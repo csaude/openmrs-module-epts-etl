@@ -1,0 +1,119 @@
+{
+	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
+	syncStageSchema: "sync_import_stage",
+	originAppLocationCode: "ZBZ_QLM_US_TESTE",
+	syncTableInfo:[
+		
+				{
+					tableName: "users",
+					mainParentRefInfo: null,
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+		
+				{
+					tableName: "location",
+					mainParentRefInfo: {tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false,
+					extraConditionForExport: "exists on (select encounter_id from encounter where encounter.location_id = location.location_id)"
+				},
+		
+				{
+					tableName: "person",
+					mainParentRefInfo: {tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+				
+				{
+					tableName: "person_address",
+					mainParentRefInfo: {tableName: "person"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+				
+				{
+					tableName: "person_attribute",
+					mainParentRefInfo: {tableName: "person"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+				
+				{
+					tableName: "person_name",
+					mainParentRefInfo: {tableName: "person"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+				
+				{
+					tableName: "patient",
+					mainParentRefInfo: {tableName: "person", referenceColumnName: "patient_id", referencedColumnName: "person_id"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+				
+				{
+					tableName: "patient_identifier",
+					mainParentRefInfo: {tableName: "patient"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+				
+				{
+					tableName: "visit",
+					mainParentRefInfo: {tableName: "patient"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+				
+				{
+					tableName: "visit_attribute",
+					mainParentRefInfo: {tableName: "visit"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+					{
+					tableName: "encounter",
+					mainParentRefInfo: {tableName: "patient"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+				{
+					tableName: "encounter_provider",
+					mainParentRefInfo: {tableName: "encounter"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+					
+				},
+				
+				{
+					tableName: "provider",
+					mainParentRefInfo: {tableName: "person"},
+					otherParentRefInfo: null,
+					mustRecompileTable: false
+				},
+				
+				{
+					tableName: "orders",
+					mainParentRefInfo: {tableName: "encounter"},
+					otherParentRefInfo: [{tableName: "patient"}],
+					mustRecompileTable: false
+				},
+				
+				{
+					tableName: "obs",
+					mainParentRefInfo: {tableName: "encounter"},
+					otherParentRefInfo: [{tableName: "person"}, {tableName: "orders", referenceColumnName: "order_id", referencedColumnName: "order_id"}],
+					mustRecompileTable: false
+				},
+				
+				{
+					tableName: "note",
+					mainParentRefInfo: {tableName: "obs"},
+					otherParentRefInfo: [{tableName: "patient"}, {tableName: "encounter"}],
+					mustRecompileTable: false
+				}
+	]
+}

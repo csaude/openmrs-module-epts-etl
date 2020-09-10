@@ -1,0 +1,17 @@
+{
+	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
+	syncStageSchema: "sync_import_stage",
+	originAppLocationCode: "ZBZ_QLM_US_TESTE",
+	syncTableInfo:[
+		
+		{
+			tableName: "location",
+			mainParentRefInfo: {tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id"},
+			otherParentRefInfo: null,
+			mustRecompileTable: false,
+			extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
+		}
+
+	]
+}
+		
