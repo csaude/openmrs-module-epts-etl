@@ -6,11 +6,12 @@ import org.openmrs.module.eptssync.controller.AbstractSyncController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.engine.synchronization.SynchronizationSyncEngine;
-import org.openmrs.module.eptssync.model.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
+import org.openmrs.module.eptssync.model.openmrs.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.model.openmrs.PersonVO;
 import org.openmrs.module.eptssync.model.openmrs.UsersVO;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -35,9 +36,13 @@ public class SynchronizationController extends AbstractSyncController {
 
 	@Override
 	public void init() {
-		super.init();
-
+		List<SyncTableInfo> allSync = discoverSyncTableInfo();
+		
 		tryToCreateInitialConfigurationForAllAvaliableLocations();
+		
+		for (SyncTableInfo syncInfo: allSync) {
+			initAndStartEngine(syncInfo);
+		}
 	}
 
 	private void tryToCreateInitialConfigurationForAllAvaliableLocations() {
@@ -79,6 +84,7 @@ public class SynchronizationController extends AbstractSyncController {
 			person.setOriginAppLocationCode(originAppLocationCode);
 			person.setUuid(utilities().generateUUID().toString());
 			person.setCreator(1);
+			person.setDateCreated(DateAndTimeUtilities.getCurrentDate());
 			
 			OpenMRSObjectDAO.insert(person, conn);
 		}
@@ -90,7 +96,8 @@ public class SynchronizationController extends AbstractSyncController {
 			user.setUuid(utilities().generateUUID().toString());
 			user.setCreator(1);
 			user.setPersonId(1);
-			
+			user.setDateCreated(DateAndTimeUtilities.getCurrentDate());
+			user.setSystemId("admin");
 			OpenMRSObjectDAO.insert(user, conn);
 		}
 		

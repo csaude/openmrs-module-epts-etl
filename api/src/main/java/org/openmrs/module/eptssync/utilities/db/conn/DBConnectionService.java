@@ -62,6 +62,9 @@ public class DBConnectionService {
 			
 			Connection conn = DriverManager.getConnection(this.connectionURI, this.dataBaseUserName, this.dataBaseUserPassword);
 			conn.setAutoCommit(false);
+			
+			//conn.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+			
 			return conn;
 		} catch (ClassNotFoundException e) {
 				e.printStackTrace();

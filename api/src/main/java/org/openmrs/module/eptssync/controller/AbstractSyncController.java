@@ -42,7 +42,7 @@ public abstract class AbstractSyncController {
 		}
 	}
 	
-	private void initAndStartEngine(SyncTableInfo syncInfo) {
+	protected void initAndStartEngine(SyncTableInfo syncInfo) {
 		SyncEngine engine = initRelatedEngine(syncInfo);
 		
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(syncInfo.getTableName());
@@ -55,7 +55,7 @@ public abstract class AbstractSyncController {
 		return syncTableInfoSource;
 	}
 	
-	private synchronized List<SyncTableInfo> discoverSyncTableInfo() {
+	protected synchronized List<SyncTableInfo> discoverSyncTableInfo() {
 		try {
 			String json = new String(Files.readAllBytes(Paths.get("sync_config.json")));
 			

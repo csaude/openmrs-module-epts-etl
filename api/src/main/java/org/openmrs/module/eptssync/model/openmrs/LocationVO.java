@@ -1,19 +1,18 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.OpenMRSObject; 
-import org.openmrs.module.eptssync.model.OpenMRSObjectDAO; 
 import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
  
 import org.openmrs.module.eptssync.model.base.BaseVO; 
  
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
+import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class LocationVO extends BaseVO implements OpenMRSObject { 
+public class LocationVO extends AbstractOpenMRSObject implements OpenMRSObject { 
 	private int locationId;
 	private String name;
 	private String description;
@@ -248,12 +247,12 @@ public class LocationVO extends BaseVO implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.name, this.description, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator, this.dateCreated, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.retired, this.retiredBy, this.dateRetired, this.retireReason, this.parentLocation, this.uuid, this.changedBy, this.dateChanged, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.name, this.description, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator == 0 ? null : this.creator, this.dateCreated, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.parentLocation == 0 ? null : this.parentLocation, this.uuid, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.name, this.description, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator, this.dateCreated, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.retired, this.retiredBy, this.dateRetired, this.retireReason, this.parentLocation, this.uuid, this.changedBy, this.dateChanged, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.locationId};		return params; 
+ 		Object[] params = {this.name, this.description, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator == 0 ? null : this.creator, this.dateCreated, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.parentLocation == 0 ? null : this.parentLocation, this.uuid, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.locationId};		return params; 
 	} 
  
 	@JsonIgnore
@@ -280,14 +279,24 @@ public class LocationVO extends BaseVO implements OpenMRSObject {
  		return "users";
 	} 
  
-	public void loadDestParentInfo(Connection conn) throws DBException {
+	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
-		parentOnDestination = OpenMRSObjectDAO.thinGetByOriginRecordId(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator, this.originAppLocationCode, conn);
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator, false, conn); 
+	this.creator = 0;
+		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
  
-		if (parentOnDestination != null){
-			this.creator = parentOnDestination.getObjectId();
-		}
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.LocationVO.class, this.parentLocation, true, conn); 
+	this.parentLocation = 0;
+		if (parentOnDestination  != null) this.parentLocation = parentOnDestination.getObjectId();
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.changedBy, true, conn); 
+	this.changedBy = 0;
+		if (parentOnDestination  != null) this.changedBy = parentOnDestination.getObjectId();
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.retiredBy, true, conn); 
+	this.retiredBy = 0;
+		if (parentOnDestination  != null) this.retiredBy = parentOnDestination.getObjectId();
  
 	}
 }

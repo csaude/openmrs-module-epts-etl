@@ -152,11 +152,22 @@ public class AttDefinedElements {
 			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
 			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
 
-			this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
-			this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
+			
+			if (!isForeignKey(dbAttName)) {
+				this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
+				this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
+			}
+			else {
+				this.sqlInsertParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
+				this.sqlUpdateParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
+			}
 		}	
 	}
 	
+	private boolean isForeignKey(String dbAttName) {
+		return utilities.isStringIn(dbAttName, syncTableInfo.getAllForeignKeys());
+	}
+
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast, SyncTableInfo syncTableInfo) {
 		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, syncTableInfo);
 		elements.generateElemets();

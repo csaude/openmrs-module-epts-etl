@@ -1,7 +1,7 @@
 package org.openmrs.module.eptssync.controller.conf;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -24,6 +24,11 @@ public class ParentRefInfo {
 	private Class<OpenMRSObject> parentClass;
 	
 	private boolean isFullLoaded;
+	
+	/*
+	 * Indicate if this parent can be ignored if not found in referenced table or not
+	 */
+	private boolean notIgnorable;
 	
 	public ParentRefInfo() {
 		this.isFullLoaded = false;
@@ -73,6 +78,14 @@ public class ParentRefInfo {
 		this.tableInfo = tableInfo;
 	}
 	
+	public boolean isNotIgnorable() {
+		return notIgnorable;
+	}
+
+	public void setNotIgnorable(boolean notIgnorable) {
+		this.notIgnorable = notIgnorable;
+	}
+
 	public synchronized void loadFullRefInfo() {
 		if (isFullLoaded) return;
 		

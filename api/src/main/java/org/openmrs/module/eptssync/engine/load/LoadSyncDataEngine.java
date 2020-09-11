@@ -9,12 +9,12 @@ import java.util.List;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.OpenMRSObject;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.load.LoadSyncDataSearchParams;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
+import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -35,6 +35,10 @@ public class LoadSyncDataEngine extends SyncEngine{
 		this.searchParams = new LoadSyncDataSearchParams(syncTableInfo);
 	}
 
+	@Override
+	protected void restart() {
+	}
+	
 	@Override
 	public void performeSync(List<SyncRecord> migrationRecords) {
 		if (this.currJSONInfo.getSyncRecords().hashCode() !=  migrationRecords.hashCode()) {

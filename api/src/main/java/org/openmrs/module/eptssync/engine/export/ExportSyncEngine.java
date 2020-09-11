@@ -5,11 +5,11 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.SyncEngine;
-import org.openmrs.module.eptssync.model.OpenMRSObject;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.export.SyncExportSearchParams;
+import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -41,6 +41,10 @@ public class ExportSyncEngine extends SyncEngine {
 		finally {
 			conn.finalizeConnection();
 		}
+	}
+	
+	@Override
+	protected void restart() {
 	}
 	
 	@Override

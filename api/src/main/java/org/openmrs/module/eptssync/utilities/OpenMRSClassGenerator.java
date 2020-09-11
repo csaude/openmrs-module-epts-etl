@@ -18,7 +18,7 @@ import javax.tools.ToolProvider;
 
 import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
-import org.openmrs.module.eptssync.model.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -167,17 +167,18 @@ public class OpenMRSClassGenerator {
 		methodFromSuperClass += "		return " + (syncTableInfo.getMainParentRefInfo() != null ? "\"" + syncTableInfo.getMainParentTableName() + "\"" : "null") + ";\n";
 		methodFromSuperClass += "	} \n \n";
 		
-		methodFromSuperClass += "	public void loadDestParentInfo(Connection conn) throws DBException {\n";
+		methodFromSuperClass += "	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
 		methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
 		
 		for(ParentRefInfo refInfo : syncTableInfo.getAllParentInfo()) {
-			methodFromSuperClass += "		parentOnDestination = OpenMRSObjectDAO.thinGetByOriginRecordId(";
+			methodFromSuperClass += "		parentOnDestination = loadParent(";
 			methodFromSuperClass += refInfo.getParentFullClassName() + ".class,";
-			methodFromSuperClass += " this." +  refInfo.getReferenceColumnAsClassAttName() + ", this.originAppLocationCode, conn);\n \n";
 			
-			methodFromSuperClass += "		if (parentOnDestination != null){\n";
-			methodFromSuperClass += "			this." + refInfo.getReferenceColumnAsClassAttName() + " = parentOnDestination.getObjectId();\n";
-			methodFromSuperClass += "		}\n \n";
+			boolean ignorable = syncTableInfo.checkIfisIgnorableParentByClassAttName(refInfo.getReferenceColumnAsClassAttName());
+			
+			methodFromSuperClass += " this." +  refInfo.getReferenceColumnAsClassAttName() + ", " + ignorable + ", conn); \n";
+			methodFromSuperClass += "	this." + refInfo.getReferenceColumnAsClassAttName() + " = 0;\n";
+			methodFromSuperClass += "		if (parentOnDestination  != null) this." + refInfo.getReferenceColumnAsClassAttName() + " = parentOnDestination.getObjectId();\n \n";
 		}
 		
 		methodFromSuperClass += "	}";
@@ -186,20 +187,20 @@ public class OpenMRSClassGenerator {
 		
 		classDefinition += "package org.openmrs.module.eptssync.model.openmrs; \n \n";
 		
-		classDefinition += "import org.openmrs.module.eptssync.model.OpenMRSObject; \n";
-		classDefinition += "import org.openmrs.module.eptssync.model.OpenMRSObjectDAO; \n";
 		classDefinition += "import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; \n \n";
 	
 		classDefinition += "import org.openmrs.module.eptssync.model.base.BaseVO; \n \n";
-	
-		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
-		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; \n \n";
 		
+		
+		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
+		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; \n";
+		classDefinition += "import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; \n \n";
+
 		classDefinition += "import java.sql.Connection; \n \n";
 		
 		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";
 		
-		classDefinition += "public class " + syncTableInfo.generateClassName() + " extends BaseVO implements OpenMRSObject { \n";
+		classDefinition += "public class " + syncTableInfo.generateClassName() + " extends AbstractOpenMRSObject implements OpenMRSObject { \n";
 		classDefinition += 		attsDefinition + "\n \n";
 		classDefinition += "	public " + syncTableInfo.generateClassName() + "() { \n";
 		classDefinition += "	} \n \n";
@@ -229,9 +230,6 @@ public class OpenMRSClassGenerator {
 		try {
 			return (Class<OpenMRSObject>) Class.forName(fullClassName);
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			//e.printStackTrace();
-			
 			return null;
 		}
 	}

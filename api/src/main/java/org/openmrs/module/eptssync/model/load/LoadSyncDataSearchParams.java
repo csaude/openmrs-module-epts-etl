@@ -6,8 +6,8 @@ import java.sql.Connection;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.model.OpenMRSObject;
 import org.openmrs.module.eptssync.model.SearchClauses;
+import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> implements FilenameFilter{

@@ -8,6 +8,7 @@ import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.synchronization.SynchronizationSearchParams;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -36,6 +37,11 @@ public class SynchronizationSyncEngine extends SyncEngine {
 		finally {
 			conn.finalizeConnection();
 		}
+	}
+	
+	@Override
+	protected void restart() {
+		this.searchParams.setSyncStartDate(DateAndTimeUtilities.getCurrentDate());
 	}
 	
 	@Override

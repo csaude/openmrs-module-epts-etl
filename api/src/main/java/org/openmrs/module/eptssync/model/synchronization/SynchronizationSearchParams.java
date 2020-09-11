@@ -1,18 +1,27 @@
 package org.openmrs.module.eptssync.model.synchronization;
 
 import java.sql.Connection;
+import java.util.Date;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfoVO>{
 	private SyncTableInfo tableInfo;
+	private Date syncStartDate;
 	
 	public SynchronizationSearchParams(SyncTableInfo tableInfo) {
 		this.tableInfo = tableInfo;
+		
+		this.syncStartDate = DateAndTimeUtilities.getCurrentDate();
+	}
+	
+	public void setSyncStartDate(Date syncStartDate) {
+		this.syncStartDate = syncStartDate;
 	}
 	
 	@Override
@@ -23,17 +32,20 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 		
 		searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName());
 		
-		if (this.tableInfo.getMainParentRefInfo() != null) {
+		searchClauses.addToClauses("last_migration_try_date is null or last_migration_try_date < ?");
+		searchClauses.addToParameters(this.syncStartDate);
+		
+		/*if (this.tableInfo.getMainParentRefInfo() != null) {
 			String refMainParent = "";
 			
 			refMainParent += "INNER JOIN "+ this.tableInfo.getMainParentTableName();
 			refMainParent += " ON ";
 			refMainParent +=  "main_parent_id" ;
 			refMainParent += " = ";
-			refMainParent += this.tableInfo.getFullMainParentReferencedColumn() ;
+			refMainParent += this.tableInfo.getFullMainParentReferencedColumn();
 			
 			searchClauses.addToClauseFrom(refMainParent);
-		}
+		}*/
 		
 		return searchClauses;
 	}	

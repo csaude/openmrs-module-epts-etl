@@ -1,0 +1,13 @@
+package org.openmrs.module.eptssync.exceptions;
+
+public abstract class SyncExeption extends RuntimeException {
+	private static final long serialVersionUID = 1L;
+
+	public SyncExeption(){
+	}
+	
+	public SyncExeption(String msg){
+		super(msg);
+	}
+	
+}

@@ -170,7 +170,7 @@ public class DBUtilities {
 		throw new ForbiddenOperationException("Unsupported DB");
 	}
 	
-	public static boolean disableForegnKeyChecks(Connection conn) throws DBException {
+	public static void disableForegnKeyChecks(Connection conn) throws DBException {
 		try {
 			if (isMySQLDB(conn)) {
 				Statement st = conn.createStatement();
@@ -182,7 +182,7 @@ public class DBUtilities {
 				st.close();
 
 			}
-			
+			else
 			throw new RuntimeException("Database not supported!");
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -191,7 +191,7 @@ public class DBUtilities {
 		}
 	}
 
-	public static boolean enableForegnKeyChecks(Connection conn) throws DBException {
+	public static void enableForegnKeyChecks(Connection conn) throws DBException {
 		try {
 			if (isMySQLDB(conn)) {
 				Statement st = conn.createStatement();
@@ -201,9 +201,9 @@ public class DBUtilities {
 				st.executeBatch();
 
 				st.close();
-
+				
 			}
-			
+			else
 			throw new RuntimeException("Database not supported!");
 		} catch (SQLException e) {
 			e.printStackTrace();

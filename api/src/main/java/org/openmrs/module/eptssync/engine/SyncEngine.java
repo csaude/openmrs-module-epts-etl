@@ -49,14 +49,18 @@ public abstract class SyncEngine implements Runnable, TimeCountDownInitializer{
 				performeSync(records);
 			}
 			else {
-				TimeCountDown t = new TimeCountDown(this, "No '" + this.syncTableInfo.getTableName() + "' records to export" , 300);
+				TimeCountDown t = new TimeCountDown(this, "No '" + this.syncTableInfo.getTableName() + "' records to export" , 20);
 				t.setIntervalForMessage(10);
+				
+				restart();
 				
 				t.run();
 			}
 		}
 	}
 	
+	protected abstract void restart();
+
 	@Override
 	public void onFinish() {
 	}

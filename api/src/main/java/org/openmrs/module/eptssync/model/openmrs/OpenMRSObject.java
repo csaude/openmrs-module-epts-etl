@@ -1,7 +1,8 @@
-package org.openmrs.module.eptssync.model;
+package org.openmrs.module.eptssync.model.openmrs;
 
 import java.sql.Connection;
 
+import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -34,7 +35,7 @@ public interface OpenMRSObject extends SyncRecord{
 	 * @param conn
 	 * @throws DBException
 	 */
-	public abstract void loadDestParentInfo(Connection conn) throws DBException;
+	public abstract void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException;
 	public abstract Object[] getInsertParams();
 	public abstract String getInsertSQL();
 	
@@ -43,4 +44,7 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract String getOriginAppLocationCode();
 	public abstract void setOriginAppLocationCode(String originAppLocationCode);
+	
+	public abstract boolean hasIgnoredParent();
+		
 }

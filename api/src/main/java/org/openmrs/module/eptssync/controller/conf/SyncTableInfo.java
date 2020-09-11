@@ -8,7 +8,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.eptssync.model.OpenMRSObject;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
@@ -35,6 +36,8 @@ public class SyncTableInfo {
 	private String primaryKey;
 	
 	private String extraConditionForExport;
+	
+	private String[] allForeignKeys;
 	
 	public SyncTableInfo() {
 	}
@@ -105,12 +108,46 @@ public class SyncTableInfo {
 		return primaryKey;
 	}
 	
+	public synchronized String[] getAllForeignKeys() {
+		if (allForeignKeys == null) {
+			
+			OpenConnection conn = DBConnectionService.getInstance().openConnection();
+			
+			try {
+				ResultSet rs = conn.getMetaData().getImportedKeys(null, null, tableName);
+				
+				rs.last();
+				
+				this.allForeignKeys = new String[rs.getRow()];
+				
+				rs.beforeFirst();
+				
+				while(rs.next()) {
+					this.allForeignKeys[rs.getRow() - 1] = rs.getString("FKCOLUMN_NAME");
+				}
+				
+			} catch (SQLException e) {
+				e.printStackTrace();
+				
+				throw new RuntimeException(e);
+			}
+			finally {
+				conn.finalizeConnection();
+			}
+		}
+		
+		return this.allForeignKeys;
+	}
+	
 	public boolean hasMainParent() {
 		return this.getMainParentRefInfo() != null;
 	}
 	
 	public ParentRefInfo getMainParentRefInfo() {
 		if (this.mainParentRefInfo != null) {
+			
+			this.mainParentRefInfo.setNotIgnorable(true);
+			
 			this.mainParentRefInfo.loadFullRefInfo();
 		}
 
@@ -179,6 +216,7 @@ public class SyncTableInfo {
 
 	public void setMainParentRefInfo(ParentRefInfo mainParentRefInfo) {
 		this.mainParentRefInfo = mainParentRefInfo;
+		this.mainParentRefInfo.setNotIgnorable(true);
 	}
 
 	public Class<OpenMRSObject> getRecordClass() {
@@ -285,9 +323,16 @@ public class SyncTableInfo {
 		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
 		sql += "	json VARCHAR(7500) NOT NULL,\n";
 		sql += "	origin_app_location_code VARCHAR(100) NOT NULL,\n";
+		sql += "	last_migration_try_date DATETIME DEFAULT NULL,\n";
+		sql += "	last_migration_try_err varchar(250) DEFAULT NULL,\n";
 		sql += "	PRIMARY KEY (id)\n";
 		sql += ")\n";
 		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";
+		
+		
+		
+		 
+		  
 		
 		OpenConnection conn = openConnection();
 
@@ -435,5 +480,15 @@ public class SyncTableInfo {
 	
 	private static String convertTableAttNameToClassAttName(String tableAttName) {
 		return utilities.convertTableAttNameToClassAttName(tableAttName);
+	}
+	
+	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName) {
+		for (ParentRefInfo  parent : this.getAllParentInfo()) {
+			if (parent.getReferenceColumnAsClassAttName().equals(parentAttName)) {
+				return !parent.isNotIgnorable();
+			}
+		}
+		
+		throw new ForbiddenOperationException("The att '" + parentAttName + "' doesn't represent any defined parent att");
 	}
 }

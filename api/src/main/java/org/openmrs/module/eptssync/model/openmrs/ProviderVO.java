@@ -12,73 +12,52 @@ import java.sql.Connection;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject { 
-	private int userId;
-	private String systemId;
-	private String username;
-	private String password;
-	private String salt;
-	private String secretQuestion;
-	private String secretAnswer;
+public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject { 
+	private int providerId;
+	private int personId;
+	private String name;
+	private String identifier;
 	private int creator;
 	private java.util.Date dateCreated;
 	private int changedBy;
 	private java.util.Date dateChanged;
-	private int personId;
 	private byte retired;
 	private int retiredBy;
 	private java.util.Date dateRetired;
 	private String retireReason;
 	private String uuid;
+	private int providerRoleId;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
  
-	public UsersVO() { 
+	public ProviderVO() { 
 	} 
  
-	public void setUserId(int userId){ 
-	 	this.userId = userId;
+	public void setProviderId(int providerId){ 
+	 	this.providerId = providerId;
 	}
  
-	public int getUserId(){ 
-		return this.userId;
-	}	public void setSystemId(String systemId){ 
-	 	this.systemId = systemId;
+	public int getProviderId(){ 
+		return this.providerId;
+	}	public void setPersonId(int personId){ 
+	 	this.personId = personId;
 	}
  
-	public String getSystemId(){ 
-		return this.systemId;
-	}	public void setUsername(String username){ 
-	 	this.username = username;
+	public int getPersonId(){ 
+		return this.personId;
+	}	public void setName(String name){ 
+	 	this.name = name;
 	}
  
-	public String getUsername(){ 
-		return this.username;
-	}	public void setPassword(String password){ 
-	 	this.password = password;
+	public String getName(){ 
+		return this.name;
+	}	public void setIdentifier(String identifier){ 
+	 	this.identifier = identifier;
 	}
  
-	public String getPassword(){ 
-		return this.password;
-	}	public void setSalt(String salt){ 
-	 	this.salt = salt;
-	}
- 
-	public String getSalt(){ 
-		return this.salt;
-	}	public void setSecretQuestion(String secretQuestion){ 
-	 	this.secretQuestion = secretQuestion;
-	}
- 
-	public String getSecretQuestion(){ 
-		return this.secretQuestion;
-	}	public void setSecretAnswer(String secretAnswer){ 
-	 	this.secretAnswer = secretAnswer;
-	}
- 
-	public String getSecretAnswer(){ 
-		return this.secretAnswer;
+	public String getIdentifier(){ 
+		return this.identifier;
 	}	public void setCreator(int creator){ 
 	 	this.creator = creator;
 	}
@@ -103,12 +82,6 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	public java.util.Date getDateChanged(){ 
 		return this.dateChanged;
-	}	public void setPersonId(int personId){ 
-	 	this.personId = personId;
-	}
- 
-	public int getPersonId(){ 
-		return this.personId;
 	}	public void setRetired(byte retired){ 
 	 	this.retired = retired;
 	}
@@ -139,6 +112,12 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	public String getUuid(){ 
 		return this.uuid;
+	}	public void setProviderRoleId(int providerRoleId){ 
+	 	this.providerRoleId = providerRoleId;
+	}
+ 
+	public int getProviderRoleId(){ 
+		return this.providerRoleId;
 	}	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -162,11 +141,11 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	}
  
 	public int getObjectId() { 
- 		return this.userId; 
+ 		return this.providerId; 
 	} 
  
 	public void setObjectId(int selfId){ 
-		this.userId = selfId; 
+		this.providerId = selfId; 
 	} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
@@ -179,27 +158,27 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
- 		return "user_id"; 
+ 		return "provider_id"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.systemId, this.username, this.password, this.salt, this.secretQuestion, this.secretAnswer, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.personId == 0 ? null : this.personId, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.providerRoleId == 0 ? null : this.providerRoleId, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.systemId, this.username, this.password, this.salt, this.secretQuestion, this.secretAnswer, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.personId == 0 ? null : this.personId, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.userId};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.providerRoleId == 0 ? null : this.providerRoleId, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.providerId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO users(system_id, username, password, salt, secret_question, secret_answer, creator, date_created, changed_by, date_changed, person_id, retired, retired_by, date_retired, retire_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO provider(person_id, name, identifier, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, uuid, provider_role_id, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE users SET system_id = ?, username = ?, password = ?, salt = ?, secret_question = ?, secret_answer = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, person_id = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE user_id = ?;"; 
+ 		return "UPDATE provider SET person_id = ?, name = ?, identifier = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, provider_role_id = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE provider_id = ?;"; 
 	} 
  
 	@JsonIgnore
@@ -219,20 +198,16 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.PersonVO.class, this.personId, false, conn); 
-	this.personId = 0;
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.PersonVO.class, this.personId,true, conn); 
 		if (parentOnDestination  != null) this.personId = parentOnDestination.getObjectId();
  
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator, false, conn); 
-	this.creator = 0;
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator,false, conn); 
 		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
  
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.changedBy, true, conn); 
-	this.changedBy = 0;
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.changedBy,true, conn); 
 		if (parentOnDestination  != null) this.changedBy = parentOnDestination.getObjectId();
  
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.retiredBy, true, conn); 
-	this.retiredBy = 0;
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.retiredBy,true, conn); 
 		if (parentOnDestination  != null) this.retiredBy = parentOnDestination.getObjectId();
  
 	}

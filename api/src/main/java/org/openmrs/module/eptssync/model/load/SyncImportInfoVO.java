@@ -1,13 +1,17 @@
 package org.openmrs.module.eptssync.model.load;
 
+import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
-import org.openmrs.module.eptssync.model.OpenMRSObject;
-import org.openmrs.module.eptssync.model.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
+import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
+import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -29,14 +33,34 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	private String syncTableName;
 	private String json;
 	private String originAppLocationCode;
+	private Date lastMigrationTryDate;
+	private String lastMigrationTryErr;
 	
 	public SyncImportInfoVO(){
 	}
-	
+
+	public Date getLastMigrationTryDate() {
+		return lastMigrationTryDate;
+	}
+
+	public void setLastMigrationTryDate(Date lastMigrationTryDate) {
+		this.lastMigrationTryDate = lastMigrationTryDate;
+	}
+
+
+	public String getLastMigrationTryErr() {
+		return lastMigrationTryErr;
+	}
+
+
+	public void setLastMigrationTryErr(String lastMigrationTryErr) {
+		this.lastMigrationTryErr = lastMigrationTryErr;
+	}
+
+
 	public int getId() {
 		return id;
 	}
-
 
 	public void setId(int id) {
 		this.id = id;
@@ -129,18 +153,45 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		
 		source.setOriginRecordId(source.getObjectId());
 		source.setObjectId(0);
-		source.loadDestParentInfo(conn);
 		
-		OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByOriginRecordId(source.getClass(), source.getOriginRecordId(), source.getOriginAppLocationCode(), conn);
-		
-		if (recordOnDB != null) {
-			source.setObjectId(recordOnDB.getObjectId());
+		try {
 			
-			OpenMRSObjectDAO.update(source, conn);
+			
+			
+			source.loadDestParentInfo(conn);
+			
+			OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByOriginRecordId(source.getClass(), source.getOriginRecordId(), source.getOriginAppLocationCode(), conn);
+			
+			if (recordOnDB != null) {
+				source.setObjectId(recordOnDB.getObjectId());
+				
+				OpenMRSObjectDAO.update(source, conn);
+			}
+			else {
+				OpenMRSObjectDAO.insert(source, conn);
+			}
+			
+			if (source.hasIgnoredParent()) {
+				markAsMigrated(tableInfo, conn);
+			}
+			else {
+				markAsToBeCompletedInFuture(tableInfo, conn);
+			}
+		} catch (ParentNotYetMigratedException e) {
+			markAsFailedToMigrate(tableInfo, e, conn);
 		}
-		else {
-			OpenMRSObjectDAO.insert(source, conn);
-		}
-	
 	}
+	
+	public void markAsToBeCompletedInFuture(SyncTableInfo tableInfo, OpenConnection conn) throws DBException {
+		SyncImportInfoDAO.markAsToBeCompletedInFuture(this, tableInfo, conn);
+	}
+
+	public void markAsFailedToMigrate(SyncTableInfo tableInfo, SyncExeption exception, Connection conn) throws DBException {
+		SyncImportInfoDAO.markAsFailedToMigrate(this, tableInfo, exception, conn);
+	}
+	
+	public void markAsMigrated(SyncTableInfo tableInfo, Connection conn) throws DBException {
+		SyncImportInfoDAO.remove(this, tableInfo, conn);
+	}
+	
 }
