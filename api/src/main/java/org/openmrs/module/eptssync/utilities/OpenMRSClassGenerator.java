@@ -59,8 +59,6 @@ public class OpenMRSClassGenerator {
 		String insertParamsDefinition = "Object[] params = {";
 		String updateParamsDefinition = "Object[] params = {";
 		
-		String mainParentAttId = syncTableInfo.hasMainParent() ? syncTableInfo.getMainParentRefInfo().getReferenceColumnAsClassAttName() : null;
-		
 		AttDefinedElements attElements;
 		
 		for (int i = 1; i <= rsMetaData.getColumnCount() - 1; i++) {
@@ -72,6 +70,8 @@ public class OpenMRSClassGenerator {
 			getttersAndSetterDefinition += "\n \n";
 			getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, attElements.getGetterDefinition());
 
+			getttersAndSetterDefinition += "\n \n";
+			
 			insertSQLStart = utilities.concatStrings(insertSQLStart, attElements.getSqlInsertFirstPartDefinition());
 			insertSQLEnd = utilities.concatStrings(insertSQLEnd, attElements.getSqlInsertLastEndPartDefinition());
 			
@@ -148,36 +148,20 @@ public class OpenMRSClassGenerator {
 		methodFromSuperClass += "	public String getUpdateSQL(){ \n ";
 		methodFromSuperClass += "		return \""+ updaSQLDefinition + "\"; \n";
 		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	@JsonIgnore\n";
-		methodFromSuperClass += "	public int getMainParentId(){ \n ";
-		methodFromSuperClass += "		return " + (mainParentAttId != null ? mainParentAttId : 0) + "; \n";
-		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	public void setMainParentId(int mainParentId){ \n ";
-		
-		if (mainParentAttId != null)	{
-			methodFromSuperClass += "		this." + mainParentAttId + " = " + "mainParentId; \n";
-		}
-		
-		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	@JsonIgnore\n";
-		methodFromSuperClass += "	public String getMainParentTable(){ \n ";
-		methodFromSuperClass += "		return " + (syncTableInfo.getMainParentRefInfo() != null ? "\"" + syncTableInfo.getMainParentTableName() + "\"" : "null") + ";\n";
-		methodFromSuperClass += "	} \n \n";
-		
+			
 		methodFromSuperClass += "	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
 		methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
 		
-		for(ParentRefInfo refInfo : syncTableInfo.getAllParentInfo()) {
+		for(ParentRefInfo refInfo : syncTableInfo.getParentRefInfo()) {
+			if (refInfo.isMetadata()) continue;
+			
 			methodFromSuperClass += "		parentOnDestination = loadParent(";
 			methodFromSuperClass += refInfo.getParentFullClassName() + ".class,";
 			
 			boolean ignorable = syncTableInfo.checkIfisIgnorableParentByClassAttName(refInfo.getReferenceColumnAsClassAttName());
 			
 			methodFromSuperClass += " this." +  refInfo.getReferenceColumnAsClassAttName() + ", " + ignorable + ", conn); \n";
-			methodFromSuperClass += "	this." + refInfo.getReferenceColumnAsClassAttName() + " = 0;\n";
+			methodFromSuperClass += "		this." + refInfo.getReferenceColumnAsClassAttName() + " = 0;\n";
 			methodFromSuperClass += "		if (parentOnDestination  != null) this." + refInfo.getReferenceColumnAsClassAttName() + " = parentOnDestination.getObjectId();\n \n";
 		}
 		
@@ -188,9 +172,6 @@ public class OpenMRSClassGenerator {
 		classDefinition += "package org.openmrs.module.eptssync.model.openmrs; \n \n";
 		
 		classDefinition += "import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; \n \n";
-	
-		classDefinition += "import org.openmrs.module.eptssync.model.base.BaseVO; \n \n";
-		
 		
 		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; \n";

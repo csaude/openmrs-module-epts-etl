@@ -23,20 +23,36 @@ public class ParentRefInfo {
 	
 	private Class<OpenMRSObject> parentClass;
 	
-	private boolean isFullLoaded;
+	/*
+	 * Indicate if this parent is metadata or not
+	 */
+	private boolean metadata;
 	
 	/*
 	 * Indicate if this parent can be ignored if not found in referenced table or not
 	 */
-	private boolean notIgnorable;
+	private boolean ignorable;
+	
+	/*
+	 * Indicate if this parent's PK is the same with the main table.
+	 * EX: The patient table and person, share the same primary key
+	 */
+	private boolean sharedPk;
 	
 	public ParentRefInfo() {
-		this.isFullLoaded = false;
 	}
 	
+	/*
+	public ParentRefInfo(String referenceColumnName, String referencedColumnName, String tableName, boolean ignorable, SyncTableInfo tableInfo) {
+		this.referenceColumnName = referenceColumnName;
+		this.referencedColumnName = referencedColumnName;
+		this.tableName = tableName;
+		this.tableInfo = tableInfo;
+		this.ignorable = ignorable;
+	}
+	*/
+	
 	public String getReferenceColumnName() {
-		loadFullRefInfo();
-		
 		return referenceColumnName;
 	}
 
@@ -45,14 +61,10 @@ public class ParentRefInfo {
 	}
 
 	public String getReferenceColumnAsClassAttName() {
-		loadFullRefInfo();
-		
 		return utilities.convertTableAttNameToClassAttName(this.getReferenceColumnName());
 	}
 	
 	public String getReferencedColumnName() {
-		loadFullRefInfo();
-		
 		return referencedColumnName;
 	}
 
@@ -61,8 +73,6 @@ public class ParentRefInfo {
 	}
 	
 	public String getTableName() {
-		loadFullRefInfo();
-		
 		return tableName;
 	}
 	
@@ -77,46 +87,42 @@ public class ParentRefInfo {
 	public void setTableInfo(SyncTableInfo tableInfo) {
 		this.tableInfo = tableInfo;
 	}
-	
-	public boolean isNotIgnorable() {
-		return notIgnorable;
-	}
 
-	public void setNotIgnorable(boolean notIgnorable) {
-		this.notIgnorable = notIgnorable;
-	}
-
-	public synchronized void loadFullRefInfo() {
-		if (isFullLoaded) return;
-		
-		if (!utilities.stringHasValue(this.referenceColumnName)) {
-			this.setReferenceColumnName(this.tableName + "_id");
-		}
-		
-		if (!utilities.stringHasValue(this.referencedColumnName)) {
-			this.setReferencedColumnName(this.tableName + "_id");
-		}
-		
-		this.isFullLoaded = true;
-	}
-	
 	public String getFullParentReferencedColumn() {
-		loadFullRefInfo();
-		
 		return  this.getTableName() + "." + this.getReferencedColumnName();
 	}
 
 	public String getFullReferenceColumn() {
-		loadFullRefInfo();
-		
 		return  this.getTableInfo().getTableName() + "." + this.getReferenceColumnName();
+	}
+	
+	public boolean isIgnorable() {
+		return ignorable;
+	}
+	
+	public void setIgnorable(boolean ignorable) {
+		this.ignorable = ignorable;
+	}
+
+	public boolean isMetadata() {
+		return metadata;
+	}
+
+	public void setMetadata(boolean metadata) {
+		this.metadata = metadata;
+	}
+	
+	public boolean isSharedPk() {
+		return sharedPk;
+	}
+
+	public void setSharedPk(boolean sharedPk) {
+		this.sharedPk = sharedPk;
 	}
 
 	@SuppressWarnings("unchecked")
 	@JsonIgnore
 	public Class<OpenMRSObject> determineParentClass(){
-		loadFullRefInfo();
-		
 		try {
 			if (this.parentClass != null) return this.parentClass;
 			
@@ -136,8 +142,6 @@ public class ParentRefInfo {
 	}
 
 	public String getParentFullClassName() {
-		loadFullRefInfo();
-		
 		return this.determineParentClass().getCanonicalName();
 	}
 	

@@ -11,7 +11,6 @@ import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
-import org.openmrs.module.eptssync.model.openmrs.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -28,9 +27,6 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	
 	private int id;
 	private int recordId;
-	private int mainParentId;
-	private String mainParentTable;
-	private String syncTableName;
 	private String json;
 	private String originAppLocationCode;
 	private Date lastMigrationTryDate;
@@ -74,15 +70,6 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.recordId = recordId;
 	}
 
-	public String getSyncTableName() {
-		return syncTableName;
-	}
-
-
-	public void setSyncTableName(String syncTableName) {
-		this.syncTableName = syncTableName;
-	}
-
 	public String getJson() {
 		return json;
 	}
@@ -99,22 +86,6 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	@Override
 	public void setObjectId(int id) {
 		this.id = id;
-	}
-
-	public int getMainParentId() {
-		return mainParentId;
-	}
-	
-	public void setMainParentId(int mainParentId) {
-		this.mainParentId = mainParentId;
-	}
-	
-	public String getMainParentTable() {
-		return mainParentTable;
-	}
-	
-	public void setMainParentTable(String mainParentTable) {
-		this.mainParentTable = mainParentTable;
 	}
 	
 	public String getOriginAppLocationCode() {
@@ -139,10 +110,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		SyncImportInfoVO syncInfo = new SyncImportInfoVO();
 		
 		syncInfo.setRecordId(syncRecord.getObjectId());
-		syncInfo.setSyncTableName(syncRecord.generateTableName());
 		syncInfo.setJson(utilities.parseToJSON(syncRecord));
-		syncInfo.setMainParentId(syncRecord.getMainParentId());
-		syncInfo.setMainParentTable(syncRecord.getMainParentTable());
 		syncInfo.setOriginAppLocationCode(syncRecord.getOriginAppLocationCode());
 		
 		return syncInfo;
@@ -152,30 +120,21 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		OpenMRSObject source = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), json);
 		
 		source.setOriginRecordId(source.getObjectId());
-		source.setObjectId(0);
 		
 		try {
-			
-			
-			
 			source.loadDestParentInfo(conn);
 			
-			OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByOriginRecordId(source.getClass(), source.getOriginRecordId(), source.getOriginAppLocationCode(), conn);
+			if (!tableInfo.useSharedPKKey()) {
+				source.setObjectId(0);
+			}
 			
-			if (recordOnDB != null) {
-				source.setObjectId(recordOnDB.getObjectId());
-				
-				OpenMRSObjectDAO.update(source, conn);
-			}
-			else {
-				OpenMRSObjectDAO.insert(source, conn);
-			}
+			source.save(conn);
 			
 			if (source.hasIgnoredParent()) {
-				markAsMigrated(tableInfo, conn);
+				markAsToBeCompletedInFuture(tableInfo, conn);
 			}
 			else {
-				markAsToBeCompletedInFuture(tableInfo, conn);
+				markAsMigrated(tableInfo, conn);
 			}
 		} catch (ParentNotYetMigratedException e) {
 			markAsFailedToMigrate(tableInfo, e, conn);

@@ -2,8 +2,6 @@ package org.openmrs.module.eptssync.model.openmrs;
  
 import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
  
-import org.openmrs.module.eptssync.model.base.BaseVO; 
- 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
@@ -39,91 +37,121 @@ public class VisitAttributeVO extends AbstractOpenMRSObject implements OpenMRSOb
  
 	public int getVisitAttributeId(){ 
 		return this.visitAttributeId;
-	}	public void setVisitId(int visitId){ 
+	}
+ 
+	public void setVisitId(int visitId){ 
 	 	this.visitId = visitId;
 	}
  
 	public int getVisitId(){ 
 		return this.visitId;
-	}	public void setAttributeTypeId(int attributeTypeId){ 
+	}
+ 
+	public void setAttributeTypeId(int attributeTypeId){ 
 	 	this.attributeTypeId = attributeTypeId;
 	}
  
 	public int getAttributeTypeId(){ 
 		return this.attributeTypeId;
-	}	public void setValueReference(String valueReference){ 
+	}
+ 
+	public void setValueReference(String valueReference){ 
 	 	this.valueReference = valueReference;
 	}
  
 	public String getValueReference(){ 
 		return this.valueReference;
-	}	public void setUuid(String uuid){ 
+	}
+ 
+	public void setUuid(String uuid){ 
 	 	this.uuid = uuid;
 	}
  
 	public String getUuid(){ 
 		return this.uuid;
-	}	public void setCreator(int creator){ 
+	}
+ 
+	public void setCreator(int creator){ 
 	 	this.creator = creator;
 	}
  
 	public int getCreator(){ 
 		return this.creator;
-	}	public void setDateCreated(java.util.Date dateCreated){ 
+	}
+ 
+	public void setDateCreated(java.util.Date dateCreated){ 
 	 	this.dateCreated = dateCreated;
 	}
  
 	public java.util.Date getDateCreated(){ 
 		return this.dateCreated;
-	}	public void setChangedBy(int changedBy){ 
+	}
+ 
+	public void setChangedBy(int changedBy){ 
 	 	this.changedBy = changedBy;
 	}
  
 	public int getChangedBy(){ 
 		return this.changedBy;
-	}	public void setDateChanged(java.util.Date dateChanged){ 
+	}
+ 
+	public void setDateChanged(java.util.Date dateChanged){ 
 	 	this.dateChanged = dateChanged;
 	}
  
 	public java.util.Date getDateChanged(){ 
 		return this.dateChanged;
-	}	public void setVoided(byte voided){ 
+	}
+ 
+	public void setVoided(byte voided){ 
 	 	this.voided = voided;
 	}
  
 	public byte getVoided(){ 
 		return this.voided;
-	}	public void setVoidedBy(int voidedBy){ 
+	}
+ 
+	public void setVoidedBy(int voidedBy){ 
 	 	this.voidedBy = voidedBy;
 	}
  
 	public int getVoidedBy(){ 
 		return this.voidedBy;
-	}	public void setDateVoided(java.util.Date dateVoided){ 
+	}
+ 
+	public void setDateVoided(java.util.Date dateVoided){ 
 	 	this.dateVoided = dateVoided;
 	}
  
 	public java.util.Date getDateVoided(){ 
 		return this.dateVoided;
-	}	public void setVoidReason(String voidReason){ 
+	}
+ 
+	public void setVoidReason(String voidReason){ 
 	 	this.voidReason = voidReason;
 	}
  
 	public String getVoidReason(){ 
 		return this.voidReason;
-	}	public void setLastSyncDate(java.util.Date lastSyncDate){ 
+	}
+ 
+	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
  
 	public java.util.Date getLastSyncDate(){ 
 		return this.lastSyncDate;
-	}	public void setOriginRecordId(int originRecordId){ 
+	}
+ 
+	public void setOriginRecordId(int originRecordId){ 
 	 	this.originRecordId = originRecordId;
 	}
  
 	public int getOriginRecordId(){ 
 		return this.originRecordId;
-	}	public void setOriginAppLocationCode(String originAppLocationCode){ 
+	}
+ 
+	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
 
@@ -174,33 +202,23 @@ public class VisitAttributeVO extends AbstractOpenMRSObject implements OpenMRSOb
  		return "UPDATE visit_attribute SET visit_id = ?, attribute_type_id = ?, value_reference = ?, uuid = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE visit_attribute_id = ?;"; 
 	} 
  
-	@JsonIgnore
-	public int getMainParentId(){ 
- 		return visitId; 
-	} 
- 
-	public void setMainParentId(int mainParentId){ 
- 		this.visitId = mainParentId; 
-	} 
- 
-	@JsonIgnore
-	public String getMainParentTable(){ 
- 		return "visit";
-	} 
- 
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.VisitVO.class, this.visitId,true, conn); 
-		if (parentOnDestination  != null) this.visitId = parentOnDestination.getObjectId();
- 
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator,false, conn); 
-		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
- 
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.changedBy,true, conn); 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.changedBy, true, conn); 
+		this.changedBy = 0;
 		if (parentOnDestination  != null) this.changedBy = parentOnDestination.getObjectId();
  
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.voidedBy,true, conn); 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator, false, conn); 
+		this.creator = 0;
+		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.VisitVO.class, this.visitId, false, conn); 
+		this.visitId = 0;
+		if (parentOnDestination  != null) this.visitId = parentOnDestination.getObjectId();
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.voidedBy, true, conn); 
+		this.voidedBy = 0;
 		if (parentOnDestination  != null) this.voidedBy = parentOnDestination.getObjectId();
  
 	}

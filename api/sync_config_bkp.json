@@ -6,187 +6,38 @@
 		  
 				{	
 					tableName: "users",
-					mainParentRefInfo: {tableName: "person"},
-					otherParentRefInfo: [
-											{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-											{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-											{tableName: "users", referenceColumnName: "retired_by", referencedColumnName: "user_id"}
-											
-										],
+					parents: ["person", "users"],
 					mustRecompileTable: true
 				},
 		
 				{
 					tableName: "location",
-					mainParentRefInfo: {tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id"},
-					otherParentRefInfo: [
-						{tableName: "location", referenceColumnName: "parent_location", referencedColumnName: "location_id"},
-						{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-						{tableName: "users", referenceColumnName: "retired_by", referencedColumnName: "user_id"}
-					],
+					parents: ["users", "location"],
 					mustRecompileTable: true,
 					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
 				},
 		
 				{
 					tableName: "person",
-					mainParentRefInfo: {tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id"},
-					otherParentRefInfo: [
-											{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-											{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-										],
+					parents: ["users"],
 					mustRecompileTable: true
 				},
 				
 				{
 					tableName: "person_address",
-					mainParentRefInfo: {tableName: "person"},
-					otherParentRefInfo: [
-										{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-										{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-										{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-									],
+					parents: ["person", "users"],
 					mustRecompileTable: true
 				},
 				
 				{
 					tableName: "person_attribute",
-					mainParentRefInfo: {tableName: "person"},
-					otherParentRefInfo: [
-											{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-											{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-											{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-										],
+					parents: ["person", "users"],
 					mustRecompileTable: true
 				},
 				
 				{
 					tableName: "person_name",
-					mainParentRefInfo: {tableName: "person"},
-					otherParentRefInfo: [
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-						{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-					],
-					mustRecompileTable: true
-				},
-				
-				{
-					tableName: "patient",
-					mainParentRefInfo: {tableName: "person", referenceColumnName: "patient_id", referencedColumnName: "person_id"},
-					otherParentRefInfo: [
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-						{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-					],
-					mustRecompileTable: true
-				},
-				
-				{
-					tableName: "patient_identifier",
-					mainParentRefInfo: {tableName: "patient"},
-					otherParentRefInfo: [
-						{tableName: "location"},
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-						{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-					],
-					mustRecompileTable: true
-				},
-				
-				{
-					tableName: "visit",
-					mainParentRefInfo: {tableName: "patient"},
-					otherParentRefInfo: [
-						{tableName: "location"},
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-						{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-					],
-					mustRecompileTable: true
-				},
-				
-				{
-					tableName: "visit_attribute",
-					mainParentRefInfo: {tableName: "visit"},
-					otherParentRefInfo: [
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-						{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-					],
-					mustRecompileTable: true
-				},
-				{
-					tableName: "encounter",
-					mainParentRefInfo: {tableName: "patient"},
-					otherParentRefInfo: [
-						{tableName: "location"},
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-						{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-					],
-					mustRecompileTable: true
-				},
-				{
-					tableName: "encounter_provider",
-					mainParentRefInfo: {tableName: "encounter"},
-					otherParentRefInfo: [
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-						{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-					],
-					mustRecompileTable: true					
-				},
-				
-				{
-					tableName: "provider",
-					mainParentRefInfo: {tableName: "person"},
-					otherParentRefInfo: [
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"},
-						{tableName: "users", referenceColumnName: "retired_by", referencedColumnName: "user_id"}
-					],
-					mustRecompileTable: true
-				},
-				
-				{
-					tableName: "orders",
-					mainParentRefInfo: {tableName: "encounter"},
-					otherParentRefInfo: [
-						{tableName: "provider", referenceColumnName: "orderer", referencedColumnName: "provider_id", notIgnorable = true},
-						{tableName: "orders", referenceColumnName: "previous_order_id", referencedColumnName: "order_id"},
-						{tableName: "patient", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-					],
-					mustRecompileTable: true
-				},
-				
-				{
-					tableName: "obs",
-					mainParentRefInfo: {tableName: "encounter"},
-					otherParentRefInfo: [
-						{tableName: "person", notIgnorable = true}, 
-						{tableName: "location"}, 
-						{tableName: "orders", referenceColumnName: "order_id", referencedColumnName: "order_id"},
-						{tableName: "obs", referenceColumnName: "obs_group_id", referencedColumnName: "obs_id"},
-						{tableName: "obs", referenceColumnName: "previous_version", referencedColumnName: "obs_id"},
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "voided_by", referencedColumnName: "user_id"}
-					],
-					mustRecompileTable: true
-				},
-				
-				{
-					tableName: "note",
-					mainParentRefInfo: {tableName: "obs"},
-					otherParentRefInfo: [
-						{tableName: "patient"}, 
-						{tableName: "encounter"},
-						{tableName: "note", referenceColumnName: "parent", referencedColumnName: "note_id"},
-						{tableName: "users", referenceColumnName: "creator", referencedColumnName: "user_id", notIgnorable = true},
-						{tableName: "users", referenceColumnName: "changed_by", referencedColumnName: "user_id"}
-					],
+					parents: ["person", "users"],
 					mustRecompileTable: true
 				}
 	]

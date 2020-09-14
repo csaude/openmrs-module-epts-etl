@@ -35,18 +35,6 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 		searchClauses.addToClauses("last_migration_try_date is null or last_migration_try_date < ?");
 		searchClauses.addToParameters(this.syncStartDate);
 		
-		/*if (this.tableInfo.getMainParentRefInfo() != null) {
-			String refMainParent = "";
-			
-			refMainParent += "INNER JOIN "+ this.tableInfo.getMainParentTableName();
-			refMainParent += " ON ";
-			refMainParent +=  "main_parent_id" ;
-			refMainParent += " = ";
-			refMainParent += this.tableInfo.getFullMainParentReferencedColumn();
-			
-			searchClauses.addToClauseFrom(refMainParent);
-		}*/
-		
 		return searchClauses;
 	}	
 	

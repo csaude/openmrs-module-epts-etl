@@ -21,11 +21,6 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract void refreshLastSyncDate(OpenConnection conn);
 	public abstract String generateDBPrimaryKeyAtt();
 	
-	public abstract int getMainParentId();
-	public abstract String getMainParentTable();
-	
-	public abstract void setMainParentId(int parentId);
-	
 	public abstract void setOriginRecordId(int originRecordId);
 	public abstract int getOriginRecordId();	
 	
@@ -46,5 +41,6 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract void setOriginAppLocationCode(String originAppLocationCode);
 	
 	public abstract boolean hasIgnoredParent();
+	public abstract void save(Connection conn) throws DBException;
 		
 }

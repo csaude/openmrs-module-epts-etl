@@ -32,6 +32,20 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		throw new ParentNotYetMigratedException(parentId, utilities.createInstance(parentClass).generateTableName(), this.getOriginAppLocationCode());
 	}
 	
+	 
+	@Override
+	public void save(Connection conn) throws DBException{ 
+		OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByOriginRecordId(this.getClass(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
+ 
+		if (recordOnDB != null) {
+			this.setObjectId(recordOnDB.getObjectId());
+			OpenMRSObjectDAO.update(this, conn);
+		}
+		else {
+			OpenMRSObjectDAO.insert(this, conn);
+		}
+	} 
+
 	@JsonIgnore
 	public boolean hasIgnoredParent() {
 		return hasIgnoredParent;

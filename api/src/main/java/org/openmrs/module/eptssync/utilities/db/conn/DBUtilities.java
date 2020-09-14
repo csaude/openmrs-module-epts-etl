@@ -212,6 +212,27 @@ public class DBUtilities {
 		}
 	}
 
+	public static boolean isTableColumnAllowNull(String tableName,  String columnName, Connection conn) throws DBException {
+		try {
+			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
+
+			ResultSet rs = st.executeQuery();
+			ResultSetMetaData rsMetaData = rs.getMetaData();
+			
+			for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+				
+				if (rsMetaData.getColumnName(i).equalsIgnoreCase(columnName)) {
+					return rsMetaData.isNullable(i) == ResultSetMetaData.columnNullable;
+				}
+			}
+			
+			throw new ForbiddenOperationException("There is no such column '" + columnName + "' on table '" + tableName + "'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new DBException(e);
+		}
+	}
 	
 	public static boolean isResourceExist(String resourceSchema, String resourceType, String resourceName, Connection conn) throws SQLException {
 		if (isMySQLDB(conn)) {

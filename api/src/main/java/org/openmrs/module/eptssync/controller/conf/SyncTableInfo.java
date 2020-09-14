@@ -22,8 +22,10 @@ public class SyncTableInfo {
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 
 	private String tableName;
-	private ParentRefInfo mainParentRefInfo;
-	private List<ParentRefInfo> otherParentRefInfo;
+	
+	private List<String> parents;
+	
+	private List<ParentRefInfo> parentRefInfo;
 
 	private boolean mustRecompileTable;
 
@@ -31,17 +33,22 @@ public class SyncTableInfo {
 
 	private SyncTableInfoSource relatedSyncTableInfoSource;
 
-	private List<ParentRefInfo> auxAllParentInfo;
-
 	private String primaryKey;
+	private String sharePkWith;
 	
 	private String extraConditionForExport;
-	
-	private String[] allForeignKeys;
 	
 	public SyncTableInfo() {
 	}
 
+	public List<String> getParents() {
+		return parents;
+	}
+	
+	public void setParents(List<String> parents) {
+		this.parents = parents;
+	}
+	
 	public String getExtraConditionForExport() {
 		return extraConditionForExport;
 	}
@@ -50,9 +57,12 @@ public class SyncTableInfo {
 		this.extraConditionForExport = extraConditionForExport;
 	}
 	
-	@JsonIgnore
-	public Class<OpenMRSObject> determineMainParentClass() {
-		return this.mainParentRefInfo.determineParentClass();
+	public String getSharePkWith() {
+		return sharePkWith;
+	}
+
+	public void setSharePkWith(String sharePkWith) {
+		this.sharePkWith = sharePkWith;
 	}
 
 	@JsonIgnore
@@ -80,6 +90,9 @@ public class SyncTableInfo {
 		this.tableName = tableName;
 	}
 	
+	public boolean useSharedPKKey() {
+		return utilities.stringHasValue(this.sharePkWith);
+	}
 	
 	public String getPrimaryKeyAsClassAtt() {
 		return convertTableAttNameToClassAttName(getPrimaryKey());
@@ -108,22 +121,38 @@ public class SyncTableInfo {
 		return primaryKey;
 	}
 	
-	public synchronized String[] getAllForeignKeys() {
-		if (allForeignKeys == null) {
-			
+	public void setParentRefInfo(List<ParentRefInfo> parentRefInfo) {
+		this.parentRefInfo = parentRefInfo;
+	}
+	
+	public synchronized List<ParentRefInfo> getParentRefInfo() {
+		if (this.parentRefInfo == null) {
 			OpenConnection conn = DBConnectionService.getInstance().openConnection();
 			
 			try {
-				ResultSet rs = conn.getMetaData().getImportedKeys(null, null, tableName);
+				this.parentRefInfo = new ArrayList<ParentRefInfo>();  
 				
-				rs.last();
+				ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(null, null, tableName);
 				
-				this.allForeignKeys = new String[rs.getRow()];
-				
-				rs.beforeFirst();
-				
-				while(rs.next()) {
-					this.allForeignKeys[rs.getRow() - 1] = rs.getString("FKCOLUMN_NAME");
+				while(foreignKeyRS.next()) {
+					ParentRefInfo ref = new ParentRefInfo();
+					
+					ref.setReferenceColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
+					ref.setReferencedColumnName(foreignKeyRS.getString("PKCOLUMN_NAME"));
+					ref.setTableName(foreignKeyRS.getString("PKTABLE_NAME"));
+					ref.setTableInfo(this);
+					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(this.tableName, ref.getReferenceColumnName(), conn));
+					
+					//Mark as metadata if is not specificaly mapped as parent in conf file
+					if (!this.parents.contains(foreignKeyRS.getString("PKTABLE_NAME"))) {
+						ref.setMetadata(true);
+					}
+					
+					if (this.sharePkWith != null && this.sharePkWith.equalsIgnoreCase(ref.getTableName())) {
+						ref.setSharedPk(true);
+					}
+					
+					this.parentRefInfo.add(ref);
 				}
 				
 			} catch (SQLException e) {
@@ -136,87 +165,7 @@ public class SyncTableInfo {
 			}
 		}
 		
-		return this.allForeignKeys;
-	}
-	
-	public boolean hasMainParent() {
-		return this.getMainParentRefInfo() != null;
-	}
-	
-	public ParentRefInfo getMainParentRefInfo() {
-		if (this.mainParentRefInfo != null) {
-			
-			this.mainParentRefInfo.setNotIgnorable(true);
-			
-			this.mainParentRefInfo.loadFullRefInfo();
-		}
-
-		return mainParentRefInfo;
-	}
-
-	public String getMainParentTableName() {
-		return this.getMainParentRefInfo().getTableName();
-	}
-
-	public void setOtherParentRefInfo(List<ParentRefInfo> otherParentRefInfo) {
-		this.otherParentRefInfo = otherParentRefInfo;
-	}
-
-	public List<ParentRefInfo> getOtherParentRefInfo() {
-
-		if (this.otherParentRefInfo != null) {
-			for (ParentRefInfo parentInfo : this.otherParentRefInfo) {
-				parentInfo.loadFullRefInfo();
-			}
-		}
-
-		return otherParentRefInfo;
-	}
-
-	public synchronized List<ParentRefInfo> getAllParentInfo() {
-		if (this.auxAllParentInfo != null)
-			return this.auxAllParentInfo;
-
-		this.auxAllParentInfo = new ArrayList<ParentRefInfo>();
-
-		if (this.getMainParentRefInfo() != null) {
-			this.auxAllParentInfo.add(this.getMainParentRefInfo());
-		}
-
-		if (this.otherParentRefInfo != null) {
-			this.auxAllParentInfo.addAll(utilities.cloneList(this.otherParentRefInfo));
-		}
-
-		return this.auxAllParentInfo;
-	}
-
-	public String getMainParentReferenceColumn() {
-		if (this.getMainParentRefInfo() != null) {
-			return this.getMainParentRefInfo().getReferenceColumnName();
-		}
-
-		return null;
-	}
-
-	public String getMainParentReferencedColumn() {
-		if (this.getMainParentRefInfo() != null) {
-			return this.getMainParentRefInfo().getReferencedColumnName();
-		}
-
-		return null;
-	}
-
-	public String getFullMainParentReferenceColumn() {
-		return this.mainParentRefInfo.getFullReferenceColumn();
-	}
-
-	public String getFullMainParentReferencedColumn() {
-		return this.getMainParentRefInfo().getFullParentReferencedColumn();
-	}
-
-	public void setMainParentRefInfo(ParentRefInfo mainParentRefInfo) {
-		this.mainParentRefInfo = mainParentRefInfo;
-		this.mainParentRefInfo.setNotIgnorable(true);
+		return parentRefInfo;
 	}
 
 	public Class<OpenMRSObject> getRecordClass() {
@@ -316,10 +265,7 @@ public class SyncTableInfo {
 
 		sql += "CREATE TABLE " + getSyncStageSchema() + "." + generateRelatedStageTableName() + "(\n";
 		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
-		sql += "	sync_table_name VARCHAR(64) NOT NULL,\n";
 		sql += "	record_id int(11) NOT NULL,\n";
-		sql += "	main_parent_id int(11) NULL,\n";
-		sql += "	main_parent_table VARCHAR(64) NULL,\n";
 		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
 		sql += "	json VARCHAR(7500) NOT NULL,\n";
 		sql += "	origin_app_location_code VARCHAR(100) NOT NULL,\n";
@@ -328,11 +274,6 @@ public class SyncTableInfo {
 		sql += "	PRIMARY KEY (id)\n";
 		sql += ")\n";
 		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";
-		
-		
-		
-		 
-		  
 		
 		OpenConnection conn = openConnection();
 
@@ -483,9 +424,9 @@ public class SyncTableInfo {
 	}
 	
 	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName) {
-		for (ParentRefInfo  parent : this.getAllParentInfo()) {
+		for (ParentRefInfo  parent : this.getParentRefInfo()) {
 			if (parent.getReferenceColumnAsClassAttName().equals(parentAttName)) {
-				return !parent.isNotIgnorable();
+				return parent.isIgnorable();
 			}
 		}
 		

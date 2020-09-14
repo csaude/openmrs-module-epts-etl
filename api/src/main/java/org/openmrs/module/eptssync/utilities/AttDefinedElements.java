@@ -1,5 +1,6 @@
 package org.openmrs.module.eptssync.utilities;
 
+import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
@@ -27,7 +28,7 @@ public class AttDefinedElements {
 	private String attName;
 	private String attType;
 
-	private boolean mainParentAtt;
+	//private boolean mainParentAtt;
 	
 	private String dbAttName;
 	private String dbAttType;
@@ -125,21 +126,8 @@ public class AttDefinedElements {
 	public void setAttType(String attType) {
 		this.attType = attType;
 	}
-
-	public boolean isMainParentAtt() {
-		return mainParentAtt;
-	}
-
-	public void setMainParentAtt(boolean mainParentAtt) {
-		this.mainParentAtt = mainParentAtt;
-	}
-
-	
+		
 	private void generateElemets() {
-		if (dbAttName.equalsIgnoreCase(syncTableInfo.getMainParentReferenceColumn())) {
-			this.mainParentAtt = true;
-		}
-
 		this.attType = convertMySQLTypeTOJavaType(dbAttType);
 		this.attName = convertTableAttNameToClassAttName(dbAttName);
 
@@ -147,7 +135,7 @@ public class AttDefinedElements {
 		this.setterDefinition = defineSetterMethod(attName, attType);
 		this.getterDefinition = defineGetterMethod(attName, attType);
 
-		if (!isObjectId) {
+		if (!isObjectId || isSharedKey()) {
 			this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
 			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
 			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
@@ -164,8 +152,24 @@ public class AttDefinedElements {
 		}	
 	}
 	
+	private boolean isSharedKey() {
+		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo()) {
+			if (parent.isSharedPk() && parent.getReferenceColumnAsClassAttName().equals(this.attName)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
 	private boolean isForeignKey(String dbAttName) {
-		return utilities.isStringIn(dbAttName, syncTableInfo.getAllForeignKeys());
+		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo()) {
+			if (parent.getReferenceColumnName().equalsIgnoreCase(dbAttName)) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast, SyncTableInfo syncTableInfo) {

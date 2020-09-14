@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync;
 
 import org.openmrs.module.eptssync.controller.export.SynchronizationController;
+import org.openmrs.module.eptssync.controller.load.SyncDataLoadController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 
@@ -17,7 +18,7 @@ public class Main {
 		
 		//new SyncExportController().init();
 	
-		//new SyncDataLoadController().init();
+		new SyncDataLoadController().init();
 		
 		new SynchronizationController().init();
 		

@@ -19,9 +19,6 @@ public class SyncImportInfoDAO extends BaseDAO {
 	
 	public static void insert(SyncImportInfoVO record, SyncTableInfo tableInfo, Connection conn) throws DBException{
 		Object[] params = {record.getRecordId(),
-						   record.getSyncTableName(),
-						   record.getMainParentId(),
-						   record.getMainParentTable(),
 						   record.getJson(),
 						   record.getOriginAppLocationCode()};
 		
@@ -29,15 +26,9 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		sql += "INSERT INTO \n"; 
 		sql += "	" + tableInfo.generateFullStageTableName() + "(	record_id,\n";
-		sql += "											 		sync_table_name,\n";
-		sql += "											 		main_parent_id,\n";
-		sql += "											 		main_parent_table,\n";
 		sql += "											 		json,\n";
 		sql += "													origin_app_location_code)";
 		sql += "	VALUES(?,\n";
-		sql += "		   ?,\n";
-		sql += "		   ?,\n";
-		sql += "		   ?,\n";
 		sql += "		   ?,\n";
 		sql += "		   ?);";
 		
