@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.model.base.BaseVO;
@@ -122,13 +123,18 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		source.setOriginRecordId(source.getObjectId());
 		
 		try {
-			source.loadDestParentInfo(conn);
-			
-			if (!tableInfo.useSharedPKKey()) {
-				source.setObjectId(0);
+			if (source.isMetadata()) {
+				source.consolidate(conn);
 			}
-			
-			source.save(conn);
+			else {
+				source.loadDestParentInfo(conn);
+				
+				if (!tableInfo.useSharedPKKey()) {
+					source.setObjectId(0);
+				}
+				
+				source.save(conn);
+			}
 			
 			if (source.hasIgnoredParent()) {
 				markAsToBeCompletedInFuture(tableInfo, conn);
@@ -138,7 +144,14 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 			}
 		} catch (ParentNotYetMigratedException e) {
 			markAsFailedToMigrate(tableInfo, e, conn);
+		} catch (MetadataInconsistentException e) {
+			markAsFailedToMigrate(tableInfo, e, conn);
+		} 
+		catch (Exception e) {
+			markAsFailedToMigrate(tableInfo, new SyncExeption(e.getLocalizedMessage()) {
+				private static final long serialVersionUID = 1L;}, conn);
 		}
+		
 	}
 	
 	public void markAsToBeCompletedInFuture(SyncTableInfo tableInfo, OpenConnection conn) throws DBException {

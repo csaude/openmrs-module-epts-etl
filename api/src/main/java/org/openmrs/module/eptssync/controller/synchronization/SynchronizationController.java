@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.controller.export;
+package org.openmrs.module.eptssync.controller.synchronization;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ public class SynchronizationController extends AbstractSyncController {
 
 	@Override
 	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo) {
-		return new SynchronizationSyncEngine(syncInfo);
+		return new SynchronizationSyncEngine(syncInfo, this);
 	}
 
 	@Override

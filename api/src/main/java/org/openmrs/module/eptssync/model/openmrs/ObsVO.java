@@ -46,6 +46,7 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private String originAppLocationCode;
  
 	public ObsVO() { 
+		this.metadata = false;
 	} 
  
 	public void setObsId(int obsId){ 

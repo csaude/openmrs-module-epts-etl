@@ -10,4 +10,7 @@ public abstract class SyncExeption extends RuntimeException {
 		super(msg);
 	}
 	
+	public SyncExeption(Exception e){
+		this(e.getLocalizedMessage());
+	}
 }

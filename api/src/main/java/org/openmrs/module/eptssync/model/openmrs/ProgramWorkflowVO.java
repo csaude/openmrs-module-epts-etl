@@ -10,31 +10,46 @@ import java.sql.Connection;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject { 
-	private int patientId;
+public class ProgramWorkflowVO extends AbstractOpenMRSObject implements OpenMRSObject { 
+	private int programWorkflowId;
+	private int programId;
+	private int conceptId;
 	private int creator;
 	private java.util.Date dateCreated;
+	private byte retired;
 	private int changedBy;
 	private java.util.Date dateChanged;
-	private byte voided;
-	private int voidedBy;
-	private java.util.Date dateVoided;
-	private String voidReason;
-	private java.util.Date lastSyncDate;
 	private String uuid;
+	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
  
-	public PatientVO() { 
-		this.metadata = false;
+	public ProgramWorkflowVO() { 
+		this.metadata = true;
 	} 
  
-	public void setPatientId(int patientId){ 
-	 	this.patientId = patientId;
+	public void setProgramWorkflowId(int programWorkflowId){ 
+	 	this.programWorkflowId = programWorkflowId;
 	}
  
-	public int getPatientId(){ 
-		return this.patientId;
+	public int getProgramWorkflowId(){ 
+		return this.programWorkflowId;
+	}
+ 
+	public void setProgramId(int programId){ 
+	 	this.programId = programId;
+	}
+ 
+	public int getProgramId(){ 
+		return this.programId;
+	}
+ 
+	public void setConceptId(int conceptId){ 
+	 	this.conceptId = conceptId;
+	}
+ 
+	public int getConceptId(){ 
+		return this.conceptId;
 	}
  
 	public void setCreator(int creator){ 
@@ -53,6 +68,14 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.dateCreated;
 	}
  
+	public void setRetired(byte retired){ 
+	 	this.retired = retired;
+	}
+ 
+	public byte getRetired(){ 
+		return this.retired;
+	}
+ 
 	public void setChangedBy(int changedBy){ 
 	 	this.changedBy = changedBy;
 	}
@@ -69,36 +92,12 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.dateChanged;
 	}
  
-	public void setVoided(byte voided){ 
-	 	this.voided = voided;
+	public void setUuid(String uuid){ 
+	 	this.uuid = uuid;
 	}
  
-	public byte getVoided(){ 
-		return this.voided;
-	}
- 
-	public void setVoidedBy(int voidedBy){ 
-	 	this.voidedBy = voidedBy;
-	}
- 
-	public int getVoidedBy(){ 
-		return this.voidedBy;
-	}
- 
-	public void setDateVoided(java.util.Date dateVoided){ 
-	 	this.dateVoided = dateVoided;
-	}
- 
-	public java.util.Date getDateVoided(){ 
-		return this.dateVoided;
-	}
- 
-	public void setVoidReason(String voidReason){ 
-	 	this.voidReason = voidReason;
-	}
- 
-	public String getVoidReason(){ 
-		return this.voidReason;
+	public String getUuid(){ 
+		return this.uuid;
 	}
  
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
@@ -107,14 +106,6 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	public java.util.Date getLastSyncDate(){ 
 		return this.lastSyncDate;
-	}
- 
-	public void setUuid(String uuid){ 
-	 	this.uuid = uuid;
-	}
- 
-	public String getUuid(){ 
-		return this.uuid;
 	}
  
 	public void setOriginRecordId(int originRecordId){ 
@@ -136,11 +127,11 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	}
  
 	public int getObjectId() { 
- 		return this.patientId; 
+ 		return this.programWorkflowId; 
 	} 
  
 	public void setObjectId(int selfId){ 
-		this.patientId = selfId; 
+		this.programWorkflowId = selfId; 
 	} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
@@ -153,47 +144,47 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
- 		return "patient_id"; 
+ 		return "program_workflow_id"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.lastSyncDate, this.uuid, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.programId == 0 ? null : this.programId, this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.lastSyncDate, this.uuid, this.originRecordId, this.originAppLocationCode, this.patientId};		return params; 
+ 		Object[] params = {this.programId == 0 ? null : this.programId, this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.programWorkflowId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO patient(patient_id, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, last_sync_date, uuid, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO program_workflow(program_id, concept_id, creator, date_created, retired, changed_by, date_changed, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient SET patient_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, last_sync_date = ?, uuid = ?, origin_record_id = ?, origin_app_location_code = ? WHERE patient_id = ?;"; 
+ 		return "UPDATE program_workflow SET program_id = ?, concept_id = ?, creator = ?, date_created = ?, retired = ?, changed_by = ?, date_changed = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE program_workflow_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.PersonVO.class, this.patientId, false, conn); 
-		this.patientId = 0;
-		if (parentOnDestination  != null) this.patientId = parentOnDestination.getObjectId();
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.ProgramVO.class, this.programId, false, conn); 
+		this.programId = 0;
+		if (parentOnDestination  != null) this.programId = parentOnDestination.getObjectId();
  
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.changedBy, true, conn); 
 		this.changedBy = 0;
 		if (parentOnDestination  != null) this.changedBy = parentOnDestination.getObjectId();
  
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.ConceptVO.class, this.conceptId, false, conn); 
+		this.conceptId = 0;
+		if (parentOnDestination  != null) this.conceptId = parentOnDestination.getObjectId();
+ 
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator, false, conn); 
 		this.creator = 0;
 		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
- 
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.voidedBy, true, conn); 
-		this.voidedBy = 0;
-		if (parentOnDestination  != null) this.voidedBy = parentOnDestination.getObjectId();
  
 	}
 }

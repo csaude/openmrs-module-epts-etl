@@ -3,6 +3,7 @@ package org.openmrs.module.eptssync.engine.synchronization;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.synchronization.SynchronizationController;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
@@ -15,11 +16,11 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 public class SynchronizationSyncEngine extends SyncEngine {
 	private SynchronizationSearchParams searchParams;
 
-	public SynchronizationSyncEngine(SyncTableInfo syncTableInfo) {
-		super(syncTableInfo);
+	public SynchronizationSyncEngine(SyncTableInfo syncTableInfo, SynchronizationController syncController) {
+		super(syncTableInfo, syncController);
 
 		searchParams = new SynchronizationSearchParams(syncTableInfo);
-		searchParams.setQtdRecordPerSelected(100);
+		searchParams.setQtdRecordPerSelected(2500);
 	}
 
 	@Override	

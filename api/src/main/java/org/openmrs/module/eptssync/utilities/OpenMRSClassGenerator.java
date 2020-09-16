@@ -184,6 +184,7 @@ public class OpenMRSClassGenerator {
 		classDefinition += "public class " + syncTableInfo.generateClassName() + " extends AbstractOpenMRSObject implements OpenMRSObject { \n";
 		classDefinition += 		attsDefinition + "\n \n";
 		classDefinition += "	public " + syncTableInfo.generateClassName() + "() { \n";
+		classDefinition += "		this.metadata = " + syncTableInfo.isMetadata() + ";\n";
 		classDefinition += "	} \n \n";
 		classDefinition +=  	getttersAndSetterDefinition + "\n \n";
 		classDefinition +=  	methodFromSuperClass + "\n";

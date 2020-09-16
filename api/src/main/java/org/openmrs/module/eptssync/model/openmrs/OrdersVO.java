@@ -44,6 +44,7 @@ public class OrdersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private String originAppLocationCode;
  
 	public OrdersVO() { 
+		this.metadata = false;
 	} 
  
 	public void setOrderId(int orderId){ 

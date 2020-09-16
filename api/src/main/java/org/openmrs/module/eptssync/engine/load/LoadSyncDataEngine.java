@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.load.SyncDataLoadController;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
@@ -29,8 +30,8 @@ public class LoadSyncDataEngine extends SyncEngine{
 	 */
 	private SyncJSONInfo currJSONInfo;
 	
-	public LoadSyncDataEngine(SyncTableInfo syncTableInfo) {
-		super(syncTableInfo);
+	public LoadSyncDataEngine(SyncTableInfo syncTableInfo, SyncDataLoadController syncController) {
+		super(syncTableInfo, syncController);
 		
 		this.searchParams = new LoadSyncDataSearchParams(syncTableInfo);
 	}

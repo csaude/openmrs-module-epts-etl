@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.engine;
 
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.AbstractSyncController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -25,8 +26,12 @@ public abstract class SyncEngine implements Runnable, TimeCountDownInitializer{
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	public SyncEngine(SyncTableInfo syncTableInfo) {
+	protected AbstractSyncController syncController;
+	
+	public SyncEngine(SyncTableInfo syncTableInfo, AbstractSyncController syncController) {
 		this.syncTableInfo = syncTableInfo;
+		
+		this.syncController = syncController;
 	}
 	
 	public SyncTableInfo getSyncTableInfo() {
@@ -42,15 +47,20 @@ public abstract class SyncEngine implements Runnable, TimeCountDownInitializer{
 		this.running = true;
 		
 		while(isRunning()) {
+			this.syncController.logInfo("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.syncTableInfo.getTableName() + "'");
 			
 			List<SyncRecord> records = searchNextRecords();
+			
+			this.syncController.logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.syncTableInfo.getTableName() + "' FINISHED.");
+			
+			this.syncController.logInfo("INITIALIZING SYNC OF '" + records.size() + "' RECORDS OF TABLE '" + this.syncTableInfo.getTableName() + "'");
 			
 			if (utilities.arrayHasElement(records)) {
 				performeSync(records);
 			}
 			else {
-				TimeCountDown t = new TimeCountDown(this, "No '" + this.syncTableInfo.getTableName() + "' records to export" , 1);
-				t.setIntervalForMessage(2);
+				TimeCountDown t = new TimeCountDown(this, "No '" + this.syncTableInfo.getTableName() + "' records to export" , 18000);
+				t.setIntervalForMessage(300);
 				
 				restart();
 				

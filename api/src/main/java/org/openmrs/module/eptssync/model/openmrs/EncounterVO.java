@@ -32,6 +32,7 @@ public class EncounterVO extends AbstractOpenMRSObject implements OpenMRSObject 
 	private String originAppLocationCode;
  
 	public EncounterVO() { 
+		this.metadata = false;
 	} 
  
 	public void setEncounterId(int encounterId){ 

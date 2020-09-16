@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfoSource;
 import org.openmrs.module.eptssync.engine.RunningEngineInfo;
@@ -26,12 +27,16 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  */
 
 public abstract class AbstractSyncController {
+	protected Logger logger;
+	
 	private Map<String, RunningEngineInfo> runnungEngines;
 	
 	private static SyncTableInfoSource syncTableInfoSource;
 	
 	public AbstractSyncController() {
 		this.runnungEngines = new HashMap<String, RunningEngineInfo>();
+		
+		this.logger = Logger.getLogger(this.getClass());
 	}
 
 	public void init() {
@@ -43,12 +48,16 @@ public abstract class AbstractSyncController {
 	}
 	
 	protected void initAndStartEngine(SyncTableInfo syncInfo) {
+		logInfo("INITIALIZING ENGINE FOR TABLE '" + syncInfo.getTableName() + "'");
+		
 		SyncEngine engine = initRelatedEngine(syncInfo);
 		
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(syncInfo.getTableName());
 		executor.execute(engine);
 		
 		runnungEngines.put(syncInfo.getTableName(), new RunningEngineInfo(executor, engine));
+		
+		logInfo("ENGINE FOR TABLE '" + syncInfo.getTableName() + "' INITIALIZED");
 	}
 	
 	protected SyncTableInfoSource getSyncTableInfoSource() {
@@ -56,25 +65,17 @@ public abstract class AbstractSyncController {
 	}
 	
 	protected synchronized List<SyncTableInfo> discoverSyncTableInfo() {
+		logInfo("DISCOVERY SYNC TABLES FOR '" + this.getClass().getSimpleName() + "'");
+		
 		try {
+			
 			String json = new String(Files.readAllBytes(Paths.get("sync_config.json")));
-			
-			
-			/* 
-			String json = "{\n" + 
-					"				syncRootDirectory: \"/home/jpboane/working/prg/jee/workspace/data/sync\",\n"+
-					"				syncTableInfo:[ {\n" + 
-					"					tableName: \"person\",\n" + 
-					"					mustRecompileTable: true,\n" + 
-					"					mainParent: \"\",\n" + 
-					"					otherParents: [],\n" + 
-					"					intrinsicChild: [\"person_adress\", \"person_attribute\", \"person_name\"]\n" + 
-					"				}]}";*/
-			
 			
 			if (syncTableInfoSource == null) {
 				syncTableInfoSource = SyncTableInfoSource.loadFromJSON(json);
 			}
+			
+			logInfo("DISCOVERED '" + syncTableInfoSource.getSyncTableInfo().size() + "' Tables for Sync");
 			
 			return syncTableInfoSource.getSyncTableInfo();
 		} catch (Exception e) {
@@ -93,5 +94,17 @@ public abstract class AbstractSyncController {
 	
 	public CommonUtilities utilities() {
 		return CommonUtilities.getInstance();
+	}
+	
+	public void logInfo(String msg) {
+		utilities().logInfo(msg, logger);
+	}
+	
+	public void logError(String msg) {
+		utilities().logErr(msg, logger);
+	}
+	
+	public void logDebug(String msg) {
+		utilities().logDebug(msg, logger);
 	}
 }

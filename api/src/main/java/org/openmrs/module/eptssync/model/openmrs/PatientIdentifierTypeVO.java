@@ -1,0 +1,263 @@
+package org.openmrs.module.eptssync.model.openmrs; 
+ 
+import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
+ 
+import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
+import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
+ 
+import java.sql.Connection; 
+ 
+import com.fasterxml.jackson.annotation.JsonIgnore; 
+ 
+public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements OpenMRSObject { 
+	private int patientIdentifierTypeId;
+	private String name;
+	private String description;
+	private String format;
+	private byte checkDigit;
+	private int creator;
+	private java.util.Date dateCreated;
+	private byte required;
+	private String formatDescription;
+	private String validator;
+	private byte retired;
+	private int retiredBy;
+	private java.util.Date dateRetired;
+	private String retireReason;
+	private String uuid;
+	private String locationBehavior;
+	private String uniquenessBehavior;
+	private java.util.Date lastSyncDate;
+	private int originRecordId;
+	private java.util.Date dateChanged;
+	private String originAppLocationCode;
+ 
+	public PatientIdentifierTypeVO() { 
+		this.metadata = true;
+	} 
+ 
+	public void setPatientIdentifierTypeId(int patientIdentifierTypeId){ 
+	 	this.patientIdentifierTypeId = patientIdentifierTypeId;
+	}
+ 
+	public int getPatientIdentifierTypeId(){ 
+		return this.patientIdentifierTypeId;
+	}
+ 
+	public void setName(String name){ 
+	 	this.name = name;
+	}
+ 
+	public String getName(){ 
+		return this.name;
+	}
+ 
+	public void setDescription(String description){ 
+	 	this.description = description;
+	}
+ 
+	public String getDescription(){ 
+		return this.description;
+	}
+ 
+	public void setFormat(String format){ 
+	 	this.format = format;
+	}
+ 
+	public String getFormat(){ 
+		return this.format;
+	}
+ 
+	public void setCheckDigit(byte checkDigit){ 
+	 	this.checkDigit = checkDigit;
+	}
+ 
+	public byte getCheckDigit(){ 
+		return this.checkDigit;
+	}
+ 
+	public void setCreator(int creator){ 
+	 	this.creator = creator;
+	}
+ 
+	public int getCreator(){ 
+		return this.creator;
+	}
+ 
+	public void setDateCreated(java.util.Date dateCreated){ 
+	 	this.dateCreated = dateCreated;
+	}
+ 
+	public java.util.Date getDateCreated(){ 
+		return this.dateCreated;
+	}
+ 
+	public void setRequired(byte required){ 
+	 	this.required = required;
+	}
+ 
+	public byte getRequired(){ 
+		return this.required;
+	}
+ 
+	public void setFormatDescription(String formatDescription){ 
+	 	this.formatDescription = formatDescription;
+	}
+ 
+	public String getFormatDescription(){ 
+		return this.formatDescription;
+	}
+ 
+	public void setValidator(String validator){ 
+	 	this.validator = validator;
+	}
+ 
+	public String getValidator(){ 
+		return this.validator;
+	}
+ 
+	public void setRetired(byte retired){ 
+	 	this.retired = retired;
+	}
+ 
+	public byte getRetired(){ 
+		return this.retired;
+	}
+ 
+	public void setRetiredBy(int retiredBy){ 
+	 	this.retiredBy = retiredBy;
+	}
+ 
+	public int getRetiredBy(){ 
+		return this.retiredBy;
+	}
+ 
+	public void setDateRetired(java.util.Date dateRetired){ 
+	 	this.dateRetired = dateRetired;
+	}
+ 
+	public java.util.Date getDateRetired(){ 
+		return this.dateRetired;
+	}
+ 
+	public void setRetireReason(String retireReason){ 
+	 	this.retireReason = retireReason;
+	}
+ 
+	public String getRetireReason(){ 
+		return this.retireReason;
+	}
+ 
+	public void setUuid(String uuid){ 
+	 	this.uuid = uuid;
+	}
+ 
+	public String getUuid(){ 
+		return this.uuid;
+	}
+ 
+	public void setLocationBehavior(String locationBehavior){ 
+	 	this.locationBehavior = locationBehavior;
+	}
+ 
+	public String getLocationBehavior(){ 
+		return this.locationBehavior;
+	}
+ 
+	public void setUniquenessBehavior(String uniquenessBehavior){ 
+	 	this.uniquenessBehavior = uniquenessBehavior;
+	}
+ 
+	public String getUniquenessBehavior(){ 
+		return this.uniquenessBehavior;
+	}
+ 
+	public void setLastSyncDate(java.util.Date lastSyncDate){ 
+	 	this.lastSyncDate = lastSyncDate;
+	}
+ 
+	public java.util.Date getLastSyncDate(){ 
+		return this.lastSyncDate;
+	}
+ 
+	public void setOriginRecordId(int originRecordId){ 
+	 	this.originRecordId = originRecordId;
+	}
+ 
+	public int getOriginRecordId(){ 
+		return this.originRecordId;
+	}
+ 
+	public void setDateChanged(java.util.Date dateChanged){ 
+	 	this.dateChanged = dateChanged;
+	}
+ 
+	public java.util.Date getDateChanged(){ 
+		return this.dateChanged;
+	}
+ 
+	public void setOriginAppLocationCode(String originAppLocationCode){ 
+	 	this.originAppLocationCode = originAppLocationCode;
+	}
+
+
+ 
+	public String getOriginAppLocationCode(){ 
+		return this.originAppLocationCode;
+	}
+ 
+	public int getObjectId() { 
+ 		return this.patientIdentifierTypeId; 
+	} 
+ 
+	public void setObjectId(int selfId){ 
+		this.patientIdentifierTypeId = selfId; 
+	} 
+ 
+	public void refreshLastSyncDate(OpenConnection conn){ 
+		try{
+			GenericSyncRecordDAO.refreshLastSyncDate(this, conn); 
+		}catch(DBException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@JsonIgnore
+	public String generateDBPrimaryKeyAtt(){ 
+ 		return "patient_identifier_type_id"; 
+	} 
+ 
+	@JsonIgnore
+	public Object[]  getInsertParams(){ 
+ 		Object[] params = {this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode};		return params; 
+	} 
+ 
+	@JsonIgnore
+	public Object[]  getUpdateParams(){ 
+ 		Object[] params = {this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.patientIdentifierTypeId};		return params; 
+	} 
+ 
+	@JsonIgnore
+	public String getInsertSQL(){ 
+ 		return "INSERT INTO patient_identifier_type(name, description, format, check_digit, creator, date_created, required, format_description, validator, retired, retired_by, date_retired, retire_reason, uuid, location_behavior, uniqueness_behavior, last_sync_date, origin_record_id, date_changed, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+	} 
+ 
+	@JsonIgnore
+	public String getUpdateSQL(){ 
+ 		return "UPDATE patient_identifier_type SET name = ?, description = ?, format = ?, check_digit = ?, creator = ?, date_created = ?, required = ?, format_description = ?, validator = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, location_behavior = ?, uniqueness_behavior = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ? WHERE patient_identifier_type_id = ?;"; 
+	} 
+ 
+	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
+		OpenMRSObject parentOnDestination = null;
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator, false, conn); 
+		this.creator = 0;
+		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.retiredBy, true, conn); 
+		this.retiredBy = 0;
+		if (parentOnDestination  != null) this.retiredBy = parentOnDestination.getObjectId();
+ 
+	}
+}

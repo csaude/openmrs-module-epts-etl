@@ -21,6 +21,6 @@ public class SyncDataLoadController extends AbstractSyncController {
 
 	@Override
 	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo) {
-		return new LoadSyncDataEngine(syncInfo);
+		return new LoadSyncDataEngine(syncInfo, this);
 	}
 }

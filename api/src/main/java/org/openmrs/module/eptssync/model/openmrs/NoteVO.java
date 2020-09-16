@@ -29,6 +29,7 @@ public class NoteVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private String originAppLocationCode;
  
 	public NoteVO() { 
+		this.metadata = false;
 	} 
  
 	public void setNoteId(int noteId){ 

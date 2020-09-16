@@ -43,6 +43,7 @@ public class PersonAddressVO extends AbstractOpenMRSObject implements OpenMRSObj
 	private String originAppLocationCode;
  
 	public PersonAddressVO() { 
+		this.metadata = false;
 	} 
  
 	public void setPersonAddressId(int personAddressId){ 

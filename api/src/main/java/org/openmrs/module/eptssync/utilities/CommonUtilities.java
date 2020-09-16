@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -855,5 +856,17 @@ public class  CommonUtilities implements Serializable{
 		}
 		
 		return attName;
+	}
+	
+	public void logInfo(String msg, Logger logger) {
+		logger.info(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
+	}
+	
+	public void logErr(String msg, Logger logger) {
+		logger.error(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
+	}
+	
+	public void logDebug(String msg, Logger logger) {
+		logger.debug(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
 	}
 }

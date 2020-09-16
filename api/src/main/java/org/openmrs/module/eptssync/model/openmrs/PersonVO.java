@@ -34,6 +34,7 @@ public class PersonVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private String originAppLocationCode;
  
 	public PersonVO() { 
+		this.metadata = false;
 	} 
  
 	public void setPersonId(int personId){ 

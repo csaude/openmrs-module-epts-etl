@@ -10,11 +10,16 @@ import java.sql.Connection;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject { 
-	private int providerId;
-	private int personId;
+public class ProviderAttributeTypeVO extends AbstractOpenMRSObject implements OpenMRSObject { 
+	private int providerAttributeTypeId;
 	private String name;
-	private String identifier;
+	private String description;
+	private String datatype;
+	private String datatypeConfig;
+	private String preferredHandler;
+	private String handlerConfig;
+	private int minOccurs;
+	private int maxOccurs;
 	private int creator;
 	private java.util.Date dateCreated;
 	private int changedBy;
@@ -28,24 +33,16 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private int originRecordId;
 	private String originAppLocationCode;
  
-	public ProviderVO() { 
-		this.metadata = false;
+	public ProviderAttributeTypeVO() { 
+		this.metadata = true;
 	} 
  
-	public void setProviderId(int providerId){ 
-	 	this.providerId = providerId;
+	public void setProviderAttributeTypeId(int providerAttributeTypeId){ 
+	 	this.providerAttributeTypeId = providerAttributeTypeId;
 	}
  
-	public int getProviderId(){ 
-		return this.providerId;
-	}
- 
-	public void setPersonId(int personId){ 
-	 	this.personId = personId;
-	}
- 
-	public int getPersonId(){ 
-		return this.personId;
+	public int getProviderAttributeTypeId(){ 
+		return this.providerAttributeTypeId;
 	}
  
 	public void setName(String name){ 
@@ -56,12 +53,60 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.name;
 	}
  
-	public void setIdentifier(String identifier){ 
-	 	this.identifier = identifier;
+	public void setDescription(String description){ 
+	 	this.description = description;
 	}
  
-	public String getIdentifier(){ 
-		return this.identifier;
+	public String getDescription(){ 
+		return this.description;
+	}
+ 
+	public void setDatatype(String datatype){ 
+	 	this.datatype = datatype;
+	}
+ 
+	public String getDatatype(){ 
+		return this.datatype;
+	}
+ 
+	public void setDatatypeConfig(String datatypeConfig){ 
+	 	this.datatypeConfig = datatypeConfig;
+	}
+ 
+	public String getDatatypeConfig(){ 
+		return this.datatypeConfig;
+	}
+ 
+	public void setPreferredHandler(String preferredHandler){ 
+	 	this.preferredHandler = preferredHandler;
+	}
+ 
+	public String getPreferredHandler(){ 
+		return this.preferredHandler;
+	}
+ 
+	public void setHandlerConfig(String handlerConfig){ 
+	 	this.handlerConfig = handlerConfig;
+	}
+ 
+	public String getHandlerConfig(){ 
+		return this.handlerConfig;
+	}
+ 
+	public void setMinOccurs(int minOccurs){ 
+	 	this.minOccurs = minOccurs;
+	}
+ 
+	public int getMinOccurs(){ 
+		return this.minOccurs;
+	}
+ 
+	public void setMaxOccurs(int maxOccurs){ 
+	 	this.maxOccurs = maxOccurs;
+	}
+ 
+	public int getMaxOccurs(){ 
+		return this.maxOccurs;
 	}
  
 	public void setCreator(int creator){ 
@@ -163,11 +208,11 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	}
  
 	public int getObjectId() { 
- 		return this.providerId; 
+ 		return this.providerAttributeTypeId; 
 	} 
  
 	public void setObjectId(int selfId){ 
-		this.providerId = selfId; 
+		this.providerAttributeTypeId = selfId; 
 	} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
@@ -180,27 +225,27 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
- 		return "provider_id"; 
+ 		return "provider_attribute_type_id"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.name, this.description, this.datatype, this.datatypeConfig, this.preferredHandler, this.handlerConfig, this.minOccurs, this.maxOccurs, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.providerId};		return params; 
+ 		Object[] params = {this.name, this.description, this.datatype, this.datatypeConfig, this.preferredHandler, this.handlerConfig, this.minOccurs, this.maxOccurs, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.providerAttributeTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO provider(person_id, name, identifier, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO provider_attribute_type(name, description, datatype, datatype_config, preferred_handler, handler_config, min_occurs, max_occurs, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE provider SET person_id = ?, name = ?, identifier = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE provider_id = ?;"; 
+ 		return "UPDATE provider_attribute_type SET name = ?, description = ?, datatype = ?, datatype_config = ?, preferred_handler = ?, handler_config = ?, min_occurs = ?, max_occurs = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE provider_attribute_type_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
@@ -213,10 +258,6 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator, false, conn); 
 		this.creator = 0;
 		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
- 
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.PersonVO.class, this.personId, true, conn); 
-		this.personId = 0;
-		if (parentOnDestination  != null) this.personId = parentOnDestination.getObjectId();
  
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.retiredBy, true, conn); 
 		this.retiredBy = 0;

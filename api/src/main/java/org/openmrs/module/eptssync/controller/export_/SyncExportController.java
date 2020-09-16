@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.controller.synchronization;
+package org.openmrs.module.eptssync.controller.export_;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
@@ -19,6 +19,6 @@ public class SyncExportController extends AbstractSyncController {
 
 	@Override
 	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo) {
-		return new ExportSyncEngine(syncInfo);
+		return new ExportSyncEngine(syncInfo, this);
 	}
 }

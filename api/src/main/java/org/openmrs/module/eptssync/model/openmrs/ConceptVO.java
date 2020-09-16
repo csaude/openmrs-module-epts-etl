@@ -10,20 +10,20 @@ import java.sql.Connection;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject { 
-	private int userId;
-	private String systemId;
-	private String username;
-	private String password;
-	private String salt;
-	private String secretQuestion;
-	private String secretAnswer;
+public class ConceptVO extends AbstractOpenMRSObject implements OpenMRSObject { 
+	private int conceptId;
+	private byte retired;
+	private String shortName;
+	private String description;
+	private String formText;
+	private int datatypeId;
+	private int classId;
+	private byte isSet;
 	private int creator;
 	private java.util.Date dateCreated;
+	private String version;
 	private int changedBy;
 	private java.util.Date dateChanged;
-	private int personId;
-	private byte retired;
 	private int retiredBy;
 	private java.util.Date dateRetired;
 	private String retireReason;
@@ -32,64 +32,72 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private int originRecordId;
 	private String originAppLocationCode;
  
-	public UsersVO() { 
-		this.metadata = false;
+	public ConceptVO() { 
+		this.metadata = true;
 	} 
  
-	public void setUserId(int userId){ 
-	 	this.userId = userId;
+	public void setConceptId(int conceptId){ 
+	 	this.conceptId = conceptId;
 	}
  
-	public int getUserId(){ 
-		return this.userId;
+	public int getConceptId(){ 
+		return this.conceptId;
 	}
  
-	public void setSystemId(String systemId){ 
-	 	this.systemId = systemId;
+	public void setRetired(byte retired){ 
+	 	this.retired = retired;
 	}
  
-	public String getSystemId(){ 
-		return this.systemId;
+	public byte getRetired(){ 
+		return this.retired;
 	}
  
-	public void setUsername(String username){ 
-	 	this.username = username;
+	public void setShortName(String shortName){ 
+	 	this.shortName = shortName;
 	}
  
-	public String getUsername(){ 
-		return this.username;
+	public String getShortName(){ 
+		return this.shortName;
 	}
  
-	public void setPassword(String password){ 
-	 	this.password = password;
+	public void setDescription(String description){ 
+	 	this.description = description;
 	}
  
-	public String getPassword(){ 
-		return this.password;
+	public String getDescription(){ 
+		return this.description;
 	}
  
-	public void setSalt(String salt){ 
-	 	this.salt = salt;
+	public void setFormText(String formText){ 
+	 	this.formText = formText;
 	}
  
-	public String getSalt(){ 
-		return this.salt;
+	public String getFormText(){ 
+		return this.formText;
 	}
  
-	public void setSecretQuestion(String secretQuestion){ 
-	 	this.secretQuestion = secretQuestion;
+	public void setDatatypeId(int datatypeId){ 
+	 	this.datatypeId = datatypeId;
 	}
  
-	public String getSecretQuestion(){ 
-		return this.secretQuestion;
+	public int getDatatypeId(){ 
+		return this.datatypeId;
 	}
  
-	public void setSecretAnswer(String secretAnswer){ 
-	 	this.secretAnswer = secretAnswer;
+	public void setClassId(int classId){ 
+	 	this.classId = classId;
 	}
  
-	public String getSecretAnswer(){ 
-		return this.secretAnswer;
+	public int getClassId(){ 
+		return this.classId;
+	}
+ 
+	public void setIsSet(byte isSet){ 
+	 	this.isSet = isSet;
+	}
+ 
+	public byte getIsSet(){ 
+		return this.isSet;
 	}
  
 	public void setCreator(int creator){ 
@@ -108,6 +116,14 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.dateCreated;
 	}
  
+	public void setVersion(String version){ 
+	 	this.version = version;
+	}
+ 
+	public String getVersion(){ 
+		return this.version;
+	}
+ 
 	public void setChangedBy(int changedBy){ 
 	 	this.changedBy = changedBy;
 	}
@@ -122,22 +138,6 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	public java.util.Date getDateChanged(){ 
 		return this.dateChanged;
-	}
- 
-	public void setPersonId(int personId){ 
-	 	this.personId = personId;
-	}
- 
-	public int getPersonId(){ 
-		return this.personId;
-	}
- 
-	public void setRetired(byte retired){ 
-	 	this.retired = retired;
-	}
- 
-	public byte getRetired(){ 
-		return this.retired;
 	}
  
 	public void setRetiredBy(int retiredBy){ 
@@ -199,11 +199,11 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	}
  
 	public int getObjectId() { 
- 		return this.userId; 
+ 		return this.conceptId; 
 	} 
  
 	public void setObjectId(int selfId){ 
-		this.userId = selfId; 
+		this.conceptId = selfId; 
 	} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
@@ -216,39 +216,39 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
- 		return "user_id"; 
+ 		return "concept_id"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.systemId, this.username, this.password, this.salt, this.secretQuestion, this.secretAnswer, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.personId == 0 ? null : this.personId, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.retired, this.shortName, this.description, this.formText, this.datatypeId == 0 ? null : this.datatypeId, this.classId == 0 ? null : this.classId, this.isSet, this.creator == 0 ? null : this.creator, this.dateCreated, this.version, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.systemId, this.username, this.password, this.salt, this.secretQuestion, this.secretAnswer, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.personId == 0 ? null : this.personId, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.userId};		return params; 
+ 		Object[] params = {this.retired, this.shortName, this.description, this.formText, this.datatypeId == 0 ? null : this.datatypeId, this.classId == 0 ? null : this.classId, this.isSet, this.creator == 0 ? null : this.creator, this.dateCreated, this.version, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.conceptId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO users(system_id, username, password, salt, secret_question, secret_answer, creator, date_created, changed_by, date_changed, person_id, retired, retired_by, date_retired, retire_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO concept(retired, short_name, description, form_text, datatype_id, class_id, is_set, creator, date_created, version, changed_by, date_changed, retired_by, date_retired, retire_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE users SET system_id = ?, username = ?, password = ?, salt = ?, secret_question = ?, secret_answer = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, person_id = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE user_id = ?;"; 
+ 		return "UPDATE concept SET retired = ?, short_name = ?, description = ?, form_text = ?, datatype_id = ?, class_id = ?, is_set = ?, creator = ?, date_created = ?, version = ?, changed_by = ?, date_changed = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE concept_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.PersonVO.class, this.personId, false, conn); 
-		this.personId = 0;
-		if (parentOnDestination  != null) this.personId = parentOnDestination.getObjectId();
- 
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator, false, conn); 
 		this.creator = 0;
 		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.ConceptDatatypeVO.class, this.datatypeId, false, conn); 
+		this.datatypeId = 0;
+		if (parentOnDestination  != null) this.datatypeId = parentOnDestination.getObjectId();
  
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.changedBy, true, conn); 
 		this.changedBy = 0;

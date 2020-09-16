@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.model.openmrs;
 
 import java.sql.Connection;
 
+import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -9,7 +10,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObject{
-	
+	protected boolean metadata;
 	/*
 	 * Indicate if there where parents which have been ingored
 	 */
@@ -31,8 +32,25 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			
 		throw new ParentNotYetMigratedException(parentId, utilities.createInstance(parentClass).generateTableName(), this.getOriginAppLocationCode());
 	}
-	
 	 
+	@Override
+	public boolean isMetadata() {
+		return metadata;
+	}
+
+	public void setMetadata(boolean metadata) {
+		this.metadata = metadata;
+	}
+	
+	@JsonIgnore
+	public boolean hasIgnoredParent() {
+		return hasIgnoredParent;
+	}
+	
+	public void setHasIgnoredParent(boolean hasIgnoredParent) {
+		this.hasIgnoredParent = hasIgnoredParent;
+	}
+
 	@Override
 	public void save(Connection conn) throws DBException{ 
 		OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByOriginRecordId(this.getClass(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
@@ -45,13 +63,26 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			OpenMRSObjectDAO.insert(this, conn);
 		}
 	} 
-
-	@JsonIgnore
-	public boolean hasIgnoredParent() {
-		return hasIgnoredParent;
-	}
 	
-	public void setHasIgnoredParent(boolean hasIgnoredParent) {
-		this.hasIgnoredParent = hasIgnoredParent;
+	@Override
+	public void consolidate(Connection conn) throws DBException {
+		OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByUuid(this.getClass(), this.getUuid(), conn);
+		
+		if (recordOnDB == null) {
+			//Check if ID is free 
+			OpenMRSObject recOnDBById = OpenMRSObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
+			
+			if (recOnDBById == null) {
+				OpenMRSObjectDAO.insert(this, conn);
+			}
+			else {
+				throw new MetadataInconsistentException(recOnDBById);
+			}
+		}
+		else {
+			if (recordOnDB.getObjectId() != this.getObjectId()) {
+				throw new MetadataInconsistentException(recordOnDB);
+			}
+		}
 	}
 }

@@ -42,5 +42,16 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract boolean hasIgnoredParent();
 	public abstract void save(Connection conn) throws DBException;
-		
+	
+	public abstract boolean isMetadata();
+	
+	/**
+	 * Consolidate this object if it is an metadata object
+	 * 
+	 * @param conn
+	 * @throws DBException
+	 */
+	public abstract void consolidate(Connection conn) throws DBException;	
+	
+	public abstract String getUuid();
 }

@@ -10,13 +10,11 @@ import java.sql.Connection;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMRSObject { 
-	private int patientIdentifierId;
-	private int patientId;
-	private String identifier;
-	private int identifierType;
-	private byte preferred;
-	private int locationId;
+public class RelationshipVO extends AbstractOpenMRSObject implements OpenMRSObject { 
+	private int relationshipId;
+	private int personA;
+	private int relationship;
+	private int personB;
 	private int creator;
 	private java.util.Date dateCreated;
 	private byte voided;
@@ -26,60 +24,46 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 	private String uuid;
 	private java.util.Date dateChanged;
 	private int changedBy;
+	private java.util.Date startDate;
+	private java.util.Date endDate;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
  
-	public PatientIdentifierVO() { 
+	public RelationshipVO() { 
 		this.metadata = false;
 	} 
  
-	public void setPatientIdentifierId(int patientIdentifierId){ 
-	 	this.patientIdentifierId = patientIdentifierId;
+	public void setRelationshipId(int relationshipId){ 
+	 	this.relationshipId = relationshipId;
 	}
  
-	public int getPatientIdentifierId(){ 
-		return this.patientIdentifierId;
+	public int getRelationshipId(){ 
+		return this.relationshipId;
 	}
  
-	public void setPatientId(int patientId){ 
-	 	this.patientId = patientId;
+	public void setPersonA(int personA){ 
+	 	this.personA = personA;
 	}
  
-	public int getPatientId(){ 
-		return this.patientId;
+	public int getPersonA(){ 
+		return this.personA;
 	}
  
-	public void setIdentifier(String identifier){ 
-	 	this.identifier = identifier;
+	public void setRelationship(int relationship){ 
+	 	this.relationship = relationship;
 	}
  
-	public String getIdentifier(){ 
-		return this.identifier;
+	public int getRelationship(){ 
+		return this.relationship;
 	}
  
-	public void setIdentifierType(int identifierType){ 
-	 	this.identifierType = identifierType;
+	public void setPersonB(int personB){ 
+	 	this.personB = personB;
 	}
  
-	public int getIdentifierType(){ 
-		return this.identifierType;
-	}
- 
-	public void setPreferred(byte preferred){ 
-	 	this.preferred = preferred;
-	}
- 
-	public byte getPreferred(){ 
-		return this.preferred;
-	}
- 
-	public void setLocationId(int locationId){ 
-	 	this.locationId = locationId;
-	}
- 
-	public int getLocationId(){ 
-		return this.locationId;
+	public int getPersonB(){ 
+		return this.personB;
 	}
  
 	public void setCreator(int creator){ 
@@ -154,6 +138,22 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 		return this.changedBy;
 	}
  
+	public void setStartDate(java.util.Date startDate){ 
+	 	this.startDate = startDate;
+	}
+ 
+	public java.util.Date getStartDate(){ 
+		return this.startDate;
+	}
+ 
+	public void setEndDate(java.util.Date endDate){ 
+	 	this.endDate = endDate;
+	}
+ 
+	public java.util.Date getEndDate(){ 
+		return this.endDate;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -181,11 +181,11 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 	}
  
 	public int getObjectId() { 
- 		return this.patientIdentifierId; 
+ 		return this.relationshipId; 
 	} 
  
 	public void setObjectId(int selfId){ 
-		this.patientIdentifierId = selfId; 
+		this.relationshipId = selfId; 
 	} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
@@ -198,31 +198,39 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
- 		return "patient_identifier_id"; 
+ 		return "relationship_id"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.identifier, this.identifierType == 0 ? null : this.identifierType, this.preferred, this.locationId == 0 ? null : this.locationId, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.personA == 0 ? null : this.personA, this.relationship == 0 ? null : this.relationship, this.personB == 0 ? null : this.personB, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.startDate, this.endDate, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.identifier, this.identifierType == 0 ? null : this.identifierType, this.preferred, this.locationId == 0 ? null : this.locationId, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.patientIdentifierId};		return params; 
+ 		Object[] params = {this.personA == 0 ? null : this.personA, this.relationship == 0 ? null : this.relationship, this.personB == 0 ? null : this.personB, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.startDate, this.endDate, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.relationshipId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO patient_identifier(patient_id, identifier, identifier_type, preferred, location_id, creator, date_created, voided, voided_by, date_voided, void_reason, uuid, date_changed, changed_by, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO relationship(person_a, relationship, person_b, creator, date_created, voided, voided_by, date_voided, void_reason, uuid, date_changed, changed_by, start_date, end_date, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient_identifier SET patient_id = ?, identifier = ?, identifier_type = ?, preferred = ?, location_id = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, date_changed = ?, changed_by = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE patient_identifier_id = ?;"; 
+ 		return "UPDATE relationship SET person_a = ?, relationship = ?, person_b = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, date_changed = ?, changed_by = ?, start_date = ?, end_date = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE relationship_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.PersonVO.class, this.personA, false, conn); 
+		this.personA = 0;
+		if (parentOnDestination  != null) this.personA = parentOnDestination.getObjectId();
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.PersonVO.class, this.personB, false, conn); 
+		this.personB = 0;
+		if (parentOnDestination  != null) this.personB = parentOnDestination.getObjectId();
  
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator, false, conn); 
 		this.creator = 0;
@@ -232,17 +240,9 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 		this.voidedBy = 0;
 		if (parentOnDestination  != null) this.voidedBy = parentOnDestination.getObjectId();
  
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.PatientVO.class, this.patientId, false, conn); 
-		this.patientId = 0;
-		if (parentOnDestination  != null) this.patientId = parentOnDestination.getObjectId();
- 
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.changedBy, true, conn); 
 		this.changedBy = 0;
 		if (parentOnDestination  != null) this.changedBy = parentOnDestination.getObjectId();
- 
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.LocationVO.class, this.locationId, true, conn); 
-		this.locationId = 0;
-		if (parentOnDestination  != null) this.locationId = parentOnDestination.getObjectId();
  
 	}
 }

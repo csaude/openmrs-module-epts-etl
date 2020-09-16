@@ -10,11 +10,11 @@ import java.sql.Connection;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject { 
-	private int providerId;
-	private int personId;
+public class VisitTypeVO extends AbstractOpenMRSObject implements OpenMRSObject { 
+	private int visitTypeId;
 	private String name;
-	private String identifier;
+	private String description;
+	private String uuid;
 	private int creator;
 	private java.util.Date dateCreated;
 	private int changedBy;
@@ -23,29 +23,20 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private int retiredBy;
 	private java.util.Date dateRetired;
 	private String retireReason;
-	private String uuid;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
  
-	public ProviderVO() { 
-		this.metadata = false;
+	public VisitTypeVO() { 
+		this.metadata = true;
 	} 
  
-	public void setProviderId(int providerId){ 
-	 	this.providerId = providerId;
+	public void setVisitTypeId(int visitTypeId){ 
+	 	this.visitTypeId = visitTypeId;
 	}
  
-	public int getProviderId(){ 
-		return this.providerId;
-	}
- 
-	public void setPersonId(int personId){ 
-	 	this.personId = personId;
-	}
- 
-	public int getPersonId(){ 
-		return this.personId;
+	public int getVisitTypeId(){ 
+		return this.visitTypeId;
 	}
  
 	public void setName(String name){ 
@@ -56,12 +47,20 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.name;
 	}
  
-	public void setIdentifier(String identifier){ 
-	 	this.identifier = identifier;
+	public void setDescription(String description){ 
+	 	this.description = description;
 	}
  
-	public String getIdentifier(){ 
-		return this.identifier;
+	public String getDescription(){ 
+		return this.description;
+	}
+ 
+	public void setUuid(String uuid){ 
+	 	this.uuid = uuid;
+	}
+ 
+	public String getUuid(){ 
+		return this.uuid;
 	}
  
 	public void setCreator(int creator){ 
@@ -128,14 +127,6 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.retireReason;
 	}
  
-	public void setUuid(String uuid){ 
-	 	this.uuid = uuid;
-	}
- 
-	public String getUuid(){ 
-		return this.uuid;
-	}
- 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -163,11 +154,11 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	}
  
 	public int getObjectId() { 
- 		return this.providerId; 
+ 		return this.visitTypeId; 
 	} 
  
 	public void setObjectId(int selfId){ 
-		this.providerId = selfId; 
+		this.visitTypeId = selfId; 
 	} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
@@ -180,27 +171,27 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
- 		return "provider_id"; 
+ 		return "visit_type_id"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.name, this.description, this.uuid, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.providerId};		return params; 
+ 		Object[] params = {this.name, this.description, this.uuid, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.visitTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO provider(person_id, name, identifier, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO visit_type(name, description, uuid, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE provider SET person_id = ?, name = ?, identifier = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE provider_id = ?;"; 
+ 		return "UPDATE visit_type SET name = ?, description = ?, uuid = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE visit_type_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
@@ -213,10 +204,6 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.creator, false, conn); 
 		this.creator = 0;
 		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
- 
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.PersonVO.class, this.personId, true, conn); 
-		this.personId = 0;
-		if (parentOnDestination  != null) this.personId = parentOnDestination.getObjectId();
  
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.UsersVO.class, this.retiredBy, true, conn); 
 		this.retiredBy = 0;

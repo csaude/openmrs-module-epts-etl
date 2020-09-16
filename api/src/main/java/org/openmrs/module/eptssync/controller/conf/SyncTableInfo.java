@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -37,6 +38,10 @@ public class SyncTableInfo {
 	private String sharePkWith;
 	
 	private String extraConditionForExport;
+	
+	private boolean metadata;
+	
+	private static Logger logger = Logger.getLogger(SyncTableInfo.class);
 	
 	public SyncTableInfo() {
 	}
@@ -127,6 +132,9 @@ public class SyncTableInfo {
 	
 	public synchronized List<ParentRefInfo> getParentRefInfo() {
 		if (this.parentRefInfo == null) {
+			
+			logInfo("DISCOVERING PARENTS FOR '" + this.tableName + "'");
+			
 			OpenConnection conn = DBConnectionService.getInstance().openConnection();
 			
 			try {
@@ -154,6 +162,8 @@ public class SyncTableInfo {
 					
 					this.parentRefInfo.add(ref);
 				}
+			
+				logInfo("PARENTS FOR '" + this.tableName + "' DISCOVERED");
 				
 			} catch (SQLException e) {
 				e.printStackTrace();
@@ -226,6 +236,14 @@ public class SyncTableInfo {
 		return isMustRecompileTable();
 	}
 
+	public boolean isMetadata() {
+		return metadata;
+	}
+
+	public void setMetadata(boolean metadata) {
+		this.metadata = metadata;
+	}
+
 	/**
 	 * Try to generate on related table the aditional information needed for
 	 * synchronization process
@@ -233,33 +251,71 @@ public class SyncTableInfo {
 	 * @throws SQLException
 	 */
 	public void tryToUpgradeDataBaseInfo() throws SQLException {
+		logInfo("UPGRATING TABLE INFO [" + this.tableName + "]");
+		
 		OpenConnection conn = DBConnectionService.getInstance().openConnection();
 
 		if (!existRelatedExportStageTable()) {
+			logInfo("GENERATING RELATED STAGE TABLE FOR [" + this.tableName + "]");
+			
 			createRelatedExportStageTable();
+			
+			logInfo("RELATED STAGE TABLE FOR [" + this.tableName + "] GENERATED");
+			
 		}
 
 		if (!isLastSyncDateColumnExistOnTable(conn)) {
+			logInfo("CREATING 'LAST_SYNC_DATE' COLUMN FOR [" + this.tableName + "]");
+			
 			createLastSyncDateOnTable(conn);
+			
+			logInfo("'LAST_SYNC_DATE' COLUMN FOR [" + this.tableName + "] CREATED");
+		}
+
+		if (!isUuidColumnExistOnTable(conn)) {
+			logInfo("CREATING 'UUID' COLUMN FOR [" + this.tableName + "]");
+			
+			createUuidColumnOnTable(conn);
+			
+			logInfo("'UUID' COLUMN FOR [" + this.tableName + "] CREATED");
+			
 		}
 
 		if (!isOriginRecordIdColumnExistOnTable(conn)) {
+			logInfo("CREATING 'ORIGIN_RECORD_ID' COLUMN FOR [" + this.tableName + "]");
+			
 			createOriginRecordIdColumnOnTable(conn);
+			
+			logInfo("'ORIGIN_RECORD_ID' COLUMN FOR [" + this.tableName + "] CREATED");
 		}
 
 		if (!isDateChangedColumnExistOnTable(conn)) {
+			logInfo("CREATING 'DATE_CHANGED' COLUMN FOR [" + this.tableName + "]");
+			
 			createDateChangedColumnOnTable(conn);
+			
+			logInfo("'DATE_CHANGED' COLUMN FOR [" + this.tableName + "] CREATED");
+			
 		}
 	
 		if (!isOriginAppLocationCodeColumnExistsOnTable(conn)) {
+			logInfo("CREATING 'ORIGIN_APP_LOCATION' COLUMN FOR [" + this.tableName + "]");
+			
 			createOriginAppLocationCodeColumnOnTable(conn);
+			
+			logInfo("'ORIGIN_APP_LOCATION' COLUMN FOR [" + this.tableName + "] CREATED");
 		}
 		
 		if (!isExistRelatedTriggers(conn)) {
+			logInfo("CREATING RELATED TRIGGERS FOR [" + this.tableName + "]");
+			
 			createLastUpdateDateMonitorTrigger(conn);
+		
+			logInfo("RELATED TRIGGERS FOR [" + this.tableName + "] CREATED");
 		}
 	}
 
+	
 	private void createRelatedExportStageTable() {
 		String sql = "";
 
@@ -414,6 +470,20 @@ public class SyncTableInfo {
 
 		st.close();
 	}
+	
+	private boolean isUuidColumnExistOnTable(Connection conn) throws SQLException {
+		return DBUtilities.isColumnExistOnTable(getTableName(), "uuid", conn);
+	}
+
+	private void createUuidColumnOnTable(Connection conn) throws SQLException {
+		String sql = "ALTER TABLE " + this.getTableName() + " ADD uuid char(38) NULL";
+		
+		Statement st = conn.createStatement();
+		st.addBatch(sql);
+		st.executeBatch();
+
+		st.close();
+	}
 
 	private boolean isOriginRecordIdColumnExistOnTable(Connection conn) throws SQLException {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "origin_record_id", conn);
@@ -431,5 +501,18 @@ public class SyncTableInfo {
 		}
 		
 		throw new ForbiddenOperationException("The att '" + parentAttName + "' doesn't represent any defined parent att");
+	}
+	
+	
+	public void logInfo(String msg) {
+		utilities.logInfo(msg, logger);
+	}
+	
+	public void logError(String msg) {
+		utilities.logErr(msg, logger);
+	}
+	
+	public void logDebug(String msg) {
+		utilities.logDebug(msg, logger);
 	}
 }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.export_.SyncExportController;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
@@ -19,11 +20,11 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 public class ExportSyncEngine extends SyncEngine {
 	private SyncExportSearchParams searchParams;
 
-	public ExportSyncEngine(SyncTableInfo syncTableInfo) {
-		super(syncTableInfo);
+	public ExportSyncEngine(SyncTableInfo syncTableInfo, SyncExportController syncController) {
+		super(syncTableInfo, syncController);
 
 		searchParams = new SyncExportSearchParams(syncTableInfo);
-		searchParams.setQtdRecordPerSelected(100);
+		searchParams.setQtdRecordPerSelected(5000);
 	}
 
 	@Override	
@@ -55,12 +56,22 @@ public class ExportSyncEngine extends SyncEngine {
 			obj.setOriginAppLocationCode(getSyncTableInfo().getOriginAppLocationCode());
 		}
 		
+		this.syncController.logInfo("GENERATING '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " TO JSON FILE");
+		
 		SyncJSONInfo jsonInfo = SyncJSONInfo.generate(syncRecordsAsOpenMRSObjects);
 		jsonInfo.setOriginAppLocationCode(getSyncTableInfo().getOriginAppLocationCode());
 		
+		this.syncController.logInfo("WRITING '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " TO JSON FILE [" + generateJSONFileName(jsonInfo) + "]");
+		
 		FileUtilities.write(generateJSONFileName(jsonInfo), jsonInfo.parseToJSON());
 		
+		this.syncController.logInfo("JSON [" + generateJSONFileName(jsonInfo) + "] CREATED!");
+		
+		this.syncController.logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " AS SYNCHRONIZED");
+			
 		markAllAsSynchronized(utilities.parseList(syncRecords, OpenMRSObject.class));
+		
+		this.syncController.logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " AS SYNCHRONIZED FINISHED");
 	}
 
 	private void markAllAsSynchronized(List<OpenMRSObject> syncRecords) {

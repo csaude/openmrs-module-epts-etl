@@ -11,7 +11,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -29,14 +28,12 @@ public abstract class BaseVO  implements VO{
 	 * Data da criacao
 	 */
 	protected Date creationDate;
-	protected UUID uuid;
 	
 	/**
 	 * Cria uma instancia de {@link BaseVO} com os atributos iniciados com
 	 * valores <code>default</code>
 	 */
 	public BaseVO() {
-		this.uuid = UUID.randomUUID();
 	}
 
 	/**
@@ -269,9 +266,9 @@ public abstract class BaseVO  implements VO{
 			 return true;
 		 }
 		 
-		 return this.uuid.equals(((BaseVO) obj).uuid);
+		 return false;
 	}
-
+	
 	/**
 	 * Transforma uma lista de VO's e lista de String
 	 * 

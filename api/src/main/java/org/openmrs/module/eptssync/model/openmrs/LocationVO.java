@@ -42,6 +42,7 @@ public class LocationVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private String originAppLocationCode;
  
 	public LocationVO() { 
+		this.metadata = false;
 	} 
  
 	public void setLocationId(int locationId){ 

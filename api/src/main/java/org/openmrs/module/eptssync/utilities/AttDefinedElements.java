@@ -141,17 +141,22 @@ public class AttDefinedElements {
 			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
 
 			
-			if (!isForeignKey(dbAttName)) {
-				this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
-				this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
-			}
-			else {
+			if (isForeignKey(dbAttName) && isNumeric()) {
 				this.sqlInsertParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
 				this.sqlUpdateParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
+			}
+			else {
+				this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
+				this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
+	
 			}
 		}	
 	}
 	
+	private boolean isNumeric() {
+		return utilities.isStringIn(this.attType, "int", "long");
+	}
+
 	private boolean isSharedKey() {
 		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo()) {
 			if (parent.isSharedPk() && parent.getReferenceColumnAsClassAttName().equals(this.attName)) {
