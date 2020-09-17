@@ -247,7 +247,14 @@ public class DBUtilities {
 		String resourceSchemaCondition = "";
 		String resourceNameCondition = "";
 		String fromClause = "";
+		
+		if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_INDEX)) {
+			fromClause = "INFORMATION_SCHEMA.INNODB_SYS_INDEXES";
+			resourceNameCondition = "NAME = '" + resourceName + "'" ;
+			resourceSchemaCondition = "1 = 1";
 			
+		}
+		else
 		if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_TRIGGER)) {
 			fromClause = "INFORMATION_SCHEMA.TRIGGERS";
 			resourceNameCondition = "TRIGGER_NAME = '" + resourceName + "'" ;

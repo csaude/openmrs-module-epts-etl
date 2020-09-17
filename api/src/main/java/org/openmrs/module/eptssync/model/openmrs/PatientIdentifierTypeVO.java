@@ -1,12 +1,15 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
- 
+import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
+import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
@@ -214,6 +217,29 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 	public void setObjectId(int selfId){ 
 		this.patientIdentifierTypeId = selfId; 
 	} 
+ 
+	public void load(ResultSet rs) throws SQLException{ 
+		this.patientIdentifierTypeId = rs.getInt("patient_identifier_type_id");
+		this.name = rs.getString("name") != null ? rs.getString("name").trim() : null;
+		this.description = rs.getString("description") != null ? rs.getString("description").trim() : null;
+		this.format = rs.getString("format") != null ? rs.getString("format").trim() : null;
+		this.checkDigit = rs.getByte("check_digit");
+		this.creator = rs.getInt("creator");
+		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
+		this.required = rs.getByte("required");
+		this.formatDescription = rs.getString("format_description") != null ? rs.getString("format_description").trim() : null;
+		this.validator = rs.getString("validator") != null ? rs.getString("validator").trim() : null;
+		this.retired = rs.getByte("retired");
+		this.retiredBy = rs.getInt("retired_by");
+		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
+		this.retireReason = rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null;
+		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.locationBehavior = rs.getString("location_behavior") != null ? rs.getString("location_behavior").trim() : null;
+		this.uniquenessBehavior = rs.getString("uniqueness_behavior") != null ? rs.getString("uniqueness_behavior").trim() : null;
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+			} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
 		try{

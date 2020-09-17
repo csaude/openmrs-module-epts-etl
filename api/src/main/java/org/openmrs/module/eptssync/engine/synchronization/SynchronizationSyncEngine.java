@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.controller.synchronization.SynchronizationController;
+import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
+import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
@@ -14,13 +16,8 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class SynchronizationSyncEngine extends SyncEngine {
-	private SynchronizationSearchParams searchParams;
-
-	public SynchronizationSyncEngine(SyncTableInfo syncTableInfo, SynchronizationController syncController) {
-		super(syncTableInfo, syncController);
-
-		searchParams = new SynchronizationSearchParams(syncTableInfo);
-		searchParams.setQtdRecordPerSelected(2500);
+	public SynchronizationSyncEngine(SyncTableInfo syncTableInfo, RecordLimits limits, SynchronizationController syncController) {
+		super(syncTableInfo, limits, syncController);
 	}
 
 	@Override	
@@ -42,7 +39,7 @@ public class SynchronizationSyncEngine extends SyncEngine {
 	
 	@Override
 	protected void restart() {
-		this.searchParams.setSyncStartDate(DateAndTimeUtilities.getCurrentDate());
+		this.getSearchParams().setSyncStartDate(DateAndTimeUtilities.getCurrentDate());
 	}
 	
 	@Override
@@ -64,5 +61,21 @@ public class SynchronizationSyncEngine extends SyncEngine {
 			conn.finalizeConnection();
 		}
 	}
+	
+	@Override
+	public SynchronizationSearchParams getSearchParams() {
+		return (SynchronizationSearchParams) super.getSearchParams();
+	}
+	
+	@Override
+	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits) {
+		SyncSearchParams<? extends SyncRecord> searchParams = new SynchronizationSearchParams(this.syncTableInfo, limits);
+		searchParams.setQtdRecordPerSelected(2500);
+		
+		return searchParams;
+	}
 
+	@Override
+	public void requestStop() {
+	}
 }

@@ -1,12 +1,15 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
- 
+import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
+import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
@@ -223,6 +226,30 @@ public class GaacMemberVO extends AbstractOpenMRSObject implements OpenMRSObject
 	public void setObjectId(int selfId){ 
 		this.gaacMemberId = selfId; 
 	} 
+ 
+	public void load(ResultSet rs) throws SQLException{ 
+		this.gaacMemberId = rs.getInt("gaac_member_id");
+		this.gaacId = rs.getInt("gaac_id");
+		this.memberId = rs.getInt("member_id");
+		this.startDate =  rs.getTimestamp("start_date") != null ? new java.util.Date( rs.getTimestamp("start_date").getTime() ) : null;
+		this.endDate =  rs.getTimestamp("end_date") != null ? new java.util.Date( rs.getTimestamp("end_date").getTime() ) : null;
+		this.reasonLeavingType = rs.getInt("reason_leaving_type");
+		this.description = rs.getString("description") != null ? rs.getString("description").trim() : null;
+		this.leaving = rs.getShort("leaving");
+		this.restart = rs.getShort("restart");
+		this.restartDate =  rs.getTimestamp("restart_date") != null ? new java.util.Date( rs.getTimestamp("restart_date").getTime() ) : null;
+		this.creator = rs.getInt("creator");
+		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
+		this.changedBy = rs.getInt("changed_by");
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.voided = rs.getShort("voided");
+		this.voidedBy = rs.getInt("voided_by");
+		this.dateVoided =  rs.getTimestamp("date_voided") != null ? new java.util.Date( rs.getTimestamp("date_voided").getTime() ) : null;
+		this.voidReason = rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null;
+		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+			} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
 		try{

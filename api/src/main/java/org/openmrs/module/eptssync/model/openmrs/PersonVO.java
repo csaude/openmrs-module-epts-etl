@@ -1,12 +1,15 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
- 
+import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
+import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
@@ -214,6 +217,29 @@ public class PersonVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setObjectId(int selfId){ 
 		this.personId = selfId; 
 	} 
+ 
+	public void load(ResultSet rs) throws SQLException{ 
+		this.personId = rs.getInt("person_id");
+		this.gender = rs.getString("gender") != null ? rs.getString("gender").trim() : null;
+		this.birthdate =  rs.getTimestamp("birthdate") != null ? new java.util.Date( rs.getTimestamp("birthdate").getTime() ) : null;
+		this.birthdateEstimated = rs.getByte("birthdate_estimated");
+		this.dead = rs.getByte("dead");
+		this.deathDate =  rs.getTimestamp("death_date") != null ? new java.util.Date( rs.getTimestamp("death_date").getTime() ) : null;
+		this.causeOfDeath = rs.getInt("cause_of_death");
+		this.creator = rs.getInt("creator");
+		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
+		this.changedBy = rs.getInt("changed_by");
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.voided = rs.getByte("voided");
+		this.voidedBy = rs.getInt("voided_by");
+		this.dateVoided =  rs.getTimestamp("date_voided") != null ? new java.util.Date( rs.getTimestamp("date_voided").getTime() ) : null;
+		this.voidReason = rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null;
+		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.deathdateEstimated = rs.getByte("deathdate_estimated");
+		this.birthtime =  rs.getTimestamp("birthtime") != null ? new java.util.Date( rs.getTimestamp("birthtime").getTime() ) : null;
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+			} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
 		try{

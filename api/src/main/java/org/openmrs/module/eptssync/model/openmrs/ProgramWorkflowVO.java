@@ -1,12 +1,15 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
- 
+import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
+import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
@@ -133,6 +136,20 @@ public class ProgramWorkflowVO extends AbstractOpenMRSObject implements OpenMRSO
 	public void setObjectId(int selfId){ 
 		this.programWorkflowId = selfId; 
 	} 
+ 
+	public void load(ResultSet rs) throws SQLException{ 
+		this.programWorkflowId = rs.getInt("program_workflow_id");
+		this.programId = rs.getInt("program_id");
+		this.conceptId = rs.getInt("concept_id");
+		this.creator = rs.getInt("creator");
+		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
+		this.retired = rs.getByte("retired");
+		this.changedBy = rs.getInt("changed_by");
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+			} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
 		try{

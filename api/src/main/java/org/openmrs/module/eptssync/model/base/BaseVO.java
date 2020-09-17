@@ -7,6 +7,7 @@ import java.lang.reflect.Modifier;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -47,7 +48,11 @@ public abstract class BaseVO  implements VO{
 	 * @see #load(List)
 	 */
 	public BaseVO(ResultSet resultSet) {
-		load(resultSet);
+		try {
+			load(resultSet);
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	/**
@@ -163,7 +168,7 @@ public abstract class BaseVO  implements VO{
 	 * @param resultSet
 	 *            contendo os valores a copiar
 	 */
-	public void load(ResultSet resultSet) {
+	public void load(ResultSet resultSet) throws SQLException{
 		Object[] fields = getFields();
 		for (int i = 0; i < fields.length; i++) {
 			Field field = (Field) fields[i];

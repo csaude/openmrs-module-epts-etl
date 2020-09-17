@@ -4,13 +4,14 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.engine.synchronization.SynchronizationSyncEngine;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
-import org.openmrs.module.eptssync.model.openmrs.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.model.openmrs.PersonVO;
 import org.openmrs.module.eptssync.model.openmrs.UsersVO;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
@@ -30,8 +31,8 @@ public class SynchronizationController extends AbstractSyncController {
 	}
 
 	@Override
-	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo) {
-		return new SynchronizationSyncEngine(syncInfo, this);
+	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) {
+		return new SynchronizationSyncEngine(syncInfo, limits, this);
 	}
 
 	@Override
@@ -103,5 +104,17 @@ public class SynchronizationController extends AbstractSyncController {
 		
 		DBUtilities.enableForegnKeyChecks(conn);
 		
+	}
+
+	@Override
+	protected int getMinRecordId(SyncTableInfo tableInfo) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	protected int getMaxRecordId(SyncTableInfo tableInfo) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 }

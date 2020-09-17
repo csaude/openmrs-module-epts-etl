@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.openmrs;
+package org.openmrs.module.eptssync.model.openmrs.generic;
 
 import java.sql.Connection;
 

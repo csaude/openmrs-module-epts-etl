@@ -1,12 +1,15 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
- 
+import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
+import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
@@ -295,6 +298,38 @@ public class PersonAddressVO extends AbstractOpenMRSObject implements OpenMRSObj
 	public void setObjectId(int selfId){ 
 		this.personAddressId = selfId; 
 	} 
+ 
+	public void load(ResultSet rs) throws SQLException{ 
+		this.personAddressId = rs.getInt("person_address_id");
+		this.personId = rs.getInt("person_id");
+		this.preferred = rs.getByte("preferred");
+		this.address1 = rs.getString("address1") != null ? rs.getString("address1").trim() : null;
+		this.address2 = rs.getString("address2") != null ? rs.getString("address2").trim() : null;
+		this.cityVillage = rs.getString("city_village") != null ? rs.getString("city_village").trim() : null;
+		this.stateProvince = rs.getString("state_province") != null ? rs.getString("state_province").trim() : null;
+		this.postalCode = rs.getString("postal_code") != null ? rs.getString("postal_code").trim() : null;
+		this.country = rs.getString("country") != null ? rs.getString("country").trim() : null;
+		this.latitude = rs.getString("latitude") != null ? rs.getString("latitude").trim() : null;
+		this.longitude = rs.getString("longitude") != null ? rs.getString("longitude").trim() : null;
+		this.creator = rs.getInt("creator");
+		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
+		this.voided = rs.getByte("voided");
+		this.voidedBy = rs.getInt("voided_by");
+		this.dateVoided =  rs.getTimestamp("date_voided") != null ? new java.util.Date( rs.getTimestamp("date_voided").getTime() ) : null;
+		this.voidReason = rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null;
+		this.countyDistrict = rs.getString("county_district") != null ? rs.getString("county_district").trim() : null;
+		this.address3 = rs.getString("address3") != null ? rs.getString("address3").trim() : null;
+		this.address6 = rs.getString("address6") != null ? rs.getString("address6").trim() : null;
+		this.address5 = rs.getString("address5") != null ? rs.getString("address5").trim() : null;
+		this.address4 = rs.getString("address4") != null ? rs.getString("address4").trim() : null;
+		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.changedBy = rs.getInt("changed_by");
+		this.startDate =  rs.getTimestamp("start_date") != null ? new java.util.Date( rs.getTimestamp("start_date").getTime() ) : null;
+		this.endDate =  rs.getTimestamp("end_date") != null ? new java.util.Date( rs.getTimestamp("end_date").getTime() ) : null;
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+			} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
 		try{

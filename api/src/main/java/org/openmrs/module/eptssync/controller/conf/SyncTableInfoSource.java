@@ -21,9 +21,19 @@ public class SyncTableInfoSource {
 	
 	private List<SyncTableInfo> syncTableInfo;
 	
+	private boolean firstExport;
+	
 	private SyncTableInfoSource() {
 	}
 	
+	public boolean isFirstExport() {
+		return firstExport;
+	}
+
+	public void setFirstExport(boolean firstExport) {
+		this.firstExport = firstExport;
+	}
+
 	public List<SyncTableInfo> getSyncTableInfo() {
 		return syncTableInfo;
 	}

@@ -5,12 +5,14 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.controller.export_.SyncExportController;
+import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
+import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.export.SyncExportSearchParams;
-import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -18,13 +20,9 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class ExportSyncEngine extends SyncEngine {
-	private SyncExportSearchParams searchParams;
-
-	public ExportSyncEngine(SyncTableInfo syncTableInfo, SyncExportController syncController) {
-		super(syncTableInfo, syncController);
-
-		searchParams = new SyncExportSearchParams(syncTableInfo);
-		searchParams.setQtdRecordPerSelected(5000);
+	
+	public ExportSyncEngine(SyncTableInfo syncTableInfo, RecordLimits limits, SyncExportController syncController) {
+		super(syncTableInfo, limits, syncController);
 	}
 
 	@Override	
@@ -87,8 +85,6 @@ public class ExportSyncEngine extends SyncEngine {
 		finally {
 			conn.finalizeConnection();
 		}
-		
-		
 	}
 
 	private String generateJSONFileName(SyncJSONInfo jsonInfo) {
@@ -117,5 +113,17 @@ public class ExportSyncEngine extends SyncEngine {
 		}
 		
 		return fileName + ".json";
+	}
+
+	@Override
+	public void requestStop() {
+	}
+
+	@Override
+	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits) {
+		SyncSearchParams<? extends SyncRecord> searchParams = new SyncExportSearchParams(this.syncTableInfo, limits);
+		searchParams.setQtdRecordPerSelected(50000);
+	
+		return searchParams;
 	}
 }

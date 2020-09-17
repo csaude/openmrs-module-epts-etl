@@ -1,7 +1,8 @@
-package org.openmrs.module.eptssync.model.openmrs;
+package org.openmrs.module.eptssync.model.openmrs.generic;
 
 import java.sql.Connection;
 
+import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
@@ -88,5 +89,57 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 			throw new RuntimeException(e);
 		}
+	}
+
+
+	public static OpenMRSObject getFirstRecord(SyncTableInfo tableInfo, Connection conn) throws DBException {
+		String sql = "";
+		
+		OpenMRSObject obj = utilities.createInstance(tableInfo.getRecordClass());
+		
+		String clause = "";
+		
+		if (!tableInfo.isFirstExport()) {
+			clause = "date_changed > last_sync_date";
+		}
+		else {
+			clause = "last_sync_date is null";
+		}
+
+		sql += " SELECT * \n";
+		sql += " FROM  	" + obj.generateTableName() + "\n";
+		sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + "\n";
+		sql += " 			= (	SELECT min(" + obj.generateDBPrimaryKeyAtt() + ")\n";
+		sql += "				FROM   " + obj.generateTableName() + "\n";
+		sql += "				WHERE  " + clause + "\n";
+		sql += "				)";
+		
+		return find(tableInfo.getRecordClass(), sql, null, conn);
+	}
+	
+	public static OpenMRSObject getLastRecord(SyncTableInfo tableInfo,  Connection conn) throws DBException {
+		String sql = "";
+		
+		OpenMRSObject obj = utilities.createInstance(tableInfo.getRecordClass());
+		
+		String clause = "";
+		
+		if (!tableInfo.isFirstExport()) {
+			clause = "date_changed > last_sync_date";
+		}
+		else {
+			clause = "last_sync_date is null";
+		}
+
+		
+		sql += " SELECT * \n";
+		sql += " FROM  	" + obj.generateTableName() + "\n";
+		sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + "\n";
+		sql += " 			= (	SELECT max(" + obj.generateDBPrimaryKeyAtt() + ")\n";
+		sql += "				FROM   " + obj.generateTableName() + "\n";
+		sql += "				WHERE  " + clause + "\n";
+		sql += "				)";
+		
+		return find(tableInfo.getRecordClass(), sql, null, conn);
 	}
 }

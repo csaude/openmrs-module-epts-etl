@@ -10,7 +10,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
@@ -40,12 +40,17 @@ public class SyncTableInfo {
 	private String extraConditionForExport;
 	
 	private boolean metadata;
+	private int qtyProcessingEngine;
 	
 	private static Logger logger = Logger.getLogger(SyncTableInfo.class);
 	
 	public SyncTableInfo() {
 	}
 
+	public boolean isFirstExport() {
+		return this.relatedSyncTableInfoSource.isFirstExport();
+	}
+	
 	public List<String> getParents() {
 		return parents;
 	}
@@ -255,67 +260,103 @@ public class SyncTableInfo {
 		
 		OpenConnection conn = DBConnectionService.getInstance().openConnection();
 
-		if (!existRelatedExportStageTable()) {
-			logInfo("GENERATING RELATED STAGE TABLE FOR [" + this.tableName + "]");
+		try {
+			String newColumnDefinition = "";
 			
-			createRelatedExportStageTable();
+			if (!existRelatedExportStageTable()) {
+				logInfo("GENERATING RELATED STAGE TABLE FOR [" + this.tableName + "]");
+				
+				createRelatedExportStageTable();
+				
+				logInfo("RELATED STAGE TABLE FOR [" + this.tableName + "] GENERATED");
+				
+			}
 			
-			logInfo("RELATED STAGE TABLE FOR [" + this.tableName + "] GENERATED");
-			
-		}
+			/*if (!isFirstExportDoneColumnExistsOnTable(conn)) {
+				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateFirstExportColumnGeneration());
+			}*/
 
-		if (!isLastSyncDateColumnExistOnTable(conn)) {
-			logInfo("CREATING 'LAST_SYNC_DATE' COLUMN FOR [" + this.tableName + "]");
-			
-			createLastSyncDateOnTable(conn);
-			
-			logInfo("'LAST_SYNC_DATE' COLUMN FOR [" + this.tableName + "] CREATED");
-		}
+			if (!isLastSyncDateColumnExistOnTable(conn)) {
+				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateLastSyncDateColumnCreation());
+			}
 
-		if (!isUuidColumnExistOnTable(conn)) {
-			logInfo("CREATING 'UUID' COLUMN FOR [" + this.tableName + "]");
-			
-			createUuidColumnOnTable(conn);
-			
-			logInfo("'UUID' COLUMN FOR [" + this.tableName + "] CREATED");
-			
-		}
+			if (!isUuidColumnExistOnTable(conn)) {
+				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateUuidColumnCreation());
+			}
 
-		if (!isOriginRecordIdColumnExistOnTable(conn)) {
-			logInfo("CREATING 'ORIGIN_RECORD_ID' COLUMN FOR [" + this.tableName + "]");
-			
-			createOriginRecordIdColumnOnTable(conn);
-			
-			logInfo("'ORIGIN_RECORD_ID' COLUMN FOR [" + this.tableName + "] CREATED");
-		}
+			if (!isOriginRecordIdColumnExistOnTable(conn)) {
+				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateOriginRecordIdColumnGeneration());
+			}
 
-		if (!isDateChangedColumnExistOnTable(conn)) {
-			logInfo("CREATING 'DATE_CHANGED' COLUMN FOR [" + this.tableName + "]");
+			if (!isDateChangedColumnExistOnTable(conn)) {
+				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateDateChangedColumnGeneration());
+			}
+
+			if (!isOriginAppLocationCodeColumnExistsOnTable(conn)) {
+				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateOriginAppLocationCodeColumnGeneration());
+			}
 			
-			createDateChangedColumnOnTable(conn);
+			if (utilities.stringHasValue(newColumnDefinition)) {
+				logInfo("CREATING CONF COLUMNS FOR TABLE [" + this.tableName + "]");
+				
+				newColumnDefinition = "ALTER TABLE " + this.getTableName() + " ADD (" + newColumnDefinition + ")"; 
+				
+				Statement st = conn.createStatement();
+				st.addBatch(newColumnDefinition);
+				st.executeBatch();
+						
+				st.close();
+				
+				logInfo("CONF COLUMNS FOR TABLE [" + this.tableName + "] CREATED");
+			}
 			
-			logInfo("'DATE_CHANGED' COLUMN FOR [" + this.tableName + "] CREATED");
+			/*
+			if (!isIndexOnFirtExportDoneColumn(conn)) {
+				createIndexOnFirstExportDoneCOlumn(conn);
+			}*/
 			
-		}
-	
-		if (!isOriginAppLocationCodeColumnExistsOnTable(conn)) {
-			logInfo("CREATING 'ORIGIN_APP_LOCATION' COLUMN FOR [" + this.tableName + "]");
+			if (!isExistRelatedTriggers(conn)) {
+				logInfo("CREATING RELATED TRIGGERS FOR [" + this.tableName + "]");
+				
+				createLastUpdateDateMonitorTrigger(conn);
 			
-			createOriginAppLocationCodeColumnOnTable(conn);
+				logInfo("RELATED TRIGGERS FOR [" + this.tableName + "] CREATED");
+			}
 			
-			logInfo("'ORIGIN_APP_LOCATION' COLUMN FOR [" + this.tableName + "] CREATED");
-		}
-		
-		if (!isExistRelatedTriggers(conn)) {
-			logInfo("CREATING RELATED TRIGGERS FOR [" + this.tableName + "]");
-			
-			createLastUpdateDateMonitorTrigger(conn);
-		
-			logInfo("RELATED TRIGGERS FOR [" + this.tableName + "] CREATED");
+			conn.markAsSuccessifullyTerminected();
+		} 
+		finally {
+			conn.finalizeConnection();
 		}
 	}
 
+	/*
+	private boolean isIndexOnFirtExportDoneColumn(Connection conn) throws SQLException {
+		return DBUtilities.isResourceExist(conn.getCatalog(), DBUtilities.RESOURCE_TYPE_INDEX,  generateNameOfIndexOnExportDoneColumn(), conn);
+	}
 	
+	private String generateNameOfIndexOnExportDoneColumn() {
+		return this.tableName + "_first_export_done_index";
+	}
+	 */
+	
+	/*
+	private void createIndexOnFirstExportDoneCOlumn(Connection conn) throws SQLException {
+		String sql = "CREATE INDEX " + generateNameOfIndexOnExportDoneColumn() + " ON " + this.tableName + "(first_export_done);";
+
+		Statement st = conn.createStatement();
+		st.addBatch(sql);
+		st.executeBatch();
+
+		st.close();
+	}*/
+
 	private void createRelatedExportStageTable() {
 		String sql = "";
 
@@ -376,31 +417,31 @@ public class SyncTableInfo {
 
 			throw new RuntimeException(e);
 		}
+		finally {
+			conn.finalizeConnection();
+		}
 	}
 
 	private boolean isOriginAppLocationCodeColumnExistsOnTable(Connection conn) throws SQLException {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "origin_app_location_code", conn);
 	}
 
-	private void createOriginAppLocationCodeColumnOnTable(Connection conn) throws SQLException {
-		String sql = "ALTER TABLE " + this.getTableName() + " ADD origin_app_location_code VARCHAR(100) NULL";
-
-		Statement st = conn.createStatement();
-		st.addBatch(sql);
-		st.executeBatch();
-
-		st.close();
+	private String generateOriginAppLocationCodeColumnGeneration() {
+		return "origin_app_location_code VARCHAR(100) NULL";
 	}
 
+	/*
+	private boolean isFirstExportDoneColumnExistsOnTable(Connection conn) throws SQLException {
+		return DBUtilities.isColumnExistOnTable(getTableName(), "first_export_done", conn);
+	}
+
+	private String generateFirstExportColumnGeneration() {
+		return "first_export_done int(1) NULL";
+	}
+	*/
 	
-	private void createDateChangedColumnOnTable(Connection conn) throws SQLException {
-		String sql = "ALTER TABLE " + this.getTableName() + " ADD date_changed datetime NULL";
-
-		Statement st = conn.createStatement();
-		st.addBatch(sql);
-		st.executeBatch();
-
-		st.close();
+	private String generateDateChangedColumnGeneration() throws SQLException {
+		return "date_changed datetime NULL";
 	}
 
 	private boolean isDateChangedColumnExistOnTable(Connection conn) throws SQLException {
@@ -447,44 +488,26 @@ public class SyncTableInfo {
 		return this.tableName + "_date_changed_update_monitor";
 	}
 
-	private void createLastSyncDateOnTable(Connection conn) throws SQLException {
-		String sql = "ALTER TABLE " + this.getTableName() + " ADD last_sync_date datetime NULL";
-
-		Statement st = conn.createStatement();
-		st.addBatch(sql);
-		st.executeBatch();
-
-		st.close();
+	private String generateLastSyncDateColumnCreation() {
+		return "last_sync_date datetime NULL";
 	}
 
 	private boolean isLastSyncDateColumnExistOnTable(Connection conn) throws SQLException {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "last_sync_date", conn);
 	}
 
-	private void createOriginRecordIdColumnOnTable(Connection conn) throws SQLException {
-		String sql = "ALTER TABLE " + this.getTableName() + " ADD origin_record_id int(11) NULL";
-
-		Statement st = conn.createStatement();
-		st.addBatch(sql);
-		st.executeBatch();
-
-		st.close();
+	private String generateOriginRecordIdColumnGeneration() {
+		return "origin_record_id int(11) NULL";
 	}
 	
 	private boolean isUuidColumnExistOnTable(Connection conn) throws SQLException {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "uuid", conn);
 	}
 
-	private void createUuidColumnOnTable(Connection conn) throws SQLException {
-		String sql = "ALTER TABLE " + this.getTableName() + " ADD uuid char(38) NULL";
-		
-		Statement st = conn.createStatement();
-		st.addBatch(sql);
-		st.executeBatch();
-
-		st.close();
+	private String generateUuidColumnCreation() {
+		return "uuid char(38) NULL";
 	}
-
+	
 	private boolean isOriginRecordIdColumnExistOnTable(Connection conn) throws SQLException {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "origin_record_id", conn);
 	}
@@ -514,5 +537,9 @@ public class SyncTableInfo {
 	
 	public void logDebug(String msg) {
 		utilities.logDebug(msg, logger);
+	}
+
+	public int getQtyProcessingEngine() {
+		return this.qtyProcessingEngine;
 	}
 }

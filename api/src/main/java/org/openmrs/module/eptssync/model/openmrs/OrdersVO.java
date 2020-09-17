@@ -1,12 +1,15 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
- 
+import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
+import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
@@ -304,6 +307,39 @@ public class OrdersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setObjectId(int selfId){ 
 		this.orderId = selfId; 
 	} 
+ 
+	public void load(ResultSet rs) throws SQLException{ 
+		this.orderId = rs.getInt("order_id");
+		this.orderTypeId = rs.getInt("order_type_id");
+		this.conceptId = rs.getInt("concept_id");
+		this.orderer = rs.getInt("orderer");
+		this.encounterId = rs.getInt("encounter_id");
+		this.instructions = rs.getString("instructions") != null ? rs.getString("instructions").trim() : null;
+		this.dateActivated =  rs.getTimestamp("date_activated") != null ? new java.util.Date( rs.getTimestamp("date_activated").getTime() ) : null;
+		this.autoExpireDate =  rs.getTimestamp("auto_expire_date") != null ? new java.util.Date( rs.getTimestamp("auto_expire_date").getTime() ) : null;
+		this.dateStopped =  rs.getTimestamp("date_stopped") != null ? new java.util.Date( rs.getTimestamp("date_stopped").getTime() ) : null;
+		this.orderReason = rs.getInt("order_reason");
+		this.creator = rs.getInt("creator");
+		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
+		this.voided = rs.getByte("voided");
+		this.voidedBy = rs.getInt("voided_by");
+		this.dateVoided =  rs.getTimestamp("date_voided") != null ? new java.util.Date( rs.getTimestamp("date_voided").getTime() ) : null;
+		this.voidReason = rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null;
+		this.patientId = rs.getInt("patient_id");
+		this.accessionNumber = rs.getString("accession_number") != null ? rs.getString("accession_number").trim() : null;
+		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.orderReasonNonCoded = rs.getString("order_reason_non_coded") != null ? rs.getString("order_reason_non_coded").trim() : null;
+		this.urgency = rs.getString("urgency") != null ? rs.getString("urgency").trim() : null;
+		this.orderNumber = rs.getString("order_number") != null ? rs.getString("order_number").trim() : null;
+		this.previousOrderId = rs.getInt("previous_order_id");
+		this.orderAction = rs.getString("order_action") != null ? rs.getString("order_action").trim() : null;
+		this.commentToFulfiller = rs.getString("comment_to_fulfiller") != null ? rs.getString("comment_to_fulfiller").trim() : null;
+		this.careSetting = rs.getInt("care_setting");
+		this.scheduledDate =  rs.getTimestamp("scheduled_date") != null ? new java.util.Date( rs.getTimestamp("scheduled_date").getTime() ) : null;
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+			} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
 		try{

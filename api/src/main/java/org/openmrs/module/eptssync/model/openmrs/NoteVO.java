@@ -1,12 +1,15 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
- 
+import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
+import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
@@ -169,6 +172,24 @@ public class NoteVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setObjectId(int selfId){ 
 		this.noteId = selfId; 
 	} 
+ 
+	public void load(ResultSet rs) throws SQLException{ 
+		this.noteId = rs.getInt("note_id");
+		this.noteType = rs.getString("note_type") != null ? rs.getString("note_type").trim() : null;
+		this.patientId = rs.getInt("patient_id");
+		this.obsId = rs.getInt("obs_id");
+		this.encounterId = rs.getInt("encounter_id");
+		this.text = rs.getString("text") != null ? rs.getString("text").trim() : null;
+		this.priority = rs.getInt("priority");
+		this.parent = rs.getInt("parent");
+		this.creator = rs.getInt("creator");
+		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
+		this.changedBy = rs.getInt("changed_by");
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+			} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
 		try{

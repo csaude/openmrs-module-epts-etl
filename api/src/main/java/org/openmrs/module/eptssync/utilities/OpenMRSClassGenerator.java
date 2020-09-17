@@ -18,7 +18,7 @@ import javax.tools.ToolProvider;
 
 import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
-import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -42,6 +42,7 @@ public class OpenMRSClassGenerator {
 
 		String attsDefinition = "";
 		String getttersAndSetterDefinition = "";
+		String resultSetLoadDefinition = "		";
 		
 		PreparedStatement st = conn.prepareStatement("SELECT * FROM " + syncTableInfo.getTableName() + " WHERE 1 != 1");
 
@@ -79,6 +80,9 @@ public class OpenMRSClassGenerator {
 			
 			insertParamsDefinition = utilities.concatStrings(insertParamsDefinition, attElements.getSqlInsertParamDefinifion());
 			updateParamsDefinition = utilities.concatStrings(updateParamsDefinition, attElements.getSqlUpdateParamDefinifion());
+			
+			resultSetLoadDefinition = utilities.concatStrings(resultSetLoadDefinition, attElements.getResultSetLoadDefinition());
+			resultSetLoadDefinition += "\n		";
 		}
 	
 		attElements = AttDefinedElements.define(rsMetaData.getColumnName(rsMetaData.getColumnCount()), rsMetaData.getColumnTypeName(rsMetaData.getColumnCount()), true, syncTableInfo);
@@ -112,6 +116,10 @@ public class OpenMRSClassGenerator {
 
 		methodFromSuperClass += "	public void setObjectId(int selfId){ \n";
 		methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
+		methodFromSuperClass += "	} \n \n";
+		
+		methodFromSuperClass += "	public void load(ResultSet rs) throws SQLException{ \n";
+		methodFromSuperClass +=   		resultSetLoadDefinition;
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	public void refreshLastSyncDate(OpenConnection conn){ \n";
@@ -171,14 +179,17 @@ public class OpenMRSClassGenerator {
 		
 		classDefinition += "package org.openmrs.module.eptssync.model.openmrs; \n \n";
 		
-		classDefinition += "import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; \n \n";
+		classDefinition += "import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; \n";
+		classDefinition += "import org.openmrs.module.eptssync.model.openmrs.generic.*; \n \n";
 		
 		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; \n";
 		classDefinition += "import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; \n \n";
-
-		classDefinition += "import java.sql.Connection; \n \n";
 		
+		classDefinition += "import java.sql.Connection; \n";
+		classDefinition += "import java.sql.SQLException; \n";
+		classDefinition += "import java.sql.ResultSet; \n \n";
+				
 		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";
 		
 		classDefinition += "public class " + syncTableInfo.generateClassName() + " extends AbstractOpenMRSObject implements OpenMRSObject { \n";

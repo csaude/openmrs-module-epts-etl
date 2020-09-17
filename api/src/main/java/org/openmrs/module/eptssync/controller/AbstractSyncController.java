@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.controller;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfoSource;
+import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.RunningEngineInfo;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -50,16 +52,51 @@ public abstract class AbstractSyncController {
 	protected void initAndStartEngine(SyncTableInfo syncInfo) {
 		logInfo("INITIALIZING ENGINE FOR TABLE '" + syncInfo.getTableName() + "'");
 		
-		SyncEngine engine = initRelatedEngine(syncInfo);
+		SyncEngine mainEngine; 
+		
+		if (syncInfo.getQtyProcessingEngine() > 1) {
+			
+			int maxRecId = getMaxRecordId(syncInfo);
+			int minRecId = getMinRecordId(syncInfo);
+			
+			int qtyRecordsPerEngine = (maxRecId - minRecId)/syncInfo.getQtyProcessingEngine();
+			
+			RecordLimits limits = new RecordLimits(minRecId, minRecId + qtyRecordsPerEngine);
+			
+			mainEngine = initRelatedEngine(syncInfo, limits);
+			
+			mainEngine.setChildren(new ArrayList<SyncEngine>());
+			
+			for (int i =0; i < syncInfo.getQtyProcessingEngine() - 2; i++) {
+				 limits  = new RecordLimits(limits.getLastRecordId() + 1, limits.getLastRecordId() + qtyRecordsPerEngine + 1);
+				
+				 SyncEngine engine = initRelatedEngine(syncInfo, limits);
+				 
+				 engine.setParent(mainEngine);
+				 
+				 mainEngine.getChildren().add(engine);
+			}
+		
+			 limits  = new RecordLimits(limits.getLastRecordId() + 1, maxRecId);
+				
+			 mainEngine.getChildren().add(initRelatedEngine(syncInfo, limits));
+		}
+		else mainEngine = initRelatedEngine(syncInfo, null);
 		
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(syncInfo.getTableName());
-		executor.execute(engine);
+		executor.execute(mainEngine);
 		
-		runnungEngines.put(syncInfo.getTableName(), new RunningEngineInfo(executor, engine));
+		if (mainEngine.isMultiProcessing()) {
+			for (SyncEngine engine : mainEngine.getChildren()) {
+				executor.execute(engine);
+			}
+		}
+		
+		runnungEngines.put(syncInfo.getTableName(), new RunningEngineInfo(executor, mainEngine));
 		
 		logInfo("ENGINE FOR TABLE '" + syncInfo.getTableName() + "' INITIALIZED");
 	}
-	
+
 	protected SyncTableInfoSource getSyncTableInfoSource() {
 		return syncTableInfoSource;
 	}
@@ -85,7 +122,11 @@ public abstract class AbstractSyncController {
 		}
 	}
 	
-	public abstract SyncEngine initRelatedEngine(SyncTableInfo syncInfo) ;
+	public abstract SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) ;
+
+	protected abstract int getMinRecordId(SyncTableInfo tableInfo);
+
+	protected abstract int getMaxRecordId(SyncTableInfo tableInfo);
 
 	public OpenConnection openConnection() {
 		return DBConnectionService.getInstance().openConnection();

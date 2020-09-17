@@ -1,7 +1,7 @@
 package org.openmrs.module.eptssync.controller.conf;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;

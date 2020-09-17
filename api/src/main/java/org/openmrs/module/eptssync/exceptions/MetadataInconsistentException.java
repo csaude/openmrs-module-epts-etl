@@ -1,6 +1,6 @@
 package org.openmrs.module.eptssync.exceptions;
 
-import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 
 /**
  * This exception indicates a metadata Inconsistence state.

@@ -1,12 +1,15 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
- 
+import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
+import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
@@ -205,6 +208,28 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setObjectId(int selfId){ 
 		this.userId = selfId; 
 	} 
+ 
+	public void load(ResultSet rs) throws SQLException{ 
+		this.userId = rs.getInt("user_id");
+		this.systemId = rs.getString("system_id") != null ? rs.getString("system_id").trim() : null;
+		this.username = rs.getString("username") != null ? rs.getString("username").trim() : null;
+		this.password = rs.getString("password") != null ? rs.getString("password").trim() : null;
+		this.salt = rs.getString("salt") != null ? rs.getString("salt").trim() : null;
+		this.secretQuestion = rs.getString("secret_question") != null ? rs.getString("secret_question").trim() : null;
+		this.secretAnswer = rs.getString("secret_answer") != null ? rs.getString("secret_answer").trim() : null;
+		this.creator = rs.getInt("creator");
+		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
+		this.changedBy = rs.getInt("changed_by");
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.personId = rs.getInt("person_id");
+		this.retired = rs.getByte("retired");
+		this.retiredBy = rs.getInt("retired_by");
+		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
+		this.retireReason = rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null;
+		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+			} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
 		try{

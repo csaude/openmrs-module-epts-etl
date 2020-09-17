@@ -8,21 +8,22 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.controller.load.SyncDataLoadController;
+import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
+import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.load.LoadSyncDataSearchParams;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
-import org.openmrs.module.eptssync.model.openmrs.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class LoadSyncDataEngine extends SyncEngine{
-	private LoadSyncDataSearchParams searchParams;
 	private File currJSONSourceFile;
 	
 	/*
@@ -30,10 +31,8 @@ public class LoadSyncDataEngine extends SyncEngine{
 	 */
 	private SyncJSONInfo currJSONInfo;
 	
-	public LoadSyncDataEngine(SyncTableInfo syncTableInfo, SyncDataLoadController syncController) {
-		super(syncTableInfo, syncController);
-		
-		this.searchParams = new LoadSyncDataSearchParams(syncTableInfo);
+	public LoadSyncDataEngine(SyncTableInfo syncTableInfo, RecordLimits limits, SyncDataLoadController syncController) {
+		super(syncTableInfo, limits, syncController);
 	}
 
 	@Override
@@ -109,7 +108,7 @@ public class LoadSyncDataEngine extends SyncEngine{
 	}
 	
     private File getNextJSONFileToLoad(){
-    	File[] files = getSyncDirectory().listFiles(this.searchParams);
+    	File[] files = getSyncDirectory().listFiles(this.getSearchParams());
     	
     	if (files != null && files.length >0){
     		return files[0];
@@ -117,6 +116,19 @@ public class LoadSyncDataEngine extends SyncEngine{
     	
     	return null;
     }
+    
+	@Override
+	public LoadSyncDataSearchParams getSearchParams() {
+		return (LoadSyncDataSearchParams) super.getSearchParams();
+	}
+	
+	@Override
+	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits) {
+		SyncSearchParams<? extends SyncRecord> searchParams = new LoadSyncDataSearchParams(this.syncTableInfo, limits);
+		searchParams.setQtdRecordPerSelected(2500);
+		
+		return searchParams;
+	}
     
     private File getSyncBkpDirectory() throws IOException {
      	String fileName = "";
@@ -152,4 +164,10 @@ public class LoadSyncDataEngine extends SyncEngine{
  
 		return new File(fileName);
     }
+
+	@Override
+	public void requestStop() {
+		// TODO Auto-generated method stub
+		
+	}
 }

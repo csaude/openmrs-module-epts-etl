@@ -17,6 +17,7 @@ public class AttDefinedElements {
 	private String attDefinition;
 	private String setterDefinition;
 	private String getterDefinition;
+	private String resultSetLoadDefinition;
 
 	private String sqlInsertFirstPartDefinition;
 	private String sqlInsertLastEndPartDefinition;
@@ -127,6 +128,10 @@ public class AttDefinedElements {
 		this.attType = attType;
 	}
 		
+	public String getResultSetLoadDefinition() {
+		return resultSetLoadDefinition;
+	}
+
 	private void generateElemets() {
 		this.attType = convertMySQLTypeTOJavaType(dbAttType);
 		this.attName = convertTableAttNameToClassAttName(dbAttName);
@@ -134,7 +139,8 @@ public class AttDefinedElements {
 		this.attDefinition = defineAtt(attName, attType);
 		this.setterDefinition = defineSetterMethod(attName, attType);
 		this.getterDefinition = defineGetterMethod(attName, attType);
-
+		this.resultSetLoadDefinition = defineResultSetLOadDefinition();
+		
 		if (!isObjectId || isSharedKey()) {
 			this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
 			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
@@ -153,6 +159,52 @@ public class AttDefinedElements {
 		}	
 	}
 	
+	private String defineResultSetLOadDefinition() {
+		
+		
+		if (attType.equals("int")) {
+			return "this." + this.attName + " = rs.getInt(\"" + dbAttName + "\");"; 
+		}
+		else 
+		if (attType.equals("boolean")) {
+			return "this." + this.attName + " = rs.getInt(\"" + dbAttName + "\") > 0;"; 
+		} 
+		else if (attType.equals("double")) {
+			return "this." + this.attName + " = rs.getDouble(\"" + dbAttName + "\");";
+		}
+		else 
+		if (attType.equals("float")) {
+			return "this." + this.attName + " = rs.getFloat(\"" + dbAttName + "\");"; 
+		}
+		else 
+		if (attType.equals("long")) {
+			return "this." + this.attName + " = rs.getLong(\"" + dbAttName + "\");"; 
+		}
+		else 
+		if (attType.equals("String")) {
+			return "this." + this.attName + " = rs.getString(\"" + dbAttName + "\") != null ? rs.getString(\"" + dbAttName + "\").trim() : null;"; 
+		} 
+		else 
+		if (attType.equals("java.util.Date")) {
+			return "this." + this.attName + " =  rs.getTimestamp(\"" + dbAttName + "\") != null ? new java.util.Date( rs.getTimestamp(\"" + dbAttName + "\").getTime() ) : null;"; 
+		} 
+		else 
+		if (attType.equals("java.io.InputStream")) {
+			return "this." + this.attName + " = rs.getBlob(\"" + dbAttName + "\") != null ? rs.getBlob(\"" + dbAttName + "\").getBinaryStream() : null;"; 
+		} 
+		else 
+		if (attType.equals("byte")) {
+			return "this." + this.attName + " = rs.getByte(\"" + dbAttName + "\");"; 
+		}
+		else 
+		if (attType.equals("short")) {
+			return "this." + this.attName + " = rs.getShort(\"" + dbAttName + "\");"; 
+		}
+		else {
+			return "this." + this.attName + " = rs.getObject(\"" + dbAttName + "\");"; 
+		}		
+	}
+
 	private boolean isNumeric() {
 		return utilities.isStringIn(this.attType, "int", "long");
 	}

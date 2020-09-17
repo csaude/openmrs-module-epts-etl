@@ -14,7 +14,7 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.FuncoesGenericas;
 
-public class Relogio implements Runnable, Serializable{
+public class TimeController implements Runnable, Serializable{
 	private static final long serialVersionUID = 1L;
 	Thread timer = null;
 	private long segundos;
@@ -26,7 +26,7 @@ public class Relogio implements Runnable, Serializable{
 	
 	private static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	public Relogio(){
+	public TimeController(){
 		segundos = 0;
 		minutos = 0;
 		horas = 0;
@@ -119,7 +119,7 @@ public class Relogio implements Runnable, Serializable{
 	}
 	
 	public static void main(String[] args) {
-		Relogio r = new Relogio();
+		TimeController r = new TimeController();
 		r.start();
 		
 		while (r.minutos <= 2){

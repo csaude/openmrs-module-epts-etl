@@ -1,12 +1,15 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; 
- 
+import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
+import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
@@ -232,6 +235,31 @@ public class PersonNameVO extends AbstractOpenMRSObject implements OpenMRSObject
 	public void setObjectId(int selfId){ 
 		this.personNameId = selfId; 
 	} 
+ 
+	public void load(ResultSet rs) throws SQLException{ 
+		this.personNameId = rs.getInt("person_name_id");
+		this.preferred = rs.getByte("preferred");
+		this.personId = rs.getInt("person_id");
+		this.prefix = rs.getString("prefix") != null ? rs.getString("prefix").trim() : null;
+		this.givenName = rs.getString("given_name") != null ? rs.getString("given_name").trim() : null;
+		this.middleName = rs.getString("middle_name") != null ? rs.getString("middle_name").trim() : null;
+		this.familyNamePrefix = rs.getString("family_name_prefix") != null ? rs.getString("family_name_prefix").trim() : null;
+		this.familyName = rs.getString("family_name") != null ? rs.getString("family_name").trim() : null;
+		this.familyName2 = rs.getString("family_name2") != null ? rs.getString("family_name2").trim() : null;
+		this.familyNameSuffix = rs.getString("family_name_suffix") != null ? rs.getString("family_name_suffix").trim() : null;
+		this.degree = rs.getString("degree") != null ? rs.getString("degree").trim() : null;
+		this.creator = rs.getInt("creator");
+		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
+		this.voided = rs.getByte("voided");
+		this.voidedBy = rs.getInt("voided_by");
+		this.dateVoided =  rs.getTimestamp("date_voided") != null ? new java.util.Date( rs.getTimestamp("date_voided").getTime() ) : null;
+		this.voidReason = rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null;
+		this.changedBy = rs.getInt("changed_by");
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+			} 
  
 	public void refreshLastSyncDate(OpenConnection conn){ 
 		try{

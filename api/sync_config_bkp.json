@@ -1,7 +1,7 @@
 {
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
 	syncStageSchema: "sync_import_stage",
-	originAppLocationCode: "ZBZ_QLM_US_TESTE",
+	originAppLocationCode: "ZBZ_PEBANE",
 	syncTableInfo:[
 		  
 				{	
