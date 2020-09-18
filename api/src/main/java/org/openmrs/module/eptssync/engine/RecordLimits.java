@@ -7,19 +7,19 @@ package org.openmrs.module.eptssync.engine;
  *
  */
 public class RecordLimits {
-	private int firstRecordId;
-	private int lastRecordId;
+	private long firstRecordId;
+	private long lastRecordId;
 	
-	public RecordLimits(int firstRecordId, int lastRecordId) {
+	public RecordLimits(long firstRecordId, long lastRecordId) {
 		this.firstRecordId = firstRecordId;
 		this.lastRecordId = lastRecordId;
 	}
 	
-	public int getFirstRecordId() {
+	public long getFirstRecordId() {
 		return firstRecordId;
 	}
 	
-	public int getLastRecordId() {
+	public long getLastRecordId() {
 		return lastRecordId;
 	}
 }

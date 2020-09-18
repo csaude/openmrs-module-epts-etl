@@ -1,8 +1,7 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
-import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.*; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
@@ -171,14 +170,6 @@ public class GaacAffinityTypeVO extends AbstractOpenMRSObject implements OpenMRS
 		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
 			} 
  
-	public void refreshLastSyncDate(OpenConnection conn){ 
-		try{
-			GenericSyncRecordDAO.refreshLastSyncDate(this, conn); 
-		}catch(DBException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
  		return "gaac_affinity_type_id"; 

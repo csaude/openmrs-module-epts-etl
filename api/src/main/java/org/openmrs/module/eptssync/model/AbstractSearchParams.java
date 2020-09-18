@@ -41,6 +41,8 @@ public abstract class AbstractSearchParams<T extends VO> {
 	
 	protected String extraCondition;
 		
+	protected String[] orderByFields;
+	
 	public String getExtraCondition() {
 		return extraCondition;
 	}
@@ -283,5 +285,13 @@ public abstract class AbstractSearchParams<T extends VO> {
 	}
 	
 	public abstract  Class<T> getRecordClass();
+
+	public void setOrderByFields(String ...orderByFields) {
+		this.orderByFields = orderByFields;
+	}
+	
+	public String[] getOrderByFields() {
+		return orderByFields;
+	}
 }
  

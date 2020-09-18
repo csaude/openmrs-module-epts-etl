@@ -6,6 +6,7 @@ import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -63,6 +64,15 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			OpenMRSObjectDAO.insert(this, conn);
 		}
 	} 
+	
+	@Override
+	public void refreshLastSyncDate(OpenConnection conn){ 
+		try{
+			OpenMRSObjectDAO.refreshLastSyncDate(this, conn); 
+		}catch(DBException e) {
+			throw new RuntimeException(e);
+		}
+	}
 	
 	@Override
 	public void consolidate(Connection conn) throws DBException {

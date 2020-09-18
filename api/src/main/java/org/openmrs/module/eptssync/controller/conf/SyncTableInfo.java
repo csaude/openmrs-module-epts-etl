@@ -41,10 +41,23 @@ public class SyncTableInfo {
 	
 	private boolean metadata;
 	private int qtyProcessingEngine;
+	private int qtyRecordsPerSelect;
 	
 	private static Logger logger = Logger.getLogger(SyncTableInfo.class);
 	
 	public SyncTableInfo() {
+	}
+
+	public int getQtyRecordsPerSelect() {
+		return qtyRecordsPerSelect != 0 ? qtyRecordsPerSelect : getRelatedSyncTableInfoSource().getDefaultQtyRecordsPerSelect();
+	}
+
+	public void setQtyRecordsPerSelect(int qtyRecordsPerSelect) {
+		this.qtyRecordsPerSelect = qtyRecordsPerSelect;
+	}
+
+	public void setQtyProcessingEngine(int qtyProcessingEngine) {
+		this.qtyProcessingEngine = qtyProcessingEngine;
 	}
 
 	public boolean isFirstExport() {
@@ -540,6 +553,6 @@ public class SyncTableInfo {
 	}
 
 	public int getQtyProcessingEngine() {
-		return this.qtyProcessingEngine;
+		return this.qtyProcessingEngine != 0 ? this.qtyProcessingEngine : getRelatedSyncTableInfoSource().getDefaultQtyProcessingEngine();
 	}
 }

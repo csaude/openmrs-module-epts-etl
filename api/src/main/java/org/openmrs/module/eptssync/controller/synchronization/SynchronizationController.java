@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableInfoSource;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.engine.synchronization.SynchronizationSyncEngine;
@@ -25,9 +26,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  *
  */
 public class SynchronizationController extends AbstractSyncController {
-
 	public SynchronizationController() {
-
 	}
 
 	@Override
@@ -36,12 +35,10 @@ public class SynchronizationController extends AbstractSyncController {
 	}
 
 	@Override
-	public void init() {
-		List<SyncTableInfo> allSync = discoverSyncTableInfo();
-		
+	public void init(SyncTableInfoSource sourceTableInfo) {
 		tryToCreateInitialConfigurationForAllAvaliableLocations();
 		
-		for (SyncTableInfo syncInfo: allSync) {
+		for (SyncTableInfo syncInfo: sourceTableInfo.getSyncTableInfo()) {
 			initAndStartEngine(syncInfo);
 		}
 	}
@@ -107,13 +104,13 @@ public class SynchronizationController extends AbstractSyncController {
 	}
 
 	@Override
-	protected int getMinRecordId(SyncTableInfo tableInfo) {
+	protected long getMinRecordId(SyncTableInfo tableInfo) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
-	protected int getMaxRecordId(SyncTableInfo tableInfo) {
+	protected long getMaxRecordId(SyncTableInfo tableInfo) {
 		// TODO Auto-generated method stub
 		return 0;
 	}

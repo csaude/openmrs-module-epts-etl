@@ -1,8 +1,7 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
-import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.*; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
@@ -191,14 +190,6 @@ public class PersonAttributeVO extends AbstractOpenMRSObject implements OpenMRSO
 		this.originRecordId = rs.getInt("origin_record_id");
 			} 
  
-	public void refreshLastSyncDate(OpenConnection conn){ 
-		try{
-			GenericSyncRecordDAO.refreshLastSyncDate(this, conn); 
-		}catch(DBException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
  		return "person_attribute_id"; 

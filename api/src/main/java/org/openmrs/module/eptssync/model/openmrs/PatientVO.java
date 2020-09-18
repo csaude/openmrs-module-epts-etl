@@ -1,8 +1,7 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
-import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.*; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
@@ -24,9 +23,9 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private java.util.Date dateVoided;
 	private String voidReason;
 	private java.util.Date lastSyncDate;
-	private String uuid;
 	private int originRecordId;
 	private String originAppLocationCode;
+	private String uuid;
  
 	public PatientVO() { 
 		this.metadata = false;
@@ -112,14 +111,6 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.lastSyncDate;
 	}
  
-	public void setUuid(String uuid){ 
-	 	this.uuid = uuid;
-	}
- 
-	public String getUuid(){ 
-		return this.uuid;
-	}
- 
 	public void setOriginRecordId(int originRecordId){ 
 	 	this.originRecordId = originRecordId;
 	}
@@ -131,11 +122,19 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
-
-
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
+	}
+ 
+	public void setUuid(String uuid){ 
+	 	this.uuid = uuid;
+	}
+
+
+ 
+	public String getUuid(){ 
+		return this.uuid;
 	}
  
 	public int getObjectId() { 
@@ -157,18 +156,10 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.dateVoided =  rs.getTimestamp("date_voided") != null ? new java.util.Date( rs.getTimestamp("date_voided").getTime() ) : null;
 		this.voidReason = rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null;
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
-		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
 		this.originRecordId = rs.getInt("origin_record_id");
+		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
-	public void refreshLastSyncDate(OpenConnection conn){ 
-		try{
-			GenericSyncRecordDAO.refreshLastSyncDate(this, conn); 
-		}catch(DBException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
  		return "patient_id"; 
@@ -176,22 +167,22 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.lastSyncDate, this.uuid, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.uuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.lastSyncDate, this.uuid, this.originRecordId, this.originAppLocationCode, this.patientId};		return params; 
+ 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.uuid, this.patientId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO patient(patient_id, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, last_sync_date, uuid, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient(patient_id, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, last_sync_date, origin_record_id, origin_app_location_code, uuid) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient SET patient_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, last_sync_date = ?, uuid = ?, origin_record_id = ?, origin_app_location_code = ? WHERE patient_id = ?;"; 
+ 		return "UPDATE patient SET patient_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, uuid = ? WHERE patient_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {

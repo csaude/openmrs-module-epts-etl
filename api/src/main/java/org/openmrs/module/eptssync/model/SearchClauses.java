@@ -103,6 +103,13 @@ public class SearchClauses<T extends VO> {
 		this.groupingFields = columnsToSelect;
 	}
 	
+	public void addToOrderByFields(String ...field){
+		for (String str : field) {
+			addToOrderByFields(str);
+		}
+	}
+	
+	
 	public void addToOrderByFields(String field){
 		String[] elements = field.toUpperCase().split(" ");
 		

@@ -26,13 +26,12 @@ public class SyncDataLoadController extends AbstractSyncController {
 	}
 
 	@Override
-	protected int getMinRecordId(SyncTableInfo tableInfo) {
-		// TODO Auto-generated method stub
+	protected long getMinRecordId(SyncTableInfo tableInfo) {
 		return 0;
 	}
 
 	@Override
-	protected int getMaxRecordId(SyncTableInfo tableInfo) {
+	protected long getMaxRecordId(SyncTableInfo tableInfo) {
 		// TODO Auto-generated method stub
 		return 0;
 	}

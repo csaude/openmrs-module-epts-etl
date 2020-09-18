@@ -37,6 +37,11 @@ public class DBConnectionService {
 	     }
 	}
 	
+
+	public static void init(DBConnectionInfo connInfo) {
+		 init(connInfo.getDriveClassName(), connInfo.getConnectionURI(), connInfo.getDataBaseUserName(), connInfo.getDataBaseUserPassword());
+	}
+	
     public static DBConnectionService getInstance() {
         if (service == null) throw new ForbiddenOperationException("The service is not initialized. Initialize it using DBConnectionService.init (...) method ");
         
@@ -109,5 +114,6 @@ public class DBConnectionService {
 		
 		return null;
 	}
+
 	
 }

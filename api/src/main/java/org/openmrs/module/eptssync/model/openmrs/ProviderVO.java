@@ -1,8 +1,7 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
-import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.*; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
@@ -27,6 +26,7 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private java.util.Date dateRetired;
 	private String retireReason;
 	private String uuid;
+	private int providerRoleId;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
@@ -139,6 +139,14 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.uuid;
 	}
  
+	public void setProviderRoleId(int providerRoleId){ 
+	 	this.providerRoleId = providerRoleId;
+	}
+ 
+	public int getProviderRoleId(){ 
+		return this.providerRoleId;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -187,18 +195,11 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
 		this.retireReason = rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null;
 		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.providerRoleId = rs.getInt("provider_role_id");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 			} 
  
-	public void refreshLastSyncDate(OpenConnection conn){ 
-		try{
-			GenericSyncRecordDAO.refreshLastSyncDate(this, conn); 
-		}catch(DBException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
  		return "provider_id"; 
@@ -206,22 +207,22 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.providerRoleId == 0 ? null : this.providerRoleId, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.providerId};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.providerRoleId == 0 ? null : this.providerRoleId, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.providerId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO provider(person_id, name, identifier, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO provider(person_id, name, identifier, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, uuid, provider_role_id, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE provider SET person_id = ?, name = ?, identifier = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE provider_id = ?;"; 
+ 		return "UPDATE provider SET person_id = ?, name = ?, identifier = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, provider_role_id = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE provider_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {

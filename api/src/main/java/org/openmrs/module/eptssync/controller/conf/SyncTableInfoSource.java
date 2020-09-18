@@ -6,6 +6,7 @@ import java.sql.Statement;
 import java.util.List;
 
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
+import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -22,10 +23,38 @@ public class SyncTableInfoSource {
 	private List<SyncTableInfo> syncTableInfo;
 	
 	private boolean firstExport;
+	private int defaultQtyRecordsPerSelect;
+	private int defaultQtyProcessingEngine;
+	private DBConnectionInfo connInfo;
 	
 	private SyncTableInfoSource() {
 	}
 	
+	public DBConnectionInfo getConnInfo() {
+		return connInfo;
+	}
+	
+	public void setConnInfo(DBConnectionInfo connInfo) {
+		this.connInfo = connInfo;
+	}
+	
+	public int getDefaultQtyProcessingEngine() {
+		return defaultQtyProcessingEngine;
+	}
+
+	public void setDefaultQtyProcessingEngine(int defaultQtyProcessingEngine) {
+		this.defaultQtyProcessingEngine = defaultQtyProcessingEngine;
+	}
+
+
+	public int getDefaultQtyRecordsPerSelect() {
+		return defaultQtyRecordsPerSelect;
+	}
+
+	public void setDefaultQtyRecordsPerSelect(int defaultQtyRecordsPerSelect) {
+		this.defaultQtyRecordsPerSelect = defaultQtyRecordsPerSelect;
+	}
+
 	public boolean isFirstExport() {
 		return firstExport;
 	}
@@ -66,21 +95,29 @@ public class SyncTableInfoSource {
 		this.originAppLocationCode = originAppLocationCode;
 	}
 
-	public static SyncTableInfoSource loadFromJSON (String json) {
+	public void fullLoadInfo() {
 		try {
-			SyncTableInfoSource syncTableInfoSource = new ObjectMapperProvider().getContext(SyncTableInfoSource.class).readValue(json, SyncTableInfoSource.class);
 		
-			if (!syncTableInfoSource.isImportStageSchemaExists()) {
-				syncTableInfoSource.createStageSchema();
+			if (!this.isImportStageSchemaExists()) {
+				this.createStageSchema();
 			}
 			
-			for (SyncTableInfo info : syncTableInfoSource.syncTableInfo) {
-				info.setRelatedSyncTableInfoSource(syncTableInfoSource);
+			for (SyncTableInfo info : this.syncTableInfo) {
+				info.setRelatedSyncTableInfoSource(this);
 				info.tryToUpgradeDataBaseInfo();
 				info.generateRecordClass();
 			}
+		} catch (SQLException e) {
+			e.printStackTrace();
 			
-			return syncTableInfoSource;
+			throw new RuntimeException(e);
+		}
+		
+	}
+	
+	public static SyncTableInfoSource loadFromJSON (String json) {
+		try {
+			return new ObjectMapperProvider().getContext(SyncTableInfoSource.class).readValue(json, SyncTableInfoSource.class);
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 		
@@ -93,11 +130,7 @@ public class SyncTableInfoSource {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
-		} catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
+		} 
 	}
 	
 	private OpenConnection openConnection() {

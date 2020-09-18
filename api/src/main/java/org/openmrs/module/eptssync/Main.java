@@ -1,25 +1,31 @@
 package org.openmrs.module.eptssync;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import org.openmrs.module.eptssync.controller.conf.SyncTableInfoSource;
 import org.openmrs.module.eptssync.controller.export_.SyncExportController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 
 public class Main {
 	
-	public static void main(String[] args) {
-		String dataBaseUserName = "root";
-		String dataBaseUserPassword = "root";
-		String connectionURI = "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch";
-		//String connectionURI = "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch";
-		String driveClassName = "com.mysql.jdbc.Driver";
+	public static void main(String[] args) throws IOException {
 		
-		DBConnectionService.init(driveClassName, connectionURI, dataBaseUserName, dataBaseUserPassword);
+		String json = new String(Files.readAllBytes(Paths.get("sync_config.json")));
 		
-		new SyncExportController().init();
+		SyncTableInfoSource syncTableInfoSource = SyncTableInfoSource.loadFromJSON(json);
+		
+		DBConnectionService.init(syncTableInfoSource.getConnInfo());
+		
+		syncTableInfoSource.fullLoadInfo();
+		
+		new SyncExportController().init(syncTableInfoSource);
 	
-		//new SyncDataLoadController().init();
+		//new SyncDataLoadController().init(syncTableInfoSource);
 		
-		//new SynchronizationController().init();
+		//new SynchronizationController().init(syncTableInfoSource);
 		
 		while(true) {
 			TimeCountDown.sleep(10000);

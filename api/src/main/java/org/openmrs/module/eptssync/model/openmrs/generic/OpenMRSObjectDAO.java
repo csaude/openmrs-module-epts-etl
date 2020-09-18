@@ -1,12 +1,43 @@
 package org.openmrs.module.eptssync.model.openmrs.generic;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class OpenMRSObjectDAO extends BaseDAO {
+	public static void refreshLastSyncDate(OpenMRSObject syncRecord, Connection conn) throws DBException{
+		Object[] params = {DateAndTimeUtilities.getCurrentSystemDate(conn), 
+						   syncRecord.getObjectId()};
+		
+		String sql = "";
+		
+		sql += " UPDATE " + syncRecord.generateTableName();
+		sql += " SET    last_sync_date = ? ";
+		sql += " WHERE  " + syncRecord.generateDBPrimaryKeyAtt() + " = ? ";
+		
+		
+		executeQuery(sql, params, conn);
+	}
+	
+	public static void refreshLastSyncDate(List<OpenMRSObject> syncRecords, Connection conn) throws DBException{
+		Object[] params = {DateAndTimeUtilities.getCurrentSystemDate(conn), 
+						   syncRecords.get(0).getObjectId(),
+						   syncRecords.get(syncRecords.size() - 1).getObjectId()
+						   };
+		
+		String sql = "";
+		
+		sql += " UPDATE " + syncRecords.get(0).generateTableName();
+		sql += " SET    last_sync_date = ? ";
+		sql += " WHERE  " + syncRecords.get(0).generateDBPrimaryKeyAtt() + " between ? and ? ";
+		
+		executeQuery(sql, params, conn);
+	}
+	
 	public static void insert(OpenMRSObject record, Connection conn) throws DBException{
 		Object[] params = record.getInsertParams();
 		String sql = record.getInsertSQL();

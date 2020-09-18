@@ -19,6 +19,8 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 	public SyncExportSearchParams(SyncTableInfo tableInfo, RecordLimits limits) {
 		this.tableInfo = tableInfo;
 		this.limits = limits;
+		
+		setOrderByFields(tableInfo.getPrimaryKey());
 	}
 	
 	@Override
@@ -35,18 +37,18 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 			else {
 				searchClauses.addToClauses("last_sync_date is null");
 			}
-		}
 		
-		if (limits != null) {
-			searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-			searchClauses.addToParameters(this.limits.getFirstRecordId());
-			searchClauses.addToParameters(this.limits.getLastRecordId());
-		}
+			if (limits != null) {
+				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
+				searchClauses.addToParameters(this.limits.getFirstRecordId());
+				searchClauses.addToParameters(this.limits.getLastRecordId());
+			}
 		
-		if (this.tableInfo.getExtraConditionForExport() != null) {
-			searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
+			if (this.tableInfo.getExtraConditionForExport() != null) {
+				searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
+			}
 		}
-		
+
 		return searchClauses;
 	}	
 	
@@ -64,7 +66,15 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 	}
 
 	@Override
-	public int countNotProcessedRecords(Connection conn) throws DBException {
-		return SearchParamsDAO.countAll(this, conn);
+	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
+		RecordLimits bkpLimits = this.limits;
+		
+		this.limits = null;
+		
+		int count = SearchParamsDAO.countAll(this, conn);
+		
+		this.limits = bkpLimits;
+		
+		return count;
 	}
 }

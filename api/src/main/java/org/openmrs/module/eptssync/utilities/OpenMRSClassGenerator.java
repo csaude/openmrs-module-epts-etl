@@ -122,14 +122,6 @@ public class OpenMRSClassGenerator {
 		methodFromSuperClass +=   		resultSetLoadDefinition;
 		methodFromSuperClass += "	} \n \n";
 		
-		methodFromSuperClass += "	public void refreshLastSyncDate(OpenConnection conn){ \n";
-		methodFromSuperClass += "		try{\n";
-		methodFromSuperClass += "			GenericSyncRecordDAO.refreshLastSyncDate(this, conn); \n";
-		methodFromSuperClass += "		}catch(DBException e) {\n";
-		methodFromSuperClass += "			throw new RuntimeException(e);\n";
-		methodFromSuperClass += "		}\n";
-		methodFromSuperClass += "	}\n\n";
-		
 		methodFromSuperClass += "	@JsonIgnore\n";
 		methodFromSuperClass += "	public String generateDBPrimaryKeyAtt(){ \n ";
 		methodFromSuperClass += "		return \""+ syncTableInfo.getPrimaryKey() + "\"; \n";
@@ -179,7 +171,6 @@ public class OpenMRSClassGenerator {
 		
 		classDefinition += "package org.openmrs.module.eptssync.model.openmrs; \n \n";
 		
-		classDefinition += "import org.openmrs.module.eptssync.model.GenericSyncRecordDAO; \n";
 		classDefinition += "import org.openmrs.module.eptssync.model.openmrs.generic.*; \n \n";
 		
 		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";

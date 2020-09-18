@@ -1,8 +1,7 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
-import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.*; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
@@ -25,6 +24,7 @@ public class ProgramWorkflowStateVO extends AbstractOpenMRSObject implements Ope
 	private int changedBy;
 	private java.util.Date dateChanged;
 	private String uuid;
+	private byte swappable;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
@@ -121,6 +121,14 @@ public class ProgramWorkflowStateVO extends AbstractOpenMRSObject implements Ope
 		return this.uuid;
 	}
  
+	public void setSwappable(byte swappable){ 
+	 	this.swappable = swappable;
+	}
+ 
+	public byte getSwappable(){ 
+		return this.swappable;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -167,18 +175,11 @@ public class ProgramWorkflowStateVO extends AbstractOpenMRSObject implements Ope
 		this.changedBy = rs.getInt("changed_by");
 		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
 		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.swappable = rs.getByte("swappable");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 			} 
  
-	public void refreshLastSyncDate(OpenConnection conn){ 
-		try{
-			GenericSyncRecordDAO.refreshLastSyncDate(this, conn); 
-		}catch(DBException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
  		return "program_workflow_state_id"; 
@@ -186,22 +187,22 @@ public class ProgramWorkflowStateVO extends AbstractOpenMRSObject implements Ope
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.programWorkflowId == 0 ? null : this.programWorkflowId, this.conceptId == 0 ? null : this.conceptId, this.initial, this.terminal, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.programWorkflowId == 0 ? null : this.programWorkflowId, this.conceptId == 0 ? null : this.conceptId, this.initial, this.terminal, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.programWorkflowId == 0 ? null : this.programWorkflowId, this.conceptId == 0 ? null : this.conceptId, this.initial, this.terminal, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.programWorkflowStateId};		return params; 
+ 		Object[] params = {this.programWorkflowId == 0 ? null : this.programWorkflowId, this.conceptId == 0 ? null : this.conceptId, this.initial, this.terminal, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.programWorkflowStateId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO program_workflow_state(program_workflow_id, concept_id, initial, terminal, creator, date_created, retired, changed_by, date_changed, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO program_workflow_state(program_workflow_id, concept_id, initial, terminal, creator, date_created, retired, changed_by, date_changed, uuid, swappable, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE program_workflow_state SET program_workflow_id = ?, concept_id = ?, initial = ?, terminal = ?, creator = ?, date_created = ?, retired = ?, changed_by = ?, date_changed = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE program_workflow_state_id = ?;"; 
+ 		return "UPDATE program_workflow_state SET program_workflow_id = ?, concept_id = ?, initial = ?, terminal = ?, creator = ?, date_created = ?, retired = ?, changed_by = ?, date_changed = ?, uuid = ?, swappable = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE program_workflow_state_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {

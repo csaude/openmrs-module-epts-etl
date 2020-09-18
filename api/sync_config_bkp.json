@@ -2,12 +2,25 @@
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
 	syncStageSchema: "sync_import_stage",
 	originAppLocationCode: "ZBZ_PEBANE",
+	defaultQtyRecordsPerSelect: 2500,
+	firstExport: true,
+	defaultQtyProcessingEngine: 1,
+	connInfo: {
+		dataBaseUserName: "root",
+		dataBaseUserPassword: "root",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		driveClassName: "com.mysql.jdbc.Driver"
+	},
+	bkpConn:{
+			connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch"
+	},
 	syncTableInfo:[
 		  
 				{	
 					tableName: "users",
 					parents: ["person", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: true,
+					qtyRecordsPerSelect: 1000
 				},
 		
 				{
@@ -110,7 +123,9 @@
 				{
 					tableName: "obs",
 					parents: ["person", "location", "orders", "obs", "users", "encounter"],
-					mustRecompileTable: true
+					mustRecompileTable: true,
+					qtyProcessingEngine: 3,
+					qtyRecordsPerSelect: 50000
 				},
 				
 				{

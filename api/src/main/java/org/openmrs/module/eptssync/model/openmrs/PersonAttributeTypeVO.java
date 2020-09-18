@@ -1,8 +1,7 @@
 package org.openmrs.module.eptssync.model.openmrs; 
  
-import org.openmrs.module.eptssync.model.GenericSyncRecordDAO;
-import org.openmrs.module.eptssync.model.openmrs.generic.AbstractOpenMRSObject;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.*; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
@@ -31,6 +30,7 @@ public class PersonAttributeTypeVO extends AbstractOpenMRSObject implements Open
 	private String editPrivilege;
 	private String uuid;
 	private double sortWeight;
+	private byte swappable;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
@@ -175,6 +175,14 @@ public class PersonAttributeTypeVO extends AbstractOpenMRSObject implements Open
 		return this.sortWeight;
 	}
  
+	public void setSwappable(byte swappable){ 
+	 	this.swappable = swappable;
+	}
+ 
+	public byte getSwappable(){ 
+		return this.swappable;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -227,18 +235,11 @@ public class PersonAttributeTypeVO extends AbstractOpenMRSObject implements Open
 		this.editPrivilege = rs.getString("edit_privilege") != null ? rs.getString("edit_privilege").trim() : null;
 		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
 		this.sortWeight = rs.getDouble("sort_weight");
+		this.swappable = rs.getByte("swappable");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 			} 
  
-	public void refreshLastSyncDate(OpenConnection conn){ 
-		try{
-			GenericSyncRecordDAO.refreshLastSyncDate(this, conn); 
-		}catch(DBException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
  		return "person_attribute_type_id"; 
@@ -246,22 +247,22 @@ public class PersonAttributeTypeVO extends AbstractOpenMRSObject implements Open
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.name, this.description, this.format, this.foreignKey, this.searchable, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.editPrivilege, this.uuid, this.sortWeight, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.name, this.description, this.format, this.foreignKey, this.searchable, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.editPrivilege, this.uuid, this.sortWeight, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.name, this.description, this.format, this.foreignKey, this.searchable, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.editPrivilege, this.uuid, this.sortWeight, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.personAttributeTypeId};		return params; 
+ 		Object[] params = {this.name, this.description, this.format, this.foreignKey, this.searchable, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.editPrivilege, this.uuid, this.sortWeight, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.personAttributeTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO person_attribute_type(name, description, format, foreign_key, searchable, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, edit_privilege, uuid, sort_weight, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO person_attribute_type(name, description, format, foreign_key, searchable, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, edit_privilege, uuid, sort_weight, swappable, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE person_attribute_type SET name = ?, description = ?, format = ?, foreign_key = ?, searchable = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, edit_privilege = ?, uuid = ?, sort_weight = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE person_attribute_type_id = ?;"; 
+ 		return "UPDATE person_attribute_type SET name = ?, description = ?, format = ?, foreign_key = ?, searchable = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, edit_privilege = ?, uuid = ?, sort_weight = ?, swappable = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE person_attribute_type_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {

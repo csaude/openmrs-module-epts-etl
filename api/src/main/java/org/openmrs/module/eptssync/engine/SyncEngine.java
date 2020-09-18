@@ -52,6 +52,10 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 	}
 	
+	public AbstractSyncController getSyncController() {
+		return syncController;
+	}
+	
 	public RecordLimits getLimits() {
 		return limits;
 	}
@@ -148,7 +152,7 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 			int total = this.searchParams.countAllRecords(conn);
 			int processed = total - remaining;
 			
-			if (hasChild()) {
+			/*if (hasChild()) {
 				for (SyncEngine child : this.children) {
 					while (child.progressMeter == null) {
 						TimeCountDown countDown = TimeCountDown.wait(this, 10, "WAINTING FOR CHILD PROGRESS METER TO BE CREATED");
@@ -157,11 +161,10 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 						while (countDown.isInExecution()) {TimeCountDown.sleep(10);}
 					}
 					
-					total += child.getProgressMeter().getTotal();
 					remaining += child.getProgressMeter().getRemain();
 					processed += child.getProgressMeter().getProcessed();
 				}
-			}
+			}*/
 			
 			this.progressMeter = new SyncProgressMeter(this, "INITIALIZING", total, processed);
 		} catch (DBException e) {
@@ -174,7 +177,7 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 		}
 	}
 	
-	private boolean hasChild() {
+	protected boolean hasChild() {
 		return utilities.arrayHasElement(this.children);
 	}
 
@@ -253,13 +256,10 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 	}
 	
 	public void reportProgress() {
-		//Report parent progress meter if exists
 		SyncProgressMeter globalProgressMeter = this.progressMeter;
 		
 		if (this.hasParent()) {
-			if (this.parent.progressMeter != null) {
-				globalProgressMeter = this.parent.progressMeter;
-			}
+			globalProgressMeter = this.parent.progressMeter;
 		}
 		
 		String log = "";

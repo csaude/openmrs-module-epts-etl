@@ -1,7 +1,5 @@
 package org.openmrs.module.eptssync.controller;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,8 +39,8 @@ public abstract class AbstractSyncController {
 		this.logger = Logger.getLogger(this.getClass());
 	}
 
-	public void init() {
-		List<SyncTableInfo> allSync = discoverSyncTableInfo();
+	public void init(SyncTableInfoSource syncTableInfoSource) {
+		List<SyncTableInfo> allSync = syncTableInfoSource.getSyncTableInfo();
 	
 		for (SyncTableInfo syncInfo: allSync) {
 			initAndStartEngine(syncInfo);
@@ -56,10 +54,10 @@ public abstract class AbstractSyncController {
 		
 		if (syncInfo.getQtyProcessingEngine() > 1) {
 			
-			int maxRecId = getMaxRecordId(syncInfo);
-			int minRecId = getMinRecordId(syncInfo);
+			long maxRecId = getMaxRecordId(syncInfo);
+			long minRecId = getMinRecordId(syncInfo);
 			
-			int qtyRecordsPerEngine = (maxRecId - minRecId)/syncInfo.getQtyProcessingEngine();
+			long qtyRecordsPerEngine = (maxRecId - minRecId)/syncInfo.getQtyProcessingEngine();
 			
 			RecordLimits limits = new RecordLimits(minRecId, minRecId + qtyRecordsPerEngine);
 			
@@ -101,32 +99,11 @@ public abstract class AbstractSyncController {
 		return syncTableInfoSource;
 	}
 	
-	protected synchronized List<SyncTableInfo> discoverSyncTableInfo() {
-		logInfo("DISCOVERY SYNC TABLES FOR '" + this.getClass().getSimpleName() + "'");
-		
-		try {
-			
-			String json = new String(Files.readAllBytes(Paths.get("sync_config.json")));
-			
-			if (syncTableInfoSource == null) {
-				syncTableInfoSource = SyncTableInfoSource.loadFromJSON(json);
-			}
-			
-			logInfo("DISCOVERED '" + syncTableInfoSource.getSyncTableInfo().size() + "' Tables for Sync");
-			
-			return syncTableInfoSource.getSyncTableInfo();
-		} catch (Exception e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-	}
-	
 	public abstract SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) ;
 
-	protected abstract int getMinRecordId(SyncTableInfo tableInfo);
+	protected abstract long getMinRecordId(SyncTableInfo tableInfo);
 
-	protected abstract int getMaxRecordId(SyncTableInfo tableInfo);
+	protected abstract long getMaxRecordId(SyncTableInfo tableInfo);
 
 	public OpenConnection openConnection() {
 		return DBConnectionService.getInstance().openConnection();
