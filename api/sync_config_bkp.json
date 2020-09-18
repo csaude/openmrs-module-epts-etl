@@ -1,0 +1,236 @@
+{
+	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
+	syncStageSchema: "sync_import_stage",
+	originAppLocationCode: "ZBZ_PEBANE",
+	defaultQtyRecordsPerSelect: 2500,
+	firstExport: true,
+	defaultQtyProcessingEngine: 1,
+	connInfo: {
+		dataBaseUserName: "root",
+		dataBaseUserPassword: "root",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		driveClassName: "com.mysql.jdbc.Driver"
+	},
+	bkpConn:{
+			connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch"
+	},
+	syncTableInfo:[
+		  
+				{	
+					tableName: "users",
+					parents: ["person", "users"],
+					mustRecompileTable: true,
+					qtyRecordsPerSelect: 1000
+				},
+		
+				{
+					tableName: "location",
+					parents: ["users", "location"],
+					mustRecompileTable: true,
+					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
+				},
+		
+				{
+					tableName: "person",
+					parents: ["users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "person_address",
+					parents: ["person", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "person_attribute",
+					parents: ["person", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "person_name",
+					parents: ["person", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "relationship",
+					parents: ["person", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "patient",
+					sharePkWith: "person",
+					parents: ["person", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "patient_identifier",
+					parents: ["patient", "location", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "patient_program",
+					parents: ["patient", "location", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "patient_state",
+					parents: ["patient_program", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "visit",
+					parents: ["patient", "location", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "visit_attribute",
+					parents: ["visit", "users"],
+					mustRecompileTable: true
+				},
+				{
+					tableName: "encounter",
+					parents: ["patient", "location", "users", "visit"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "provider",
+					parents: ["person", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "encounter_provider",
+					parents: ["encounter", "users", "provider"],
+					mustRecompileTable: true					
+				},
+				
+				{
+					tableName: "orders",
+					parents: ["encounter", "proverder", "orders", "patient", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "obs",
+					parents: ["person", "location", "orders", "obs", "users", "encounter"],
+					mustRecompileTable: true,
+					qtyProcessingEngine: 3,
+					qtyRecordsPerSelect: 50000
+				},
+				
+				{
+					tableName: "note",
+					parents: ["encounter", "patient", "note", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "gaac",
+					parents: ["patient", "location", "users"],
+					mustRecompileTable: true
+				},
+			
+				{
+					tableName: "gaac_member",
+					parents: ["patient", "gaac", "users"],
+					mustRecompileTable: true
+				},
+				
+				{
+					tableName: "concept_datatype",
+					parents: ["users"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+				 
+				{
+					tableName: "concept",
+					parents: ["users", "concept_classes", "concept_datatype"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+				
+				{
+					tableName: "person_attribute_type",
+					parents: ["users"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+				 
+				{
+					tableName: "provider_attribute_type",
+					parents: ["users", "program_workflow"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+				 
+				{
+					tableName: "program",
+					parents: ["users", "concept"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+			
+				{
+					tableName: "program_workflow",
+					parents: ["users", "program", "concept"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+				
+
+				{
+					tableName: "program_workflow_state",
+					parents: ["users", "program_workflow", "concept"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+				
+				{
+					tableName: "visit_type",
+					parents: ["users"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+				
+				{
+					tableName: "relationship_type",
+					parents: ["users"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+				
+				
+				{
+					tableName: "patient_identifier_type",
+					parents: ["users"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+				
+				{
+					tableName: "gaac_affinity_type",
+					parents: ["users"],
+					mustRecompileTable: true,
+					metadata: true
+				},
+				
+				{
+					tableName: "gaac_reason_leaving_type",
+					parents: ["users"],
+					mustRecompileTable: true,
+					metadata: true
+				}
+				
+	]
+}
