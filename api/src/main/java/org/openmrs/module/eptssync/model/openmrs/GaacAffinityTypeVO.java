@@ -3,7 +3,6 @@ package org.openmrs.module.eptssync.model.openmrs;
 import org.openmrs.module.eptssync.model.openmrs.generic.*; 
  
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 

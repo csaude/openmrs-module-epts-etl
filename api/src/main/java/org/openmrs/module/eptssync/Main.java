@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfoSource;
-import org.openmrs.module.eptssync.controller.export_.SyncExportController;
+import org.openmrs.module.eptssync.controller.load.SyncDataLoadController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 
@@ -21,9 +21,9 @@ public class Main {
 		
 		syncTableInfoSource.fullLoadInfo();
 		
-		new SyncExportController().init(syncTableInfoSource);
+		//new SyncExportController().init(syncTableInfoSource);
 	
-		//new SyncDataLoadController().init(syncTableInfoSource);
+		new SyncDataLoadController().init(syncTableInfoSource);
 		
 		//new SynchronizationController().init(syncTableInfoSource);
 		

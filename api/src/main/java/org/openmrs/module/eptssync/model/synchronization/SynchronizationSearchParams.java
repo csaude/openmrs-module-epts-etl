@@ -18,6 +18,8 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 	private SyncTableInfo tableInfo;
 	private Date syncStartDate;
 	
+	private boolean forProgressMeter;
+	
 	public SynchronizationSearchParams(SyncTableInfo tableInfo, RecordLimits limits) {
 		this.tableInfo = tableInfo;
 		
@@ -36,8 +38,16 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 		
 		searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName());
 		
-		searchClauses.addToClauses("last_migration_try_date is null or last_migration_try_date < ?");
-		searchClauses.addToParameters(this.syncStartDate);
+		if (!forProgressMeter) {
+			searchClauses.addToClauses("last_migration_try_date is null or last_migration_try_date < ?");
+			searchClauses.addToParameters(this.syncStartDate);
+		}
+		else {
+			searchClauses.addToClauses("migration_status in (?, ?)");
+			
+			searchClauses.addToParameters(SyncImportInfoVO.MIGRATION_STATUS_FAILED);
+			searchClauses.addToParameters(SyncImportInfoVO.MIGRATION_STATUS_PENDING);
+		}
 		
 		return searchClauses;
 	}	

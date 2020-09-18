@@ -116,9 +116,9 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 			
 			this.syncController.logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.syncTableInfo.getTableName() + "' FINISHED.");
 			
-			this.syncController.logInfo("INITIALIZING SYNC OF '" + records.size() + "' RECORDS OF TABLE '" + this.syncTableInfo.getTableName() + "'");
-			
 			if (utilities.arrayHasElement(records)) {
+				this.syncController.logInfo("INITIALIZING SYNC OF '" + records.size() + "' RECORDS OF TABLE '" + this.syncTableInfo.getTableName() + "'");
+				
 				performeSync(records);
 				
 				refreshProgressMeter(records.size());
@@ -261,6 +261,8 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 		if (this.hasParent()) {
 			globalProgressMeter = this.parent.progressMeter;
 		}
+		
+		if (globalProgressMeter == null) return;
 		
 		String log = "";
 		

@@ -26,6 +26,10 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
+	public static final int MIGRATION_STATUS_PENDING = 1;
+	public static final int MIGRATION_STATUS_INCOMPLETE = 0;
+	public static final int MIGRATION_STATUS_FAILED = -1;
+	
 	private int id;
 	private int recordId;
 	private String json;

@@ -131,38 +131,16 @@ public class LoadSyncDataEngine extends SyncEngine{
 	}
     
     private File getSyncBkpDirectory() throws IOException {
-     	String fileName = "";
-
-		fileName += this.getSyncTableInfo().getRelatedSyncTableInfoSource().getSyncRootDirectory();
-		fileName += FileUtilities.getPathSeparator();
-		
-		fileName += "import_bkp";
-		fileName += FileUtilities.getPathSeparator();
-		
-		fileName += this.getSyncTableInfo().getTableName();
- 
-		File bkpDirectory = new File(fileName);
-    	
-		
-		if (!bkpDirectory.exists()) {
-			FileUtilities.tryToCreateDirectoryStructure(bkpDirectory.getAbsolutePath());
-		}
-		
-		return bkpDirectory;
+     	return SyncDataLoadController.getSyncDirectory(getSyncTableInfo());
+    }
+    
+    @Override
+    public SyncDataLoadController getSyncController() {
+    	return (SyncDataLoadController) super.getSyncController();
     }
     
     private File getSyncDirectory() {
-    	String fileName = "";
-
-		fileName += this.getSyncTableInfo().getRelatedSyncTableInfoSource().getSyncRootDirectory();
-		fileName += FileUtilities.getPathSeparator();
-		
-		fileName += "import";
-		fileName += FileUtilities.getPathSeparator();
-		
-		fileName += this.getSyncTableInfo().getTableName();
- 
-		return new File(fileName);
+    	return SyncDataLoadController.getSyncDirectory(getSyncTableInfo());
     }
 
 	@Override

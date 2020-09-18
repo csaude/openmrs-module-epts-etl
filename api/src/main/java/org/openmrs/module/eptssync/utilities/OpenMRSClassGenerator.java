@@ -174,7 +174,6 @@ public class OpenMRSClassGenerator {
 		classDefinition += "import org.openmrs.module.eptssync.model.openmrs.generic.*; \n \n";
 		
 		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
-		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; \n";
 		classDefinition += "import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; \n \n";
 		
 		classDefinition += "import java.sql.Connection; \n";

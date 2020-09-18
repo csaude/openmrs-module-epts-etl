@@ -381,6 +381,8 @@ public class SyncTableInfo {
 		sql += "	origin_app_location_code VARCHAR(100) NOT NULL,\n";
 		sql += "	last_migration_try_date DATETIME DEFAULT NULL,\n";
 		sql += "	last_migration_try_err varchar(250) DEFAULT NULL,\n";
+		sql += "	migration_status int(1) DEFAULT 1,\n";
+		sql += "	CONSTRAINT CHK_" + generateRelatedStageTableName() + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
 		sql += "	PRIMARY KEY (id)\n";
 		sql += ")\n";
 		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";

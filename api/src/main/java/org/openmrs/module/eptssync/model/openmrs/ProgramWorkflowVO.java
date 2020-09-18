@@ -3,7 +3,6 @@ package org.openmrs.module.eptssync.model.openmrs;
 import org.openmrs.module.eptssync.model.openmrs.generic.*; 
  
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
@@ -22,7 +21,6 @@ public class ProgramWorkflowVO extends AbstractOpenMRSObject implements OpenMRSO
 	private int changedBy;
 	private java.util.Date dateChanged;
 	private String uuid;
-	private byte swappable;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
@@ -103,14 +101,6 @@ public class ProgramWorkflowVO extends AbstractOpenMRSObject implements OpenMRSO
 		return this.uuid;
 	}
  
-	public void setSwappable(byte swappable){ 
-	 	this.swappable = swappable;
-	}
- 
-	public byte getSwappable(){ 
-		return this.swappable;
-	}
- 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -155,7 +145,6 @@ public class ProgramWorkflowVO extends AbstractOpenMRSObject implements OpenMRSO
 		this.changedBy = rs.getInt("changed_by");
 		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
 		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
-		this.swappable = rs.getByte("swappable");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 			} 
@@ -167,22 +156,22 @@ public class ProgramWorkflowVO extends AbstractOpenMRSObject implements OpenMRSO
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.programId == 0 ? null : this.programId, this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.programId == 0 ? null : this.programId, this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.programId == 0 ? null : this.programId, this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.programWorkflowId};		return params; 
+ 		Object[] params = {this.programId == 0 ? null : this.programId, this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.programWorkflowId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO program_workflow(program_id, concept_id, creator, date_created, retired, changed_by, date_changed, uuid, swappable, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO program_workflow(program_id, concept_id, creator, date_created, retired, changed_by, date_changed, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE program_workflow SET program_id = ?, concept_id = ?, creator = ?, date_created = ?, retired = ?, changed_by = ?, date_changed = ?, uuid = ?, swappable = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE program_workflow_id = ?;"; 
+ 		return "UPDATE program_workflow SET program_id = ?, concept_id = ?, creator = ?, date_created = ?, retired = ?, changed_by = ?, date_changed = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE program_workflow_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {

@@ -53,7 +53,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 	}
 
 	public static void markAsFailedToMigrate(SyncImportInfoVO record, SyncTableInfo tableInfo, SyncExeption e, Connection conn) throws DBException {
-		Object[] params = { e.getLocalizedMessage(),
+		Object[] params = { SyncImportInfoVO.MIGRATION_STATUS_FAILED,
+							e.getLocalizedMessage(),
 							DateAndTimeUtilities.getCurrentDate(),
 							record.getId()
 							};
@@ -61,7 +62,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 			String sql = "";
 			
 			sql += "UPDATE 	" + tableInfo.generateFullStageTableName() + "\n";
-			sql += "SET	   	last_migration_try_err = ?, \n";
+			sql += "SET	   	migration_status = ?, \n";
+			sql += "	   	last_migration_try_err = ?, \n";
 			sql += "	   	last_migration_try_date = ? \n";
 			sql += "WHERE 	id = ?";
 	
@@ -82,7 +84,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 	}
 
 	public static void markAsToBeCompletedInFuture(SyncImportInfoVO record, SyncTableInfo tableInfo, OpenConnection conn) throws DBException {
-		Object[] params = { "Migrated BUT still miss some parent info",
+		Object[] params = { SyncImportInfoVO.MIGRATION_STATUS_INCOMPLETE,
+							"Migrated BUT still miss some parent info",
 							DateAndTimeUtilities.getCurrentDate(),
 							record.getId()
 							};
@@ -90,7 +93,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += "UPDATE 	" + tableInfo.generateFullStageTableName() + "\n";
-		sql += "SET	   	last_migration_try_err = ?, \n";
+		sql += "SET	   	migration_status = ?, \n";
+		sql += "	   	last_migration_try_err = ?, \n";
 		sql += "	   	last_migration_try_date = ? \n";
 		sql += "WHERE 	id = ?";
 		
