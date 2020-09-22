@@ -23,9 +23,13 @@ public class SyncTableInfoSource {
 	private List<SyncTableInfo> syncTableInfo;
 	
 	private boolean firstExport;
+	
+	private boolean doIntegrityCheckInTheEnd;
 	private int defaultQtyRecordsPerSelect;
 	private int defaultQtyProcessingEngine;
+	
 	private DBConnectionInfo connInfo;
+	private DBConnectionService connService;
 	
 	private SyncTableInfoSource() {
 	}
@@ -46,7 +50,14 @@ public class SyncTableInfoSource {
 		this.defaultQtyProcessingEngine = defaultQtyProcessingEngine;
 	}
 
-
+	public boolean isDoIntegrityCheckInTheEnd() {
+		return doIntegrityCheckInTheEnd;
+	}
+	
+	public void setDoIntegrityCheckInTheEnd(boolean doIntegrityCheckInTheEnd) {
+		this.doIntegrityCheckInTheEnd = doIntegrityCheckInTheEnd;
+	}
+	
 	public int getDefaultQtyRecordsPerSelect() {
 		return defaultQtyRecordsPerSelect;
 	}
@@ -133,8 +144,10 @@ public class SyncTableInfoSource {
 		} 
 	}
 	
-	private OpenConnection openConnection() {
-		return DBConnectionService.getInstance().openConnection();
+	public OpenConnection openConnection() {
+		if (connService == null) connService = DBConnectionService.init(getConnInfo());
+		
+		return connService.openConnection();
 	}
 	
 	private void createStageSchema() {

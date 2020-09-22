@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.controller.synchronization;
+package org.openmrs.module.eptssync.synchronization.controller;
 
 import java.util.List;
 
@@ -7,13 +7,14 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfoSource;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
-import org.openmrs.module.eptssync.engine.synchronization.SynchronizationSyncEngine;
-import org.openmrs.module.eptssync.model.load.SyncImportInfoDAO;
-import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.openmrs.PersonVO;
 import org.openmrs.module.eptssync.model.openmrs.UsersVO;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.synchronization.engine.SynchronizationSyncEngine;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
+import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -26,9 +27,11 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  *
  */
 public class SynchronizationController extends AbstractSyncController {
-	public SynchronizationController() {
-	}
 
+	public SynchronizationController(DBConnectionService connectionService) {
+		super(connectionService);
+	}
+	
 	@Override
 	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) {
 		return new SynchronizationSyncEngine(syncInfo, limits, this);
@@ -36,10 +39,34 @@ public class SynchronizationController extends AbstractSyncController {
 
 	@Override
 	public void init(SyncTableInfoSource sourceTableInfo) {
-		tryToCreateInitialConfigurationForAllAvaliableLocations();
+		if (sourceTableInfo.isDoIntegrityCheckInTheEnd()) {
+			
+			OpenConnection conn = openConnection();
+			
+			try {
+				DBUtilities.disableForegnKeyChecks(conn);
+				//DBUtilities.enableForegnKeyChecks(conn);
+				
+				conn.markAsSuccessifullyTerminected();
+			} catch (DBException e) {
+				e.printStackTrace();
+				
+				throw new RuntimeException(e);
+			}
+			finally {
+				conn.finalizeConnection();
+			}
+			
+			super.init(sourceTableInfo);
+		}
+		else{
+			setSyncTableInfoSource(sourceTableInfo);
 		
-		for (SyncTableInfo syncInfo: sourceTableInfo.getSyncTableInfo()) {
-			initAndStartEngine(syncInfo);
+			tryToCreateInitialConfigurationForAllAvaliableLocations();
+		
+			for (SyncTableInfo syncInfo: sourceTableInfo.getSyncTableInfo()) {
+				initAndStartEngine(syncInfo);
+			}
 		}
 	}
 
@@ -105,13 +132,51 @@ public class SynchronizationController extends AbstractSyncController {
 
 	@Override
 	protected long getMinRecordId(SyncTableInfo tableInfo) {
-		// TODO Auto-generated method stub
-		return 0;
+		OpenConnection conn = openConnection();
+		
+		try {
+			SyncImportInfoVO obj = SyncImportInfoDAO.getFirstRecord(tableInfo, conn);
+		
+			if (obj != null) return obj.getObjectId();
+			
+			return 0;
+		} catch (DBException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
 	}
 
 	@Override
 	protected long getMaxRecordId(SyncTableInfo tableInfo) {
-		// TODO Auto-generated method stub
-		return 0;
+		OpenConnection conn = openConnection();
+		
+		try {
+			SyncImportInfoVO obj = SyncImportInfoDAO.getLastRecord(tableInfo, conn);
+		
+			if (obj != null) return obj.getObjectId();
+			
+			return 0;
+		} catch (DBException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+
+	@Override
+	public boolean mustRestartInTheEnd() {
+		return true;
+	}
+	
+	@Override
+	public String getOperationName() {
+		return AbstractSyncController.SYNC_OPERATION_SYNCHRONIZATION;
 	}
 }

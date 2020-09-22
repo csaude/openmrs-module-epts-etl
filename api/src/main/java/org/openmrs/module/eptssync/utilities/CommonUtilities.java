@@ -722,7 +722,7 @@ public class  CommonUtilities implements Serializable{
 	 */
 	public <T> T loadObjectFormJSON(Class<T> clazz, String json) {
 		try {
-			return new ObjectMapper().readValue(json, clazz);
+			return new ObjectMapperProvider().getContext(null).readValue(json, clazz);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

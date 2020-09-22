@@ -1,3 +1,4 @@
+
 package org.openmrs.module.eptssync.utilities;
 
 import java.io.File;
@@ -5,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -19,14 +21,15 @@ import javax.tools.ToolProvider;
 import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class OpenMRSClassGenerator {
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 
-	public static Class<OpenMRSObject> generate(SyncTableInfo syncTableInfo) throws IOException, SQLException, ClassNotFoundException {
+	public static Class<OpenMRSObject> generate(SyncTableInfo syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
+		
+		syncTableInfo.fullLoad();
+		
 		Path root = Paths.get(".").normalize().toAbsolutePath();
 
 		File sourceFile = new File(root + "/src/main/java/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.generateClassName() + ".java");
@@ -37,9 +40,7 @@ public class OpenMRSClassGenerator {
 		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName);
 			
 		if (existingCLass != null && !syncTableInfo.mustRecompileTableClass()) return existingCLass;
-		
-		OpenConnection conn = DBConnectionService.getInstance().openConnection();
-
+	
 		String attsDefinition = "";
 		String getttersAndSetterDefinition = "";
 		String resultSetLoadDefinition = "		";
@@ -149,6 +150,47 @@ public class OpenMRSClassGenerator {
 		methodFromSuperClass += "		return \""+ updaSQLDefinition + "\"; \n";
 		methodFromSuperClass += "	} \n \n";
 			
+		
+		/*methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public void setAllParentsToZero(SyncTableInfo tableInfo, Connection conn) {\n";
+			for(ParentRefInfo refInfo : syncTableInfo.getParentRefInfo()) {
+				methodFromSuperClass += "		this." + refInfo.getReferenceColumnAsClassAttName() + " = 0;\n";
+			}
+		methodFromSuperClass += "	}\n\n";*/
+		
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public boolean hasParents() {\n";
+		
+		for(ParentRefInfo refInfo : syncTableInfo.getParentRefInfo()) {		
+			methodFromSuperClass += "		if (this." + refInfo.getReferenceColumnAsClassAttName() + " != 0) return true;\n";
+		}
+	
+		methodFromSuperClass += "		return false;\n";
+		
+		methodFromSuperClass += "	}\n\n";
+
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
+			
+		ParentRefInfo sharedKeyRefInfo = syncTableInfo.getSharedKeyRefInfo();
+		
+		if (sharedKeyRefInfo != null) {
+			methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
+			
+			methodFromSuperClass += "		parentOnDestination = loadParent(";
+			methodFromSuperClass += sharedKeyRefInfo.getParentFullClassName() + ".class,";
+				
+			methodFromSuperClass += " this." +  sharedKeyRefInfo.getReferenceColumnAsClassAttName() + ", false, conn); \n";
+			methodFromSuperClass += "		return parentOnDestination.getObjectId();\n \n";
+		}
+		else {
+			methodFromSuperClass += "		throw new RuntimeException(\"No PKSharedInfo defined!\");";
+		}
+		
+		methodFromSuperClass += "	}\n\n";
+		
+		
+		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
 		methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
 		
@@ -165,7 +207,18 @@ public class OpenMRSClassGenerator {
 			methodFromSuperClass += "		if (parentOnDestination  != null) this." + refInfo.getReferenceColumnAsClassAttName() + " = parentOnDestination.getObjectId();\n \n";
 		}
 		
-		methodFromSuperClass += "	}";
+		methodFromSuperClass += "	}\n\n";
+		
+		
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public int getParentValue(String parentAttName) {\n";
+		
+		for(ParentRefInfo refInfo : syncTableInfo.getParentRefInfo()) {
+			methodFromSuperClass += "		if (parentAttName.equals(\"" + refInfo.getReferenceColumnAsClassAttName() + "\")) return this."+refInfo.getReferenceColumnAsClassAttName();
+		}
+		
+		methodFromSuperClass += "	}\n\n";
+		
 		
 		String classDefinition ="";
 		
@@ -202,10 +255,7 @@ public class OpenMRSClassGenerator {
 		
 		st.close();
 		rs.close();
-		
-		conn.finalizeConnection();
-
-		
+				
 		return tryToGetExistingCLass(fullClassName);
 	}
 	@SuppressWarnings("unchecked")

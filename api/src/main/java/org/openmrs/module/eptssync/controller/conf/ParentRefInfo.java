@@ -156,4 +156,9 @@ public class ParentRefInfo {
 
 		return className + "VO";
 	}
+	
+	@Override
+	public String toString() {
+		return "TABLE: " + this.tableName + ", REFECENCE: " + this.referenceColumnName + ", REFERENCEDE: " + this.referencedColumnName;
+	}
 }

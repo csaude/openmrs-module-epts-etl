@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.load;
+package org.openmrs.module.eptssync.load.model;
 
 import java.sql.Connection;
 import java.util.List;
@@ -20,6 +20,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 	public static void insert(SyncImportInfoVO record, SyncTableInfo tableInfo, Connection conn) throws DBException{
 		Object[] params = {record.getRecordId(),
 						   record.getJson(),
+						   record.getMigrationStatus(),
+						   record.getLastMigrationTryErr(),
 						   record.getOriginAppLocationCode()};
 		
 		String sql = "";
@@ -27,13 +29,42 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += "INSERT INTO \n"; 
 		sql += "	" + tableInfo.generateFullStageTableName() + "(	record_id,\n";
 		sql += "											 		json,\n";
+		sql += "											 		migration_status,\n";
+		sql += "											 		last_migration_try_err,\n";
 		sql += "													origin_app_location_code)";
 		sql += "	VALUES(?,\n";
+		sql += "		   ?,\n";
+		sql += "		   ?,\n";
 		sql += "		   ?,\n";
 		sql += "		   ?);";
 		
 		executeQuery(sql, params, conn);
 	}
+	
+	public static SyncImportInfoVO getFirstRecord(SyncTableInfo tableInfo, Connection conn) throws DBException {
+		String sql = "";
+		
+		sql += " SELECT * \n";
+		sql += " FROM  	" + tableInfo.generateFullStageTableName() + "\n";
+		sql += " WHERE 	id = \n";
+		sql += " 			 (	SELECT min(id)\n";
+		sql += "				FROM   " + tableInfo.generateFullStageTableName() +  ")";
+		
+		return find(SyncImportInfoVO.class, sql, null, conn);
+	}
+	
+	public static SyncImportInfoVO getLastRecord(SyncTableInfo tableInfo, Connection conn) throws DBException {
+		String sql = "";
+		
+		sql += " SELECT * \n";
+		sql += " FROM  	" + tableInfo.generateFullStageTableName() + "\n";
+		sql += " WHERE 	id = \n";
+		sql += " 			 (	SELECT max(id)\n";
+		sql += "				FROM   " + tableInfo.generateFullStageTableName() +  ")";
+		
+		return find(SyncImportInfoVO.class, sql, null, conn);
+	}
+	
 	
 	/**
 	 * For each originAppLocationId retrieve on record from the diven tableName
@@ -53,8 +84,10 @@ public class SyncImportInfoDAO extends BaseDAO {
 	}
 
 	public static void markAsFailedToMigrate(SyncImportInfoVO record, SyncTableInfo tableInfo, SyncExeption e, Connection conn) throws DBException {
+		String msg = e.getLocalizedMessage().length() <= 250 ? e.getLocalizedMessage() : e.getLocalizedMessage().substring(0, 250);
+		
 		Object[] params = { SyncImportInfoVO.MIGRATION_STATUS_FAILED,
-							e.getLocalizedMessage(),
+							msg,
 							DateAndTimeUtilities.getCurrentDate(),
 							record.getId()
 							};

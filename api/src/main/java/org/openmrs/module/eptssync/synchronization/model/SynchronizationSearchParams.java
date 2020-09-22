@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.synchronization;
+package org.openmrs.module.eptssync.synchronization.model;
 
 import java.sql.Connection;
 import java.util.Date;
@@ -6,9 +6,9 @@ import java.util.Date;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectSearchParams;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -19,11 +19,15 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 	private Date syncStartDate;
 	
 	private boolean forProgressMeter;
+	private RecordLimits limits;
 	
 	public SynchronizationSearchParams(SyncTableInfo tableInfo, RecordLimits limits) {
 		this.tableInfo = tableInfo;
+		this.limits = limits;
 		
 		this.syncStartDate = DateAndTimeUtilities.getCurrentDate();
+		
+		setOrderByFields("id");
 	}
 	
 	public void setSyncStartDate(Date syncStartDate) {
@@ -41,6 +45,12 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 		if (!forProgressMeter) {
 			searchClauses.addToClauses("last_migration_try_date is null or last_migration_try_date < ?");
 			searchClauses.addToParameters(this.syncStartDate);
+			
+			if (limits != null) {
+				searchClauses.addToClauses("id between ? and ?");
+				searchClauses.addToParameters(this.limits.getFirstRecordId());
+				searchClauses.addToParameters(this.limits.getLastRecordId());
+			}
 		}
 		else {
 			searchClauses.addToClauses("migration_status in (?, ?)");

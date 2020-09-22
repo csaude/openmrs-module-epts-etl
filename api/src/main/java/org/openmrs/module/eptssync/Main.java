@@ -3,9 +3,12 @@ package org.openmrs.module.eptssync;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.openmrs.module.eptssync.controller.AbstractSyncController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfoSource;
-import org.openmrs.module.eptssync.controller.load.SyncDataLoadController;
+import org.openmrs.module.eptssync.synchronization.controller.SynchronizationController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 
@@ -17,18 +20,37 @@ public class Main {
 		
 		SyncTableInfoSource syncTableInfoSource = SyncTableInfoSource.loadFromJSON(json);
 		
-		DBConnectionService.init(syncTableInfoSource.getConnInfo());
+		DBConnectionService connService = DBConnectionService.init(syncTableInfoSource.getConnInfo());
 		
 		syncTableInfoSource.fullLoadInfo();
 		
-		//new SyncExportController().init(syncTableInfoSource);
-	
-		new SyncDataLoadController().init(syncTableInfoSource);
 		
-		//new SynchronizationController().init(syncTableInfoSource);
+		List<AbstractSyncController> allController = new ArrayList<AbstractSyncController>();
 		
-		while(true) {
+		//allController.add(new SyncExportController());
+		//allController.get(allController.size() - 1).init(syncTableInfoSource);
+		
+		//allController.add(new SyncTransportController());
+		//allController.get(allController.size() - 1).init(syncTableInfoSource);
+		
+		//allController.add(new SyncDataLoadController());
+		//allController.get(allController.size() - 1).init(syncTableInfoSource);
+		
+		allController.add(new SynchronizationController(connService));
+		allController.get(allController.size() - 1).init(syncTableInfoSource);
+		
+		while(!isAllFinished(allController)) {
 			TimeCountDown.sleep(10000);
 		}
+		
+		allController.get(0).logInfo("ALL JOBS ARE FINISHED");
+	}
+	
+	public static boolean isAllFinished(List<AbstractSyncController> controllers) {
+		for (AbstractSyncController c : controllers) {
+			if (!c.isFininished()) return false;
+		}
+		
+		return true;
 	}
 }

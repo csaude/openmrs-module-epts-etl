@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.load;
+package org.openmrs.module.eptssync.load.model;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -13,6 +13,7 @@ import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -36,8 +37,10 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	private String originAppLocationCode;
 	private Date lastMigrationTryDate;
 	private String lastMigrationTryErr;
+	private int migrationStatus;
 	
 	public SyncImportInfoVO(){
+		this.migrationStatus = MIGRATION_STATUS_PENDING;
 	}
 
 	public Date getLastMigrationTryDate() {
@@ -101,6 +104,28 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.originAppLocationCode = originAppLocationCode;
 	}
 
+	public void markAsPartialMigrated() {
+		this.migrationStatus = MIGRATION_STATUS_INCOMPLETE;
+	}
+
+	public void markAsPartialMigrated(String errMsg) {
+		this.migrationStatus = MIGRATION_STATUS_INCOMPLETE;
+		this.lastMigrationTryErr = errMsg;
+	}
+
+	public void markAsSyncFailedToMigrate(String errMsg) {
+		this.migrationStatus = MIGRATION_STATUS_FAILED;
+		this.lastMigrationTryErr = errMsg;
+	}
+
+	public void markAsSyncFailedToMigrate() {
+		this.migrationStatus = MIGRATION_STATUS_FAILED;
+	}
+
+	public int getMigrationStatus() {
+		return migrationStatus;
+	}
+	
 	public static List<SyncImportInfoVO> generateFromSyncRecord(List<OpenMRSObject> syncRecords) {
 		List<SyncImportInfoVO> importInfo = new ArrayList<SyncImportInfoVO>();
 	
@@ -128,23 +153,41 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		
 		try {
 			if (source.isMetadata()) {
-				source.consolidate(conn);
+				source.consolidateMetadata(conn);
 			}
 			else {
-				source.loadDestParentInfo(conn);
 				
-				if (!tableInfo.useSharedPKKey()) {
-					source.setObjectId(0);
+				if (tableInfo.isDoIntegrityCheckInTheEnd()) {
+					if (source.hasParents()) {
+						source.markAsInconsistent();
+					}
+					
+					if (tableInfo.useSharedPKKey()) {
+						refrieveSharedPKKey(source, 0, conn);
+					}
+					else {
+						source.setObjectId(0);
+					}
+					
+					//Migrate now and ajust later
+					markAsMigrated(tableInfo, conn);
+				}
+				else {
+					source.loadDestParentInfo(conn);
+					
+					if (source.hasIgnoredParent()) {
+						markAsToBeCompletedInFuture(tableInfo, conn);
+					}
+					else {
+						markAsMigrated(tableInfo, conn);
+					}
+					
+					if (!tableInfo.useSharedPKKey()) {
+						source.setObjectId(0);
+					}
 				}
 				
 				source.save(conn);
-			}
-			
-			if (source.hasIgnoredParent()) {
-				markAsToBeCompletedInFuture(tableInfo, conn);
-			}
-			else {
-				markAsMigrated(tableInfo, conn);
 			}
 		} catch (ParentNotYetMigratedException e) {
 			markAsFailedToMigrate(tableInfo, e, conn);
@@ -156,6 +199,28 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 				private static final long serialVersionUID = 1L;}, conn);
 		}
 		
+	}
+
+	/**
+	 * 
+	 * @param source
+	 * @param qtyTry number of attempts before "give up" 
+	 * @param conn
+	 * @throws ParentNotYetMigratedException
+	 * @throws DBException
+	 */
+	private void refrieveSharedPKKey(OpenMRSObject source, int qtyTry, Connection conn) throws ParentNotYetMigratedException, DBException {
+		try {
+			source.setObjectId(source.retrieveSharedPKKey(conn));
+		} catch (ParentNotYetMigratedException e) {
+			
+			if (qtyTry > 0) {
+				//Wait 10 seconds before try again
+				TimeCountDown.sleep(1);
+				refrieveSharedPKKey(source, --qtyTry, conn);
+			}
+			else throw e;
+		}
 	}
 	
 	public void markAsToBeCompletedInFuture(SyncTableInfo tableInfo, OpenConnection conn) throws DBException {

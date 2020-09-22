@@ -23,6 +23,7 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private String description;
 	private String uuid;
 	private int outcomesConceptId;
+	private byte swappable;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
@@ -119,6 +120,14 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.outcomesConceptId;
 	}
  
+	public void setSwappable(byte swappable){ 
+	 	this.swappable = swappable;
+	}
+ 
+	public byte getSwappable(){ 
+		return this.swappable;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -165,6 +174,7 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.description = rs.getString("description") != null ? rs.getString("description").trim() : null;
 		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
 		this.outcomesConceptId = rs.getInt("outcomes_concept_id");
+		this.swappable = rs.getByte("swappable");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 			} 
@@ -176,22 +186,22 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.programId};		return params; 
+ 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.programId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO program(concept_id, creator, date_created, changed_by, date_changed, retired, name, description, uuid, outcomes_concept_id, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO program(concept_id, creator, date_created, changed_by, date_changed, retired, name, description, uuid, outcomes_concept_id, swappable, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE program SET concept_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, name = ?, description = ?, uuid = ?, outcomes_concept_id = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE program_id = ?;"; 
+ 		return "UPDATE program SET concept_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, name = ?, description = ?, uuid = ?, outcomes_concept_id = ?, swappable = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE program_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {

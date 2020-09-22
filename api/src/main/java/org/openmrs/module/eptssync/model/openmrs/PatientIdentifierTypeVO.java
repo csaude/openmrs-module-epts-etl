@@ -29,6 +29,7 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 	private String uuid;
 	private String locationBehavior;
 	private String uniquenessBehavior;
+	private byte swappable;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private java.util.Date dateChanged;
@@ -174,6 +175,14 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 		return this.uniquenessBehavior;
 	}
  
+	public void setSwappable(byte swappable){ 
+	 	this.swappable = swappable;
+	}
+ 
+	public byte getSwappable(){ 
+		return this.swappable;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -234,6 +243,7 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
 		this.locationBehavior = rs.getString("location_behavior") != null ? rs.getString("location_behavior").trim() : null;
 		this.uniquenessBehavior = rs.getString("uniqueness_behavior") != null ? rs.getString("uniqueness_behavior").trim() : null;
+		this.swappable = rs.getByte("swappable");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
@@ -246,22 +256,22 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.swappable, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.patientIdentifierTypeId};		return params; 
+ 		Object[] params = {this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.swappable, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.patientIdentifierTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO patient_identifier_type(name, description, format, check_digit, creator, date_created, required, format_description, validator, retired, retired_by, date_retired, retire_reason, uuid, location_behavior, uniqueness_behavior, last_sync_date, origin_record_id, date_changed, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_identifier_type(name, description, format, check_digit, creator, date_created, required, format_description, validator, retired, retired_by, date_retired, retire_reason, uuid, location_behavior, uniqueness_behavior, swappable, last_sync_date, origin_record_id, date_changed, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient_identifier_type SET name = ?, description = ?, format = ?, check_digit = ?, creator = ?, date_created = ?, required = ?, format_description = ?, validator = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, location_behavior = ?, uniqueness_behavior = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ? WHERE patient_identifier_type_id = ?;"; 
+ 		return "UPDATE patient_identifier_type SET name = ?, description = ?, format = ?, check_digit = ?, creator = ?, date_created = ?, required = ?, format_description = ?, validator = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, location_behavior = ?, uniqueness_behavior = ?, swappable = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ? WHERE patient_identifier_type_id = ?;"; 
 	} 
  
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {

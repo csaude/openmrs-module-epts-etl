@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.load;
+package org.openmrs.module.eptssync.load.model;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -8,13 +8,13 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
-import org.openmrs.module.eptssync.controller.load.SyncDataLoadController;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.model.MinimalSyncJSONInfo;
+import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
 import org.openmrs.module.eptssync.model.SearchClauses;
+import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.synchronization.SynchronizationSearchParams;
+import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> implements FilenameFilter{
@@ -47,6 +47,7 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 	@Override
 	public boolean accept(File dir, String name) {
 		boolean isJSON = name.toLowerCase().endsWith("json");
+		boolean isNotMinimal = !name.toLowerCase().contains("minimal");
 		
 		boolean isInInterval = true;
 		
@@ -55,7 +56,7 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 			isInInterval = isInInterval && name.compareTo(this.lastFileName) <= 0;
 		}
 		
-		return  isJSON && isInInterval;
+		return  isJSON && isNotMinimal && isInInterval;
 	}
 	
 	private boolean hasLimits() {
@@ -74,17 +75,25 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 
 	@Override
 	public int countNotProcessedRecords(Connection conn) throws DBException {
-		LoadSyncDataSearchParams auxSearchParams = new LoadSyncDataSearchParams(tableInfo, null);
-		
 		try {
-			File[] files = getSyncDirectory().listFiles(auxSearchParams);
+			File[] files = getSyncDirectory().listFiles(new FilenameFilter() {
+				@Override
+				public boolean accept(File dir, String name) {
+					boolean isJSON = name.toLowerCase().endsWith("json");
+					boolean isMinimal = name.toLowerCase().contains("minimal");
+				
+					return isJSON && isMinimal;
+				}
+			});
 			
 			int notYetProcessed = 0;
+			
+			if (files == null) return 0;
 			
 			for (File file : files) {
 				String json = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
 				
-				notYetProcessed += MinimalSyncJSONInfo.loadFromJSON(json).getQtyRecords();
+				notYetProcessed += SyncJSONInfo.loadFromJSON(json).getQtyRecords();
 			}
 			
 			return notYetProcessed;

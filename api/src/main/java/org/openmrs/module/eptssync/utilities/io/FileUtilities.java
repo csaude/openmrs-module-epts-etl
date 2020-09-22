@@ -22,6 +22,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
+
 
 public class FileUtilities {
 	/**
@@ -480,6 +482,9 @@ public class FileUtilities {
 		
 		return  i>1 ? fileName.substring(0, i-1) : fileName;
 	}
-	
+
+	public static void copyFile(File source, File destination) throws IOException {
+		FileUtils.copyFile(source, destination);
+	}
 	
 }

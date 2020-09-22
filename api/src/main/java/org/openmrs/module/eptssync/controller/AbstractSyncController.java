@@ -27,13 +27,23 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  */
 
 public abstract class AbstractSyncController {
+	public static String SYNC_OPERATION_EXPORT = "EXPORT";
+	public static String SYNC_OPERATION_SYNCHRONIZATION = "SYNCHRONIZATION";
+	public static String SYNC_OPERATION_LOAD = "LOAD";
+	public static String SYNC_OPERATION_TRANSPOR = "TRANSPORT";
+	
 	protected Logger logger;
+	
 	
 	private Map<String, RunningEngineInfo> runnungEngines;
 	
 	private static SyncTableInfoSource syncTableInfoSource;
+	private boolean initialized;
+	private DBConnectionService connectionService;
 	
-	public AbstractSyncController() {
+	public AbstractSyncController(DBConnectionService connectionService) {
+		this.connectionService = connectionService;
+		
 		this.runnungEngines = new HashMap<String, RunningEngineInfo>();
 		
 		this.logger = Logger.getLogger(this.getClass());
@@ -45,6 +55,8 @@ public abstract class AbstractSyncController {
 		for (SyncTableInfo syncInfo: allSync) {
 			initAndStartEngine(syncInfo);
 		}
+		
+		this.initialized = true;
 	}
 	
 	protected void initAndStartEngine(SyncTableInfo syncInfo) {
@@ -52,11 +64,10 @@ public abstract class AbstractSyncController {
 		
 		SyncEngine mainEngine; 
 		
-		if (syncInfo.getQtyProcessingEngine() > 1) {
-			
-			long maxRecId = getMaxRecordId(syncInfo);
-			long minRecId = getMinRecordId(syncInfo);
-			
+		long maxRecId = getMaxRecordId(syncInfo);
+		long minRecId = getMinRecordId(syncInfo);
+		
+		if (syncInfo.getQtyProcessingEngine() > 1 && minRecId != maxRecId) {
 			long qtyRecordsPerEngine = (maxRecId - minRecId)/syncInfo.getQtyProcessingEngine();
 			
 			RecordLimits limits = new RecordLimits(minRecId, minRecId + qtyRecordsPerEngine);
@@ -84,7 +95,7 @@ public abstract class AbstractSyncController {
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(syncInfo.getTableName());
 		executor.execute(mainEngine);
 		
-		if (mainEngine.isMultiProcessing()) {
+		if (mainEngine.getChildren() != null) {
 			for (SyncEngine engine : mainEngine.getChildren()) {
 				executor.execute(engine);
 			}
@@ -95,20 +106,17 @@ public abstract class AbstractSyncController {
 		logInfo("ENGINE FOR TABLE '" + syncInfo.getTableName() + "' INITIALIZED");
 	}
 
+	public static void setSyncTableInfoSource(SyncTableInfoSource syncTableInfoSource) {
+		AbstractSyncController.syncTableInfoSource = syncTableInfoSource;
+	}
+	
 	protected SyncTableInfoSource getSyncTableInfoSource() {
 		return syncTableInfoSource;
 	}
 	
-	public abstract SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) ;
-
-	protected abstract long getMinRecordId(SyncTableInfo tableInfo);
-
-	protected abstract long getMaxRecordId(SyncTableInfo tableInfo);
-
 	public OpenConnection openConnection() {
-		return DBConnectionService.getInstance().openConnection();
+		return this.connectionService.openConnection();
 	}
-	
 	
 	public CommonUtilities utilities() {
 		return CommonUtilities.getInstance();
@@ -125,4 +133,29 @@ public abstract class AbstractSyncController {
 	public void logDebug(String msg) {
 		utilities().logDebug(msg, logger);
 	}
+
+	public boolean isFininished() {
+		if(!initialized) {
+			return false;
+		}
+		
+		for (Map.Entry<String, RunningEngineInfo> engine : runnungEngines.entrySet()) {
+			if (!engine.getValue().getEngine().isFinished()) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+
+	public abstract boolean mustRestartInTheEnd();
+	
+	public abstract String getOperationName();
+	
+	public abstract SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) ;
+
+	protected abstract long getMinRecordId(SyncTableInfo tableInfo);
+
+	protected abstract long getMaxRecordId(SyncTableInfo tableInfo);
+
 }

@@ -173,4 +173,14 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		return find(tableInfo.getRecordClass(), sql, null, conn);
 	}
+
+	public static void markAsConsistent(OpenMRSObject record, Connection conn) throws DBException {
+		Object[] params = {OpenMRSObject.CONSISTENCE_STATUS, record.getObjectId()};
+		
+		String sql = " UPDATE " + record.generateTableName() + 
+					 " SET    consistent = ? " +
+					 " WHERE  " + record.generateDBPrimaryKeyAtt() + " =  ? ";
+		
+		executeQuery(sql, params, conn);
+	}		
 }

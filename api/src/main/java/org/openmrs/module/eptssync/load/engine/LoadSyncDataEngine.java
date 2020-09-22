@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.engine.load;
+package org.openmrs.module.eptssync.load.engine;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,18 +7,17 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
-import org.openmrs.module.eptssync.controller.load.SyncDataLoadController;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
+import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.load.LoadSyncDataSearchParams;
-import org.openmrs.module.eptssync.model.load.SyncImportInfoDAO;
-import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -45,18 +44,26 @@ public class LoadSyncDataEngine extends SyncEngine{
 			throw new ForbiddenOperationException("The migration record source differ from the current migration records");
 		}
 		
-		OpenConnection conn = DBConnectionService.getInstance().openConnection();
+		OpenConnection conn = openConnection();
 		
 		try {
 			
 			List<OpenMRSObject> migrationRecordAsOpenMRSObjects = utilities.parseList(migrationRecords, OpenMRSObject.class);
 			
 			List<SyncImportInfoVO> syncImportInfo = SyncImportInfoVO.generateFromSyncRecord(migrationRecordAsOpenMRSObjects);
+		
+			this.syncController.logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " TO STAGING TABLE");
 			
 			SyncImportInfoDAO.insertAll(syncImportInfo, getSyncTableInfo(), conn);
 			
+			this.syncController.logInfo("'"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " WROTE TO STAGING TABLE");
+			
+			this.syncController.logInfo("MOVING SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] TO BACKUP AREA.");
+			
 			moveSoureJSONFileToBackup();
-
+			
+			this.syncController.logInfo("SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] MOVED TO BACKUP AREA.");
+			
 			conn.markAsSuccessifullyTerminected();
 		} catch (DBException e) {
 			e.printStackTrace();
@@ -71,6 +78,7 @@ public class LoadSyncDataEngine extends SyncEngine{
 
 	private void moveSoureJSONFileToBackup() {
 		try {
+			
 			String pathToBkpFile = "";
 			
 			pathToBkpFile += getSyncBkpDirectory().getAbsolutePath();
@@ -79,16 +87,36 @@ public class LoadSyncDataEngine extends SyncEngine{
 			pathToBkpFile +=  FileUtilities.generateFileNameFromRealPath(this.currJSONSourceFile.getAbsolutePath());
 			
 			FileUtilities.renameTo(this.currJSONSourceFile.getAbsolutePath(), pathToBkpFile);
+			
+			//NOW, MOVE MINIMAL FILE
+			
+			String[] parts = this.currJSONSourceFile.getAbsolutePath().split(".json");
+			String minimalFile = parts[0] + "_minimal.json";
+			
+			String pathToBkpMinimalFile = "";
+			pathToBkpMinimalFile += getSyncBkpDirectory().getAbsolutePath();
+			pathToBkpMinimalFile += FileUtilities.getPathSeparator();
+			
+			pathToBkpMinimalFile +=  FileUtilities.generateFileNameFromRealPath(minimalFile);
+			
+			FileUtilities.renameTo(minimalFile, pathToBkpMinimalFile);
+		
 		} catch (IOException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
 		}
 	}
+	
+	
 
 	
 	@Override
 	protected List<SyncRecord> searchNextRecords() {
+		/*if (tmpPrintFiles()) {
+			return null;
+		}*/
+		
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
 		if (this.currJSONSourceFile == null) return null;
@@ -105,6 +133,22 @@ public class LoadSyncDataEngine extends SyncEngine{
 			
 			throw new RuntimeException(e);
 		}
+	}
+	
+	boolean printed; 
+	boolean tmpPrintFiles() {
+		if (printed) return printed;
+		
+		File[] files = getSyncDirectory().listFiles(this.getSearchParams());
+	    
+		System.out.println("---------------------------------------------------------------------------------------------------------------------");
+		
+		for (File f :files) {
+			System.out.println(this.hashCode()+ ">" + f.getName());
+		}
+		this.printed = true;
+		
+		return this.printed;
 	}
 	
     private File getNextJSONFileToLoad(){
@@ -131,7 +175,7 @@ public class LoadSyncDataEngine extends SyncEngine{
 	}
     
     private File getSyncBkpDirectory() throws IOException {
-     	return SyncDataLoadController.getSyncDirectory(getSyncTableInfo());
+     	return SyncDataLoadController.getSyncBkpDirectory(getSyncTableInfo());
     }
     
     @Override

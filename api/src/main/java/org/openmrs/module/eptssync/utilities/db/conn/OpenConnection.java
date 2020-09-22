@@ -38,11 +38,14 @@ public class OpenConnection implements Connection, Closeable{
 	private String id;
 	private Date openDate;
 	private Date closeDate;
+	private DBConnectionService connService;
 	
-	protected OpenConnection(Connection conn){
+	protected OpenConnection(Connection conn, DBConnectionService service){
 		this.connection = conn;
 		this.operationTerminatedSuccessifully = false;
 		this.id = "CONN_"+hashCode();
+		
+		this.connService = service;
    }
 
 	public void markAsSuccessifullyTerminected(){
@@ -136,11 +139,10 @@ public class OpenConnection implements Connection, Closeable{
     	//Ficheiro.write("D:\\connections.txt", "FINALIZED CONN ["+ this.id + "] ON [" +  CallerInfo.getStackInfo(3)+ "]");
     }
 
-    
     private void tryToReopen() throws SQLException{
     	if (!this.isFinalized()){
     		if (isClosed()){
-    			this.connection =  DBConnectionService.getInstance().openConnection();
+    			this.connection =  connService.openConnection();
     		}
     	}
     }

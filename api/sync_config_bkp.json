@@ -5,6 +5,7 @@
 	defaultQtyRecordsPerSelect: 2500,
 	firstExport: true,
 	defaultQtyProcessingEngine: 1,
+	doIntegrityCheckInTheEnd: true,
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",

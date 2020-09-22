@@ -13,7 +13,6 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -27,6 +26,8 @@ public class SyncTableInfo {
 	private List<String> parents;
 	
 	private List<ParentRefInfo> parentRefInfo;
+	private List<ParentRefInfo> childRefInfo;
+	
 
 	private boolean mustRecompileTable;
 
@@ -48,6 +49,10 @@ public class SyncTableInfo {
 	public SyncTableInfo() {
 	}
 
+	public boolean isDoIntegrityCheckInTheEnd() {
+		return getRelatedSyncTableInfoSource().isDoIntegrityCheckInTheEnd();
+	}
+	
 	public int getQtyRecordsPerSelect() {
 		return qtyRecordsPerSelect != 0 ? qtyRecordsPerSelect : getRelatedSyncTableInfoSource().getDefaultQtyRecordsPerSelect();
 	}
@@ -121,9 +126,13 @@ public class SyncTableInfo {
 		return convertTableAttNameToClassAttName(getPrimaryKey());
 	}
 	
+	public OpenConnection openConnection() {
+		return relatedSyncTableInfoSource.openConnection();
+	}
+	
 	public String getPrimaryKey() {
 		if (primaryKey == null) {
-			OpenConnection conn = DBConnectionService.getInstance().openConnection();
+			OpenConnection conn =  openConnection();
 			
 			try {
 				ResultSet rs = conn.getMetaData().getPrimaryKeys(null, null, tableName);
@@ -144,6 +153,70 @@ public class SyncTableInfo {
 		return primaryKey;
 	}
 	
+	public void setChildRefInfo(List<ParentRefInfo> childRefInfo) {
+		this.parentRefInfo = childRefInfo;
+	}
+	
+	public synchronized List<ParentRefInfo> getChildRefInfo() {
+		if (this.childRefInfo == null) {
+			
+			logInfo("DISCOVERING CHILDREN FOR '" + this.tableName + "'");
+			
+			OpenConnection conn =  openConnection();
+					/*PKTABLE_CAT String => primary key table catalog (may be null)
+					PKTABLE_SCHEM String => primary key table schema (may be null)
+					PKTABLE_NAME String => primary key table name
+					PKCOLUMN_NAME String => primary key column name
+					FKTABLE_CAT String => foreign key table catalog (may be null) being exported (may be null)
+					FKTABLE_SCHEM String => foreign key table schema (may be null) being exported (may be null)
+					FKTABLE_NAME String => foreign key table name being exported
+					FKCOLUMN_NAME String => foreign key column name being exported*/
+			try {
+				this.childRefInfo = new ArrayList<ParentRefInfo>();  
+				
+				ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
+				
+				//System.out.println("-----------------------------------------------------");
+				
+				while(foreignKeyRS.next()) {
+					ParentRefInfo ref = new ParentRefInfo();
+					
+					ref.setReferenceColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
+					ref.setReferencedColumnName(foreignKeyRS.getString("PKCOLUMN_NAME"));
+					ref.setTableName(foreignKeyRS.getString("FKTABLE_NAME"));
+					ref.setTableInfo(this);
+					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getTableName(), ref.getReferenceColumnName(), conn));
+					
+					/*System.out.print("PKTABLE_NAME\t");
+					System.out.print("PKCOLUMN_NAME\t");
+					System.out.print("FKTABLE_NAME\t");
+					System.out.print("FKCOLUMN_NAME\t");
+					System.out.println("NULLABLE\t");
+					
+					System.out.print(foreignKeyRS.getString("PKTABLE_NAME")+"\t\t");
+					System.out.print(foreignKeyRS.getString("PKCOLUMN_NAME")+"\t\t");
+					System.out.print(foreignKeyRS.getString("FKTABLE_NAME")+"\t\t");
+					System.out.print(foreignKeyRS.getString("FKCOLUMN_NAME")+ "\t\t");
+					System.out.println(ref.isIgnorable());*/
+					
+					this.childRefInfo.add(ref);
+				}
+			
+				logInfo(this.childRefInfo.size() + " CHILDREN FOR '" + this.tableName + "' DISCOVERED");
+				
+			} catch (SQLException e) {
+				e.printStackTrace();
+				
+				throw new RuntimeException(e);
+			}
+			finally {
+				conn.finalizeConnection();
+			}
+		}
+		
+		return parentRefInfo;
+	}
+
 	public void setParentRefInfo(List<ParentRefInfo> parentRefInfo) {
 		this.parentRefInfo = parentRefInfo;
 	}
@@ -153,7 +226,7 @@ public class SyncTableInfo {
 			
 			logInfo("DISCOVERING PARENTS FOR '" + this.tableName + "'");
 			
-			OpenConnection conn = DBConnectionService.getInstance().openConnection();
+			OpenConnection conn =  openConnection();
 			
 			try {
 				this.parentRefInfo = new ArrayList<ParentRefInfo>();  
@@ -181,8 +254,7 @@ public class SyncTableInfo {
 					this.parentRefInfo.add(ref);
 				}
 			
-				logInfo("PARENTS FOR '" + this.tableName + "' DISCOVERED");
-				
+				logInfo(this.parentRefInfo.size() + " PARENTS FOR '" + this.tableName + "' DISCOVERED");
 			} catch (SQLException e) {
 				e.printStackTrace();
 				
@@ -203,14 +275,14 @@ public class SyncTableInfo {
 	public String getOriginAppLocationCode() {
 		return getRelatedSyncTableInfoSource().getOriginAppLocationCode();
 	}
-	
-	private OpenConnection openConnection() {
-		return DBConnectionService.getInstance().openConnection();
-	}
 
 	public void generateRecordClass() {
+		OpenConnection conn = openConnection();
+		
 		try {
-			this.syncRecordClass = OpenMRSClassGenerator.generate(this);
+			
+			this.syncRecordClass = OpenMRSClassGenerator.generate(this, conn);
+			conn.markAsSuccessifullyTerminected();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 
@@ -223,6 +295,9 @@ public class SyncTableInfo {
 			e.printStackTrace();
 
 			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
 		}
 	}
 
@@ -271,7 +346,7 @@ public class SyncTableInfo {
 	public void tryToUpgradeDataBaseInfo() throws SQLException {
 		logInfo("UPGRATING TABLE INFO [" + this.tableName + "]");
 		
-		OpenConnection conn = DBConnectionService.getInstance().openConnection();
+		OpenConnection conn = openConnection();
 
 		try {
 			String newColumnDefinition = "";
@@ -289,6 +364,11 @@ public class SyncTableInfo {
 				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
 				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateFirstExportColumnGeneration());
 			}*/
+			
+			if (!isConsistentColumnExistOnTable(conn)) {
+				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateConsistentColumnGeneration());
+			}
 
 			if (!isLastSyncDateColumnExistOnTable(conn)) {
 				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
@@ -514,7 +594,15 @@ public class SyncTableInfo {
 	private String generateOriginRecordIdColumnGeneration() {
 		return "origin_record_id int(11) NULL";
 	}
-	
+
+	private boolean isConsistentColumnExistOnTable(Connection conn) throws SQLException {
+		return DBUtilities.isColumnExistOnTable(getTableName(), "consistent", conn);
+	}
+
+	private String generateConsistentColumnGeneration() {
+		return "consistent int(1) DEFAULT 1";
+	}
+
 	private boolean isUuidColumnExistOnTable(Connection conn) throws SQLException {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "uuid", conn);
 	}
@@ -556,5 +644,18 @@ public class SyncTableInfo {
 
 	public int getQtyProcessingEngine() {
 		return this.qtyProcessingEngine != 0 ? this.qtyProcessingEngine : getRelatedSyncTableInfoSource().getDefaultQtyProcessingEngine();
+	}
+
+	public void fullLoad() {
+		getParentRefInfo();
+		getChildRefInfo();
+	}
+
+	public ParentRefInfo getSharedKeyRefInfo() {
+		for (ParentRefInfo refInfo : getParentRefInfo()) {
+			if (refInfo.isSharedPk()) return refInfo;
+		}
+			
+		return null;
 	}
 }

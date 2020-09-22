@@ -1,16 +1,18 @@
-package org.openmrs.module.eptssync.controller.export_;
+package org.openmrs.module.eptssync.export.controller;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
-import org.openmrs.module.eptssync.engine.export.ExportSyncEngine;
+import org.openmrs.module.eptssync.export.engine.ExportSyncEngine;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
+import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -23,8 +25,8 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  */
 public class SyncExportController extends AbstractSyncController {
 	
-	public SyncExportController() {
-		
+	public SyncExportController(DBConnectionService connectionService) {
+		super(connectionService);
 	}
 
 	@Override
@@ -72,7 +74,7 @@ public class SyncExportController extends AbstractSyncController {
 		}
 	}
 	
-	public synchronized String generateJSONFileName(SyncJSONInfo jsonInfo, SyncTableInfo tableInfo) {
+	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableInfo tableInfo) throws IOException {
 		String fileName = "";
 		String fileSufix = "00";
 		
@@ -88,17 +90,40 @@ public class SyncExportController extends AbstractSyncController {
 		fileName += tableInfo.getTableName();
 		fileName += "_" + DateAndTimeUtilities.parseFullDateToTimeLongIncludeSeconds(jsonInfo.getDateGenerated());
 
-		if(new File(fileName + fileSufix + ".json").exists()) {
+		String fileNameWithoutExtension = fileName + fileSufix;
+		String fileNameWithExtension = fileName + ".json";
+		
+		if(new File(fileNameWithExtension).exists() || new File(fileNameWithoutExtension).exists()) {
 			int count = 1;
 			
-			while(new File(fileName + count + ".json").exists()) {
+			fileNameWithoutExtension = fileName + count;
+			fileNameWithExtension = fileNameWithoutExtension + ".json";
+			
+			while(new File(fileNameWithoutExtension).exists() || new File(fileNameWithExtension).exists()) {
 				count++;
 			}
 			
 			fileSufix = utilities().garantirXCaracterOnNumber(count, 2) ;
 		}
 		
-		return fileName + fileSufix + ".json";
+		fileName += fileSufix;
+		
+		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
+		
+		File file = new File(fileName);
+		file.createNewFile();
+		
+		return file;
+	}
+
+	@Override
+	public boolean mustRestartInTheEnd() {
+		return false;
+	}
+
+	@Override
+	public String getOperationName() {
+		return AbstractSyncController.SYNC_OPERATION_EXPORT;
 	}
 
 }

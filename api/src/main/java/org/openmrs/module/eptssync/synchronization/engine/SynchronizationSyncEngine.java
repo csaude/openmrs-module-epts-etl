@@ -1,16 +1,16 @@
-package org.openmrs.module.eptssync.engine.synchronization;
+package org.openmrs.module.eptssync.synchronization.engine;
 
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
-import org.openmrs.module.eptssync.controller.synchronization.SynchronizationController;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.load.SyncImportInfoVO;
-import org.openmrs.module.eptssync.model.synchronization.SynchronizationSearchParams;
+import org.openmrs.module.eptssync.synchronization.controller.SynchronizationController;
+import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -47,9 +47,11 @@ public class SynchronizationSyncEngine extends SyncEngine {
 		OpenConnection conn = openConnection();
 		
 		try {
+			getSyncController().logInfo("SYNCHRONIZING '"+syncRecords.size() + "' "+ getSyncTableInfo().getTableName().toUpperCase());
 			for (SyncRecord record : syncRecords) {
 				((SyncImportInfoVO)record).sync(this.getSyncTableInfo(), conn);
 			}
+			getSyncController().logInfo("SYNCHRONIZED'"+syncRecords.size() + "' "+ getSyncTableInfo().getTableName().toUpperCase());
 			
 			conn.markAsSuccessifullyTerminected();
 		} catch (DBException e) {
@@ -70,7 +72,7 @@ public class SynchronizationSyncEngine extends SyncEngine {
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new SynchronizationSearchParams(this.syncTableInfo, limits);
-		searchParams.setQtdRecordPerSelected(2500);
+		searchParams.setQtdRecordPerSelected(getSyncTableInfo().getQtyRecordsPerSelect());
 		
 		return searchParams;
 	}

@@ -29,6 +29,11 @@ public class SyncJSONInfo {
 	
 	private List<OpenMRSObject> syncRecords;
 
+	/**
+	 * The minimal info of this object
+	 */
+	private SyncJSONInfo minimalJSONInfo;
+	
 	public SyncJSONInfo() {
 	}
 	
@@ -103,5 +108,14 @@ public class SyncJSONInfo {
 			throw new RuntimeException(e);
 		}
 	}	
+	
+	public SyncJSONInfo generateMinimalInfo() {
+		this.minimalJSONInfo = new SyncJSONInfo();
+		this.minimalJSONInfo.qtyRecords = this.qtyRecords;
+		this.minimalJSONInfo.originAppLocationCode = this.originAppLocationCode;
+		this.minimalJSONInfo.dateGenerated = this.dateGenerated;
+		
+		return this.minimalJSONInfo;
+	}
 	
 }

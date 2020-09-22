@@ -16,9 +16,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 
 public class DateAndTimeUtilities {
@@ -570,13 +568,7 @@ public class DateAndTimeUtilities {
 	
 	
 	public static Date getCurrentDate(){
-		OpenConnection conn = DBConnectionService.getInstance().openConnection();
-		
-    	Date currentDate =  getCurrentSystemDate(conn);
-    	
-    	conn.finalizeConnection();
-    	
-    	return currentDate;
+		return new Date();
     }
 	
 	public static int getDayOfMonth(Date date){

@@ -10,7 +10,6 @@ import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDownInitializer;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -68,10 +67,6 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 		this.children = children;
 	}
 	
-	public boolean isMultiProcessing() {
-		return syncTableInfo.getQtyProcessingEngine() > 1;
-	}
-	
 	public SyncSearchParams<? extends SyncRecord> getSearchParams() {
 		return searchParams;
 	}
@@ -85,7 +80,7 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 	}
 	
 	public OpenConnection openConnection() {
-		return DBConnectionService.getInstance().openConnection();
+		return syncController.openConnection();
 	}
 	
 	public SyncEngine getParent() {
@@ -117,7 +112,7 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 			this.syncController.logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.syncTableInfo.getTableName() + "' FINISHED.");
 			
 			if (utilities.arrayHasElement(records)) {
-				this.syncController.logInfo("INITIALIZING SYNC OF '" + records.size() + "' RECORDS OF TABLE '" + this.syncTableInfo.getTableName() + "'");
+				this.syncController.logInfo("INITIALIZING " +  getSyncController().getOperationName() + " OF '" + records.size() + "' RECORDS OF TABLE '" + this.syncTableInfo.getTableName() + "'");
 				
 				performeSync(records);
 				
@@ -126,25 +121,38 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 				reportProgress();
 			}
 			else {
-				TimeCountDown t = new TimeCountDown(this, "No '" + this.syncTableInfo.getTableName() + "' records to export" , 18000);
-				t.setIntervalForMessage(300);
-				
-				restart();
-				
-				t.run();
+				if (getSyncController().mustRestartInTheEnd()) {
+					TimeCountDown t = new TimeCountDown(this, "NO '" + this.syncTableInfo.getTableName().toUpperCase() + "' RECORD TO " + getSyncController().getOperationName() + ".... SLEEPING", 60);
+					t.setIntervalForMessage(10);
+					t.run();	
+					
+					changeStatusToSleeping();
+					
+					while(t.isInExecution()) {
+						TimeCountDown.sleep(10000);
+					}
+					
+					restart();
+					
+				}
+				else {
+					getSyncController().logInfo("NO '" + this.syncTableInfo.getTableName() + "' RECORDS TO " + getSyncController().getOperationName() + "! FINISHING..." );
+					changeStatusToFinished();
+				}
 			}
 		}
 	}
 
 	private synchronized void refreshProgressMeter(int newlyProcessedRecords) {
-		this.progressMeter.refresh("RUNNING", this.progressMeter.getTotal(), this.getProgressMeter().getProcessed() + newlyProcessedRecords);
-		
 		if (this.hasParent()) {
 			this.parent.refreshProgressMeter(newlyProcessedRecords);
 		}
+		else this.progressMeter.refresh("RUNNING", this.progressMeter.getTotal(), this.getProgressMeter().getProcessed() + newlyProcessedRecords);
 	}
 
 	private synchronized void initProgressMeter()  {
+		if (this.hasParent()) return;
+		
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -235,6 +243,11 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 		return this.operationStatus == MonitoredOperation.STATUS_SLEEPENG;
 	}
 
+	@Override
+	public void changeStatusToSleeping() {
+		this.operationStatus = MonitoredOperation.STATUS_SLEEPENG;
+	}
+	
 	@Override
 	public void changeStatusToRunning() {
 		this.operationStatus = MonitoredOperation.STATUS_RUNNING;

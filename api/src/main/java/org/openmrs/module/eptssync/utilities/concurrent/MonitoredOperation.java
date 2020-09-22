@@ -31,4 +31,6 @@ public interface MonitoredOperation {
 	public void changeStatusToStopped();
 	public void changeStatusToFinished();
 	public void changeStatusToPaused();
+	public void changeStatusToSleeping();
+	
 }
