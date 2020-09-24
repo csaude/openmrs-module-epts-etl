@@ -6,13 +6,17 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.synchronization.controller.SynchronizationController;
 import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class SynchronizationSyncEngine extends SyncEngine {
@@ -42,15 +46,46 @@ public class SynchronizationSyncEngine extends SyncEngine {
 		this.getSearchParams().setSyncStartDate(DateAndTimeUtilities.getCurrentDate());
 	}
 	
+	
+	@Override
+	public OpenConnection openConnection() {
+		OpenConnection conn = super.openConnection();
+	
+		if (getSyncTableInfo().isDoIntegrityCheckInTheEnd()) {
+			try {
+				DBUtilities.disableForegnKeyChecks(conn);
+			} catch (DBException e) {
+				e.printStackTrace();
+				
+				throw new RuntimeException(e);
+			}
+		}
+		
+		return conn;
+	}
+	
+	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords) {
 		OpenConnection conn = openConnection();
 		
 		try {
 			getSyncController().logInfo("SYNCHRONIZING '"+syncRecords.size() + "' "+ getSyncTableInfo().getTableName().toUpperCase());
-			for (SyncRecord record : syncRecords) {
-				((SyncImportInfoVO)record).sync(this.getSyncTableInfo(), conn);
+			
+			
+			if (getSyncTableInfo().isDoIntegrityCheckInTheEnd() && !getSyncTableInfo().useSharedPKKey()) {
+				List<OpenMRSObject> objects = SyncImportInfoVO.convertAllToOpenMRSObject(getSyncTableInfo(), utilities.parseList(syncRecords, SyncImportInfoVO.class));
+				
+				OpenMRSObjectDAO.insertAll(objects, conn);
+				
+				SyncImportInfoDAO.refreshLastMigrationTrySync(getSyncTableInfo(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
 			}
+			else{
+				for (SyncRecord record : syncRecords) {
+					((SyncImportInfoVO)record).sync(this.getSyncTableInfo(), conn);
+				}
+			}
+			
 			getSyncController().logInfo("SYNCHRONIZED'"+syncRecords.size() + "' "+ getSyncTableInfo().getTableName().toUpperCase());
 			
 			conn.markAsSuccessifullyTerminected();

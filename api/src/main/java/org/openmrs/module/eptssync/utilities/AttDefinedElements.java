@@ -25,6 +25,7 @@ public class AttDefinedElements {
 
 	private String sqlInsertParamDefinifion;
 	private String sqlUpdateParamDefinifion;
+	private String sqlInsertValues;
 
 	private String attName;
 	private String attType;
@@ -141,22 +142,53 @@ public class AttDefinedElements {
 		this.getterDefinition = defineGetterMethod(attName, attType);
 		this.resultSetLoadDefinition = defineResultSetLOadDefinition();
 		
+		String aspasAbrir = "\"\\\"\"+";
+		String aspasFechar = "+\"\\\"\"";
+		
 		if (!isObjectId || isSharedKey()) {
 			this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
 			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
 			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
-
 			
 			if (isForeignKey(dbAttName) && isNumeric()) {
 				this.sqlInsertParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
 				this.sqlUpdateParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
+				this.sqlInsertValues = "this." + attName + " == 0 ? null : this." + attName;
+				
+				this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + "); 
+				
 			}
 			else {
 				this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
 				this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
 	
+				if (isNumeric()) {
+					this.sqlInsertValues = "this." + attName;
+				}
+				else
+				if (isDate()) {
+					this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + " DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(" + attName + ")  " + aspasFechar + " : null";
+				}
+				else {
+					this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + attName + aspasFechar + " : null";
+				}
+				
+				
+				this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + "); 
 			}
 		}	
+	}
+	
+	public String getSqlInsertValues() {
+		return sqlInsertValues;
+	}
+	
+	public static void main(String[] args) {
+		String a = "2020-20-20 10:11";
+		
+		String s = "\"" + a + "\"";
+		
+		System.out.println(s);
 	}
 	
 	private String defineResultSetLOadDefinition() {
@@ -204,9 +236,17 @@ public class AttDefinedElements {
 			return "this." + this.attName + " = rs.getObject(\"" + dbAttName + "\");"; 
 		}		
 	}
-
+	
+	private boolean isDate() {
+		return utilities.isStringIn(this.attType, "java.util.Date", "Date");
+	}
+	
 	private boolean isNumeric() {
-		return utilities.isStringIn(this.attType, "int", "long");
+		return utilities.isStringIn(this.attType, "int", "long", "byte", "short", "double", "float");
+	}
+	
+	public static boolean isNumeric(String attType) {
+		return utilities.isStringIn(attType, "int", "long", "byte", "short", "double", "float");
 	}
 
 	private boolean isSharedKey() {
@@ -258,7 +298,7 @@ public class AttDefinedElements {
 		return utilities.convertTableAttNameToClassAttName(tableAttName);
 	}
 
-	private static String convertMySQLTypeTOJavaType(String mySQLTypeName) {
+	public static String convertMySQLTypeTOJavaType(String mySQLTypeName) {
 		mySQLTypeName = mySQLTypeName.toUpperCase();
 
 		if (utilities.isStringIn(mySQLTypeName, "INT", "MEDIUMINT"))

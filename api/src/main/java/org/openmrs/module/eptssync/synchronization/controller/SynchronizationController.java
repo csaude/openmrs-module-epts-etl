@@ -39,6 +39,8 @@ public class SynchronizationController extends AbstractSyncController {
 
 	@Override
 	public void init(SyncTableInfoSource sourceTableInfo) {
+		setSyncTableInfoSource(sourceTableInfo);
+		
 		if (sourceTableInfo.isDoIntegrityCheckInTheEnd()) {
 			
 			OpenConnection conn = openConnection();
@@ -172,7 +174,7 @@ public class SynchronizationController extends AbstractSyncController {
 
 	@Override
 	public boolean mustRestartInTheEnd() {
-		return true;
+		return !getSyncTableInfoSource().isDoIntegrityCheckInTheEnd();
 	}
 	
 	@Override

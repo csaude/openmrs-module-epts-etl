@@ -10,7 +10,9 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
@@ -43,7 +45,7 @@ public class SyncTableInfo {
 	private boolean metadata;
 	private int qtyProcessingEngine;
 	private int qtyRecordsPerSelect;
-	
+	private boolean fullLoaded;
 	private static Logger logger = Logger.getLogger(SyncTableInfo.class);
 	
 	public SyncTableInfo() {
@@ -163,41 +165,22 @@ public class SyncTableInfo {
 			logInfo("DISCOVERING CHILDREN FOR '" + this.tableName + "'");
 			
 			OpenConnection conn =  openConnection();
-					/*PKTABLE_CAT String => primary key table catalog (may be null)
-					PKTABLE_SCHEM String => primary key table schema (may be null)
-					PKTABLE_NAME String => primary key table name
-					PKCOLUMN_NAME String => primary key column name
-					FKTABLE_CAT String => foreign key table catalog (may be null) being exported (may be null)
-					FKTABLE_SCHEM String => foreign key table schema (may be null) being exported (may be null)
-					FKTABLE_NAME String => foreign key table name being exported
-					FKCOLUMN_NAME String => foreign key column name being exported*/
+		
 			try {
 				this.childRefInfo = new ArrayList<ParentRefInfo>();  
 				
 				ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
 				
-				//System.out.println("-----------------------------------------------------");
-				
 				while(foreignKeyRS.next()) {
 					ParentRefInfo ref = new ParentRefInfo();
 					
 					ref.setReferenceColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
+					ref.setReferenceTableInfo(SyncTableInfo.init(foreignKeyRS.getString("FKTABLE_NAME"), this.relatedSyncTableInfoSource));
+					
 					ref.setReferencedColumnName(foreignKeyRS.getString("PKCOLUMN_NAME"));
-					ref.setTableName(foreignKeyRS.getString("FKTABLE_NAME"));
-					ref.setTableInfo(this);
-					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getTableName(), ref.getReferenceColumnName(), conn));
+					ref.setReferencedTableInfo(this);
 					
-					/*System.out.print("PKTABLE_NAME\t");
-					System.out.print("PKCOLUMN_NAME\t");
-					System.out.print("FKTABLE_NAME\t");
-					System.out.print("FKCOLUMN_NAME\t");
-					System.out.println("NULLABLE\t");
-					
-					System.out.print(foreignKeyRS.getString("PKTABLE_NAME")+"\t\t");
-					System.out.print(foreignKeyRS.getString("PKCOLUMN_NAME")+"\t\t");
-					System.out.print(foreignKeyRS.getString("FKTABLE_NAME")+"\t\t");
-					System.out.print(foreignKeyRS.getString("FKCOLUMN_NAME")+ "\t\t");
-					System.out.println(ref.isIgnorable());*/
+					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getReferenceTableInfo().getTableName(), ref.getReferenceColumnName(), conn));
 					
 					this.childRefInfo.add(ref);
 				}
@@ -214,7 +197,7 @@ public class SyncTableInfo {
 			}
 		}
 		
-		return parentRefInfo;
+		return childRefInfo;
 	}
 
 	public void setParentRefInfo(List<ParentRefInfo> parentRefInfo) {
@@ -238,16 +221,20 @@ public class SyncTableInfo {
 					
 					ref.setReferenceColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
 					ref.setReferencedColumnName(foreignKeyRS.getString("PKCOLUMN_NAME"));
-					ref.setTableName(foreignKeyRS.getString("PKTABLE_NAME"));
-					ref.setTableInfo(this);
+					ref.setReferenceTableInfo(this);
+					
+					ref.setReferencedTableInfo(SyncTableInfo.init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource));
+					
 					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(this.tableName, ref.getReferenceColumnName(), conn));
 					
+					ref.setRefColumnType(AttDefinedElements.convertMySQLTypeTOJavaType(DBUtilities.determineColunType(this.getTableName(), ref.getReferenceColumnName(), conn)));
+					
 					//Mark as metadata if is not specificaly mapped as parent in conf file
-					if (!this.parents.contains(foreignKeyRS.getString("PKTABLE_NAME"))) {
+					if (this.parents != null && !this.parents.contains(foreignKeyRS.getString("PKTABLE_NAME"))) {
 						ref.setMetadata(true);
 					}
 					
-					if (this.sharePkWith != null && this.sharePkWith.equalsIgnoreCase(ref.getTableName())) {
+					if (this.sharePkWith != null && this.sharePkWith.equalsIgnoreCase(ref.getReferenceColumnName())) {
 						ref.setSharedPk(true);
 					}
 					
@@ -268,6 +255,14 @@ public class SyncTableInfo {
 		return parentRefInfo;
 	}
 
+	private static SyncTableInfo init(String tableName, SyncTableInfoSource sourceInfo) {
+		SyncTableInfo tableInfo = new SyncTableInfo();
+		tableInfo.setTableName(tableName);
+		tableInfo.setRelatedSyncTableInfoSource(sourceInfo);
+		
+		return tableInfo;
+	}
+
 	public Class<OpenMRSObject> getRecordClass() {
 		return this.syncRecordClass;
 	}
@@ -280,7 +275,6 @@ public class SyncTableInfo {
 		OpenConnection conn = openConnection();
 		
 		try {
-			
 			this.syncRecordClass = OpenMRSClassGenerator.generate(this, conn);
 			conn.markAsSuccessifullyTerminected();
 		} catch (ClassNotFoundException e) {
@@ -395,18 +389,27 @@ public class SyncTableInfo {
 				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateOriginAppLocationCodeColumnGeneration());
 			}
 			
+			
+			String uniqueOrigin = "";
+			
+			if (!isUniqueOriginConstraintsExists(conn)) {
+				uniqueOrigin = "UNIQUE KEY " + generateUniqueOriginConstraintsName() + "(origin_record_id, origin_app_location_code)";
+			}
+			
+			String batch = "";
+			
 			if (utilities.stringHasValue(newColumnDefinition)) {
-				logInfo("CREATING CONF COLUMNS FOR TABLE [" + this.tableName + "]");
-				
-				newColumnDefinition = "ALTER TABLE " + this.getTableName() + " ADD (" + newColumnDefinition + ")"; 
-				
-				Statement st = conn.createStatement();
-				st.addBatch(newColumnDefinition);
-				st.executeBatch();
-						
-				st.close();
-				
+				batch = "ALTER TABLE " + this.getTableName() + " ADD (" + newColumnDefinition + ")"; 
+			}
+			
+			if (utilities.stringHasValue(uniqueOrigin)) {
+				batch +=  (!utilities.stringHasValue(batch) ? "ALTER TABLE " + this.getTableName() + " ADD " + uniqueOrigin : ", " + uniqueOrigin); 
+			}
+		
+			if (utilities.stringHasValue(batch)) {
 				logInfo("CONF COLUMNS FOR TABLE [" + this.tableName + "] CREATED");
+				BaseDAO.executeBatch(conn, batch);
+				logInfo("CREATING CONF COLUMNS FOR TABLE [" + this.tableName + "]");
 			}
 			
 			/*
@@ -427,6 +430,16 @@ public class SyncTableInfo {
 		finally {
 			conn.finalizeConnection();
 		}
+	}
+
+	private boolean isUniqueOriginConstraintsExists(Connection conn) throws SQLException {
+		String unqKey = generateUniqueOriginConstraintsName(); 
+	
+		return DBUtilities.isIndexExistsOnTable(conn.getCatalog(), getTableName(), unqKey, conn);
+	}
+
+	private String generateUniqueOriginConstraintsName() {
+		return this.getTableName() + "origin_unq";
 	}
 
 	/*
@@ -463,6 +476,7 @@ public class SyncTableInfo {
 		sql += "	last_migration_try_err varchar(250) DEFAULT NULL,\n";
 		sql += "	migration_status int(1) DEFAULT 1,\n";
 		sql += "	CONSTRAINT CHK_" + generateRelatedStageTableName() + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
+		sql += "	UNIQUE KEY " + generateRelatedStageTableName() + "UNQ_RECORD(record_id, origin_app_location_code),\n";
 		sql += "	PRIMARY KEY (id)\n";
 		sql += ")\n";
 		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";
@@ -646,9 +660,17 @@ public class SyncTableInfo {
 		return this.qtyProcessingEngine != 0 ? this.qtyProcessingEngine : getRelatedSyncTableInfoSource().getDefaultQtyProcessingEngine();
 	}
 
-	public void fullLoad() {
+	public boolean isFullLoaded() {
+		return fullLoaded;
+	}
+	
+	public synchronized void fullLoad() {
+		if (isFullLoaded()) throw new ForbiddenOperationException("This table info is already full loaded");
+		
 		getParentRefInfo();
 		getChildRefInfo();
+		
+		this.fullLoaded = true;
 	}
 
 	public ParentRefInfo getSharedKeyRefInfo() {
@@ -657,5 +679,10 @@ public class SyncTableInfo {
 		}
 			
 		return null;
+	}
+
+	@Override
+	public String toString() {
+		return "Table [name:" + this.tableName + ", pk: " + getPrimaryKey()+"]";
 	}
 }

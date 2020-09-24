@@ -107,7 +107,7 @@ public class SyncDataLoadController extends AbstractSyncController {
 
 	@Override
 	public boolean mustRestartInTheEnd() {
-		return false;
+		return true;
 	}
 
 	@Override

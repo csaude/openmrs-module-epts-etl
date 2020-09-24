@@ -7,6 +7,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class OpenMRSObjectDAO extends BaseDAO {
 	public static void refreshLastSyncDate(OpenMRSObject syncRecord, Connection conn) throws DBException{
@@ -122,7 +123,6 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		}
 	}
 
-
 	public static OpenMRSObject getFirstRecord(SyncTableInfo tableInfo, Connection conn) throws DBException {
 		String sql = "";
 		
@@ -182,5 +182,93 @@ public class OpenMRSObjectDAO extends BaseDAO {
 					 " WHERE  " + record.generateDBPrimaryKeyAtt() + " =  ? ";
 		
 		executeQuery(sql, params, conn);
+	}
+
+	public static void remove(OpenMRSObject record, Connection conn) throws DBException{
+		Object[] params = {record.getObjectId()};
+		
+		String sql = " DELETE" +
+					 " FROM " + record.generateTableName() +
+					 " WHERE  " + record.generateDBPrimaryKeyAtt() + " =  ? ";
+		
+		executeQuery(sql, params, conn);
+	}
+	
+	public static void removeByOriginId(OpenMRSObject record, Connection conn) throws DBException{
+		Object[] params = {record.getOriginRecordId()};
+		
+		String sql = " DELETE" +
+					 " FROM " + record.generateTableName() +
+					 " WHERE  origin_record_id = ? ";
+		
+		executeQuery(sql, params, conn);
+	}
+	
+	public static List<OpenMRSObject> getByOriginParentId(Class<OpenMRSObject> clazz, String parentField, int parentOriginId, String appOriginCode, Connection conn) throws DBException {
+		Object[] params = {parentField, 
+						  appOriginCode};
+		
+		OpenMRSObject obj = utilities.createInstance(clazz);
+		
+		String sql = " SELECT * " +
+					 " FROM     " + obj.generateTableName() +
+					 " WHERE 	" + parentField + " = ? " +
+					 "			AND origin_app_location_code = ? ";
+		
+		return search(clazz, sql, params, conn);
+	}
+
+	public static void insertAll(List<OpenMRSObject> objects, OpenConnection conn) throws DBException {
+		String sql = "";
+		sql += objects.get(0).getInsertSQL().split("VALUES")[0];
+		sql += " VALUES";
+		
+		String values = "";
+		
+		for (int i=0; i < objects.size(); i++) {
+			if (objects.get(i).isExcluded()) continue;
+			
+			values += "(" + objects.get(i).generateInsertValues() + "),";
+		}
+		
+		if (utilities.stringHasValue(values)) {
+			sql += utilities.removeLastChar(values);
+		
+			try {
+				executeBatch(conn, sql);
+			} catch (DBException e) {
+				if (e.isDuplicatePrimaryKeyException()) {
+					OpenMRSObject problematicRecord = retrieveProblematicObjectFromExceptionInfo(objects.get(0).getClass(), e, conn);
+					
+					problematicRecord = utilities.findOnArray(objects, problematicRecord);
+					problematicRecord.setExcluded(true);
+					
+					update(problematicRecord, conn);
+						
+					insertAll(objects, conn);
+				}
+				else throw e;
+			}
+		}
+	}
+	
+	
+	private static OpenMRSObject retrieveProblematicObjectFromExceptionInfo(Class<? extends OpenMRSObject> class1, DBException e, Connection conn) throws DBException {
+	 	//UUID duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
+		String s = e.getLocalizedMessage().split("'")[1];
+		
+		//Check if is uuid duplication
+		if (utilities.isValidUUID(s)) {
+			return thinGetByUuid(class1, s, conn);
+		}	
+		else {
+		 	//ORIGIN duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
+			String[] idParts = (e.getLocalizedMessage().split("'")[1]).split("-");
+			
+			int objectId = Integer.parseInt(idParts[0]);
+			String originAppLocationCode = idParts[1];
+			
+			return thinGetByOriginRecordId(class1, objectId, originAppLocationCode, conn);
+		}
 	}		
 }

@@ -2,6 +2,8 @@ package org.openmrs.module.eptssync.utilities.db.conn;
 
 import java.sql.SQLException;
 
+import org.openmrs.module.eptssync.model.base.BaseDAO;
+
 /**
  * Exception is thrown when any DB error occurs.
  * 
@@ -21,6 +23,8 @@ public class DBException extends SQLException
 	public static final int ORACLE_UNIQUE_CONSTRAINTS_VIOLATED_COD=1;
 	public static final int ORACLE_NAME_IS_ALREADY_USED_BY_AN_EXISTING_OBJECT=17081;
 	public static final int ORACLE_TABLE_OR_VIEW_DOES_NOT_EXIST=942;
+	
+	public static final int MYSQL_UNIQUE_CONSTRAINTS_VIOLATED_COD=1062;
 	
 	
 	
@@ -98,8 +102,41 @@ public class DBException extends SQLException
 			return this.SQLCodeError == ORACLE_UNIQUE_CONSTRAINTS_VIOLATED_COD;
 		}
 		
+		if (this.dataBaseName.equals(DBUtilities.MYSQL_DATABASE)){
+			return this.SQLCodeError == MYSQL_UNIQUE_CONSTRAINTS_VIOLATED_COD;
+		}
+		 //SQL Error [1062] [23000]: Duplicate entry '1' for key 'tmp_unq'
+		 //SQL Error [1062] [23000]: Duplicate entry '1' for key 'PRIMARY'
+	
+		
 		System.err.println("WARNING: Nao foi possivel determinar a base de dados");
 		return false;
+	}
+	
+	public static void main(String[] args) throws DBException {
+		DBConnectionInfo info = new DBConnectionInfo();
+		info.setConnectionURI("jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch");
+		info.setDataBaseUserName("root");
+		info.setDataBaseUserPassword("root");
+		info.setDriveClassName("com.mysql.jdbc.Driver");
+		
+		DBConnectionService service = DBConnectionService.init(info);
+		
+		try {
+			BaseDAO.executeBatch(service.openConnection(), "insert into tmp(id) values(1), (1)");
+		} catch (DBException e) {
+			
+			String s = e.getLocalizedMessage().split("'")[1];
+			
+			System.out.println(s);
+			
+			if (e.isDuplicatePrimaryKeyException()) {
+				System.out.println("Duplicate!!!");
+			}
+			else System.out.println("Other error");
+			
+			//e.printStackTrace();
+		}
 	}
 	
 	/**

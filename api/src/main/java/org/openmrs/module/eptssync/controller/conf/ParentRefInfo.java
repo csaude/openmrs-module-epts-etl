@@ -1,8 +1,14 @@
 package org.openmrs.module.eptssync.controller.conf;
 
+import java.io.IOException;
+import java.sql.SQLException;
+
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -15,13 +21,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class ParentRefInfo {
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 
-	
+	private SyncTableInfo referenceTableInfo;
 	private String referenceColumnName;
-	private String referencedColumnName;
-	private String tableName;
-	private SyncTableInfo tableInfo;
+	private Class<OpenMRSObject> relatedReferenceClass;
 	
-	private Class<OpenMRSObject> parentClass;
+	private SyncTableInfo referencedTableInfo;
+	private String referencedColumnName;
+	private Class<OpenMRSObject> relatedReferencedClass;
 	
 	/*
 	 * Indicate if this parent is metadata or not
@@ -39,23 +45,26 @@ public class ParentRefInfo {
 	 */
 	private boolean sharedPk;
 	
+	public String refColumnType;
+	
 	public ParentRefInfo() {
 	}
 	
-	/*
-	public ParentRefInfo(String referenceColumnName, String referencedColumnName, String tableName, boolean ignorable, SyncTableInfo tableInfo) {
-		this.referenceColumnName = referenceColumnName;
-		this.referencedColumnName = referencedColumnName;
-		this.tableName = tableName;
-		this.tableInfo = tableInfo;
-		this.ignorable = ignorable;
+	public String getRefColumnType() {
+		return refColumnType;
 	}
-	*/
 	
+	public void setRefColumnType(String refColumnType) {
+		this.refColumnType = refColumnType;
+	}
 	public String getReferenceColumnName() {
 		return referenceColumnName;
 	}
 
+	public boolean isNumericRefColumn() {
+		return AttDefinedElements.isNumeric(this.refColumnType);
+	}
+	
 	public void setReferenceColumnName(String referenceColumnName) {
 		this.referenceColumnName = referenceColumnName;
 	}
@@ -72,28 +81,28 @@ public class ParentRefInfo {
 		this.referencedColumnName = referencedColumnName;
 	}
 	
-	public String getTableName() {
-		return tableName;
+	public SyncTableInfo getReferenceTableInfo() {
+		return referenceTableInfo;
 	}
 	
-	public void setTableName(String tableName) {
-		this.tableName = tableName;
+	public void setReferenceTableInfo(SyncTableInfo referenceTableInfo) {
+		this.referenceTableInfo = referenceTableInfo;
 	}
 	
-	public SyncTableInfo getTableInfo() {
-		return tableInfo;
+	public SyncTableInfo getReferencedTableInfo() {
+		return referencedTableInfo;
 	}
 	
-	public void setTableInfo(SyncTableInfo tableInfo) {
-		this.tableInfo = tableInfo;
+	public void setReferencedTableInfo(SyncTableInfo referencedTableInfo) {
+		this.referencedTableInfo = referencedTableInfo;
 	}
 
-	public String getFullParentReferencedColumn() {
-		return  this.getTableName() + "." + this.getReferencedColumnName();
+	public String getFullReferencedColumn() {
+		return  this.getReferencedTableInfo().getTableName() + "." + this.getReferencedColumnName();
 	}
 
 	public String getFullReferenceColumn() {
-		return  this.getTableInfo().getTableName() + "." + this.getReferenceColumnName();
+		return  this.getReferenceTableInfo().getTableName() + "." + this.getReferenceColumnName();
 	}
 	
 	public boolean isIgnorable() {
@@ -122,31 +131,81 @@ public class ParentRefInfo {
 
 	@SuppressWarnings("unchecked")
 	@JsonIgnore
-	public Class<OpenMRSObject> determineParentClass(){
+	public Class<OpenMRSObject> determineRelatedReferencedClass(){
 		try {
-			if (this.parentClass != null) return this.parentClass;
+			if (this.relatedReferencedClass != null) return this.relatedReferencedClass;
 			
-			if (this.tableName == null)
-				throw new ForbiddenOperationException("No main parent info defined!");
+			if (this.referencedTableInfo == null)
+				throw new ForbiddenOperationException("No referenced parent info defined!");
 
-			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + generateClassName(this.tableName);
+			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + generateRelatedReferencedClassName();
 			
-			this.parentClass = (Class<OpenMRSObject>) Class.forName(fullClassName);
+			this.relatedReferencedClass = (Class<OpenMRSObject>) Class.forName(fullClassName);
 
-			return this.parentClass;
+			return this.relatedReferencedClass;
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		
 			throw new RuntimeException(e);
 		}
 	}
 
-	public String getParentFullClassName() {
-		return this.determineParentClass().getCanonicalName();
+	@SuppressWarnings("unchecked")
+	@JsonIgnore
+	public Class<OpenMRSObject> determineRelatedReferenceClass(){
+		try {
+			if (this.relatedReferenceClass != null) return this.relatedReferenceClass;
+			
+			if (this.referenceTableInfo == null)
+				throw new ForbiddenOperationException("No reference parent info defined!");
+
+			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + generateRelatedReferenceClassName();
+			
+			this.relatedReferenceClass = (Class<OpenMRSObject>) Class.forName(fullClassName);
+
+			return this.relatedReferenceClass;
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
-	private String generateClassName(String tableName) {
-		String[] nameParts = tableName.split("_");
+	public boolean existsRelatedReferenceClass() {
+		try {
+			return determineRelatedReferenceClass() != null;
+		} catch (RuntimeException e) {
+			return false;
+		}
+	}
+	
+	public boolean existsRelatedReferencedClass() {
+		try {
+			return determineRelatedReferencedClass() != null;
+		} catch (RuntimeException e) {
+			return false;
+		}
+	}
+	
+	public String getReferencedClassFullName() {
+		return this.determineRelatedReferencedClass().getCanonicalName();
+	}
+	
+	public String getReferenceClassFullName() {
+		return this.determineRelatedReferenceClass().getCanonicalName();
+	}
+	
+	private String generateRelatedReferencedClassName() {
+		String[] nameParts = this.referencedTableInfo.getTableName().split("_");
+
+		String className = utilities.capitalize(nameParts[0]);
+
+		for (int i = 1; i < nameParts.length; i++) {
+			className += utilities.capitalize(nameParts[i]);
+		}
+
+		return className + "VO";
+	}
+	
+	@SuppressWarnings("unused")
+	private String generateRelatedReferenceClassName() {
+		String[] nameParts = this.referenceTableInfo.getTableName().split("_");
 
 		String className = utilities.capitalize(nameParts[0]);
 
@@ -159,6 +218,57 @@ public class ParentRefInfo {
 	
 	@Override
 	public String toString() {
-		return "TABLE: " + this.tableName + ", REFECENCE: " + this.referenceColumnName + ", REFERENCEDE: " + this.referencedColumnName;
+		return "REFERENCE [TABLE: " + this.referenceTableInfo.getTableName() + ", COLUMN: " + this.referenceColumnName + "]," +
+					"REFERENCED[TABLE: " + this.referencedTableInfo.getTableName() + ", COLUMN: " + this.referencedColumnName + "]";
+	}
+
+	public void generateRelatedReferencedClass() {
+		OpenConnection conn = getReferencedTableInfo().openConnection();
+		
+		try {
+			this.relatedReferencedClass = OpenMRSClassGenerator.generate(this.getReferencedTableInfo(), conn);
+			conn.markAsSuccessifullyTerminected();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+		
+	}
+	
+	public void generateRelatedReferenceClass() {
+		OpenConnection conn = getReferenceTableInfo().openConnection();
+		
+		try {
+			this.relatedReferenceClass = OpenMRSClassGenerator.generate(this.getReferenceTableInfo(), conn);
+			conn.markAsSuccessifullyTerminected();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+		
 	}
 }

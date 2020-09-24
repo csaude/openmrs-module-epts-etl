@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.model.openmrs.generic;
 
 import java.sql.Connection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -11,9 +12,9 @@ import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
+import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -120,7 +121,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 	
 	@Override
-	public void consolidateData(SyncTableInfo tableInfo, Connection conn) throws InconsistentStateException, DBException{
+	public void consolidateData(SyncTableInfo tableInfo, Connection conn) throws DBException{
 		Map<ParentRefInfo, Integer> missingParents = loadMissingParents(tableInfo, conn);
 		
 		boolean missingNotIgnorableParent = false;
@@ -132,45 +133,53 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			}
 		}
 		
-		InconsistentStateException e = null;
-		
-		if (!missingParents.isEmpty()) e = new InconsistentStateException(this, missingParents);
-		
-		if (missingNotIgnorableParent) throw e;
-		
-		OpenMRSObject originalObj = OpenMRSObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
-		originalObj.setObjectId(this.getOriginRecordId());
-		
-		loadDestParentInfo(conn);
-		
-		save(conn);
-		
-		if (hasIgnoredParent()) {
-			//Write object info on stage area for further data consolidation
-			SyncImportInfoVO syncInfo = SyncImportInfoVO.generateFromSyncRecord(originalObj);
-			syncInfo.markAsPartialMigrated(e.getLocalizedMessage());
-			
-			SyncImportInfoDAO.insert(syncInfo, tableInfo, conn);
+		if (missingNotIgnorableParent) {
+			removeDueInconsistency(tableInfo, missingParents, conn);
 		}
 		else {
+			loadDestParentInfo(conn);
+			
+			save(conn);
+			
+			SyncImportInfoVO syncInfo = this.retrieveRelatedSyncInfo(tableInfo, conn);
+			
+			if (hasIgnoredParent()) {
+				syncInfo.markAsPartialMigrated(tableInfo, generateMissingInfo(missingParents), conn);
+			}
+			else syncInfo.delete(tableInfo, conn);
+			
 			this.markAsConsistent(conn);
+			
+			BaseDAO.commit(conn);
 		}
 	}
 	
-	@Override
-	public void moveToStageAreaDueInconsistency(SyncTableInfo syncTableInfo, InconsistentStateException exception, Connection conn) throws DBException{
-		OpenMRSObject originalObj = OpenMRSObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
-		originalObj.setObjectId(this.getOriginRecordId());
+	protected  SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableInfo tableInfo, Connection conn) throws DBException {
+		return SyncImportInfoDAO.retrieveFromOpenMRSObject(tableInfo, this, conn);
+	}
+
+	public void removeDueInconsistency(SyncTableInfo syncTableInfo, Map<ParentRefInfo, Integer> missingParents, Connection conn) throws DBException{
+		SyncImportInfoVO syncInfo = this.retrieveRelatedSyncInfo(syncTableInfo, conn);
 		
-		SyncImportInfoVO syncInfo = SyncImportInfoVO.generateFromSyncRecord(originalObj);
-		syncInfo.markAsSyncFailedToMigrate(exception.getLocalizedMessage());
+		syncInfo.markAsPartialMigrated(syncTableInfo, generateMissingInfo(missingParents), conn);
 		
-		SyncImportInfoDAO.insert(syncInfo, syncTableInfo, conn);
+		this.remove(conn);
 		
+		BaseDAO.commit(conn);
 		
+		for (ParentRefInfo refInfo: syncTableInfo.getChildRefInfo()) {
+			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferencedClass(), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
 			
+			for (OpenMRSObject child : children) {
+				child.consolidateData(refInfo.getReferenceTableInfo(), conn);
+			}
+		}
 	}
 	
+	protected void  remove(Connection conn) throws DBException {
+		OpenMRSObjectDAO.remove(this, conn);
+	}
+
 	public void markAsConsistent(Connection conn) throws DBException{
 		markAsConsistent();
 		
@@ -185,7 +194,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				 
 			try {
 				if (parentId != 0) {
-					OpenMRSObject parent = loadParent(refInfo.determineParentClass(), parentId, refInfo.isIgnorable(), conn);
+					OpenMRSObject parent = loadParent(refInfo.determineRelatedReferencedClass(), parentId, refInfo.isIgnorable(), conn);
 					 
 					 if (parent == null) {
 						missingParents.put(refInfo, parentId);
@@ -199,5 +208,30 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		
 		return missingParents;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) return false;
+		
+		if (!obj.getClass().equals(this.getClass())) return false;
+		
+		AbstractOpenMRSObject objAsOpenMrs = (AbstractOpenMRSObject)obj;
+		
+		if (utilities.stringHasValue(this.getUuid()) && utilities.stringHasValue(objAsOpenMrs.getUuid())) {
+			return this.getUuid().equals(objAsOpenMrs.getUuid());
+		}
+		
+		return super.equals(obj);
+	}
+	
+	private String generateMissingInfo(Map<ParentRefInfo, Integer> missingParents) {
+		String missingInfo = "";
+		
+		for (Entry<ParentRefInfo, Integer> missing : missingParents.entrySet()) {
+			missingInfo = utilities.concatStrings(missingInfo, "[" +missing.getKey().getReferencedTableInfo().getTableName() + ": " + missing.getValue() + "]", ";");
+		}
+		
+		return "The record [" + this.generateTableName() + " = " + this.getObjectId() + "] is in inconsistent state. There are missing these parents: " + missingInfo;
+	}	
 
 }

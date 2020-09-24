@@ -30,6 +30,7 @@ public class ObjectMapperProvider implements ContextResolver<ObjectMapper> {
 		result.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		result.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 		result.configure(Feature.ALLOW_UNQUOTED_FIELD_NAMES , true);
+		//result.configure(Feature.ALLOW_UNQUOTED_CONTROL_CHARS , true);
 		
 		return result;
 	}

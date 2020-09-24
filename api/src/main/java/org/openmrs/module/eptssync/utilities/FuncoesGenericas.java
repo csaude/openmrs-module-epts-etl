@@ -57,7 +57,7 @@ public class FuncoesGenericas {
 	}
 	
 	public static String concatStrings(String value, String... inValues){
-		if (value==null) return value;
+		if (inValues == null) return value;
 		
 		for (String str : inValues){
 			value = concatStrings(value, str, "");

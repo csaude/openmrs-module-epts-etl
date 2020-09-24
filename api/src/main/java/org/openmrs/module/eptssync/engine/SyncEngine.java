@@ -123,7 +123,7 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 			else {
 				if (getSyncController().mustRestartInTheEnd()) {
 					TimeCountDown t = new TimeCountDown(this, "NO '" + this.syncTableInfo.getTableName().toUpperCase() + "' RECORD TO " + getSyncController().getOperationName() + ".... SLEEPING", 60);
-					t.setIntervalForMessage(10);
+					t.setIntervalForMessage(30);
 					t.run();	
 					
 					changeStatusToSleeping();
@@ -134,6 +134,7 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 					
 					restart();
 					
+					run();
 				}
 				else {
 					getSyncController().logInfo("NO '" + this.syncTableInfo.getTableName() + "' RECORDS TO " + getSyncController().getOperationName() + "! FINISHING..." );

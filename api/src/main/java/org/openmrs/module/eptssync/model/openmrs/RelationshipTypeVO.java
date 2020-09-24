@@ -2,6 +2,8 @@ package org.openmrs.module.eptssync.model.openmrs;
  
 import org.openmrs.module.eptssync.model.openmrs.generic.*; 
  
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
@@ -29,6 +31,7 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
 	private int originRecordId;
 	private java.util.Date dateChanged;
 	private String originAppLocationCode;
+	private int consistent;
  
 	public RelationshipTypeVO() { 
 		this.metadata = true;
@@ -165,11 +168,19 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
-
-
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
+	}
+ 
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+
+
+ 
+	public int getConsistent(){ 
+		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -197,6 +208,7 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -206,24 +218,41 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.aIsToB, this.bIsToA, this.preferred, this.weight, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.uuid, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.aIsToB, this.bIsToA, this.preferred, this.weight, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.uuid, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.consistent};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.aIsToB, this.bIsToA, this.preferred, this.weight, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.uuid, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.relationshipTypeId};		return params; 
+ 		Object[] params = {this.aIsToB, this.bIsToA, this.preferred, this.weight, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.uuid, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.consistent, this.relationshipTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO relationship_type(a_is_to_b, b_is_to_a, preferred, weight, description, creator, date_created, uuid, retired, retired_by, date_retired, retire_reason, last_sync_date, origin_record_id, date_changed, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO relationship_type(a_is_to_b, b_is_to_a, preferred, weight, description, creator, date_created, uuid, retired, retired_by, date_retired, retire_reason, last_sync_date, origin_record_id, date_changed, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE relationship_type SET a_is_to_b = ?, b_is_to_a = ?, preferred = ?, weight = ?, description = ?, creator = ?, date_created = ?, uuid = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ? WHERE relationship_type_id = ?;"; 
+ 		return "UPDATE relationship_type SET a_is_to_b = ?, b_is_to_a = ?, preferred = ?, weight = ?, description = ?, creator = ?, date_created = ?, uuid = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ?, consistent = ? WHERE relationship_type_id = ?;"; 
 	} 
  
+	@JsonIgnore
+	public String generateInsertValues(){ 
+ 		return (this.aIsToB != null ? "\""+aIsToB+"\"" : null) + "," + (this.bIsToA != null ? "\""+bIsToA+"\"" : null) + "," + (this.preferred) + "," + (this.weight) + "," + (this.description != null ? "\""+description+"\"" : null) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.retired) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+retireReason+"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+	} 
+ 
+	@Override
+	public boolean hasParents() {
+		if (this.creator != 0) return true;
+		if (this.retiredBy != 0) return true;
+		return false;
+	}
+
+	@Override
+	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {
+		throw new RuntimeException("No PKSharedInfo defined!");	}
+
+	@Override
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
@@ -236,4 +265,13 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
 		if (parentOnDestination  != null) this.retiredBy = parentOnDestination.getObjectId();
  
 	}
+
+	@Override
+	public int getParentValue(String parentAttName) {		
+		if (parentAttName.equals("creator")) return this.creator;		
+		if (parentAttName.equals("retiredBy")) return this.retiredBy;
+
+		throw new RuntimeException("No found parent for: " + parentAttName);	}
+
+
 }

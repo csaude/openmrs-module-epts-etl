@@ -31,6 +31,7 @@ public abstract class AbstractSyncController {
 	public static String SYNC_OPERATION_SYNCHRONIZATION = "SYNCHRONIZATION";
 	public static String SYNC_OPERATION_LOAD = "LOAD";
 	public static String SYNC_OPERATION_TRANSPOR = "TRANSPORT";
+	public static String SYNC_OPERATION_CONSOLIDATION= "CONSOLIDATION";
 	
 	protected Logger logger;
 	

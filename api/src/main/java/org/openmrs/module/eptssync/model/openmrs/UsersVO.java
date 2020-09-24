@@ -2,6 +2,8 @@ package org.openmrs.module.eptssync.model.openmrs;
  
 import org.openmrs.module.eptssync.model.openmrs.generic.*; 
  
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
@@ -264,6 +266,11 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
  		return "UPDATE users SET system_id = ?, username = ?, password = ?, salt = ?, secret_question = ?, secret_answer = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, person_id = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE user_id = ?;"; 
 	} 
  
+	@JsonIgnore
+	public String generateInsertValues(){ 
+ 		return (this.systemId != null ? "\""+systemId+"\"" : null) + "," + (this.username != null ? "\""+username+"\"" : null) + "," + (this.password != null ? "\""+password+"\"" : null) + "," + (this.salt != null ? "\""+salt+"\"" : null) + "," + (this.secretQuestion != null ? "\""+secretQuestion+"\"" : null) + "," + (this.secretAnswer != null ? "\""+secretAnswer+"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.personId == 0 ? null : this.personId) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+retireReason+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+	} 
+ 
 	@Override
 	public boolean hasParents() {
 		if (this.personId != 0) return true;
@@ -298,4 +305,15 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		if (parentOnDestination  != null) this.retiredBy = parentOnDestination.getObjectId();
  
 	}
+
+	@Override
+	public int getParentValue(String parentAttName) {		
+		if (parentAttName.equals("personId")) return this.personId;		
+		if (parentAttName.equals("creator")) return this.creator;		
+		if (parentAttName.equals("changedBy")) return this.changedBy;		
+		if (parentAttName.equals("retiredBy")) return this.retiredBy;
+
+		throw new RuntimeException("No found parent for: " + parentAttName);	}
+
+
 }

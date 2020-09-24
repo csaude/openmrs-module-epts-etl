@@ -42,6 +42,8 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract String getUpdateSQL();
 	public abstract Object[] getUpdateParams();
 	
+	public abstract String generateInsertValues();
+	
 	public abstract String getOriginAppLocationCode();
 	public abstract void setOriginAppLocationCode(String originAppLocationCode);
 	
@@ -69,7 +71,17 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract int retrieveSharedPKKey(Connection conn)  throws ParentNotYetMigratedException, DBException;
 	
 	public abstract int getParentValue(String parentAttName);
+	
+	/**
+	 * Consolidate data for database consistency
+	 * <p> The consolidation consist on re-arranging foreign keys between records from different tables
+	 * <p> Because the consolidation process would be in cascade mode, each consolidation is imediatily commited to the dadabase
+	 * 
+	 * @param tableInfo
+	 * @param conn
+	 * @throws InconsistentStateException
+	 * @throws DBException
+	 */
 	public abstract void consolidateData(SyncTableInfo tableInfo, Connection conn) throws InconsistentStateException, DBException;
-	public abstract void moveToStageAreaDueInconsistency(SyncTableInfo syncTableInfo, InconsistentStateException exception, Connection conn) throws DBException;
-
+	//public abstract void moveToStageAreaDueInconsistency(SyncTableInfo syncTableInfo, InconsistentStateException exception, Connection conn) throws DBException;
 }

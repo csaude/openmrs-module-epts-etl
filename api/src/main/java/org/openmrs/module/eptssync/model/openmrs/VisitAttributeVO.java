@@ -2,6 +2,8 @@ package org.openmrs.module.eptssync.model.openmrs;
  
 import org.openmrs.module.eptssync.model.openmrs.generic.*; 
  
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
@@ -28,6 +30,7 @@ public class VisitAttributeVO extends AbstractOpenMRSObject implements OpenMRSOb
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
+	private int consistent;
  
 	public VisitAttributeVO() { 
 		this.metadata = false;
@@ -156,11 +159,19 @@ public class VisitAttributeVO extends AbstractOpenMRSObject implements OpenMRSOb
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
-
-
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
+	}
+ 
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+
+
+ 
+	public int getConsistent(){ 
+		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -187,6 +198,7 @@ public class VisitAttributeVO extends AbstractOpenMRSObject implements OpenMRSOb
 		this.voidReason = rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null;
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
+		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -196,24 +208,44 @@ public class VisitAttributeVO extends AbstractOpenMRSObject implements OpenMRSOb
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.visitId == 0 ? null : this.visitId, this.attributeTypeId == 0 ? null : this.attributeTypeId, this.valueReference, this.uuid, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.visitId == 0 ? null : this.visitId, this.attributeTypeId == 0 ? null : this.attributeTypeId, this.valueReference, this.uuid, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.visitId == 0 ? null : this.visitId, this.attributeTypeId == 0 ? null : this.attributeTypeId, this.valueReference, this.uuid, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.visitAttributeId};		return params; 
+ 		Object[] params = {this.visitId == 0 ? null : this.visitId, this.attributeTypeId == 0 ? null : this.attributeTypeId, this.valueReference, this.uuid, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.visitAttributeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO visit_attribute(visit_id, attribute_type_id, value_reference, uuid, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO visit_attribute(visit_id, attribute_type_id, value_reference, uuid, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE visit_attribute SET visit_id = ?, attribute_type_id = ?, value_reference = ?, uuid = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE visit_attribute_id = ?;"; 
+ 		return "UPDATE visit_attribute SET visit_id = ?, attribute_type_id = ?, value_reference = ?, uuid = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE visit_attribute_id = ?;"; 
 	} 
  
+	@JsonIgnore
+	public String generateInsertValues(){ 
+ 		return (this.visitId == 0 ? null : this.visitId) + "," + (this.attributeTypeId == 0 ? null : this.attributeTypeId) + "," + (this.valueReference != null ? "\""+valueReference+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+voidReason+"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+	} 
+ 
+	@Override
+	public boolean hasParents() {
+		if (this.attributeTypeId != 0) return true;
+		if (this.changedBy != 0) return true;
+		if (this.creator != 0) return true;
+		if (this.visitId != 0) return true;
+		if (this.voidedBy != 0) return true;
+		return false;
+	}
+
+	@Override
+	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {
+		throw new RuntimeException("No PKSharedInfo defined!");	}
+
+	@Override
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
@@ -234,4 +266,16 @@ public class VisitAttributeVO extends AbstractOpenMRSObject implements OpenMRSOb
 		if (parentOnDestination  != null) this.voidedBy = parentOnDestination.getObjectId();
  
 	}
+
+	@Override
+	public int getParentValue(String parentAttName) {		
+		if (parentAttName.equals("attributeTypeId")) return this.attributeTypeId;		
+		if (parentAttName.equals("changedBy")) return this.changedBy;		
+		if (parentAttName.equals("creator")) return this.creator;		
+		if (parentAttName.equals("visitId")) return this.visitId;		
+		if (parentAttName.equals("voidedBy")) return this.voidedBy;
+
+		throw new RuntimeException("No found parent for: " + parentAttName);	}
+
+
 }

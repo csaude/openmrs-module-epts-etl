@@ -88,7 +88,10 @@ public class SyncJSONInfo {
 	}
 	
 	public static SyncJSONInfo loadFromJSON (String json) {
+		Exception ex = null;
+		
 		try {
+			
 			ObjectMapperProvider mapper = new ObjectMapperProvider();
 			
 			SyncJSONInfo synJsonInfo = mapper.getContext(SyncJSONInfo.class).readValue(json, SyncJSONInfo.class);
@@ -97,16 +100,28 @@ public class SyncJSONInfo {
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 		
+			ex = e;
+			
 			throw new RuntimeException(e);
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
 		
+			ex = e;
+			
 			throw new RuntimeException(e);
 		} catch (IOException e) {
 			e.printStackTrace();
 			
+			ex = e;
+			
 			throw new RuntimeException(e);
 		}
+		finally {
+			if (ex != null) {
+				System.out.println(json);
+			}
+		}
+		
 	}	
 	
 	public SyncJSONInfo generateMinimalInfo() {
@@ -117,5 +132,14 @@ public class SyncJSONInfo {
 		
 		return this.minimalJSONInfo;
 	}
+
+	private String fileName;
 	
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
+
+	public String getFileName() {
+		return fileName;
+	}
 }

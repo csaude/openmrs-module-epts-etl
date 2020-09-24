@@ -2,6 +2,8 @@ package org.openmrs.module.eptssync.model.openmrs;
  
 import org.openmrs.module.eptssync.model.openmrs.generic.*; 
  
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
@@ -28,6 +30,7 @@ public class EncounterProviderVO extends AbstractOpenMRSObject implements OpenMR
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
+	private int consistent;
  
 	public EncounterProviderVO() { 
 		this.metadata = false;
@@ -156,11 +159,19 @@ public class EncounterProviderVO extends AbstractOpenMRSObject implements OpenMR
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
-
-
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
+	}
+ 
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+
+
+ 
+	public int getConsistent(){ 
+		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -187,6 +198,7 @@ public class EncounterProviderVO extends AbstractOpenMRSObject implements OpenMR
 		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
+		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -196,24 +208,45 @@ public class EncounterProviderVO extends AbstractOpenMRSObject implements OpenMR
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.encounterId == 0 ? null : this.encounterId, this.providerId == 0 ? null : this.providerId, this.encounterRoleId == 0 ? null : this.encounterRoleId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.dateVoided, this.voidedBy == 0 ? null : this.voidedBy, this.voidReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.encounterId == 0 ? null : this.encounterId, this.providerId == 0 ? null : this.providerId, this.encounterRoleId == 0 ? null : this.encounterRoleId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.dateVoided, this.voidedBy == 0 ? null : this.voidedBy, this.voidReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.encounterId == 0 ? null : this.encounterId, this.providerId == 0 ? null : this.providerId, this.encounterRoleId == 0 ? null : this.encounterRoleId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.dateVoided, this.voidedBy == 0 ? null : this.voidedBy, this.voidReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.encounterProviderId};		return params; 
+ 		Object[] params = {this.encounterId == 0 ? null : this.encounterId, this.providerId == 0 ? null : this.providerId, this.encounterRoleId == 0 ? null : this.encounterRoleId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.dateVoided, this.voidedBy == 0 ? null : this.voidedBy, this.voidReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.encounterProviderId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO encounter_provider(encounter_id, provider_id, encounter_role_id, creator, date_created, changed_by, date_changed, voided, date_voided, voided_by, void_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO encounter_provider(encounter_id, provider_id, encounter_role_id, creator, date_created, changed_by, date_changed, voided, date_voided, voided_by, void_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE encounter_provider SET encounter_id = ?, provider_id = ?, encounter_role_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, date_voided = ?, voided_by = ?, void_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE encounter_provider_id = ?;"; 
+ 		return "UPDATE encounter_provider SET encounter_id = ?, provider_id = ?, encounter_role_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, date_voided = ?, voided_by = ?, void_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE encounter_provider_id = ?;"; 
 	} 
  
+	@JsonIgnore
+	public String generateInsertValues(){ 
+ 		return (this.encounterId == 0 ? null : this.encounterId) + "," + (this.providerId == 0 ? null : this.providerId) + "," + (this.encounterRoleId == 0 ? null : this.encounterRoleId) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.voidReason != null ? "\""+voidReason+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+	} 
+ 
+	@Override
+	public boolean hasParents() {
+		if (this.encounterId != 0) return true;
+		if (this.changedBy != 0) return true;
+		if (this.creator != 0) return true;
+		if (this.voidedBy != 0) return true;
+		if (this.encounterRoleId != 0) return true;
+		if (this.providerId != 0) return true;
+		return false;
+	}
+
+	@Override
+	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {
+		throw new RuntimeException("No PKSharedInfo defined!");	}
+
+	@Override
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
@@ -238,4 +271,17 @@ public class EncounterProviderVO extends AbstractOpenMRSObject implements OpenMR
 		if (parentOnDestination  != null) this.providerId = parentOnDestination.getObjectId();
  
 	}
+
+	@Override
+	public int getParentValue(String parentAttName) {		
+		if (parentAttName.equals("encounterId")) return this.encounterId;		
+		if (parentAttName.equals("changedBy")) return this.changedBy;		
+		if (parentAttName.equals("creator")) return this.creator;		
+		if (parentAttName.equals("voidedBy")) return this.voidedBy;		
+		if (parentAttName.equals("encounterRoleId")) return this.encounterRoleId;		
+		if (parentAttName.equals("providerId")) return this.providerId;
+
+		throw new RuntimeException("No found parent for: " + parentAttName);	}
+
+
 }

@@ -2,6 +2,8 @@ package org.openmrs.module.eptssync.model.openmrs;
  
 import org.openmrs.module.eptssync.model.openmrs.generic.*; 
  
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
@@ -30,6 +32,7 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
+	private int consistent;
  
 	public PatientIdentifierVO() { 
 		this.metadata = false;
@@ -174,11 +177,19 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
-
-
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
+	}
+ 
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+
+
+ 
+	public int getConsistent(){ 
+		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -207,6 +218,7 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 		this.changedBy = rs.getInt("changed_by");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
+		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -216,24 +228,45 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.identifier, this.identifierType == 0 ? null : this.identifierType, this.preferred, this.locationId == 0 ? null : this.locationId, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.identifier, this.identifierType == 0 ? null : this.identifierType, this.preferred, this.locationId == 0 ? null : this.locationId, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.identifier, this.identifierType == 0 ? null : this.identifierType, this.preferred, this.locationId == 0 ? null : this.locationId, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.patientIdentifierId};		return params; 
+ 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.identifier, this.identifierType == 0 ? null : this.identifierType, this.preferred, this.locationId == 0 ? null : this.locationId, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.patientIdentifierId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO patient_identifier(patient_id, identifier, identifier_type, preferred, location_id, creator, date_created, voided, voided_by, date_voided, void_reason, uuid, date_changed, changed_by, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_identifier(patient_id, identifier, identifier_type, preferred, location_id, creator, date_created, voided, voided_by, date_voided, void_reason, uuid, date_changed, changed_by, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient_identifier SET patient_id = ?, identifier = ?, identifier_type = ?, preferred = ?, location_id = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, date_changed = ?, changed_by = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE patient_identifier_id = ?;"; 
+ 		return "UPDATE patient_identifier SET patient_id = ?, identifier = ?, identifier_type = ?, preferred = ?, location_id = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, date_changed = ?, changed_by = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE patient_identifier_id = ?;"; 
 	} 
  
+	@JsonIgnore
+	public String generateInsertValues(){ 
+ 		return (this.patientId == 0 ? null : this.patientId) + "," + (this.identifier != null ? "\""+identifier+"\"" : null) + "," + (this.identifierType == 0 ? null : this.identifierType) + "," + (this.preferred) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+voidReason+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+	} 
+ 
+	@Override
+	public boolean hasParents() {
+		if (this.identifierType != 0) return true;
+		if (this.creator != 0) return true;
+		if (this.voidedBy != 0) return true;
+		if (this.patientId != 0) return true;
+		if (this.changedBy != 0) return true;
+		if (this.locationId != 0) return true;
+		return false;
+	}
+
+	@Override
+	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {
+		throw new RuntimeException("No PKSharedInfo defined!");	}
+
+	@Override
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
@@ -258,4 +291,17 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 		if (parentOnDestination  != null) this.locationId = parentOnDestination.getObjectId();
  
 	}
+
+	@Override
+	public int getParentValue(String parentAttName) {		
+		if (parentAttName.equals("identifierType")) return this.identifierType;		
+		if (parentAttName.equals("creator")) return this.creator;		
+		if (parentAttName.equals("voidedBy")) return this.voidedBy;		
+		if (parentAttName.equals("patientId")) return this.patientId;		
+		if (parentAttName.equals("changedBy")) return this.changedBy;		
+		if (parentAttName.equals("locationId")) return this.locationId;
+
+		throw new RuntimeException("No found parent for: " + parentAttName);	}
+
+
 }

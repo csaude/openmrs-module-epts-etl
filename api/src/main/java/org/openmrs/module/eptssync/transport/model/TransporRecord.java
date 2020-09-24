@@ -98,7 +98,7 @@ public class TransporRecord extends BaseVO implements SyncRecord {
 	
 	private void copy(File source, File dest) throws IOException {
 		try {
-			FileUtilities.copyFile(this.file, dest);
+			FileUtilities.copyFile(source, dest);
 		} catch (IOException e) {
 			if (e.getLocalizedMessage().contains("Failed to copy full contents from")) {
 				/*The file is on the creation process

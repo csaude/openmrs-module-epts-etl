@@ -234,6 +234,55 @@ public class DBUtilities {
 		}
 	}
 	
+	public static String determineColunType(String tableName,  String columnName, Connection conn) throws DBException {
+		try {
+			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
+
+			ResultSet rs = st.executeQuery();
+			ResultSetMetaData rsMetaData = rs.getMetaData();
+			
+			for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+				
+				if (rsMetaData.getColumnName(i).equalsIgnoreCase(columnName)) {
+					return rsMetaData.getColumnTypeName(i);
+				}
+			}
+			
+			throw new ForbiddenOperationException("There is no such column '" + columnName + "' on table '" + tableName + "'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new DBException(e);
+		}
+	}
+	
+	public static boolean isIndexExistsOnTable(String tableSchema, String tableName, String indexName, Connection conn) throws SQLException {
+		if (isMySQLDB(conn)) {
+			return isMySQLIndexExistsOnTable(tableSchema, tableName, indexName, conn);
+		}
+		
+		throw new RuntimeException("Database not supported!");
+	}
+
+	public static boolean isMySQLIndexExistsOnTable(String tableSchema, String tableName, String indexName, Connection conn) throws SQLException {
+		String fullTableName = tableSchema + "/" + tableName;
+		
+		String selectQuery = "";
+		
+		selectQuery += " SELECT * \n";
+		selectQuery += " FROM INFORMATION_SCHEMA.INNODB_SYS_INDEXES INNER JOIN INFORMATION_SCHEMA.INNODB_SYS_TABLES ON INNODB_SYS_INDEXES.TABLE_ID = INNODB_SYS_TABLES.TABLE_ID";
+		selectQuery += " WHERE 	1 = 1\n";
+		selectQuery += " 		AND  INNODB_SYS_TABLES.NAME = '" + fullTableName +"'\n";
+		selectQuery += " 		AND  INNODB_SYS_INDEXES.NAME = '" + indexName +"'\n";
+		
+		PreparedStatement statement = conn.prepareStatement(selectQuery); 
+		    
+	    ResultSet result = statement.executeQuery();
+		
+		return result.next();
+	}
+
+	
 	public static boolean isResourceExist(String resourceSchema, String resourceType, String resourceName, Connection conn) throws SQLException {
 		if (isMySQLDB(conn)) {
 			return isMySQLResourceExist(resourceSchema, resourceType, resourceName, conn);
@@ -241,8 +290,7 @@ public class DBUtilities {
 		
 		throw new RuntimeException("Database not supported!");
 	}
-	
-	
+
 	private static boolean isMySQLResourceExist(String resourceSchema, String resourceType, String resourceName, Connection conn) throws SQLException {
 		String resourceSchemaCondition = "";
 		String resourceNameCondition = "";

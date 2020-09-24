@@ -5,7 +5,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.sql.Blob;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -15,7 +14,6 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
-import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 /**
  * Base class for all value objects. Provides utility function load(...) to fill
@@ -30,6 +28,7 @@ public abstract class BaseVO  implements VO{
 	 */
 	protected Date creationDate;
 	
+	protected boolean excluded;
 	/**
 	 * Cria uma instancia de {@link BaseVO} com os atributos iniciados com
 	 * valores <code>default</code>
@@ -136,6 +135,14 @@ public abstract class BaseVO  implements VO{
 	private Object[] getFields() {
 		return getFields(this);
 	}
+	
+	public boolean isExcluded() {
+		return excluded;
+	}
+	
+	public void setExcluded(boolean excluded) {
+		this.excluded = excluded;
+	}
 
 	/**
 	 * Retorna todos os atributos de inst�ncia de da classe de um objecto
@@ -233,47 +240,6 @@ public abstract class BaseVO  implements VO{
 		}
 	}
 
-	public abstract void setObjectId(int selfId);
-
-	public static boolean existOnDB(BaseVO object, Connection conexao) {
-		return object != null && object.existOnDB(conexao);
-	}
-
-	/**
-	 * Verifica se este objeto existe ou nao na BD.
-	 * 
-	 * @param conexao
-	 *            � BD a ser usada para a execu��o da opera��o na BD
-	 * @return <code>true</code> se o objecto existir ou <code>"false"</code> no
-	 *         caso contr�rio
-	 */
-	public boolean existOnDB(Connection conexao) {
-		try {
-			return BaseDAO.getById(this, conexao) != null;
-		} catch (DBException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	@Override
-	public String toString() {
-		return "[" + this.getClass().getName() + " selfId=" + getObjectId() + "]";
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == null)
-			return false;
-		if (!(obj instanceof BaseVO))
-			return false;
-
-		 if (this.getObjectId() != 0 && this.getObjectId() == ((BaseVO) obj).getObjectId()){
-			 return true;
-		 }
-		 
-		 return false;
-	}
-	
 	/**
 	 * Transforma uma lista de VO's e lista de String
 	 * 
@@ -294,10 +260,6 @@ public abstract class BaseVO  implements VO{
 		}
 
 		return parsed;
-	}
-
-	public boolean hasSelfId() {
-		return getObjectId() > 0;
 	}
 
 	public static <T extends BaseVO> T createInstance(Class<T> classe) {

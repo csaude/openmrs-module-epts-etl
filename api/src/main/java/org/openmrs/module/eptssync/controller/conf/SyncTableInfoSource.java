@@ -118,6 +118,9 @@ public class SyncTableInfoSource {
 				info.tryToUpgradeDataBaseInfo();
 				info.generateRecordClass();
 			}
+			
+			recompileAllAvaliableClasses();
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 			
@@ -126,6 +129,63 @@ public class SyncTableInfoSource {
 		
 	}
 	
+	private void recompileAllAvaliableClasses() {
+		for (SyncTableInfo info : this.syncTableInfo) {
+			for (ParentRefInfo i: info.getChildRefInfo()) {
+				if (!i.getReferenceTableInfo().isFullLoaded()) {
+					SyncTableInfo existingTableInfo = retrieveTableInfoByTableName(i.getReferenceTableInfo().getTableName());
+					
+					if (existingTableInfo != null) {
+						i.setReferenceTableInfo(existingTableInfo);
+					}
+					else {
+						i.getReferenceTableInfo().fullLoad();
+					}
+				}
+				
+				if (!i.existsRelatedReferenceClass()) {
+					i.generateRelatedReferenceClass();
+				}
+			}
+			
+			for (ParentRefInfo i: info.getParentRefInfo()) {
+				if (!i.getReferencedTableInfo().isFullLoaded()) {
+					SyncTableInfo existingTableInfo = retrieveTableInfoByTableName(i.getReferencedTableInfo().getTableName());
+					
+					if (existingTableInfo != null) {
+						i.setReferencedTableInfo(existingTableInfo);
+					}
+					else {
+						i.getReferencedTableInfo().fullLoad();
+					}
+				}
+				
+				if (!i.existsRelatedReferencedClass()) {
+					i.generateRelatedReferencedClass();
+				}
+			}
+		}
+	}
+
+	private SyncTableInfo retrieveTableInfoByTableName(String tableName) {
+		for (SyncTableInfo info : this.syncTableInfo) {
+			if (info.getTableName().equals(tableName)) return info;
+		}
+		
+		for (SyncTableInfo info : this.syncTableInfo) {
+			
+			for (ParentRefInfo child : info.getChildRefInfo()) {
+				if (child.getReferenceTableInfo().getTableName().equals(tableName)) {
+					if (child.getReferenceTableInfo().isFullLoaded()) {
+						return child.getReferenceTableInfo();
+					}
+				}
+			}
+		}
+		
+		return null;
+	}
+
 	public static SyncTableInfoSource loadFromJSON (String json) {
 		try {
 			return new ObjectMapperProvider().getContext(SyncTableInfoSource.class).readValue(json, SyncTableInfoSource.class);
@@ -188,5 +248,4 @@ public class SyncTableInfoSource {
 			conn.finalizeConnection();
 		}
 	}
-
 }

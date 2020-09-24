@@ -196,6 +196,7 @@ public class  CommonUtilities implements Serializable{
 		return FuncoesGenericas.removeAllEmptySpace(text);
 	}
 	
+	
 	/**
 	 * Remove todas as ocorrencias de espa�o superiores a 1
 	 * @param text
@@ -868,5 +869,40 @@ public class  CommonUtilities implements Serializable{
 	
 	public void logDebug(String msg, Logger logger) {
 		logger.debug(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
+	}
+
+	public boolean isValidUUID(String str) {
+		 try {
+	         UUID.fromString(str);
+	         return true;
+	      } catch (IllegalArgumentException ex) {
+	         return false;
+	      }	 
+	}
+
+	public String scapeQuotationMarks(String str) {
+		str = new String(str.replaceAll("\"", "\\\\\""));
+		
+		str = str.replaceAll("\\\\\\\\", "\\\\\\\\\\\\");
+		
+		return str;
+	}
+	
+	public String removeLastChar(String str) {
+		return str.substring(0, str.length() -1);
+	}
+	
+
+	public static void main(String[] args) {
+		//String quotedStr = "\"Munhana\"";
+		
+		String quotedStr = "Munhana \\\"A\\\"";
+		
+		quotedStr = "\"" + quotedStr + "\"";
+		
+		
+		System.out.println(quotedStr);
+	
+		System.out.println(getInstance().scapeQuotationMarks(quotedStr));
 	}
 }

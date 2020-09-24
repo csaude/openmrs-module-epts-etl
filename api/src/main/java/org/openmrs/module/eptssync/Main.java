@@ -6,9 +6,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.eptssync.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfoSource;
-import org.openmrs.module.eptssync.synchronization.controller.SynchronizationController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 
@@ -27,16 +27,19 @@ public class Main {
 		
 		List<AbstractSyncController> allController = new ArrayList<AbstractSyncController>();
 		
-		//allController.add(new SyncExportController());
+		//allController.add(new SyncExportController(connService));
 		//allController.get(allController.size() - 1).init(syncTableInfoSource);
 		
-		//allController.add(new SyncTransportController());
+		//allController.add(new SyncTransportController(connService));
 		//allController.get(allController.size() - 1).init(syncTableInfoSource);
 		
-		//allController.add(new SyncDataLoadController());
+		//allController.add(new SyncDataLoadController(connService));
 		//allController.get(allController.size() - 1).init(syncTableInfoSource);
 		
-		allController.add(new SynchronizationController(connService));
+		//allController.add(new SynchronizationController(connService));
+		//allController.get(allController.size() - 1).init(syncTableInfoSource);
+		
+		allController.add(new DatabaseIntegrityConsolidationController(connService));
 		allController.get(allController.size() - 1).init(syncTableInfoSource);
 		
 		while(!isAllFinished(allController)) {

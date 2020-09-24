@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.DateFormat;
@@ -48,14 +49,6 @@ public abstract class BaseDAO{
 		Object[] params = {id};
 		
 		return find(AnonymousVO.class, sql, params, conn);
-	}
-	
-	public static BaseVO getById(BaseVO vo, Connection conn) throws DBException{
-		String sql = "SELECT * FROM " + vo.generateTableName() + " WHERE SELF_ID = ? ";
-		
-		Object[] params = {vo.getObjectId()};
-		
-		return find(vo.getClass(), sql, params, conn);
 	}
 	
 	/**
@@ -195,6 +188,24 @@ public abstract class BaseDAO{
 			executeDBQuery(sql, params, connection);
 		}catch(DBException e){
 			if (!tryToSolveIssues(e, sql, params, connection)) throw e;
+		}
+	}
+	
+	
+	public static void executeBatch(Connection conn, String ... batches) throws DBException {
+		
+		try {
+			Statement st = conn.createStatement();
+			
+			for (String batch : batches) {
+				st.addBatch(batch);
+			}
+			
+			st.executeBatch();
+
+			st.close();
+		} catch (SQLException e) {
+			throw new DBException(e);
 		}
 	}
 

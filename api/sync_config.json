@@ -2,10 +2,10 @@
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
 	syncStageSchema: "sync_import_stage",
 	originAppLocationCode: "ZBZ_PEBANE",
-	defaultQtyRecordsPerSelect: 1000,
+	defaultQtyRecordsPerSelect: 5000,
 	firstExport: true,
-	doIntegrityCheckInTheEnd: true,
 	defaultQtyProcessingEngine: 1,
+	doIntegrityCheckInTheEnd: true,
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
@@ -16,11 +16,11 @@
 			connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch"
 	},
 	syncTableInfo:[
-		{
-			tableName: "patient",
-			sharePkWith: "person",
+			{	
+			tableName: "users",
 			parents: ["person", "users"],
 			mustRecompileTable: true
-		}		
+		}
+			
 	]
 }

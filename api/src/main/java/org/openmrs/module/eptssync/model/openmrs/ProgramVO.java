@@ -2,6 +2,8 @@ package org.openmrs.module.eptssync.model.openmrs;
  
 import org.openmrs.module.eptssync.model.openmrs.generic.*; 
  
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
@@ -27,6 +29,7 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
+	private int consistent;
  
 	public ProgramVO() { 
 		this.metadata = true;
@@ -147,11 +150,19 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
-
-
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
+	}
+ 
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+
+
+ 
+	public int getConsistent(){ 
+		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -177,6 +188,7 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.swappable = rs.getByte("swappable");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
+		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -186,24 +198,43 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.programId};		return params; 
+ 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.programId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO program(concept_id, creator, date_created, changed_by, date_changed, retired, name, description, uuid, outcomes_concept_id, swappable, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO program(concept_id, creator, date_created, changed_by, date_changed, retired, name, description, uuid, outcomes_concept_id, swappable, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE program SET concept_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, name = ?, description = ?, uuid = ?, outcomes_concept_id = ?, swappable = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE program_id = ?;"; 
+ 		return "UPDATE program SET concept_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, name = ?, description = ?, uuid = ?, outcomes_concept_id = ?, swappable = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE program_id = ?;"; 
 	} 
  
+	@JsonIgnore
+	public String generateInsertValues(){ 
+ 		return (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.name != null ? "\""+name+"\"" : null) + "," + (this.description != null ? "\""+description+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.swappable) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+	} 
+ 
+	@Override
+	public boolean hasParents() {
+		if (this.conceptId != 0) return true;
+		if (this.creator != 0) return true;
+		if (this.outcomesConceptId != 0) return true;
+		if (this.changedBy != 0) return true;
+		return false;
+	}
+
+	@Override
+	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {
+		throw new RuntimeException("No PKSharedInfo defined!");	}
+
+	@Override
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
@@ -224,4 +255,15 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		if (parentOnDestination  != null) this.changedBy = parentOnDestination.getObjectId();
  
 	}
+
+	@Override
+	public int getParentValue(String parentAttName) {		
+		if (parentAttName.equals("conceptId")) return this.conceptId;		
+		if (parentAttName.equals("creator")) return this.creator;		
+		if (parentAttName.equals("outcomesConceptId")) return this.outcomesConceptId;		
+		if (parentAttName.equals("changedBy")) return this.changedBy;
+
+		throw new RuntimeException("No found parent for: " + parentAttName);	}
+
+
 }

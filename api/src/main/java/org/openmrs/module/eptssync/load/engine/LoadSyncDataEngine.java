@@ -66,6 +66,8 @@ public class LoadSyncDataEngine extends SyncEngine{
 			
 			conn.markAsSuccessifullyTerminected();
 		} catch (DBException e) {
+			
+			getSyncController().logInfo("Error performing "+ currJSONInfo.getFileName());
 			e.printStackTrace();
 		
 			throw new RuntimeException(e);
@@ -73,7 +75,6 @@ public class LoadSyncDataEngine extends SyncEngine{
 		finally {
 			conn.finalizeConnection();
 		}
-		
 	}
 
 	private void moveSoureJSONFileToBackup() {
@@ -125,6 +126,7 @@ public class LoadSyncDataEngine extends SyncEngine{
 			String json = new String(Files.readAllBytes(Paths.get(currJSONSourceFile.getAbsolutePath())));
 			
 			this.currJSONInfo = SyncJSONInfo.loadFromJSON(json);
+			this.currJSONInfo.setFileName(currJSONSourceFile.getAbsolutePath());
 			
 			return utilities.parseList(this.currJSONInfo.getSyncRecords(), SyncRecord.class);
 			

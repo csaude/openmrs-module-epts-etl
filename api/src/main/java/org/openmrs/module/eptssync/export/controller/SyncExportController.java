@@ -91,16 +91,23 @@ public class SyncExportController extends AbstractSyncController {
 		fileName += "_" + DateAndTimeUtilities.parseFullDateToTimeLongIncludeSeconds(jsonInfo.getDateGenerated());
 
 		String fileNameWithoutExtension = fileName + fileSufix;
-		String fileNameWithExtension = fileName + ".json";
+		String fileNameWithExtension = fileNameWithoutExtension + ".json";
 		
 		if(new File(fileNameWithExtension).exists() || new File(fileNameWithoutExtension).exists()) {
 			int count = 1;
 			
-			fileNameWithoutExtension = fileName + count;
+			fileSufix = utilities().garantirXCaracterOnNumber(count, 2) ;
+			
+			fileNameWithoutExtension = fileName + fileSufix;
 			fileNameWithExtension = fileNameWithoutExtension + ".json";
 			
 			while(new File(fileNameWithoutExtension).exists() || new File(fileNameWithExtension).exists()) {
 				count++;
+				
+				fileSufix = utilities().garantirXCaracterOnNumber(count, 2) ;
+				
+				fileNameWithoutExtension = fileName + fileSufix;
+				fileNameWithExtension = fileNameWithoutExtension + ".json";
 			}
 			
 			fileSufix = utilities().garantirXCaracterOnNumber(count, 2) ;

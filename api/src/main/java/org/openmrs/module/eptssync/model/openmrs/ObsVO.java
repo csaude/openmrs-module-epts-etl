@@ -2,6 +2,8 @@ package org.openmrs.module.eptssync.model.openmrs;
  
 import org.openmrs.module.eptssync.model.openmrs.generic.*; 
  
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
+ 
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
@@ -45,6 +47,8 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private int originRecordId;
 	private java.util.Date dateChanged;
 	private String originAppLocationCode;
+	private int firstExportDone;
+	private int consistent;
  
 	public ObsVO() { 
 		this.metadata = false;
@@ -309,11 +313,27 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
-
-
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
+	}
+ 
+	public void setFirstExportDone(int firstExportDone){ 
+	 	this.firstExportDone = firstExportDone;
+	}
+ 
+	public int getFirstExportDone(){ 
+		return this.firstExportDone;
+	}
+ 
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+
+
+ 
+	public int getConsistent(){ 
+		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -357,6 +377,8 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
+		this.firstExportDone = rs.getInt("first_export_done");
 			} 
  
 	@JsonIgnore
@@ -366,24 +388,51 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.firstExportDone, this.consistent};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.obsId};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.firstExportDone, this.consistent, this.obsId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO obs(person_id, concept_id, encounter_id, order_id, obs_datetime, location_id, obs_group_id, accession_number, value_group_id, value_boolean, value_coded, value_coded_name_id, value_drug, value_datetime, value_numeric, value_modifier, value_text, comments, creator, date_created, voided, voided_by, date_voided, void_reason, value_complex, uuid, previous_version, form_namespace_and_path, last_sync_date, origin_record_id, date_changed, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO obs(person_id, concept_id, encounter_id, order_id, obs_datetime, location_id, obs_group_id, accession_number, value_group_id, value_boolean, value_coded, value_coded_name_id, value_drug, value_datetime, value_numeric, value_modifier, value_text, comments, creator, date_created, voided, voided_by, date_voided, void_reason, value_complex, uuid, previous_version, form_namespace_and_path, last_sync_date, origin_record_id, date_changed, origin_app_location_code, first_export_done, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE obs SET person_id = ?, concept_id = ?, encounter_id = ?, order_id = ?, obs_datetime = ?, location_id = ?, obs_group_id = ?, accession_number = ?, value_group_id = ?, value_boolean = ?, value_coded = ?, value_coded_name_id = ?, value_drug = ?, value_datetime = ?, value_numeric = ?, value_modifier = ?, value_text = ?, comments = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, value_complex = ?, uuid = ?, previous_version = ?, form_namespace_and_path = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ? WHERE obs_id = ?;"; 
+ 		return "UPDATE obs SET person_id = ?, concept_id = ?, encounter_id = ?, order_id = ?, obs_datetime = ?, location_id = ?, obs_group_id = ?, accession_number = ?, value_group_id = ?, value_boolean = ?, value_coded = ?, value_coded_name_id = ?, value_drug = ?, value_datetime = ?, value_numeric = ?, value_modifier = ?, value_text = ?, comments = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, value_complex = ?, uuid = ?, previous_version = ?, form_namespace_and_path = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ?, first_export_done = ?, consistent = ? WHERE obs_id = ?;"; 
 	} 
  
+	@JsonIgnore
+	public String generateInsertValues(){ 
+ 		return (this.personId == 0 ? null : this.personId) + "," + (this.conceptId == 0 ? null : this.conceptId) + "," + (this.encounterId == 0 ? null : this.encounterId) + "," + (this.orderId == 0 ? null : this.orderId) + "," + (this.obsDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(obsDatetime)  +"\"" : null) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.obsGroupId == 0 ? null : this.obsGroupId) + "," + (this.accessionNumber != null ? "\""+accessionNumber+"\"" : null) + "," + (this.valueGroupId) + "," + (this.valueBoolean) + "," + (this.valueCoded == 0 ? null : this.valueCoded) + "," + (this.valueCodedNameId == 0 ? null : this.valueCodedNameId) + "," + (this.valueDrug == 0 ? null : this.valueDrug) + "," + (this.valueDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime)  +"\"" : null) + "," + (this.valueNumeric) + "," + (this.valueModifier != null ? "\""+valueModifier+"\"" : null) + "," + (this.valueText != null ? "\""+valueText+"\"" : null) + "," + (this.comments != null ? "\""+comments+"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+voidReason+"\"" : null) + "," + (this.valueComplex != null ? "\""+valueComplex+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.previousVersion == 0 ? null : this.previousVersion) + "," + (this.formNamespaceAndPath != null ? "\""+formNamespaceAndPath+"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.firstExportDone) + "," + (this.consistent); 
+	} 
+ 
+	@Override
+	public boolean hasParents() {
+		if (this.valueCoded != 0) return true;
+		if (this.valueDrug != 0) return true;
+		if (this.encounterId != 0) return true;
+		if (this.conceptId != 0) return true;
+		if (this.creator != 0) return true;
+		if (this.obsGroupId != 0) return true;
+		if (this.locationId != 0) return true;
+		if (this.valueCodedNameId != 0) return true;
+		if (this.orderId != 0) return true;
+		if (this.personId != 0) return true;
+		if (this.previousVersion != 0) return true;
+		if (this.voidedBy != 0) return true;
+		return false;
+	}
+
+	@Override
+	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {
+		throw new RuntimeException("No PKSharedInfo defined!");	}
+
+	@Override
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
@@ -420,4 +469,23 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		if (parentOnDestination  != null) this.voidedBy = parentOnDestination.getObjectId();
  
 	}
+
+	@Override
+	public int getParentValue(String parentAttName) {		
+		if (parentAttName.equals("valueCoded")) return this.valueCoded;		
+		if (parentAttName.equals("valueDrug")) return this.valueDrug;		
+		if (parentAttName.equals("encounterId")) return this.encounterId;		
+		if (parentAttName.equals("conceptId")) return this.conceptId;		
+		if (parentAttName.equals("creator")) return this.creator;		
+		if (parentAttName.equals("obsGroupId")) return this.obsGroupId;		
+		if (parentAttName.equals("locationId")) return this.locationId;		
+		if (parentAttName.equals("valueCodedNameId")) return this.valueCodedNameId;		
+		if (parentAttName.equals("orderId")) return this.orderId;		
+		if (parentAttName.equals("personId")) return this.personId;		
+		if (parentAttName.equals("previousVersion")) return this.previousVersion;		
+		if (parentAttName.equals("voidedBy")) return this.voidedBy;
+
+		throw new RuntimeException("No found parent for: " + parentAttName);	}
+
+
 }

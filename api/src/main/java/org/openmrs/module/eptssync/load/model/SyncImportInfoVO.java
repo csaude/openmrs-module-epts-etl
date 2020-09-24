@@ -88,12 +88,12 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 
 	@Override
 	public int getObjectId() {
-		return this.id;
+		return this.recordId;
 	}
 
 	@Override
 	public void setObjectId(int id) {
-		this.id = id;
+		this.recordId = id;
 	}
 	
 	public String getOriginAppLocationCode() {
@@ -108,14 +108,18 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.migrationStatus = MIGRATION_STATUS_INCOMPLETE;
 	}
 
-	public void markAsPartialMigrated(String errMsg) {
+	public void markAsPartialMigrated(SyncTableInfo tableInfo, String errMsg, Connection conn) throws DBException {
 		this.migrationStatus = MIGRATION_STATUS_INCOMPLETE;
 		this.lastMigrationTryErr = errMsg;
+		
+		SyncImportInfoDAO.updateMigrationStatus(tableInfo, this, conn);
 	}
 
-	public void markAsSyncFailedToMigrate(String errMsg) {
+	public void markAsSyncFailedToMigrate(SyncTableInfo tableInfo, String errMsg, Connection conn) throws DBException {
 		this.migrationStatus = MIGRATION_STATUS_FAILED;
 		this.lastMigrationTryErr = errMsg;
+		
+		SyncImportInfoDAO.updateMigrationStatus(tableInfo, this, conn);
 	}
 
 	public void markAsSyncFailedToMigrate() {
@@ -234,5 +238,34 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	public void markAsMigrated(SyncTableInfo tableInfo, Connection conn) throws DBException {
 		SyncImportInfoDAO.remove(this, tableInfo, conn);
 	}
+
+	public static List<OpenMRSObject> convertAllToOpenMRSObject(SyncTableInfo tableInfo, List<SyncImportInfoVO> toParse) {
+		List<OpenMRSObject> records = new ArrayList<OpenMRSObject>();
+		
+		for (SyncImportInfoVO imp : toParse) {
+			OpenMRSObject rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), imp.getJson());
+			rec.setOriginRecordId(rec.getObjectId());
+			rec.setObjectId(0);
+			rec.setConsistent(OpenMRSObject.INCONSISTENCE_STATUS);
+			records.add(rec);
+		}
+		
+		return records;
+	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) return false;
+		
+		if (!(obj instanceof SyncImportInfoVO)) return false;
+		
+		SyncImportInfoVO otherObj = (SyncImportInfoVO)obj;
+		
+		return this.originAppLocationCode.equalsIgnoreCase(otherObj.originAppLocationCode) && this.recordId == otherObj.getRecordId();
+	}
+
+	public void delete(SyncTableInfo tableInfo, Connection conn) throws DBException {
+		SyncImportInfoDAO.remove(this, tableInfo, conn);
+	}
+
 }
