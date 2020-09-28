@@ -16,7 +16,6 @@ import org.openmrs.module.eptssync.synchronization.controller.SynchronizationCon
 import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class SynchronizationSyncEngine extends SyncEngine {
@@ -45,25 +44,6 @@ public class SynchronizationSyncEngine extends SyncEngine {
 	protected void restart() {
 		this.getSearchParams().setSyncStartDate(DateAndTimeUtilities.getCurrentDate());
 	}
-	
-	
-	@Override
-	public OpenConnection openConnection() {
-		OpenConnection conn = super.openConnection();
-	
-		if (getSyncTableInfo().isDoIntegrityCheckInTheEnd()) {
-			try {
-				DBUtilities.disableForegnKeyChecks(conn);
-			} catch (DBException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
-		}
-		
-		return conn;
-	}
-	
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords) {

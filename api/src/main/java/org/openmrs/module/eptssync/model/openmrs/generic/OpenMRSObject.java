@@ -73,6 +73,11 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract int getParentValue(String parentAttName);
 	
 	/**
+	 * Indicate if this object was generated or not using an eskeleton class
+	 * @return
+	 */
+	public abstract boolean isGeneratedFromSkeletonClass();
+	/**
 	 * Consolidate data for database consistency
 	 * <p> The consolidation consist on re-arranging foreign keys between records from different tables
 	 * <p> Because the consolidation process would be in cascade mode, each consolidation is imediatily commited to the dadabase

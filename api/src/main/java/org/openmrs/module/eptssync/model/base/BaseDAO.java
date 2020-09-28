@@ -214,7 +214,7 @@ public abstract class BaseDAO{
 		
 		try{
 			st = connection.prepareStatement(sql);
-			st.setQueryTimeout(10);
+			//st.setQueryTimeout(10);
 			loadParamsToStatment(st, params, connection);
 			
 			st.execute();

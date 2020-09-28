@@ -35,9 +35,10 @@ public class SyncTableInfo {
 
 	private Class<OpenMRSObject> syncRecordClass;
 
-	private SyncTableInfoSource relatedSyncTableInfoSource;
+	private SyncConf relatedSyncTableInfoSource;
 
 	private String primaryKey;
+	private String primaryKeyType;
 	private String sharePkWith;
 	
 	private String extraConditionForExport;
@@ -51,6 +52,10 @@ public class SyncTableInfo {
 	public SyncTableInfo() {
 	}
 
+	public String getClasspackage() {
+		return getRelatedSyncTableInfoSource().getClasspackage();
+	}
+	
 	public boolean isDoIntegrityCheckInTheEnd() {
 		return getRelatedSyncTableInfoSource().isDoIntegrityCheckInTheEnd();
 	}
@@ -97,6 +102,10 @@ public class SyncTableInfo {
 
 	@JsonIgnore
 	public Class<OpenMRSObject> getSyncRecordClass() {
+		if (syncRecordClass == null) {
+			generateRecordClass();
+		}
+		
 		return syncRecordClass;
 	}
 
@@ -104,11 +113,11 @@ public class SyncTableInfo {
 		this.syncRecordClass = syncRecordClass;
 	}
 
-	public SyncTableInfoSource getRelatedSyncTableInfoSource() {
+	public SyncConf getRelatedSyncTableInfoSource() {
 		return relatedSyncTableInfoSource;
 	}
 
-	public void setRelatedSyncTableInfoSource(SyncTableInfoSource relatedSyncTableInfoSource) {
+	public void setRelatedSyncTableInfoSource(SyncConf relatedSyncTableInfoSource) {
 		this.relatedSyncTableInfoSource = relatedSyncTableInfoSource;
 	}
 
@@ -138,10 +147,14 @@ public class SyncTableInfo {
 			
 			try {
 				ResultSet rs = conn.getMetaData().getPrimaryKeys(null, null, tableName);
-	
-				rs.next();
 				
-				this.primaryKey = rs.getString("COLUMN_NAME");
+				if (rs.next()) {
+					this.primaryKey = rs.getString("COLUMN_NAME");
+				
+					this.primaryKeyType = DBUtilities.determineColunType(tableName, this.primaryKey, conn);
+				
+					this.primaryKeyType = AttDefinedElements.convertMySQLTypeTOJavaType(this.primaryKeyType);
+				}
 			} catch (SQLException e) {
 				e.printStackTrace();
 				
@@ -153,6 +166,18 @@ public class SyncTableInfo {
 		}
 		
 		return primaryKey;
+	}
+	
+	public String getPrimaryKeyType() {
+		return primaryKeyType;
+	}
+	
+	public boolean isNumericColumnType() {
+		return AttDefinedElements.isNumeric(this.getPrimaryKeyType());
+	}
+	
+	public boolean hasPK() {
+		return getPrimaryKey() != null;
 	}
 	
 	public void setChildRefInfo(List<ParentRefInfo> childRefInfo) {
@@ -181,6 +206,12 @@ public class SyncTableInfo {
 					ref.setReferencedTableInfo(this);
 					
 					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getReferenceTableInfo().getTableName(), ref.getReferenceColumnName(), conn));
+					
+					//Mark as metadata if there is no table info congigured
+					if (getRelatedSyncTableInfoSource().find(ref.getReferenceTableInfo()) == null) {
+						ref.setMetadata(true);
+					}
+				
 					
 					this.childRefInfo.add(ref);
 				}
@@ -255,22 +286,33 @@ public class SyncTableInfo {
 		return parentRefInfo;
 	}
 
-	private static SyncTableInfo init(String tableName, SyncTableInfoSource sourceInfo) {
+	private static SyncTableInfo init(String tableName, SyncConf sourceInfo) {
 		SyncTableInfo tableInfo = new SyncTableInfo();
 		tableInfo.setTableName(tableName);
 		tableInfo.setRelatedSyncTableInfoSource(sourceInfo);
-		
+		tableInfo.setMustRecompileTable(sourceInfo.isMustRecompileTable());
 		return tableInfo;
 	}
 
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.syncRecordClass;
+		if (this.syncRecordClass == null) {
+			this.syncRecordClass = OpenMRSClassGenerator.tryToGetExistingCLass(this.generateFullClassName());
+		
+			if (this.syncRecordClass == null) throw new ForbiddenOperationException("No Sync Record Class found for: " + this.tableName);
+		}
+		
+		return this.syncRecordClass; 
 	}
 
+	public String generateFullClassName() {
+		return "org.openmrs.module.eptssync.model.openmrs." + getClasspackage() + "." + generateClassName();
+	}
+	
 	public String getOriginAppLocationCode() {
 		return getRelatedSyncTableInfoSource().getOriginAppLocationCode();
 	}
 
+	
 	public void generateRecordClass() {
 		OpenConnection conn = openConnection();
 		
@@ -345,7 +387,7 @@ public class SyncTableInfo {
 		try {
 			String newColumnDefinition = "";
 			
-			if (!existRelatedExportStageTable()) {
+			if (mustCreateStageSchemaElements() && !existRelatedExportStageTable()) {
 				logInfo("GENERATING RELATED STAGE TABLE FOR [" + this.tableName + "]");
 				
 				createRelatedExportStageTable();
@@ -369,10 +411,10 @@ public class SyncTableInfo {
 				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateLastSyncDateColumnCreation());
 			}
 
-			if (!isUuidColumnExistOnTable(conn)) {
+			/*if (!isUuidColumnExistOnTable(conn)) {
 				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
 				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateUuidColumnCreation());
-			}
+			}*/
 
 			if (!isOriginRecordIdColumnExistOnTable(conn)) {
 				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
@@ -403,7 +445,7 @@ public class SyncTableInfo {
 			}
 			
 			if (utilities.stringHasValue(uniqueOrigin)) {
-				batch +=  (!utilities.stringHasValue(batch) ? "ALTER TABLE " + this.getTableName() + " ADD " + uniqueOrigin : ", " + uniqueOrigin); 
+				batch +=  (!utilities.stringHasValue(batch) ? "ALTER TABLE " + this.getTableName() + " ADD " + uniqueOrigin : ", ADD " + uniqueOrigin); 
 			}
 		
 			if (utilities.stringHasValue(batch)) {
@@ -498,6 +540,10 @@ public class SyncTableInfo {
 		} finally {
 			conn.finalizeConnection();
 		}
+	}
+	
+	public boolean mustCreateStageSchemaElements() {
+		return getRelatedSyncTableInfoSource().mustCreateStageSchemaElements();
 	}
 
 	public String generateRelatedStageTableName() {
@@ -617,13 +663,13 @@ public class SyncTableInfo {
 		return "consistent int(1) DEFAULT 1";
 	}
 
-	private boolean isUuidColumnExistOnTable(Connection conn) throws SQLException {
+	/*private boolean isUuidColumnExistOnTable(Connection conn) throws SQLException {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "uuid", conn);
-	}
+	}*/
 
-	private String generateUuidColumnCreation() {
+	/*private String generateUuidColumnCreation() {
 		return "uuid char(38) NULL";
-	}
+	}*/
 	
 	private boolean isOriginRecordIdColumnExistOnTable(Connection conn) throws SQLException {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "origin_record_id", conn);
@@ -684,5 +730,13 @@ public class SyncTableInfo {
 	@Override
 	public String toString() {
 		return "Table [name:" + this.tableName + ", pk: " + getPrimaryKey()+"]";
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) return false;
+		if (!(obj instanceof SyncTableInfo)) return false;
+		
+		return this.getTableName().equalsIgnoreCase(((SyncTableInfo)obj).getTableName());
 	}
 }

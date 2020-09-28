@@ -232,9 +232,14 @@ public class AttDefinedElements {
 		if (attType.equals("short")) {
 			return "this." + this.attName + " = rs.getShort(\"" + dbAttName + "\");"; 
 		}
+		else
+		if (attType.equals("byte[]")) {
+			return "this." + this.attName + " = rs.getBytes(\"" + dbAttName + "\");"; 
+		}
 		else {
 			return "this." + this.attName + " = rs.getObject(\"" + dbAttName + "\");"; 
 		}		
+		
 	}
 	
 	private boolean isDate() {
@@ -294,6 +299,23 @@ public class AttDefinedElements {
 				+ " = " + attName + ";\n" + "	}";
 	}
 
+	
+	public static String defineDefaultGetterMethod(String attName, String attType) {
+		String cAttName = attName.toUpperCase().charAt(0) + attName.substring(1);
+
+		if (isNumeric(attType)) return "	public " + attType + " get" + cAttName + "(){ \n" + "		return 0;\n" + "	}";
+
+		return 	"	public " + attType + " get" + cAttName + "(){ \n" + "		return null;\n" + "	}";
+		
+	}
+
+	public static String defineDefaultSetterMethod(String attName, String attType) {
+		String cAttName = attName.toUpperCase().charAt(0) + attName.substring(1);
+
+		return "	public void set" + cAttName + "(" + attType + " " + attName + "){ }";
+	}
+
+	
 	private static String convertTableAttNameToClassAttName(String tableAttName) {
 		return utilities.convertTableAttNameToClassAttName(tableAttName);
 	}
@@ -315,11 +337,11 @@ public class AttDefinedElements {
 			return "float";
 		if (utilities.isStringIn(mySQLTypeName, "VARCHAR", "CHAR"))
 			return "String";
-		if (utilities.isStringIn(mySQLTypeName, "VARBINARY", "BLOB", "TEXT"))
+		if (utilities.isStringIn(mySQLTypeName, "VARBINARY", "BLOB", "TEXT", "LONGBLOB"))
 			return "byte[]";
 		if (utilities.isStringIn(mySQLTypeName, "DATE", "DATETIME", "TIME", "TIMESTAMP"))
 			return "java.util.Date";
-
+		
 		throw new ForbiddenOperationException("Unknown data type [" + mySQLTypeName + "]");
 	}
 	

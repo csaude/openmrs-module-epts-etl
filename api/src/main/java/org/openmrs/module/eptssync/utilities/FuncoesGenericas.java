@@ -49,9 +49,9 @@ public class FuncoesGenericas {
 	 * @return
 	 */
 	public static String concatStrings(String currentString, String toConcant, String scapeStr){
-		if (!stringHasValue(currentString)) return toConcant;
-		
 		if (!stringHasValue(toConcant)) return currentString;
+		
+		if (!stringHasValue(currentString)) return toConcant;
 		
 		return currentString + scapeStr+ toConcant; 
 	}

@@ -161,17 +161,20 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	public void removeDueInconsistency(SyncTableInfo syncTableInfo, Map<ParentRefInfo, Integer> missingParents, Connection conn) throws DBException{
 		SyncImportInfoVO syncInfo = this.retrieveRelatedSyncInfo(syncTableInfo, conn);
 		
-		syncInfo.markAsPartialMigrated(syncTableInfo, generateMissingInfo(missingParents), conn);
+		syncInfo.markAsFailedToMigrate(syncTableInfo, generateMissingInfo(missingParents), conn);
 		
 		this.remove(conn);
 		
 		BaseDAO.commit(conn);
 		
 		for (ParentRefInfo refInfo: syncTableInfo.getChildRefInfo()) {
-			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferencedClass(), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
 			
-			for (OpenMRSObject child : children) {
-				child.consolidateData(refInfo.getReferenceTableInfo(), conn);
+			if (!refInfo.isMetadata()) {
+				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferenceClass(), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
+				
+				for (OpenMRSObject child : children) {
+					child.consolidateData(refInfo.getReferenceTableInfo(), conn);
+				}
 			}
 		}
 	}

@@ -7,8 +7,8 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
@@ -19,8 +19,8 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  */
 public class DatabaseIntegrityConsolidationController extends AbstractSyncController {
 	
-	public DatabaseIntegrityConsolidationController(DBConnectionService connectionService) {
-		super(connectionService);
+	public DatabaseIntegrityConsolidationController() {
+		super();
 	}
 
 	@Override
@@ -76,5 +76,22 @@ public class DatabaseIntegrityConsolidationController extends AbstractSyncContro
 	@Override
 	public String getOperationName() {
 		return AbstractSyncController.SYNC_OPERATION_CONSOLIDATION;
+	}
+	
+	@Override
+	public OpenConnection openConnection() {
+		OpenConnection conn = super.openConnection();
+	
+		if (getSyncTableInfoSource().isDoIntegrityCheckInTheEnd()) {
+			try {
+				DBUtilities.disableForegnKeyChecks(conn);
+			} catch (DBException e) {
+				e.printStackTrace();
+				
+				throw new RuntimeException(e);
+			}
+		}
+		
+		return conn;
 	}
 }

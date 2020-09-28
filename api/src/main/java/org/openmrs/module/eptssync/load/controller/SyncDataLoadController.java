@@ -10,7 +10,6 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.load.engine.LoadSyncDataEngine;
 import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 /**
@@ -23,8 +22,8 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  */
 public class SyncDataLoadController extends AbstractSyncController {
 	
-	public SyncDataLoadController(DBConnectionService connectionService) {
-		super(connectionService);
+	public SyncDataLoadController() {
+		super();
 	}
 
 	@Override

@@ -32,10 +32,10 @@ public class OpenMRSClassGenerator {
 		
 		Path root = Paths.get(".").normalize().toAbsolutePath();
 
-		File sourceFile = new File(root + "/src/main/java/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.generateClassName() + ".java");
+		File sourceFile = new File(root + "/src/main/java/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
 		File destinationFileLocation = new File(root + "/target/classes/");
 		
-		String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
+		String fullClassName = syncTableInfo.generateFullClassName();
 		
 		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName);
 			
@@ -108,14 +108,23 @@ public class OpenMRSClassGenerator {
 		
 		insertParamsDefinition += attElements.getSqlInsertParamDefinifion() + "};";
 		updateParamsDefinition += attElements.getSqlUpdateParamDefinifion();
-		updateParamsDefinition += ", this." + syncTableInfo.getPrimaryKeyAsClassAtt() + "};"; 
 		
+		if (syncTableInfo.getPrimaryKey() != null) {
+			updateParamsDefinition += ", this." + syncTableInfo.getPrimaryKeyAsClassAtt() + "};"; 
+		}
+		else {
+			updateParamsDefinition += ", null};"; 				
+		}
 		insertSQLDefinition = insertSQLStart + " " + insertSQLEnd + ";";
 		
 		insertValuesDefinition += attElements.getSqlInsertValues();
 		
 		
 		//GENERATE INFO FOR UNAVALIABLE COLUMNS
+		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "uuid", conn)) {
+			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("uuid", "String");
+		}
+		
 		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "origin_record_id", conn)) {
 			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("originRecordId", "int");
 		}
@@ -127,19 +136,20 @@ public class OpenMRSClassGenerator {
 		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "consistent", conn)) {
 			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("consistent", "int");
 		}
-		
-		String primaryKeyAtt = syncTableInfo.getPrimaryKeyAsClassAtt();
-		
+
 		String methodFromSuperClass = "";
+
+		String primaryKeyAtt = syncTableInfo.hasPK() ? syncTableInfo.getPrimaryKeyAsClassAtt() : null;
 		
 		methodFromSuperClass += "	public int getObjectId() { \n ";
-		methodFromSuperClass += "		return this."+ primaryKeyAtt + "; \n";
+		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK()) methodFromSuperClass += "		return this."+ primaryKeyAtt + "; \n";
+		else methodFromSuperClass += "		return 0; \n";
 		methodFromSuperClass += "	} \n \n";
 
 		methodFromSuperClass += "	public void setObjectId(int selfId){ \n";
-		methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
+		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK()) methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
 		methodFromSuperClass += "	} \n \n";
-		
+	
 		methodFromSuperClass += "	public void load(ResultSet rs) throws SQLException{ \n";
 		methodFromSuperClass +=   		resultSetLoadDefinition;
 		methodFromSuperClass += "	} \n \n";
@@ -173,16 +183,14 @@ public class OpenMRSClassGenerator {
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
 		methodFromSuperClass += "	public String generateInsertValues(){ \n ";
-		methodFromSuperClass += "		return "+ insertValuesDefinition + "; \n";
+		methodFromSuperClass += "		return \"\"+"+ insertValuesDefinition + "; \n";
 		methodFromSuperClass += "	} \n \n";
-			
-		/*methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public void setAllParentsToZero(SyncTableInfo tableInfo, Connection conn) {\n";
-			for(ParentRefInfo refInfo : syncTableInfo.getParentRefInfo()) {
-				methodFromSuperClass += "		this." + refInfo.getReferenceColumnAsClassAttName() + " = 0;\n";
-			}
-		methodFromSuperClass += "	}\n\n";*/
 		
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public boolean isGeneratedFromSkeletonClass() {\n";
+		methodFromSuperClass += "		return false;\n";
+		methodFromSuperClass += "	}\n\n";
+			
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public boolean hasParents() {\n";
 		
@@ -228,8 +236,10 @@ public class OpenMRSClassGenerator {
 			if (refInfo.isMetadata()) continue;
 			
 			if (!refInfo.existsRelatedReferencedClass()) {
-				refInfo.generateRelatedReferencedClass();
+				refInfo.generateSkeletonOfRelatedReferencedClass(conn);
 			}
+			
+			if (!refInfo.isNumericRefColumn()) methodFromSuperClass += "/*\n";
 			
 			methodFromSuperClass += "		parentOnDestination = loadParent(";
 			methodFromSuperClass += refInfo.getReferencedClassFullName() + ".class,";
@@ -239,6 +249,9 @@ public class OpenMRSClassGenerator {
 			methodFromSuperClass += " this." +  refInfo.getReferenceColumnAsClassAttName() + ", " + ignorable + ", conn); \n";
 			methodFromSuperClass += "		this." + refInfo.getReferenceColumnAsClassAttName() + " = 0;\n";
 			methodFromSuperClass += "		if (parentOnDestination  != null) this." + refInfo.getReferenceColumnAsClassAttName() + " = parentOnDestination.getObjectId();\n \n";
+			
+			if (!refInfo.isNumericRefColumn()) methodFromSuperClass += "*/\n";
+			
 		}
 		
 		methodFromSuperClass += "	}\n\n";
@@ -264,7 +277,7 @@ public class OpenMRSClassGenerator {
 		
 		String classDefinition ="";
 		
-		classDefinition += "package org.openmrs.module.eptssync.model.openmrs; \n \n";
+		classDefinition += "package org.openmrs.module.eptssync.model.openmrs." +  syncTableInfo.getClasspackage() + "; \n \n";
 		
 		classDefinition += "import org.openmrs.module.eptssync.model.openmrs.generic.*; \n \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; \n \n";
@@ -301,13 +314,115 @@ public class OpenMRSClassGenerator {
 		return tryToGetExistingCLass(fullClassName);
 	}
 	
+	public static Class<OpenMRSObject> generateSkeleton(SyncTableInfo syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
+		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad();
+		
+		Path root = Paths.get(".").normalize().toAbsolutePath();
+
+		File sourceFile = new File(root + "/src/main/java/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
+		File destinationFileLocation = new File(root + "/target/classes/");
+		
+		String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
+		
+		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName);
+			
+		if (existingCLass != null && !syncTableInfo.mustRecompileTableClass()) return existingCLass;
+	
+		//String getttersAndSetterDefinition = "";
+		String methodFromSuperClass = "";
+			
+		methodFromSuperClass += generateDefaultGetterAndSetterDefinition("originRecordId", "int");
+		methodFromSuperClass += generateDefaultGetterAndSetterDefinition("originAppLocationCode", "String");
+		methodFromSuperClass += generateDefaultGetterAndSetterDefinition("consistent", "int");
+		methodFromSuperClass += generateDefaultGetterAndSetterDefinition("objectId", "int");
+		methodFromSuperClass += generateDefaultGetterAndSetterDefinition("uuid", "String");
+		
+		methodFromSuperClass += "	public String generateDBPrimaryKeyAtt(){ \n ";
+		methodFromSuperClass += "		return null; \n";
+		methodFromSuperClass += "	} \n \n";
+		
+		methodFromSuperClass += "	public Object[]  getInsertParams(){ \n ";
+		methodFromSuperClass += "		return null; \n";
+		methodFromSuperClass += "	} \n \n";
+	
+		methodFromSuperClass += "	public Object[]  getUpdateParams(){ \n ";
+		methodFromSuperClass += "		return null; \n";
+		methodFromSuperClass += "	} \n \n";
+		
+		methodFromSuperClass += "	public String getInsertSQL(){ \n ";
+		methodFromSuperClass += "		return null; \n";
+		methodFromSuperClass += "	} \n \n";
+	
+		methodFromSuperClass += "	public String getUpdateSQL(){ \n ";
+		methodFromSuperClass += "		return null; \n";
+		methodFromSuperClass += "	} \n \n";
+		
+		methodFromSuperClass += "	public String generateInsertValues(){ \n ";
+		methodFromSuperClass += "		return null; \n";
+		methodFromSuperClass += "	} \n \n";
+			
+		methodFromSuperClass += "	public boolean hasParents() {\n";
+		methodFromSuperClass += "		return false;\n";
+		methodFromSuperClass += "	}\n\n";
+
+		methodFromSuperClass += "	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
+		methodFromSuperClass += "		throw new RuntimeException(\"No PKSharedInfo defined!\");";
+		methodFromSuperClass += "	}\n\n";
+		
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
+		methodFromSuperClass += "	}\n\n";
+		
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public int getParentValue(String parentAttName) {";
+		methodFromSuperClass += "		return 0;\n";
+		methodFromSuperClass += "	}\n\n";
+		
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public boolean isGeneratedFromSkeletonClass() {\n";
+		methodFromSuperClass += "		return true;\n";
+		methodFromSuperClass += "	}\n\n";
+		
+		String classDefinition ="";
+		
+		
+		classDefinition += "package org.openmrs.module.eptssync.model.openmrs." + syncTableInfo.getClasspackage() + "; \n \n";
+		
+		classDefinition += "import org.openmrs.module.eptssync.model.openmrs.generic.*; \n \n";
+		classDefinition += "import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; \n \n";
+		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
+		classDefinition += "import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; \n \n";
+		
+		classDefinition += "import java.sql.Connection; \n";
+		classDefinition += "import java.sql.SQLException; \n";
+		classDefinition += "import java.sql.ResultSet; \n \n";
+				
+		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";
+		
+		classDefinition += "public class " + syncTableInfo.generateClassName() + " extends AbstractOpenMRSObject implements OpenMRSObject { \n";
+		classDefinition += "	public " + syncTableInfo.generateClassName() + "() { \n";
+		classDefinition += "	} \n \n";
+		classDefinition +=  	methodFromSuperClass + "\n";
+		classDefinition += "}";
+		
+		FileWriter writer = new FileWriter(sourceFile);
+
+		writer.write(classDefinition);
+
+		writer.close();
+
+		compile(sourceFile, destinationFileLocation);
+				
+		return tryToGetExistingCLass(fullClassName);
+	}
+	
 	private static String generateDefaultGetterAndSetterDefinition(String attName, String attType) {
 		String getttersAndSetterDefinition = "";
 		
-		getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, AttDefinedElements.defineGetterMethod(attName, attType));
+		getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, AttDefinedElements.defineDefaultGetterMethod(attName, attType));
 		
 		getttersAndSetterDefinition += "\n \n";
-		getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, AttDefinedElements.defineSetterMethod(attName, attType));
+		getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, AttDefinedElements.defineDefaultSetterMethod(attName, attType));
 
 		getttersAndSetterDefinition += "\n \n";
 		

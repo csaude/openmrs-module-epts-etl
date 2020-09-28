@@ -205,8 +205,8 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	}
 	
 	public static List<OpenMRSObject> getByOriginParentId(Class<OpenMRSObject> clazz, String parentField, int parentOriginId, String appOriginCode, Connection conn) throws DBException {
-		Object[] params = {parentField, 
-						  appOriginCode};
+		Object[] params = {parentOriginId, 
+						   appOriginCode};
 		
 		OpenMRSObject obj = utilities.createInstance(clazz);
 		

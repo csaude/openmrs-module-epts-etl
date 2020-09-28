@@ -1,0 +1,28 @@
+{
+	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
+	syncStageSchema: "sync_import_stage",
+	mustCreateStageSchemaElements:true,
+	originAppLocationCode: "CENTRAL_DB",
+	defaultQtyRecordsPerSelect: 25000,
+	firstExport: true,
+	defaultQtyProcessingEngine: 1,
+	doIntegrityCheckInTheEnd: true,
+	mustRecompileTable: false,
+	mustCreateClasses: false,
+	classpackage: "destinationpkg",
+	connInfo: {
+		dataBaseUserName: "root",
+		dataBaseUserPassword: "root",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		driveClassName: "com.mysql.jdbc.Driver"
+	},
+	syncTableInfo:[
+		 				
+		{	
+			tableName: "users",
+			parents: ["person", "users"],
+			mustRecompileTable: false,
+			qtyRecordsPerSelect: 25000
+		}			
+	]
+}

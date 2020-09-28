@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
-import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -157,8 +156,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return  BaseDAO.find(SyncImportInfoVO.class , sql, params, conn);
 	}
 
-	public static void markAsFailedToMigrate(SyncImportInfoVO record, SyncTableInfo tableInfo, SyncExeption e, Connection conn) throws DBException {
-		String msg = e.getLocalizedMessage().length() <= 250 ? e.getLocalizedMessage() : e.getLocalizedMessage().substring(0, 250);
+	public static void markAsFailedToMigrate(SyncImportInfoVO record, SyncTableInfo tableInfo, String msg, Connection conn) throws DBException {
+		msg = msg.length() <= 250 ? msg : msg.substring(0, 250);
 		
 		Object[] params = { SyncImportInfoVO.MIGRATION_STATUS_FAILED,
 							msg,

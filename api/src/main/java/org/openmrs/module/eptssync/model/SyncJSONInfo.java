@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
+import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -27,8 +28,7 @@ public class SyncJSONInfo {
 	private Date dateGenerated;
 	private String originAppLocationCode;
 	
-	private List<OpenMRSObject> syncRecords;
-
+	private List<SyncImportInfoVO> syncInfo;
 	/**
 	 * The minimal info of this object
 	 */
@@ -38,10 +38,19 @@ public class SyncJSONInfo {
 	}
 	
 	public SyncJSONInfo(List<OpenMRSObject> syncRecords) {
-		this.syncRecords = syncRecords;
 		this.qtyRecords = utilities.arraySize(syncRecords);
-
+		
+		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(syncRecords);
+		
 		this.dateGenerated = DateAndTimeUtilities.getCurrentDate();
+	}
+	
+	public List<SyncImportInfoVO> getSyncInfo() {
+		return syncInfo;
+	}
+	
+	public void setSyncInfo(List<SyncImportInfoVO> syncInfo) {
+		this.syncInfo = syncInfo;
 	}
 	
 	public String getOriginAppLocationCode() {
@@ -66,14 +75,6 @@ public class SyncJSONInfo {
 
 	public void setDateGenerated(Date dateGenerated) {
 		this.dateGenerated = dateGenerated;
-	}
-
-	public List<OpenMRSObject> getSyncRecords() {
-		return syncRecords;
-	}
-
-	public void setSyncRecords(List<OpenMRSObject> syncRecords) {
-		this.syncRecords = syncRecords;
 	}
 
 	public static SyncJSONInfo generate(List<OpenMRSObject> syncRecords) {

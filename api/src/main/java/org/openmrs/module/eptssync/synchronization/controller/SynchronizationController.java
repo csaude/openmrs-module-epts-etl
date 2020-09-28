@@ -1,20 +1,13 @@
 package org.openmrs.module.eptssync.synchronization.controller;
 
-import java.util.List;
-
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
+import org.openmrs.module.eptssync.controller.conf.SyncConf;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfoSource;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
-import org.openmrs.module.eptssync.model.openmrs.PersonVO;
-import org.openmrs.module.eptssync.model.openmrs.UsersVO;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.synchronization.engine.SynchronizationSyncEngine;
-import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -28,8 +21,8 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  */
 public class SynchronizationController extends AbstractSyncController {
 
-	public SynchronizationController(DBConnectionService connectionService) {
-		super(connectionService);
+	public SynchronizationController() {
+		super();
 	}
 	
 	@Override
@@ -38,7 +31,7 @@ public class SynchronizationController extends AbstractSyncController {
 	}
 
 	@Override
-	public void init(SyncTableInfoSource sourceTableInfo) {
+	public void init(SyncConf sourceTableInfo) {
 		setSyncTableInfoSource(sourceTableInfo);
 		
 		if (sourceTableInfo.isDoIntegrityCheckInTheEnd()) {
@@ -64,7 +57,7 @@ public class SynchronizationController extends AbstractSyncController {
 		else{
 			setSyncTableInfoSource(sourceTableInfo);
 		
-			tryToCreateInitialConfigurationForAllAvaliableLocations();
+			//tryToCreateInitialConfigurationForAllAvaliableLocations();
 		
 			for (SyncTableInfo syncInfo: sourceTableInfo.getSyncTableInfo()) {
 				initAndStartEngine(syncInfo);
@@ -72,6 +65,24 @@ public class SynchronizationController extends AbstractSyncController {
 		}
 	}
 
+	@Override
+	public OpenConnection openConnection() {
+		OpenConnection conn = super.openConnection();
+	
+		if (getSyncTableInfoSource().isDoIntegrityCheckInTheEnd()) {
+			try {
+				DBUtilities.disableForegnKeyChecks(conn);
+			} catch (DBException e) {
+				e.printStackTrace();
+				
+				throw new RuntimeException(e);
+			}
+		}
+		
+		return conn;
+	}
+	
+	/*
 	private void tryToCreateInitialConfigurationForAllAvaliableLocations() {
 		OpenConnection conn = openConnection();
 
@@ -97,8 +108,9 @@ public class SynchronizationController extends AbstractSyncController {
 			conn.finalizeConnection();
 		}
 
-	}
+	}*/
 	
+	/*
 	private void tryToCreateInitialConfigurationForLocation(String originAppLocationCode, OpenConnection conn) throws DBException {
 		PersonVO person = OpenMRSObjectDAO.thinGetByOriginRecordId(PersonVO.class, 1, originAppLocationCode, conn);
 		UsersVO  user = OpenMRSObjectDAO.thinGetByOriginRecordId(UsersVO.class, 1, originAppLocationCode, conn);
@@ -131,7 +143,8 @@ public class SynchronizationController extends AbstractSyncController {
 		DBUtilities.enableForegnKeyChecks(conn);
 		
 	}
-
+	*/
+	
 	@Override
 	protected long getMinRecordId(SyncTableInfo tableInfo) {
 		OpenConnection conn = openConnection();
@@ -174,7 +187,7 @@ public class SynchronizationController extends AbstractSyncController {
 
 	@Override
 	public boolean mustRestartInTheEnd() {
-		return !getSyncTableInfoSource().isDoIntegrityCheckInTheEnd();
+		return true;
 	}
 	
 	@Override

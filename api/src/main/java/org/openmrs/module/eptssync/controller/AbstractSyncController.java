@@ -7,14 +7,13 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.log4j.Logger;
+import org.openmrs.module.eptssync.controller.conf.SyncConf;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfoSource;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.RunningEngineInfo;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
@@ -38,19 +37,18 @@ public abstract class AbstractSyncController {
 	
 	private Map<String, RunningEngineInfo> runnungEngines;
 	
-	private static SyncTableInfoSource syncTableInfoSource;
+	private static SyncConf syncTableInfoSource;
 	private boolean initialized;
-	private DBConnectionService connectionService;
 	
-	public AbstractSyncController(DBConnectionService connectionService) {
-		this.connectionService = connectionService;
-		
+	public AbstractSyncController() {
 		this.runnungEngines = new HashMap<String, RunningEngineInfo>();
 		
 		this.logger = Logger.getLogger(this.getClass());
 	}
 
-	public void init(SyncTableInfoSource syncTableInfoSource) {
+	public void init(SyncConf syncTableInfoSource) {
+		AbstractSyncController.syncTableInfoSource = syncTableInfoSource;
+		
 		List<SyncTableInfo> allSync = syncTableInfoSource.getSyncTableInfo();
 	
 		for (SyncTableInfo syncInfo: allSync) {
@@ -93,7 +91,7 @@ public abstract class AbstractSyncController {
 		}
 		else mainEngine = initRelatedEngine(syncInfo, null);
 		
-		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(syncInfo.getTableName());
+		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(getOperationName() + ":" + syncInfo.getTableName());
 		executor.execute(mainEngine);
 		
 		if (mainEngine.getChildren() != null) {
@@ -107,16 +105,16 @@ public abstract class AbstractSyncController {
 		logInfo("ENGINE FOR TABLE '" + syncInfo.getTableName() + "' INITIALIZED");
 	}
 
-	public static void setSyncTableInfoSource(SyncTableInfoSource syncTableInfoSource) {
+	public static void setSyncTableInfoSource(SyncConf syncTableInfoSource) {
 		AbstractSyncController.syncTableInfoSource = syncTableInfoSource;
 	}
 	
-	protected SyncTableInfoSource getSyncTableInfoSource() {
+	protected SyncConf getSyncTableInfoSource() {
 		return syncTableInfoSource;
 	}
 	
 	public OpenConnection openConnection() {
-		return this.connectionService.openConnection();
+		return syncTableInfoSource.openConnection();
 	}
 	
 	public CommonUtilities utilities() {

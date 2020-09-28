@@ -10,7 +10,6 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.transport.engine.TransportSyncFilesEngine;
 import org.openmrs.module.eptssync.transport.model.TransportSyncFilesSearchParams;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 /**
@@ -21,8 +20,8 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  */
 public class SyncTransportController extends AbstractSyncController {
 	
-	public SyncTransportController(DBConnectionService connectionService) {
-		super(connectionService);
+	public SyncTransportController() {
+		super();
 	}
 
 	@Override

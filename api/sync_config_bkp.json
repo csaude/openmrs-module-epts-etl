@@ -6,6 +6,7 @@
 	firstExport: true,
 	defaultQtyProcessingEngine: 1,
 	doIntegrityCheckInTheEnd: true,
+	mustRecompileTable: true,
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",

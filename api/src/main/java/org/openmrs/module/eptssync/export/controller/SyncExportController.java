@@ -12,7 +12,6 @@ import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -25,8 +24,8 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  */
 public class SyncExportController extends AbstractSyncController {
 	
-	public SyncExportController(DBConnectionService connectionService) {
-		super(connectionService);
+	public SyncExportController() {
+		super();
 	}
 
 	@Override

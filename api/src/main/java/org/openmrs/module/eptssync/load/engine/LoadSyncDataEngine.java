@@ -10,14 +10,12 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
 import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -40,21 +38,21 @@ public class LoadSyncDataEngine extends SyncEngine{
 	
 	@Override
 	public void performeSync(List<SyncRecord> migrationRecords) {
-		if (this.currJSONInfo.getSyncRecords().hashCode() !=  migrationRecords.hashCode()) {
+		/*if (this.currJSONInfo.getSyncRecords().hashCode() !=  migrationRecords.hashCode()) {
 			throw new ForbiddenOperationException("The migration record source differ from the current migration records");
-		}
+		}*/
 		
 		OpenConnection conn = openConnection();
 		
 		try {
 			
-			List<OpenMRSObject> migrationRecordAsOpenMRSObjects = utilities.parseList(migrationRecords, OpenMRSObject.class);
+			List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
 			
-			List<SyncImportInfoVO> syncImportInfo = SyncImportInfoVO.generateFromSyncRecord(migrationRecordAsOpenMRSObjects);
+			//List<SyncImportInfoVO> syncImportInfo = SyncImportInfoVO.generateFromSyncRecord(migrationRecordAsOpenMRSObjects);
 		
 			this.syncController.logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " TO STAGING TABLE");
 			
-			SyncImportInfoDAO.insertAll(syncImportInfo, getSyncTableInfo(), conn);
+			SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSyncTableInfo(), conn);
 			
 			this.syncController.logInfo("'"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " WROTE TO STAGING TABLE");
 			
@@ -128,7 +126,7 @@ public class LoadSyncDataEngine extends SyncEngine{
 			this.currJSONInfo = SyncJSONInfo.loadFromJSON(json);
 			this.currJSONInfo.setFileName(currJSONSourceFile.getAbsolutePath());
 			
-			return utilities.parseList(this.currJSONInfo.getSyncRecords(), SyncRecord.class);
+			return utilities.parseList(this.currJSONInfo.getSyncInfo(), SyncRecord.class);
 			
 		} catch (Exception e) {
 			e.printStackTrace();

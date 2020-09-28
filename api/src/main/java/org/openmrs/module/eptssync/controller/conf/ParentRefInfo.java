@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.controller.conf;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -138,7 +139,7 @@ public class ParentRefInfo {
 			if (this.referencedTableInfo == null)
 				throw new ForbiddenOperationException("No referenced parent info defined!");
 
-			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + generateRelatedReferencedClassName();
+			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + getReferencedTableInfo().getClasspackage() + "." + generateRelatedReferencedClassName();
 			
 			this.relatedReferencedClass = (Class<OpenMRSObject>) Class.forName(fullClassName);
 
@@ -157,7 +158,7 @@ public class ParentRefInfo {
 			if (this.referenceTableInfo == null)
 				throw new ForbiddenOperationException("No reference parent info defined!");
 
-			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + generateRelatedReferenceClassName();
+			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + getReferenceTableInfo().getClasspackage() + "." + generateRelatedReferenceClassName();
 			
 			this.relatedReferenceClass = (Class<OpenMRSObject>) Class.forName(fullClassName);
 
@@ -222,12 +223,9 @@ public class ParentRefInfo {
 					"REFERENCED[TABLE: " + this.referencedTableInfo.getTableName() + ", COLUMN: " + this.referencedColumnName + "]";
 	}
 
-	public void generateRelatedReferencedClass() {
-		OpenConnection conn = getReferencedTableInfo().openConnection();
-		
+	public void generateRelatedReferencedClass(Connection conn) {
 		try {
 			this.relatedReferencedClass = OpenMRSClassGenerator.generate(this.getReferencedTableInfo(), conn);
-			conn.markAsSuccessifullyTerminected();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 
@@ -242,7 +240,6 @@ public class ParentRefInfo {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
 		}
 		
 	}
@@ -271,4 +268,52 @@ public class ParentRefInfo {
 		}
 		
 	}
+	
+	public void generateSkeletonOfRelatedReferencedClass(Connection conn) {
+		try {
+			this.relatedReferencedClass = OpenMRSClassGenerator.generateSkeleton(this.getReferencedTableInfo(), conn);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+		finally {
+		}
+		
+	}
+	
+	public void generateSkeletonRelatedReferenceClass() {
+		OpenConnection conn = getReferenceTableInfo().openConnection();
+		
+		try {
+			this.relatedReferenceClass = OpenMRSClassGenerator.generateSkeleton(this.getReferenceTableInfo(), conn);
+			conn.markAsSuccessifullyTerminected();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+		
+	}
+
+	
 }
