@@ -43,7 +43,7 @@ public class ThreadPoolService {
 				.build();
 		
 		
-		this.createdThreadPools.add(new ExecutorServiceManager(Executors.newFixedThreadPool(7, threadFactory), namingPattern));
+		this.createdThreadPools.add(new ExecutorServiceManager(Executors.newSingleThreadExecutor(threadFactory), namingPattern));
 		
 		return this.createdThreadPools.get(this.createdThreadPools.size()-1).getExecutorService();
 	}

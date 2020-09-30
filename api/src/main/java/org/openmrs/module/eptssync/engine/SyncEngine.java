@@ -39,6 +39,8 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 	private int operationStatus;
 	private boolean stopRequested;
 	
+	private String engineId;
+	
 	public SyncEngine(SyncTableInfo syncTableInfo, RecordLimits limits, AbstractSyncController syncController) {
 		this.syncTableInfo = syncTableInfo;
 		
@@ -49,6 +51,14 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 		this.searchParams = initSearchParams(limits);
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
+	}
+	
+	public String getEngineId() {
+		return engineId;
+	}
+	
+	public void setEngineId(String engineId) {
+		this.engineId = engineId;
 	}
 	
 	public AbstractSyncController getSyncController() {
@@ -122,12 +132,8 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 			}
 			else {
 				
-				if (getSyncController().getOperationName().equals(AbstractSyncController.SYNC_OPERATION_EXPORT) && getSyncTableInfo().getTableName().equals("obs")) {
-					System.out.println("STop");
-				}
-				
 				if (getSyncController().mustRestartInTheEnd()) {
-					TimeCountDown t = new TimeCountDown(this, "NO '" + this.syncTableInfo.getTableName().toUpperCase() + "' RECORD TO " + getSyncController().getOperationName() + ".... SLEEPING", 60);
+					TimeCountDown t = new TimeCountDown(this, "NO '" + this.syncTableInfo.getTableName().toUpperCase() + "' RECORD TO " + getSyncController().getOperationName() + ".... SLEEPING", 120);
 					t.setIntervalForMessage(30);
 					t.run();	
 					
@@ -138,11 +144,7 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 					}
 					
 					restart();
-					
-					if (getSyncController().getOperationName().equals(AbstractSyncController.SYNC_OPERATION_EXPORT) && getSyncTableInfo().getTableName().equals("obs")) {
-						System.out.println("After Stop");
-					}
-
+				
 					run();
 				}
 				else {

@@ -490,7 +490,7 @@ public class SyncTableInfo {
 	}
 	
 	private String generateNameOfIndexOnExportDoneColumn() {
-		return this.tableName + "_first_export_done_index";
+		return this.tableName + "__index";
 	}
 	 */
 	
@@ -501,7 +501,6 @@ public class SyncTableInfo {
 		Statement st = conn.createStatement();
 		st.addBatch(sql);
 		st.executeBatch();
-
 		st.close();
 	}*/
 

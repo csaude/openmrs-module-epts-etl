@@ -1,9 +1,10 @@
 {
+	installationType: "source",
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
 	syncStageSchema: "sync_import_stage",
 	mustCreateStageSchemaElements:false,	
 	originAppLocationCode: "ZBZ_PEBANE",
-	defaultQtyRecordsPerSelect: 25000,
+	defaultQtyRecordsPerSelect: 10000,
 	firstExport: true,
 	defaultQtyProcessingEngine: 1,
 	doIntegrityCheckInTheEnd: true,
@@ -22,7 +23,7 @@
 					tableName: "users",
 					parents: ["person", "users"],
 					mustRecompileTable: false,
-					qtyRecordsPerSelect: 25000
+					qtyRecordsPerSelect: 10000
 				},
 		
 				{
@@ -90,7 +91,8 @@
 				{
 					tableName: "visit",
 					parents: ["patient", "location", "users"],
-					mustRecompileTable: false
+					mustRecompileTable: false,
+					qtyProcessingEngine: 5			
 				},
 				
 				{
@@ -101,7 +103,8 @@
 				{
 					tableName: "encounter",
 					parents: ["patient", "location", "users", "visit"],
-					mustRecompileTable: false
+					mustRecompileTable: false,
+					qtyProcessingEngine: 5			
 				},
 				
 				{
@@ -126,7 +129,7 @@
 					tableName: "obs",
 					parents: ["person", "location", "orders", "obs", "users", "encounter"],
 					mustRecompileTable: false,
-					qtyProcessingEngine: 3
+					qtyProcessingEngine: 5
 				},
 				
 				{

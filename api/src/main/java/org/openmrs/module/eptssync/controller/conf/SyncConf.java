@@ -1,10 +1,14 @@
 package org.openmrs.module.eptssync.controller.conf;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+
+import javax.ws.rs.ForbiddenException;
 
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
@@ -42,7 +46,27 @@ public class SyncConf implements MonitoredOperation, Runnable{
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
+	private String installationType;
+	private File relatedConfFile;
+	
+	private static final String[] supportedInstallationTypes = {"source", "destination"};
+	
 	private SyncConf() {
+	}
+	
+	public String getInstallationType() {
+		return installationType;
+	}
+	
+	public void setInstallationType(String installationType) {
+		if (!utilities.isStringIn(installationType, supportedInstallationTypes)) {
+			throw new ForbiddenException("The 'installationType' of syncConf file must be in "+supportedInstallationTypes);
+		}
+		this.installationType = installationType;
+	}
+	
+	public boolean isDestinationInstallationType() {
+		return this.installationType.equals(supportedInstallationTypes[1]);
 	}
 	
 	public boolean mustCreateStageSchemaElements() {
@@ -252,7 +276,24 @@ public class SyncConf implements MonitoredOperation, Runnable{
 		return null;
 	}
 
-	public static SyncConf loadFromJSON (String json) {
+
+	public void setRelatedConfFile(File relatedConfFile) {
+		this.relatedConfFile = relatedConfFile;
+	}
+	
+	public File getRelatedConfFile() {
+		return relatedConfFile;
+	}
+	
+	public static SyncConf loadFromFile(File file) throws IOException {
+		SyncConf conf = SyncConf.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
+		
+		conf.setRelatedConfFile(file);
+		
+		return conf;
+	}
+	
+	private static SyncConf loadFromJSON (String json) {
 		try {
 			return new ObjectMapperProvider().getContext(SyncConf.class).readValue(json, SyncConf.class);
 		} catch (JsonParseException e) {
@@ -391,5 +432,9 @@ public class SyncConf implements MonitoredOperation, Runnable{
 
 	public SyncTableInfo find(SyncTableInfo tableInf) {
 		return utilities.findOnList(this.syncTableInfo, tableInf);
+	}
+
+	public String getDesignation() {
+		return this.installationType + "_" + this.originAppLocationCode;
 	}
 }

@@ -30,7 +30,11 @@ public class ExportSyncEngine extends SyncEngine {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+			//List<SyncRecord> records = utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+			
+			List<SyncRecord> records = utilities.parseList(SearchParamsDAO.search(this, conn), SyncRecord.class);
+				
+			return records;
 			
 		} catch (DBException e) {
 			e.printStackTrace();

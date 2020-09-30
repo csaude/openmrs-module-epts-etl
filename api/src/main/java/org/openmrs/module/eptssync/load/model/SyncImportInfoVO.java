@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.conf.SyncConf;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
@@ -150,7 +151,9 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	}
 
 	public void sync(SyncTableInfo tableInfo, OpenConnection conn) throws DBException {
-		OpenMRSObject source = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), json);
+		String modifiedJSON = json.replaceFirst(retrieveSourcePackageName(tableInfo), tableInfo.getClasspackage());
+		
+		OpenMRSObject source = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), modifiedJSON);
 		
 		source.setOriginRecordId(source.getObjectId());
 		
@@ -235,7 +238,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	public void markAsMigrated(SyncTableInfo tableInfo, Connection conn) throws DBException {
 		SyncImportInfoDAO.remove(this, tableInfo, conn);
 	}
-
+	
 	public static List<OpenMRSObject> convertAllToOpenMRSObject(SyncTableInfo tableInfo, List<SyncImportInfoVO> toParse) {
 		List<OpenMRSObject> records = new ArrayList<OpenMRSObject>();
 		
@@ -252,6 +255,12 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		return records;
 	}
 	
+	/**
+	 * The JSON generated from the source use class from source package classes defined in {@link SyncConf#getClasspackage()}.
+	 * In the destination this class is represented by the correspondent in the classpackage
+	 * @param tableInfo
+	 * @return
+	 */
 	private String retrieveSourcePackageName(SyncTableInfo tableInfo) {
 		//"json" : "{\n  \"className\" : \"org.openmrs.module.eptssync.model.openmrs.sourcepkg.PersonVO\"
 		return this.getJson().split("org.openmrs.module.eptssync.model.openmrs.")[1].split("\\.")[0];

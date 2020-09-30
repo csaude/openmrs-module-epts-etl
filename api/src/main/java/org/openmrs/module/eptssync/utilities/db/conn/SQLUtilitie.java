@@ -678,13 +678,18 @@ public class SQLUtilitie  {
 	 * @throws DBException 
 	 */
 	public static String createPhasedSelectMySQL(String originalSelect, int start, int qtdRecordSuported, Connection conn) throws DBException{
+		boolean isDistinct =  originalSelect.contains("DISTINCT");
+		
 		String fasedCondition = "";
 			
 		fasedCondition = " LIMIT " + (start-1) + "," + qtdRecordSuported;
 		
-		originalSelect = " SELECT * " +
-						 " FROM (" + originalSelect + ") MYSUBQUERY " +
-						   fasedCondition;
+		if (isDistinct) {
+			originalSelect = " SELECT * " +
+						 	 " FROM (" + originalSelect + ") MYSUBQUERY ";
+		}
+		
+		originalSelect += fasedCondition;
 		
 		return originalSelect;
 	}

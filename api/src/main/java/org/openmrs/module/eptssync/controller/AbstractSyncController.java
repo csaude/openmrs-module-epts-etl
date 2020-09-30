@@ -37,7 +37,7 @@ public abstract class AbstractSyncController {
 	
 	private Map<String, RunningEngineInfo> runnungEngines;
 	
-	private static SyncConf syncTableInfoSource;
+	private SyncConf syncTableInfoSource;
 	private boolean initialized;
 	
 	public AbstractSyncController() {
@@ -47,7 +47,7 @@ public abstract class AbstractSyncController {
 	}
 
 	public void init(SyncConf syncTableInfoSource) {
-		AbstractSyncController.syncTableInfoSource = syncTableInfoSource;
+		this.syncTableInfoSource = syncTableInfoSource;
 		
 		List<SyncTableInfo> allSync = syncTableInfoSource.getSyncTableInfo();
 	
@@ -75,11 +75,14 @@ public abstract class AbstractSyncController {
 			
 			mainEngine.setChildren(new ArrayList<SyncEngine>());
 			
-			for (int i =0; i < syncInfo.getQtyProcessingEngine() - 2; i++) {
+			int i = 1;
+			
+			for (i = 1; i < syncInfo.getQtyProcessingEngine() - 1; i++) {
 				 limits  = new RecordLimits(limits.getLastRecordId() + 1, limits.getLastRecordId() + qtyRecordsPerEngine + 1);
 				
 				 SyncEngine engine = initRelatedEngine(syncInfo, limits);
-				 
+				 engine.setEngineId(getOperationName()+"_"+syncInfo.getTableName()+""+utilities().garantirXCaracterOnNumber(i, 2));
+					
 				 engine.setParent(mainEngine);
 				 
 				 mainEngine.getChildren().add(engine);
@@ -87,26 +90,33 @@ public abstract class AbstractSyncController {
 		
 			 limits  = new RecordLimits(limits.getLastRecordId() + 1, maxRecId);
 				
-			 mainEngine.getChildren().add(initRelatedEngine(syncInfo, limits));
+			 SyncEngine engine = initRelatedEngine(syncInfo, limits);
+			 engine.setEngineId(getOperationName()+"_"+syncInfo.getTableName()+""+utilities().garantirXCaracterOnNumber(i, 2));
+				
+			 mainEngine.getChildren().add(engine);
 		}
 		else mainEngine = initRelatedEngine(syncInfo, null);
 		
-		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(getOperationName() + ":" + syncInfo.getTableName());
+		mainEngine.setEngineId(getOperationName()+"_"+syncInfo.getTableName()+""+utilities().garantirXCaracterOnNumber(0, 2));
+
+		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(mainEngine.getEngineId());
 		executor.execute(mainEngine);
+		runnungEngines.put(mainEngine.getEngineId(), new RunningEngineInfo(executor, mainEngine));
 		
 		if (mainEngine.getChildren() != null) {
-			for (SyncEngine engine : mainEngine.getChildren()) {
-				executor.execute(engine);
+			for (SyncEngine childEngine : mainEngine.getChildren()) {
+				executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(childEngine.getEngineId());
+				executor.execute(childEngine);
+				runnungEngines.put(childEngine.getEngineId(), new RunningEngineInfo(executor, childEngine));
 			}
 		}
 		
-		runnungEngines.put(syncInfo.getTableName(), new RunningEngineInfo(executor, mainEngine));
 		
 		logInfo("ENGINE FOR TABLE '" + syncInfo.getTableName() + "' INITIALIZED");
 	}
 
-	public static void setSyncTableInfoSource(SyncConf syncTableInfoSource) {
-		AbstractSyncController.syncTableInfoSource = syncTableInfoSource;
+	public void setSyncTableInfoSource(SyncConf syncTableInfoSource) {
+		this.syncTableInfoSource = syncTableInfoSource;
 	}
 	
 	protected SyncConf getSyncTableInfoSource() {
