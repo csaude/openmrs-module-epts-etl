@@ -25,10 +25,10 @@ public class ProgramWorkflowStateVO extends AbstractOpenMRSObject implements Ope
 	private int changedBy;
 	private java.util.Date dateChanged;
 	private String uuid;
+	private int consistent;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
-	private int consistent;
  
 	public ProgramWorkflowStateVO() { 
 		this.metadata = true;
@@ -122,6 +122,14 @@ public class ProgramWorkflowStateVO extends AbstractOpenMRSObject implements Ope
 		return this.uuid;
 	}
  
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+ 
+	public int getConsistent(){ 
+		return this.consistent;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -141,19 +149,11 @@ public class ProgramWorkflowStateVO extends AbstractOpenMRSObject implements Ope
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
+
+
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
-	}
- 
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
- 
-	public int getConsistent(){ 
-		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -176,9 +176,9 @@ public class ProgramWorkflowStateVO extends AbstractOpenMRSObject implements Ope
 		this.changedBy = rs.getInt("changed_by");
 		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
 		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.consistent = rs.getInt("consistent");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
-		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -188,27 +188,27 @@ public class ProgramWorkflowStateVO extends AbstractOpenMRSObject implements Ope
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.programWorkflowId == 0 ? null : this.programWorkflowId, this.conceptId == 0 ? null : this.conceptId, this.initial, this.terminal, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.programWorkflowId == 0 ? null : this.programWorkflowId, this.conceptId == 0 ? null : this.conceptId, this.initial, this.terminal, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.programWorkflowId == 0 ? null : this.programWorkflowId, this.conceptId == 0 ? null : this.conceptId, this.initial, this.terminal, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.programWorkflowStateId};		return params; 
+ 		Object[] params = {this.programWorkflowId == 0 ? null : this.programWorkflowId, this.conceptId == 0 ? null : this.conceptId, this.initial, this.terminal, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.programWorkflowStateId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO program_workflow_state(program_workflow_id, concept_id, initial, terminal, creator, date_created, retired, changed_by, date_changed, uuid, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO program_workflow_state(program_workflow_id, concept_id, initial, terminal, creator, date_created, retired, changed_by, date_changed, uuid, consistent, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE program_workflow_state SET program_workflow_id = ?, concept_id = ?, initial = ?, terminal = ?, creator = ?, date_created = ?, retired = ?, changed_by = ?, date_changed = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE program_workflow_state_id = ?;"; 
+ 		return "UPDATE program_workflow_state SET program_workflow_id = ?, concept_id = ?, initial = ?, terminal = ?, creator = ?, date_created = ?, retired = ?, changed_by = ?, date_changed = ?, uuid = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE program_workflow_state_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.programWorkflowId == 0 ? null : this.programWorkflowId) + "," + (this.conceptId == 0 ? null : this.conceptId) + "," + (this.initial) + "," + (this.terminal) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.retired) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.programWorkflowId == 0 ? null : this.programWorkflowId) + "," + (this.conceptId == 0 ? null : this.conceptId) + "," + (this.initial) + "," + (this.terminal) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.retired) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null); 
 	} 
  
 	@Override

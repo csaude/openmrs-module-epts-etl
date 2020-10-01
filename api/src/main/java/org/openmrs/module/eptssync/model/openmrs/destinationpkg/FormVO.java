@@ -32,7 +32,6 @@ public class FormVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private java.util.Date dateRetired;
 	private String retiredReason;
 	private String uuid;
-	private byte swappable;
  
 	public FormVO() { 
 		this.metadata = false;
@@ -177,19 +176,11 @@ public class FormVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setUuid(String uuid){ 
 	 	this.uuid = uuid;
 	}
+
+
  
 	public String getUuid(){ 
 		return this.uuid;
-	}
- 
-	public void setSwappable(byte swappable){ 
-	 	this.swappable = swappable;
-	}
-
-
- 
-	public byte getSwappable(){ 
-		return this.swappable;
 	}	public int getOriginRecordId(){ 
 		return 0;
 	}
@@ -236,7 +227,6 @@ public class FormVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.retiredBy = rs.getInt("retired_by");
 		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
 		this.retiredReason = rs.getString("retired_reason") != null ? rs.getString("retired_reason").trim() : null;
-		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -246,27 +236,27 @@ public class FormVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.name, this.version, this.build, this.published, this.description, this.encounterType == 0 ? null : this.encounterType, this.template, this.xslt, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retiredReason, this.uuid, this.swappable};		return params; 
+ 		Object[] params = {this.name, this.version, this.build, this.published, this.description, this.encounterType == 0 ? null : this.encounterType, this.template, this.xslt, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retiredReason, this.uuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.name, this.version, this.build, this.published, this.description, this.encounterType == 0 ? null : this.encounterType, this.template, this.xslt, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retiredReason, this.uuid, this.swappable, this.formId};		return params; 
+ 		Object[] params = {this.name, this.version, this.build, this.published, this.description, this.encounterType == 0 ? null : this.encounterType, this.template, this.xslt, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retiredReason, this.uuid, this.formId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO form(name, version, build, published, description, encounter_type, template, xslt, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retired_reason, uuid, swappable) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO form(name, version, build, published, description, encounter_type, template, xslt, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retired_reason, uuid) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE form SET name = ?, version = ?, build = ?, published = ?, description = ?, encounter_type = ?, template = ?, xslt = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retired_reason = ?, uuid = ?, swappable = ? WHERE form_id = ?;"; 
+ 		return "UPDATE form SET name = ?, version = ?, build = ?, published = ?, description = ?, encounter_type = ?, template = ?, xslt = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retired_reason = ?, uuid = ? WHERE form_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.name != null ? "\""+name+"\"" : null) + "," + (this.version != null ? "\""+version+"\"" : null) + "," + (this.build) + "," + (this.published) + "," + (this.description != null ? "\""+description+"\"" : null) + "," + (this.encounterType == 0 ? null : this.encounterType) + "," + (this.template != null ? "\""+template+"\"" : null) + "," + (this.xslt != null ? "\""+xslt+"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retiredReason != null ? "\""+retiredReason+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.swappable); 
+ 		return ""+(this.name != null ? "\""+name+"\"" : null) + "," + (this.version != null ? "\""+version+"\"" : null) + "," + (this.build) + "," + (this.published) + "," + (this.description != null ? "\""+description+"\"" : null) + "," + (this.encounterType == 0 ? null : this.encounterType) + "," + (this.template != null ? "\""+template+"\"" : null) + "," + (this.xslt != null ? "\""+xslt+"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retiredReason != null ? "\""+retiredReason+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null); 
 	} 
  
 	@Override

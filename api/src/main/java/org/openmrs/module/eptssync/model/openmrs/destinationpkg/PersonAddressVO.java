@@ -41,10 +41,10 @@ public class PersonAddressVO extends AbstractOpenMRSObject implements OpenMRSObj
 	private int changedBy;
 	private java.util.Date startDate;
 	private java.util.Date endDate;
+	private int consistent;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
-	private int consistent;
  
 	public PersonAddressVO() { 
 		this.metadata = false;
@@ -266,6 +266,14 @@ public class PersonAddressVO extends AbstractOpenMRSObject implements OpenMRSObj
 		return this.endDate;
 	}
  
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+ 
+	public int getConsistent(){ 
+		return this.consistent;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -285,19 +293,11 @@ public class PersonAddressVO extends AbstractOpenMRSObject implements OpenMRSObj
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
+
+
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
-	}
- 
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
- 
-	public int getConsistent(){ 
-		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -336,9 +336,9 @@ public class PersonAddressVO extends AbstractOpenMRSObject implements OpenMRSObj
 		this.changedBy = rs.getInt("changed_by");
 		this.startDate =  rs.getTimestamp("start_date") != null ? new java.util.Date( rs.getTimestamp("start_date").getTime() ) : null;
 		this.endDate =  rs.getTimestamp("end_date") != null ? new java.util.Date( rs.getTimestamp("end_date").getTime() ) : null;
+		this.consistent = rs.getInt("consistent");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
-		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -348,27 +348,27 @@ public class PersonAddressVO extends AbstractOpenMRSObject implements OpenMRSObj
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.preferred, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.startDate, this.endDate, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.preferred, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.startDate, this.endDate, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.preferred, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.startDate, this.endDate, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.personAddressId};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.preferred, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.startDate, this.endDate, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.personAddressId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO person_address(person_id, preferred, address1, address2, city_village, state_province, postal_code, country, latitude, longitude, creator, date_created, voided, voided_by, date_voided, void_reason, county_district, address3, address6, address5, address4, uuid, date_changed, changed_by, start_date, end_date, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO person_address(person_id, preferred, address1, address2, city_village, state_province, postal_code, country, latitude, longitude, creator, date_created, voided, voided_by, date_voided, void_reason, county_district, address3, address6, address5, address4, uuid, date_changed, changed_by, start_date, end_date, consistent, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE person_address SET person_id = ?, preferred = ?, address1 = ?, address2 = ?, city_village = ?, state_province = ?, postal_code = ?, country = ?, latitude = ?, longitude = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, county_district = ?, address3 = ?, address6 = ?, address5 = ?, address4 = ?, uuid = ?, date_changed = ?, changed_by = ?, start_date = ?, end_date = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE person_address_id = ?;"; 
+ 		return "UPDATE person_address SET person_id = ?, preferred = ?, address1 = ?, address2 = ?, city_village = ?, state_province = ?, postal_code = ?, country = ?, latitude = ?, longitude = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, county_district = ?, address3 = ?, address6 = ?, address5 = ?, address4 = ?, uuid = ?, date_changed = ?, changed_by = ?, start_date = ?, end_date = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE person_address_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.personId == 0 ? null : this.personId) + "," + (this.preferred) + "," + (this.address1 != null ? "\""+address1+"\"" : null) + "," + (this.address2 != null ? "\""+address2+"\"" : null) + "," + (this.cityVillage != null ? "\""+cityVillage+"\"" : null) + "," + (this.stateProvince != null ? "\""+stateProvince+"\"" : null) + "," + (this.postalCode != null ? "\""+postalCode+"\"" : null) + "," + (this.country != null ? "\""+country+"\"" : null) + "," + (this.latitude != null ? "\""+latitude+"\"" : null) + "," + (this.longitude != null ? "\""+longitude+"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+voidReason+"\"" : null) + "," + (this.countyDistrict != null ? "\""+countyDistrict+"\"" : null) + "," + (this.address3 != null ? "\""+address3+"\"" : null) + "," + (this.address6 != null ? "\""+address6+"\"" : null) + "," + (this.address5 != null ? "\""+address5+"\"" : null) + "," + (this.address4 != null ? "\""+address4+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.personId == 0 ? null : this.personId) + "," + (this.preferred) + "," + (this.address1 != null ? "\""+ utilities.scapeQuotationMarks(address1)  +"\"" : null) + "," + (this.address2 != null ? "\""+ utilities.scapeQuotationMarks(address2)  +"\"" : null) + "," + (this.cityVillage != null ? "\""+ utilities.scapeQuotationMarks(cityVillage)  +"\"" : null) + "," + (this.stateProvince != null ? "\""+ utilities.scapeQuotationMarks(stateProvince)  +"\"" : null) + "," + (this.postalCode != null ? "\""+ utilities.scapeQuotationMarks(postalCode)  +"\"" : null) + "," + (this.country != null ? "\""+ utilities.scapeQuotationMarks(country)  +"\"" : null) + "," + (this.latitude != null ? "\""+ utilities.scapeQuotationMarks(latitude)  +"\"" : null) + "," + (this.longitude != null ? "\""+ utilities.scapeQuotationMarks(longitude)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.countyDistrict != null ? "\""+ utilities.scapeQuotationMarks(countyDistrict)  +"\"" : null) + "," + (this.address3 != null ? "\""+ utilities.scapeQuotationMarks(address3)  +"\"" : null) + "," + (this.address6 != null ? "\""+ utilities.scapeQuotationMarks(address6)  +"\"" : null) + "," + (this.address5 != null ? "\""+ utilities.scapeQuotationMarks(address5)  +"\"" : null) + "," + (this.address4 != null ? "\""+ utilities.scapeQuotationMarks(address4)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null); 
 	} 
  
 	@Override

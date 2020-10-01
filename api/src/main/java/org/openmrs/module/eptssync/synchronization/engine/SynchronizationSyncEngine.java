@@ -53,7 +53,7 @@ public class SynchronizationSyncEngine extends SyncEngine {
 			getSyncController().logInfo("SYNCHRONIZING '"+syncRecords.size() + "' "+ getSyncTableInfo().getTableName().toUpperCase());
 			
 			
-			if (getSyncTableInfo().isDoIntegrityCheckInTheEnd() && !getSyncTableInfo().useSharedPKKey()) {
+			if (getSyncTableInfo().isDoIntegrityCheckInTheEnd(getSyncController().getOperationType()) && !getSyncTableInfo().useSharedPKKey()) {
 				List<OpenMRSObject> objects = SyncImportInfoVO.convertAllToOpenMRSObject(getSyncTableInfo(), utilities.parseList(syncRecords, SyncImportInfoVO.class));
 				
 				OpenMRSObjectDAO.insertAll(objects, conn);
@@ -87,7 +87,8 @@ public class SynchronizationSyncEngine extends SyncEngine {
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new SynchronizationSearchParams(this.syncTableInfo, limits);
-		searchParams.setQtdRecordPerSelected(getSyncTableInfo().getQtyRecordsPerSelect());
+		searchParams.setQtdRecordPerSelected(getSyncTableInfo().getQtyRecordsPerSelect(getSyncController().getOperationType()));
+		//searchParams.setExtraCondition("json like \"%1f485395-b5ea-4889-8c1f-2b4f85a44776%\"");
 		
 		return searchParams;
 	}

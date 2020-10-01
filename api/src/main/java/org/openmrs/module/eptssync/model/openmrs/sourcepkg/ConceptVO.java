@@ -31,10 +31,10 @@ public class ConceptVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private java.util.Date dateRetired;
 	private String retireReason;
 	private String uuid;
+	private int consistent;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
-	private int consistent;
  
 	public ConceptVO() { 
 		this.metadata = true;
@@ -176,6 +176,14 @@ public class ConceptVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.uuid;
 	}
  
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+ 
+	public int getConsistent(){ 
+		return this.consistent;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -195,19 +203,11 @@ public class ConceptVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
+
+
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
-	}
- 
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
- 
-	public int getConsistent(){ 
-		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -236,9 +236,9 @@ public class ConceptVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
 		this.retireReason = rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null;
 		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.consistent = rs.getInt("consistent");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
-		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -248,27 +248,27 @@ public class ConceptVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.retired, this.shortName, this.description, this.formText, this.datatypeId == 0 ? null : this.datatypeId, this.classId == 0 ? null : this.classId, this.isSet, this.creator == 0 ? null : this.creator, this.dateCreated, this.version, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.retired, this.shortName, this.description, this.formText, this.datatypeId == 0 ? null : this.datatypeId, this.classId == 0 ? null : this.classId, this.isSet, this.creator == 0 ? null : this.creator, this.dateCreated, this.version, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.retired, this.shortName, this.description, this.formText, this.datatypeId == 0 ? null : this.datatypeId, this.classId == 0 ? null : this.classId, this.isSet, this.creator == 0 ? null : this.creator, this.dateCreated, this.version, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.conceptId};		return params; 
+ 		Object[] params = {this.retired, this.shortName, this.description, this.formText, this.datatypeId == 0 ? null : this.datatypeId, this.classId == 0 ? null : this.classId, this.isSet, this.creator == 0 ? null : this.creator, this.dateCreated, this.version, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.conceptId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO concept(retired, short_name, description, form_text, datatype_id, class_id, is_set, creator, date_created, version, changed_by, date_changed, retired_by, date_retired, retire_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO concept(retired, short_name, description, form_text, datatype_id, class_id, is_set, creator, date_created, version, changed_by, date_changed, retired_by, date_retired, retire_reason, uuid, consistent, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE concept SET retired = ?, short_name = ?, description = ?, form_text = ?, datatype_id = ?, class_id = ?, is_set = ?, creator = ?, date_created = ?, version = ?, changed_by = ?, date_changed = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE concept_id = ?;"; 
+ 		return "UPDATE concept SET retired = ?, short_name = ?, description = ?, form_text = ?, datatype_id = ?, class_id = ?, is_set = ?, creator = ?, date_created = ?, version = ?, changed_by = ?, date_changed = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE concept_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.retired) + "," + (this.shortName != null ? "\""+shortName+"\"" : null) + "," + (this.description != null ? "\""+description+"\"" : null) + "," + (this.formText != null ? "\""+formText+"\"" : null) + "," + (this.datatypeId == 0 ? null : this.datatypeId) + "," + (this.classId == 0 ? null : this.classId) + "," + (this.isSet) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.version != null ? "\""+version+"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+retireReason+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.retired) + "," + (this.shortName != null ? "\""+shortName+"\"" : null) + "," + (this.description != null ? "\""+description+"\"" : null) + "," + (this.formText != null ? "\""+formText+"\"" : null) + "," + (this.datatypeId == 0 ? null : this.datatypeId) + "," + (this.classId == 0 ? null : this.classId) + "," + (this.isSet) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.version != null ? "\""+version+"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+retireReason+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null); 
 	} 
  
 	@Override

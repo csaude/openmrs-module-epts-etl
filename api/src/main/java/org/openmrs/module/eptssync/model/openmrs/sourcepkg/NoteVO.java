@@ -27,10 +27,10 @@ public class NoteVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private int changedBy;
 	private java.util.Date dateChanged;
 	private String uuid;
+	private int consistent;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
-	private int consistent;
  
 	public NoteVO() { 
 		this.metadata = false;
@@ -140,6 +140,14 @@ public class NoteVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.uuid;
 	}
  
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+ 
+	public int getConsistent(){ 
+		return this.consistent;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -159,19 +167,11 @@ public class NoteVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
+
+
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
-	}
- 
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
- 
-	public int getConsistent(){ 
-		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -196,9 +196,9 @@ public class NoteVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.changedBy = rs.getInt("changed_by");
 		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
 		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
+		this.consistent = rs.getInt("consistent");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
-		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -208,27 +208,27 @@ public class NoteVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.noteType, this.patientId == 0 ? null : this.patientId, this.obsId == 0 ? null : this.obsId, this.encounterId == 0 ? null : this.encounterId, this.text, this.priority, this.parent == 0 ? null : this.parent, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.noteType, this.patientId == 0 ? null : this.patientId, this.obsId == 0 ? null : this.obsId, this.encounterId == 0 ? null : this.encounterId, this.text, this.priority, this.parent == 0 ? null : this.parent, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.noteType, this.patientId == 0 ? null : this.patientId, this.obsId == 0 ? null : this.obsId, this.encounterId == 0 ? null : this.encounterId, this.text, this.priority, this.parent == 0 ? null : this.parent, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.noteId};		return params; 
+ 		Object[] params = {this.noteType, this.patientId == 0 ? null : this.patientId, this.obsId == 0 ? null : this.obsId, this.encounterId == 0 ? null : this.encounterId, this.text, this.priority, this.parent == 0 ? null : this.parent, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.uuid, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.noteId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO note(note_type, patient_id, obs_id, encounter_id, text, priority, parent, creator, date_created, changed_by, date_changed, uuid, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO note(note_type, patient_id, obs_id, encounter_id, text, priority, parent, creator, date_created, changed_by, date_changed, uuid, consistent, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE note SET note_type = ?, patient_id = ?, obs_id = ?, encounter_id = ?, text = ?, priority = ?, parent = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE note_id = ?;"; 
+ 		return "UPDATE note SET note_type = ?, patient_id = ?, obs_id = ?, encounter_id = ?, text = ?, priority = ?, parent = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, uuid = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE note_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.noteType != null ? "\""+noteType+"\"" : null) + "," + (this.patientId == 0 ? null : this.patientId) + "," + (this.obsId == 0 ? null : this.obsId) + "," + (this.encounterId == 0 ? null : this.encounterId) + "," + (this.text != null ? "\""+text+"\"" : null) + "," + (this.priority) + "," + (this.parent == 0 ? null : this.parent) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.noteType != null ? "\""+noteType+"\"" : null) + "," + (this.patientId == 0 ? null : this.patientId) + "," + (this.obsId == 0 ? null : this.obsId) + "," + (this.encounterId == 0 ? null : this.encounterId) + "," + (this.text != null ? "\""+text+"\"" : null) + "," + (this.priority) + "," + (this.parent == 0 ? null : this.parent) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null); 
 	} 
  
 	@Override
@@ -262,6 +262,10 @@ public class NoteVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.sourcepkg.NoteVO.class, this.parent, true, conn); 
 		this.parent = 0;
 		if (parentOnDestination  != null) this.parent = parentOnDestination.getObjectId();
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.sourcepkg.ObsVO.class, this.obsId, true, conn); 
+		this.obsId = 0;
+		if (parentOnDestination  != null) this.obsId = parentOnDestination.getObjectId();
  
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.sourcepkg.PatientVO.class, this.patientId, true, conn); 
 		this.patientId = 0;

@@ -14,10 +14,39 @@ import java.sql.ResultSet;
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class PrivilegeVO extends AbstractOpenMRSObject implements OpenMRSObject { 
+	private String privilege;
+	private String description;
+	private String uuid;
+ 
 	public PrivilegeVO() { 
+		this.metadata = false;
 	} 
  
-	public int getOriginRecordId(){ 
+	public void setPrivilege(String privilege){ 
+	 	this.privilege = privilege;
+	}
+ 
+	public String getPrivilege(){ 
+		return this.privilege;
+	}
+ 
+	public void setDescription(String description){ 
+	 	this.description = description;
+	}
+ 
+	public String getDescription(){ 
+		return this.description;
+	}
+ 
+	public void setUuid(String uuid){ 
+	 	this.uuid = uuid;
+	}
+
+
+ 
+	public String getUuid(){ 
+		return this.uuid;
+	}	public int getOriginRecordId(){ 
 		return 0;
 	}
  
@@ -35,61 +64,74 @@ public class PrivilegeVO extends AbstractOpenMRSObject implements OpenMRSObject 
  
 	public void setConsistent(int consistent){ }
  
-	public int getObjectId(){ 
-		return 0;
-	}
+
  
-	public void setObjectId(int objectId){ }
+	public int getObjectId() { 
+ 		return 0; 
+	} 
  
-	public String getUuid(){ 
-		return null;
-	}
+	public void setObjectId(int selfId){ 
+	} 
  
-	public void setUuid(String uuid){ }
+	public void load(ResultSet rs) throws SQLException{ 
+		this.privilege = rs.getString("privilege") != null ? rs.getString("privilege").trim() : null;
+		this.description = rs.getString("description") != null ? rs.getString("description").trim() : null;
+			} 
  
+	@JsonIgnore
 	public String generateDBPrimaryKeyAtt(){ 
- 		return null; 
+ 		return "privilege"; 
 	} 
  
+	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		return null; 
+ 		Object[] params = {this.description, this.uuid};		return params; 
 	} 
  
+	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		return null; 
+ 		Object[] params = {this.description, this.uuid, this.privilege};		return params; 
 	} 
  
+	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return null; 
+ 		return "INSERT INTO privilege(description, uuid) VALUES(?, ?);"; 
 	} 
  
+	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return null; 
+ 		return "UPDATE privilege SET description = ?, uuid = ? WHERE privilege = ?;"; 
 	} 
  
+	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return null; 
+ 		return ""+(this.description != null ? "\""+description+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null); 
 	} 
  
+	@Override
+	public boolean isGeneratedFromSkeletonClass() {
+		return false;
+	}
+
+	@Override
 	public boolean hasParents() {
 		return false;
 	}
 
+	@Override
 	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {
 		throw new RuntimeException("No PKSharedInfo defined!");	}
 
 	@Override
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
+		OpenMRSObject parentOnDestination = null;
+ 
 	}
 
 	@Override
-	public int getParentValue(String parentAttName) {		return 0;
-	}
+	public int getParentValue(String parentAttName) {
 
-	@Override
-	public boolean isGeneratedFromSkeletonClass() {
-		return true;
-	}
+		throw new RuntimeException("No found parent for: " + parentAttName);	}
 
 
 }

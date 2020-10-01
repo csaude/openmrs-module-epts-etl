@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
@@ -125,7 +126,7 @@ public class SyncTransportController extends AbstractSyncController {
 	}
 
 	@Override
-	public String getOperationName() {
-		return AbstractSyncController.SYNC_OPERATION_TRANSPOR;
+	public String getOperationType() {
+		return SyncOperationConfig.SYNC_OPERATION_TRANSPORT;
 	}	
 }

@@ -24,6 +24,8 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 	private String firstFileName;
 	private String lastFileName;
 	
+	private String fileNamePathern;
+	
 	public LoadSyncDataSearchParams(SyncTableInfo tableInfo, RecordLimits limits) {
 		this.tableInfo = tableInfo;
 		this.limits = limits;
@@ -32,6 +34,14 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 			this.firstFileName = tableInfo.getTableName() + "_" + limits.getFirstRecordId() + ".json"; 
 			this.lastFileName = tableInfo.getTableName() + "_" + limits.getLastRecordId() + ".json"; 
 		}
+	}
+	
+	public void setFileNamePathern(String fileNamePathern) {
+		this.fileNamePathern = fileNamePathern;
+	}
+	
+	public String getFileNamePathern() {
+		return fileNamePathern;
 	}
 	
 	@Override
@@ -46,6 +56,7 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 	
 	@Override
 	public boolean accept(File dir, String name) {
+		
 		boolean isJSON = name.toLowerCase().endsWith("json");
 		boolean isNotMinimal = !name.toLowerCase().contains("minimal");
 		
@@ -56,7 +67,13 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 			isInInterval = isInInterval && name.compareTo(this.lastFileName) <= 0;
 		}
 		
-		return  isJSON && isNotMinimal && isInInterval;
+		boolean pathernOk = true;
+		
+		if (utilities.stringHasValue(this.fileNamePathern)) {
+			pathernOk = name.contains(this.fileNamePathern);
+		}
+		
+		return  isJSON && isNotMinimal && isInInterval && pathernOk;
 	}
 	
 	private boolean hasLimits() {

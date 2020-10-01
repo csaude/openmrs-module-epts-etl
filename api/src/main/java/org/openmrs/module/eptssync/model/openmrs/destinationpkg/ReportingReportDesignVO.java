@@ -238,6 +238,7 @@ public class ReportingReportDesignVO extends AbstractOpenMRSObject implements Op
 	public boolean hasParents() {
 		if (this.changedBy != 0) return true;
 		if (this.creator != 0) return true;
+		if (this.reportDefinitionUuid != null) return true;
 		if (this.retiredBy != 0) return true;
 		return false;
 	}
@@ -258,6 +259,12 @@ public class ReportingReportDesignVO extends AbstractOpenMRSObject implements Op
 		this.creator = 0;
 		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
  
+/*
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.SerializedObjectVO.class, this.reportDefinitionUuid, false, conn); 
+		this.reportDefinitionUuid = 0;
+		if (parentOnDestination  != null) this.reportDefinitionUuid = parentOnDestination.getObjectId();
+ 
+*/
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.UsersVO.class, this.retiredBy, true, conn); 
 		this.retiredBy = 0;
 		if (parentOnDestination  != null) this.retiredBy = parentOnDestination.getObjectId();
@@ -268,6 +275,7 @@ public class ReportingReportDesignVO extends AbstractOpenMRSObject implements Op
 	public int getParentValue(String parentAttName) {		
 		if (parentAttName.equals("changedBy")) return this.changedBy;		
 		if (parentAttName.equals("creator")) return this.creator;		
+		if (parentAttName.equals("reportDefinitionUuid")) return 0;		
 		if (parentAttName.equals("retiredBy")) return this.retiredBy;
 
 		throw new RuntimeException("No found parent for: " + parentAttName);	}

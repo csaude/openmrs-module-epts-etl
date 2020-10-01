@@ -132,6 +132,8 @@ public class AttDefinedElements {
 	public String getResultSetLoadDefinition() {
 		return resultSetLoadDefinition;
 	}
+	
+	
 
 	private void generateElemets() {
 		this.attType = convertMySQLTypeTOJavaType(dbAttType);
@@ -169,14 +171,23 @@ public class AttDefinedElements {
 				if (isDate()) {
 					this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + " DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(" + attName + ")  " + aspasFechar + " : null";
 				}
+				else
+				if (isString()) {
+					this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + " utilities.scapeQuotationMarks(" + attName + ")  " + aspasFechar + " : null";
+				}
 				else {
 					this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + attName + aspasFechar + " : null";
 				}
 				
-				
 				this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + "); 
 			}
 		}	
+	}
+	
+	public static String removeStrangeCharactersOnString(String str) {
+		if (!utilities.stringHasValue(str)) return str;
+		
+		return utilities.removeCharactersOnString(str, "\\\\");
 	}
 	
 	public String getSqlInsertValues() {
@@ -214,7 +225,7 @@ public class AttDefinedElements {
 		}
 		else 
 		if (attType.equals("String")) {
-			return "this." + this.attName + " = rs.getString(\"" + dbAttName + "\") != null ? rs.getString(\"" + dbAttName + "\").trim() : null;"; 
+			return "this." + this.attName + " = AttDefinedElements.removeStrangeCharactersOnString(rs.getString(\"" + dbAttName + "\") != null ? rs.getString(\"" + dbAttName + "\").trim() : null);"; 
 		} 
 		else 
 		if (attType.equals("java.util.Date")) {
@@ -244,6 +255,10 @@ public class AttDefinedElements {
 	
 	private boolean isDate() {
 		return utilities.isStringIn(this.attType, "java.util.Date", "Date");
+	}
+	
+	private boolean isString() {
+		return utilities.isStringIn(this.attType, "java.lang.String", "String");
 	}
 	
 	private boolean isNumeric() {

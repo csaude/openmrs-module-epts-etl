@@ -1,28 +1,48 @@
 {
+	installationType: "destination",	
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
-	syncStageSchema: "sync_import_stage",
+	
 	mustCreateStageSchemaElements:true,
+	syncStageSchema: "sync_import_stage",
 	originAppLocationCode: "CENTRAL_DB",
-	defaultQtyRecordsPerSelect: 25000,
 	firstExport: true,
-	defaultQtyProcessingEngine: 1,
-	doIntegrityCheckInTheEnd: true,
-	mustRecompileTable: false,
-	mustCreateClasses: false,
+	mustCreateClasses: true,
+	mustRecompileTable: true,
 	classpackage: "destinationpkg",
+	
+	operations: [
+		{
+			operationType: synchronization,
+			defaultQtyRecordsPerSelect: 10000,
+			defaultQtyRecordsPerEngine: 100000,
+			doIntegrityCheckInTheEnd: true
+		},
+		{
+			operationType: load,
+			defaultQtyRecordsPerSelect: 1,
+			defaultQtyRecordsPerEngine: 10
+		},
+		{
+			operationType: consolidation,
+			defaultQtyRecordsPerSelect: 10000,
+			defaultQtyRecordsPerEngine: 100000
+		},
+	],
+	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	syncTableInfo:[
-		 				
-		{	
-			tableName: "users",
-			parents: ["person", "users"],
-			mustRecompileTable: false,
-			qtyRecordsPerSelect: 25000
-		}			
+		{
+			tableName: "obs",
+			parents: ["person", "location", "orders", "obs", "users", "encounter"],
+			mustRecompileTable: true,
+			qtyProcessingEngine: 10
+		}	
 	]
 }
+
+

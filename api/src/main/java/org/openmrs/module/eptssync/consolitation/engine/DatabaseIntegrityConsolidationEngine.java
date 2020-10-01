@@ -74,7 +74,7 @@ public class DatabaseIntegrityConsolidationEngine extends SyncEngine {
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DatabaseIntegrityConsolidationSearchParams(this.syncTableInfo, limits);
-		searchParams.setQtdRecordPerSelected(getSyncTableInfo().getQtyRecordsPerSelect());
+		searchParams.setQtdRecordPerSelected(getSyncTableInfo().getQtyRecordsPerSelect(getSyncController().getOperationType()));
 	
 		return searchParams;
 	}

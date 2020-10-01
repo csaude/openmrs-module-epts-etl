@@ -41,11 +41,11 @@ public class OrdersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private String commentToFulfiller;
 	private int careSetting;
 	private java.util.Date scheduledDate;
+	private int consistent;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private java.util.Date dateChanged;
 	private String originAppLocationCode;
-	private int consistent;
  
 	public OrdersVO() { 
 		this.metadata = false;
@@ -267,6 +267,14 @@ public class OrdersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.scheduledDate;
 	}
  
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+ 
+	public int getConsistent(){ 
+		return this.consistent;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -294,19 +302,11 @@ public class OrdersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
+
+
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
-	}
- 
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
- 
-	public int getConsistent(){ 
-		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -345,10 +345,10 @@ public class OrdersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.commentToFulfiller = rs.getString("comment_to_fulfiller") != null ? rs.getString("comment_to_fulfiller").trim() : null;
 		this.careSetting = rs.getInt("care_setting");
 		this.scheduledDate =  rs.getTimestamp("scheduled_date") != null ? new java.util.Date( rs.getTimestamp("scheduled_date").getTime() ) : null;
+		this.consistent = rs.getInt("consistent");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
-		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -358,27 +358,27 @@ public class OrdersVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.orderTypeId == 0 ? null : this.orderTypeId, this.conceptId, this.orderer == 0 ? null : this.orderer, this.encounterId == 0 ? null : this.encounterId, this.instructions, this.dateActivated, this.autoExpireDate, this.dateStopped, this.orderReason == 0 ? null : this.orderReason, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.patientId == 0 ? null : this.patientId, this.accessionNumber, this.uuid, this.orderReasonNonCoded, this.urgency, this.orderNumber, this.previousOrderId == 0 ? null : this.previousOrderId, this.orderAction, this.commentToFulfiller, this.careSetting == 0 ? null : this.careSetting, this.scheduledDate, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.orderTypeId == 0 ? null : this.orderTypeId, this.conceptId, this.orderer == 0 ? null : this.orderer, this.encounterId == 0 ? null : this.encounterId, this.instructions, this.dateActivated, this.autoExpireDate, this.dateStopped, this.orderReason == 0 ? null : this.orderReason, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.patientId == 0 ? null : this.patientId, this.accessionNumber, this.uuid, this.orderReasonNonCoded, this.urgency, this.orderNumber, this.previousOrderId == 0 ? null : this.previousOrderId, this.orderAction, this.commentToFulfiller, this.careSetting == 0 ? null : this.careSetting, this.scheduledDate, this.consistent, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.orderTypeId == 0 ? null : this.orderTypeId, this.conceptId, this.orderer == 0 ? null : this.orderer, this.encounterId == 0 ? null : this.encounterId, this.instructions, this.dateActivated, this.autoExpireDate, this.dateStopped, this.orderReason == 0 ? null : this.orderReason, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.patientId == 0 ? null : this.patientId, this.accessionNumber, this.uuid, this.orderReasonNonCoded, this.urgency, this.orderNumber, this.previousOrderId == 0 ? null : this.previousOrderId, this.orderAction, this.commentToFulfiller, this.careSetting == 0 ? null : this.careSetting, this.scheduledDate, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.consistent, this.orderId};		return params; 
+ 		Object[] params = {this.orderTypeId == 0 ? null : this.orderTypeId, this.conceptId, this.orderer == 0 ? null : this.orderer, this.encounterId == 0 ? null : this.encounterId, this.instructions, this.dateActivated, this.autoExpireDate, this.dateStopped, this.orderReason == 0 ? null : this.orderReason, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.patientId == 0 ? null : this.patientId, this.accessionNumber, this.uuid, this.orderReasonNonCoded, this.urgency, this.orderNumber, this.previousOrderId == 0 ? null : this.previousOrderId, this.orderAction, this.commentToFulfiller, this.careSetting == 0 ? null : this.careSetting, this.scheduledDate, this.consistent, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.orderId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO orders(order_type_id, concept_id, orderer, encounter_id, instructions, date_activated, auto_expire_date, date_stopped, order_reason, creator, date_created, voided, voided_by, date_voided, void_reason, patient_id, accession_number, uuid, order_reason_non_coded, urgency, order_number, previous_order_id, order_action, comment_to_fulfiller, care_setting, scheduled_date, last_sync_date, origin_record_id, date_changed, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO orders(order_type_id, concept_id, orderer, encounter_id, instructions, date_activated, auto_expire_date, date_stopped, order_reason, creator, date_created, voided, voided_by, date_voided, void_reason, patient_id, accession_number, uuid, order_reason_non_coded, urgency, order_number, previous_order_id, order_action, comment_to_fulfiller, care_setting, scheduled_date, consistent, last_sync_date, origin_record_id, date_changed, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE orders SET order_type_id = ?, concept_id = ?, orderer = ?, encounter_id = ?, instructions = ?, date_activated = ?, auto_expire_date = ?, date_stopped = ?, order_reason = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, patient_id = ?, accession_number = ?, uuid = ?, order_reason_non_coded = ?, urgency = ?, order_number = ?, previous_order_id = ?, order_action = ?, comment_to_fulfiller = ?, care_setting = ?, scheduled_date = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ?, consistent = ? WHERE order_id = ?;"; 
+ 		return "UPDATE orders SET order_type_id = ?, concept_id = ?, orderer = ?, encounter_id = ?, instructions = ?, date_activated = ?, auto_expire_date = ?, date_stopped = ?, order_reason = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, patient_id = ?, accession_number = ?, uuid = ?, order_reason_non_coded = ?, urgency = ?, order_number = ?, previous_order_id = ?, order_action = ?, comment_to_fulfiller = ?, care_setting = ?, scheduled_date = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ? WHERE order_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.orderTypeId == 0 ? null : this.orderTypeId) + "," + (this.conceptId) + "," + (this.orderer == 0 ? null : this.orderer) + "," + (this.encounterId == 0 ? null : this.encounterId) + "," + (this.instructions != null ? "\""+instructions+"\"" : null) + "," + (this.dateActivated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateActivated)  +"\"" : null) + "," + (this.autoExpireDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(autoExpireDate)  +"\"" : null) + "," + (this.dateStopped != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateStopped)  +"\"" : null) + "," + (this.orderReason == 0 ? null : this.orderReason) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+voidReason+"\"" : null) + "," + (this.patientId == 0 ? null : this.patientId) + "," + (this.accessionNumber != null ? "\""+accessionNumber+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.orderReasonNonCoded != null ? "\""+orderReasonNonCoded+"\"" : null) + "," + (this.urgency != null ? "\""+urgency+"\"" : null) + "," + (this.orderNumber != null ? "\""+orderNumber+"\"" : null) + "," + (this.previousOrderId == 0 ? null : this.previousOrderId) + "," + (this.orderAction != null ? "\""+orderAction+"\"" : null) + "," + (this.commentToFulfiller != null ? "\""+commentToFulfiller+"\"" : null) + "," + (this.careSetting == 0 ? null : this.careSetting) + "," + (this.scheduledDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(scheduledDate)  +"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.orderTypeId == 0 ? null : this.orderTypeId) + "," + (this.conceptId) + "," + (this.orderer == 0 ? null : this.orderer) + "," + (this.encounterId == 0 ? null : this.encounterId) + "," + (this.instructions != null ? "\""+instructions+"\"" : null) + "," + (this.dateActivated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateActivated)  +"\"" : null) + "," + (this.autoExpireDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(autoExpireDate)  +"\"" : null) + "," + (this.dateStopped != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateStopped)  +"\"" : null) + "," + (this.orderReason == 0 ? null : this.orderReason) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+voidReason+"\"" : null) + "," + (this.patientId == 0 ? null : this.patientId) + "," + (this.accessionNumber != null ? "\""+accessionNumber+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.orderReasonNonCoded != null ? "\""+orderReasonNonCoded+"\"" : null) + "," + (this.urgency != null ? "\""+urgency+"\"" : null) + "," + (this.orderNumber != null ? "\""+orderNumber+"\"" : null) + "," + (this.previousOrderId == 0 ? null : this.previousOrderId) + "," + (this.orderAction != null ? "\""+orderAction+"\"" : null) + "," + (this.commentToFulfiller != null ? "\""+commentToFulfiller+"\"" : null) + "," + (this.careSetting == 0 ? null : this.careSetting) + "," + (this.scheduledDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(scheduledDate)  +"\"" : null) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null); 
 	} 
  
 	@Override
@@ -408,6 +408,14 @@ public class OrdersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
  
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.ConceptVO.class, this.orderReason, true, conn); 
+		this.orderReason = 0;
+		if (parentOnDestination  != null) this.orderReason = parentOnDestination.getObjectId();
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.ProviderVO.class, this.orderer, false, conn); 
+		this.orderer = 0;
+		if (parentOnDestination  != null) this.orderer = parentOnDestination.getObjectId();
+ 
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.UsersVO.class, this.creator, false, conn); 
 		this.creator = 0;
 		if (parentOnDestination  != null) this.creator = parentOnDestination.getObjectId();
@@ -416,6 +424,10 @@ public class OrdersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.patientId = 0;
 		if (parentOnDestination  != null) this.patientId = parentOnDestination.getObjectId();
  
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.CareSettingVO.class, this.careSetting, false, conn); 
+		this.careSetting = 0;
+		if (parentOnDestination  != null) this.careSetting = parentOnDestination.getObjectId();
+ 
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.EncounterVO.class, this.encounterId, false, conn); 
 		this.encounterId = 0;
 		if (parentOnDestination  != null) this.encounterId = parentOnDestination.getObjectId();
@@ -423,6 +435,10 @@ public class OrdersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.OrdersVO.class, this.previousOrderId, true, conn); 
 		this.previousOrderId = 0;
 		if (parentOnDestination  != null) this.previousOrderId = parentOnDestination.getObjectId();
+ 
+		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.OrderTypeVO.class, this.orderTypeId, false, conn); 
+		this.orderTypeId = 0;
+		if (parentOnDestination  != null) this.orderTypeId = parentOnDestination.getObjectId();
  
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.UsersVO.class, this.voidedBy, true, conn); 
 		this.voidedBy = 0;

@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.synchronization.controller;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
 import org.openmrs.module.eptssync.controller.conf.SyncConf;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
@@ -34,7 +35,7 @@ public class SynchronizationController extends AbstractSyncController {
 	public void init(SyncConf sourceTableInfo) {
 		setSyncTableInfoSource(sourceTableInfo);
 		
-		if (sourceTableInfo.isDoIntegrityCheckInTheEnd()) {
+		if (sourceTableInfo.isDoIntegrityCheckInTheEnd(getOperationType())) {
 			
 			OpenConnection conn = openConnection();
 			
@@ -69,7 +70,7 @@ public class SynchronizationController extends AbstractSyncController {
 	public OpenConnection openConnection() {
 		OpenConnection conn = super.openConnection();
 	
-		if (getSyncTableInfoSource().isDoIntegrityCheckInTheEnd()) {
+		if (getSyncTableInfoSource().isDoIntegrityCheckInTheEnd(getOperationType())) {
 			try {
 				DBUtilities.disableForegnKeyChecks(conn);
 			} catch (DBException e) {
@@ -191,7 +192,7 @@ public class SynchronizationController extends AbstractSyncController {
 	}
 	
 	@Override
-	public String getOperationName() {
-		return AbstractSyncController.SYNC_OPERATION_SYNCHRONIZATION;
+	public String getOperationType() {
+		return SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION;
 	}
 }

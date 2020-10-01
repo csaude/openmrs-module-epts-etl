@@ -171,6 +171,8 @@ public class LoadSyncDataEngine extends SyncEngine{
 		SyncSearchParams<? extends SyncRecord> searchParams = new LoadSyncDataSearchParams(this.syncTableInfo, limits);
 		searchParams.setQtdRecordPerSelected(2500);
 		
+		//searchParams.setExtraCondition("obs_2020093011233502.json");
+		
 		return searchParams;
 	}
     

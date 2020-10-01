@@ -6,15 +6,15 @@
 	originAppLocationCode: "ZBZ_PEBANE",
 	defaultQtyRecordsPerSelect: 10000,
 	firstExport: true,
-	defaultQtyProcessingEngine: 1,
+	defaultQtyRecordsPerEngine: 100000,
 	doIntegrityCheckInTheEnd: true,
-	mustRecompileTable: false,
+	mustRecompileTable: true,
 	mustCreateClasses: true,
 	classpackage: "sourcepkg",
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	syncTableInfo:[
@@ -22,14 +22,14 @@
 				{	
 					tableName: "users",
 					parents: ["person", "users"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					qtyRecordsPerSelect: 10000
 				},
 		
 				{
 					tableName: "location",
 					parents: ["users", "location"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
 				},
 		
@@ -91,7 +91,7 @@
 				{
 					tableName: "visit",
 					parents: ["patient", "location", "users"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					qtyProcessingEngine: 5			
 				},
 				
@@ -103,7 +103,7 @@
 				{
 					tableName: "encounter",
 					parents: ["patient", "location", "users", "visit"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					qtyProcessingEngine: 5			
 				},
 				
@@ -128,7 +128,7 @@
 				{
 					tableName: "obs",
 					parents: ["person", "location", "orders", "obs", "users", "encounter"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					qtyProcessingEngine: 5
 				},
 				
@@ -141,42 +141,42 @@
 				{
 					tableName: "concept_datatype",
 					parents: ["users"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					metadata: true
 				},
 				 
 				{
 					tableName: "concept",
 					parents: ["users", "concept_classes", "concept_datatype"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					metadata: true
 				},
 				
 				{
 					tableName: "person_attribute_type",
 					parents: ["users"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					metadata: true
 				},
 				 
 				{
 					tableName: "provider_attribute_type",
 					parents: ["users", "program_workflow"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					metadata: true
 				},
 				 
 				{
 					tableName: "program",
 					parents: ["users", "concept"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					metadata: true
 				},
 			
 				{
 					tableName: "program_workflow",
 					parents: ["users", "program", "concept"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					metadata: true
 				},
 				
@@ -184,21 +184,21 @@
 				{
 					tableName: "program_workflow_state",
 					parents: ["users", "program_workflow", "concept"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					metadata: true
 				},
 				
 				{
 					tableName: "visit_type",
 					parents: ["users"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					metadata: true
 				},
 				
 				{
 					tableName: "relationship_type",
 					parents: ["users"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					metadata: true
 				},
 				
@@ -206,7 +206,7 @@
 				{
 					tableName: "patient_identifier_type",
 					parents: ["users"],
-					mustRecompileTable: false,
+					mustRecompileTable: true,
 					metadata: true
 				}
 				

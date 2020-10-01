@@ -32,9 +32,6 @@ public class SyncConf implements MonitoredOperation, Runnable{
 	
 	private boolean firstExport;
 	private boolean mustCreateClasses;
-	private boolean doIntegrityCheckInTheEnd;
-	private int defaultQtyRecordsPerSelect;
-	private int defaultQtyProcessingEngine;
 	private boolean mustRecompileTable;
 	private DBConnectionInfo connInfo;
 	private DBConnectionService connService;
@@ -48,6 +45,8 @@ public class SyncConf implements MonitoredOperation, Runnable{
 	
 	private String installationType;
 	private File relatedConfFile;
+
+	private List<SyncOperationConfig> operations;
 	
 	private static final String[] supportedInstallationTypes = {"source", "destination"};
 	
@@ -112,28 +111,16 @@ public class SyncConf implements MonitoredOperation, Runnable{
 		this.mustRecompileTable = mustRecompileTable;
 	}
 	
-	public int getDefaultQtyProcessingEngine() {
-		return defaultQtyProcessingEngine;
-	}
-
-	public void setDefaultQtyProcessingEngine(int defaultQtyProcessingEngine) {
-		this.defaultQtyProcessingEngine = defaultQtyProcessingEngine;
-	}
-
-	public boolean isDoIntegrityCheckInTheEnd() {
-		return doIntegrityCheckInTheEnd;
+	public int getDefaultQtyRecordsPerEngine(String operationType) {
+		return  findOperation(operationType).getDefaultQtyRecordsPerEngine();
 	}
 	
-	public void setDoIntegrityCheckInTheEnd(boolean doIntegrityCheckInTheEnd) {
-		this.doIntegrityCheckInTheEnd = doIntegrityCheckInTheEnd;
+	public boolean isDoIntegrityCheckInTheEnd(String operationType) {
+		return  findOperation(operationType).isDoIntegrityCheckInTheEnd();
 	}
 	
-	public int getDefaultQtyRecordsPerSelect() {
-		return defaultQtyRecordsPerSelect;
-	}
-
-	public void setDefaultQtyRecordsPerSelect(int defaultQtyRecordsPerSelect) {
-		this.defaultQtyRecordsPerSelect = defaultQtyRecordsPerSelect;
+	public int getDefaultQtyRecordsPerSelect(String operationType) {
+		return findOperation(operationType).getDefaultQtyRecordsPerSelect();
 	}
 
 	public boolean isFirstExport() {
@@ -436,5 +423,9 @@ public class SyncConf implements MonitoredOperation, Runnable{
 
 	public String getDesignation() {
 		return this.installationType + "_" + this.originAppLocationCode;
+	}
+	
+	private SyncOperationConfig findOperation(String operationType) {
+		return utilities.findOnArray(this.operations, SyncOperationConfig.fastCreate(operationType));
 	}
 }

@@ -44,7 +44,7 @@ public class SyncTableInfo {
 	private String extraConditionForExport;
 	
 	private boolean metadata;
-	private int qtyProcessingEngine;
+	private int qtyRecordsPerEngine;
 	private int qtyRecordsPerSelect;
 	private boolean fullLoaded;
 	private static Logger logger = Logger.getLogger(SyncTableInfo.class);
@@ -56,20 +56,20 @@ public class SyncTableInfo {
 		return getRelatedSyncTableInfoSource().getClasspackage();
 	}
 	
-	public boolean isDoIntegrityCheckInTheEnd() {
-		return getRelatedSyncTableInfoSource().isDoIntegrityCheckInTheEnd();
+	public boolean isDoIntegrityCheckInTheEnd(String operationType) {
+		return getRelatedSyncTableInfoSource().isDoIntegrityCheckInTheEnd(operationType);
 	}
 	
-	public int getQtyRecordsPerSelect() {
-		return qtyRecordsPerSelect != 0 ? qtyRecordsPerSelect : getRelatedSyncTableInfoSource().getDefaultQtyRecordsPerSelect();
+	public int getQtyRecordsPerSelect(String operationType) {
+		return qtyRecordsPerSelect != 0 ? qtyRecordsPerSelect : getRelatedSyncTableInfoSource().getDefaultQtyRecordsPerSelect(operationType);
 	}
 
 	public void setQtyRecordsPerSelect(int qtyRecordsPerSelect) {
 		this.qtyRecordsPerSelect = qtyRecordsPerSelect;
 	}
 
-	public void setQtyProcessingEngine(int qtyProcessingEngine) {
-		this.qtyProcessingEngine = qtyProcessingEngine;
+	public void setQtyRecordsPerEngine(int qtyRecordsPerEngine) {
+		this.qtyRecordsPerEngine = qtyRecordsPerEngine;
 	}
 
 	public boolean isFirstExport() {
@@ -701,8 +701,8 @@ public class SyncTableInfo {
 		utilities.logDebug(msg, logger);
 	}
 
-	public int getQtyProcessingEngine() {
-		return this.qtyProcessingEngine != 0 ? this.qtyProcessingEngine : getRelatedSyncTableInfoSource().getDefaultQtyProcessingEngine();
+	public int getQtyRecordsPerEngine(String operationType) {
+		return this.qtyRecordsPerEngine != 0 ? this.qtyRecordsPerEngine : getRelatedSyncTableInfoSource().getDefaultQtyRecordsPerEngine(operationType);
 	}
 
 	public boolean isFullLoaded() {
@@ -710,8 +710,6 @@ public class SyncTableInfo {
 	}
 	
 	public synchronized void fullLoad() {
-		if (isFullLoaded()) throw new ForbiddenOperationException("This table info is already full loaded");
-		
 		getParentRefInfo();
 		getChildRefInfo();
 		

@@ -59,6 +59,10 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 			searchClauses.addToParameters(SyncImportInfoVO.MIGRATION_STATUS_PENDING);
 		}
 		
+		if (utilities.stringHasValue(getExtraCondition())) {
+			searchClauses.addToClauses(getExtraCondition());
+		}
+		
 		return searchClauses;
 	}	
 	

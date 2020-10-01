@@ -15,6 +15,14 @@ public class RecordLimits {
 		this.lastRecordId = lastRecordId;
 	}
 	
+	public void setFirstRecordId(long firstRecordId) {
+		this.firstRecordId = firstRecordId;
+	}
+	
+	public void setLastRecordId(long lastRecordId) {
+		this.lastRecordId = lastRecordId;
+	}
+	
 	public long getFirstRecordId() {
 		return firstRecordId;
 	}

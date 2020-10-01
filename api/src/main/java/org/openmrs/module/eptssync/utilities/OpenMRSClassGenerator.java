@@ -279,9 +279,11 @@ public class OpenMRSClassGenerator {
 		
 		classDefinition += "package org.openmrs.module.eptssync.model.openmrs." +  syncTableInfo.getClasspackage() + "; \n \n";
 		
+		
 		classDefinition += "import org.openmrs.module.eptssync.model.openmrs.generic.*; \n \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; \n \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
+		classDefinition += "import org.openmrs.module.eptssync.utilities.AttDefinedElements; \n";
 		classDefinition += "import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; \n \n";
 		
 		classDefinition += "import java.sql.Connection; \n";

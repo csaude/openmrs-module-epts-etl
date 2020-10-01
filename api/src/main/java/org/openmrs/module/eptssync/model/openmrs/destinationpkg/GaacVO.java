@@ -35,10 +35,6 @@ public class GaacVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private java.util.Date dateVoided;
 	private String voidReason;
 	private String uuid;
-	private java.util.Date lastSyncDate;
-	private int originRecordId;
-	private String originAppLocationCode;
-	private int consistent;
  
 	public GaacVO() { 
 		this.metadata = false;
@@ -207,44 +203,30 @@ public class GaacVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setUuid(String uuid){ 
 	 	this.uuid = uuid;
 	}
+
+
  
 	public String getUuid(){ 
 		return this.uuid;
+	}	public int getOriginRecordId(){ 
+		return 0;
 	}
  
-	public void setLastSyncDate(java.util.Date lastSyncDate){ 
-	 	this.lastSyncDate = lastSyncDate;
-	}
- 
-	public java.util.Date getLastSyncDate(){ 
-		return this.lastSyncDate;
-	}
- 
-	public void setOriginRecordId(int originRecordId){ 
-	 	this.originRecordId = originRecordId;
-	}
- 
-	public int getOriginRecordId(){ 
-		return this.originRecordId;
-	}
- 
-	public void setOriginAppLocationCode(String originAppLocationCode){ 
-	 	this.originAppLocationCode = originAppLocationCode;
-	}
+	public void setOriginRecordId(int originRecordId){ }
  
 	public String getOriginAppLocationCode(){ 
-		return this.originAppLocationCode;
+		return null;
 	}
  
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
+	public void setOriginAppLocationCode(String originAppLocationCode){ }
  
 	public int getConsistent(){ 
-		return this.consistent;
+		return 0;
 	}
+ 
+	public void setConsistent(int consistent){ }
+ 
+
  
 	public int getObjectId() { 
  		return this.gaacId; 
@@ -275,10 +257,6 @@ public class GaacVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.voidedBy = rs.getInt("voided_by");
 		this.dateVoided =  rs.getTimestamp("date_voided") != null ? new java.util.Date( rs.getTimestamp("date_voided").getTime() ) : null;
 		this.voidReason = rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null;
-		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
-		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
-		this.originRecordId = rs.getInt("origin_record_id");
-		this.originAppLocationCode = rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null;
 			} 
  
 	@JsonIgnore
@@ -288,27 +266,27 @@ public class GaacVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.name, this.description, this.gaacIdentifier, this.startDate, this.endDate, this.focalPatientId == 0 ? null : this.focalPatientId, this.affinityType == 0 ? null : this.affinityType, this.locationId == 0 ? null : this.locationId, this.crumbled, this.reasonCrumbled, this.dateCrumbled, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.name, this.description, this.gaacIdentifier, this.startDate, this.endDate, this.focalPatientId == 0 ? null : this.focalPatientId, this.affinityType == 0 ? null : this.affinityType, this.locationId == 0 ? null : this.locationId, this.crumbled, this.reasonCrumbled, this.dateCrumbled, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.name, this.description, this.gaacIdentifier, this.startDate, this.endDate, this.focalPatientId == 0 ? null : this.focalPatientId, this.affinityType == 0 ? null : this.affinityType, this.locationId == 0 ? null : this.locationId, this.crumbled, this.reasonCrumbled, this.dateCrumbled, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.gaacId};		return params; 
+ 		Object[] params = {this.name, this.description, this.gaacIdentifier, this.startDate, this.endDate, this.focalPatientId == 0 ? null : this.focalPatientId, this.affinityType == 0 ? null : this.affinityType, this.locationId == 0 ? null : this.locationId, this.crumbled, this.reasonCrumbled, this.dateCrumbled, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.gaacId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO gaac(name, description, gaac_identifier, start_date, end_date, focal_patient_id, affinity_type, location_id, crumbled, reason_crumbled, date_crumbled, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO gaac(name, description, gaac_identifier, start_date, end_date, focal_patient_id, affinity_type, location_id, crumbled, reason_crumbled, date_crumbled, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, uuid) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE gaac SET name = ?, description = ?, gaac_identifier = ?, start_date = ?, end_date = ?, focal_patient_id = ?, affinity_type = ?, location_id = ?, crumbled = ?, reason_crumbled = ?, date_crumbled = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE gaac_id = ?;"; 
+ 		return "UPDATE gaac SET name = ?, description = ?, gaac_identifier = ?, start_date = ?, end_date = ?, focal_patient_id = ?, affinity_type = ?, location_id = ?, crumbled = ?, reason_crumbled = ?, date_crumbled = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ? WHERE gaac_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.name != null ? "\""+name+"\"" : null) + "," + (this.description != null ? "\""+description+"\"" : null) + "," + (this.gaacIdentifier != null ? "\""+gaacIdentifier+"\"" : null) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.focalPatientId == 0 ? null : this.focalPatientId) + "," + (this.affinityType == 0 ? null : this.affinityType) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.crumbled) + "," + (this.reasonCrumbled != null ? "\""+reasonCrumbled+"\"" : null) + "," + (this.dateCrumbled != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCrumbled)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+voidReason+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.name != null ? "\""+name+"\"" : null) + "," + (this.description != null ? "\""+description+"\"" : null) + "," + (this.gaacIdentifier != null ? "\""+gaacIdentifier+"\"" : null) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.focalPatientId == 0 ? null : this.focalPatientId) + "," + (this.affinityType == 0 ? null : this.affinityType) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.crumbled) + "," + (this.reasonCrumbled != null ? "\""+reasonCrumbled+"\"" : null) + "," + (this.dateCrumbled != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCrumbled)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+voidReason+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null); 
 	} 
  
 	@Override

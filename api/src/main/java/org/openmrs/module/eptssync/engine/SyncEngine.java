@@ -8,8 +8,6 @@ import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
-import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
-import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDownInitializer;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -21,7 +19,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  *
  */
-public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCountDownInitializer{
+public abstract class SyncEngine implements Runnable, MonitoredOperation{
 	protected SyncTableInfo syncTableInfo;
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
@@ -40,6 +38,8 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 	private boolean stopRequested;
 	
 	private String engineId;
+
+	private boolean newJobRequested;
 	
 	public SyncEngine(SyncTableInfo syncTableInfo, RecordLimits limits, AbstractSyncController syncController) {
 		this.syncTableInfo = syncTableInfo;
@@ -122,7 +122,7 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 			this.syncController.logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.syncTableInfo.getTableName() + "' FINISHED.");
 			
 			if (utilities.arrayHasElement(records)) {
-				this.syncController.logInfo("INITIALIZING " +  getSyncController().getOperationName() + " OF '" + records.size() + "' RECORDS OF TABLE '" + this.syncTableInfo.getTableName() + "'");
+				this.syncController.logInfo("INITIALIZING " +  getSyncController().getOperationType() + " OF '" + records.size() + "' RECORDS OF TABLE '" + this.syncTableInfo.getTableName() + "'");
 				
 				performeSync(records);
 				
@@ -131,24 +131,11 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 				reportProgress();
 			}
 			else {
-				
 				if (getSyncController().mustRestartInTheEnd()) {
-					TimeCountDown t = new TimeCountDown(this, "NO '" + this.syncTableInfo.getTableName().toUpperCase() + "' RECORD TO " + getSyncController().getOperationName() + ".... SLEEPING", 120);
-					t.setIntervalForMessage(30);
-					t.run();	
-					
-					changeStatusToSleeping();
-					
-					while(t.isInExecution()) {
-						TimeCountDown.sleep(10000);
-					}
-					
-					restart();
-				
-					run();
+					syncController.pullEgine(this);
 				}
 				else {
-					getSyncController().logInfo("NO '" + this.syncTableInfo.getTableName() + "' RECORDS TO " + getSyncController().getOperationName() + "! FINISHING..." );
+					getSyncController().logInfo("NO '" + this.syncTableInfo.getTableName() + "' RECORDS TO " + getSyncController().getOperationType() + "! FINISHING..." );
 					changeStatusToFinished();
 				}
 			}
@@ -208,16 +195,6 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 	@Override
 	public TimeController getTimer() {
 		return this.timer;
-	}
-
-	@Override
-	public void onFinish() {
-		syncController.logInfo("FINISHED WAIT");
-	}
-	
-	@Override
-	public String getThreadNamingPattern() {
-		return this.syncTableInfo.getTableName() + "_Sleep";
 	}
 	
 	@Override
@@ -298,6 +275,18 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation, TimeCo
 		log += "TIME: " + globalProgressMeter.getTime() + "]";
 		
 		this.syncController.logInfo(log);
+	}
+	
+	public void resetLimits(RecordLimits limits) {
+		getSearchParams().setLimits(limits);
+	}
+
+	public boolean isNewJobRequested() {
+		return newJobRequested;
+	}
+	
+	public void setNewJobRequested(boolean newJobRequested) {
+		this.newJobRequested = newJobRequested;
 	}
 	
 	protected abstract void restart();

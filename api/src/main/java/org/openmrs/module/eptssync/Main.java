@@ -11,9 +11,7 @@ import org.openmrs.module.eptssync.controller.AbstractSyncController;
 import org.openmrs.module.eptssync.controller.conf.SyncConf;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.export.controller.SyncExportController;
-import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
 import org.openmrs.module.eptssync.synchronization.controller.SynchronizationController;
-import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
@@ -45,13 +43,24 @@ public class Main {
 			}
 		}
 		
+		
+		//Wait forever
+		/*for (SyncConf conf : syncConfigs) {
+			while(conf.isFinished()) {
+				TimeCountDown.sleep(20);
+				
+				logger.info("Conf["+conf.getDesignation() + "] Still working...");
+			}
+		}*/
+		
+		
 		List<AbstractSyncController> allController = new ArrayList<AbstractSyncController>();
 		
 		//And now run all operations
 		for (SyncConf conf : syncConfigs) {
 			if (conf.isDestinationInstallationType()) {
-				allController.add(new SyncDataLoadController());
-				allController.get(allController.size() - 1).init(conf);
+				//allController.add(new SyncDataLoadController());
+				//allController.get(allController.size() - 1).init(conf);
 				
 				allController.add(new SynchronizationController());
 				allController.get(allController.size() - 1).init(conf);
@@ -60,8 +69,8 @@ public class Main {
 				allController.add(new SyncExportController());
 				allController.get(allController.size() - 1).init(conf);
 				
-				allController.add(new SyncTransportController());
-				allController.get(allController.size() - 1).init(conf);
+				//allController.add(new SyncTransportController());
+				//allController.get(allController.size() - 1).init(conf);
 			}
 		}
 		

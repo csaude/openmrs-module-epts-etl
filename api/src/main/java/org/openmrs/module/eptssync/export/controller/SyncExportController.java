@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
@@ -128,8 +129,8 @@ public class SyncExportController extends AbstractSyncController {
 	}
 
 	@Override
-	public String getOperationName() {
-		return AbstractSyncController.SYNC_OPERATION_EXPORT;
+	public String getOperationType() {
+		return SyncOperationConfig.SYNC_OPERATION_EXPORT;
 	}
 
 }

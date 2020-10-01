@@ -1,29 +1,39 @@
 {
+	installationType: "source",
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
 	syncStageSchema: "sync_import_stage",
 	mustCreateStageSchemaElements:false,
 	originAppLocationCode: "ZBZ_PEBANE",
-	defaultQtyRecordsPerSelect: 25000,
 	firstExport: true,
-	defaultQtyProcessingEngine: 1,
-	doIntegrityCheckInTheEnd: true,
-	mustRecompileTable: false,
-	mustCreateClasses: false,
+	mustRecompileTable: true,
+	mustCreateClasses: true,
 	classpackage: "sourcepkg",
+	operations: [
+		{
+			operationType: export,
+			defaultQtyRecordsPerSelect: 10000,
+			defaultQtyRecordsPerEngine: 100000
+		},
+		{
+			operationType: transport,
+			defaultQtyRecordsPerSelect: 1,
+			defaultQtyRecordsPerEngine: 10
+		}
+	],
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	syncTableInfo:[
 		  
-		{	
-			tableName: "users",
-			parents: ["person", "users"],
-			mustRecompileTable: false,
-			qtyRecordsPerSelect: 25000
-		}
+		{
+			tableName: "obs",
+			parents: ["person", "location", "orders", "obs", "users", "encounter"],
+			mustRecompileTable: true,
+			qtyProcessingEngine: 1
+		}	
 				
 	]
 }

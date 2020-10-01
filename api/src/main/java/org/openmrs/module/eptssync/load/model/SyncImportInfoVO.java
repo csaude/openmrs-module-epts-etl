@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncConf;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
@@ -163,7 +164,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 			}
 			else {
 				
-				if (tableInfo.isDoIntegrityCheckInTheEnd()) {
+				if (tableInfo.isDoIntegrityCheckInTheEnd(SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION)) {
 					if (source.hasParents()) {
 						source.markAsInconsistent();
 					}

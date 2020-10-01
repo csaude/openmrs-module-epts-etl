@@ -893,16 +893,23 @@ public class  CommonUtilities implements Serializable{
 	}
 	
 
+	public String removeCharactersOnString(String str, String ... characters) {
+		if (!stringHasValue(str) || characters == null) return str;
+		
+		
+		
+		for (String c : characters) {
+			str = str.replaceAll(c, "");
+		}
+		
+		return str;
+	}
+
 	public static void main(String[] args) {
-		//String quotedStr = "\"Munhana\"";
+		String strWithStrangeCharacters = "\\a";
 		
-		String quotedStr = "Munhana \\\"A\\\"";
-		
-		quotedStr = "\"" + quotedStr + "\"";
-		
-		
-		System.out.println(quotedStr);
+		System.out.println(strWithStrangeCharacters);
 	
-		System.out.println(getInstance().scapeQuotationMarks(quotedStr));
+		System.out.println(getInstance().removeCharactersOnString(strWithStrangeCharacters, "\\\\"));
 	}
 }
