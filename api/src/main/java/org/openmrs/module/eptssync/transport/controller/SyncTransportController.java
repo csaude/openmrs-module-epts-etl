@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
+import org.openmrs.module.eptssync.controller.conf.SyncConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
@@ -21,8 +22,8 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  */
 public class SyncTransportController extends AbstractSyncController {
 	
-	public SyncTransportController() {
-		super();
+	public SyncTransportController(SyncConfig syncConfig) {
+		super(syncConfig);
 	}
 
 	@Override
@@ -69,10 +70,10 @@ public class SyncTransportController extends AbstractSyncController {
 
 		fileName += syncInfo.getRelatedSyncTableInfoSource().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		
+		fileName += syncInfo.getRelatedSyncTableInfoSource().getOriginAppLocationCode().toLowerCase();
+		fileName += FileUtilities.getPathSeparator();
 		fileName += "export";
 		fileName += FileUtilities.getPathSeparator();
-		
 		fileName += syncInfo.getTableName();
  
 		return new File(fileName);
@@ -83,7 +84,8 @@ public class SyncTransportController extends AbstractSyncController {
 
 		fileName += syncInfo.getRelatedSyncTableInfoSource().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		
+		fileName += syncInfo.getRelatedSyncTableInfoSource().getOriginAppLocationCode().toLowerCase();
+		fileName += FileUtilities.getPathSeparator();
 		fileName += "export_bkp";
 		fileName += FileUtilities.getPathSeparator();
 		
@@ -104,15 +106,14 @@ public class SyncTransportController extends AbstractSyncController {
 
 		fileName += syncInfo.getRelatedSyncTableInfoSource().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		
 		fileName += "import";
 		fileName += FileUtilities.getPathSeparator();
-		
+		fileName += syncInfo.getRelatedSyncTableInfoSource().getOriginAppLocationCode().toLowerCase();
+		fileName += FileUtilities.getPathSeparator();
 		fileName += syncInfo.getTableName();
  
 		File bkpDirectory = new File(fileName);
     	
-		
 		if (!bkpDirectory.exists()) {
 			FileUtilities.tryToCreateDirectoryStructure(bkpDirectory.getAbsolutePath());
 		}

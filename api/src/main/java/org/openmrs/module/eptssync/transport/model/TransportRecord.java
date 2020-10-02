@@ -11,13 +11,13 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 /**
  * @author jpboane
  */
-public class TransporRecord extends BaseVO implements SyncRecord {
+public class TransportRecord extends BaseVO implements SyncRecord {
 	private File file;
 	private File relatedMinimalInfoFile;
 	private File bkpDirectory;
 	private File destDirectory;
 
-	public TransporRecord(File file, File destDirectory, File bkpDirectory) {
+	public TransportRecord(File file, File destDirectory, File bkpDirectory) {
 		this.file = file;
 		this.bkpDirectory = bkpDirectory;
 		this.destDirectory = destDirectory;

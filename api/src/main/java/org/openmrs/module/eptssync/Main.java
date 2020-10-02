@@ -4,14 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.log4j.Logger;
-import org.openmrs.module.eptssync.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
-import org.openmrs.module.eptssync.controller.conf.SyncConf;
+import org.openmrs.module.eptssync.controller.conf.SyncConfig;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.export.controller.SyncExportController;
-import org.openmrs.module.eptssync.synchronization.controller.SynchronizationController;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
@@ -25,17 +24,17 @@ public class Main {
 	public static void main(String[] synConfigFiles) throws IOException {
 		if (synConfigFiles == null || synConfigFiles.length == 0) throw new ForbiddenOperationException("You must especify the source/destination config file. Eg. /sync/conf.json");
 	
-		List<SyncConf> syncConfigs = loadSyncConfig(synConfigFiles);
+		List<SyncConfig> syncConfigs = loadSyncConfig(synConfigFiles);
 		
-		SyncConf destinationConf = determineDestinationSyncConf(syncConfigs);
+		if (countQtyDestination(syncConfigs) > 0) throw new ForbiddenOperationException("You must define only one destination file");
 		
-		//Performe database configuration
-		for (SyncConf conf : syncConfigs) {
+		//Performe database and classes adjustment
+		for (SyncConfig conf : syncConfigs) {
 			ThreadPoolService.getInstance().createNewThreadPoolExecutor(conf.getDesignation()).execute(conf);
 		}
 		
 		//Wait until all configuration been loaded
-		for (SyncConf conf : syncConfigs) {
+		for (SyncConfig conf : syncConfigs) {
 			while(!conf.isFinished()) {
 				TimeCountDown.sleep(20);
 				
@@ -57,60 +56,54 @@ public class Main {
 		List<AbstractSyncController> allController = new ArrayList<AbstractSyncController>();
 		
 		//And now run all operations
-		for (SyncConf conf : syncConfigs) {
-			if (conf.isDestinationInstallationType()) {
-				//allController.add(new SyncDataLoadController());
-				//allController.get(allController.size() - 1).init(conf);
-				
-				allController.add(new SynchronizationController());
-				allController.get(allController.size() - 1).init(conf);
-			}
-			else {
-				allController.add(new SyncExportController());
-				allController.get(allController.size() - 1).init(conf);
-				
-				//allController.add(new SyncTransportController());
-				//allController.get(allController.size() - 1).init(conf);
+		for (SyncConfig conf : syncConfigs) {
+			for (SyncOperationConfig operation : conf.getOperations()) {
+				if (!operation.isDisabled()) {
+					List<AbstractSyncController> controllers = operation.generateRelatedController();
+					
+					for (AbstractSyncController controller : controllers) {
+						allController.add(controller);
+						
+						ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId());
+						executor.execute(controller);
+					}
+				}
 			}
 		}
 		
 		while(!isAllFinished(allController)) {
 			TimeCountDown.sleep(10000);
 		}
-		
-		allController.add(new DatabaseIntegrityConsolidationController());
-		allController.get(allController.size() - 1).init(destinationConf);
-
-		while(!isAllFinished(allController)) {
-			TimeCountDown.sleep(10000);
-		}
-		
-		allController.get(0).logInfo("ALL JOBS ARE FINISHED");
+			
+		logger.info("ALL JOBS ARE FINISHED");
 	}
 
-	private static List<SyncConf>  loadSyncConfig(String[] synConfigFiles) throws IOException {
-		List<SyncConf> syncConfigs = new ArrayList<SyncConf>(synConfigFiles.length);
+	private static List<SyncConfig>  loadSyncConfig(String[] synConfigFiles) throws ForbiddenOperationException, IOException {
+		List<SyncConfig> syncConfigs = new ArrayList<SyncConfig>(synConfigFiles.length);
 		
 		for (String confFile : synConfigFiles) {
-			syncConfigs.add(SyncConf.loadFromFile(new File(confFile)));
+			SyncConfig conf = SyncConfig.loadFromFile(new File(confFile));
+			
+			conf.validate();
+			
+			syncConfigs.add(conf);
 		
 		}
 		
 		return syncConfigs;
 	}
 	
-	private static SyncConf  determineDestinationSyncConf(List<SyncConf> confs) throws IOException {
-		SyncConf destinationConf = null;
+	private static int countQtyDestination (List<SyncConfig> confs) throws IOException {
 		
-		for (SyncConf conf : confs) {
+		int i  = 0;;
+		
+		for (SyncConfig conf : confs) {
 			if(conf.isDestinationInstallationType()) {
-				if (destinationConf != null) throw new ForbiddenOperationException("You must define only one destination file");
-				
-				destinationConf = conf;
+				i++;
 			}
 		}
 		
-		return destinationConf;
+		return i;
 	}
 	
 	

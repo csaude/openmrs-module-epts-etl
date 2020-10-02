@@ -28,10 +28,11 @@ public class LoadSyncDataEngine extends SyncEngine{
 	 */
 	private SyncJSONInfo currJSONInfo;
 	
+	
 	public LoadSyncDataEngine(SyncTableInfo syncTableInfo, RecordLimits limits, SyncDataLoadController syncController) {
 		super(syncTableInfo, limits, syncController);
 	}
-
+	
 	@Override
 	protected void restart() {
 	}
@@ -82,7 +83,6 @@ public class LoadSyncDataEngine extends SyncEngine{
 			
 			pathToBkpFile += getSyncBkpDirectory().getAbsolutePath();
 			pathToBkpFile += FileUtilities.getPathSeparator();
-			
 			pathToBkpFile +=  FileUtilities.generateFileNameFromRealPath(this.currJSONSourceFile.getAbsolutePath());
 			
 			FileUtilities.renameTo(this.currJSONSourceFile.getAbsolutePath(), pathToBkpFile);
@@ -95,11 +95,9 @@ public class LoadSyncDataEngine extends SyncEngine{
 			String pathToBkpMinimalFile = "";
 			pathToBkpMinimalFile += getSyncBkpDirectory().getAbsolutePath();
 			pathToBkpMinimalFile += FileUtilities.getPathSeparator();
-			
 			pathToBkpMinimalFile +=  FileUtilities.generateFileNameFromRealPath(minimalFile);
 			
 			FileUtilities.renameTo(minimalFile, pathToBkpMinimalFile);
-		
 		} catch (IOException e) {
 			e.printStackTrace();
 			
@@ -177,7 +175,9 @@ public class LoadSyncDataEngine extends SyncEngine{
 	}
     
     private File getSyncBkpDirectory() throws IOException {
-     	return SyncDataLoadController.getSyncBkpDirectory(getSyncTableInfo());
+    	String baseDirectory = SyncDataLoadController.getSyncBkpDirectory(getSyncTableInfo()).getAbsolutePath();
+    	
+    	return new File(baseDirectory + FileUtilities.getPathSeparator() + getSyncController().getAppOriginLocationCode());
     }
     
     @Override
@@ -186,7 +186,9 @@ public class LoadSyncDataEngine extends SyncEngine{
     }
     
     private File getSyncDirectory() {
-    	return SyncDataLoadController.getSyncDirectory(getSyncTableInfo());
+    	String baseDirectory = SyncDataLoadController.getSyncDirectory(getSyncTableInfo()).getAbsolutePath();
+    	
+    	return new File(baseDirectory + FileUtilities.getPathSeparator() + getSyncController().getAppOriginLocationCode());
     }
 
 	@Override

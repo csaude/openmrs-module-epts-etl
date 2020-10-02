@@ -132,7 +132,7 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation{
 			}
 			else {
 				if (getSyncController().mustRestartInTheEnd()) {
-					syncController.pullEgine(this);
+					this.requestANewJob();
 				}
 				else {
 					getSyncController().logInfo("NO '" + this.syncTableInfo.getTableName() + "' RECORDS TO " + getSyncController().getOperationType() + "! FINISHING..." );
@@ -280,7 +280,20 @@ public abstract class SyncEngine implements Runnable, MonitoredOperation{
 	public void resetLimits(RecordLimits limits) {
 		getSearchParams().setLimits(limits);
 	}
-
+	
+	public void requestANewJob() {
+		this.newJobRequested = true;
+		
+		syncController.scheduleNewJobForEngine(this);
+	}
+	
+	@Override
+	public String toString() {
+		return getEngineId() + " Limits [" + getLimits() + "]";
+	}
+	/**
+	 * @return
+	 */
 	public boolean isNewJobRequested() {
 		return newJobRequested;
 	}

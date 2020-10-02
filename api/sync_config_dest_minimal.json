@@ -1,7 +1,6 @@
 {
-	installationType: "destination",	
+	installationType: "destination",
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
-	
 	mustCreateStageSchemaElements:true,
 	syncStageSchema: "sync_import_stage",
 	originAppLocationCode: "CENTRAL_DB",
@@ -12,21 +11,22 @@
 	
 	operations: [
 		{
-			operationType: synchronization,
+			operationType: "synchronization",
 			defaultQtyRecordsPerSelect: 10000,
 			defaultQtyRecordsPerEngine: 100000,
-			doIntegrityCheckInTheEnd: true
+			doIntegrityCheckInTheEnd: true,
+			
+			relatedOperationToBeRunInTheEnd: {
+				operationType: "consolidation",
+				defaultQtyRecordsPerSelect: 10000,
+				defaultQtyRecordsPerEngine: 100000
+			}
 		},
 		{
-			operationType: load,
+			operationType: "load",
 			defaultQtyRecordsPerSelect: 1,
 			defaultQtyRecordsPerEngine: 10
-		},
-		{
-			operationType: consolidation,
-			defaultQtyRecordsPerSelect: 10000,
-			defaultQtyRecordsPerEngine: 100000
-		},
+		}
 	],
 	
 	connInfo: {

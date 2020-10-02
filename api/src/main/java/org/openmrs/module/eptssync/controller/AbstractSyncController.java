@@ -8,7 +8,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.log4j.Logger;
-import org.openmrs.module.eptssync.controller.conf.SyncConf;
+import org.openmrs.module.eptssync.controller.conf.SyncConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.RunningEngineInfo;
@@ -28,22 +28,39 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  *
  */
 
-public abstract class AbstractSyncController {
-	
-	
+public abstract class AbstractSyncController implements Runnable{
 	protected Logger logger;
 	
-	private Map<String, RunningEngineInfo> runnungEngines;
+	protected Map<String, RunningEngineInfo> runnungEngines;
 	
-	private SyncConf syncTableInfoSource;
+	private SyncConfig syncConfig;
 	private boolean initialized;
+
+	private List<EnginActivitieMonitor> enginesActivititieMonitor;
+	private ControllerActivitieMonitor activitieMonitor;
 	
-	public AbstractSyncController() {
+	private AbstractSyncController relatedOperationToBeRunInTheEnd;
+	
+	private String controllerId;
+	
+	public AbstractSyncController(SyncConfig syncConfig) {
 		this.runnungEngines = new HashMap<String, RunningEngineInfo>();
 		
 		this.logger = Logger.getLogger(this.getClass());
+		
+		this.syncConfig = syncConfig;
+		
+		this.controllerId = getOperationType() + "_" + syncConfig.getOriginAppLocationCode();	
 	}
 
+	public AbstractSyncController getRelatedOperationToBeRunInTheEnd() {
+		return relatedOperationToBeRunInTheEnd;
+	}
+	
+	public void setRelatedOperationToBeRunInTheEnd(AbstractSyncController relatedOperationToBeRunInTheEnd) {
+		this.relatedOperationToBeRunInTheEnd = relatedOperationToBeRunInTheEnd;
+	}
+	
 	@JsonIgnore
 	public Map<String, RunningEngineInfo> getRunnungEngines() {
 		return runnungEngines;
@@ -52,19 +69,28 @@ public abstract class AbstractSyncController {
 	public void setRunnungEngines(Map<String, RunningEngineInfo> runnungEngines) {
 		this.runnungEngines = runnungEngines;
 	}
-
 	
-	public void init(SyncConf syncTableInfoSource) {
-		this.syncTableInfoSource = syncTableInfoSource;
+	public void init() {
+		this.enginesActivititieMonitor = new ArrayList<EnginActivitieMonitor>();
 		
-		List<SyncTableInfo> allSync = syncTableInfoSource.getSyncTableInfo();
+		List<SyncTableInfo> allSync = syncConfig.getSyncTableInfo();
 	
 		for (SyncTableInfo syncInfo: allSync) {
 			initAndStartEngine(syncInfo);
 		}
 		
-		this.initialized = true;
+		if (this.relatedOperationToBeRunInTheEnd != null) {
+			this.activitieMonitor = new ControllerActivitieMonitor(this);
 		
+			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId + "_MONIGTOR");
+			executor.execute(this.activitieMonitor);
+		}
+		
+		this.initialized = true;
+	}
+
+	public String getControllerId() {
+		return controllerId;
 	}
 	
 	protected void initAndStartEngine(SyncTableInfo syncInfo) {
@@ -82,7 +108,7 @@ public abstract class AbstractSyncController {
 		RecordLimits limits = new RecordLimits(minRecId, minRecId + syncInfo.getQtyRecordsPerEngine(getOperationType()));
 		
 		mainEngine = initRelatedEngine(syncInfo, limits);
-		mainEngine.setEngineId(getOperationType()+"_"+syncInfo.getTableName()+""+utilities().garantirXCaracterOnNumber(0, 2));
+		mainEngine.setEngineId(getControllerId()+"_"+syncInfo.getTableName()+""+utilities().garantirXCaracterOnNumber(0, 2));
 		mainEngine.setChildren(new ArrayList<SyncEngine>());
 		
 		int i = 1;
@@ -93,7 +119,7 @@ public abstract class AbstractSyncController {
 			 if (i == qtyEngines) limits.setLastRecordId(maxRecId);
 			 
 			 SyncEngine engine = initRelatedEngine(syncInfo, limits);
-			 engine.setEngineId(getOperationType()+"_"+syncInfo.getTableName()+""+utilities().garantirXCaracterOnNumber(i, 2));
+			 engine.setEngineId(getControllerId()+"_"+syncInfo.getTableName()+""+utilities().garantirXCaracterOnNumber(i, 2));
 				
 			 engine.setParent(mainEngine);
 			 
@@ -111,28 +137,34 @@ public abstract class AbstractSyncController {
 				runnungEngines.put(childEngine.getEngineId(), new RunningEngineInfo(executor, childEngine));
 			}
 		}
-		
-		EnginsMonitor monitor = new EnginsMonitor(this, syncInfo);
-		executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(getOperationType()+"_"+syncInfo.getTableName() + "_MONITOR");
-		executor.execute(mainEngine);
 	
-		
+		if (mustRestartInTheEnd()) {
+			EnginActivitieMonitor monitor = new EnginActivitieMonitor(this, syncInfo);
+			executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(getControllerId() + "_ENGINE_OPERATION_MONITOR");
+			executor.execute(monitor);
+	
+			this.enginesActivititieMonitor.add(monitor);
+		}
 		
 		logInfo("ENGINE FOR TABLE '" + syncInfo.getTableName() + "' INITIALIZED");
 	}
-
-	public void setSyncTableInfoSource(SyncConf syncTableInfoSource) {
-		this.syncTableInfoSource = syncTableInfoSource;
+	
+	public List<EnginActivitieMonitor> getEnginesActivititieMonitor() {
+		return enginesActivititieMonitor;
+	}
+	
+	public void setSyncTableInfoSource(SyncConfig syncTableInfoSource) {
+		this.syncConfig = syncTableInfoSource;
 	}
 	
 	@JsonIgnore
-	public SyncConf getSyncTableInfoSource() {
-		return syncTableInfoSource;
+	public SyncConfig getSyncConfig() {
+		return syncConfig;
 	}
 	
 	@JsonIgnore
 	public OpenConnection openConnection() {
-		return syncTableInfoSource.openConnection();
+		return syncConfig.openConnection();
 	}
 	
 	@JsonIgnore
@@ -167,10 +199,10 @@ public abstract class AbstractSyncController {
 		return true;
 	}
 	
-	public void resetEngines(EnginsMonitor monitor) {
+	public void realocateJobToEngines(EnginActivitieMonitor monitor) {
 		SyncTableInfo syncInfo = monitor.getTableInfo();
 		
-		logInfo("REDIFINING NEW LIMITS FOR ENGINES FOR TABLE '" + syncInfo.getTableName() + "'");
+		logInfo("REALOCATING ENGINES FOR '" + syncInfo.getTableName() + "'");
 		
 		SyncEngine mainEngine = retrieveMainSleepingEngine(syncInfo); 
 		
@@ -241,12 +273,14 @@ public abstract class AbstractSyncController {
 	}
 	
 	/**
-	 * Put an engine to the sleeping engines pull
+	 * Schedule new job for this job. This is controller by {@link EnginActivitieMonitor}
 	 * 
 	 * @param syncEngine
 	 */
-	public void pullEgine(SyncEngine syncEngine) {
+	public void scheduleNewJobForEngine(SyncEngine syncEngine) {
+		syncEngine.setNewJobRequested(true);
 		syncEngine.changeStatusToSleeping();
+		logInfo("THE ENGINE '" + syncEngine.getEngineId() + "' HAS FINISHED ITS JOB AND NOW IS WATING FOR NEW ALOCATION WORK");	
 	}
 
 	private SyncEngine retrieveSleepingEngine(SyncTableInfo tableInfo) {
@@ -272,6 +306,19 @@ public abstract class AbstractSyncController {
 		return null;
 	}
 	
+	@Override
+	public String toString() {
+		return this.controllerId;
+	}
+	
+	public void starttRelatedOperationToBeRunInTheEnd() {
+		this.relatedOperationToBeRunInTheEnd.init();
+	}
+	
+	@Override
+	public void run() {
+		init();
+	}
 	
 	@JsonIgnore
 	public abstract boolean mustRestartInTheEnd();
@@ -286,8 +333,5 @@ public abstract class AbstractSyncController {
 	protected abstract long getMaxRecordId(SyncTableInfo tableInfo);
 	
 	public void refresh() {
-		
 	}
-
-	
 }

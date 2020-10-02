@@ -69,7 +69,7 @@ public class ExportSyncEngine extends SyncEngine {
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(syncRecordsAsOpenMRSObjects);
 			jsonInfo.setOriginAppLocationCode(getSyncTableInfo().getOriginAppLocationCode());
 
-			File jsonFIle = generateJSONTempFile(jsonInfo);
+			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecords.get(0).getObjectId(), syncRecords.get(syncRecords.size() - 1).getObjectId());
 			
 			this.syncController.logInfo("WRITING '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " TO JSON FILE [" + jsonFIle.getAbsolutePath() + ".json]");
 			
@@ -119,8 +119,8 @@ public class ExportSyncEngine extends SyncEngine {
 		}
 	}
 
-	private File generateJSONTempFile(SyncJSONInfo jsonInfo) throws IOException {
-		return getSyncController().generateJSONTempFile(jsonInfo, getSyncTableInfo());
+	private File generateJSONTempFile(SyncJSONInfo jsonInfo, int startRecord, int lastRecord) throws IOException {
+		return getSyncController().generateJSONTempFile(jsonInfo, getSyncTableInfo(), startRecord, lastRecord);
 	}
 	
 	@Override

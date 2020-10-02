@@ -10,6 +10,7 @@ import java.util.List;
 
 import javax.ws.rs.ForbiddenException;
 
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
@@ -22,7 +23,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-public class SyncConf implements MonitoredOperation, Runnable{
+public class SyncConfig implements MonitoredOperation, Runnable{
 	private String syncRootDirectory;
 	private String syncStageSchema;
 	
@@ -50,7 +51,7 @@ public class SyncConf implements MonitoredOperation, Runnable{
 	
 	private static final String[] supportedInstallationTypes = {"source", "destination"};
 	
-	private SyncConf() {
+	private SyncConfig() {
 	}
 	
 	public String getInstallationType() {
@@ -272,17 +273,17 @@ public class SyncConf implements MonitoredOperation, Runnable{
 		return relatedConfFile;
 	}
 	
-	public static SyncConf loadFromFile(File file) throws IOException {
-		SyncConf conf = SyncConf.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
+	public static SyncConfig loadFromFile(File file) throws IOException {
+		SyncConfig conf = SyncConfig.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 		
 		conf.setRelatedConfFile(file);
 		
 		return conf;
 	}
 	
-	private static SyncConf loadFromJSON (String json) {
+	private static SyncConfig loadFromJSON (String json) {
 		try {
-			return new ObjectMapperProvider().getContext(SyncConf.class).readValue(json, SyncConf.class);
+			return new ObjectMapperProvider().getContext(SyncConfig.class).readValue(json, SyncConfig.class);
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 		
@@ -425,7 +426,30 @@ public class SyncConf implements MonitoredOperation, Runnable{
 		return this.installationType + "_" + this.originAppLocationCode;
 	}
 	
+	public List<SyncOperationConfig> getOperations() {
+		return operations;
+	}
+	
+	public void setOperations(List<SyncOperationConfig> operations) {
+		for (SyncOperationConfig operation : operations) {
+			operation.setRelatedSyncConfig(this);
+		}
+		
+		this.operations = operations;
+	}
+	
 	private SyncOperationConfig findOperation(String operationType) {
 		return utilities.findOnArray(this.operations, SyncOperationConfig.fastCreate(operationType));
+	}
+	
+	public void validate() throws ForbiddenOperationException{
+		for (SyncOperationConfig operation : this.operations) {
+			if (this.isDestinationInstallationType()) {
+				if (!operation.canBeRunInDestinationInstallation()) throw new ForbiddenOperationException("This operation ["+ operation.getOperationType() + "] Cannot be configured in destination installation");
+			}
+			else {
+				if (!operation.canBeRunInSourceInstallation()) throw new ForbiddenOperationException("This operation ["+ operation.getOperationType() + "] Cannot be configured in source installation");
+			}
+		}
 	}
 }

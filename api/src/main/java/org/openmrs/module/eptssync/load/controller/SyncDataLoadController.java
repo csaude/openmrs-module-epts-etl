@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
+import org.openmrs.module.eptssync.controller.conf.SyncConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
@@ -16,17 +17,26 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 /**
  * This class is responsible for control the loading of sync data to stage area.
  * <p>
- * This load concist on readding the JSON content from the sync directory and load them to temp tables on sync stage.
+ * This load consist on readding the JSON content from the sync directory and load them to temp tables on sync stage.
  * 
  * @author jpboane
  *
  */
 public class SyncDataLoadController extends AbstractSyncController {
 	
-	public SyncDataLoadController() {
-		super();
-	}
+	//The data origin site
+	private String appOriginLocationCode;
 
+	public SyncDataLoadController(SyncConfig syncConfig, String appOriginLocationCode) {
+		super(syncConfig);
+		
+		this.appOriginLocationCode = appOriginLocationCode;
+	}
+		
+	public String getAppOriginLocationCode() {
+		return appOriginLocationCode;
+	}
+	
 	@Override
 	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) {
 		return new LoadSyncDataEngine(syncInfo, limits, this);
@@ -113,5 +123,14 @@ public class SyncDataLoadController extends AbstractSyncController {
 	@Override
 	public String getOperationType() {
 		return SyncOperationConfig.SYNC_OPERATION_LOAD;
+	}
+
+	public static String[] discoveryAllAvaliableOrigins(SyncConfig syncConfig) {
+		String roootyncImportDirectory = "";
+		roootyncImportDirectory += syncConfig.getSyncRootDirectory();
+		roootyncImportDirectory += FileUtilities.getPathSeparator();
+		roootyncImportDirectory += "import";
+
+		return (new File(roootyncImportDirectory)).list();
 	}
 }

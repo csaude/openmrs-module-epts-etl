@@ -1,7 +1,7 @@
 package org.openmrs.module.eptssync.synchronization.controller;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
-import org.openmrs.module.eptssync.controller.conf.SyncConf;
+import org.openmrs.module.eptssync.controller.conf.SyncConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
@@ -22,8 +22,8 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  */
 public class SynchronizationController extends AbstractSyncController {
 
-	public SynchronizationController() {
-		super();
+	public SynchronizationController(SyncConfig syncConfig) {
+		super(syncConfig);
 	}
 	
 	@Override
@@ -32,10 +32,8 @@ public class SynchronizationController extends AbstractSyncController {
 	}
 
 	@Override
-	public void init(SyncConf sourceTableInfo) {
-		setSyncTableInfoSource(sourceTableInfo);
-		
-		if (sourceTableInfo.isDoIntegrityCheckInTheEnd(getOperationType())) {
+	public void init() {
+		if (getSyncConfig().isDoIntegrityCheckInTheEnd(getOperationType())) {
 			
 			OpenConnection conn = openConnection();
 			
@@ -53,14 +51,10 @@ public class SynchronizationController extends AbstractSyncController {
 				conn.finalizeConnection();
 			}
 			
-			super.init(sourceTableInfo);
+			super.init();
 		}
 		else{
-			setSyncTableInfoSource(sourceTableInfo);
-		
-			//tryToCreateInitialConfigurationForAllAvaliableLocations();
-		
-			for (SyncTableInfo syncInfo: sourceTableInfo.getSyncTableInfo()) {
+			for (SyncTableInfo syncInfo: getSyncConfig().getSyncTableInfo()) {
 				initAndStartEngine(syncInfo);
 			}
 		}
@@ -70,7 +64,7 @@ public class SynchronizationController extends AbstractSyncController {
 	public OpenConnection openConnection() {
 		OpenConnection conn = super.openConnection();
 	
-		if (getSyncTableInfoSource().isDoIntegrityCheckInTheEnd(getOperationType())) {
+		if (getSyncConfig().isDoIntegrityCheckInTheEnd(getOperationType())) {
 			try {
 				DBUtilities.disableForegnKeyChecks(conn);
 			} catch (DBException e) {

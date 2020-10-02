@@ -30,4 +30,9 @@ public class RecordLimits {
 	public long getLastRecordId() {
 		return lastRecordId;
 	}
+	
+	@Override
+		public String toString() {
+			return this.firstRecordId + " - " + this.lastRecordId;
+		}
 }

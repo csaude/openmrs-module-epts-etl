@@ -11,13 +11,20 @@
 	
 	operations: [
 		{
-			operationType: synchronization,
+			operationType: "synchronization",
 			defaultQtyRecordsPerSelect: 10000,
 			defaultQtyRecordsPerEngine: 100000,
-			doIntegrityCheckInTheEnd: true
+			doIntegrityCheckInTheEnd: true,
+		
+			relatedOperationToBeRunInTheEnd: {
+				operationType: "consolidation",
+				defaultQtyRecordsPerSelect: 10000,
+				defaultQtyRecordsPerEngine: 100000
+			}
+		
 		},
 		{
-			operationType: load,
+			operationType: "load",
 			defaultQtyRecordsPerSelect: 1,
 			defaultQtyRecordsPerEngine: 10
 		}

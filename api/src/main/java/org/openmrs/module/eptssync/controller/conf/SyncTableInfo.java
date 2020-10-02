@@ -35,7 +35,7 @@ public class SyncTableInfo {
 
 	private Class<OpenMRSObject> syncRecordClass;
 
-	private SyncConf relatedSyncTableInfoSource;
+	private SyncConfig relatedSyncTableInfoSource;
 
 	private String primaryKey;
 	private String primaryKeyType;
@@ -113,11 +113,11 @@ public class SyncTableInfo {
 		this.syncRecordClass = syncRecordClass;
 	}
 
-	public SyncConf getRelatedSyncTableInfoSource() {
+	public SyncConfig getRelatedSyncTableInfoSource() {
 		return relatedSyncTableInfoSource;
 	}
 
-	public void setRelatedSyncTableInfoSource(SyncConf relatedSyncTableInfoSource) {
+	public void setRelatedSyncTableInfoSource(SyncConfig relatedSyncTableInfoSource) {
 		this.relatedSyncTableInfoSource = relatedSyncTableInfoSource;
 	}
 
@@ -286,7 +286,7 @@ public class SyncTableInfo {
 		return parentRefInfo;
 	}
 
-	private static SyncTableInfo init(String tableName, SyncConf sourceInfo) {
+	private static SyncTableInfo init(String tableName, SyncConfig sourceInfo) {
 		SyncTableInfo tableInfo = new SyncTableInfo();
 		tableInfo.setTableName(tableName);
 		tableInfo.setRelatedSyncTableInfoSource(sourceInfo);

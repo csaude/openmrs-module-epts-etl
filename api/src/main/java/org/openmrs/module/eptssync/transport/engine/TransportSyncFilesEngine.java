@@ -11,7 +11,7 @@ import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
-import org.openmrs.module.eptssync.transport.model.TransporRecord;
+import org.openmrs.module.eptssync.transport.model.TransportRecord;
 import org.openmrs.module.eptssync.transport.model.TransportSyncFilesSearchParams;
 
 /**
@@ -38,12 +38,12 @@ public class TransportSyncFilesEngine extends SyncEngine {
 	}
 	@Override
 	public void performeSync(List<SyncRecord> migrationRecords) {
-		List<TransporRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords, TransporRecord.class);
+		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords, TransportRecord.class);
 	
 		this.syncController.logInfo("COPYING  '"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " SORUCE FILES TO IMPORT AREA");
 		
 		
-		for (TransporRecord t : migrationRecordAsTransportRecord) {
+		for (TransportRecord t : migrationRecordAsTransportRecord) {
 			t.transport();
 			t.moveToBackUpDirectory();
 		}
@@ -60,7 +60,7 @@ public class TransportSyncFilesEngine extends SyncEngine {
 			
 			if (files != null) {
 				for (File f : files) {
-					syncRecords.add(new TransporRecord(f, getSyncDestinationDirectory(), getSyncBkpDirectory()));
+					syncRecords.add(new TransportRecord(f, getSyncDestinationDirectory(), getSyncBkpDirectory()));
 				}
 			}
 			

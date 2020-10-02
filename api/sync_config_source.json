@@ -3,7 +3,7 @@
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
 	syncStageSchema: "sync_import_stage",
 	mustCreateStageSchemaElements:false,	
-	originAppLocationCode: "ZBZ_PEBANE",
+	originAppLocationCode: "zbz_pebane",
 	defaultQtyRecordsPerSelect: 10000,
 	firstExport: true,
 	defaultQtyRecordsPerEngine: 100000,
@@ -11,6 +11,21 @@
 	mustRecompileTable: true,
 	mustCreateClasses: true,
 	classpackage: "sourcepkg",
+	
+	operations: [
+		
+		{
+			operationType: "export",
+			defaultQtyRecordsPerSelect: 125,
+			defaultQtyRecordsPerEngine: 10
+		},
+		{
+			operationType: "transport",
+			defaultQtyRecordsPerSelect: 1,
+			defaultQtyRecordsPerEngine: 10
+		}
+	],
+	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",

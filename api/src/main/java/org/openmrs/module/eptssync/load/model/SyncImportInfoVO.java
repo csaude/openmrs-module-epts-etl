@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.SyncConf;
+import org.openmrs.module.eptssync.controller.conf.SyncConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
@@ -257,7 +257,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	}
 	
 	/**
-	 * The JSON generated from the source use class from source package classes defined in {@link SyncConf#getClasspackage()}.
+	 * The JSON generated from the source use class from source package classes defined in {@link SyncConfig#getClasspackage()}.
 	 * In the destination this class is represented by the correspondent in the classpackage
 	 * @param tableInfo
 	 * @return

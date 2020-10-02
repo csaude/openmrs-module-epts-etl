@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.consolitation.controller;
 
 import org.openmrs.module.eptssync.consolitation.engine.DatabaseIntegrityConsolidationEngine;
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
+import org.openmrs.module.eptssync.controller.conf.SyncConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
@@ -20,8 +21,8 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  */
 public class DatabaseIntegrityConsolidationController extends AbstractSyncController {
 	
-	public DatabaseIntegrityConsolidationController() {
-		super();
+	public DatabaseIntegrityConsolidationController(SyncConfig syncConfig) {
+		super(syncConfig);
 	}
 
 	@Override
@@ -83,7 +84,7 @@ public class DatabaseIntegrityConsolidationController extends AbstractSyncContro
 	public OpenConnection openConnection() {
 		OpenConnection conn = super.openConnection();
 	
-		if (getSyncTableInfoSource().isDoIntegrityCheckInTheEnd(getOperationType())) {
+		if (getSyncConfig().isDoIntegrityCheckInTheEnd(getOperationType())) {
 			try {
 				DBUtilities.disableForegnKeyChecks(conn);
 			} catch (DBException e) {

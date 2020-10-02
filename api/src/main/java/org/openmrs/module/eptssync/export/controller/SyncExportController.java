@@ -4,15 +4,16 @@ import java.io.File;
 import java.io.IOException;
 
 import org.openmrs.module.eptssync.controller.AbstractSyncController;
+import org.openmrs.module.eptssync.controller.conf.SyncConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncEngine;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.export.engine.ExportSyncEngine;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
-import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -24,9 +25,8 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  *
  */
 public class SyncExportController extends AbstractSyncController {
-	
-	public SyncExportController() {
-		super();
+	public SyncExportController(SyncConfig syncConfig) {
+		super(syncConfig);
 	}
 
 	@Override
@@ -74,23 +74,30 @@ public class SyncExportController extends AbstractSyncController {
 		}
 	}
 	
-	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableInfo tableInfo) throws IOException {
+	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableInfo tableInfo, int startRecord, int lastRecord) throws IOException {
 		String fileName = "";
-		String fileSufix = "00";
+		//String fileSufix = "00";
 		
 		fileName += tableInfo.getRelatedSyncTableInfoSource().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		
+		fileName += tableInfo.getRelatedSyncTableInfoSource().getOriginAppLocationCode().toLowerCase();
+		fileName += FileUtilities.getPathSeparator();
 		fileName += "export";
 		fileName += FileUtilities.getPathSeparator();
-		
 		fileName += tableInfo.getTableName();
 		fileName += FileUtilities.getPathSeparator();
-		
 		fileName += tableInfo.getTableName();
-		fileName += "_" + DateAndTimeUtilities.parseFullDateToTimeLongIncludeSeconds(jsonInfo.getDateGenerated());
-
-		String fileNameWithoutExtension = fileName + fileSufix;
+		
+		fileName += "_" + utilities().garantirXCaracterOnNumber(startRecord, 10);
+		fileName += "_" + utilities().garantirXCaracterOnNumber(lastRecord, 10);
+	
+		if(new File(fileName).exists() || new File(fileName+".json").exists()) {
+			throw new ForbiddenOperationException("The file '" + fileName + "' is already exists!!!");
+		}
+		
+		/*
+		String fileNameWithoutExtension = fileName; //+ fileSufix;
+		
 		String fileNameWithExtension = fileNameWithoutExtension + ".json";
 		
 		if(new File(fileNameWithExtension).exists() || new File(fileNameWithoutExtension).exists()) {
@@ -114,6 +121,7 @@ public class SyncExportController extends AbstractSyncController {
 		}
 		
 		fileName += fileSufix;
+		*/
 		
 		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
 		

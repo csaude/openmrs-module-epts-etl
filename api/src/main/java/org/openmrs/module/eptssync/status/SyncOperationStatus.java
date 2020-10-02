@@ -29,7 +29,7 @@ public class SyncOperationStatus {
 		
 		this.status = STATUS_NOT_INITIALIZED;
 		
-		this.id = this.syncController.getOperationType() + "_" + this.syncController.getSyncTableInfoSource().getDesignation();
+		this.id = this.syncController.getOperationType() + "_" + this.syncController.getSyncConfig().getDesignation();
 	}
 	
 	public String getStatus() {
