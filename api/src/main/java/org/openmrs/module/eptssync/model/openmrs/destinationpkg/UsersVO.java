@@ -5,6 +5,7 @@ import org.openmrs.module.eptssync.model.openmrs.generic.*;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.eptssync.utilities.db.conn.DBException; 
+import org.openmrs.module.eptssync.utilities.AttDefinedElements; 
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; 
  
 import java.sql.Connection; 
@@ -31,10 +32,10 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private java.util.Date dateRetired;
 	private String retireReason;
 	private String uuid;
-	private int consistent;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
+	private int consistent;
  
 	public UsersVO() { 
 		this.metadata = false;
@@ -176,14 +177,6 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.uuid;
 	}
  
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
- 
-	public int getConsistent(){ 
-		return this.consistent;
-	}
- 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -203,11 +196,19 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
-
-
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
+	}
+ 
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+
+
+ 
+	public int getConsistent(){ 
+		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -220,12 +221,12 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	public void load(ResultSet rs) throws SQLException{ 
 		this.userId = rs.getInt("user_id");
-		this.systemId = rs.getString("system_id") != null ? rs.getString("system_id").trim() : null;
-		this.username = rs.getString("username") != null ? rs.getString("username").trim() : null;
-		this.password = rs.getString("password") != null ? rs.getString("password").trim() : null;
-		this.salt = rs.getString("salt") != null ? rs.getString("salt").trim() : null;
-		this.secretQuestion = rs.getString("secret_question") != null ? rs.getString("secret_question").trim() : null;
-		this.secretAnswer = rs.getString("secret_answer") != null ? rs.getString("secret_answer").trim() : null;
+		this.systemId = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("system_id") != null ? rs.getString("system_id").trim() : null);
+		this.username = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("username") != null ? rs.getString("username").trim() : null);
+		this.password = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("password") != null ? rs.getString("password").trim() : null);
+		this.salt = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("salt") != null ? rs.getString("salt").trim() : null);
+		this.secretQuestion = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("secret_question") != null ? rs.getString("secret_question").trim() : null);
+		this.secretAnswer = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("secret_answer") != null ? rs.getString("secret_answer").trim() : null);
 		this.creator = rs.getInt("creator");
 		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
 		this.changedBy = rs.getInt("changed_by");
@@ -234,11 +235,11 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.retired = rs.getByte("retired");
 		this.retiredBy = rs.getInt("retired_by");
 		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
-		this.retireReason = rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null;
-		this.uuid = rs.getString("uuid") != null ? rs.getString("uuid").trim() : null;
-		this.consistent = rs.getInt("consistent");
+		this.retireReason = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null);
+		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
+		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
 			} 
  
 	@JsonIgnore
@@ -248,27 +249,27 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.systemId, this.username, this.password, this.salt, this.secretQuestion, this.secretAnswer, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.personId == 0 ? null : this.personId, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
+ 		Object[] params = {this.systemId, this.username, this.password, this.salt, this.secretQuestion, this.secretAnswer, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.personId == 0 ? null : this.personId, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.systemId, this.username, this.password, this.salt, this.secretQuestion, this.secretAnswer, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.personId == 0 ? null : this.personId, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.userId};		return params; 
+ 		Object[] params = {this.systemId, this.username, this.password, this.salt, this.secretQuestion, this.secretAnswer, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.personId == 0 ? null : this.personId, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.userId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO users(system_id, username, password, salt, secret_question, secret_answer, creator, date_created, changed_by, date_changed, person_id, retired, retired_by, date_retired, retire_reason, uuid, consistent, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO users(system_id, username, password, salt, secret_question, secret_answer, creator, date_created, changed_by, date_changed, person_id, retired, retired_by, date_retired, retire_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE users SET system_id = ?, username = ?, password = ?, salt = ?, secret_question = ?, secret_answer = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, person_id = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE user_id = ?;"; 
+ 		return "UPDATE users SET system_id = ?, username = ?, password = ?, salt = ?, secret_question = ?, secret_answer = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, person_id = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE user_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.systemId != null ? "\""+systemId+"\"" : null) + "," + (this.username != null ? "\""+username+"\"" : null) + "," + (this.password != null ? "\""+password+"\"" : null) + "," + (this.salt != null ? "\""+salt+"\"" : null) + "," + (this.secretQuestion != null ? "\""+secretQuestion+"\"" : null) + "," + (this.secretAnswer != null ? "\""+secretAnswer+"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.personId == 0 ? null : this.personId) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+retireReason+"\"" : null) + "," + (this.uuid != null ? "\""+uuid+"\"" : null) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+originAppLocationCode+"\"" : null); 
+ 		return ""+(this.systemId != null ? "\""+ utilities.scapeQuotationMarks(systemId)  +"\"" : null) + "," + (this.username != null ? "\""+ utilities.scapeQuotationMarks(username)  +"\"" : null) + "," + (this.password != null ? "\""+ utilities.scapeQuotationMarks(password)  +"\"" : null) + "," + (this.salt != null ? "\""+ utilities.scapeQuotationMarks(salt)  +"\"" : null) + "," + (this.secretQuestion != null ? "\""+ utilities.scapeQuotationMarks(secretQuestion)  +"\"" : null) + "," + (this.secretAnswer != null ? "\""+ utilities.scapeQuotationMarks(secretAnswer)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.personId == 0 ? null : this.personId) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null) + "," + (this.consistent); 
 	} 
  
 	@Override

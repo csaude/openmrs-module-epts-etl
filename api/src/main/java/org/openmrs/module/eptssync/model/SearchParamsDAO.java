@@ -53,13 +53,14 @@ public class SearchParamsDAO extends BaseDAO{
 		String sql = searchClauses.generateSQL(conn);
 		
 
-		if (utilities.createInstance(searchParams.getRecordClass()).generateTableName().equals("obs")) {
+		/*if (utilities.createInstance(searchParams.getRecordClass()).generateTableName().equals("obs")) {
 			utilities.logInfo("[EXPORT:obs] SQL = "+ sql, l);
-		}
+		}*/
 		
 		return search(searchParams.getRecordClass(), sql, searchClauses.getParameters(), conn);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static <T extends VO>  List<T> search(SyncEngine engine, Connection conn) throws DBException{
 		SearchClauses<T> searchClauses = (SearchClauses<T>) engine.getSearchParams().generateSearchClauses(conn);
 		

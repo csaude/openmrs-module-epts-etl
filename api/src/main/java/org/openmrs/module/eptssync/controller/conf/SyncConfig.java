@@ -433,13 +433,27 @@ public class SyncConfig implements MonitoredOperation, Runnable{
 	public void setOperations(List<SyncOperationConfig> operations) {
 		for (SyncOperationConfig operation : operations) {
 			operation.setRelatedSyncConfig(this);
+			
+			if (operation.getRelatedOperationToBeRunInTheEnd() != null) {
+				operation.getRelatedOperationToBeRunInTheEnd().setRelatedSyncConfig(this);
+			}
 		}
 		
 		this.operations = operations;
 	}
 	
 	private SyncOperationConfig findOperation(String operationType) {
-		return utilities.findOnArray(this.operations, SyncOperationConfig.fastCreate(operationType));
+		SyncOperationConfig toFind = SyncOperationConfig.fastCreate(operationType);
+		
+		for (SyncOperationConfig op : this.operations) {
+			if (op.equals(toFind)) return op;
+			
+			if (op.getRelatedOperationToBeRunInTheEnd() != null && op.getRelatedOperationToBeRunInTheEnd().equals(toFind)) {
+				return op.getRelatedOperationToBeRunInTheEnd();
+			}
+		}
+		
+		return null;
 	}
 	
 	public void validate() throws ForbiddenOperationException{

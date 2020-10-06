@@ -43,8 +43,13 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 		searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName());
 		
 		if (!forProgressMeter) {
-			searchClauses.addToClauses("last_migration_try_date is null or last_migration_try_date < ?");
-			searchClauses.addToParameters(this.syncStartDate);
+			if (this.tableInfo.isFirstExport()) {
+				searchClauses.addToClauses("last_migration_try_date is null");
+			}
+			else {
+				searchClauses.addToClauses("last_migration_try_date is null or last_migration_try_date < ?");
+				searchClauses.addToParameters(this.syncStartDate);
+			}
 			
 			if (limits != null) {
 				searchClauses.addToClauses("id between ? and ?");

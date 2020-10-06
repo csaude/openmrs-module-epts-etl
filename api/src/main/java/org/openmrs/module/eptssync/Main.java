@@ -26,7 +26,7 @@ public class Main {
 	
 		List<SyncConfig> syncConfigs = loadSyncConfig(synConfigFiles);
 		
-		if (countQtyDestination(syncConfigs) > 0) throw new ForbiddenOperationException("You must define only one destination file");
+		if (countQtyDestination(syncConfigs) > 1) throw new ForbiddenOperationException("You must define only one destination file");
 		
 		//Performe database and classes adjustment
 		for (SyncConfig conf : syncConfigs) {

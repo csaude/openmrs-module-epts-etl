@@ -12,15 +12,19 @@
 	operations: [
 		{
 			operationType: "export",
-			defaultQtyRecordsPerSelect: 10,
-			defaultQtyRecordsPerEngine: 100000,
-			disabled: true
+			defaultQtyRecordsPerSelect: 25000,
+			defaultQtyRecordsPerEngine: 1000000,
+			disabled: false
 		},
+		
+		182790293,
+		
+		
 		
 		{
 			operationType: "transport",
 			defaultQtyRecordsPerSelect: 1,
-			defaultQtyRecordsPerEngine: 10,
+			defaultQtyRecordsPerEngine: 3,
 			disabled: false
 		}
 	],

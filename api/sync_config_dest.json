@@ -5,8 +5,8 @@
 	mustCreateStageSchemaElements:true,
 	originAppLocationCode: "CENTRAL_DB",
 	firstExport: true,
-	mustRecompileTable: true,
-	mustCreateClasses: true,
+	mustRecompileTable: false,
+	mustCreateClasses: false,
 	classpackage: "destinationpkg",
 	
 	operations: [
@@ -15,7 +15,8 @@
 			defaultQtyRecordsPerSelect: 10000,
 			defaultQtyRecordsPerEngine: 100000,
 			doIntegrityCheckInTheEnd: true,
-		
+			disabled: false
+			
 			relatedOperationToBeRunInTheEnd: {
 				operationType: "consolidation",
 				defaultQtyRecordsPerSelect: 10000,
@@ -26,7 +27,8 @@
 		{
 			operationType: "load",
 			defaultQtyRecordsPerSelect: 1,
-			defaultQtyRecordsPerEngine: 10
+			defaultQtyRecordsPerEngine: 10,
+			disabled: true
 		}
 	],
 	
@@ -145,7 +147,7 @@
 				{
 					tableName: "obs",
 					parents: ["person", "location", "orders", "obs", "users", "encounter"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					qtyProcessingEngine: 1
 				},
 				

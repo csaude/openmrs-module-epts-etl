@@ -311,8 +311,9 @@ public abstract class AbstractSyncController implements Runnable{
 		return this.controllerId;
 	}
 	
-	public void starttRelatedOperationToBeRunInTheEnd() {
-		this.relatedOperationToBeRunInTheEnd.init();
+	public void startRelatedOperationToBeRunInTheEnd() {
+		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.relatedOperationToBeRunInTheEnd.getControllerId());
+		executor.execute(this.relatedOperationToBeRunInTheEnd);
 	}
 	
 	@Override

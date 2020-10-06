@@ -39,6 +39,14 @@ public class SyncOperationConfig {
 	public SyncOperationConfig() {
 	}
 	
+	public SyncOperationConfig getRelatedOperationToBeRunInTheEnd() {
+		return relatedOperationToBeRunInTheEnd;
+	}
+	
+	public void setRelatedOperationToBeRunInTheEnd(SyncOperationConfig relatedOperationToBeRunInTheEnd) {
+		this.relatedOperationToBeRunInTheEnd = relatedOperationToBeRunInTheEnd;
+	}
+	
 	public void setDisabled(boolean disabled) {
 		this.disabled = disabled;
 	}

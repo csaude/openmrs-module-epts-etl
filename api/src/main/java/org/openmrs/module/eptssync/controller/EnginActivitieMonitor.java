@@ -48,12 +48,12 @@ public class EnginActivitieMonitor implements Runnable{
 	@Override
 	public void run() {
 		while(true) {
-			String msg = "WAITING FOR ALL ENGINE REQUEST NEW LIMITS. CURRENT STATUS: " + generateEngineNewJobRequestStatus();
+			String msg = "WAITING FOR ALL ENGINE REQUEST NEW JOB REALOCATION. CURRENT STATUS: " + generateEngineNewJobRequestStatus();
 			
 			if (!isAllEnginePulled()) {
 				this.controller.logInfo(msg);
 				
-				TimeCountDown.sleep(60);
+				TimeCountDown.sleep(30);
 			}
 			else {
 				
