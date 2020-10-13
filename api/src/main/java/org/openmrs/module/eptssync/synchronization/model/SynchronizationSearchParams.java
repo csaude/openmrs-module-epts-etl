@@ -3,7 +3,7 @@ package org.openmrs.module.eptssync.synchronization.model;
 import java.sql.Connection;
 import java.util.Date;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
@@ -15,19 +15,19 @@ import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfoVO>{
-	private SyncTableInfo tableInfo;
 	private Date syncStartDate;
-	
 	private boolean forProgressMeter;
-	private RecordLimits limits;
 	
-	public SynchronizationSearchParams(SyncTableInfo tableInfo, RecordLimits limits) {
-		this.tableInfo = tableInfo;
-		this.limits = limits;
+	public SynchronizationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits) {
+		super(tableInfo, limits);
 		
 		this.syncStartDate = DateAndTimeUtilities.getCurrentDate();
 		
 		setOrderByFields("id");
+	}
+	
+	public Date getSyncStartDate() {
+		return syncStartDate;
 	}
 	
 	public void setSyncStartDate(Date syncStartDate) {
@@ -78,7 +78,7 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		Class<OpenMRSObject> clazz = tableInfo.getSyncRecordClass();
+		Class<OpenMRSObject> clazz = tableInfo.getSyncRecordClass(conn);
 		
 		OpenMRSObjectSearchParams<OpenMRSObject> migratedRecordSearchParams = new OpenMRSObjectSearchParams<OpenMRSObject>(clazz);
 		

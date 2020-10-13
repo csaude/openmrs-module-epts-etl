@@ -2,7 +2,7 @@ package org.openmrs.module.eptssync.model.openmrs.generic;
 
 import java.sql.Connection;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -87,6 +87,6 @@ public interface OpenMRSObject extends SyncRecord{
 	 * @throws InconsistentStateException
 	 * @throws DBException
 	 */
-	public abstract void consolidateData(SyncTableInfo tableInfo, Connection conn) throws InconsistentStateException, DBException;
+	public abstract void consolidateData(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
 	//public abstract void moveToStageAreaDueInconsistency(SyncTableInfo syncTableInfo, InconsistentStateException exception, Connection conn) throws DBException;
 }

@@ -6,7 +6,7 @@ package org.openmrs.module.eptssync.utilities.concurrent;
  * @author JPBOANE
  *
  */
-public interface MonitoredOperation {
+public interface MonitoredOperation extends Runnable{
 	public static final int STATUS_NOT_INITIALIZED=0;
 	public static final int STATUS_RUNNING=1;
 	public static final int STATUS_PAUSED = 2;
@@ -32,5 +32,12 @@ public interface MonitoredOperation {
 	public void changeStatusToFinished();
 	public void changeStatusToPaused();
 	public void changeStatusToSleeping();
+	
+	public abstract void onStart();
+	public abstract void onSleep();
+	public abstract void onStop();
+	public abstract void onFinish();
+	
+	public abstract int getWaitTimeToCheckStatus();
 	
 }

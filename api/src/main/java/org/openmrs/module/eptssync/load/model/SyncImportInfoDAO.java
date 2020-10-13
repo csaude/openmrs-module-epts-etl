@@ -3,14 +3,15 @@ package org.openmrs.module.eptssync.load.model;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class SyncImportInfoDAO extends BaseDAO {
-	public static void insertAll(List<SyncImportInfoVO> records, SyncTableInfo tableInfo, Connection conn) throws DBException{
+	public static void insertAll(List<SyncImportInfoVO> records, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 			String sql = "";
 					
 			sql += "INSERT INTO \n"; 
@@ -36,6 +37,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 				try {
 					executeBatch(conn, sql);
 				} catch (DBException e) {
+					e.printStackTrace();
+					
 					 if (e.isDuplicatePrimaryKeyException()) {
 						 	//Error Pather... Duplicate Entry 'objectId-origin_app' for bla bla 
 							String[] s = (e.getLocalizedMessage().split("'")[1]).split("-");
@@ -59,7 +62,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 			}
 	}
 	
-	private static void updateByRecordIdAndAppOriginCode(SyncTableInfo tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {
+	private static void updateByRecordIdAndAppOriginCode(SyncTableConfiguration tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {
 		Object[] params = {record.getJson(),
 						   record.getRecordId(),	
 				   		   record.getOriginAppLocationCode()};
@@ -74,7 +77,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 			executeQuery(sql, params, conn);
 	}
 	
-	public static void insert(SyncImportInfoVO record, SyncTableInfo tableInfo, Connection conn) throws DBException{
+	public static void insert(SyncImportInfoVO record, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 		Object[] params = {record.getRecordId(),
 						   record.getJson(),
 						   record.getMigrationStatus(),
@@ -98,28 +101,58 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQuery(sql, params, conn);
 	}
 	
-	public static SyncImportInfoVO getFirstRecord(SyncTableInfo tableInfo, Connection conn) throws DBException {
+	public static SyncImportInfoVO getFirstRecord(SynchronizationSearchParams searchParams, Connection conn) throws DBException {
+		Object[] params = {};
+		
+		String extraCondition;
+		
+		if (searchParams.getTableInfo().isFirstExport()) {
+			extraCondition = "last_migration_try_date is null";
+		}
+		else {
+			extraCondition = "last_migration_try_date is null or last_migration_try_date < ?";
+			
+			utilities.setParam(params.length, params, searchParams.getSyncStartDate());
+		}
+	
 		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + tableInfo.generateFullStageTableName() + "\n";
+		sql += " FROM  	" + searchParams.getTableInfo().generateFullStageTableName() + "\n";
 		sql += " WHERE 	id = \n";
 		sql += " 			 (	SELECT min(id)\n";
-		sql += "				FROM   " + tableInfo.generateFullStageTableName() +  ")";
+		sql += "				FROM   " + searchParams.getTableInfo().generateFullStageTableName();
+		sql += "				WHERE " +  extraCondition + ")";
 		
-		return find(SyncImportInfoVO.class, sql, null, conn);
+		return find(SyncImportInfoVO.class, sql, params, conn);
 	}
 	
-	public static SyncImportInfoVO getLastRecord(SyncTableInfo tableInfo, Connection conn) throws DBException {
+	public static SyncImportInfoVO getLastRecord(SynchronizationSearchParams searchParams, Connection conn) throws DBException {
+		Object[] params = {};
+		
+		String extraCondition;
+		
+		if (searchParams.getTableInfo().isFirstExport()) {
+			extraCondition = "last_migration_try_date is null";
+		}
+		else {
+			extraCondition = "last_migration_try_date is null or last_migration_try_date < ?";
+			
+			utilities.setParam(params.length, params, searchParams.getSyncStartDate());
+		}
+		
+		
 		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + tableInfo.generateFullStageTableName() + "\n";
+		sql += " FROM  	" + searchParams.getTableInfo().generateFullStageTableName() + "\n";
 		sql += " WHERE 	id = \n";
 		sql += " 			 (	SELECT max(id)\n";
-		sql += "				FROM   " + tableInfo.generateFullStageTableName() +  ")";
+		sql += "				FROM   " + searchParams.getTableInfo().generateFullStageTableName();
+		sql += "				WHERE  " +  extraCondition + ")";
 		
-		return find(SyncImportInfoVO.class, sql, null, conn);
+		
+		return find(SyncImportInfoVO.class, sql, params, conn);
 	}
 	
 	
@@ -143,7 +176,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 	
 	
 
-	public static SyncImportInfoVO retrieveFromOpenMRSObject(SyncTableInfo tableInfo, OpenMRSObject object, Connection conn) throws DBException {
+	public static SyncImportInfoVO retrieveFromOpenMRSObject(SyncTableConfiguration tableInfo, OpenMRSObject object, Connection conn) throws DBException {
 		Object[] params = {	object.getOriginRecordId(), 
 							object.getOriginAppLocationCode()};
 		
@@ -156,7 +189,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return  BaseDAO.find(SyncImportInfoVO.class , sql, params, conn);
 	}
 
-	public static void markAsFailedToMigrate(SyncImportInfoVO record, SyncTableInfo tableInfo, String msg, Connection conn) throws DBException {
+	public static void markAsFailedToMigrate(SyncImportInfoVO record, SyncTableConfiguration tableInfo, String msg, Connection conn) throws DBException {
 		msg = msg.length() <= 250 ? msg : msg.substring(0, 250);
 		
 		Object[] params = { SyncImportInfoVO.MIGRATION_STATUS_FAILED,
@@ -176,7 +209,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 			executeQuery(sql, params, conn);
 	}
 
-	public static void refreshLastMigrationTrySync(SyncTableInfo tableInfo, List<SyncImportInfoVO> syncRecords, Connection conn) throws DBException{
+	public static void refreshLastMigrationTrySync(SyncTableConfiguration tableInfo, List<SyncImportInfoVO> syncRecords, Connection conn) throws DBException{
 		Object[] params = {DateAndTimeUtilities.getCurrentSystemDate(conn), 
 						   syncRecords.get(0).getId(),
 						   syncRecords.get(syncRecords.size() - 1).getId()
@@ -207,7 +240,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 	}
 	
 	
-	public static void remove(SyncImportInfoVO record, SyncTableInfo tableInfo, Connection conn) throws DBException {
+	public static void remove(SyncImportInfoVO record, SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		Object[] params = { record.getId()
 							};
 
@@ -220,11 +253,11 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQuery(sql, params, conn);
 	}
 
-	public static void markAsToBeCompletedInFuture(SyncImportInfoVO record, SyncTableInfo tableInfo, Connection conn) throws DBException {
+	public static void markAsToBeCompletedInFuture(SyncImportInfoVO record, SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		markAsToBeCompletedInFuture(record, tableInfo, null, conn);
 	}
 	
-	private static void markAsToBeCompletedInFuture(SyncImportInfoVO record, SyncTableInfo tableInfo, String msg, Connection conn) throws DBException {
+	private static void markAsToBeCompletedInFuture(SyncImportInfoVO record, SyncTableConfiguration tableInfo, String msg, Connection conn) throws DBException {
 		Object[] params = { SyncImportInfoVO.MIGRATION_STATUS_INCOMPLETE,
 							msg == null ? "Migrated BUT still miss some parent info" : msg,
 							DateAndTimeUtilities.getCurrentDate(),
@@ -242,7 +275,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQuery(sql, params, conn);
 	}
 
-	public static void updateMigrationStatus(SyncTableInfo tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {
+	public static void updateMigrationStatus(SyncTableConfiguration tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {
 		markAsToBeCompletedInFuture(record, tableInfo, record.getLastMigrationTryErr(), conn);		
 	}
 }

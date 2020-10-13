@@ -4,12 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.openmrs.module.eptssync.controller.AbstractSyncController;
-import org.openmrs.module.eptssync.controller.conf.SyncConfig;
+import org.openmrs.module.eptssync.controller.OperationController;
+import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.engine.SyncEngine;
+import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
 import org.openmrs.module.eptssync.transport.engine.TransportSyncFilesEngine;
 import org.openmrs.module.eptssync.transport.model.TransportSyncFilesSearchParams;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -20,20 +21,20 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  *
  */
-public class SyncTransportController extends AbstractSyncController {
+public class SyncTransportController extends OperationController {
 	
-	public SyncTransportController(SyncConfig syncConfig) {
-		super(syncConfig);
+	public SyncTransportController(ProcessController processController, SyncOperationConfig operationConfig) {
+		super(processController, operationConfig);
 	}
 
 	@Override
-	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) {
-		return new TransportSyncFilesEngine(syncInfo, limits, this);
+	public Engine initRelatedEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+		return new TransportSyncFilesEngine(monitor, limits);
 	}
 
 	@Override
-	protected long getMinRecordId(SyncTableInfo tableInfo) {
-		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncFilesSearchParams(tableInfo));
+	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncFilesSearchParams(this, tableInfo, null));
 	    
 		if (files == null || files.length == 0) return 0;
 		
@@ -41,31 +42,31 @@ public class SyncTransportController extends AbstractSyncController {
 		
 		File firstFile = files[0];
 		
-		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_SEQNAME.JSON
+		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_MINRECORD_MAXRECORD.JSON
 		
 		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(firstFile.getName()).split("_");
 		
-		return Long.parseLong(pats[pats.length -1]);
+		return Long.parseLong(pats[pats.length-2]);
 	}
 
 	@Override
-	protected long getMaxRecordId(SyncTableInfo tableInfo) {
-		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncFilesSearchParams(tableInfo));
+	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncFilesSearchParams(this, tableInfo, null));
 	    
 		if (files == null || files.length == 0) return 0;
 		
 		Arrays.sort(files);
 		
-		File firstFile = files[files.length -1];
+		File lastFile = files[files.length -1];
 		
-		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_SEQNAME.JSON
+		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_MINRECORD_MAXRECORD.JSON
 		
-		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(firstFile.getName()).split("_");
+		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(lastFile.getName()).split("_");
 		
 		return Long.parseLong(pats[pats.length -1]);
 	}
 	
-    public static File getSyncDirectory(SyncTableInfo syncInfo) {
+    public File getSyncDirectory(SyncTableConfiguration syncInfo) {
     	String fileName = "";
 
 		fileName += syncInfo.getRelatedSyncTableInfoSource().getSyncRootDirectory();
@@ -79,7 +80,7 @@ public class SyncTransportController extends AbstractSyncController {
 		return new File(fileName);
     }
     
-    public static File getSyncBkpDirectory(SyncTableInfo syncInfo) throws IOException {
+    public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
      	String fileName = "";
 
 		fileName += syncInfo.getRelatedSyncTableInfoSource().getSyncRootDirectory();
@@ -101,7 +102,7 @@ public class SyncTransportController extends AbstractSyncController {
 		return bkpDirectory;
     }
     
-    public static File getSyncDestinationDirectory(SyncTableInfo syncInfo) throws IOException {
+    public File getSyncDestinationDirectory(SyncTableConfiguration syncInfo) throws IOException {
      	String fileName = "";
 
 		fileName += syncInfo.getRelatedSyncTableInfoSource().getSyncRootDirectory();
@@ -123,7 +124,7 @@ public class SyncTransportController extends AbstractSyncController {
     
 	@Override
 	public boolean mustRestartInTheEnd() {
-		return true;
+		return isParallelModeProcessing() ? true : false;
 	}
 
 	@Override

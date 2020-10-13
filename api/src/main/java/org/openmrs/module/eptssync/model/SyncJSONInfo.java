@@ -119,7 +119,7 @@ public class SyncJSONInfo {
 		}
 		finally {
 			if (ex != null) {
-				System.out.println(json);
+				//System.out.println(json);
 			}
 		}
 		

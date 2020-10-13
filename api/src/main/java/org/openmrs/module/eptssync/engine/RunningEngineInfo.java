@@ -4,9 +4,9 @@ import java.util.concurrent.ExecutorService;
 
 public class RunningEngineInfo {
 	private ExecutorService executorService;
-	private SyncEngine engine;
+	private Engine engine;
 	
-	public RunningEngineInfo(ExecutorService executorService, SyncEngine engine) {
+	public RunningEngineInfo(ExecutorService executorService, Engine engine) {
 		this.executorService = executorService;
 		this.engine = engine;
 	}
@@ -15,7 +15,7 @@ public class RunningEngineInfo {
 		return executorService;
 	}
 	
-	public SyncEngine getEngine() {
+	public Engine getEngine() {
 		return engine;
 	}
 }

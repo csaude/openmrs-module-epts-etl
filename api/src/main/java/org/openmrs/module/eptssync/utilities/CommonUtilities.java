@@ -860,7 +860,7 @@ public class  CommonUtilities implements Serializable{
 	}
 	
 	public void logInfo(String msg, Logger logger) {
-		logger.info(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
+		logger.info(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
 	public void logErr(String msg, Logger logger) {

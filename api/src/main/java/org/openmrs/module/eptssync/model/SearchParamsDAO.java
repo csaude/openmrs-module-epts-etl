@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.openmrs.module.eptssync.engine.SyncEngine;
+import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.VO;
@@ -61,7 +61,7 @@ public class SearchParamsDAO extends BaseDAO{
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends VO>  List<T> search(SyncEngine engine, Connection conn) throws DBException{
+	public static <T extends VO>  List<T> search(Engine engine, Connection conn) throws DBException{
 		SearchClauses<T> searchClauses = (SearchClauses<T>) engine.getSearchParams().generateSearchClauses(conn);
 		
 		if (engine.getSearchParams().getOrderByFields() != null) {
@@ -76,11 +76,11 @@ public class SearchParamsDAO extends BaseDAO{
 		
 		List<T> records = (List<T>) search(engine.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(), conn);
 		
-		if (!utilities.arrayHasElement(records) && utilities.createInstance(engine.getSearchParams().getRecordClass()).generateTableName().equals("obs")) {
-			engine.getSyncController().logInfo(sqlToLog);
+		/*if (!utilities.arrayHasElement(records) && utilities.createInstance(engine.getSearchParams().getRecordClass()).generateTableName().equals("obs")) {
+			engine.getRelatedOperationController().logInfo(sqlToLog);
 			
 			records = (List<T>) search(engine.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(), conn);
-		}
+		}*/
 		
 		return records;	
 	}

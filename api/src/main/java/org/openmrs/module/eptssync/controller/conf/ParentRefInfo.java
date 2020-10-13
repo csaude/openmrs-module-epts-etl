@@ -9,12 +9,11 @@ import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Define the refencial information betwen a {@link SyncTableInfo} and its main parent;
+ * Define the refencial information betwen a {@link SyncTableConfiguration} and its main parent;
  * 
  * @author jpboane
  *
@@ -22,11 +21,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class ParentRefInfo {
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 
-	private SyncTableInfo referenceTableInfo;
+	private SyncTableConfiguration referenceTableInfo;
 	private String referenceColumnName;
 	private Class<OpenMRSObject> relatedReferenceClass;
 	
-	private SyncTableInfo referencedTableInfo;
+	private SyncTableConfiguration referencedTableInfo;
 	private String referencedColumnName;
 	private Class<OpenMRSObject> relatedReferencedClass;
 	
@@ -82,19 +81,19 @@ public class ParentRefInfo {
 		this.referencedColumnName = referencedColumnName;
 	}
 	
-	public SyncTableInfo getReferenceTableInfo() {
+	public SyncTableConfiguration getReferenceTableInfo() {
 		return referenceTableInfo;
 	}
 	
-	public void setReferenceTableInfo(SyncTableInfo referenceTableInfo) {
+	public void setReferenceTableInfo(SyncTableConfiguration referenceTableInfo) {
 		this.referenceTableInfo = referenceTableInfo;
 	}
 	
-	public SyncTableInfo getReferencedTableInfo() {
+	public SyncTableConfiguration getReferencedTableInfo() {
 		return referencedTableInfo;
 	}
 	
-	public void setReferencedTableInfo(SyncTableInfo referencedTableInfo) {
+	public void setReferencedTableInfo(SyncTableConfiguration referencedTableInfo) {
 		this.referencedTableInfo = referencedTableInfo;
 	}
 
@@ -244,12 +243,10 @@ public class ParentRefInfo {
 		
 	}
 	
-	public void generateRelatedReferenceClass() {
-		OpenConnection conn = getReferenceTableInfo().openConnection();
+	public void generateRelatedReferenceClass(Connection conn) {
 		
 		try {
 			this.relatedReferenceClass = OpenMRSClassGenerator.generate(this.getReferenceTableInfo(), conn);
-			conn.markAsSuccessifullyTerminected();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 
@@ -263,10 +260,6 @@ public class ParentRefInfo {
 
 			throw new RuntimeException(e);
 		}
-		finally {
-			conn.finalizeConnection();
-		}
-		
 	}
 	
 	public void generateSkeletonOfRelatedReferencedClass(Connection conn) {
@@ -290,12 +283,10 @@ public class ParentRefInfo {
 		
 	}
 	
-	public void generateSkeletonRelatedReferenceClass() {
-		OpenConnection conn = getReferenceTableInfo().openConnection();
+	public void generateSkeletonRelatedReferenceClass(Connection conn) {
 		
 		try {
 			this.relatedReferenceClass = OpenMRSClassGenerator.generateSkeleton(this.getReferenceTableInfo(), conn);
-			conn.markAsSuccessifullyTerminected();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 
@@ -309,11 +300,5 @@ public class ParentRefInfo {
 
 			throw new RuntimeException(e);
 		}
-		finally {
-			conn.finalizeConnection();
-		}
-		
 	}
-
-	
 }

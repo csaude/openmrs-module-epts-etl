@@ -1,14 +1,15 @@
 package org.openmrs.module.eptssync.consolitation.controller;
 
 import org.openmrs.module.eptssync.consolitation.engine.DatabaseIntegrityConsolidationEngine;
-import org.openmrs.module.eptssync.controller.AbstractSyncController;
-import org.openmrs.module.eptssync.controller.conf.SyncConfig;
+import org.openmrs.module.eptssync.controller.OperationController;
+import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -19,19 +20,19 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  *
  */
-public class DatabaseIntegrityConsolidationController extends AbstractSyncController {
+public class DatabaseIntegrityConsolidationController extends OperationController {
 	
-	public DatabaseIntegrityConsolidationController(SyncConfig syncConfig) {
-		super(syncConfig);
+	public DatabaseIntegrityConsolidationController(ProcessController processController, SyncOperationConfig operationConfig) {
+		super(processController, operationConfig);
 	}
 
 	@Override
-	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) {
-		return new DatabaseIntegrityConsolidationEngine(syncInfo, limits, this);
+	public Engine initRelatedEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+		return new DatabaseIntegrityConsolidationEngine(monitor, limits);
 	}
 
 	@Override
-	protected long getMinRecordId(SyncTableInfo tableInfo) {
+	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -51,7 +52,7 @@ public class DatabaseIntegrityConsolidationController extends AbstractSyncContro
 	}
 
 	@Override
-	protected long getMaxRecordId(SyncTableInfo tableInfo) {
+	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -84,7 +85,7 @@ public class DatabaseIntegrityConsolidationController extends AbstractSyncContro
 	public OpenConnection openConnection() {
 		OpenConnection conn = super.openConnection();
 	
-		if (getSyncConfig().isDoIntegrityCheckInTheEnd(getOperationType())) {
+		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
 			try {
 				DBUtilities.disableForegnKeyChecks(conn);
 			} catch (DBException e) {

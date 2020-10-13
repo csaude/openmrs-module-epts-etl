@@ -1,0 +1,54 @@
+{
+	installationType: "source",
+	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
+	syncStageSchema: "sync_import_stage",
+	mustCreateStageSchemaElements:false,
+	originAppLocationCode: "zbz_pebane",
+	firstExport: true,
+	mustRecompileTable: false,
+	mustCreateClasses: false,
+	classpackage: "sourcepkg",
+	automaticStart: false,
+	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w01/openmrs-module-eptssync/api/target/conf/minimal_dest_sync_config.json",
+	
+	connInfo: {
+		dataBaseUserName: "root",
+		dataBaseUserPassword: "root",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		driveClassName: "com.mysql.jdbc.Driver"
+	},
+	
+	operations: [
+		{
+			operationType: "export",
+			maxRecordPerProcessing: 25000,
+			maxSupportedEngines: 50,
+			minRecordsPerEngine: 1000,
+			disabled: false,
+			processingMode: "sequencial",
+			
+			child:{
+				operationType: "transport",
+				maxRecordPerProcessing: 25000,
+				maxSupportedEngines: 50,
+				minRecordsPerEngine: 1000,
+				disabled: false,
+				processingMode: "sequencial"
+			}
+		}
+	],
+	
+	tablesConfigurations:[
+		{	
+			tableName: "users",
+			parents: ["person", "users"],
+			mustRecompileTable: false
+		},
+
+		{
+			tableName: "person",
+			parents: ["users"],
+			mustRecompileTable: false
+		}
+	]
+}

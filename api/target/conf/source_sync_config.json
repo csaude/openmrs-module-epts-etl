@@ -4,47 +4,55 @@
 	syncStageSchema: "sync_import_stage",
 	mustCreateStageSchemaElements:false,	
 	originAppLocationCode: "zbz_pebane",
-	defaultQtyRecordsPerSelect: 10000,
+	maxRecordPerProcessing: 10000,
 	firstExport: true,
 	defaultQtyRecordsPerEngine: 100000,
 	doIntegrityCheckInTheEnd: true,
-	mustRecompileTable: true,
-	mustCreateClasses: true,
+	mustRecompileTable: false,
+	mustCreateClasses: false,
 	classpackage: "sourcepkg",
-	
-	operations: [
-		
-		{
-			operationType: "export",
-			defaultQtyRecordsPerSelect: 125,
-			defaultQtyRecordsPerEngine: 10
-		},
-		{
-			operationType: "transport",
-			defaultQtyRecordsPerSelect: 1,
-			defaultQtyRecordsPerEngine: 10
-		}
-	],
+	automaticStart: true,
+	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w01/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
 	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
-	syncTableInfo:[
+	
+	operations: [
+		{
+			operationType: "export",
+			maxRecordPerProcessing: 25000,
+			maxSupportedEngines: 50,
+			minRecordsPerEngine: 1000,
+			disabled: false,
+			processingMode: "sequencial",
+			
+			child:{
+				operationType: "transport",
+				maxRecordPerProcessing: 25000,
+				maxSupportedEngines: 50,
+				minRecordsPerEngine: 1000,
+				disabled: false,
+				processingMode: "sequencial"
+			}
+		}
+	],
+	
+	tablesConfigurations:[
 		  
 				{	
 					tableName: "users",
 					parents: ["person", "users"],
-					mustRecompileTable: true,
-					qtyRecordsPerSelect: 10000
+					mustRecompileTable: false
 				},
 		
 				{
 					tableName: "location",
 					parents: ["users", "location"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
 				},
 		
@@ -106,7 +114,7 @@
 				{
 					tableName: "visit",
 					parents: ["patient", "location", "users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					qtyProcessingEngine: 5			
 				},
 				
@@ -118,7 +126,7 @@
 				{
 					tableName: "encounter",
 					parents: ["patient", "location", "users", "visit"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					qtyProcessingEngine: 5			
 				},
 				
@@ -143,7 +151,7 @@
 				{
 					tableName: "obs",
 					parents: ["person", "location", "orders", "obs", "users", "encounter"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					qtyProcessingEngine: 5
 				},
 				
@@ -156,42 +164,42 @@
 				{
 					tableName: "concept_datatype",
 					parents: ["users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				 
 				{
 					tableName: "concept",
 					parents: ["users", "concept_classes", "concept_datatype"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				
 				{
 					tableName: "person_attribute_type",
 					parents: ["users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				 
 				{
 					tableName: "provider_attribute_type",
 					parents: ["users", "program_workflow"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				 
 				{
 					tableName: "program",
 					parents: ["users", "concept"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 			
 				{
 					tableName: "program_workflow",
 					parents: ["users", "program", "concept"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				
@@ -199,21 +207,21 @@
 				{
 					tableName: "program_workflow_state",
 					parents: ["users", "program_workflow", "concept"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				
 				{
 					tableName: "visit_type",
 					parents: ["users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				
 				{
 					tableName: "relationship_type",
 					parents: ["users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				
@@ -221,7 +229,7 @@
 				{
 					tableName: "patient_identifier_type",
 					parents: ["users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				}
 				

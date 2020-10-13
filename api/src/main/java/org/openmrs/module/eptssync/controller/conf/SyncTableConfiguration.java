@@ -16,11 +16,10 @@ import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SyncTableInfo {
+public class SyncTableConfiguration {
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 
 	private String tableName;
@@ -35,7 +34,7 @@ public class SyncTableInfo {
 
 	private Class<OpenMRSObject> syncRecordClass;
 
-	private SyncConfig relatedSyncTableInfoSource;
+	private SyncConfiguration relatedSyncTableInfoSource;
 
 	private String primaryKey;
 	private String primaryKeyType;
@@ -44,12 +43,12 @@ public class SyncTableInfo {
 	private String extraConditionForExport;
 	
 	private boolean metadata;
-	private int qtyRecordsPerEngine;
-	private int qtyRecordsPerSelect;
+	/*private int qtyRecordsPerEngine;
+	private int qtyRecordsPerSelect;*/
 	private boolean fullLoaded;
-	private static Logger logger = Logger.getLogger(SyncTableInfo.class);
+	private static Logger logger = Logger.getLogger(SyncTableConfiguration.class);
 	
-	public SyncTableInfo() {
+	public SyncTableConfiguration() {
 	}
 
 	public String getClasspackage() {
@@ -60,6 +59,7 @@ public class SyncTableInfo {
 		return getRelatedSyncTableInfoSource().isDoIntegrityCheckInTheEnd(operationType);
 	}
 	
+	/*
 	public int getQtyRecordsPerSelect(String operationType) {
 		return qtyRecordsPerSelect != 0 ? qtyRecordsPerSelect : getRelatedSyncTableInfoSource().getDefaultQtyRecordsPerSelect(operationType);
 	}
@@ -71,7 +71,7 @@ public class SyncTableInfo {
 	public void setQtyRecordsPerEngine(int qtyRecordsPerEngine) {
 		this.qtyRecordsPerEngine = qtyRecordsPerEngine;
 	}
-
+	*/
 	public boolean isFirstExport() {
 		return this.relatedSyncTableInfoSource.isFirstExport();
 	}
@@ -101,9 +101,9 @@ public class SyncTableInfo {
 	}
 
 	@JsonIgnore
-	public Class<OpenMRSObject> getSyncRecordClass() {
+	public Class<OpenMRSObject> getSyncRecordClass(Connection conn) {
 		if (syncRecordClass == null) {
-			generateRecordClass();
+			generateRecordClass(conn);
 		}
 		
 		return syncRecordClass;
@@ -113,11 +113,11 @@ public class SyncTableInfo {
 		this.syncRecordClass = syncRecordClass;
 	}
 
-	public SyncConfig getRelatedSyncTableInfoSource() {
+	public SyncConfiguration getRelatedSyncTableInfoSource() {
 		return relatedSyncTableInfoSource;
 	}
 
-	public void setRelatedSyncTableInfoSource(SyncConfig relatedSyncTableInfoSource) {
+	public void setRelatedSyncTableInfoSource(SyncConfiguration relatedSyncTableInfoSource) {
 		this.relatedSyncTableInfoSource = relatedSyncTableInfoSource;
 	}
 
@@ -133,17 +133,12 @@ public class SyncTableInfo {
 		return utilities.stringHasValue(this.sharePkWith);
 	}
 	
-	public String getPrimaryKeyAsClassAtt() {
-		return convertTableAttNameToClassAttName(getPrimaryKey());
+	public String getPrimaryKeyAsClassAtt(Connection conn) {
+		return convertTableAttNameToClassAttName(getPrimaryKey(conn));
 	}
-	
-	public OpenConnection openConnection() {
-		return relatedSyncTableInfoSource.openConnection();
-	}
-	
-	public String getPrimaryKey() {
+
+	public String getPrimaryKey(Connection conn) {
 		if (primaryKey == null) {
-			OpenConnection conn =  openConnection();
 			
 			try {
 				ResultSet rs = conn.getMetaData().getPrimaryKeys(null, null, tableName);
@@ -160,9 +155,6 @@ public class SyncTableInfo {
 				
 				throw new RuntimeException(e);
 			}
-			finally {
-				conn.finalizeConnection();
-			}
 		}
 		
 		return primaryKey;
@@ -176,21 +168,19 @@ public class SyncTableInfo {
 		return AttDefinedElements.isNumeric(this.getPrimaryKeyType());
 	}
 	
-	public boolean hasPK() {
-		return getPrimaryKey() != null;
+	public boolean hasPK(Connection conn) {
+		return getPrimaryKey(conn) != null;
 	}
 	
 	public void setChildRefInfo(List<ParentRefInfo> childRefInfo) {
 		this.parentRefInfo = childRefInfo;
 	}
 	
-	public synchronized List<ParentRefInfo> getChildRefInfo() {
+	public synchronized List<ParentRefInfo> getChildRefInfo(Connection conn) {
 		if (this.childRefInfo == null) {
 			
 			logInfo("DISCOVERING CHILDREN FOR '" + this.tableName + "'");
 			
-			OpenConnection conn =  openConnection();
-		
 			try {
 				this.childRefInfo = new ArrayList<ParentRefInfo>();  
 				
@@ -200,7 +190,7 @@ public class SyncTableInfo {
 					ParentRefInfo ref = new ParentRefInfo();
 					
 					ref.setReferenceColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
-					ref.setReferenceTableInfo(SyncTableInfo.init(foreignKeyRS.getString("FKTABLE_NAME"), this.relatedSyncTableInfoSource));
+					ref.setReferenceTableInfo(SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"), this.relatedSyncTableInfoSource));
 					
 					ref.setReferencedColumnName(foreignKeyRS.getString("PKCOLUMN_NAME"));
 					ref.setReferencedTableInfo(this);
@@ -223,9 +213,6 @@ public class SyncTableInfo {
 				
 				throw new RuntimeException(e);
 			}
-			finally {
-				conn.finalizeConnection();
-			}
 		}
 		
 		return childRefInfo;
@@ -235,12 +222,10 @@ public class SyncTableInfo {
 		this.parentRefInfo = parentRefInfo;
 	}
 	
-	public synchronized List<ParentRefInfo> getParentRefInfo() {
+	public synchronized List<ParentRefInfo> getParentRefInfo(Connection conn) {
 		if (this.parentRefInfo == null) {
 			
 			logInfo("DISCOVERING PARENTS FOR '" + this.tableName + "'");
-			
-			OpenConnection conn =  openConnection();
 			
 			try {
 				this.parentRefInfo = new ArrayList<ParentRefInfo>();  
@@ -254,7 +239,7 @@ public class SyncTableInfo {
 					ref.setReferencedColumnName(foreignKeyRS.getString("PKCOLUMN_NAME"));
 					ref.setReferenceTableInfo(this);
 					
-					ref.setReferencedTableInfo(SyncTableInfo.init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource));
+					ref.setReferencedTableInfo(SyncTableConfiguration.init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource));
 					
 					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(this.tableName, ref.getReferenceColumnName(), conn));
 					
@@ -278,16 +263,13 @@ public class SyncTableInfo {
 				
 				throw new RuntimeException(e);
 			}
-			finally {
-				conn.finalizeConnection();
-			}
 		}
 		
 		return parentRefInfo;
 	}
 
-	private static SyncTableInfo init(String tableName, SyncConfig sourceInfo) {
-		SyncTableInfo tableInfo = new SyncTableInfo();
+	private static SyncTableConfiguration init(String tableName, SyncConfiguration sourceInfo) {
+		SyncTableConfiguration tableInfo = new SyncTableConfiguration();
 		tableInfo.setTableName(tableName);
 		tableInfo.setRelatedSyncTableInfoSource(sourceInfo);
 		tableInfo.setMustRecompileTable(sourceInfo.isMustRecompileTable());
@@ -313,12 +295,9 @@ public class SyncTableInfo {
 	}
 
 	
-	public void generateRecordClass() {
-		OpenConnection conn = openConnection();
-		
+	public void generateRecordClass(Connection conn) {
 		try {
 			this.syncRecordClass = OpenMRSClassGenerator.generate(this, conn);
-			conn.markAsSuccessifullyTerminected();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 
@@ -331,9 +310,6 @@ public class SyncTableInfo {
 			e.printStackTrace();
 
 			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
 		}
 	}
 
@@ -379,98 +355,89 @@ public class SyncTableInfo {
 	 * 
 	 * @throws SQLException
 	 */
-	public void tryToUpgradeDataBaseInfo() throws SQLException {
+	public void tryToUpgradeDataBaseInfo(Connection conn) throws SQLException {
 		logInfo("UPGRATING TABLE INFO [" + this.tableName + "]");
 		
-		OpenConnection conn = openConnection();
-
-		try {
-			String newColumnDefinition = "";
-			
-			if (mustCreateStageSchemaElements() && !existRelatedExportStageTable()) {
-				logInfo("GENERATING RELATED STAGE TABLE FOR [" + this.tableName + "]");
-				
-				createRelatedExportStageTable();
-				
-				logInfo("RELATED STAGE TABLE FOR [" + this.tableName + "] GENERATED");
-				
-			}
-			
-			/*if (!isFirstExportDoneColumnExistsOnTable(conn)) {
-				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateFirstExportColumnGeneration());
-			}*/
-			
-			if (!isConsistentColumnExistOnTable(conn)) {
-				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateConsistentColumnGeneration());
-			}
-
-			if (!isLastSyncDateColumnExistOnTable(conn)) {
-				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateLastSyncDateColumnCreation());
-			}
-
-			/*if (!isUuidColumnExistOnTable(conn)) {
-				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateUuidColumnCreation());
-			}*/
-
-			if (!isOriginRecordIdColumnExistOnTable(conn)) {
-				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateOriginRecordIdColumnGeneration());
-			}
-
-			if (!isDateChangedColumnExistOnTable(conn)) {
-				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateDateChangedColumnGeneration());
-			}
-
-			if (!isOriginAppLocationCodeColumnExistsOnTable(conn)) {
-				newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-				newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateOriginAppLocationCodeColumnGeneration());
-			}
-			
-			
-			String uniqueOrigin = "";
-			
-			if (!isUniqueOriginConstraintsExists(conn)) {
-				uniqueOrigin = "UNIQUE KEY " + generateUniqueOriginConstraintsName() + "(origin_record_id, origin_app_location_code)";
-			}
-			
-			String batch = "";
-			
-			if (utilities.stringHasValue(newColumnDefinition)) {
-				batch = "ALTER TABLE " + this.getTableName() + " ADD (" + newColumnDefinition + ")"; 
-			}
-			
-			if (utilities.stringHasValue(uniqueOrigin)) {
-				batch +=  (!utilities.stringHasValue(batch) ? "ALTER TABLE " + this.getTableName() + " ADD " + uniqueOrigin : ", ADD " + uniqueOrigin); 
-			}
+		String newColumnDefinition = "";
 		
-			if (utilities.stringHasValue(batch)) {
-				logInfo("CONF COLUMNS FOR TABLE [" + this.tableName + "] CREATED");
-				BaseDAO.executeBatch(conn, batch);
-				logInfo("CREATING CONF COLUMNS FOR TABLE [" + this.tableName + "]");
-			}
+		if (mustCreateStageSchemaElements() && !existRelatedExportStageTable(conn)) {
+			logInfo("GENERATING RELATED STAGE TABLE FOR [" + this.tableName + "]");
 			
-			/*
-			if (!isIndexOnFirtExportDoneColumn(conn)) {
-				createIndexOnFirstExportDoneCOlumn(conn);
-			}*/
+			createRelatedExportStageTable(conn);
 			
-			if (!isExistRelatedTriggers(conn)) {
-				logInfo("CREATING RELATED TRIGGERS FOR [" + this.tableName + "]");
-				
-				createLastUpdateDateMonitorTrigger(conn);
+			logInfo("RELATED STAGE TABLE FOR [" + this.tableName + "] GENERATED");
 			
-				logInfo("RELATED TRIGGERS FOR [" + this.tableName + "] CREATED");
-			}
+		}
+		
+		/*if (!isFirstExportDoneColumnExistsOnTable(conn)) {
+			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateFirstExportColumnGeneration());
+		}*/
+		
+		if (!isConsistentColumnExistOnTable(conn)) {
+			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateConsistentColumnGeneration());
+		}
+
+		if (!isLastSyncDateColumnExistOnTable(conn)) {
+			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateLastSyncDateColumnCreation());
+		}
+
+		/*if (!isUuidColumnExistOnTable(conn)) {
+			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateUuidColumnCreation());
+		}*/
+
+		if (!isOriginRecordIdColumnExistOnTable(conn)) {
+			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateOriginRecordIdColumnGeneration());
+		}
+
+		if (!isDateChangedColumnExistOnTable(conn)) {
+			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateDateChangedColumnGeneration());
+		}
+
+		if (!isOriginAppLocationCodeColumnExistsOnTable(conn)) {
+			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
+			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateOriginAppLocationCodeColumnGeneration());
+		}
+		
+		
+		String uniqueOrigin = "";
+		
+		if (!isUniqueOriginConstraintsExists(conn)) {
+			uniqueOrigin = "UNIQUE KEY " + generateUniqueOriginConstraintsName() + "(origin_record_id, origin_app_location_code)";
+		}
+		
+		String batch = "";
+		
+		if (utilities.stringHasValue(newColumnDefinition)) {
+			batch = "ALTER TABLE " + this.getTableName() + " ADD (" + newColumnDefinition + ")"; 
+		}
+		
+		if (utilities.stringHasValue(uniqueOrigin)) {
+			batch +=  (!utilities.stringHasValue(batch) ? "ALTER TABLE " + this.getTableName() + " ADD " + uniqueOrigin : ", ADD " + uniqueOrigin); 
+		}
+	
+		if (utilities.stringHasValue(batch)) {
+			logInfo("CONF COLUMNS FOR TABLE [" + this.tableName + "] CREATED");
+			BaseDAO.executeBatch(conn, batch);
+			logInfo("CREATING CONF COLUMNS FOR TABLE [" + this.tableName + "]");
+		}
+		
+		/*
+		if (!isIndexOnFirtExportDoneColumn(conn)) {
+			createIndexOnFirstExportDoneCOlumn(conn);
+		}*/
+		
+		if (!isExistRelatedTriggers(conn)) {
+			logInfo("CREATING RELATED TRIGGERS FOR [" + this.tableName + "]");
 			
-			conn.markAsSuccessifullyTerminected();
-		} 
-		finally {
-			conn.finalizeConnection();
+			createLastUpdateDateMonitorTrigger(conn);
+		
+			logInfo("RELATED TRIGGERS FOR [" + this.tableName + "] CREATED");
 		}
 	}
 
@@ -504,7 +471,7 @@ public class SyncTableInfo {
 		st.close();
 	}*/
 
-	private void createRelatedExportStageTable() {
+	private void createRelatedExportStageTable(Connection conn) {
 		String sql = "";
 
 		sql += "CREATE TABLE " + getSyncStageSchema() + "." + generateRelatedStageTableName() + "(\n";
@@ -522,23 +489,17 @@ public class SyncTableInfo {
 		sql += ")\n";
 		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";
 		
-		OpenConnection conn = openConnection();
-
 		try {
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
 			st.executeBatch();
 
 			st.close();
-
-			conn.markAsSuccessifullyTerminected();
 		} catch (SQLException e) {
 			e.printStackTrace();
 
 			throw new RuntimeException(e);
-		} finally {
-			conn.finalizeConnection();
-		}
+		} 
 	}
 	
 	public boolean mustCreateStageSchemaElements() {
@@ -557,9 +518,7 @@ public class SyncTableInfo {
 		return getSyncStageSchema() + "." + generateRelatedStageTableName();
 	}
 	
-	private boolean existRelatedExportStageTable() {
-		OpenConnection conn = openConnection();
-
+	private boolean existRelatedExportStageTable(Connection conn) {
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = generateRelatedStageTableName();
@@ -570,9 +529,6 @@ public class SyncTableInfo {
 			e.printStackTrace();
 
 			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
 		}
 	}
 
@@ -602,7 +558,7 @@ public class SyncTableInfo {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "date_changed", conn);
 	}
 
-	private void createLastUpdateDateMonitorTrigger(OpenConnection conn) throws SQLException {
+	private void createLastUpdateDateMonitorTrigger(Connection conn) throws SQLException {
 		Statement st = conn.createStatement();
 
 		st.addBatch(generateTriggerCode(this.generateLastUpdateDateInsertTriggerMonitor(), "INSERT"));
@@ -629,7 +585,7 @@ public class SyncTableInfo {
 		return sql;
 	}
 
-	private boolean isExistRelatedTriggers(OpenConnection conn) throws SQLException {
+	private boolean isExistRelatedTriggers(Connection conn) throws SQLException {
 		return DBUtilities.isResourceExist(conn.getCatalog(), DBUtilities.RESOURCE_TYPE_TRIGGER,
 				generateLastUpdateDateInsertTriggerMonitor(), conn);
 	}
@@ -678,8 +634,8 @@ public class SyncTableInfo {
 		return utilities.convertTableAttNameToClassAttName(tableAttName);
 	}
 	
-	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName) {
-		for (ParentRefInfo  parent : this.getParentRefInfo()) {
+	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
+		for (ParentRefInfo  parent : this.getParentRefInfo(conn)) {
 			if (parent.getReferenceColumnAsClassAttName().equals(parentAttName)) {
 				return parent.isIgnorable();
 			}
@@ -701,23 +657,25 @@ public class SyncTableInfo {
 		utilities.logDebug(msg, logger);
 	}
 
+	/*
 	public int getQtyRecordsPerEngine(String operationType) {
 		return this.qtyRecordsPerEngine != 0 ? this.qtyRecordsPerEngine : getRelatedSyncTableInfoSource().getDefaultQtyRecordsPerEngine(operationType);
-	}
+	}*/
+	
 
 	public boolean isFullLoaded() {
 		return fullLoaded;
 	}
 	
-	public synchronized void fullLoad() {
-		getParentRefInfo();
-		getChildRefInfo();
+	public synchronized void fullLoad(Connection conn) {
+		getParentRefInfo(conn);
+		getChildRefInfo(conn);
 		
 		this.fullLoaded = true;
 	}
 
-	public ParentRefInfo getSharedKeyRefInfo() {
-		for (ParentRefInfo refInfo : getParentRefInfo()) {
+	public ParentRefInfo getSharedKeyRefInfo(Connection conn) {
+		for (ParentRefInfo refInfo : getParentRefInfo(conn)) {
 			if (refInfo.isSharedPk()) return refInfo;
 		}
 			
@@ -726,14 +684,14 @@ public class SyncTableInfo {
 
 	@Override
 	public String toString() {
-		return "Table [name:" + this.tableName + ", pk: " + getPrimaryKey()+"]";
+		return "Table [name:" + this.tableName + ", pk: " + this.primaryKey +"]";
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) return false;
-		if (!(obj instanceof SyncTableInfo)) return false;
+		if (!(obj instanceof SyncTableConfiguration)) return false;
 		
-		return this.getTableName().equalsIgnoreCase(((SyncTableInfo)obj).getTableName());
+		return this.getTableName().equalsIgnoreCase(((SyncTableConfiguration)obj).getTableName());
 	}
 }

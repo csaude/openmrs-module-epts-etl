@@ -1,44 +1,33 @@
 package org.openmrs.module.eptssync.consolitation.engine;
 
+import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.eptssync.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.eptssync.consolitation.model.DatabaseIntegrityConsolidationSearchParams;
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.engine.SyncEngine;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
-public class DatabaseIntegrityConsolidationEngine extends SyncEngine {
+public class DatabaseIntegrityConsolidationEngine extends Engine {
 	
-	public DatabaseIntegrityConsolidationEngine(SyncTableInfo syncTableInfo, RecordLimits limits, DatabaseIntegrityConsolidationController syncController) {
-		super(syncTableInfo, limits, syncController);
+	public DatabaseIntegrityConsolidationEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+		super(monitor, limits);
 	}
 
 	@Override	
-	public List<SyncRecord> searchNextRecords(){
-		OpenConnection conn = openConnection();
-		
-		try {
-			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
-		} catch (DBException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
-		}
+	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
+		return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override
-	public DatabaseIntegrityConsolidationController getSyncController() {
-		return (DatabaseIntegrityConsolidationController) super.getSyncController();
+	public DatabaseIntegrityConsolidationController getRelatedOperationController() {
+		return (DatabaseIntegrityConsolidationController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -46,25 +35,16 @@ public class DatabaseIntegrityConsolidationEngine extends SyncEngine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords) {
+	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
 		List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
 		
-		OpenConnection conn = openConnection();
-	
-		this.syncController.logInfo("CONSOLIDATING INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName());
+		this.getMonitor().logInfo("CONSOLIDATING INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName());
 		
 		for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
-			try {
-				obj.consolidateData(getSyncTableInfo(), conn);
-			} 
-			catch (DBException e) {
-				e.printStackTrace();
-			
-				throw new RuntimeException(e);
-			}
+			obj.consolidateData(getSyncTableInfo(), conn);
 		}
 			
-		this.syncController.logInfo("INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " CONSOLIDATED!");
+		this.getMonitor().logInfo("INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " CONSOLIDATED!");
 	}
 	
 	@Override
@@ -72,9 +52,9 @@ public class DatabaseIntegrityConsolidationEngine extends SyncEngine {
 	}
 
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DatabaseIntegrityConsolidationSearchParams(this.syncTableInfo, limits);
-		searchParams.setQtdRecordPerSelected(getSyncTableInfo().getQtyRecordsPerSelect(getSyncController().getOperationType()));
+	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends SyncRecord> searchParams = new DatabaseIntegrityConsolidationSearchParams(this.getSyncTableInfo(), limits, conn);
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 	
 		return searchParams;
 	}

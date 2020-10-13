@@ -3,17 +3,17 @@ package org.openmrs.module.eptssync.export.controller;
 import java.io.File;
 import java.io.IOException;
 
-import org.openmrs.module.eptssync.controller.AbstractSyncController;
-import org.openmrs.module.eptssync.controller.conf.SyncConfig;
+import org.openmrs.module.eptssync.controller.OperationController;
+import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.engine.SyncEngine;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.export.engine.ExportSyncEngine;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -24,18 +24,19 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  *
  */
-public class SyncExportController extends AbstractSyncController {
-	public SyncExportController(SyncConfig syncConfig) {
-		super(syncConfig);
+public class SyncExportController extends OperationController {
+	
+	public SyncExportController(ProcessController processController, SyncOperationConfig operationConfig) {
+		super(processController, operationConfig);
 	}
 
 	@Override
-	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) {
-		return new ExportSyncEngine(syncInfo, limits, this);
+	public Engine initRelatedEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+		return new ExportSyncEngine(monitor, limits);
 	}
 
 	@Override
-	protected long getMinRecordId(SyncTableInfo tableInfo) {
+	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -55,7 +56,7 @@ public class SyncExportController extends AbstractSyncController {
 	}
 
 	@Override
-	protected long getMaxRecordId(SyncTableInfo tableInfo) {
+	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -74,7 +75,7 @@ public class SyncExportController extends AbstractSyncController {
 		}
 	}
 	
-	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableInfo tableInfo, int startRecord, int lastRecord) throws IOException {
+	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, int startRecord, int lastRecord) throws IOException {
 		String fileName = "";
 		//String fileSufix = "00";
 		
@@ -91,8 +92,14 @@ public class SyncExportController extends AbstractSyncController {
 		fileName += "_" + utilities().garantirXCaracterOnNumber(startRecord, 10);
 		fileName += "_" + utilities().garantirXCaracterOnNumber(lastRecord, 10);
 	
-		if(new File(fileName).exists() || new File(fileName+".json").exists()) {
-			throw new ForbiddenOperationException("The file '" + fileName + "' is already exists!!!");
+		if(new File(fileName).exists() ) {
+			logInfo("The file '" + fileName + "' is already exists!!! Removing it...");
+			new File(fileName).delete();
+		}
+		
+		if(new File(fileName+".json").exists() ) {
+			logInfo("The file '" + fileName  + ".json' is already exists!!! Removing it...");
+			new File(fileName+".json").delete();
 		}
 		
 		/*

@@ -2,14 +2,15 @@ package org.openmrs.module.eptssync.transport.engine;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.engine.SyncEngine;
+import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
+import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
 import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.transport.model.TransportRecord;
 import org.openmrs.module.eptssync.transport.model.TransportSyncFilesSearchParams;
@@ -26,21 +27,20 @@ import org.openmrs.module.eptssync.transport.model.TransportSyncFilesSearchParam
  * 
  * @author jpboane
  */
-public class TransportSyncFilesEngine extends SyncEngine {
+public class TransportSyncFilesEngine extends Engine {
 
-	public TransportSyncFilesEngine(SyncTableInfo syncTableInfo, RecordLimits limits,
-			SyncTransportController syncController) {
-		super(syncTableInfo, limits, syncController);
+	public TransportSyncFilesEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+		super(monitor, limits);
 	}
 
 	@Override
 	protected void restart() {
 	}
 	@Override
-	public void performeSync(List<SyncRecord> migrationRecords) {
+	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) {
 		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords, TransportRecord.class);
 	
-		this.syncController.logInfo("COPYING  '"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " SORUCE FILES TO IMPORT AREA");
+		this.getMonitor().logInfo("COPYING  '"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " SORUCE FILES TO IMPORT AREA");
 		
 		
 		for (TransportRecord t : migrationRecordAsTransportRecord) {
@@ -48,11 +48,11 @@ public class TransportSyncFilesEngine extends SyncEngine {
 			t.moveToBackUpDirectory();
 		}
 	
-		this.syncController.logInfo("'"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " SORUCE FILES COPIED TO IMPORT AREA");
+		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " SORUCE FILES COPIED TO IMPORT AREA");
 	}
 
 	@Override
-	protected List<SyncRecord> searchNextRecords() {
+	protected List<SyncRecord> searchNextRecords(Connection conn) {
 		try {
 			File[] files = getSyncDirectory().listFiles(this.getSearchParams());
 			
@@ -78,28 +78,28 @@ public class TransportSyncFilesEngine extends SyncEngine {
 	}
 
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new TransportSyncFilesSearchParams(this.syncTableInfo);
+	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends SyncRecord> searchParams = new TransportSyncFilesSearchParams(getRelatedOperationController(), this.getSyncTableInfo(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
 
 		return searchParams;
 	}
 
 	private File getSyncBkpDirectory() throws IOException {
-		return SyncTransportController.getSyncBkpDirectory(getSyncTableInfo());
+		return getRelatedOperationController().getSyncBkpDirectory(getSyncTableInfo());
 	}
 
 	private File getSyncDestinationDirectory() throws IOException {
-		return SyncTransportController.getSyncDestinationDirectory(getSyncTableInfo());
+		return getRelatedOperationController().getSyncDestinationDirectory(getSyncTableInfo());
 	}
 
 	@Override
-	public SyncTransportController getSyncController() {
-		return (SyncTransportController) super.getSyncController();
+	public SyncTransportController getRelatedOperationController() {
+		return (SyncTransportController) super.getRelatedOperationController();
 	}
 
 	private File getSyncDirectory() {
-		return SyncTransportController.getSyncDirectory(getSyncTableInfo());
+		return getRelatedOperationController().getSyncDirectory(getSyncTableInfo());
 	}
 
 	@Override

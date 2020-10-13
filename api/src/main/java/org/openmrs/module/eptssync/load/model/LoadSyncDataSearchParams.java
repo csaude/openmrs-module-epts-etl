@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
@@ -18,21 +18,23 @@ import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchPa
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> implements FilenameFilter{
-	private SyncTableInfo tableInfo;
-	private RecordLimits limits;
 	
 	private String firstFileName;
 	private String lastFileName;
 	
 	private String fileNamePathern;
 	
-	public LoadSyncDataSearchParams(SyncTableInfo tableInfo, RecordLimits limits) {
-		this.tableInfo = tableInfo;
-		this.limits = limits;
+	private SyncDataLoadController controller;
 	
+	public LoadSyncDataSearchParams(SyncDataLoadController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
+		super(tableInfo, limits);
+		
+		this.controller = controller;
+	
+		
 		if (limits != null) {
-			this.firstFileName = tableInfo.getTableName() + "_" + limits.getFirstRecordId() + ".json"; 
-			this.lastFileName = tableInfo.getTableName() + "_" + limits.getLastRecordId() + ".json"; 
+			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getFirstRecordId(), 10) + ".json"; 
+			this.lastFileName = tableInfo.getTableName() + "_" +  utilities.garantirXCaracterOnNumber(limits.getLastRecordId(), 10) + ".json"; 
 		}
 	}
 	
@@ -74,10 +76,6 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 		}
 		
 		return  isJSON && isNotMinimal && isInInterval && pathernOk;
-	}
-	
-	private boolean hasLimits() {
-		return this.limits != null;
 	}
 
 	@Override
@@ -122,6 +120,6 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 	}
 
 	private File getSyncDirectory() {
-		return SyncDataLoadController.getSyncDirectory(tableInfo);
+		return this.controller.getSyncDirectory(tableInfo);
 	}
 }

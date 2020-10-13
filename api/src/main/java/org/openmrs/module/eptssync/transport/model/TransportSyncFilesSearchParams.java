@@ -4,18 +4,38 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.sql.Connection;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class TransportSyncFilesSearchParams extends SyncSearchParams<OpenMRSObject> implements FilenameFilter{
-	private SyncTableInfo tableInfo;
+	private String firstFileName;
+	private String lastFileName;
 	
-	public TransportSyncFilesSearchParams(SyncTableInfo tableInfo) {
-		this.tableInfo = tableInfo;
+	private String fileNamePathern;
+	private SyncTransportController controller;
+	
+	public TransportSyncFilesSearchParams(SyncTransportController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
+		super(tableInfo, limits);
+		
+		this.controller = controller;
+		
+		if (limits != null) {
+			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getFirstRecordId(), 10) + ".json"; 
+			this.lastFileName = tableInfo.getTableName() + "_" +  utilities.garantirXCaracterOnNumber(limits.getLastRecordId(), 10) + ".json"; 
+		}
+	}
+	
+	public String getFileNamePathern() {
+		return fileNamePathern;
+	}
+	
+	public void setFileNamePathern(String fileNamePathern) {
+		this.fileNamePathern = fileNamePathern;
 	}
 	
 	@Override
@@ -33,7 +53,20 @@ public class TransportSyncFilesSearchParams extends SyncSearchParams<OpenMRSObje
 		boolean isJSON = name.toLowerCase().endsWith("json");
 		boolean isNotMinimal = !name.toLowerCase().contains("minimal");
 		
-		return isJSON && isNotMinimal;
+		boolean isInInterval = true;
+		
+		if (hasLimits()) {
+			isInInterval = isInInterval && name.compareTo(this.firstFileName) >= 0;
+			isInInterval = isInInterval && name.compareTo(this.lastFileName) <= 0;
+		}
+		
+		boolean pathernOk = true;
+		
+		if (utilities.stringHasValue(this.fileNamePathern)) {
+			pathernOk = name.contains(this.fileNamePathern);
+		}
+		
+		return  isJSON && isNotMinimal && isInInterval && pathernOk;
 	}
 	
 	@Override
@@ -51,6 +84,6 @@ public class TransportSyncFilesSearchParams extends SyncSearchParams<OpenMRSObje
 	}
 
 	private File getSyncDirectory() {
-		return SyncDataLoadController.getSyncDirectory(tableInfo);
+		return controller.getSyncDirectory( tableInfo);
 	}
 }

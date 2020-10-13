@@ -3,11 +3,10 @@ package org.openmrs.module.eptssync.model.openmrs.generic;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class OpenMRSObjectDAO extends BaseDAO {
 	public static void refreshLastSyncDate(OpenMRSObject syncRecord, Connection conn) throws DBException{
@@ -123,7 +122,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		}
 	}
 
-	public static OpenMRSObject getFirstRecord(SyncTableInfo tableInfo, Connection conn) throws DBException {
+	public static OpenMRSObject getFirstRecord(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		String sql = "";
 		
 		OpenMRSObject obj = utilities.createInstance(tableInfo.getRecordClass());
@@ -148,7 +147,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		return find(tableInfo.getRecordClass(), sql, null, conn);
 	}
 	
-	public static OpenMRSObject getLastRecord(SyncTableInfo tableInfo,  Connection conn) throws DBException {
+	public static OpenMRSObject getLastRecord(SyncTableConfiguration tableInfo,  Connection conn) throws DBException {
 		String sql = "";
 		
 		OpenMRSObject obj = utilities.createInstance(tableInfo.getRecordClass());
@@ -218,7 +217,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		return search(clazz, sql, params, conn);
 	}
 
-	public static void insertAll(List<OpenMRSObject> objects, OpenConnection conn) throws DBException {
+	public static void insertAll(List<OpenMRSObject> objects, Connection conn) throws DBException {
 		String sql = "";
 		sql += objects.get(0).getInsertSQL().split("VALUES")[0];
 		sql += " VALUES";

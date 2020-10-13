@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
@@ -121,7 +121,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 	
 	@Override
-	public void consolidateData(SyncTableInfo tableInfo, Connection conn) throws DBException{
+	public void consolidateData(SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 		Map<ParentRefInfo, Integer> missingParents = loadMissingParents(tableInfo, conn);
 		
 		boolean missingNotIgnorableParent = false;
@@ -154,11 +154,11 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		}
 	}
 	
-	protected  SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableInfo tableInfo, Connection conn) throws DBException {
+	protected  SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		return SyncImportInfoDAO.retrieveFromOpenMRSObject(tableInfo, this, conn);
 	}
 
-	public void removeDueInconsistency(SyncTableInfo syncTableInfo, Map<ParentRefInfo, Integer> missingParents, Connection conn) throws DBException{
+	public void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<ParentRefInfo, Integer> missingParents, Connection conn) throws DBException{
 		SyncImportInfoVO syncInfo = this.retrieveRelatedSyncInfo(syncTableInfo, conn);
 		
 		syncInfo.markAsFailedToMigrate(syncTableInfo, generateMissingInfo(missingParents), conn);
@@ -167,7 +167,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		
 		BaseDAO.commit(conn);
 		
-		for (ParentRefInfo refInfo: syncTableInfo.getChildRefInfo()) {
+		for (ParentRefInfo refInfo: syncTableInfo.getChildRefInfo(conn)) {
 			
 			if (!refInfo.isMetadata()) {
 				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferenceClass(), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
@@ -189,10 +189,10 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		OpenMRSObjectDAO.markAsConsistent(this, conn);
 	}
 
-	private Map<ParentRefInfo, Integer>  loadMissingParents(SyncTableInfo tableInfo, Connection conn) throws DBException{
+	private Map<ParentRefInfo, Integer>  loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 		Map<ParentRefInfo, Integer> missingParents = new HashMap<ParentRefInfo, Integer>();
 		
-		for (ParentRefInfo refInfo: tableInfo.getParentRefInfo()) {
+		for (ParentRefInfo refInfo: tableInfo.getParentRefInfo(conn)) {
 			 int parentId = getParentValue(refInfo.getReferenceColumnAsClassAttName());
 				 
 			try {

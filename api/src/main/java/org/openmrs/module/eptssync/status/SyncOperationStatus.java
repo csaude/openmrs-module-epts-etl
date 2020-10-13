@@ -1,6 +1,6 @@
 package org.openmrs.module.eptssync.status;
 
-import org.openmrs.module.eptssync.controller.AbstractSyncController;
+import org.openmrs.module.eptssync.controller.OperationController;
 
 /**
  * This class represent the current status of hole synchronization process. It can pass the status or receive inputs to the synchronization process
@@ -22,14 +22,14 @@ public class SyncOperationStatus {
 	private boolean requestedStopAllEngines;
 	private String lastMsgFromController;
 	
-	private AbstractSyncController syncController;
+	private OperationController syncController;
 	
-	public SyncOperationStatus(AbstractSyncController syncController){
+	public SyncOperationStatus(OperationController syncController){
 		this.syncController = syncController;
 		
 		this.status = STATUS_NOT_INITIALIZED;
 		
-		this.id = this.syncController.getOperationType() + "_" + this.syncController.getSyncConfig().getDesignation();
+		this.id = this.syncController.getControllerId();
 	}
 	
 	public String getStatus() {

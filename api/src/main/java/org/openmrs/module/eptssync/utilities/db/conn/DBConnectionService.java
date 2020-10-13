@@ -16,6 +16,10 @@ import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
  *
  */
 public class DBConnectionService {
+	
+	static int openConnections;
+	static int closedConnections;
+	
 	private static final org.apache.log4j.Logger logger = Logger.getLogger(DBConnectionService.class);
 
 	private static List<DBConnectionService> services = new ArrayList<DBConnectionService>();
@@ -80,11 +84,28 @@ public class DBConnectionService {
 
 		return service;
 	}*/
-
+	
 	public OpenConnection openConnection() {
-		return new OpenConnection(openConnection(5), this);
+		OpenConnection conn = new OpenConnection(openConnection(5), this);
+		
+		//incriseOpenConnections();
+		return conn;
 	}
-
+	
+	/*
+	public synchronized static void incriseOpenConnections() {
+		openConnections++;
+		
+		logger.info("TOTAL Open Connections [" + openConnections + "] Closed [" + closedConnections + "] active [" + (openConnections - closedConnections) + "]");
+	}
+	
+	public synchronized static void increseClosedConnections() {
+		closedConnections++;
+		
+		logger.info("TOTAL Open Connections [" + openConnections + "] Closed [" + closedConnections + "] active [" + (openConnections - closedConnections) + "]");
+	}
+	*/
+	
 	public OpenConnection openConnection(String context) {
 		return openConnection(context, 10);
 	}

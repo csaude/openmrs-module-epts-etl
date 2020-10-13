@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.engine.SyncEngine;
+import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
 import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
@@ -16,11 +16,11 @@ import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
+import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
-public class LoadSyncDataEngine extends SyncEngine{
+public class LoadSyncDataEngine extends Engine{
 	private File currJSONSourceFile;
 	
 	/*
@@ -29,8 +29,8 @@ public class LoadSyncDataEngine extends SyncEngine{
 	private SyncJSONInfo currJSONInfo;
 	
 	
-	public LoadSyncDataEngine(SyncTableInfo syncTableInfo, RecordLimits limits, SyncDataLoadController syncController) {
-		super(syncTableInfo, limits, syncController);
+	public LoadSyncDataEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+		super(monitor, limits);
 	}
 	
 	@Override
@@ -38,42 +38,22 @@ public class LoadSyncDataEngine extends SyncEngine{
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> migrationRecords) {
-		/*if (this.currJSONInfo.getSyncRecords().hashCode() !=  migrationRecords.hashCode()) {
-			throw new ForbiddenOperationException("The migration record source differ from the current migration records");
-		}*/
+	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
+		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
 		
-		OpenConnection conn = openConnection();
+		//List<SyncImportInfoVO> syncImportInfo = SyncImportInfoVO.generateFromSyncRecord(migrationRecordAsOpenMRSObjects);
+	
+		this.getMonitor().logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " TO STAGING TABLE");
 		
-		try {
-			
-			List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
-			
-			//List<SyncImportInfoVO> syncImportInfo = SyncImportInfoVO.generateFromSyncRecord(migrationRecordAsOpenMRSObjects);
+		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSyncTableInfo(), conn);
 		
-			this.syncController.logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " TO STAGING TABLE");
-			
-			SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSyncTableInfo(), conn);
-			
-			this.syncController.logInfo("'"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " WROTE TO STAGING TABLE");
-			
-			this.syncController.logInfo("MOVING SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] TO BACKUP AREA.");
-			
-			moveSoureJSONFileToBackup();
-			
-			this.syncController.logInfo("SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] MOVED TO BACKUP AREA.");
-			
-			conn.markAsSuccessifullyTerminected();
-		} catch (DBException e) {
-			
-			getSyncController().logInfo("Error performing "+ currJSONInfo.getFileName());
-			e.printStackTrace();
+		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " WROTE TO STAGING TABLE");
 		
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
-		}
+		this.getMonitor().logInfo("MOVING SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] TO BACKUP AREA.");
+		
+		moveSoureJSONFileToBackup();
+		
+		this.getMonitor().logInfo("SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] MOVED TO BACKUP AREA.");
 	}
 
 	private void moveSoureJSONFileToBackup() {
@@ -105,11 +85,8 @@ public class LoadSyncDataEngine extends SyncEngine{
 		}
 	}
 	
-	
-
-	
 	@Override
-	protected List<SyncRecord> searchNextRecords() {
+	public List<SyncRecord> searchNextRecords(Connection conn) {
 		/*if (tmpPrintFiles()) {
 			return null;
 		}*/
@@ -117,6 +94,8 @@ public class LoadSyncDataEngine extends SyncEngine{
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
 		if (this.currJSONSourceFile == null) return null;
+		
+		getRelatedOperationController().logInfo("Loading content on JSON File "+ this.currJSONSourceFile.getAbsolutePath());
 		
 		try {
 			String json = new String(Files.readAllBytes(Paths.get(currJSONSourceFile.getAbsolutePath())));
@@ -127,6 +106,8 @@ public class LoadSyncDataEngine extends SyncEngine{
 			return utilities.parseList(this.currJSONInfo.getSyncInfo(), SyncRecord.class);
 			
 		} catch (Exception e) {
+			getRelatedOperationController().logInfo("Error performing "+ this.currJSONSourceFile.getAbsolutePath());
+			
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -165,30 +146,29 @@ public class LoadSyncDataEngine extends SyncEngine{
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new LoadSyncDataSearchParams(this.syncTableInfo, limits);
+	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends SyncRecord> searchParams = new LoadSyncDataSearchParams(getRelatedOperationController(), this.getSyncTableInfo(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
-		
 		//searchParams.setExtraCondition("obs_2020093011233502.json");
 		
 		return searchParams;
 	}
     
     private File getSyncBkpDirectory() throws IOException {
-    	String baseDirectory = SyncDataLoadController.getSyncBkpDirectory(getSyncTableInfo()).getAbsolutePath();
+    	String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSyncTableInfo()).getAbsolutePath();
     	
-    	return new File(baseDirectory + FileUtilities.getPathSeparator() + getSyncController().getAppOriginLocationCode());
+    	return new File(baseDirectory);
     }
     
     @Override
-    public SyncDataLoadController getSyncController() {
-    	return (SyncDataLoadController) super.getSyncController();
+    public SyncDataLoadController getRelatedOperationController() {
+    	return (SyncDataLoadController) super.getRelatedOperationController();
     }
     
     private File getSyncDirectory() {
-    	String baseDirectory = SyncDataLoadController.getSyncDirectory(getSyncTableInfo()).getAbsolutePath();
+    	String baseDirectory = getRelatedOperationController().getSyncDirectory(getSyncTableInfo()).getAbsolutePath();
     	
-    	return new File(baseDirectory + FileUtilities.getPathSeparator() + getSyncController().getAppOriginLocationCode());
+    	return new File(baseDirectory);
     }
 
 	@Override

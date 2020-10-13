@@ -4,14 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.openmrs.module.eptssync.controller.AbstractSyncController;
-import org.openmrs.module.eptssync.controller.conf.SyncConfig;
+import org.openmrs.module.eptssync.controller.OperationController;
+import org.openmrs.module.eptssync.controller.ProcessController;
+import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.engine.SyncEngine;
+import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.load.engine.LoadSyncDataEngine;
 import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
+import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 /**
@@ -22,13 +24,14 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  *
  */
-public class SyncDataLoadController extends AbstractSyncController {
+public class SyncDataLoadController extends OperationController {
 	
 	//The data origin site
 	private String appOriginLocationCode;
 
-	public SyncDataLoadController(SyncConfig syncConfig, String appOriginLocationCode) {
-		super(syncConfig);
+	public SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+		super(processController, operationConfig);
+		
 		
 		this.appOriginLocationCode = appOriginLocationCode;
 	}
@@ -38,13 +41,13 @@ public class SyncDataLoadController extends AbstractSyncController {
 	}
 	
 	@Override
-	public SyncEngine initRelatedEngine(SyncTableInfo syncInfo, RecordLimits limits) {
-		return new LoadSyncDataEngine(syncInfo, limits, this);
+	public Engine initRelatedEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+		return new LoadSyncDataEngine(monitor, limits);
 	}
 
 	@Override
-	protected long getMinRecordId(SyncTableInfo tableInfo) {
-		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(tableInfo, null);
+	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, tableInfo, null);
 		
 		File[] files = getSyncDirectory(tableInfo).listFiles(searchParams);
 	    
@@ -54,16 +57,16 @@ public class SyncDataLoadController extends AbstractSyncController {
 		
 		File firstFile = files[0];
 		
-		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_SEQNAME.JSON
+		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_FIRSTRECORDID_LASTRECORDID.JSON
 		
 		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(firstFile.getName()).split("_");
 		
-		return Long.parseLong(pats[pats.length - 1]);
+		return Long.parseLong(pats[pats.length - 2]);
 	}
 
 	@Override
-	protected long getMaxRecordId(SyncTableInfo tableInfo) {
-		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(tableInfo, null);
+	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, tableInfo, null);
 		
 		File[] files = getSyncDirectory(tableInfo).listFiles(searchParams);
 	    
@@ -71,16 +74,16 @@ public class SyncDataLoadController extends AbstractSyncController {
 		
 		Arrays.sort(files);
 		
-		File firstFile = files[files.length -1];
+		File lastFile = files[files.length -1];
 		
-		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_SEQNAME.JSON
+		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_FIRSTRECORDID_LASTRECORDID.JSON
 		
-		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(firstFile.getName()).split("_");
+		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(lastFile.getName()).split("_");
 		
 		return Long.parseLong(pats[pats.length - 1]);
 	}
 	
-    public static File getSyncDirectory(SyncTableInfo syncInfo) {
+    public File getSyncDirectory(SyncTableConfiguration syncInfo) {
     	String fileName = "";
 
 		fileName += syncInfo.getRelatedSyncTableInfoSource().getSyncRootDirectory();
@@ -89,12 +92,15 @@ public class SyncDataLoadController extends AbstractSyncController {
 		fileName += "import";
 		fileName += FileUtilities.getPathSeparator();
 		
+		fileName += this.appOriginLocationCode;
+		fileName += FileUtilities.getPathSeparator();
+		
 		fileName += syncInfo.getTableName();
  
 		return new File(fileName);
     }
     
-    public static File getSyncBkpDirectory(SyncTableInfo syncInfo) throws IOException {
+    public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
      	String fileName = "";
 
 		fileName += syncInfo.getRelatedSyncTableInfoSource().getSyncRootDirectory();
@@ -103,11 +109,13 @@ public class SyncDataLoadController extends AbstractSyncController {
 		fileName += "import_bkp";
 		fileName += FileUtilities.getPathSeparator();
 		
+		fileName += this.appOriginLocationCode;
+		fileName += FileUtilities.getPathSeparator();
+		
 		fileName += syncInfo.getTableName();
  
 		File bkpDirectory = new File(fileName);
     	
-		
 		if (!bkpDirectory.exists()) {
 			FileUtilities.tryToCreateDirectoryStructure(bkpDirectory.getAbsolutePath());
 		}
@@ -117,7 +125,7 @@ public class SyncDataLoadController extends AbstractSyncController {
 
 	@Override
 	public boolean mustRestartInTheEnd() {
-		return true;
+		return isParallelModeProcessing() ? true : false;
 	}
 
 	@Override
@@ -125,7 +133,7 @@ public class SyncDataLoadController extends AbstractSyncController {
 		return SyncOperationConfig.SYNC_OPERATION_LOAD;
 	}
 
-	public static String[] discoveryAllAvaliableOrigins(SyncConfig syncConfig) {
+	public static String[] discoveryAllAvaliableOrigins(SyncConfiguration syncConfig) {
 		String roootyncImportDirectory = "";
 		roootyncImportDirectory += syncConfig.getSyncRootDirectory();
 		roootyncImportDirectory += FileUtilities.getPathSeparator();

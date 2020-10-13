@@ -1,192 +1,209 @@
 {
+	installationType: "destination",
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
+	mustCreateStageSchemaElements:true,
 	syncStageSchema: "sync_import_stage",
-	originAppLocationCode: "ZBZ_PEBANE",
-	defaultQtyRecordsPerSelect: 2500,
+	originAppLocationCode: "CENTRAL_DB",
 	firstExport: true,
-	defaultQtyProcessingEngine: 1,
-	doIntegrityCheckInTheEnd: true,
-	mustRecompileTable: true,
+	mustCreateClasses: false,
+	mustRecompileTable: false,
+	classpackage: "destinationpkg",
+	automaticStart: false,
+	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
-	bkpConn:{
-			connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch"
-	},
-	syncTableInfo:[
+	
+	operations: [
+		
+		{
+			operationType: "load",
+			maxRecordPerProcessing: 25000,
+			maxSupportedEngines: 30,
+			minRecordsPerEngine: 1000,
+			disabled: false,
+			processingMode: "sequencial",
+			
+			child:{
+				operationType: "synchronization",
+				maxRecordPerProcessing: 25000,
+				maxSupportedEngines: 30,
+				minRecordsPerEngine: 1000,
+				doIntegrityCheckInTheEnd: true,
+				disabled: false,
+				processingMode: "sequencial",
+				
+				child: {
+					operationType: "consolidation",
+					maxRecordPerProcessing: 25000,
+					maxSupportedEngines: 30,
+					minRecordsPerEngine: 1000,
+					doIntegrityCheckInTheEnd: true,
+					processingMode: "sequencial"
+				}
+			}
+		}
+	],
+
+	tablesConfigurations:[
 		  
 				{	
 					tableName: "users",
 					parents: ["person", "users"],
-					mustRecompileTable: true,
-					qtyRecordsPerSelect: 1000
+					mustRecompileTable: false				
 				},
 		
 				{
 					tableName: "location",
 					parents: ["users", "location"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
 				},
 		
 				{
 					tableName: "person",
 					parents: ["users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "person_address",
 					parents: ["person", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "person_attribute",
 					parents: ["person", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "person_name",
 					parents: ["person", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "relationship",
 					parents: ["person", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "patient",
 					sharePkWith: "person",
 					parents: ["person", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "patient_identifier",
 					parents: ["patient", "location", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "patient_program",
 					parents: ["patient", "location", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "patient_state",
 					parents: ["patient_program", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "visit",
 					parents: ["patient", "location", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "visit_attribute",
 					parents: ["visit", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				{
 					tableName: "encounter",
 					parents: ["patient", "location", "users", "visit"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "provider",
 					parents: ["person", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "encounter_provider",
 					parents: ["encounter", "users", "provider"],
-					mustRecompileTable: true					
+					mustRecompileTable: false					
 				},
 				
 				{
 					tableName: "orders",
 					parents: ["encounter", "proverder", "orders", "patient", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "obs",
 					parents: ["person", "location", "orders", "obs", "users", "encounter"],
-					mustRecompileTable: true,
-					qtyProcessingEngine: 3,
-					qtyRecordsPerSelect: 50000
+					mustRecompileTable: false
 				},
 				
 				{
 					tableName: "note",
 					parents: ["encounter", "patient", "note", "users"],
-					mustRecompileTable: true
-				},
-				
-				{
-					tableName: "gaac",
-					parents: ["patient", "location", "users"],
-					mustRecompileTable: true
+					mustRecompileTable: false
 				},
 			
 				{
-					tableName: "gaac_member",
-					parents: ["patient", "gaac", "users"],
-					mustRecompileTable: true
-				},
-				
-				{
 					tableName: "concept_datatype",
 					parents: ["users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				 
 				{
 					tableName: "concept",
 					parents: ["users", "concept_classes", "concept_datatype"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				
 				{
 					tableName: "person_attribute_type",
 					parents: ["users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				 
 				{
 					tableName: "provider_attribute_type",
 					parents: ["users", "program_workflow"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				 
 				{
 					tableName: "program",
 					parents: ["users", "concept"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 			
 				{
 					tableName: "program_workflow",
 					parents: ["users", "program", "concept"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				
@@ -194,21 +211,21 @@
 				{
 					tableName: "program_workflow_state",
 					parents: ["users", "program_workflow", "concept"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				
 				{
 					tableName: "visit_type",
 					parents: ["users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				
 				{
 					tableName: "relationship_type",
 					parents: ["users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				},
 				
@@ -216,21 +233,7 @@
 				{
 					tableName: "patient_identifier_type",
 					parents: ["users"],
-					mustRecompileTable: true,
-					metadata: true
-				},
-				
-				{
-					tableName: "gaac_affinity_type",
-					parents: ["users"],
-					mustRecompileTable: true,
-					metadata: true
-				},
-				
-				{
-					tableName: "gaac_reason_leaving_type",
-					parents: ["users"],
-					mustRecompileTable: true,
+					mustRecompileTable: false,
 					metadata: true
 				}
 				

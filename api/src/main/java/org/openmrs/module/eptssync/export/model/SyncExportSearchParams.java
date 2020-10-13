@@ -2,7 +2,7 @@ package org.openmrs.module.eptssync.export.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
@@ -11,16 +11,12 @@ import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
-	private SyncTableInfo tableInfo;
-	
 	private boolean selectAllRecords;
-	private RecordLimits limits;
 	
-	public SyncExportSearchParams(SyncTableInfo tableInfo, RecordLimits limits) {
-		this.tableInfo = tableInfo;
-		this.limits = limits;
+	public SyncExportSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
+		super(tableInfo, limits);
 		
-		setOrderByFields(tableInfo.getPrimaryKey());
+		setOrderByFields(tableInfo.getPrimaryKey(conn));
 	}
 	
 	@Override
@@ -39,7 +35,7 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 			}
 		
 			if (limits != null) {
-				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
+				searchClauses.addToClauses(tableInfo.getPrimaryKey(conn) + " between ? and ?");
 				searchClauses.addToParameters(this.limits.getFirstRecordId());
 				searchClauses.addToParameters(this.limits.getLastRecordId());
 			}
@@ -59,7 +55,7 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		SyncExportSearchParams auxSearchParams = new SyncExportSearchParams(this.tableInfo, this.limits);
+		SyncExportSearchParams auxSearchParams = new SyncExportSearchParams(this.tableInfo, this.limits, conn);
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);

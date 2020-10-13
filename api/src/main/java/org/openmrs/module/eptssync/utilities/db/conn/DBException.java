@@ -2,8 +2,6 @@ package org.openmrs.module.eptssync.utilities.db.conn;
 
 import java.sql.SQLException;
 
-import org.openmrs.module.eptssync.model.base.BaseDAO;
-
 /**
  * Exception is thrown when any DB error occurs.
  * 
@@ -111,32 +109,6 @@ public class DBException extends SQLException
 		
 		System.err.println("WARNING: Nao foi possivel determinar a base de dados");
 		return false;
-	}
-	
-	public static void main(String[] args) throws DBException {
-		DBConnectionInfo info = new DBConnectionInfo();
-		info.setConnectionURI("jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch");
-		info.setDataBaseUserName("root");
-		info.setDataBaseUserPassword("root");
-		info.setDriveClassName("com.mysql.jdbc.Driver");
-		
-		DBConnectionService service = DBConnectionService.init(info);
-		
-		try {
-			BaseDAO.executeBatch(service.openConnection(), "insert into tmp(id) values(1), (1)");
-		} catch (DBException e) {
-			
-			String s = e.getLocalizedMessage().split("'")[1];
-			
-			System.out.println(s);
-			
-			if (e.isDuplicatePrimaryKeyException()) {
-				System.out.println("Duplicate!!!");
-			}
-			else System.out.println("Other error");
-			
-			//e.printStackTrace();
-		}
 	}
 	
 	/**

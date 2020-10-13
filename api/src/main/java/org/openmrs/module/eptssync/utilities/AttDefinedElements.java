@@ -1,7 +1,9 @@
 package org.openmrs.module.eptssync.utilities;
 
+import java.sql.Connection;
+
 import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 /**
@@ -37,13 +39,13 @@ public class AttDefinedElements {
 	
 	private boolean isObjectId;
 	private boolean isLast;
-	private SyncTableInfo syncTableInfo;
+	private SyncTableConfiguration syncTableInfo;
 	
-	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, SyncTableInfo syncTableInfo) {
+	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, SyncTableConfiguration syncTableInfo, Connection conn) {
 		this.dbAttName = dbAttName;
 		this.dbAttType = dbAttType;
 		
-		this.isObjectId = dbAttName.equalsIgnoreCase(syncTableInfo.getPrimaryKey());
+		this.isObjectId = dbAttName.equalsIgnoreCase(syncTableInfo.getPrimaryKey(conn));
 		
 		this.isLast = isLast;
 		this.syncTableInfo = syncTableInfo;
@@ -135,7 +137,7 @@ public class AttDefinedElements {
 	
 	
 
-	private void generateElemets() {
+	private void generateElemets(Connection conn) {
 		this.attType = convertMySQLTypeTOJavaType(dbAttType);
 		this.attName = convertTableAttNameToClassAttName(dbAttName);
 
@@ -147,12 +149,12 @@ public class AttDefinedElements {
 		String aspasAbrir = "\"\\\"\"+";
 		String aspasFechar = "+\"\\\"\"";
 		
-		if (!isObjectId || isSharedKey()) {
+		if (!isObjectId || isSharedKey(conn)) {
 			this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
 			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
 			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
 			
-			if (isForeignKey(dbAttName) && isNumeric()) {
+			if (isForeignKey(dbAttName, conn) && isNumeric()) {
 				this.sqlInsertParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
 				this.sqlUpdateParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
 				this.sqlInsertValues = "this." + attName + " == 0 ? null : this." + attName;
@@ -269,8 +271,8 @@ public class AttDefinedElements {
 		return utilities.isStringIn(attType, "int", "long", "byte", "short", "double", "float");
 	}
 
-	private boolean isSharedKey() {
-		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo()) {
+	private boolean isSharedKey(Connection conn) {
+		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo(conn)) {
 			if (parent.isSharedPk() && parent.getReferenceColumnAsClassAttName().equals(this.attName)) {
 				return true;
 			}
@@ -279,8 +281,8 @@ public class AttDefinedElements {
 		return false;
 	}
 
-	private boolean isForeignKey(String dbAttName) {
-		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo()) {
+	private boolean isForeignKey(String dbAttName, Connection conn) {
+		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo(conn)) {
 			if (parent.getReferenceColumnName().equalsIgnoreCase(dbAttName)) {
 				return true;
 			}
@@ -289,9 +291,9 @@ public class AttDefinedElements {
 		return false;
 	}
 
-	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast, SyncTableInfo syncTableInfo) {
-		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, syncTableInfo);
-		elements.generateElemets();
+	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast, SyncTableConfiguration syncTableInfo, Connection conn) {
+		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, syncTableInfo, conn);
+		elements.generateElemets(conn);
 		
 		return elements;
 	}

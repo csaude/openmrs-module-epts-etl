@@ -128,6 +128,8 @@ public class OpenConnection implements Connection, Closeable{
 			}
 			
 			connection.close();
+			
+			//DBConnectionService.increseClosedConnections();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			
