@@ -12,6 +12,7 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
+import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class Main {
 
@@ -20,8 +21,8 @@ public class Main {
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 
 	public static void main(String[] synConfigFiles) throws IOException {
-		if (synConfigFiles == null || synConfigFiles.length == 0) throw new ForbiddenOperationException("You must especify the source/destination config file. Eg. /sync/conf.json");
-
+		//if (true) throw new RuntimeException(getProjectPOJODirectory().getAbsolutePath());
+	
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);
 
 		if (countQtyDestination(syncConfigs) > 1) throw new ForbiddenOperationException("You must define only one destination file");
@@ -96,7 +97,6 @@ public class Main {
 	}
 
 	public static boolean isAllFinished(List<ProcessController> controllers) {
-		
 		for (ProcessController c : controllers) {
 			if (!c.isFinished() || c.getChildController() != null && !c.getChildController().isFinished()) {
 					return false;
@@ -104,5 +104,13 @@ public class Main {
 		}
 		
 		return true;
+	}
+	
+	public static File getProjectRoot() {
+		return new File(Main.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+	}
+	
+	public static File getProjectPOJODirectory() {
+		return new File(FileUtilities.getParent(getProjectRoot()).getAbsoluteFile() + "/epts-sync-pojo");
 	}
 }

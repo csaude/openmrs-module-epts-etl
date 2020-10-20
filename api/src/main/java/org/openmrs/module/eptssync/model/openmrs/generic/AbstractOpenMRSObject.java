@@ -170,7 +170,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		for (ParentRefInfo refInfo: syncTableInfo.getChildRefInfo(conn)) {
 			
 			if (!refInfo.isMetadata()) {
-				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferenceClass(), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
+				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferenceClass(conn), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
 				
 				for (OpenMRSObject child : children) {
 					child.consolidateData(refInfo.getReferenceTableInfo(), conn);
@@ -197,7 +197,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				 
 			try {
 				if (parentId != 0) {
-					OpenMRSObject parent = loadParent(refInfo.determineRelatedReferencedClass(), parentId, refInfo.isIgnorable(), conn);
+					OpenMRSObject parent = loadParent(refInfo.determineRelatedReferencedClass(conn), parentId, refInfo.isIgnorable(), conn);
 					 
 					 if (parent == null) {
 						missingParents.put(refInfo, parentId);

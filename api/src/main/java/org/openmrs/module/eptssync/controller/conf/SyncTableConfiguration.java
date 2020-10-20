@@ -1,5 +1,6 @@
 package org.openmrs.module.eptssync.controller.conf;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -29,9 +30,6 @@ public class SyncTableConfiguration {
 	private List<ParentRefInfo> parentRefInfo;
 	private List<ParentRefInfo> childRefInfo;
 	
-
-	private boolean mustRecompileTable;
-
 	private Class<OpenMRSObject> syncRecordClass;
 
 	private SyncConfiguration relatedSyncTableInfoSource;
@@ -52,11 +50,11 @@ public class SyncTableConfiguration {
 	}
 
 	public String getClasspackage() {
-		return getRelatedSyncTableInfoSource().getClasspackage();
+		return getRelatedSynconfiguration().getClasspackage();
 	}
 	
 	public boolean isDoIntegrityCheckInTheEnd(String operationType) {
-		return getRelatedSyncTableInfoSource().isDoIntegrityCheckInTheEnd(operationType);
+		return getRelatedSynconfiguration().isDoIntegrityCheckInTheEnd(operationType);
 	}
 	
 	/*
@@ -103,7 +101,7 @@ public class SyncTableConfiguration {
 	@JsonIgnore
 	public Class<OpenMRSObject> getSyncRecordClass(Connection conn) {
 		if (syncRecordClass == null) {
-			generateRecordClass(conn);
+			generateRecordClass(false, conn);
 		}
 		
 		return syncRecordClass;
@@ -113,7 +111,7 @@ public class SyncTableConfiguration {
 		this.syncRecordClass = syncRecordClass;
 	}
 
-	public SyncConfiguration getRelatedSyncTableInfoSource() {
+	public SyncConfiguration getRelatedSynconfiguration() {
 		return relatedSyncTableInfoSource;
 	}
 
@@ -198,7 +196,7 @@ public class SyncTableConfiguration {
 					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getReferenceTableInfo().getTableName(), ref.getReferenceColumnName(), conn));
 					
 					//Mark as metadata if there is no table info congigured
-					if (getRelatedSyncTableInfoSource().find(ref.getReferenceTableInfo()) == null) {
+					if (getRelatedSynconfiguration().find(ref.getReferenceTableInfo()) == null) {
 						ref.setMetadata(true);
 					}
 				
@@ -272,16 +270,18 @@ public class SyncTableConfiguration {
 		SyncTableConfiguration tableInfo = new SyncTableConfiguration();
 		tableInfo.setTableName(tableName);
 		tableInfo.setRelatedSyncTableInfoSource(sourceInfo);
-		tableInfo.setMustRecompileTable(sourceInfo.isMustRecompileTable());
+	
 		return tableInfo;
 	}
 
 	public Class<OpenMRSObject> getRecordClass() {
-		if (this.syncRecordClass == null) {
-			this.syncRecordClass = OpenMRSClassGenerator.tryToGetExistingCLass(this.generateFullClassName());
-		
-			if (this.syncRecordClass == null) throw new ForbiddenOperationException("No Sync Record Class found for: " + this.tableName);
-		}
+		String root = getRelatedSynconfiguration().getPojoProjectLocation().getAbsolutePath();
+
+		File destinationFileLocation = new File(root + "/bin/");
+
+		this.syncRecordClass = OpenMRSClassGenerator.tryToGetExistingCLass(destinationFileLocation, this.generateFullClassName());
+	
+		if (this.syncRecordClass == null) throw new ForbiddenOperationException("No Sync Record Class found for: " + this.tableName);
 		
 		return this.syncRecordClass; 
 	}
@@ -291,13 +291,18 @@ public class SyncTableConfiguration {
 	}
 	
 	public String getOriginAppLocationCode() {
-		return getRelatedSyncTableInfoSource().getOriginAppLocationCode();
+		return getRelatedSynconfiguration().getOriginAppLocationCode();
 	}
 
 	
-	public void generateRecordClass(Connection conn) {
+	public void generateRecordClass(boolean fullClass, Connection conn) {
 		try {
-			this.syncRecordClass = OpenMRSClassGenerator.generate(this, conn);
+			if (fullClass) {
+				this.syncRecordClass = OpenMRSClassGenerator.generate(this, conn);
+			}
+			else {
+				this.syncRecordClass = OpenMRSClassGenerator.generateSkeleton(this, conn);
+			}
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 
@@ -313,6 +318,26 @@ public class SyncTableConfiguration {
 		}
 	}
 
+	
+	public void generateSkeletonRecordClass(Connection conn) {
+		try {
+			this.syncRecordClass = OpenMRSClassGenerator.generateSkeleton(this, conn);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+	}
+
+	
 	public String generateClassName() {
 		return generateClassName(this.tableName);
 	}
@@ -329,16 +354,8 @@ public class SyncTableConfiguration {
 		return className + "VO";
 	}
 
-	public void setMustRecompileTable(boolean mustRecompileTable) {
-		this.mustRecompileTable = mustRecompileTable;
-	}
-
-	public boolean isMustRecompileTable() {
-		return mustRecompileTable;
-	}
-
 	public boolean mustRecompileTableClass() {
-		return isMustRecompileTable();
+		return getRelatedSynconfiguration().isMustRecompileTable();
 	}
 
 	public boolean isMetadata() {
@@ -503,7 +520,7 @@ public class SyncTableConfiguration {
 	}
 	
 	public boolean mustCreateStageSchemaElements() {
-		return getRelatedSyncTableInfoSource().mustCreateStageSchemaElements();
+		return getRelatedSynconfiguration().mustCreateStageSchemaElements();
 	}
 
 	public String generateRelatedStageTableName() {
@@ -511,7 +528,7 @@ public class SyncTableConfiguration {
 	}
 
 	public String getSyncStageSchema() {
-		return getRelatedSyncTableInfoSource().getSyncStageSchema();
+		return getRelatedSynconfiguration().getSyncStageSchema();
 	}
 
 	public String generateFullStageTableName() {

@@ -486,5 +486,8 @@ public class FileUtilities {
 	public static void copyFile(File source, File destination) throws IOException {
 		FileUtils.copyFile(source, destination);
 	}
-	
+
+	public static File getParent(File f) {
+		return f.getParentFile();
+	}
 }

@@ -1,5 +1,6 @@
 package org.openmrs.module.eptssync.controller.conf;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -129,66 +130,77 @@ public class ParentRefInfo {
 		this.sharedPk = sharedPk;
 	}
 
-	@SuppressWarnings("unchecked")
 	@JsonIgnore
-	public Class<OpenMRSObject> determineRelatedReferencedClass(){
-		try {
-			if (this.relatedReferencedClass != null) return this.relatedReferencedClass;
+	public Class<OpenMRSObject> determineRelatedReferencedClass(Connection conn) {
+		
+		if (this.referencedTableInfo == null) throw new ForbiddenOperationException("No referenced parent info defined!");
+		
+		String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + getReferencedTableInfo().getClasspackage() + "." + generateRelatedReferencedClassName();
 			
-			if (this.referencedTableInfo == null)
-				throw new ForbiddenOperationException("No referenced parent info defined!");
-
-			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + getReferencedTableInfo().getClasspackage() + "." + generateRelatedReferencedClassName();
-			
-			this.relatedReferencedClass = (Class<OpenMRSObject>) Class.forName(fullClassName);
-
-			return this.relatedReferencedClass;
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(e);
+		File targetLocation = new File(getReferencedTableInfo().getRelatedSynconfiguration().getPojoProjectLocation().getAbsolutePath() + "/bin");
+		
+		this.relatedReferencedClass = OpenMRSClassGenerator.tryToGetExistingCLass(targetLocation, fullClassName);
+		
+		if (this.relatedReferencedClass == null) {
+			generateRelatedReferencedClass(false, conn);
 		}
+		
+		if (this.relatedReferencedClass  == null) throw new RuntimeException("The class " + fullClassName + " could not be created");
+		
+		return this.relatedReferencedClass ;
 	}
 
-	@SuppressWarnings("unchecked")
 	@JsonIgnore
-	public Class<OpenMRSObject> determineRelatedReferenceClass(){
+	public Class<OpenMRSObject> determineRelatedReferenceClass(Connection conn) {
 		try {
-			if (this.relatedReferenceClass != null) return this.relatedReferenceClass;
-			
 			if (this.referenceTableInfo == null)
-				throw new ForbiddenOperationException("No reference parent info defined!");
+					throw new ForbiddenOperationException("No reference parent info defined!");
 
 			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + getReferenceTableInfo().getClasspackage() + "." + generateRelatedReferenceClassName();
 			
-			this.relatedReferenceClass = (Class<OpenMRSObject>) Class.forName(fullClassName);
+			File targetLocation = new File(getReferencedTableInfo().getRelatedSynconfiguration().getPojoProjectLocation().getAbsolutePath() + "/bin");
+			
+			this.relatedReferenceClass = OpenMRSClassGenerator.tryToGetExistingCLass(targetLocation, fullClassName);
 
-			return this.relatedReferenceClass;
-		} catch (ClassNotFoundException e) {
+			if (this.relatedReferenceClass == null) {
+				this.relatedReferenceClass = OpenMRSClassGenerator.generateSkeleton(getReferenceTableInfo(), conn);
+			}
+
+			if (this.relatedReferenceClass  == null) throw new RuntimeException("The class " + fullClassName + " could not be created");
+
+			return this.relatedReferenceClass ;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+		catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		}
 	}
 	
-	public boolean existsRelatedReferenceClass() {
+	public boolean existsRelatedReferenceClass(Connection conn) {
 		try {
-			return determineRelatedReferenceClass() != null;
+			return determineRelatedReferenceClass(conn) != null;
 		} catch (RuntimeException e) {
 			return false;
 		}
 	}
 	
-	public boolean existsRelatedReferencedClass() {
+	public boolean existsRelatedReferencedClass(Connection conn) {
 		try {
-			return determineRelatedReferencedClass() != null;
+			return determineRelatedReferencedClass(conn) != null;
 		} catch (RuntimeException e) {
 			return false;
 		}
 	}
 	
-	public String getReferencedClassFullName() {
-		return this.determineRelatedReferencedClass().getCanonicalName();
+	public String getReferencedClassFullName(Connection conn) throws ClassNotFoundException, IOException, SQLException {
+		return this.determineRelatedReferencedClass(conn).getCanonicalName();
 	}
 	
-	public String getReferenceClassFullName() {
-		return this.determineRelatedReferenceClass().getCanonicalName();
+	public String getReferenceClassFullName(Connection conn) throws ClassNotFoundException, IOException, SQLException {
+		return this.determineRelatedReferenceClass(conn).getCanonicalName();
 	}
 	
 	private String generateRelatedReferencedClassName() {
@@ -222,9 +234,15 @@ public class ParentRefInfo {
 					"REFERENCED[TABLE: " + this.referencedTableInfo.getTableName() + ", COLUMN: " + this.referencedColumnName + "]";
 	}
 
-	public void generateRelatedReferencedClass(Connection conn) {
+	public void generateRelatedReferencedClass(boolean fullClass, Connection conn) {
 		try {
-			this.relatedReferencedClass = OpenMRSClassGenerator.generate(this.getReferencedTableInfo(), conn);
+			
+			if (fullClass) {
+				this.relatedReferencedClass = OpenMRSClassGenerator.generate(this.getReferencedTableInfo(), conn);
+			}
+			else {
+				this.relatedReferencedClass = OpenMRSClassGenerator.generateSkeleton(this.getReferencedTableInfo(), conn);
+			}
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 
@@ -243,10 +261,15 @@ public class ParentRefInfo {
 		
 	}
 	
-	public void generateRelatedReferenceClass(Connection conn) {
+	public void generateRelatedReferenceClass(boolean fullClass, Connection conn) {
 		
 		try {
-			this.relatedReferenceClass = OpenMRSClassGenerator.generate(this.getReferenceTableInfo(), conn);
+			if (fullClass) {
+				this.relatedReferenceClass = OpenMRSClassGenerator.generate(this.getReferenceTableInfo(), conn);
+			}
+			else {
+				this.relatedReferenceClass = OpenMRSClassGenerator.generateSkeleton(this.getReferenceTableInfo(), conn);
+			}
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 
@@ -263,42 +286,10 @@ public class ParentRefInfo {
 	}
 	
 	public void generateSkeletonOfRelatedReferencedClass(Connection conn) {
-		try {
-			this.relatedReferencedClass = OpenMRSClassGenerator.generateSkeleton(this.getReferencedTableInfo(), conn);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		} catch (IOException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		}
-		finally {
-		}
-		
+		generateRelatedReferencedClass(false, conn);
 	}
 	
 	public void generateSkeletonRelatedReferenceClass(Connection conn) {
-		
-		try {
-			this.relatedReferenceClass = OpenMRSClassGenerator.generateSkeleton(this.getReferenceTableInfo(), conn);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		} catch (IOException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		}
+		generateRelatedReferenceClass(false, conn);
 	}
 }

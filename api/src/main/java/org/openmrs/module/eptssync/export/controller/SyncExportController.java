@@ -79,9 +79,9 @@ public class SyncExportController extends OperationController {
 		String fileName = "";
 		//String fileSufix = "00";
 		
-		fileName += tableInfo.getRelatedSyncTableInfoSource().getSyncRootDirectory();
+		fileName += tableInfo.getRelatedSynconfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		fileName += tableInfo.getRelatedSyncTableInfoSource().getOriginAppLocationCode().toLowerCase();
+		fileName += tableInfo.getRelatedSynconfiguration().getOriginAppLocationCode().toLowerCase();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += "export";
 		fileName += FileUtilities.getPathSeparator();

@@ -8,6 +8,7 @@ import java.util.List;
 
 import javax.ws.rs.ForbiddenException;
 
+import org.openmrs.module.eptssync.Main;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
@@ -325,5 +326,9 @@ public class SyncConfiguration {
 	
 	public boolean existsOnArray(List<SyncConfiguration> syncConfigs) {
 		return utilities.findOnArray(syncConfigs, this) != null;
-	}	
+	}
+
+	public File getPojoProjectLocation() {
+		return Main.getProjectPOJODirectory();
+	}
 }

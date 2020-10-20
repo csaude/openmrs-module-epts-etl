@@ -1,12 +1,13 @@
 {
 	installationType: "destination",
+	pojoProjectLocation: "/home/jpboane/working/prg/jee/workspace/w02/eptsync-openmrs-pojos",
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
 	mustCreateStageSchemaElements:true,
 	syncStageSchema: "sync_import_stage",
 	originAppLocationCode: "CENTRAL_DB",
 	firstExport: true,
-	mustCreateClasses: false,
-	mustRecompileTable: false,
+	mustCreateClasses: true,
+	mustRecompileTable: true,
 	classpackage: "destinationpkg",
 	automaticStart: false,
 	

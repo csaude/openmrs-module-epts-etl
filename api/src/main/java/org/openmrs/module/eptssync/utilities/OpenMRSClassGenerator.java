@@ -3,21 +3,26 @@ package org.openmrs.module.eptssync.utilities;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
+import org.apache.log4j.Logger;
+import org.openmrs.module.eptssync.Main;
 import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
@@ -29,15 +34,15 @@ public class OpenMRSClassGenerator {
 
 	public static Class<OpenMRSObject> generate(SyncTableConfiguration syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
 		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad(conn);
-		
-		Path root = Paths.get(".").normalize().toAbsolutePath();
 
-		File sourceFile = new File(root + "/src/main/java/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
-		File destinationFileLocation = new File(root + "/target/classes/");
+		String root = Main.getProjectPOJODirectory().getAbsolutePath();
+		
+		File sourceFile = new File(root + "/src/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
+		File destinationFileLocation = new File(root + "/bin/");
 		
 		String fullClassName = syncTableInfo.generateFullClassName();
 		
-		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName);
+		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(destinationFileLocation, fullClassName);
 			
 		if (existingCLass != null && !syncTableInfo.mustRecompileTableClass()) return existingCLass;
 	
@@ -108,6 +113,9 @@ public class OpenMRSClassGenerator {
 		
 		insertParamsDefinition += attElements.getSqlInsertParamDefinifion() + "};";
 		updateParamsDefinition += attElements.getSqlUpdateParamDefinifion();
+		
+		resultSetLoadDefinition += attElements.getResultSetLoadDefinition();
+		resultSetLoadDefinition += "\n";
 		
 		if (syncTableInfo.getPrimaryKey(conn) != null) {
 			updateParamsDefinition += ", this." + syncTableInfo.getPrimaryKeyAsClassAtt(conn) + "};"; 
@@ -216,7 +224,7 @@ public class OpenMRSClassGenerator {
 			methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
 			
 			methodFromSuperClass += "		parentOnDestination = loadParent(";
-			methodFromSuperClass += sharedKeyRefInfo.getReferencedClassFullName() + ".class,";
+			methodFromSuperClass += sharedKeyRefInfo.getReferencedClassFullName(conn) + ".class,";
 				
 			methodFromSuperClass += " this." +  sharedKeyRefInfo.getReferenceColumnAsClassAttName() + ", false, conn); \n";
 			methodFromSuperClass += "		return parentOnDestination.getObjectId();\n \n";
@@ -235,14 +243,14 @@ public class OpenMRSClassGenerator {
 		for(ParentRefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {
 			if (refInfo.isMetadata()) continue;
 			
-			if (!refInfo.existsRelatedReferencedClass()) {
+			if (!refInfo.existsRelatedReferencedClass(conn)) {
 				refInfo.generateSkeletonOfRelatedReferencedClass(conn);
 			}
 			
 			if (!refInfo.isNumericRefColumn()) methodFromSuperClass += "/*\n";
 			
 			methodFromSuperClass += "		parentOnDestination = loadParent(";
-			methodFromSuperClass += refInfo.getReferencedClassFullName() + ".class,";
+			methodFromSuperClass += refInfo.getReferencedClassFullName(conn) + ".class,";
 			
 			boolean ignorable = syncTableInfo.checkIfisIgnorableParentByClassAttName(refInfo.getReferenceColumnAsClassAttName(), conn);
 			
@@ -302,31 +310,33 @@ public class OpenMRSClassGenerator {
 		
 		classDefinition += "}";
 		
+		FileUtilities.tryToCreateDirectoryStructureForFile(sourceFile.getAbsolutePath());
+		
 		FileWriter writer = new FileWriter(sourceFile);
 
 		writer.write(classDefinition);
 
 		writer.close();
-
+		
 		compile(sourceFile, destinationFileLocation);
 		
 		st.close();
 		rs.close();
 				
-		return tryToGetExistingCLass(fullClassName);
+		return tryToGetExistingCLass(destinationFileLocation, fullClassName);
 	}
 	
 	public static Class<OpenMRSObject> generateSkeleton(SyncTableConfiguration syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
 		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad(conn);
 		
-		Path root = Paths.get(".").normalize().toAbsolutePath();
-
-		File sourceFile = new File(root + "/src/main/java/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
-		File destinationFileLocation = new File(root + "/target/classes/");
+		String root = Main.getProjectPOJODirectory().getAbsolutePath();
+			
+		File sourceFile = new File(root + "/src/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
+		File destinationFileLocation = new File(root + "/bin/");
 		
-		String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
+		String fullClassName = "org.openmrs.module.eptssync.model.openmrs." +  syncTableInfo.getClasspackage() + "." + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
 		
-		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName);
+		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(destinationFileLocation, fullClassName);
 			
 		if (existingCLass != null && !syncTableInfo.mustRecompileTableClass()) return existingCLass;
 	
@@ -407,6 +417,9 @@ public class OpenMRSClassGenerator {
 		classDefinition +=  	methodFromSuperClass + "\n";
 		classDefinition += "}";
 		
+		
+		FileUtilities.tryToCreateDirectoryStructureForFile(sourceFile.getAbsolutePath());
+
 		FileWriter writer = new FileWriter(sourceFile);
 
 		writer.write(classDefinition);
@@ -414,9 +427,13 @@ public class OpenMRSClassGenerator {
 		writer.close();
 
 		compile(sourceFile, destinationFileLocation);
-				
-		return tryToGetExistingCLass(fullClassName);
+			
+		logger.info("GENERATED CLASS "+ fullClassName + " ON LOCATION "+ destinationFileLocation);
+		
+		return tryToGetExistingCLass(destinationFileLocation, fullClassName);
 	}
+	
+	static Logger logger = Logger.getLogger(OpenMRSClassGenerator.class);
 	
 	private static String generateDefaultGetterAndSetterDefinition(String attName, String attType) {
 		String getttersAndSetterDefinition = "";
@@ -432,20 +449,49 @@ public class OpenMRSClassGenerator {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static Class<OpenMRSObject> tryToGetExistingCLass(String fullClassName) {
+	public static Class<OpenMRSObject> tryToGetExistingCLass(File targetDirectory, String fullClassName) {
 		try {
-			return (Class<OpenMRSObject>) Class.forName(fullClassName);
-		} catch (ClassNotFoundException e) {
+			URLClassLoader loader = URLClassLoader.newInstance(new URL[] {targetDirectory.toURI().toURL()});
+	        
+	        Class<OpenMRSObject> c = (Class<OpenMRSObject>) loader.loadClass(fullClassName);
+	        
+	        loader.close();
+	        
+	        return c;
+		} 
+		catch (ClassNotFoundException e) {
+			return null;
+		} catch (IOException e) {
+			e.printStackTrace();
+			
 			return null;
 		}
 	}
 	
 	public static void compile(File sourceFile, File destinationFile) throws IOException {
+		FileUtilities.tryToCreateDirectoryStructure(destinationFile.getAbsolutePath());
+		
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
 
 		fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destinationFile));
-
+		
+		File[] jars = FileUtilities.getParent(Main.getProjectRoot()).listFiles(new FilenameFilter() {
+																			@Override
+																				public boolean accept(File dir, String name) {
+																					return name.toLowerCase().endsWith("jar");
+																				}
+																			});
+		
+		 List<File> classPathFiles = new ArrayList<File>();
+		 classPathFiles.add(destinationFile);
+		 
+		 for (File classPath : jars) {
+			 classPathFiles.add(classPath);
+		 }
+		 
+		fileManager.setLocation(StandardLocation.CLASS_PATH, classPathFiles);
+		
 		// Compile the file
 		compiler.getTask(null, fileManager, null, null, null, fileManager.getJavaFileObjectsFromFiles(Arrays.asList(sourceFile))).call();
 		

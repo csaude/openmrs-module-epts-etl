@@ -1,24 +1,20 @@
 package org.openmrs.module.eptssync.controller;
 
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.log4j.Logger;
-import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.monitor.ControllerStatusMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
+import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
-import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
@@ -40,6 +36,7 @@ public class ProcessController implements Controller{
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	private static Logger logger = Logger.getLogger(ProcessController.class);
+	private boolean configurationDone;
 	
 	public ProcessController(SyncConfiguration configuration){
 		this.configuration = configuration;
@@ -52,6 +49,7 @@ public class ProcessController implements Controller{
 		this.controllerId = configuration.getDesignation() + "_controller";
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
+		this.configurationDone = false;
 	}
 	
 	public SyncConfiguration getConfiguration() {
@@ -62,121 +60,35 @@ public class ProcessController implements Controller{
 		return childController;
 	}
 	
-	public void init() {
-		OpenConnection conn = openConnection();
-		
-		try {
-			if (configuration.mustCreateStageSchemaElements() && !this.isImportStageSchemaExists()) {
-				this.createStageSchema();
-			}
-			
-			for (SyncTableConfiguration info : this.configuration.getTablesConfigurations()) {
-				info.setRelatedSyncTableInfoSource(this.getConfiguration());
-				info.tryToUpgradeDataBaseInfo(conn);
-				if (configuration.isMustCreateClasses()) info.generateRecordClass(conn);
-			}
-			
-			if (configuration.isMustCreateClasses()) {
-				recompileAllAvaliableClasses(conn);
-			}
-			
-			conn.markAsSuccessifullyTerminected();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
-		}
-		
+	public boolean isConfigurationDone() {
+		return configurationDone;
 	}
 	
-	private void createStageSchema() {
-		OpenConnection conn = openConnection();
-		
-		try {
-			Statement st = conn.createStatement();
-
-			st.addBatch("CREATE DATABASE " + configuration.getSyncStageSchema());
-
-			st.executeBatch();
-
-			st.close();
+	public void init() {
+		if (!isConfigurationDone()) {
+			ProcessInitialization initialization = new ProcessInitialization(this);
+			ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId.toUpperCase() + "_INITIALIZER").execute(initialization);
 			
-			conn.markAsSuccessifullyTerminected();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
-		}
-	}
-
-	private void recompileAllAvaliableClasses(Connection conn) {
-		for (SyncTableConfiguration info : this.configuration.getTablesConfigurations()) {
-			if (utilities.createInstance(info.getSyncRecordClass(conn)).isGeneratedFromSkeletonClass()) {
-				info.generateRecordClass(conn);
-			}
-		
-			for (ParentRefInfo i: info.getChildRefInfo(conn)) {
-				
-				if (i.getReferenceTableInfo().getTableName().equals("person")) {
-					System.out.println("Stop");
-				}
-				
-				if (!i.getReferenceTableInfo().isFullLoaded()) {
-					SyncTableConfiguration existingTableInfo = configuration.retrieveTableInfoByTableName(i.getReferenceTableInfo().getTableName(), conn);
-					
-					if (existingTableInfo != null) {
-						i.setReferenceTableInfo(existingTableInfo);
-					}
-					else {
-						i.getReferenceTableInfo().fullLoad(conn);
-					}
-				}
-				
-				if (!i.existsRelatedReferenceClass() || utilities.createInstance(i.determineRelatedReferenceClass()).isGeneratedFromSkeletonClass()) {
-					i.generateRelatedReferenceClass(conn);
-				}
+			ProcessInitialization childInitialization = null; 
+			
+			if (this.getChildController() != null) {
+				childInitialization = new ProcessInitialization(this.getChildController());
+				ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.getChildController().getControllerId().toUpperCase() + "_INITIALIZER").execute(childInitialization);
 			}
 			
-			for (ParentRefInfo i: info.getParentRefInfo(conn)) {
-				if (!i.getReferencedTableInfo().isFullLoaded()) {
-					SyncTableConfiguration existingTableInfo = configuration.retrieveTableInfoByTableName(i.getReferencedTableInfo().getTableName(), conn);
-					
-					if (existingTableInfo != null) {
-						i.setReferencedTableInfo(existingTableInfo);
-					}
-					else {
-						i.getReferencedTableInfo().fullLoad(conn);
-					}
-				}
-				
-				if (!i.existsRelatedReferencedClass() || utilities.createInstance(i.determineRelatedReferencedClass()).isGeneratedFromSkeletonClass()) {
-					i.generateRelatedReferencedClass(conn);
-				}
+			while(!initialization.isFinished() || childInitialization != null && !childInitialization.isFinished()) {
+				logInfo("STILL INITIALIZING THE PROCESS");
+				TimeCountDown.sleep(15);
+			}
+			
+			
+			this.configurationDone = true;
+			
+			if (this.getChildController() != null) {
+				this.getChildController().configurationDone = true;
 			}
 		}
 	}
-
-	private boolean isImportStageSchemaExists() {
-		OpenConnection conn = openConnection();
-		
-		try {
-			return DBUtilities.isResourceExist(null, DBUtilities.RESOURCE_TYPE_SCHEMA, configuration.getSyncStageSchema(), conn);
-		} catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
-		}
-	}
-
 	
 	public OpenConnection openConnection() {
 		if (connService == null) connService = DBConnectionService.init(configuration.getConnInfo());

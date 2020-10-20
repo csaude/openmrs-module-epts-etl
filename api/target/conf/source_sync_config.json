@@ -11,7 +11,7 @@
 	mustRecompileTable: false,
 	mustCreateClasses: false,
 	classpackage: "sourcepkg",
-	automaticStart: true,
+	automaticStart: false,
 	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
 	
 	connInfo: {

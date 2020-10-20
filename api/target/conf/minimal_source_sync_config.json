@@ -5,11 +5,11 @@
 	mustCreateStageSchemaElements:false,
 	originAppLocationCode: "zbz_pebane",
 	firstExport: true,
-	mustRecompileTable: false,
-	mustCreateClasses: false,
+	mustRecompileTable: true,
+	mustCreateClasses: true,
 	classpackage: "sourcepkg",
-	automaticStart: false,
-	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/minimal_dest_sync_config.json",
+	automaticStart: true,
+	childConfigFilePath_: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/minimal_dest_sync_config.json",
 	
 	connInfo: {
 		dataBaseUserName: "root",
@@ -44,11 +44,30 @@
 			parents: ["person", "users"],
 			mustRecompileTable: false
 		},
+		{
+			tableName: "location",
+			parents: ["users", "location"],
+			mustRecompileTable: false,
+			extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
+		},
 
 		{
 			tableName: "person",
 			parents: ["users"],
 			mustRecompileTable: false
+		},
+		
+		{
+			tableName: "person_address",
+			parents: ["person", "users"],
+			mustRecompileTable: false
+		},
+		
+		{
+			tableName: "person_attribute",
+			parents: ["person", "users"],
+			mustRecompileTable: false
 		}
+			
 	]
 }

@@ -220,7 +220,15 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += " WHERE record_id = ? ";
 		sql += "  	   AND origin_app_location_code = ? ";
 		
-		return  BaseDAO.find(SyncImportInfoVO.class , sql, params, conn);
+		SyncImportInfoVO record = BaseDAO.find(SyncImportInfoVO.class , sql, params, conn);
+		
+		
+		
+		if (record == null) {
+			throw new RuntimeException("This record: "+ tableInfo.getTableName() +"[ id="+object.getOriginRecordId() + ", origin=" +object.getOriginAppLocationCode() + " was not found on staging area");
+		}
+		
+		return record;
 	}
 
 	public static void markAsFailedToMigrate(SyncImportInfoVO record, SyncTableConfiguration tableInfo, String msg, Connection conn) throws DBException {
