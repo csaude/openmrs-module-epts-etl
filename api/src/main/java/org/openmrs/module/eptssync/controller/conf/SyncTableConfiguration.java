@@ -41,6 +41,7 @@ public class SyncTableConfiguration {
 	private String extraConditionForExport;
 	
 	private boolean metadata;
+	
 	/*private int qtyRecordsPerEngine;
 	private int qtyRecordsPerSelect;*/
 	private boolean fullLoaded;
@@ -55,6 +56,10 @@ public class SyncTableConfiguration {
 	
 	public boolean isDoIntegrityCheckInTheEnd(String operationType) {
 		return getRelatedSynconfiguration().isDoIntegrityCheckInTheEnd(operationType);
+	}
+	
+	public String getId() {
+		return this.getRelatedSynconfiguration().getDesignation() + "_" + this.tableName;
 	}
 	
 	/*

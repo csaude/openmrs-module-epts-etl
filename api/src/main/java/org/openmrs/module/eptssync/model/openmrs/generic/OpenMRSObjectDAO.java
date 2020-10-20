@@ -54,13 +54,17 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	}
 	
 	public static <T extends OpenMRSObject> T thinGetByOriginRecordId(Class<T> openMRSClass, int originRecordId, String originAppLocationCode, Connection conn) throws DBException{
+		T instance = null;
+		
 		try {
+			instance = openMRSClass.newInstance();
+			
 			Object[] params = {originRecordId, originAppLocationCode};
 			
 			String sql = "";
 			
 			sql += " SELECT * \n";
-			sql += " FROM  	" + openMRSClass.newInstance().generateTableName() + "\n";
+			sql += " FROM  	" + instance.generateTableName() + "\n";
 			sql += " WHERE 	origin_record_id = ? \n";
 			sql += "		AND origin_app_location_code = ?;\n";
 			
@@ -72,6 +76,13 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
 		
+			throw new RuntimeException(e);
+		}
+		catch (Exception e) {
+			if (e.getLocalizedMessage().contains("origin_record_id")) {
+				throw new RuntimeException("The table " + instance.generateTableName()  + " Does not contain field origin_record_id");
+			}
+			
 			throw new RuntimeException(e);
 		}
 	}

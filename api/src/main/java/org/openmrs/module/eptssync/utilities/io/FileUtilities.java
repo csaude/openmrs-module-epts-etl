@@ -99,6 +99,25 @@ public class FileUtilities {
 		}
 	}
 	
+	public static void write(String fileName, String ... linesToWrite){
+		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
+		
+		try {
+			
+			FileWriter file = new FileWriter(fileName, true);
+			BufferedWriter buffer = new BufferedWriter(file);
+			
+			for (String str:linesToWrite){
+				buffer.write(str);
+				buffer.newLine();
+			}
+			buffer.close();
+			file.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static java.io.File createDirectory(String directoryName){
 		java.io.File dir = new java.io.File(directoryName);
 

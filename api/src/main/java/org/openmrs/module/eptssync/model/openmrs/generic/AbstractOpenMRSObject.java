@@ -1,5 +1,9 @@
 package org.openmrs.module.eptssync.model.openmrs.generic;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.List;
@@ -236,5 +240,25 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		
 		return "The record [" + this.generateTableName() + " = " + this.getObjectId() + "] is in inconsistent state. There are missing these parents: " + missingInfo;
 	}	
+	
+	@SuppressWarnings("unchecked")
+	public  Class<OpenMRSObject> tryToGetExistingCLass(File targetDirectory, String fullClassName) {
+		try {
+			URLClassLoader loader = URLClassLoader.newInstance(new URL[] {targetDirectory.toURI().toURL()});
+	        
+	        Class<OpenMRSObject> c = (Class<OpenMRSObject>) loader.loadClass(fullClassName);
+	        
+	        loader.close();
+	        
+	        return c;
+		} 
+		catch (ClassNotFoundException e) {
+			return null;
+		} catch (IOException e) {
+			e.printStackTrace();
+			
+			return null;
+		}
+	}
 
 }

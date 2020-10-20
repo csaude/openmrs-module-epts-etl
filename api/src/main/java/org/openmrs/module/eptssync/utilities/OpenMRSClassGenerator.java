@@ -248,9 +248,13 @@ public class OpenMRSClassGenerator {
 			}
 			
 			if (!refInfo.isNumericRefColumn()) methodFromSuperClass += "/*\n";
+						
+			String pathToTarget = Main.getProjectPOJODirectory().getAbsolutePath() + "/bin";
+			
+			String parentClassDefinition = "this.tryToGetExistingCLass(new File(\""+ pathToTarget +"\"), \"" + refInfo.getReferencedClassFullName(conn) + "\")";
 			
 			methodFromSuperClass += "		parentOnDestination = loadParent(";
-			methodFromSuperClass += refInfo.getReferencedClassFullName(conn) + ".class,";
+			methodFromSuperClass += parentClassDefinition + ",";
 			
 			boolean ignorable = syncTableInfo.checkIfisIgnorableParentByClassAttName(refInfo.getReferenceColumnAsClassAttName(), conn);
 			
@@ -297,6 +301,8 @@ public class OpenMRSClassGenerator {
 		classDefinition += "import java.sql.Connection; \n";
 		classDefinition += "import java.sql.SQLException; \n";
 		classDefinition += "import java.sql.ResultSet; \n \n";
+		
+		classDefinition += "import java.io.File; \n \n";
 				
 		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";
 		

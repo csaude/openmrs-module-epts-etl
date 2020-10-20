@@ -1,5 +1,6 @@
 package org.openmrs.module.eptssync.controller;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +18,7 @@ import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
+import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -126,22 +128,52 @@ public abstract class OperationController implements Controller{
 		}
 		else {
 			for (SyncTableConfiguration syncInfo: allSync) {
-				logInfo("Starting operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'");
 				
-				Engine engine = initAndStartEngine(syncInfo);
-				
-				while (engine != null && !engine.isFinished()) {
-					logInfo("The operation '" + getOperationType() + "' Is still working on table '" + syncInfo.getTableName() + "'");
-					TimeCountDown.sleep(15);
+				if (!operationIsAlreadyFinished(syncInfo)) {
+					logInfo("Starting operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'");
+					
+					Engine engine = initAndStartEngine(syncInfo);
+					
+					while (engine != null && !engine.isFinished()) {
+						logInfo("The operation '" + getOperationType() + "' Is still working on table '" + syncInfo.getTableName() + "'");
+						TimeCountDown.sleep(15);
+					}
+					
+					markOperationAsFinished(syncInfo);
+					
+					logInfo("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' is finished!");
 				}
+				logInfo("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' is already finished!");
 				
-				logInfo("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' is finished!");
 			}
 			
 			changeStatusToFinished();
 			
 			onFinish();
 		}
+	}
+
+	private boolean operationIsAlreadyFinished(SyncTableConfiguration conf) {
+		String operationId = this.getControllerId() + "_" + conf.getTableName();
+		
+		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
+		
+		return new File(fileName).exists(); 
+	}
+
+	private void markOperationAsFinished(SyncTableConfiguration conf) {
+		String operationId = this.getControllerId() + "_" + conf.getTableName();
+		
+		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
+		
+		String desc = "";
+		
+		desc += "{\n";
+		desc += "	operationName: \"" + this.getControllerId() + "\",";
+		desc += "	operationTable: \"" + conf.getTableName() + "\"";
+		desc += "}";
+		
+		FileUtilities.write(fileName, desc);		
 	}
 
 	public String getControllerId() {
