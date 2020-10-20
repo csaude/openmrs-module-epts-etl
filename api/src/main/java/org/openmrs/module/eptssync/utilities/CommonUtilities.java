@@ -904,12 +904,56 @@ public class  CommonUtilities implements Serializable{
 		
 		return str;
 	}
+	
+
+	public String resolveScapeCharacter(String str) {
+		if (!stringHasValue(str)) return str;
+		
+		char scapeCaracter = '\\';
+		
+		String resolved = "";
+		
+		for (int i=0; i < str.length(); i++) {
+			if (str.charAt(i) == scapeCaracter) {
+				if (i+1 < str.length()) {
+					if (!isSpecialCharacter(str.charAt(i+1))) {
+						//Force to be scaped
+						resolved += str.charAt(i) + "\\";
+					}
+				}
+				else {
+					//Force to be scaped
+					resolved += str.charAt(i) + "\\";
+				}
+			}
+			else resolved += str.charAt(i);
+		}
+		
+		return resolved;
+	}
+	
+	
+	private boolean isSpecialCharacter(char charAt) {
+		char[] spectials = {'\\', '\"'};
+		
+		
+		return getPosOnArray(spectials, charAt) >= 0;
+	}
+
+	private int getPosOnArray(char[] array, char toFind) {
+		for (int i =0; i < array.length; i++){
+			if (array[i] == toFind) return i;
+		}
+		
+		return -1;
+	}
 
 	public static void main(String[] args) {
-		String strWithStrangeCharacters = "\\a";
+		String strWithStrangeCharacters = "\\a\\\"";
 		
 		System.out.println(strWithStrangeCharacters);
 	
-		System.out.println(getInstance().removeCharactersOnString(strWithStrangeCharacters, "\\\\"));
+		
+		System.out.println(getInstance().resolveScapeCharacter(strWithStrangeCharacters));
 	}
 }

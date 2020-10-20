@@ -164,8 +164,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			} catch (Exception e) {
 				e.printStackTrace();
 				
-				conn.markAsSuccessifullyTerminected();
-				
 				throw new RuntimeException(e);
 			}
 			finally {
@@ -239,12 +237,22 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	@Override
 	public boolean isNotInitialized() {
+		//logInfo("CHECK IF ENGINE "+this.getEngineId() + " IS INITIALIZED. CURR STATUS "+ this.operationStatus);
+		
 		if (utilities.arrayHasElement(this.children)) {
+			//logInfo("ENGINE STATUS "+this.getEngineId() + " CHILDREN STATUS: "+ this.operationStatus);
+			
 			for (Engine engine : this.children) {
-				if (!engine.isNotInitialized()) return false;
+				if (engine.isNotInitialized()) {
+					//logInfo("CHILD ENGINE "+engine.getEngineId() + " STATUS " + engine.operationStatus);
+					
+					return true;
+				}
 			}
 		}
 
+		//logInfo("ENGINE STATUS "+this.getEngineId() + this.operationStatus);
+		
 		return this.operationStatus == MonitoredOperation.STATUS_NOT_INITIALIZED;
 	}
 	
@@ -326,6 +334,8 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	@Override	
 	public void changeStatusToPaused() {
 		this.operationStatus = MonitoredOperation.STATUS_PAUSED;	
+	
+		throw new RuntimeException("Trying to pause engine " + getEngineId());
 	}
 	
 	public void reportProgress() {

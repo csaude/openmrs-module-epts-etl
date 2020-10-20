@@ -1,0 +1,25 @@
+controllers:
+
+{
+	lastMsgFromServer: "All is ok",
+	[
+		{
+			controllerId: "id",
+			controllerStatus: "status",
+			lastRefreshOn: "lastRefresh",
+			requestedStopAllEngines: true,
+			lastMsgFromController: "AllOkay"
+			engines : [
+							{engineId: "id",
+							 engineStatus: "status",
+							 qtyProcessors: 2,
+							 qtyRecordsPerSelect: 10000,
+							 stopRequested: true,
+							 totalRecords: 1000,
+							 lastMsgFromEngine
+							}
+			]
+			
+		}
+	]
+}

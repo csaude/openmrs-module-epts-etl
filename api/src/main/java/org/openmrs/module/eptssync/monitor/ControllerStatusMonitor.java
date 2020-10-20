@@ -21,16 +21,16 @@ public class ControllerStatusMonitor implements Runnable{
 	public void run() {
 		//String msg = "THE MONITOR OF CONTROLLER : " + controller.getControllerId() + " HAS STARTED THE MONITORING. THE RELATED OPERATION '" + controller.getRelatedOperationToBeRunInTheEnd().getOperationType() + "' WILL START AS SOON AS THIS CONTROLLER FINISH!";
 		
-		String msg = "THE MONITOR OF CONTROLLER : " + controller.getControllerId() + " HAS STARTED THE MONITORING. THE RELATED STATUS OPERATIONS WILL START AS SOON AS THE CORRESPONDENT STATUS TRIGGERD";
+		//String msg = "THE MONITOR OF CONTROLLER : " + controller.getControllerId() + " HAS STARTED THE MONITORING. THE RELATED STATUS OPERATIONS WILL START AS SOON AS THE CORRESPONDENT STATUS TRIGGERD";
 			
-		this.controller.logInfo(msg);
+		//this.controller.logInfo(msg);
 		
 		boolean running = true;
 		
 		while(running) {
-			msg = "THE CONTROLLER : " + controller.getControllerId() + " IS STILL WORKING. THE RELATED STATUS OPERATIONS WILL START AS SOON AS THE CORRESPONDENT STATUS TRIGGED!";
+			//msg = "THE CONTROLLER : " + controller.getControllerId() + " IS STILL WORKING. THE RELATED STATUS OPERATIONS WILL START AS SOON AS THE CORRESPONDENT STATUS TRIGGED!";
 			
-			this.controller.logInfo(msg);
+			//this.controller.logInfo(msg);
 			TimeCountDown.sleep(controller.getWaitTimeToCheckStatus());
 			
 			if (this.controller.isFinished()) {

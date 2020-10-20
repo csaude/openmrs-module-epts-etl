@@ -13,7 +13,7 @@
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
@@ -33,7 +33,7 @@
 				maxSupportedEngines: 30,
 				minRecordsPerEngine: 1000,
 				doIntegrityCheckInTheEnd: true,
-				disabled: false,
+				disabled: true,
 				processingMode: "sequencial",
 				
 				child: {
@@ -42,6 +42,7 @@
 					maxSupportedEngines: 30,
 					minRecordsPerEngine: 1000,
 					doIntegrityCheckInTheEnd: true,
+					disabled: true,
 					processingMode: "sequencial"
 				}
 			}

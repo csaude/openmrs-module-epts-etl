@@ -43,6 +43,7 @@ public abstract class OperationController implements Controller{
 	private boolean stopRequested;
 	
 	private SyncOperationConfig operationConfig;
+	private OperationController parent;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = Logger.getLogger(this.getClass());
@@ -53,6 +54,26 @@ public abstract class OperationController implements Controller{
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
+	}
+	
+	public OperationController getParent() {
+		return parent;
+	}
+	
+	public boolean hasParent() {
+		return this.parent != null;
+	}
+	
+	public boolean hasChild() {
+		return this.child != null;
+	}
+	
+	public boolean hasNestedController() {
+		return hasChild() || hasParent();
+	}
+	
+	public void setParent(OperationController parent) {
+		this.parent = parent;
 	}
 	
 	public SyncOperationConfig getOperationConfig() {
@@ -81,7 +102,17 @@ public abstract class OperationController implements Controller{
 		
 		if (isParallelModeProcessing()) {
 			for (SyncTableConfiguration syncInfo: allSync) {
-				initAndStartEngine(syncInfo);
+				
+				logInfo("INITIALIZING '" + getOperationType() + "' ENGINE FOR TABLE '" + syncInfo.getTableName() + "'");
+				
+				Engine engine = initAndStartEngine(syncInfo);
+				
+				if (engine != null) {
+					logInfo("INITIALIZED '" + getOperationType() + "' ENGINE FOR TABLE '" + syncInfo.getTableName() + "'");
+				}
+				else {
+					logInfo("NO ENGINE FOR '" + getOperationType() + "' FOR TABLE '" + syncInfo.getTableName() + "' WAS CREATED...");
+				}
 			}
 		
 			if (this.child != null) {
@@ -147,10 +178,12 @@ public abstract class OperationController implements Controller{
 		EnginActivityMonitor activitityMonitor = new EnginActivityMonitor(this, syncInfo);
 		Engine engine = activitityMonitor.initEngine();
 		
-		if (getOperationConfig().isParallelModeProcessing() &&  mustRestartInTheEnd()) {
-			ThreadPoolService.getInstance().createNewThreadPoolExecutor(getControllerId() + "_ENGINE_OPERATION_MONITOR").execute(activitityMonitor);
-			
+		if (engine != null) {
 			this.enginesActivititieMonitor.add(activitityMonitor);
+			
+			if (mustRestartInTheEnd()) {
+				ThreadPoolService.getInstance().createNewThreadPoolExecutor(getControllerId() + "_ENGINE_OPERATION_MONITOR").execute(activitityMonitor);
+			}
 		}
 		
 		return engine;
@@ -204,18 +237,29 @@ public abstract class OperationController implements Controller{
 	@Override
 	public boolean isFinished() {
 		if(isNotInitialized()) {
+			
+			//logInfo("NOT INITIALIZED....");
+			
 			return false;
 		}
+		
+		//logInfo("ALL ENGINES INITIALIZED....");
 		
 		
 		if (isParallelModeProcessing()) {
 			for (EnginActivityMonitor monitor : this.enginesActivititieMonitor) {
 				Engine engine = monitor.getMainEngine();
 				
-				if (engine != null && !engine.isFinished()) {
-						return false;
+				if (engine == null) throw new RuntimeException("No engine for minitor '" + monitor.getSyncTableInfo().getTableName() + "'");
+				
+				//logInfo("Engine " + engine.getEngineId() + " status = "+engine.isFinished());
+				
+				if (!engine.isFinished()) {
+					return false;
 				}
 			}
+			
+			//logInfo("ALL "+ enginesActivititieMonitor.size() +" ENGINES ARE FINISHED....");
 			
 			return true;
 		}
@@ -273,7 +317,11 @@ public abstract class OperationController implements Controller{
 	
 	@Override
 	public void onFinish() {
-		if (getChild() != null) {
+		/*if (getOperationType().equals(SyncOperationConfig.SYNC_OPERATION_LOAD)) {
+			throw new RuntimeException("Finished before finish!! Current loaded operations " + this.enginesActivititieMonitor.size());
+		}*/
+		
+		if (getChild() != null && !getChild().getOperationConfig().isDisabled()) {
 			this.executeChildOperation();
 		}
 	}

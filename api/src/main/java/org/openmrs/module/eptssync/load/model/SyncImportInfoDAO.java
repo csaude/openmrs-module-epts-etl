@@ -11,7 +11,41 @@ import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class SyncImportInfoDAO extends BaseDAO {
+
 	public static void insertAll(List<SyncImportInfoVO> records, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
+		insertAllBatch(records, tableInfo, conn);
+	}
+	
+	public static void insertAllOneByOne(List<SyncImportInfoVO> records, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
+		for (SyncImportInfoVO record : records) {
+			
+			try {
+				insert(record, tableInfo, conn);
+			} catch (DBException e) {
+				e.printStackTrace();
+			
+				 if (e.isDuplicatePrimaryKeyException()) {
+					 	//Error Pather... Duplicate Entry 'objectId-origin_app' for bla bla 
+						String[] s = (e.getLocalizedMessage().split("'")[1]).split("-");
+						
+						int objectId = Integer.parseInt(s[0]);
+						String originAppLocationCode = s[1];
+						
+						SyncImportInfoVO problematicRecord = new SyncImportInfoVO();
+						problematicRecord.setRecordId(objectId);
+						problematicRecord.setOriginAppLocationCode(originAppLocationCode);
+						
+						problematicRecord = utilities.findOnArray(records, problematicRecord);
+						problematicRecord.setExcluded(true);
+						
+						updateByRecordIdAndAppOriginCode(tableInfo, problematicRecord, conn);
+				 }
+				 else throw e;
+			}
+		}
+	}
+	
+	public static void insertAllBatch(List<SyncImportInfoVO> records, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 			String sql = "";
 					
 			sql += "INSERT INTO \n"; 

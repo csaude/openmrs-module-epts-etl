@@ -245,7 +245,18 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		for (SyncImportInfoVO imp : toParse) {
 			String modifiedJSON = imp.getJson().replaceFirst(imp.retrieveSourcePackageName(tableInfo), tableInfo.getClasspackage());
 			
-			OpenMRSObject rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(conn), modifiedJSON);
+			
+			OpenMRSObject rec = null;
+			
+			try {
+				rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(conn), modifiedJSON);
+			} catch (Exception e) {
+				
+				//try to resolve pathern problems
+				modifiedJSON = utilities.resolveScapeCharacter(modifiedJSON);
+				rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(conn), modifiedJSON);
+			}
+			
 			rec.setOriginRecordId(rec.getObjectId());
 			rec.setObjectId(0);
 			rec.setConsistent(OpenMRSObject.INCONSISTENCE_STATUS);

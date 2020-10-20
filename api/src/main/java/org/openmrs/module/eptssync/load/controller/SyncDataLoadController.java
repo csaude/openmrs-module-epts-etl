@@ -9,8 +9,8 @@ import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.Engine;
+import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.load.engine.LoadSyncDataEngine;
 import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
 import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
@@ -125,7 +125,7 @@ public class SyncDataLoadController extends OperationController {
 
 	@Override
 	public boolean mustRestartInTheEnd() {
-		return isParallelModeProcessing() ? true : false;
+		return hasNestedController() ? false : true;
 	}
 
 	@Override

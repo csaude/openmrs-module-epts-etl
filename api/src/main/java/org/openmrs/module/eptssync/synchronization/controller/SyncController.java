@@ -95,7 +95,7 @@ public class SyncController extends OperationController {
 
 	@Override
 	public boolean mustRestartInTheEnd() {
-		return isParallelModeProcessing() ? true : false;
+		return hasNestedController() ? false : true;
 	}
 	
 	@Override

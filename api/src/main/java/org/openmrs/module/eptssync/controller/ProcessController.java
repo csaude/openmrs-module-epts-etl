@@ -58,6 +58,10 @@ public class ProcessController implements Controller{
 		return configuration;
 	}
 	
+	public ProcessController getChildController() {
+		return childController;
+	}
+	
 	public void init() {
 		OpenConnection conn = openConnection();
 		
@@ -208,22 +212,38 @@ public class ProcessController implements Controller{
 	@Override
 	public boolean isFinished() {
 		if (utilities.arrayHasElement(this.operationsControllers)) {
+			
+			logInfo("STARTING CHECK IF PROCESS CONTROLLER IS FINICHED");
+			
 			for (OperationController controller : this.operationsControllers) {
+				if (controller.getOperationConfig().isDisabled()) {
+					continue;
+				}
+				else
 				if (!controller.isFinished()) {
+					logInfo("PROCESS CONTROLLER NOT FINISHED. REASON: OPERATION CONTROLLER " + controller.getControllerId() + " IS STILL NOT FINISHED....");
+					
 					return false;
 				}
 				else
 				if (controller.getChild() != null && !controller.getChild().isFinished()) {
+					logInfo("PROCESS CONTROLLER NOT FINISHED. REASON:  THE CHILD OPERATION CONTROLLER " + controller.getChild().getControllerId() + " IS STILL NOT FINISHED....");
+					
 					return false;
 				}
 			}
 			
+			logInfo("ALL PROCESS OPERATIONS ARE FINISHED!");
+			
+			return true;
+			
+			/*
 			if (this.childController != null) {
 				return this.childController.isFinished();
 			}
 			else {
 				return true;
-			}
+			}*/
 		}
 		
 		return this.operationStatus == MonitoredOperation.STATUS_FINISHED;
@@ -306,6 +326,11 @@ public class ProcessController implements Controller{
 					executor.execute(controller);
 				}
 			}
+		}
+		
+		
+		if (!utilities.arrayHasElement(this.operationsControllers)) {
+			changeStatusToFinished();
 		}
 	}
 	

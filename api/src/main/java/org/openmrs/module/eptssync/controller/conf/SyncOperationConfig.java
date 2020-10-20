@@ -206,6 +206,7 @@ public class SyncOperationConfig {
 		
 		if (this.child != null) {
 			controllers.get(0).setChild(child.generateRelatedController(processController, conn).get(0));
+			controllers.get(0).getChild().setParent(controllers.get(0));
 		}
 		
 		return controllers;

@@ -88,7 +88,7 @@ public class TimeCountDown extends ScheduledOperation {
 	
 	@Override
 	public void run() {
-		if (this.intervalForMessage == 0) this.intervalForMessage = 1;
+		if (this.intervalForMessage == 0) this.intervalForMessage = 10;
 		
 		while (this.remainTime > 0) {
 			try {

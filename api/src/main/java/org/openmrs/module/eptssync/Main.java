@@ -66,10 +66,15 @@ public class Main {
 
 				if (conf.isAutomaticStart()) {
 					if (!conf.existsOnArray(syncConfigs)) {
+						
+						logger.info("ADDED " + conf.getDesignation());
 						syncConfigs.add(conf);
 					} else
 						throw new ForbiddenOperationException(
 								"The configuration [" + conf.getDesignation() + "] exists in more than one files");
+				}
+				else {
+					logger.info("NOT ADDED " + conf.getDesignation());
 				}
 			}
 		}
@@ -91,11 +96,13 @@ public class Main {
 	}
 
 	public static boolean isAllFinished(List<ProcessController> controllers) {
+		
 		for (ProcessController c : controllers) {
-			if (!c.isFinished())
-				return false;
+			if (!c.isFinished() || c.getChildController() != null && !c.getChildController().isFinished()) {
+					return false;
+			}
 		}
-
+		
 		return true;
 	}
 }

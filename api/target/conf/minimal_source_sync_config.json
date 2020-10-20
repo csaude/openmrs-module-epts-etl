@@ -9,7 +9,7 @@
 	mustCreateClasses: false,
 	classpackage: "sourcepkg",
 	automaticStart: false,
-	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w01/openmrs-module-eptssync/api/target/conf/minimal_dest_sync_config.json",
+	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/minimal_dest_sync_config.json",
 	
 	connInfo: {
 		dataBaseUserName: "root",

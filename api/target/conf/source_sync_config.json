@@ -12,12 +12,12 @@
 	mustCreateClasses: false,
 	classpackage: "sourcepkg",
 	automaticStart: true,
-	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w01/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
+	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
 	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
@@ -27,7 +27,7 @@
 			maxRecordPerProcessing: 25000,
 			maxSupportedEngines: 50,
 			minRecordsPerEngine: 1000,
-			disabled: false,
+			disabled: true,
 			processingMode: "sequencial",
 			
 			child:{

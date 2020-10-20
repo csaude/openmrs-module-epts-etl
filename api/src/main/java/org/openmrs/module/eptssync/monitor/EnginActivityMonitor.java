@@ -49,18 +49,18 @@ public class EnginActivityMonitor implements Runnable{
 			return this.ownEngines.get(0);
 		}
 		
-		return null;
+		throw new RuntimeException("No engine defined for this monitor "+getController().getControllerId() + "_" + getSyncTableInfo().getTableName());
 	}
 	
 	@Override
 	public void run() {
 		while(true) {
-			String msg = "WAITING FOR ALL ENGINE REQUEST NEW JOB REALOCATION. CURRENT STATUS: " + generateEngineNewJobRequestStatus();
+			//String msg = "WAITING FOR ALL ENGINE REQUEST NEW JOB REALOCATION. CURRENT STATUS: " + generateEngineNewJobRequestStatus();
 			
 			TimeCountDown.sleep(60);
 			
 			if (!isAllEnginesRequestedNewJob()) {
-				this.controller.logInfo(msg);
+				//this.controller.logInfo(msg);
 			}
 			else {
 				if (utilities.arrayHasElement(this.ownEngines)) {
@@ -110,22 +110,22 @@ public class EnginActivityMonitor implements Runnable{
 		else {
 			long qtyRecords = maxRecId - minRecId;
 			long qtyEngines = determineQtyEngines(qtyRecords);
-			long qtyRecordsPerEngine = determineQtyRecordsPerEngine(qtyEngines, qtyRecords);
+			long qtyRecordsPerEngine = 0;
+			
+			if (qtyEngines == 0) qtyEngines = 1;
+			
+			qtyRecordsPerEngine = determineQtyRecordsPerEngine(qtyEngines, qtyRecords);
 			
 			long currMax = minRecId + qtyRecordsPerEngine;
 			
-			if (qtyEngines == 0) {
-				qtyEngines = 1;
-				
-				currMax = maxRecId;
-			}
+			if (qtyEngines == 1) currMax = maxRecId;
 			
 			RecordLimits limits = new RecordLimits(minRecId, currMax);
 			
-			Engine mainEngine = retrieveMainSleepingEngine();
+			Engine mainEngine = retrieveAndRemoveMainSleepingEngine();
 			
 			//If there was no main engine, retrieve onother engine and make it main
-			mainEngine =  mainEngine == null ? retrieveSleepingEngine() : mainEngine;
+			mainEngine =  mainEngine == null ? retrieveAndRemoveSleepingEngin() : mainEngine;
 			
 			mainEngine = mainEngine == null ? controller.initRelatedEngine(this, limits) : mainEngine; 
 			mainEngine.setEngineId(getController().getControllerId() + "_" + syncInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(0, 2));
@@ -133,8 +133,6 @@ public class EnginActivityMonitor implements Runnable{
 			mainEngine.resetLimits(limits);
 			
 			logInfo("REALOCATED NEW RECORDS [" + mainEngine.getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
-			
-			mainEngine.changeStatusToPaused();
 			
 			if (mainEngine.getChildren() == null) {
 				mainEngine.setChildren(new ArrayList<Engine>());
@@ -147,7 +145,7 @@ public class EnginActivityMonitor implements Runnable{
 				 
 				 if (i == qtyEngines) limits.setLastRecordId(maxRecId);
 				 
-				 Engine engine = retrieveSleepingEngine();
+				 Engine engine = retrieveAndRemoveSleepingEngin();
 				 
 				 if (engine == null) {
 					 engine = getController().initRelatedEngine(this, limits);
@@ -158,28 +156,35 @@ public class EnginActivityMonitor implements Runnable{
 				 }
 				 else {
 					 engine.resetLimits(limits);
-					 engine.changeStatusToPaused();
 				 }
 				 
 				 logInfo("REALOCATED NEW RECORDS [" + engine.getLimits() + "] FOR ENGINE [" + engine.getEngineId()  + "]");
 			}
 		
+			//If this engine is new must be not initialized, otherwise must be on STOPPED STATE
+			if (mainEngine.isNotInitialized()) {
+				logInfo("MAIN ENGINE ADDED TO OWNENGINES...");
+				this.ownEngines.add(mainEngine);
+			}
+			else
+				logInfo("NO MAIN ENGINE ADDED TO OWNENGINES...");
+
 			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(mainEngine.getEngineId());
 			executor.execute(mainEngine);
 			
-			//If this engine is new must be not initialized, otherwise must be on STOPPED STATE
-			if (mainEngine.isNotInitialized()) {
-				this.ownEngines.add(mainEngine);
+			while(mainEngine.getProgressMeter() == null) {
+				logInfo("WAINTING FOR PROGRESS METER OF '" + mainEngine.getEngineId() + "' BEEN CREATED TO START RELATED CHILDREN ENGINES!!!");
+				TimeCountDown.sleep(15);
 			}
 			
 			if (mainEngine.getChildren() != null) {
 				for (Engine childEngine : mainEngine.getChildren()) {
-					executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(childEngine.getEngineId());
-					executor.execute(childEngine);
-					
 					if (mainEngine.isNotInitialized()) {
 						this.ownEngines.add(mainEngine);
 					}
+			
+					executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(childEngine.getEngineId());
+					executor.execute(childEngine);
 				}
 			}
 			
@@ -209,24 +214,36 @@ public class EnginActivityMonitor implements Runnable{
 		initEngine();
 	}
 
-	private Engine retrieveSleepingEngine() {
+	private Engine retrieveAndRemoveSleepingEngin() {
+		Engine sleepingEngine = null;
+		
 		for ( Engine engine : this.ownEngines) {
 			if (engine.isSleeping()) {
-				return engine;
+				sleepingEngine = engine;
 			}
 		}
 		
-		return null;
+		if (sleepingEngine != null) {
+			this.ownEngines.remove(sleepingEngine);
+		}
+		
+		return sleepingEngine;
 	}
 	
-	private Engine retrieveMainSleepingEngine() {
+	private Engine retrieveAndRemoveMainSleepingEngine() {
+		Engine sleepingEngine = null;
+		
 		for ( Engine engine : this.ownEngines) {
 			if (engine.isSleeping() && engine.getChildren() != null) {
-				return engine;
+				sleepingEngine = engine;
+				
+				break;
 			}
 		}
 		
-		return null;
+		if (sleepingEngine != null) this.ownEngines.remove(sleepingEngine);
+		
+		return sleepingEngine;
 	}
 	
 	private boolean mustRestartInTheEnd() {
