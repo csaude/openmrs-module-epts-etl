@@ -3,9 +3,11 @@ package org.openmrs.module.eptssync.model.openmrs.generic;
 import java.sql.Connection;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
+import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class OpenMRSObjectDAO extends BaseDAO {
@@ -53,6 +55,8 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		executeQuery(sql, params, conn);
 	}
 	
+	static Logger logger = Logger.getLogger(OpenMRSObjectDAO.class);
+	
 	public static <T extends OpenMRSObject> T thinGetByOriginRecordId(Class<T> openMRSClass, int originRecordId, String originAppLocationCode, Connection conn) throws DBException{
 		T instance = null;
 		
@@ -69,21 +73,13 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			sql += "		AND origin_app_location_code = ?;\n";
 			
 			return find(openMRSClass, sql, params, conn);
-		} catch (InstantiationException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			logger.info("Error trying do retrieve record on table " + instance.generateTableName()  + "["+e.getMessage() + "]");
 			
-			throw new RuntimeException(e);
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
+			TimeCountDown.sleep(2000);
 		
-			throw new RuntimeException(e);
-		}
-		catch (Exception e) {
-			if (e.getLocalizedMessage().contains("origin_record_id")) {
-				throw new RuntimeException("The table " + instance.generateTableName()  + " Does not contain field origin_record_id");
-			}
+			throw new RuntimeException("Error trying do retrieve record on table " + instance.generateTableName()  + "["+e.getMessage() + "]");
 			
-			throw new RuntimeException(e);
 		}
 	}
 

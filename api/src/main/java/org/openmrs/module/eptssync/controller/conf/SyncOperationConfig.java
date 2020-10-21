@@ -7,15 +7,22 @@ import java.util.List;
 import org.openmrs.module.eptssync.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
+import org.openmrs.module.eptssync.databasepreparation.controller.DatabasePreparationController;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.export.controller.SyncExportController;
 import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
+import org.openmrs.module.eptssync.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.eptssync.synchronization.controller.SyncController;
 import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 public class SyncOperationConfig {
 	
+	
+	
+	
+	public static final String SYNC_OPERATION_DATABASE_PREPARATION = "database_preparation";
+	public static final String SYNC_OPERATION_POJO_GENERATION = "pojo_generation";
 	public static final String SYNC_OPERATION_EXPORT = "export";
 	public static final String SYNC_OPERATION_SYNCHRONIZATION = "synchronization";
 	public static final String SYNC_OPERATION_LOAD = "load";
@@ -39,7 +46,9 @@ public class SyncOperationConfig {
 															SYNC_OPERATION_EXPORT, 
 															SYNC_OPERATION_LOAD, 
 															SYNC_OPERATION_SYNCHRONIZATION, 
-															SYNC_OPERATION_TRANSPORT};
+															SYNC_OPERATION_TRANSPORT,
+															SYNC_OPERATION_DATABASE_PREPARATION,
+															SYNC_OPERATION_POJO_GENERATION};
 	
 	public CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -167,6 +176,15 @@ public class SyncOperationConfig {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_CONSOLIDATION);
 	}
 	
+	public boolean isDatabasePreparationOperation() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION);
+	}
+	
+	public boolean isPojoGeneration() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION);
+	}
+	
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) return false;
@@ -195,6 +213,14 @@ public class SyncOperationConfig {
 			controllers.add(new SyncExportController(processController, this));
 		}
 		else
+		if (isPojoGeneration()) {
+			controllers.add(new PojoGenerationController(processController, this));
+		}
+		else	
+		if (isDatabasePreparationOperation()) {
+			controllers.add(new DatabasePreparationController(processController, this));
+		}
+		else			
 		if (isLoadOperation()) {
 			String[] allAvaliableOrigins = SyncDataLoadController.discoveryAllAvaliableOrigins(getRelatedSyncConfig());
 			
@@ -215,11 +241,20 @@ public class SyncOperationConfig {
 	public boolean canBeRunInDestinationInstallation() {
 		return this.isConsolidationOperation() || 
 				this.isSynchronizationOperation() ||
-					this.isLoadOperation();
+					this.isLoadOperation() ||
+						this.isDatabasePreparationOperation() ||
+							this.isPojoGeneration();
 	}
 	
 	public boolean canBeRunInSourceInstallation() {
 		return this.isExportOperation() || 
-				this.isTransportOperation();
+				this.isTransportOperation() ||
+					this.isDatabasePreparationOperation() ||
+						this.isPojoGeneration();
+	}
+	
+	@Override
+	public String toString() {
+		return getRelatedSyncConfig().getDesignation() + "_" + this.operationType;
 	}
 }

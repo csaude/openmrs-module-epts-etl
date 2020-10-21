@@ -43,11 +43,11 @@ public class LoadSyncDataEngine extends Engine{
 		
 		//List<SyncImportInfoVO> syncImportInfo = SyncImportInfoVO.generateFromSyncRecord(migrationRecordAsOpenMRSObjects);
 	
-		this.getMonitor().logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " TO STAGING TABLE");
+		this.getMonitor().logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO STAGING TABLE");
 		
-		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSyncTableInfo(), conn);
+		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSyncTableConfiguration(), conn);
 		
-		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " WROTE TO STAGING TABLE");
+		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " WROTE TO STAGING TABLE");
 		
 		this.getMonitor().logInfo("MOVING SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] TO BACKUP AREA.");
 		
@@ -147,7 +147,7 @@ public class LoadSyncDataEngine extends Engine{
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new LoadSyncDataSearchParams(getRelatedOperationController(), this.getSyncTableInfo(), limits);
+		SyncSearchParams<? extends SyncRecord> searchParams = new LoadSyncDataSearchParams(getRelatedOperationController(), this.getSyncTableConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
 		//searchParams.setExtraCondition("obs_2020093011233502.json");
 		
@@ -155,7 +155,7 @@ public class LoadSyncDataEngine extends Engine{
 	}
     
     private File getSyncBkpDirectory() throws IOException {
-    	String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSyncTableInfo()).getAbsolutePath();
+    	String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSyncTableConfiguration()).getAbsolutePath();
     	
     	return new File(baseDirectory);
     }
@@ -166,7 +166,7 @@ public class LoadSyncDataEngine extends Engine{
     }
     
     private File getSyncDirectory() {
-    	String baseDirectory = getRelatedOperationController().getSyncDirectory(getSyncTableInfo()).getAbsolutePath();
+    	String baseDirectory = getRelatedOperationController().getSyncDirectory(getSyncTableConfiguration()).getAbsolutePath();
     	
     	return new File(baseDirectory);
     }

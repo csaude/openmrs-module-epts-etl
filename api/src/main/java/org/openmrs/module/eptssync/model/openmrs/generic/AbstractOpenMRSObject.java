@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
@@ -18,6 +19,7 @@ import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.BaseVO;
+import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -33,7 +35,18 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	public <T extends OpenMRSObject> T loadParent(Class<T> parentClass, int parentId, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException {
 		if (parentId == 0) return null;
 		
-		T parentOnDestination = OpenMRSObjectDAO.thinGetByOriginRecordId(parentClass, parentId, this.getOriginAppLocationCode(), conn);
+		T parentOnDestination;
+		try {
+			parentOnDestination = OpenMRSObjectDAO.thinGetByOriginRecordId(parentClass, parentId, this.getOriginAppLocationCode(), conn);
+		} catch (DBException e) {
+			logger.info("NEW ERROR PERFORMING LOAD OF " + parentClass.getName());
+			
+			e.printStackTrace();
+
+			TimeCountDown.sleep(2000);
+			
+			throw new RuntimeException(e);
+		}
  
 		if (parentOnDestination != null){
 			return parentOnDestination;
@@ -158,7 +171,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		}
 	}
 	
-	protected  SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+	public  SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		return SyncImportInfoDAO.retrieveFromOpenMRSObject(tableInfo, this, conn);
 	}
 
@@ -173,7 +186,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		
 		for (ParentRefInfo refInfo: syncTableInfo.getChildRefInfo(conn)) {
 			
-			if (!refInfo.isMetadata()) {
+			if (!refInfo.isMetadata() && refInfo.isRelatedReferenceTableConfiguredForSynchronization()) {
 				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferenceClass(conn), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
 				
 				for (OpenMRSObject child : children) {
@@ -181,9 +194,10 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				}
 			}
 		}
+		
 	}
 	
-	protected void  remove(Connection conn) throws DBException {
+	public void  remove(Connection conn) throws DBException {
 		OpenMRSObjectDAO.remove(this, conn);
 	}
 
@@ -193,7 +207,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		OpenMRSObjectDAO.markAsConsistent(this, conn);
 	}
 
-	private Map<ParentRefInfo, Integer>  loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException{
+	Logger logger = Logger.getLogger(AbstractOpenMRSObject.class);
+	
+	public Map<ParentRefInfo, Integer>  loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 		Map<ParentRefInfo, Integer> missingParents = new HashMap<ParentRefInfo, Integer>();
 		
 		for (ParentRefInfo refInfo: tableInfo.getParentRefInfo(conn)) {
@@ -201,7 +217,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				 
 			try {
 				if (parentId != 0) {
-					OpenMRSObject parent = loadParent(refInfo.determineRelatedReferencedClass(conn), parentId, refInfo.isIgnorable(), conn);
+					OpenMRSObject parent;
+					
+					parent = loadParent(refInfo.determineRelatedReferencedClass(conn), parentId, refInfo.isIgnorable(), conn);
 					 
 					 if (parent == null) {
 						missingParents.put(refInfo, parentId);
@@ -231,7 +249,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		return super.equals(obj);
 	}
 	
-	private String generateMissingInfo(Map<ParentRefInfo, Integer> missingParents) {
+	public String generateMissingInfo(Map<ParentRefInfo, Integer> missingParents) {
 		String missingInfo = "";
 		
 		for (Entry<ParentRefInfo, Integer> missing : missingParents.entrySet()) {

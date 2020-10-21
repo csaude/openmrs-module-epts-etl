@@ -13,7 +13,6 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
-import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -36,7 +35,6 @@ public class ProcessController implements Controller{
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	private static Logger logger = Logger.getLogger(ProcessController.class);
-	private boolean configurationDone;
 	
 	public ProcessController(SyncConfiguration configuration){
 		this.configuration = configuration;
@@ -49,7 +47,6 @@ public class ProcessController implements Controller{
 		this.controllerId = configuration.getDesignation() + "_controller";
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
-		this.configurationDone = false;
 	}
 	
 	public SyncConfiguration getConfiguration() {
@@ -59,37 +56,7 @@ public class ProcessController implements Controller{
 	public ProcessController getChildController() {
 		return childController;
 	}
-	
-	public boolean isConfigurationDone() {
-		return configurationDone;
-	}
-	
-	public void init() {
-		if (!isConfigurationDone()) {
-			ProcessInitialization initialization = new ProcessInitialization(this);
-			ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId.toUpperCase() + "_INITIALIZER").execute(initialization);
-			
-			ProcessInitialization childInitialization = null; 
-			
-			if (this.getChildController() != null) {
-				childInitialization = new ProcessInitialization(this.getChildController());
-				ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.getChildController().getControllerId().toUpperCase() + "_INITIALIZER").execute(childInitialization);
-			}
-			
-			while(!initialization.isFinished() || childInitialization != null && !childInitialization.isFinished()) {
-				logInfo("STILL INITIALIZING THE PROCESS");
-				TimeCountDown.sleep(15);
-			}
-			
-			
-			this.configurationDone = true;
-			
-			if (this.getChildController() != null) {
-				this.getChildController().configurationDone = true;
-			}
-		}
-	}
-	
+
 	public OpenConnection openConnection() {
 		if (connService == null) connService = DBConnectionService.init(configuration.getConnInfo());
 		
@@ -204,8 +171,6 @@ public class ProcessController implements Controller{
 	public void run() {
 		this.operationStatus = MonitoredOperation.STATUS_RUNNING;
 		
-		init();
-		
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -228,9 +193,19 @@ public class ProcessController implements Controller{
 		this.operationsControllers = new ArrayList<OperationController>();
 		
 		for (SyncOperationConfig operation : configuration.getOperations()) {
-			if (!operation.isDisabled()) {
-				List<OperationController> controllers = operation.generateRelatedController(this, conn);
-
+			
+			SyncOperationConfig operationToAdd = operation;
+			
+			while(operationToAdd != null && operationToAdd.isDisabled()) {
+				if ( operationToAdd.getChild() != null) {
+					operationToAdd = operationToAdd.getChild();
+				}
+				else operationToAdd = null;
+			}
+			
+			if (operationToAdd != null) {
+				List<OperationController> controllers = operationToAdd.generateRelatedController(this, conn);
+	
 				for (OperationController controller : controllers) {
 					this.operationsControllers.add(controller);
 					
@@ -239,7 +214,6 @@ public class ProcessController implements Controller{
 				}
 			}
 		}
-		
 		
 		if (!utilities.arrayHasElement(this.operationsControllers)) {
 			changeStatusToFinished();

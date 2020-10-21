@@ -40,7 +40,7 @@ public class TransportSyncFilesEngine extends Engine {
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) {
 		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords, TransportRecord.class);
 	
-		this.getMonitor().logInfo("COPYING  '"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " SORUCE FILES TO IMPORT AREA");
+		this.getMonitor().logInfo("COPYING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " SORUCE FILES TO IMPORT AREA");
 		
 		
 		for (TransportRecord t : migrationRecordAsTransportRecord) {
@@ -48,7 +48,7 @@ public class TransportSyncFilesEngine extends Engine {
 			t.moveToBackUpDirectory();
 		}
 	
-		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableInfo().getTableName() + " SORUCE FILES COPIED TO IMPORT AREA");
+		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " SORUCE FILES COPIED TO IMPORT AREA");
 	}
 
 	@Override
@@ -79,18 +79,18 @@ public class TransportSyncFilesEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new TransportSyncFilesSearchParams(getRelatedOperationController(), this.getSyncTableInfo(), limits);
+		SyncSearchParams<? extends SyncRecord> searchParams = new TransportSyncFilesSearchParams(getRelatedOperationController(), this.getSyncTableConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
 
 		return searchParams;
 	}
 
 	private File getSyncBkpDirectory() throws IOException {
-		return getRelatedOperationController().getSyncBkpDirectory(getSyncTableInfo());
+		return getRelatedOperationController().getSyncBkpDirectory(getSyncTableConfiguration());
 	}
 
 	private File getSyncDestinationDirectory() throws IOException {
-		return getRelatedOperationController().getSyncDestinationDirectory(getSyncTableInfo());
+		return getRelatedOperationController().getSyncDestinationDirectory(getSyncTableConfiguration());
 	}
 
 	@Override
@@ -99,7 +99,7 @@ public class TransportSyncFilesEngine extends Engine {
 	}
 
 	private File getSyncDirectory() {
-		return getRelatedOperationController().getSyncDirectory(getSyncTableInfo());
+		return getRelatedOperationController().getSyncDirectory(getSyncTableConfiguration());
 	}
 
 	@Override

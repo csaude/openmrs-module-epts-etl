@@ -5,13 +5,10 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -45,11 +42,10 @@ public class SyncTableConfiguration {
 	/*private int qtyRecordsPerEngine;
 	private int qtyRecordsPerSelect;*/
 	private boolean fullLoaded;
-	private static Logger logger = Logger.getLogger(SyncTableConfiguration.class);
 	
 	public SyncTableConfiguration() {
 	}
-
+	
 	public String getClasspackage() {
 		return getRelatedSynconfiguration().getClasspackage();
 	}
@@ -62,19 +58,6 @@ public class SyncTableConfiguration {
 		return this.getRelatedSynconfiguration().getDesignation() + "_" + this.tableName;
 	}
 	
-	/*
-	public int getQtyRecordsPerSelect(String operationType) {
-		return qtyRecordsPerSelect != 0 ? qtyRecordsPerSelect : getRelatedSyncTableInfoSource().getDefaultQtyRecordsPerSelect(operationType);
-	}
-
-	public void setQtyRecordsPerSelect(int qtyRecordsPerSelect) {
-		this.qtyRecordsPerSelect = qtyRecordsPerSelect;
-	}
-
-	public void setQtyRecordsPerEngine(int qtyRecordsPerEngine) {
-		this.qtyRecordsPerEngine = qtyRecordsPerEngine;
-	}
-	*/
 	public boolean isFirstExport() {
 		return this.relatedSyncTableInfoSource.isFirstExport();
 	}
@@ -179,10 +162,13 @@ public class SyncTableConfiguration {
 		this.parentRefInfo = childRefInfo;
 	}
 	
+	private static String convertTableAttNameToClassAttName(String tableAttName) {
+		return utilities.convertTableAttNameToClassAttName(tableAttName);
+	}
+	
+	
 	public synchronized List<ParentRefInfo> getChildRefInfo(Connection conn) {
 		if (this.childRefInfo == null) {
-			
-			logInfo("DISCOVERING CHILDREN FOR '" + this.tableName + "'");
 			
 			try {
 				this.childRefInfo = new ArrayList<ParentRefInfo>();  
@@ -204,13 +190,9 @@ public class SyncTableConfiguration {
 					if (getRelatedSynconfiguration().find(ref.getReferenceTableInfo()) == null) {
 						ref.setMetadata(true);
 					}
-				
 					
 					this.childRefInfo.add(ref);
 				}
-			
-				logInfo(this.childRefInfo.size() + " CHILDREN FOR '" + this.tableName + "' DISCOVERED");
-				
 			} catch (SQLException e) {
 				e.printStackTrace();
 				
@@ -225,10 +207,19 @@ public class SyncTableConfiguration {
 		this.parentRefInfo = parentRefInfo;
 	}
 	
+	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
+		for (ParentRefInfo  parent : this.getParentRefInfo(conn)) {
+			if (parent.getReferenceColumnAsClassAttName().equals(parentAttName)) {
+				return parent.isIgnorable();
+			}
+		}
+		
+		throw new ForbiddenOperationException("The att '" + parentAttName + "' doesn't represent any defined parent att");
+	}
+	
+	
 	public synchronized List<ParentRefInfo> getParentRefInfo(Connection conn) {
 		if (this.parentRefInfo == null) {
-			
-			logInfo("DISCOVERING PARENTS FOR '" + this.tableName + "'");
 			
 			try {
 				this.parentRefInfo = new ArrayList<ParentRefInfo>();  
@@ -259,8 +250,6 @@ public class SyncTableConfiguration {
 					
 					this.parentRefInfo.add(ref);
 				}
-			
-				logInfo(this.parentRefInfo.size() + " PARENTS FOR '" + this.tableName + "' DISCOVERED");
 			} catch (SQLException e) {
 				e.printStackTrace();
 				
@@ -270,12 +259,18 @@ public class SyncTableConfiguration {
 		
 		return parentRefInfo;
 	}
-
+			
 	private static SyncTableConfiguration init(String tableName, SyncConfiguration sourceInfo) {
-		SyncTableConfiguration tableInfo = new SyncTableConfiguration();
-		tableInfo.setTableName(tableName);
-		tableInfo.setRelatedSyncTableInfoSource(sourceInfo);
-	
+		SyncTableConfiguration tableInfo = sourceInfo.findPulledTableConfiguration(tableName);
+		
+		if (tableInfo == null) {
+			tableInfo = new SyncTableConfiguration();
+			tableInfo.setTableName(tableName);
+			tableInfo.setRelatedSyncTableInfoSource(sourceInfo);
+			
+			sourceInfo.addToTableConfigurationPull(tableInfo);
+		}
+		
 		return tableInfo;
 	}
 
@@ -359,118 +354,12 @@ public class SyncTableConfiguration {
 		return className + "VO";
 	}
 
-	public boolean mustRecompileTableClass() {
-		return getRelatedSynconfiguration().isMustRecompileTable();
-	}
-
 	public boolean isMetadata() {
 		return metadata;
 	}
 
 	public void setMetadata(boolean metadata) {
 		this.metadata = metadata;
-	}
-
-	/**
-	 * Try to generate on related table the aditional information needed for
-	 * synchronization process
-	 * 
-	 * @throws SQLException
-	 */
-	public void tryToUpgradeDataBaseInfo(Connection conn) throws SQLException {
-		logInfo("UPGRATING TABLE INFO [" + this.tableName + "]");
-		
-		String newColumnDefinition = "";
-		
-		if (mustCreateStageSchemaElements() && !existRelatedExportStageTable(conn)) {
-			logInfo("GENERATING RELATED STAGE TABLE FOR [" + this.tableName + "]");
-			
-			createRelatedExportStageTable(conn);
-			
-			logInfo("RELATED STAGE TABLE FOR [" + this.tableName + "] GENERATED");
-			
-		}
-		
-		/*if (!isFirstExportDoneColumnExistsOnTable(conn)) {
-			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateFirstExportColumnGeneration());
-		}*/
-		
-		if (!isConsistentColumnExistOnTable(conn)) {
-			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateConsistentColumnGeneration());
-		}
-
-		if (!isLastSyncDateColumnExistOnTable(conn)) {
-			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateLastSyncDateColumnCreation());
-		}
-
-		/*if (!isUuidColumnExistOnTable(conn)) {
-			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateUuidColumnCreation());
-		}*/
-
-		if (!isOriginRecordIdColumnExistOnTable(conn)) {
-			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateOriginRecordIdColumnGeneration());
-		}
-
-		if (!isDateChangedColumnExistOnTable(conn)) {
-			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateDateChangedColumnGeneration());
-		}
-
-		if (!isOriginAppLocationCodeColumnExistsOnTable(conn)) {
-			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateOriginAppLocationCodeColumnGeneration());
-		}
-		
-		
-		String uniqueOrigin = "";
-		
-		if (!isUniqueOriginConstraintsExists(conn)) {
-			uniqueOrigin = "UNIQUE KEY " + generateUniqueOriginConstraintsName() + "(origin_record_id, origin_app_location_code)";
-		}
-		
-		String batch = "";
-		
-		if (utilities.stringHasValue(newColumnDefinition)) {
-			batch = "ALTER TABLE " + this.getTableName() + " ADD (" + newColumnDefinition + ")"; 
-		}
-		
-		if (utilities.stringHasValue(uniqueOrigin)) {
-			batch +=  (!utilities.stringHasValue(batch) ? "ALTER TABLE " + this.getTableName() + " ADD " + uniqueOrigin : ", ADD " + uniqueOrigin); 
-		}
-	
-		if (utilities.stringHasValue(batch)) {
-			logInfo("CONF COLUMNS FOR TABLE [" + this.tableName + "] CREATED");
-			BaseDAO.executeBatch(conn, batch);
-			logInfo("CREATING CONF COLUMNS FOR TABLE [" + this.tableName + "]");
-		}
-		
-		/*
-		if (!isIndexOnFirtExportDoneColumn(conn)) {
-			createIndexOnFirstExportDoneCOlumn(conn);
-		}*/
-		
-		if (!isExistRelatedTriggers(conn)) {
-			logInfo("CREATING RELATED TRIGGERS FOR [" + this.tableName + "]");
-			
-			createLastUpdateDateMonitorTrigger(conn);
-		
-			logInfo("RELATED TRIGGERS FOR [" + this.tableName + "] CREATED");
-		}
-	}
-
-	private boolean isUniqueOriginConstraintsExists(Connection conn) throws SQLException {
-		String unqKey = generateUniqueOriginConstraintsName(); 
-	
-		return DBUtilities.isIndexExistsOnTable(conn.getCatalog(), getTableName(), unqKey, conn);
-	}
-
-	private String generateUniqueOriginConstraintsName() {
-		return this.getTableName() + "origin_unq";
 	}
 
 	/*
@@ -493,37 +382,7 @@ public class SyncTableConfiguration {
 		st.close();
 	}*/
 
-	private void createRelatedExportStageTable(Connection conn) {
-		String sql = "";
 
-		sql += "CREATE TABLE " + getSyncStageSchema() + "." + generateRelatedStageTableName() + "(\n";
-		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
-		sql += "	record_id int(11) NOT NULL,\n";
-		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
-		sql += "	json VARCHAR(7500) NOT NULL,\n";
-		sql += "	origin_app_location_code VARCHAR(100) NOT NULL,\n";
-		sql += "	last_migration_try_date DATETIME DEFAULT NULL,\n";
-		sql += "	last_migration_try_err varchar(250) DEFAULT NULL,\n";
-		sql += "	migration_status int(1) DEFAULT 1,\n";
-		sql += "	CONSTRAINT CHK_" + generateRelatedStageTableName() + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
-		sql += "	UNIQUE KEY " + generateRelatedStageTableName() + "UNQ_RECORD(record_id, origin_app_location_code),\n";
-		sql += "	PRIMARY KEY (id)\n";
-		sql += ")\n";
-		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";
-		
-		try {
-			Statement st = conn.createStatement();
-			st.addBatch(sql);
-			st.executeBatch();
-
-			st.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		} 
-	}
-	
 	public boolean mustCreateStageSchemaElements() {
 		return getRelatedSynconfiguration().mustCreateStageSchemaElements();
 	}
@@ -540,7 +399,7 @@ public class SyncTableConfiguration {
 		return getSyncStageSchema() + "." + generateRelatedStageTableName();
 	}
 	
-	private boolean existRelatedExportStageTable(Connection conn) {
+	public boolean existRelatedExportStageTable(Connection conn) {
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = generateRelatedStageTableName();
@@ -554,13 +413,6 @@ public class SyncTableConfiguration {
 		}
 	}
 
-	private boolean isOriginAppLocationCodeColumnExistsOnTable(Connection conn) throws SQLException {
-		return DBUtilities.isColumnExistOnTable(getTableName(), "origin_app_location_code", conn);
-	}
-
-	private String generateOriginAppLocationCodeColumnGeneration() {
-		return "origin_app_location_code VARCHAR(100) NULL";
-	}
 
 	/*
 	private boolean isFirstExportDoneColumnExistsOnTable(Connection conn) throws SQLException {
@@ -572,112 +424,6 @@ public class SyncTableConfiguration {
 	}
 	*/
 	
-	private String generateDateChangedColumnGeneration() throws SQLException {
-		return "date_changed datetime NULL";
-	}
-
-	private boolean isDateChangedColumnExistOnTable(Connection conn) throws SQLException {
-		return DBUtilities.isColumnExistOnTable(getTableName(), "date_changed", conn);
-	}
-
-	private void createLastUpdateDateMonitorTrigger(Connection conn) throws SQLException {
-		Statement st = conn.createStatement();
-
-		st.addBatch(generateTriggerCode(this.generateLastUpdateDateInsertTriggerMonitor(), "INSERT"));
-		st.addBatch(generateTriggerCode(this.generateLastUpdateDateUpdateTriggerMonitor(), "UPDATE"));
-
-		st.executeBatch();
-
-		st.close();
-
-	}
-
-	private String generateTriggerCode(String triggerName, String triggerEvent) {
-		String sql = "";
-
-		// sql += "DELIMITER $$\n";
-		sql += "CREATE TRIGGER " + triggerName + " BEFORE " + triggerEvent + " ON " + this.tableName + "\n";
-		sql += "FOR EACH ROW\n";
-		sql += "	BEGIN\n";
-		sql += "		SET NEW.date_changed = CURRENT_TIMESTAMP();\n";
-		sql += "	END;\n";
-		// sql += "$$\n";
-		// sql += "DELIMITER ;";
-
-		return sql;
-	}
-
-	private boolean isExistRelatedTriggers(Connection conn) throws SQLException {
-		return DBUtilities.isResourceExist(conn.getCatalog(), DBUtilities.RESOURCE_TYPE_TRIGGER,
-				generateLastUpdateDateInsertTriggerMonitor(), conn);
-	}
-
-	private String generateLastUpdateDateInsertTriggerMonitor() {
-		return this.tableName + "_date_changed_insert_monitor";
-	}
-
-	private String generateLastUpdateDateUpdateTriggerMonitor() {
-		return this.tableName + "_date_changed_update_monitor";
-	}
-
-	private String generateLastSyncDateColumnCreation() {
-		return "last_sync_date datetime NULL";
-	}
-
-	private boolean isLastSyncDateColumnExistOnTable(Connection conn) throws SQLException {
-		return DBUtilities.isColumnExistOnTable(getTableName(), "last_sync_date", conn);
-	}
-
-	private String generateOriginRecordIdColumnGeneration() {
-		return "origin_record_id int(11) NULL";
-	}
-
-	private boolean isConsistentColumnExistOnTable(Connection conn) throws SQLException {
-		return DBUtilities.isColumnExistOnTable(getTableName(), "consistent", conn);
-	}
-
-	private String generateConsistentColumnGeneration() {
-		return "consistent int(1) DEFAULT 1";
-	}
-
-	/*private boolean isUuidColumnExistOnTable(Connection conn) throws SQLException {
-		return DBUtilities.isColumnExistOnTable(getTableName(), "uuid", conn);
-	}*/
-
-	/*private String generateUuidColumnCreation() {
-		return "uuid char(38) NULL";
-	}*/
-	
-	private boolean isOriginRecordIdColumnExistOnTable(Connection conn) throws SQLException {
-		return DBUtilities.isColumnExistOnTable(getTableName(), "origin_record_id", conn);
-	}
-	
-	private static String convertTableAttNameToClassAttName(String tableAttName) {
-		return utilities.convertTableAttNameToClassAttName(tableAttName);
-	}
-	
-	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
-		for (ParentRefInfo  parent : this.getParentRefInfo(conn)) {
-			if (parent.getReferenceColumnAsClassAttName().equals(parentAttName)) {
-				return parent.isIgnorable();
-			}
-		}
-		
-		throw new ForbiddenOperationException("The att '" + parentAttName + "' doesn't represent any defined parent att");
-	}
-	
-	
-	public void logInfo(String msg) {
-		utilities.logInfo(msg, logger);
-	}
-	
-	public void logError(String msg) {
-		utilities.logErr(msg, logger);
-	}
-	
-	public void logDebug(String msg) {
-		utilities.logDebug(msg, logger);
-	}
 
 	/*
 	public int getQtyRecordsPerEngine(String operationType) {
@@ -692,7 +438,7 @@ public class SyncTableConfiguration {
 	public synchronized void fullLoad(Connection conn) {
 		getParentRefInfo(conn);
 		getChildRefInfo(conn);
-		
+
 		this.fullLoaded = true;
 	}
 

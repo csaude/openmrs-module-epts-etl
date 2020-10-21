@@ -292,4 +292,8 @@ public class ParentRefInfo {
 	public void generateSkeletonRelatedReferenceClass(Connection conn) {
 		generateRelatedReferenceClass(false, conn);
 	}
+
+	public boolean isRelatedReferenceTableConfiguredForSynchronization() {
+		return getReferenceTableInfo().getRelatedSynconfiguration().find(getReferenceTableInfo()) != null;
+	}
 }

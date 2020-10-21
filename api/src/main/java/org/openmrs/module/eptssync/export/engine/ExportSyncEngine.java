@@ -46,17 +46,17 @@ public class ExportSyncEngine extends Engine {
 			List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
 			
 			for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
-				obj.setOriginAppLocationCode(getSyncTableInfo().getOriginAppLocationCode());
+				obj.setOriginAppLocationCode(getSyncTableConfiguration().getOriginAppLocationCode());
 			}
 			
-			this.getMonitor().logInfo("GENERATING '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " TO JSON FILE");
+			this.getMonitor().logInfo("GENERATING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE");
 			
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(syncRecordsAsOpenMRSObjects);
-			jsonInfo.setOriginAppLocationCode(getSyncTableInfo().getOriginAppLocationCode());
+			jsonInfo.setOriginAppLocationCode(getSyncTableConfiguration().getOriginAppLocationCode());
 
 			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecords.get(0).getObjectId(), syncRecords.get(syncRecords.size() - 1).getObjectId());
 			
-			this.getMonitor().logInfo("WRITING '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " TO JSON FILE [" + jsonFIle.getAbsolutePath() + ".json]");
+			this.getMonitor().logInfo("WRITING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE [" + jsonFIle.getAbsolutePath() + ".json]");
 			
 			FileUtilities.write(jsonFIle.getAbsolutePath(), jsonInfo.parseToJSON());
 			
@@ -64,11 +64,11 @@ public class ExportSyncEngine extends Engine {
 			
 			this.getMonitor().logInfo("JSON [" + jsonFIle + ".json] CREATED!");
 			
-			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " AS SYNCHRONIZED");
+			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED");
 				
 			markAllAsSynchronized(utilities.parseList(syncRecords, OpenMRSObject.class));
 			
-			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableInfo().getTableName() + " AS SYNCHRONIZED FINISHED");
+			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED FINISHED");
 			
 			this.getMonitor().logInfo("MAKING FILES AVALIABLE");
 			
@@ -105,7 +105,7 @@ public class ExportSyncEngine extends Engine {
 	}
 
 	private File generateJSONTempFile(SyncJSONInfo jsonInfo, int startRecord, int lastRecord) throws IOException {
-		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSyncTableInfo(), startRecord, lastRecord);
+		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSyncTableConfiguration(), startRecord, lastRecord);
 	}
 	
 	@Override
@@ -114,7 +114,7 @@ public class ExportSyncEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new SyncExportSearchParams(this.getSyncTableInfo(), limits, conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new SyncExportSearchParams(this.getSyncTableConfiguration(), limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		
 		return searchParams;

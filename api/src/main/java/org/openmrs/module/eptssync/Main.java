@@ -21,8 +21,6 @@ public class Main {
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 
 	public static void main(String[] synConfigFiles) throws IOException {
-		//if (true) throw new RuntimeException(getProjectPOJODirectory().getAbsolutePath());
-	
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);
 
 		if (countQtyDestination(syncConfigs) > 1) throw new ForbiddenOperationException("You must define only one destination file");

@@ -35,22 +35,22 @@ public class SyncEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		getRelatedOperationController().logInfo("SYNCHRONIZING '"+syncRecords.size() + "' "+ getSyncTableInfo().getTableName().toUpperCase());
+		getRelatedOperationController().logInfo("SYNCHRONIZING '"+syncRecords.size() + "' "+ getSyncTableConfiguration().getTableName().toUpperCase());
 		
-		if (getSyncTableInfo().isDoIntegrityCheckInTheEnd(getRelatedOperationController().getOperationType()) && !getSyncTableInfo().useSharedPKKey()) {
-			List<OpenMRSObject> objects = SyncImportInfoVO.convertAllToOpenMRSObject(getSyncTableInfo(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
+		if (getSyncTableConfiguration().isDoIntegrityCheckInTheEnd(getRelatedOperationController().getOperationType()) && !getSyncTableConfiguration().useSharedPKKey()) {
+			List<OpenMRSObject> objects = SyncImportInfoVO.convertAllToOpenMRSObject(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
 			
 			OpenMRSObjectDAO.insertAll(objects, conn);
 			
-			SyncImportInfoDAO.refreshLastMigrationTrySync(getSyncTableInfo(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
+			SyncImportInfoDAO.refreshLastMigrationTrySync(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
 		}
 		else{
 			for (SyncRecord record : syncRecords) {
-				((SyncImportInfoVO)record).sync(this.getSyncTableInfo(), conn);
+				((SyncImportInfoVO)record).sync(this.getSyncTableConfiguration(), conn);
 			}
 		}
 		
-		getRelatedOperationController().logInfo("SYNCHRONIZED'"+syncRecords.size() + "' "+ getSyncTableInfo().getTableName().toUpperCase());
+		getRelatedOperationController().logInfo("SYNCHRONIZED'"+syncRecords.size() + "' "+ getSyncTableConfiguration().getTableName().toUpperCase());
 	}
 	
 	@Override
@@ -60,7 +60,7 @@ public class SyncEngine extends Engine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new SynchronizationSearchParams(this.getSyncTableInfo(), limits);
+		SyncSearchParams<? extends SyncRecord> searchParams = new SynchronizationSearchParams(this.getSyncTableConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		//searchParams.setExtraCondition("json like \"%1f485395-b5ea-4889-8c1f-2b4f85a44776%\"");
 		

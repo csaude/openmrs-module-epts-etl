@@ -3,11 +3,13 @@ package org.openmrs.module.eptssync.controller.conf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Connection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.ForbiddenException;
 
+import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.Main;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -23,11 +25,11 @@ public class SyncConfiguration {
 	
 	private String originAppLocationCode;
 	
+	private Map<String, SyncTableConfiguration> syncTableConfigurationPull;
+	
 	private List<SyncTableConfiguration> tablesConfigurations;
 	
 	private boolean firstExport;
-	private boolean mustCreateClasses;
-	private boolean mustRecompileTable;
 	private DBConnectionInfo connInfo;
 	
 	private String classpackage;
@@ -52,6 +54,7 @@ public class SyncConfiguration {
 	private static final String[] supportedInstallationTypes = {"source", "destination"};
 	
 	private SyncConfiguration() {
+		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
 	}
 	
 	public SyncConfiguration getChildConfig() {
@@ -112,28 +115,13 @@ public class SyncConfiguration {
 	public void setClasspackage(String classpackage) {
 		this.classpackage = classpackage;
 	}
-	public boolean isMustCreateClasses() {
-		return mustCreateClasses;
-	}
-
-	public void setMustCreateClasses(boolean mustCreateClasses) {
-		this.mustCreateClasses = mustCreateClasses;
-	}
-
+	
 	public DBConnectionInfo getConnInfo() {
 		return connInfo;
 	}
 	
 	public void setConnInfo(DBConnectionInfo connInfo) {
 		this.connInfo = connInfo;
-	}
-	
-	public boolean isMustRecompileTable() {
-		return mustRecompileTable;
-	}
-	
-	public void setMustRecompileTable(boolean mustRecompileTable) {
-		this.mustRecompileTable = mustRecompileTable;
 	}
 	
 	/*
@@ -179,9 +167,25 @@ public class SyncConfiguration {
 	}
 
 	public void setTablesConfigurations(List<SyncTableConfiguration> tablesConfigurations) {
+		if (tablesConfigurations != null) {
+			for (SyncTableConfiguration config : tablesConfigurations) {
+				config.setRelatedSyncTableInfoSource(this);
+				
+				addToTableConfigurationPull(config);
+			}
+		}
+		
 		this.tablesConfigurations = tablesConfigurations;
 	}
+	
+	public void addToTableConfigurationPull(SyncTableConfiguration tableConfiguration) {
+		syncTableConfigurationPull.put(tableConfiguration.getTableName(), tableConfiguration);
+	}
 
+	public SyncTableConfiguration findPulledTableConfiguration(String tableName) {
+		return syncTableConfigurationPull.get(tableName);
+	}
+	
 	public String getSyncStageSchema() {
 		return syncStageSchema;
 	}
@@ -198,14 +202,21 @@ public class SyncConfiguration {
 		this.originAppLocationCode = originAppLocationCode;
 	}	
 	
-	public SyncTableConfiguration retrieveTableInfoByTableName(String tableName, Connection conn) {
+	static Logger logger = Logger.getLogger(SyncConfiguration.class);
+	
+	
+	/*public SyncTableConfiguration retrieveTableInfoByTableName(String tableName, Connection conn) {
 		for (SyncTableConfiguration info : this.tablesConfigurations) {
+			logger.info("RETRIEVING TABLE INFO OF TABLE '" + tableName + "' ON CONFIGURATION [" + info + "]");
+			
 			if (info.getTableName().equals(tableName)) return info;
 		}
 		
 		for (SyncTableConfiguration info : this.tablesConfigurations) {
 			
 			for (ParentRefInfo child : info.getChildRefInfo(conn)) {
+				logger.info("RETRIEVING TABLE INFO OF TABLE '" + tableName + "' ON CHILD [" + child.getReferenceTableInfo().getTableName() + "] OF CONFIGURATION [" + info + "]");
+				
 				if (child.getReferenceTableInfo().getTableName().equals(tableName)) {
 					if (child.getReferenceTableInfo().isFullLoaded()) {
 						return child.getReferenceTableInfo();
@@ -215,7 +226,7 @@ public class SyncConfiguration {
 		}
 		
 		return null;
-	}
+	}*/
 
 	public void setRelatedConfFile(File relatedConfFile) {
 		this.relatedConfFile = relatedConfFile;
@@ -274,7 +285,13 @@ public class SyncConfiguration {
 			operation.setRelatedSyncConfig(this);
 			
 			if (operation.getChild() != null) {
-				operation.getChild().setRelatedSyncConfig(this);
+				SyncOperationConfig child = operation.getChild();
+				
+				while(child != null) {
+					child.setRelatedSyncConfig(this);
+					
+					child = child.getChild();
+				}
 			}
 		}
 		

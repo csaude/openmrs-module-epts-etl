@@ -96,11 +96,14 @@ public abstract class BaseDAO{
 	 * 
 	 * @return generated object with retrieved data from DB
 	 */
-	public static <T extends VO> T find(Class<T> voClass,String sql, Object[] params, Connection conn) throws DBException{		
-		List<T> result = search(voClass, sql,params, conn );
+	
+	public static <T extends VO> T find(Class<T> voClass,String sql, Object[] params, Connection conn) throws DBException{	
+		
+		List<T> result;
+		result = search(voClass, sql,params, conn );
 		
 		if(utilities.arrayHasElement(result)) return result.get(0);
-	
+		
 		return null;
 	}
 		  
@@ -135,7 +138,7 @@ public abstract class BaseDAO{
 			}			
 		}
 		catch(Exception e){
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 		finally{
 			releaseDBResources(st, rs, conn);

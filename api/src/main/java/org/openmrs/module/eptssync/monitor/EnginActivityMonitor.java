@@ -100,6 +100,8 @@ public class EnginActivityMonitor implements Runnable{
 			else {
 				msg += " FINISHING....";
 				
+				getController().markTableOperationAsFinished(syncInfo);
+				
 				//this.changeStatusToFinished();
 			}
 			
@@ -163,12 +165,9 @@ public class EnginActivityMonitor implements Runnable{
 		
 			//If this engine is new must be not initialized, otherwise must be on STOPPED STATE
 			if (mainEngine.isNotInitialized()) {
-				logInfo("MAIN ENGINE ADDED TO OWNENGINES...");
 				this.ownEngines.add(mainEngine);
 			}
-			else
-				logInfo("NO MAIN ENGINE ADDED TO OWNENGINES...");
-
+			
 			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(mainEngine.getEngineId());
 			executor.execute(mainEngine);
 			

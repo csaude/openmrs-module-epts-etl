@@ -34,16 +34,16 @@
 				maxSupportedEngines: 30,
 				minRecordsPerEngine: 1000,
 				doIntegrityCheckInTheEnd: true,
-				disabled: true,
+				disabled: false,
 				processingMode: "sequencial",
 				
 				child: {
 					operationType: "consolidation",
 					maxRecordPerProcessing: 25000,
-					maxSupportedEngines: 30,
-					minRecordsPerEngine: 1000,
+					maxSupportedEngines: 1,
+					minRecordsPerEngine: 100,
 					doIntegrityCheckInTheEnd: true,
-					disabled: true,
+					disabled: false,
 					processingMode: "sequencial"
 				}
 			}

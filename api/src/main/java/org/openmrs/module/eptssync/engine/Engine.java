@@ -10,6 +10,7 @@ import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
+import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -97,7 +98,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		return searchParams;
 	}
 	
-	public SyncTableConfiguration getSyncTableInfo() {
+	public SyncTableConfiguration getSyncTableConfiguration() {
 		return monitor.getSyncTableInfo();
 	}
 	
@@ -141,7 +142,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		}
 		
 		while(isRunning()) {
-			this.monitor.logInfo("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableInfo().getTableName() + "'");
+			this.monitor.logInfo("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
 			
 			conn = openConnection();
 			
@@ -157,8 +158,11 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 						this.requestANewJob();
 					}
 					else {
-						getRelatedOperationController().logInfo("NO '" + this.getSyncTableInfo().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
+						getRelatedOperationController().logInfo("NO '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
+						
 						changeStatusToFinished();
+						
+						onFinish();
 					}
 				}
 			} catch (Exception e) {
@@ -175,10 +179,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	private int performe(Connection conn) throws DBException {
 		List<SyncRecord> records = searchNextRecords(conn);
 		
-		this.monitor.logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableInfo().getTableName() + "' FINISHED.");
+		this.monitor.logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "' FINISHED.");
 		
 		if (utilities.arrayHasElement(records)) {
-			this.monitor.logInfo("INITIALIZING " +  getRelatedOperationController().getOperationType() + " OF '" + records.size() + "' RECORDS OF TABLE '" + this.getSyncTableInfo().getTableName() + "'");
+			this.monitor.logInfo("INITIALIZING " +  getRelatedOperationController().getOperationType() + " OF '" + records.size() + "' RECORDS OF TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
 			
 			performeSync(records, conn);
 		}
@@ -349,7 +353,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		
 		String log = "";
 		
-		log += getSyncTableInfo().getTableName() + " PROGRESS: ";
+		log += getSyncTableConfiguration().getTableName() + " PROGRESS: ";
 		log += "[TOTAL RECS: " + globalProgressMeter.getTotal() + ", ";
 		log += "PROCESSED: " + globalProgressMeter.getDetailedProgress() + ", ";
 		log += "REMAINING: " + globalProgressMeter.getDetailedRemaining() + ",";
@@ -397,8 +401,19 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 
 	@Override
 	public void onFinish() {
+		if (!this.hasParent()) {
+			
+			if (this.hasChild()) {
+				while(!isFinished()) {
+					logInfo("THE ENGINE "+ getEngineId() + " IS WAITING FOR ALL CHILDREN FINISH TO TERMINATE THE OPERATION");
+					TimeCountDown.sleep(15);
+				}
+			}
+			
+			getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration());
+		}
 	}
-
+		
 	@Override
 	public int getWaitTimeToCheckStatus() {
 		return 0;

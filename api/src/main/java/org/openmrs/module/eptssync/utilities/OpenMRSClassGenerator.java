@@ -44,7 +44,7 @@ public class OpenMRSClassGenerator {
 		
 		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(destinationFileLocation, fullClassName);
 			
-		if (existingCLass != null && !syncTableInfo.mustRecompileTableClass()) return existingCLass;
+		if (existingCLass != null && !utilities.createInstance(existingCLass).isGeneratedFromSkeletonClass() ) return existingCLass;
 	
 		String attsDefinition = "";
 		String getttersAndSetterDefinition = "";
@@ -344,7 +344,7 @@ public class OpenMRSClassGenerator {
 		
 		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(destinationFileLocation, fullClassName);
 			
-		if (existingCLass != null && !syncTableInfo.mustRecompileTableClass()) return existingCLass;
+		if (existingCLass != null) return existingCLass;
 	
 		//String getttersAndSetterDefinition = "";
 		String methodFromSuperClass = "";
@@ -434,8 +434,6 @@ public class OpenMRSClassGenerator {
 
 		compile(sourceFile, destinationFileLocation);
 			
-		logger.info("GENERATED CLASS "+ fullClassName + " ON LOCATION "+ destinationFileLocation);
-		
 		return tryToGetExistingCLass(destinationFileLocation, fullClassName);
 	}
 	
