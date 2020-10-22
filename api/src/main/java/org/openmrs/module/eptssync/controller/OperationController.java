@@ -11,8 +11,9 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.monitor.ControllerStatusMonitor;
-import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
@@ -33,7 +34,7 @@ public abstract class OperationController implements Controller{
 	
 	private ProcessController processController;
 	
-	private List<EnginActivityMonitor> enginesActivititieMonitor;
+	private List<EngineActivityMonitor> enginesActivititieMonitor;
 	private ControllerStatusMonitor activitieMonitor;
 	
 	private OperationController child;
@@ -45,6 +46,8 @@ public abstract class OperationController implements Controller{
 	
 	private SyncOperationConfig operationConfig;
 	private OperationController parent;
+	
+	private TimeController timer;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = Logger.getLogger(this.getClass());
@@ -97,69 +100,78 @@ public abstract class OperationController implements Controller{
 		return this.getOperationConfig().isParallelModeProcessing();
 	}
 	
-	public void init() {
-		if (operationIsAlreadyFinished()) {
-			logInfo("THE OPERATION " + getControllerId() + " WAS ALREADY FINISHED!");
-			
-			changeStatusToFinished();
-			onFinish();
-		}
-		else {
-			this.enginesActivititieMonitor = new ArrayList<EnginActivityMonitor>();
-			List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
-			
-			if (isParallelModeProcessing()) {
-				for (SyncTableConfiguration syncInfo: allSync) {
-					
-					if (!operationTableIsAlreadyFinished(syncInfo)) {
-						logInfo("INITIALIZING '" + getOperationType() + "' ENGINE FOR TABLE '" + syncInfo.getTableName() + "'");
-						
-						Engine engine = initAndStartEngine(syncInfo);
-						
-						if (engine != null) {
-							logInfo("INITIALIZED '" + getOperationType() + "' ENGINE FOR TABLE '" + syncInfo.getTableName() + "'");
-						}
-						else {
-							logInfo("NO ENGINE FOR '" + getOperationType() + "' FOR TABLE '" + syncInfo.getTableName() + "' WAS CREATED...");
-						}
-					}
-					else {
-						logInfo("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' was already finished!");
-					}
-				}
-			
-				if (this.child != null) {
-					this.activitieMonitor = new ControllerStatusMonitor(this);
-				
-					ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId + "_MONIGTOR");
-					executor.execute(this.activitieMonitor);
-				}
-				
-				changeStatusToRunning();
-			}
-			else {
-				for (SyncTableConfiguration syncInfo: allSync) {
-					
-					if (!operationTableIsAlreadyFinished(syncInfo)) {
-						logInfo("Starting operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'");
-						
-						Engine engine = initAndStartEngine(syncInfo);
-						
-						while (engine != null && !engine.isFinished()) {
-							logInfo("The operation '" + getOperationType() + "' Is still working on table '" + syncInfo.getTableName() + "'");
-							TimeCountDown.sleep(15);
-						}
-						
-						logInfo("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' is finished!");
-					}
-					else logInfo("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' was already finished!");
-					
-				}
+	private void runIsSequencialMode() {
+		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
+		
+		for (SyncTableConfiguration syncInfo: allSync) {
+			if (operationTableIsAlreadyFinished(syncInfo)) {
+				logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
 				
 				changeStatusToFinished();
+				break;		
+			}
+			else 
+			if (stopRequested()) {
+				logInfo("ABORTING THE ENGINE PROCESS DUE STOP REQUESTED!");
 				
-				//There is no controller monitor so do onFinish();
-				onFinish();
+				changeStatusToStopped();
+				break;		
+			}
+			else {
+				logInfo(("Starting operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'").toUpperCase());
+				
+				EngineActivityMonitor engine = initAndStartEngine(syncInfo);
+				
+				while (engine != null && !engine.getMainEngine().isFinished() && !engine.getMainEngine().isStopped()) {
+					if (stopRequested()) {
+						logInfo("STOP REQUEST!!! THE OPERATION ON TABLE " + syncInfo.getTableName().toUpperCase() + " WILL STOPPED SOON");
+						engine.getMainEngine().requestStop();
+					}
+					else {
+						logInfo(("The operation '" + getOperationType() + "' Is still working on table '" + syncInfo.getTableName() + "'").toUpperCase());
+					}
+					
+					TimeCountDown.sleep(15);
+				}
+				
+				if (stopRequested() && engine.getMainEngine().isStopped()) {
+					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());
+				}
+				else {
+					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' is finished!").toUpperCase());
+				}
+			}
+		}
+	}
+
+	private void runInParallelMode() {
+		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
+		
+		this.enginesActivititieMonitor = new ArrayList<EngineActivityMonitor>();
+		
+		for (SyncTableConfiguration syncInfo: allSync) {
+			if (operationTableIsAlreadyFinished(syncInfo)) {
+				logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
+			}
+			else 
+			if (stopRequested()) {
+				logInfo("ABORTING THE ENGINE INITIALIZER DUE STOP REQUESTED!");
+				
+				break;
+			}
+			else{
+				logInfo("INITIALIZING '" + getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
+					
+				EngineActivityMonitor activitityMonitor = initAndStartEngine(syncInfo);
+					
+				if (activitityMonitor != null) {
+					startAndAddToEnginesActivititieMonitor(activitityMonitor);
+					
+					logInfo("INITIALIZED '" + getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
+				}
+				else {
+					logInfo("NO ENGINE FOR '" + getOperationType().toUpperCase() + "' FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "' WAS CREATED...");
+				}
 			}
 		}
 	}
@@ -184,7 +196,7 @@ public abstract class OperationController implements Controller{
 		return controllerId;
 	}
 	
-	public List<EnginActivityMonitor> getEnginesActivititieMonitor() {
+	public List<EngineActivityMonitor> getEnginesActivititieMonitor() {
 		return enginesActivititieMonitor;
 	}
 	
@@ -210,19 +222,20 @@ public abstract class OperationController implements Controller{
 		utilities().logDebug(msg, logger);
 	}
 
-	protected Engine initAndStartEngine(SyncTableConfiguration syncInfo) {
-		EnginActivityMonitor activitityMonitor = new EnginActivityMonitor(this, syncInfo);
+	protected EngineActivityMonitor initAndStartEngine(SyncTableConfiguration syncInfo) {
+		EngineActivityMonitor activitityMonitor = new EngineActivityMonitor(this, syncInfo);
 		Engine engine = activitityMonitor.initEngine();
 		
 		if (engine != null) {
-			this.enginesActivititieMonitor.add(activitityMonitor);
-			
-			if (mustRestartInTheEnd()) {
-				ThreadPoolService.getInstance().createNewThreadPoolExecutor(getControllerId() + "_ENGINE_OPERATION_MONITOR").execute(activitityMonitor);
-			}
+			return activitityMonitor;
 		}
+		else return null;
+	}
+	
+	private void startAndAddToEnginesActivititieMonitor(EngineActivityMonitor activitityMonitor) {
+		this.enginesActivititieMonitor.add(activitityMonitor);
 		
-		return engine;
+		ThreadPoolService.getInstance().createNewThreadPoolExecutor(getControllerId().toUpperCase() + "_ENGINE_OPERATION_MONITOR").execute(activitityMonitor);
 	}
 	
 	@Override
@@ -230,20 +243,46 @@ public abstract class OperationController implements Controller{
 		return this.controllerId;
 	}
 	
-	public void executeChildOperation() {
-		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.child.getControllerId());
-		executor.execute(this.child);
-	}
-	
 	@Override
 	public void run() {
-		init();
+		changeStatusToRunning();
+		
+		timer = new TimeController();
+		timer.start();
+		
+		this.activitieMonitor = new ControllerStatusMonitor(this);
+		
+		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId.toUpperCase() + "_MONIGTOR");
+		executor.execute(this.activitieMonitor);
+
+		if (stopRequested()) {
+			logInfo("THE OPERATION " + getControllerId()  + " COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
+			
+			changeStatusToStopped();
+			
+			if (getChild() != null) {
+				getChild().requestStop();
+			}
+		}
+		else
+		if (operationIsAlreadyFinished()) {
+			logInfo("THE OPERATION " + getControllerId() + " WAS ALREADY FINISHED!");
+			
+			changeStatusToFinished();
+		}
+		else
+		if (isParallelModeProcessing()) {
+			runInParallelMode();
+		}
+		else {
+			runIsSequencialMode();
+		}
 	}
 	
 	
 	@Override
 	public TimeController getTimer() {
-		return null;
+		return this.timer;
 	}
 	
 	@Override
@@ -267,6 +306,22 @@ public abstract class OperationController implements Controller{
 	
 	@Override
 	public boolean isStopped() {
+		if (isFinished()) return true;
+		
+		if (isParallelModeProcessing() && this.enginesActivititieMonitor != null) {
+			for (EngineActivityMonitor monitor : this.enginesActivititieMonitor) {
+				Engine engine = monitor.getMainEngine();
+				
+				if (engine == null) throw new RuntimeException("No engine for minitor '" + monitor.getSyncTableInfo().getTableName() + "'");
+				
+				if (!engine.isStopped()) {
+					return false;
+				}
+			}
+			
+			return true;
+		}
+		
 		return this.operationStatus == MonitoredOperation.STATUS_STOPPED;
 	}
 	
@@ -277,7 +332,7 @@ public abstract class OperationController implements Controller{
 		}
 		
 		if (isParallelModeProcessing() && this.enginesActivititieMonitor != null) {
-			for (EnginActivityMonitor monitor : this.enginesActivititieMonitor) {
+			for (EngineActivityMonitor monitor : this.enginesActivititieMonitor) {
 				Engine engine = monitor.getMainEngine();
 				
 				if (engine == null) throw new RuntimeException("No engine for minitor '" + monitor.getSyncTableInfo().getTableName() + "'");
@@ -295,23 +350,28 @@ public abstract class OperationController implements Controller{
 	}
 	
 	
-	public void markTableOperationAsFinished(SyncTableConfiguration conf) {
+	public void markTableOperationAsFinished(SyncTableConfiguration conf, TimeController timer) {
 		String operationId = this.getControllerId() + "_" + conf.getTableName();
 		
 		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
 		
-		logInfo("FINISHING OPERATION... WRITING OPERATION STATUS ON "+ fileName);
-		
-		String desc = "";
-		
-		desc += "{\n";
-		desc += "	operationName: \"" + this.getControllerId() + "\",\n";
-		desc += "	operationTable: \"" + conf.getTableName() + "\"\n";
-		desc += "}";
-		
-		FileUtilities.write(fileName, desc);
-		
-		logInfo("FILE WROTE");
+		if (!new File(fileName).exists()) {
+			logInfo("FINISHING OPERATION... WRITING OPERATION STATUS ON "+ fileName);
+			
+			String desc = "";
+			
+			desc += "{\n";
+			desc += "	operationName: \"" + this.getControllerId() + "\",\n";
+			desc += "	operationTable: \"" + conf.getTableName() + "\"\n";
+			desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(timer.getStartTime()) + "\",\n";
+			desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate()) + "\",\n";
+			desc += "	elapsedTime: \"" + timer.getDuration(TimeController.DURACAO_IN_HOURS) + "\"\n";
+			desc += "}";
+			
+			FileUtilities.write(fileName, desc);
+			
+			logInfo("FILE WROTE");
+		}
 	}
 	
 	public void markOperationAsFinished() {
@@ -319,18 +379,22 @@ public abstract class OperationController implements Controller{
 		
 		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
 		
-		logInfo("FINISHING OPERATION... WRITING OPERATION STATUS ON "+ fileName);
-		
-		String desc = "";
-		
-		desc += "{\n";
-		desc += "	operationName: \"" + this.getControllerId() + "\",\n";
-		desc += "}";
-		
-		FileUtilities.write(fileName, desc);
-		
-		logInfo("FILE WROTE");
-		
+		if (!new File(fileName).exists()) {
+			logInfo("FINISHING OPERATION... WRITING OPERATION STATUS ON "+ fileName);
+			
+			String desc = "";
+			
+			desc += "{\n";
+			desc += "	operationName: \"" + this.getControllerId() + "\",\n";
+			desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(this.getTimer().getStartTime()) + "\",\n";
+			desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate()) + "\",\n";
+			desc += "	elapsedTime: \"" + this.getTimer().getDuration(TimeController.DURACAO_IN_HOURS) + "\"\n";
+			desc += "}";
+			
+			FileUtilities.write(fileName, desc);
+			
+			logInfo("FILE WROTE");
+		}
 		changeStatusToFinished();
 	}
 	
@@ -379,10 +443,13 @@ public abstract class OperationController implements Controller{
 
 	@Override
 	public void onStop() {
+		logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
 	}
 	
 	@Override
 	public void onFinish() {
+		getTimer().stop();
+		
 		markOperationAsFinished();
 		
 		logInfo("FINISHING OPERATION");
@@ -393,12 +460,31 @@ public abstract class OperationController implements Controller{
 		}
 		
 		if (nextOperation != null) {
-			this.executeChildOperation();
+			if (!stopRequested()) {
+				ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(nextOperation.getControllerId());
+				executor.execute(nextOperation);
+			}
+			else {
+				logInfo("THE OPERATION " + nextOperation.getControllerId().toUpperCase() + " COULD NOT BE INITIALIZED BECAUSE THERE WAS A STOP REQUEST!!!");
+			}
 		}
 	}
 	
 	@Override
-	public void requestStop() {
+	public synchronized void requestStop() {
+		if (isNotInitialized()) {
+			changeStatusToStopped();
+		}
+		else
+		if (!stopRequested()) {
+			for (EngineActivityMonitor monitor : this.enginesActivititieMonitor) {
+				monitor.getMainEngine().requestStop();
+			}
+		
+			this.stopRequested = true;
+		}
+		
+		if (getChild() != null) getChild().requestStop();
 	}
 	
 	@Override
@@ -412,7 +498,7 @@ public abstract class OperationController implements Controller{
 	@JsonIgnore
 	public abstract String getOperationType();
 	
-	public abstract Engine initRelatedEngine(EnginActivityMonitor monitor, RecordLimits limits) ;
+	public abstract Engine initRelatedEngine(EngineActivityMonitor monitor, RecordLimits limits) ;
 
 	public abstract long getMinRecordId(SyncTableConfiguration tableInfo);
 	public abstract long getMaxRecordId(SyncTableConfiguration tableInfo);

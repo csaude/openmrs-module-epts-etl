@@ -1,5 +1,6 @@
 package org.openmrs.module.eptssync.controller;
 
+import java.io.File;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,11 +11,13 @@ import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.monitor.ControllerStatusMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
+import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 /**
  * The controller os whole synchronization process. This class uses {@link OperationController} to do the synchronization process
@@ -25,7 +28,6 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 public class ProcessController implements Controller{
 	private SyncConfiguration configuration;
 	private int operationStatus;
-	private boolean stopRequested;
 	private List<OperationController> operationsControllers;
 	private ProcessController childController;
 	private ControllerStatusMonitor monitor;
@@ -35,6 +37,8 @@ public class ProcessController implements Controller{
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	private static Logger logger = Logger.getLogger(ProcessController.class);
+	
+	private TimeController timer;
 	
 	public ProcessController(SyncConfiguration configuration){
 		this.configuration = configuration;
@@ -65,12 +69,14 @@ public class ProcessController implements Controller{
 	
 	@Override
 	public TimeController getTimer() {
-		return null;
+		return this.timer;
 	}
 
 	@Override
 	public boolean stopRequested() {
-		return this.stopRequested;
+		return new File (getConfiguration().getSyncRootDirectory()+"/process_status/stop_requested.info").exists();
+		
+		//return this.stopRequested;
 	}
 	
 	@Override
@@ -85,44 +91,62 @@ public class ProcessController implements Controller{
 	
 	@Override
 	public boolean isStopped() {
+		if (isFinished()) return true;
+		
+		if (utilities.arrayHasElement(this.operationsControllers)) {
+			for (OperationController controller : this.operationsControllers) {
+				if (controller.getOperationConfig().isDisabled()) {
+					continue;
+				}
+				else
+				if (!controller.isStopped()) {
+					return false;
+				}
+				else {
+					OperationController child = controller.getChild() ;
+					
+					while(child != null) {
+						if (!child.isStopped()) {
+							return false;
+						}
+						
+						child = child.getChild();
+					}
+				}
+			}
+			
+			return true;
+		}
+		
+		
 		return this.operationStatus == MonitoredOperation.STATUS_STOPPED;
 	}
 	
 	@Override
 	public boolean isFinished() {
 		if (utilities.arrayHasElement(this.operationsControllers)) {
-			
-			logInfo("STARTING CHECK IF PROCESS CONTROLLER IS FINICHED");
-			
 			for (OperationController controller : this.operationsControllers) {
 				if (controller.getOperationConfig().isDisabled()) {
 					continue;
 				}
 				else
 				if (!controller.isFinished()) {
-					logInfo("PROCESS CONTROLLER NOT FINISHED. REASON: OPERATION CONTROLLER " + controller.getControllerId() + " IS STILL NOT FINISHED....");
-					
 					return false;
 				}
-				else
-				if (controller.getChild() != null && !controller.getChild().isFinished()) {
-					logInfo("PROCESS CONTROLLER NOT FINISHED. REASON:  THE CHILD OPERATION CONTROLLER " + controller.getChild().getControllerId() + " IS STILL NOT FINISHED....");
+				else {
+					OperationController child = controller.getChild() ;
 					
-					return false;
+					while(child != null) {
+						if (!child.isFinished()) {
+							return false;
+						}
+						
+						child = child.getChild();
+					}
 				}
 			}
-			
-			logInfo("ALL PROCESS OPERATIONS ARE FINISHED!");
 			
 			return true;
-			
-			/*
-			if (this.childController != null) {
-				return this.childController.isFinished();
-			}
-			else {
-				return true;
-			}*/
 		}
 		
 		return this.operationStatus == MonitoredOperation.STATUS_FINISHED;
@@ -164,28 +188,58 @@ public class ProcessController implements Controller{
 	}
 
 	@Override
-	public void requestStop() {	
+	public synchronized void requestStop() {	
+		if (isNotInitialized()) {
+			changeStatusToStopped();
+		}
+		else
+		if (utilities.arrayHasElement(this.operationsControllers)) {
+			for (OperationController controller : this.operationsControllers) {
+				controller.requestStop();
+			}
+		}
+		
+		if (getChildController() != null) {
+			getChildController().requestStop();
+		}
 	}
 
 	@Override
 	public void run() {
-		this.operationStatus = MonitoredOperation.STATUS_RUNNING;
+		changeStatusToRunning();
 		
-		OpenConnection conn = openConnection();
+		this.timer = new TimeController();
+		this.timer.start();
+	
+		this.monitor = new ControllerStatusMonitor(this);
 		
-		try {
-			initOperationsControllers(conn);
-			conn.markAsSuccessifullyTerminected();
+		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId + "_MONITOR");
+		executor.execute(this.monitor);
+		
+		if (stopRequested()) {
+			logInfo("THE PROCESS COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
+			
+			changeStatusToStopped();
+			
+			if (getChildController() != null) {
+				getChildController().requestStop();
+			}
 		}
-		finally {
-			conn.finalizeConnection();
+		else
+		if (processIsAlreadyFinished()) {
+			logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS ALREADY FINISHED!!!");
+			changeStatusToFinished();
 		}
-		
-		if (this.childController != null) {
-			this.monitor = new ControllerStatusMonitor(this);
-		
-			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId + "_MONITOR");
-			executor.execute(this.monitor);
+		else {
+			OpenConnection conn = openConnection();
+			
+			try {
+				initOperationsControllers(conn);
+				conn.markAsSuccessifullyTerminected();
+			}
+			finally {
+				conn.finalizeConnection();
+			}
 		}
 	}
 	
@@ -193,7 +247,6 @@ public class ProcessController implements Controller{
 		this.operationsControllers = new ArrayList<OperationController>();
 		
 		for (SyncOperationConfig operation : configuration.getOperations()) {
-			
 			SyncOperationConfig operationToAdd = operation;
 			
 			while(operationToAdd != null && operationToAdd.isDisabled()) {
@@ -216,6 +269,7 @@ public class ProcessController implements Controller{
 		}
 		
 		if (!utilities.arrayHasElement(this.operationsControllers)) {
+			logInfo("NO OPERATION TO EXECUTE... FINISHING NOW!!!");
 			changeStatusToFinished();
 		}
 	}
@@ -230,21 +284,66 @@ public class ProcessController implements Controller{
 
 	@Override
 	public void onStop() {
+		logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
 	}
 
 	@Override
 	public void onFinish() {
+		markProcessAsFinished();
+		
 		if (this.childController != null) {
-			if (this.childController != null) {
-				ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.childController.getControllerId());
-				executor.execute(this.childController);
+			
+			ProcessController child = this.childController;
+			
+			while (child != null && child.getConfiguration().isDisabled()) {
+				child = child.getChildController();
+			}
+			
+			if (child != null) {
+				ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(child.getControllerId());
+				executor.execute(child);
 			}
 		}
 	}
+	
+	private void markProcessAsFinished() {
+		String operationId = this.getControllerId();
+		
+		String fileName = getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
+		
+		if (!new File(fileName).exists()) {
+			logInfo("FINISHING PROCESS... WRITING PROCESS STATUS ON "+ fileName);
+			
+			String desc = "";
+			
+			desc += "{\n";
+			desc += "	processName: \"" + this.getControllerId() + "\",\n";
+			desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(this.getTimer().getStartTime()) + "\",\n";
+			desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate()) + "\",\n";
+			desc += "	elapsedTime: \"" + this.getTimer().getDuration(TimeController.DURACAO_IN_HOURS) + "\"\n";
+			desc += "}";
+			
+			FileUtilities.write(fileName, desc);
+			
+			logInfo("FILE WROTE");
+		}
+		
+		changeStatusToFinished();
+	}
+	
+
+	private boolean processIsAlreadyFinished() {
+		String operationId = this.getControllerId();
+		
+		String fileName = getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
+		
+		return new File(fileName).exists(); 
+	}
+	
 
 	@Override
 	public int getWaitTimeToCheckStatus() {
-		return 15;
+		return 5;
 	}
 	
 	public void forceFinish() {

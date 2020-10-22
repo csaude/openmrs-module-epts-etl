@@ -35,11 +35,18 @@ public class Main {
 			allController.add(controller);
 		}
 
-		while (!isAllFinished(allController)) {
-			TimeCountDown.sleep(10000);
+		while (!isAllFinished(allController) && !isAllStoppedFinished(allController)){
+			TimeCountDown.sleep(10);
 		}
-
-		logger.info("ALL JOBS ARE FINISHED");
+		
+		if (isAllFinished(allController)) {
+			logger.info("ALL JOBS ARE FINISHED");
+		}
+		else
+		if (isAllStoppedFinished(allController)) {
+			logger.info("ALL JOBS ARE STOPPED");
+		}
+		
 	}
 
 	private static List<SyncConfiguration> loadSyncConfig(String[] synConfigFiles) throws ForbiddenOperationException, IOException {
@@ -103,6 +110,17 @@ public class Main {
 		
 		return true;
 	}
+	
+	public static boolean isAllStoppedFinished(List<ProcessController> controllers) {
+		for (ProcessController c : controllers) {
+			if (!c.isStopped() || c.getChildController() != null && !c.getChildController().isStopped()) {
+					return false;
+			}
+		}
+		
+		return true;
+	}
+	
 	
 	public static File getProjectRoot() {
 		return new File(Main.class.getProtectionDomain().getCodeSource().getLocation().getPath());

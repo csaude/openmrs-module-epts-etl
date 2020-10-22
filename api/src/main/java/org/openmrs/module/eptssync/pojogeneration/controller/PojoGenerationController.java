@@ -6,7 +6,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
 import org.openmrs.module.eptssync.pojogeneration.engine.PojoGenerationEngine;
 
 /**
@@ -22,7 +22,7 @@ public class PojoGenerationController extends OperationController {
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+	public Engine initRelatedEngine(EngineActivityMonitor monitor, RecordLimits limits) {
 		return new PojoGenerationEngine(monitor, limits);
 	}
 

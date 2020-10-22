@@ -10,7 +10,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
 import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.transport.model.TransportRecord;
 import org.openmrs.module.eptssync.transport.model.TransportSyncFilesSearchParams;
@@ -29,7 +29,7 @@ import org.openmrs.module.eptssync.transport.model.TransportSyncFilesSearchParam
  */
 public class TransportSyncFilesEngine extends Engine {
 
-	public TransportSyncFilesEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+	public TransportSyncFilesEngine(EngineActivityMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 

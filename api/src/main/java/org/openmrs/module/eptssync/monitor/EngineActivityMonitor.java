@@ -10,17 +10,18 @@ import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
+import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 
 /**
  * This class monitor all {@link Engine}s of an {@link OperationController}
  * <p>When a {@link Engine} process all records within the {@link RecordLimits} granted by the {@link OperationController} then
  * the engine went to sleeping state and is put back to the controller pull. When All the engines related to a specific engine went sleep, the controller allocate new job
- * fore these engine. The purpose of {@link EnginActivityMonitor} is to controller the correct time to realocate new jobs to sleeping engines. This is done by calling {@link OperationController#realocateJobToEngines(EnginActivityMonitor)}
+ * fore these engine. The purpose of {@link EngineActivityMonitor} is to controller the correct time to realocate new jobs to sleeping engines. This is done by calling {@link OperationController#realocateJobToEngines(EngineActivityMonitor)}
  * 
  * @author jpboane
  */
-public class EnginActivityMonitor implements Runnable{
+public class EngineActivityMonitor implements Runnable{
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private OperationController controller;
@@ -28,7 +29,9 @@ public class EnginActivityMonitor implements Runnable{
 	
 	private List<Engine> ownEngines;
 	
-	public EnginActivityMonitor(OperationController controller, SyncTableConfiguration syncTableInfo) {
+	private TimeController timer;
+	
+	public EngineActivityMonitor(OperationController controller, SyncTableConfiguration syncTableInfo) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<Engine>();
 		this.syncTableInfo = syncTableInfo;
@@ -54,11 +57,23 @@ public class EnginActivityMonitor implements Runnable{
 	
 	@Override
 	public void run() {
-		while(true) {
-			//String msg = "WAITING FOR ALL ENGINE REQUEST NEW JOB REALOCATION. CURRENT STATUS: " + generateEngineNewJobRequestStatus();
-			
+		boolean running = true;
+		
+		while(running) {
 			TimeCountDown.sleep(60);
 			
+			if (getMainEngine().isFinished()) {
+				getMainEngine().onFinish();
+				
+				running = false;
+			}
+			else
+			if(getMainEngine().isStopped()) {
+				getMainEngine().onStop();
+				
+				running = false;
+			}
+			else
 			if (!isAllEnginesRequestedNewJob()) {
 				//this.controller.logInfo(msg);
 			}
@@ -82,6 +97,11 @@ public class EnginActivityMonitor implements Runnable{
 	}
 	
 	public Engine initEngine() {
+		if (timer == null) {
+			this.timer = new TimeController();
+			this.timer.start();
+		}
+		
 		SyncTableConfiguration syncInfo = getSyncTableInfo();
 		
 		long minRecId = getController().getMinRecordId(getSyncTableInfo());
@@ -100,7 +120,7 @@ public class EnginActivityMonitor implements Runnable{
 			else {
 				msg += " FINISHING....";
 				
-				getController().markTableOperationAsFinished(syncInfo);
+				getController().markTableOperationAsFinished(syncInfo, this.timer);
 				
 				//this.changeStatusToFinished();
 			}
@@ -264,7 +284,7 @@ public class EnginActivityMonitor implements Runnable{
 	}
 	
 	/**
-	 * Schedule new job for this job. This is controller by {@link EnginActivityMonitor}
+	 * Schedule new job for this job. This is controller by {@link EngineActivityMonitor}
 	 * 
 	 * @param syncEngine
 	 */

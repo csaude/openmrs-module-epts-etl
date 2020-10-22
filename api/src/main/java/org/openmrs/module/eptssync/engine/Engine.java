@@ -6,7 +6,7 @@ import java.util.List;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
@@ -28,7 +28,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	protected List<Engine> children;
 	protected Engine parent;
 	
-	protected EnginActivityMonitor monitor;
+	protected EngineActivityMonitor monitor;
 	
 	protected SyncProgressMeter progressMeter;
 	protected SyncSearchParams<? extends SyncRecord> searchParams;
@@ -43,7 +43,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 
 	private boolean newJobRequested;
 	
-	public Engine(EnginActivityMonitor monitr, RecordLimits limits) {
+	public Engine(EngineActivityMonitor monitr, RecordLimits limits) {
 		this.monitor = monitr;
 		
 		this.limits = limits;
@@ -62,7 +62,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		return monitor.getController().getOperationConfig().getMaxRecordPerProcessing();
 	}
 
-	public EnginActivityMonitor getMonitor() {
+	public EngineActivityMonitor getMonitor() {
 		return monitor;
 	}
 	
@@ -122,56 +122,82 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	public void run() {
 		this.changeStatusToRunning();
 		
-		if (this.timer == null) {
+		if (this.timer == null && !this.hasParent()) {
 			this.timer = new TimeController();
 			this.timer.start();
 		}
 		
-		OpenConnection conn = openConnection();
-		
-		try {
-			initProgressMeter(conn);
-			conn.markAsSuccessifullyTerminected();
-		} catch (DBException e) {
-			e.printStackTrace();
-		
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
-		}
-		
-		while(isRunning()) {
-			this.monitor.logInfo("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
+		if (stopRequested()) {
+			changeStatusToStopped();
 			
-			conn = openConnection();
+			if (this.hasChild()) {
+				for (Engine engine : this.getChildren()) {
+					engine.requestStop();
+				}
+			}
+		}
+		
+		else {
+			OpenConnection conn = openConnection();
 			
 			try {
-				int processedRecords = performe(conn);
+				initProgressMeter(conn);
 				conn.markAsSuccessifullyTerminected();
-				
-				refreshProgressMeter(processedRecords, conn);
-				reportProgress();
-				
-				if (processedRecords == 0) {
-					if (getRelatedOperationController().mustRestartInTheEnd()) {
-						this.requestANewJob();
-					}
-					else {
-						getRelatedOperationController().logInfo("NO '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
-						
-						changeStatusToFinished();
-						
-						onFinish();
-					}
-				}
-			} catch (Exception e) {
+			} catch (DBException e) {
 				e.printStackTrace();
-				
+			
 				throw new RuntimeException(e);
 			}
 			finally {
 				conn.finalizeConnection();
+			}
+			
+			while(isRunning()) {
+				if (stopRequested()) {
+					logInfo("STOP REQUESTED... STOPPING NOW");
+					
+					if (this.hasChild()) {
+						for (Engine child : getChildren()) {
+							while(!child.isStopped() || !child.isFinished()) {
+								logInfo("WAITING FOR ALL CHILD ENGINES TO BE STOPPED");
+								TimeCountDown.sleep(10);
+							}
+						}
+					}
+					
+					this.changeStatusToStopped();
+				}
+				else {
+					logInfo("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
+					
+					conn = openConnection();
+					
+					try {
+						int processedRecords = performe(conn);
+						conn.markAsSuccessifullyTerminected();
+						
+						refreshProgressMeter(processedRecords, conn);
+						reportProgress();
+						
+						if (processedRecords == 0) {
+							if (getRelatedOperationController().mustRestartInTheEnd()) {
+								this.requestANewJob();
+							}
+							else {
+								getRelatedOperationController().logInfo("NO '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
+								
+								changeStatusToFinished();
+							}
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+						
+						throw new RuntimeException(e);
+					}
+					finally {
+						conn.finalizeConnection();
+					}
+				}
 			}
 		}
 	}
@@ -273,6 +299,8 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	@Override
 	public boolean isStopped() {
+		if (isFinished()) return true;
+		
 		if (utilities.arrayHasElement(this.children)) {
 			for (Engine engine : this.children) {
 				if (!engine.isStopped()) return false;
@@ -376,6 +404,24 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	public String toString() {
 		return getEngineId() + " Limits [" + getLimits() + "]";
 	}
+	
+	@Override
+	public synchronized void requestStop() {
+		if (isNotInitialized()) {
+			changeStatusToStopped();
+		}
+		else
+		if (!stopRequested()) {
+			if (this.hasChild()) {
+				for (Engine engine : this.getChildren()) {
+					engine.requestStop();
+				}
+			}
+			
+			this.stopRequested = true;
+		}
+	}
+	
 	/**
 	 * @return
 	 */
@@ -410,7 +456,9 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 				}
 			}
 			
-			getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration());
+			getTimer().stop();
+			
+			getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration(), getTimer());
 		}
 	}
 		

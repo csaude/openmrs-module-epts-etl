@@ -15,14 +15,14 @@ import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
-import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class ExportSyncEngine extends Engine {
 	
-	public ExportSyncEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+	public ExportSyncEngine(EngineActivityMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 

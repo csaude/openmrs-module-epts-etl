@@ -29,6 +29,16 @@ public class ControllerStatusMonitor implements Runnable{
 			
 				running = false;
 			}
+			else 
+			if (controller.isStopped()) {
+				running = false;
+				
+				controller.onStop();
+			}
+			else
+			if (controller.stopRequested()) {
+				controller.requestStop();
+			}
 		}
 	}
 }

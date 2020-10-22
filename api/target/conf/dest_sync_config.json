@@ -6,45 +6,61 @@
 	syncStageSchema: "sync_import_stage",
 	originAppLocationCode: "CENTRAL_DB",
 	firstExport: true,
-	mustCreateClasses: true,
-	mustRecompileTable: true,
 	classpackage: "destinationpkg",
 	automaticStart: false,
 	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
 	operations: [
-		
-		{
-			operationType: "load",
-			maxRecordPerProcessing: 25000,
-			maxSupportedEngines: 30,
-			minRecordsPerEngine: 1000,
-			disabled: false,
-			processingMode: "sequencial",
 			
-			child:{
-				operationType: "synchronization",
-				maxRecordPerProcessing: 25000,
-				maxSupportedEngines: 30,
-				minRecordsPerEngine: 1000,
-				doIntegrityCheckInTheEnd: true,
+		{
+			operationType: "database_preparation",
+			maxRecordPerProcessing: 1,
+			maxSupportedEngines: 1,
+			minRecordsPerEngine: 1,
+			disabled: false,
+			processingMode: "parallel",
+			
+			child: {
+				operationType: "pojo_generation",
+				maxRecordPerProcessing: 1,
+				maxSupportedEngines: 1,
+				minRecordsPerEngine: 1,
 				disabled: false,
-				processingMode: "sequencial",
+				processingMode: "sequencial",	
 				
-				child: {
-					operationType: "consolidation",
+				child:{
+					operationType: "load",
 					maxRecordPerProcessing: 25000,
-					maxSupportedEngines: 1,
-					minRecordsPerEngine: 100,
-					doIntegrityCheckInTheEnd: true,
+					maxSupportedEngines: 30,
+					minRecordsPerEngine: 1000,
 					disabled: false,
-					processingMode: "sequencial"
+					processingMode: "sequencial",
+					
+					child:{
+						operationType: "synchronization",
+						maxRecordPerProcessing: 25000,
+						maxSupportedEngines: 30,
+						minRecordsPerEngine: 1000,
+						doIntegrityCheckInTheEnd: true,
+						disabled: false,
+						processingMode: "sequencial",
+						
+						child: {
+							operationType: "consolidation",
+							maxRecordPerProcessing: 25000,
+							maxSupportedEngines: 1,
+							minRecordsPerEngine: 100,
+							doIntegrityCheckInTheEnd: true,
+							disabled: false,
+							processingMode: "sequencial"
+						}
+					}
 				}
 			}
 		}

@@ -8,7 +8,7 @@ import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
-import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
 import org.openmrs.module.eptssync.synchronization.engine.SyncEngine;
 import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -28,7 +28,7 @@ public class SyncController extends OperationController {
 	}
 
 	@Override
-	public Engine initRelatedEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+	public Engine initRelatedEngine(EngineActivityMonitor monitor, RecordLimits limits) {
 		return new SyncEngine(monitor, limits);
 	}
 

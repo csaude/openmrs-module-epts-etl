@@ -8,8 +8,6 @@
 	firstExport: true,
 	defaultQtyRecordsPerEngine: 100000,
 	doIntegrityCheckInTheEnd: true,
-	mustRecompileTable: true,
-	mustCreateClasses: true,
 	classpackage: "sourcepkg",
 	automaticStart: true,
 	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
@@ -17,26 +15,45 @@
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
 	operations: [
+		
 		{
-			operationType: "export",
-			maxRecordPerProcessing: 25000,
-			maxSupportedEngines: 50,
-			minRecordsPerEngine: 1000,
-			disabled: true,
-			processingMode: "sequencial",
+			operationType: "database_preparation",
+			maxRecordPerProcessing: 1,
+			maxSupportedEngines: 1,
+			minRecordsPerEngine: 1,
+			disabled: false,
+			processingMode: "parallel",
 			
-			child:{
-				operationType: "transport",
-				maxRecordPerProcessing: 25000,
-				maxSupportedEngines: 50,
-				minRecordsPerEngine: 1000,
+			child: {
+				operationType: "pojo_generation",
+				maxRecordPerProcessing: 1,
+				maxSupportedEngines: 1,
+				minRecordsPerEngine: 1,
 				disabled: false,
-				processingMode: "sequencial"
+				processingMode: "sequencial",
+				
+				child:	{
+					operationType: "export",
+					maxRecordPerProcessing: 25000,
+					maxSupportedEngines: 50,
+					minRecordsPerEngine: 1000,
+					disabled: false,
+					processingMode: "sequencial",
+							
+					child:{
+						operationType: "transport",
+						maxRecordPerProcessing: 25000,
+						maxSupportedEngines: 50,
+						minRecordsPerEngine: 1000,
+						disabled: false,
+						processingMode: "sequencial"
+					}
+				}
 			}
 		}
 	],

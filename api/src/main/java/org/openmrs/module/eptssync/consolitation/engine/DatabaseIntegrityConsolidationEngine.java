@@ -11,12 +11,12 @@ import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.monitor.EnginActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class DatabaseIntegrityConsolidationEngine extends Engine {
 	
-	public DatabaseIntegrityConsolidationEngine(EnginActivityMonitor monitor, RecordLimits limits) {
+	public DatabaseIntegrityConsolidationEngine(EngineActivityMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 

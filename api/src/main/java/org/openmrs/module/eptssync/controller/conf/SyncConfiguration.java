@@ -48,6 +48,8 @@ public class SyncConfiguration {
 	private String childConfigFilePath;
 	private SyncConfiguration childConfig;
 	
+	private boolean disabled;
+	
 	public static String PROCESSING_MODE_SEQUENCIAL="sequencial";
 	public static String PROCESSING_MODE_PARALLEL="parallel";
 	
@@ -55,6 +57,14 @@ public class SyncConfiguration {
 	
 	private SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
+	}
+	
+	public boolean isDisabled() {
+		return disabled;
+	}
+	
+	public void setDisabled(boolean disabled) {
+		this.disabled = disabled;
 	}
 	
 	public SyncConfiguration getChildConfig() {
