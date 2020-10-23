@@ -1,23 +1,22 @@
 {
-	installationType: "source",
+	installationType: "destination",
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
+	mustCreateStageSchemaElements: true,
 	syncStageSchema: "sync_import_stage",
-	mustCreateStageSchemaElements: false,	
-	originAppLocationCode: "zbz_pebane",
+	originAppLocationCode: "central_db",
 	firstExport: true,
-	classpackage: "sourcepkg",
-	automaticStart: true, 
-	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
+	classpackage: "destinationpkg",
+	automaticStart: false,
 	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
 	operations: [
-		
+			
 		{
 			operationType: "database_preparation",
 			maxRecordPerProcessing: 1,
@@ -32,34 +31,45 @@
 				maxSupportedEngines: 1,
 				minRecordsPerEngine: 1,
 				disabled: false,
-				processingMode: "sequencial",
+				processingMode: "sequencial",	
 				
-				child:	{
-					operationType: "export",
+				child:{
+					operationType: "load",
 					maxRecordPerProcessing: 1000,
 					maxSupportedEngines: 10,
 					minRecordsPerEngine: 100,
 					disabled: true,
 					processingMode: "sequencial",
-							
+					
 					child:{
-						operationType: "transport",
+						operationType: "synchronization",
 						maxRecordPerProcessing: 1000,
 						maxSupportedEngines: 10,
-						minRecordsPerEngine: 50,
+						minRecordsPerEngine: 100,
+						doIntegrityCheckInTheEnd: true,
 						disabled: true,
-						processingMode: "sequencial"
+						processingMode: "sequencial",
+						
+						child: {
+							operationType: "consolidation",
+							maxRecordPerProcessing: 1000,
+							maxSupportedEngines: 10,
+							minRecordsPerEngine: 100,
+							doIntegrityCheckInTheEnd: true,
+							disabled: true,
+							processingMode: "sequencial"
+						}
 					}
 				}
 			}
 		}
 	],
-	
+
 	tablesConfigurations:[
 		  
 				{	
 					tableName: "users",
-					parents: ["person", "users"]
+					parents: ["person", "users"]			
 				},
 		
 				{
@@ -116,7 +126,7 @@
 				
 				{
 					tableName: "visit",
-					parents: ["patient", "location", "users"]	
+					parents: ["patient", "location", "users"]
 				},
 				
 				{
@@ -125,12 +135,13 @@
 				},
 				{
 					tableName: "encounter",
-					parents: ["patient", "location", "users", "visit"]	
+					parents: ["patient", "location", "users", "visit"]
 				},
 				
 				{
 					tableName: "provider",
-					parents: ["person", "users"]
+					parents: ["person", "users"],
+					mustRecompileTable: false
 				},
 				
 				{
@@ -152,10 +163,11 @@
 					tableName: "note",
 					parents: ["encounter", "patient", "note", "users"]
 				},
-					
+			
 				{
 					tableName: "concept_datatype",
-					parents: ["users"]
+					parents: ["users"],
+					metadata: true
 				},
 				 
 				{
@@ -187,8 +199,7 @@
 					parents: ["users", "program", "concept"],
 					metadata: true
 				},
-				
-
+			
 				{
 					tableName: "program_workflow_state",
 					parents: ["users", "program_workflow", "concept"],
