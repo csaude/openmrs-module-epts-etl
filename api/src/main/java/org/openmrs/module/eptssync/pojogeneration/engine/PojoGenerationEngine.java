@@ -12,7 +12,7 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.eptssync.pojogeneration.model.PojoGenerationRecord;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -33,7 +33,7 @@ public class PojoGenerationEngine extends Engine {
 	
 	private boolean pojoGenerated;
 	
-	public PojoGenerationEngine(EngineActivityMonitor monitor, RecordLimits limits) {
+	public PojoGenerationEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 

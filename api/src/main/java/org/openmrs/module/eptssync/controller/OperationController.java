@@ -10,8 +10,8 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.monitor.ControllerStatusMonitor;
-import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
+import org.openmrs.module.eptssync.monitor.ControllerMonitor;
+import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
@@ -34,8 +34,8 @@ public abstract class OperationController implements Controller{
 	
 	private ProcessController processController;
 	
-	private List<EngineActivityMonitor> enginesActivititieMonitor;
-	private ControllerStatusMonitor activitieMonitor;
+	private List<EngineMonitor> enginesActivititieMonitor;
+	private ControllerMonitor activitieMonitor;
 	
 	private OperationController child;
 	
@@ -115,7 +115,7 @@ public abstract class OperationController implements Controller{
 			else {
 				logInfo(("Starting operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'").toUpperCase());
 				
-				EngineActivityMonitor engine = initAndStartEngine(syncInfo);
+				EngineMonitor engine = initAndStartEngine(syncInfo);
 				
 				while (engine != null && !engine.getMainEngine().isFinished() && !engine.getMainEngine().isStopped()) {
 					if (stopRequested()) {
@@ -150,7 +150,7 @@ public abstract class OperationController implements Controller{
 	private void runInParallelMode() {
 		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
 		
-		this.enginesActivititieMonitor = new ArrayList<EngineActivityMonitor>();
+		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
 		
 		for (SyncTableConfiguration syncInfo: allSync) {
 			if (operationTableIsAlreadyFinished(syncInfo)) {
@@ -165,7 +165,7 @@ public abstract class OperationController implements Controller{
 			else{
 				logInfo("INITIALIZING '" + getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
 					
-				EngineActivityMonitor activitityMonitor = initAndStartEngine(syncInfo);
+				EngineMonitor activitityMonitor = initAndStartEngine(syncInfo);
 					
 				if (activitityMonitor != null) {
 					startAndAddToEnginesActivititieMonitor(activitityMonitor);
@@ -199,7 +199,7 @@ public abstract class OperationController implements Controller{
 		return controllerId;
 	}
 	
-	public List<EngineActivityMonitor> getEnginesActivititieMonitor() {
+	public List<EngineMonitor> getEnginesActivititieMonitor() {
 		return enginesActivititieMonitor;
 	}
 	
@@ -225,8 +225,8 @@ public abstract class OperationController implements Controller{
 		utilities().logDebug(msg, logger);
 	}
 
-	protected EngineActivityMonitor initAndStartEngine(SyncTableConfiguration syncInfo) {
-		EngineActivityMonitor activitityMonitor = new EngineActivityMonitor(this, syncInfo);
+	protected EngineMonitor initAndStartEngine(SyncTableConfiguration syncInfo) {
+		EngineMonitor activitityMonitor = new EngineMonitor(this, syncInfo);
 		Engine engine = activitityMonitor.initEngine();
 		
 		if (engine != null) {
@@ -235,7 +235,7 @@ public abstract class OperationController implements Controller{
 		else return null;
 	}
 	
-	private void startAndAddToEnginesActivititieMonitor(EngineActivityMonitor activitityMonitor) {
+	private void startAndAddToEnginesActivititieMonitor(EngineMonitor activitityMonitor) {
 		this.enginesActivititieMonitor.add(activitityMonitor);
 		
 		ThreadPoolService.getInstance().createNewThreadPoolExecutor(getControllerId().toUpperCase() + "_ENGINE_OPERATION_MONITOR").execute(activitityMonitor);
@@ -253,7 +253,7 @@ public abstract class OperationController implements Controller{
 		timer = new TimeController();
 		timer.start();
 		
-		this.activitieMonitor = new ControllerStatusMonitor(this);
+		this.activitieMonitor = new ControllerMonitor(this);
 		
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId.toUpperCase() + "_MONIGTOR");
 		executor.execute(this.activitieMonitor);
@@ -312,7 +312,7 @@ public abstract class OperationController implements Controller{
 		if (isFinished()) return true;
 		
 		if (isParallelModeProcessing() && this.enginesActivititieMonitor != null) {
-			for (EngineActivityMonitor monitor : this.enginesActivititieMonitor) {
+			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
 				Engine engine = monitor.getMainEngine();
 				
 				if (engine == null) throw new RuntimeException("No engine for minitor '" + monitor.getSyncTableInfo().getTableName() + "'");
@@ -335,7 +335,7 @@ public abstract class OperationController implements Controller{
 		}
 		
 		if (isParallelModeProcessing() && this.enginesActivititieMonitor != null) {
-			for (EngineActivityMonitor monitor : this.enginesActivititieMonitor) {
+			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
 				Engine engine = monitor.getMainEngine();
 				
 				if (engine == null) throw new RuntimeException("No engine for minitor '" + monitor.getSyncTableInfo().getTableName() + "'");
@@ -495,7 +495,7 @@ public abstract class OperationController implements Controller{
 		else
 		if (!stopRequested()) {
 			if (this.enginesActivititieMonitor != null) {
-				for (EngineActivityMonitor monitor : this.enginesActivititieMonitor) {
+				for (EngineMonitor monitor : this.enginesActivititieMonitor) {
 					monitor.getMainEngine().requestStop();
 				}
 			}
@@ -517,7 +517,7 @@ public abstract class OperationController implements Controller{
 	@JsonIgnore
 	public abstract String getOperationType();
 	
-	public abstract Engine initRelatedEngine(EngineActivityMonitor monitor, RecordLimits limits) ;
+	public abstract Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) ;
 
 	public abstract long getMinRecordId(SyncTableConfiguration tableInfo);
 	public abstract long getMaxRecordId(SyncTableConfiguration tableInfo);

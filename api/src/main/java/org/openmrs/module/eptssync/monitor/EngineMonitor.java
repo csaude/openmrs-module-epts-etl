@@ -15,13 +15,10 @@ import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 
 /**
  * This class monitor all {@link Engine}s of an {@link OperationController}
- * <p>When a {@link Engine} process all records within the {@link RecordLimits} granted by the {@link OperationController} then
- * the engine went to sleeping state and is put back to the controller pull. When All the engines related to a specific engine went sleep, the controller allocate new job
- * fore these engine. The purpose of {@link EngineActivityMonitor} is to controller the correct time to realocate new jobs to sleeping engines. This is done by calling {@link OperationController#realocateJobToEngines(EngineActivityMonitor)}
- * 
+ *  
  * @author jpboane
  */
-public class EngineActivityMonitor implements Runnable{
+public class EngineMonitor implements Runnable{
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private OperationController controller;
@@ -31,7 +28,7 @@ public class EngineActivityMonitor implements Runnable{
 	
 	private TimeController timer;
 	
-	public EngineActivityMonitor(OperationController controller, SyncTableConfiguration syncTableInfo) {
+	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<Engine>();
 		this.syncTableInfo = syncTableInfo;
@@ -284,7 +281,7 @@ public class EngineActivityMonitor implements Runnable{
 	}
 	
 	/**
-	 * Schedule new job for this job. This is controller by {@link EngineActivityMonitor}
+	 * Schedule new job for this job. This is controller by {@link EngineMonitor}
 	 * 
 	 * @param syncEngine
 	 */

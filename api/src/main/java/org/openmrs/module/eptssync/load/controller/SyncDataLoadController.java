@@ -13,7 +13,7 @@ import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.load.engine.LoadSyncDataEngine;
 import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
-import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 /**
@@ -41,7 +41,7 @@ public class SyncDataLoadController extends OperationController {
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EngineActivityMonitor monitor, RecordLimits limits) {
+	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new LoadSyncDataEngine(monitor, limits);
 	}
 

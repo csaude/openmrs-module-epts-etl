@@ -14,7 +14,7 @@ import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 
@@ -34,7 +34,7 @@ public class DatabasePreparationEngine extends Engine {
 	
 	private boolean updateDone;
 	
-	public DatabasePreparationEngine(EngineActivityMonitor monitor, RecordLimits limits) {
+	public DatabasePreparationEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 

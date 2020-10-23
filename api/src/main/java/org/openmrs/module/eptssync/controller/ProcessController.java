@@ -9,7 +9,7 @@ import java.util.concurrent.ExecutorService;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.monitor.ControllerStatusMonitor;
+import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
@@ -30,7 +30,7 @@ public class ProcessController implements Controller{
 	private int operationStatus;
 	private List<OperationController> operationsControllers;
 	private ProcessController childController;
-	private ControllerStatusMonitor monitor;
+	private ControllerMonitor monitor;
 	
 	private DBConnectionService connService;
 	private String controllerId;
@@ -213,7 +213,7 @@ public class ProcessController implements Controller{
 		this.timer = new TimeController();
 		this.timer.start();
 	
-		this.monitor = new ControllerStatusMonitor(this);
+		this.monitor = new ControllerMonitor(this);
 		
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId + "_MONITOR");
 		executor.execute(this.monitor);

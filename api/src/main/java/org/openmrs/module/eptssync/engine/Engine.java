@@ -6,7 +6,7 @@ import java.util.List;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
@@ -28,7 +28,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	protected List<Engine> children;
 	protected Engine parent;
 	
-	protected EngineActivityMonitor monitor;
+	protected EngineMonitor monitor;
 	
 	protected SyncProgressMeter progressMeter;
 	protected SyncSearchParams<? extends SyncRecord> searchParams;
@@ -43,7 +43,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 
 	private boolean newJobRequested;
 	
-	public Engine(EngineActivityMonitor monitr, RecordLimits limits) {
+	public Engine(EngineMonitor monitr, RecordLimits limits) {
 		this.monitor = monitr;
 		
 		this.limits = limits;
@@ -62,7 +62,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		return monitor.getController().getOperationConfig().getMaxRecordPerProcessing();
 	}
 
-	public EngineActivityMonitor getMonitor() {
+	public EngineMonitor getMonitor() {
 		return monitor;
 	}
 	

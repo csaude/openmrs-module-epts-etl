@@ -10,10 +10,10 @@ import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
  * 
  * @author jpboane
  */
-public class ControllerStatusMonitor implements Runnable{
+public class ControllerMonitor implements Runnable{
 	private Controller controller;
 	
-	public ControllerStatusMonitor(Controller controller) {
+	public ControllerMonitor(Controller controller) {
 		this.controller = controller;
 	}
 	

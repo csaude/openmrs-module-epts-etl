@@ -134,34 +134,11 @@ public class SyncConfiguration {
 		this.connInfo = connInfo;
 	}
 	
-	/*
-	public int getDefaultQtyRecordsPerEngine(String operationType) {
-		try {
-			return  findOperation(operationType).getDefaultQtyRecordsPerEngine();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return  findOperation(operationType).getDefaultQtyRecordsPerEngine();
-	}
-	*/
-	
-	
 	public boolean isDoIntegrityCheckInTheEnd(String operationType) {
-		logger.info("FINDING OPERATION "+operationType);
-		
 		SyncOperationConfig op = findOperation(operationType);
-	
-		logger.info("FOUND OPERATION "+op.getOperationType());
 		
 		return op.isDoIntegrityCheckInTheEnd();
 	}
-	
-	/*
-	public int getDefaultQtyRecordsPerSelect(String operationType) {
-		return findOperation(operationType).getDefaultQtyRecordsPerSelect();
-	}
-	*/
 	
 	public boolean isFirstExport() {
 		return firstExport;

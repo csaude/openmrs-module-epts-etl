@@ -13,7 +13,7 @@ import org.openmrs.module.eptssync.export.engine.ExportSyncEngine;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
-import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -31,7 +31,7 @@ public class SyncExportController extends OperationController {
 	}
 
 	@Override
-	public Engine initRelatedEngine(EngineActivityMonitor monitor, RecordLimits limits) {
+	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new ExportSyncEngine(monitor, limits);
 	}
 

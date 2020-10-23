@@ -16,7 +16,7 @@ import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.monitor.EngineActivityMonitor;
+import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -29,7 +29,7 @@ public class LoadSyncDataEngine extends Engine{
 	private SyncJSONInfo currJSONInfo;
 	
 	
-	public LoadSyncDataEngine(EngineActivityMonitor monitor, RecordLimits limits) {
+	public LoadSyncDataEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	

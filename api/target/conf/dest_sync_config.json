@@ -1,10 +1,9 @@
 {
 	installationType: "destination",
-	pojoProjectLocation: "/home/jpboane/working/prg/jee/workspace/w02/eptsync-openmrs-pojos",
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
-	mustCreateStageSchemaElements:true,
+	mustCreateStageSchemaElements: true,
 	syncStageSchema: "sync_import_stage",
-	originAppLocationCode: "CENTRAL_DB",
+	originAppLocationCode: "central_db",
 	firstExport: true,
 	classpackage: "destinationpkg",
 	automaticStart: false,
@@ -36,25 +35,25 @@
 				
 				child:{
 					operationType: "load",
-					maxRecordPerProcessing: 25000,
-					maxSupportedEngines: 30,
-					minRecordsPerEngine: 1000,
+					maxRecordPerProcessing: 1000,
+					maxSupportedEngines: 10,
+					minRecordsPerEngine: 100,
 					disabled: true,
 					processingMode: "sequencial",
 					
 					child:{
 						operationType: "synchronization",
-						maxRecordPerProcessing: 25000,
-						maxSupportedEngines: 30,
-						minRecordsPerEngine: 1000,
+						maxRecordPerProcessing: 1000,
+						maxSupportedEngines: 10,
+						minRecordsPerEngine: 100,
 						doIntegrityCheckInTheEnd: true,
 						disabled: true,
 						processingMode: "sequencial",
 						
 						child: {
 							operationType: "consolidation",
-							maxRecordPerProcessing: 25000,
-							maxSupportedEngines: 1,
+							maxRecordPerProcessing: 1000,
+							maxSupportedEngines: 10,
 							minRecordsPerEngine: 100,
 							doIntegrityCheckInTheEnd: true,
 							disabled: true,
@@ -70,87 +69,73 @@
 		  
 				{	
 					tableName: "users",
-					parents: ["person", "users"],
-					mustRecompileTable: false				
+					parents: ["person", "users"]			
 				},
 		
 				{
 					tableName: "location",
 					parents: ["users", "location"],
-					mustRecompileTable: false,
 					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
 				},
 		
 				{
 					tableName: "person",
-					parents: ["users"],
-					mustRecompileTable: false
+					parents: ["users"]
 				},
 				
 				{
 					tableName: "person_address",
-					parents: ["person", "users"],
-					mustRecompileTable: false
+					parents: ["person", "users"]
 				},
 				
 				{
 					tableName: "person_attribute",
-					parents: ["person", "users"],
-					mustRecompileTable: false
+					parents: ["person", "users"]
 				},
 				
 				{
 					tableName: "person_name",
-					parents: ["person", "users"],
-					mustRecompileTable: false
+					parents: ["person", "users"]
 				},
 				
 				{
 					tableName: "relationship",
-					parents: ["person", "users"],
-					mustRecompileTable: false
+					parents: ["person", "users"]
 				},
 				
 				{
 					tableName: "patient",
 					sharePkWith: "person",
-					parents: ["person", "users"],
-					mustRecompileTable: false
+					parents: ["person", "users"]
 				},
 				
 				{
 					tableName: "patient_identifier",
-					parents: ["patient", "location", "users"],
-					mustRecompileTable: false
+					parents: ["patient", "location", "users"]
 				},
 				
 				{
 					tableName: "patient_program",
-					parents: ["patient", "location", "users"],
-					mustRecompileTable: false
+					parents: ["patient", "location", "users"]
 				},
 				
 				{
 					tableName: "patient_state",
-					parents: ["patient_program", "users"],
-					mustRecompileTable: false
+					parents: ["patient_program", "users"]
 				},
 				
 				{
 					tableName: "visit",
-					parents: ["patient", "location", "users"],
-					mustRecompileTable: false
+					parents: ["patient", "location", "users"]
 				},
 				
 				{
 					tableName: "visit_attribute",
-					parents: ["visit", "users"],
-					mustRecompileTable: false
+					parents: ["visit", "users"]
 				},
 				{
 					tableName: "encounter",
-					parents: ["patient", "location", "users", "visit"],
-					mustRecompileTable: false
+					parents: ["patient", "location", "users", "visit"]
 				},
 				
 				{
@@ -161,97 +146,81 @@
 				
 				{
 					tableName: "encounter_provider",
-					parents: ["encounter", "users", "provider"],
-					mustRecompileTable: false					
+					parents: ["encounter", "users", "provider"]
 				},
 				
 				{
 					tableName: "orders",
-					parents: ["encounter", "proverder", "orders", "patient", "users"],
-					mustRecompileTable: false
+					parents: ["encounter", "proverder", "orders", "patient", "users"]
 				},
 				
 				{
 					tableName: "obs",
-					parents: ["person", "location", "orders", "obs", "users", "encounter"],
-					mustRecompileTable: false
+					parents: ["person", "location", "orders", "obs", "users", "encounter"]
 				},
 				
 				{
 					tableName: "note",
-					parents: ["encounter", "patient", "note", "users"],
-					mustRecompileTable: false
+					parents: ["encounter", "patient", "note", "users"]
 				},
 			
 				{
 					tableName: "concept_datatype",
 					parents: ["users"],
-					mustRecompileTable: false,
 					metadata: true
 				},
 				 
 				{
 					tableName: "concept",
 					parents: ["users", "concept_classes", "concept_datatype"],
-					mustRecompileTable: false,
 					metadata: true
 				},
 				
 				{
 					tableName: "person_attribute_type",
 					parents: ["users"],
-					mustRecompileTable: false,
 					metadata: true
 				},
 				 
 				{
 					tableName: "provider_attribute_type",
 					parents: ["users", "program_workflow"],
-					mustRecompileTable: false,
 					metadata: true
 				},
 				 
 				{
 					tableName: "program",
 					parents: ["users", "concept"],
-					mustRecompileTable: false,
 					metadata: true
 				},
 			
 				{
 					tableName: "program_workflow",
 					parents: ["users", "program", "concept"],
-					mustRecompileTable: false,
 					metadata: true
 				},
-				
-
+			
 				{
 					tableName: "program_workflow_state",
 					parents: ["users", "program_workflow", "concept"],
-					mustRecompileTable: false,
 					metadata: true
 				},
 				
 				{
 					tableName: "visit_type",
 					parents: ["users"],
-					mustRecompileTable: false,
 					metadata: true
 				},
 				
 				{
 					tableName: "relationship_type",
 					parents: ["users"],
-					mustRecompileTable: false,
 					metadata: true
 				},
-				
 				
 				{
 					tableName: "patient_identifier_type",
 					parents: ["users"],
-					mustRecompileTable: false,
 					metadata: true
 				}
 				

@@ -39,8 +39,6 @@ public class SyncTableConfiguration {
 	
 	private boolean metadata;
 	
-	/*private int qtyRecordsPerEngine;
-	private int qtyRecordsPerSelect;*/
 	private boolean fullLoaded;
 	
 	public SyncTableConfiguration() {

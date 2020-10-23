@@ -17,10 +17,6 @@ import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 public class SyncOperationConfig {
-	
-	
-	
-	
 	public static final String SYNC_OPERATION_DATABASE_PREPARATION = "database_preparation";
 	public static final String SYNC_OPERATION_POJO_GENERATION = "pojo_generation";
 	public static final String SYNC_OPERATION_EXPORT = "export";
@@ -28,7 +24,22 @@ public class SyncOperationConfig {
 	public static final String SYNC_OPERATION_LOAD = "load";
 	public static final String SYNC_OPERATION_TRANSPORT = "transport";
 	public static final String SYNC_OPERATION_CONSOLIDATION= "consolidation";
+
+	private static final String[] SUPPORTED_OPERATIONS = {	SYNC_OPERATION_CONSOLIDATION, 
+			SYNC_OPERATION_EXPORT, 
+			SYNC_OPERATION_LOAD, 
+			SYNC_OPERATION_SYNCHRONIZATION, 
+			SYNC_OPERATION_TRANSPORT,
+			SYNC_OPERATION_DATABASE_PREPARATION,
+			SYNC_OPERATION_POJO_GENERATION};
+
+	public CommonUtilities utilities = CommonUtilities.getInstance();
 	
+	public static String PROCESSING_MODE_SEQUENCIAL="sequencial";
+	public static String PROCESSING_MODE_PARALLEL="parallel";
+	
+	private static final String[] supportedProcessingModes = {PROCESSING_MODE_SEQUENCIAL, PROCESSING_MODE_PARALLEL};
+
 	private String operationType;
 
 	private int maxRecordPerProcessing;
@@ -41,21 +52,6 @@ public class SyncOperationConfig {
 	private boolean disabled;
 	
 	private String processingMode;
-	
-	private static final String[] SUPPORTED_OPERATIONS = {	SYNC_OPERATION_CONSOLIDATION, 
-															SYNC_OPERATION_EXPORT, 
-															SYNC_OPERATION_LOAD, 
-															SYNC_OPERATION_SYNCHRONIZATION, 
-															SYNC_OPERATION_TRANSPORT,
-															SYNC_OPERATION_DATABASE_PREPARATION,
-															SYNC_OPERATION_POJO_GENERATION};
-	
-	public CommonUtilities utilities = CommonUtilities.getInstance();
-	
-	public static String PROCESSING_MODE_SEQUENCIAL="sequencial";
-	public static String PROCESSING_MODE_PARALLEL="parallel";
-	
-	private static final String[] supportedProcessingModes = {PROCESSING_MODE_SEQUENCIAL, PROCESSING_MODE_PARALLEL};
 	
 	public boolean isParallelModeProcessing() {
 		return this.processingMode.equalsIgnoreCase(SyncConfiguration.PROCESSING_MODE_PARALLEL);
