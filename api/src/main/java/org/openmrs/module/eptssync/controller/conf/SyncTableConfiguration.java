@@ -24,8 +24,8 @@ public class SyncTableConfiguration {
 	
 	private List<String> parents;
 	
-	private List<ParentRefInfo> parentRefInfo;
-	private List<ParentRefInfo> childRefInfo;
+	private List<RefInfo> parentRefInfo;
+	private List<RefInfo> childRefInfo;
 	
 	private Class<OpenMRSObject> syncRecordClass;
 
@@ -158,7 +158,7 @@ public class SyncTableConfiguration {
 		return getPrimaryKey(conn) != null;
 	}
 	
-	public void setChildRefInfo(List<ParentRefInfo> childRefInfo) {
+	public void setChildRefInfo(List<RefInfo> childRefInfo) {
 		this.parentRefInfo = childRefInfo;
 	}
 	
@@ -167,16 +167,16 @@ public class SyncTableConfiguration {
 	}
 	
 	
-	public synchronized List<ParentRefInfo> getChildRefInfo(Connection conn) {
+	public synchronized List<RefInfo> getChildRefInfo(Connection conn) {
 		if (this.childRefInfo == null) {
 			
 			try {
-				this.childRefInfo = new ArrayList<ParentRefInfo>();  
+				this.childRefInfo = new ArrayList<RefInfo>();  
 				
 				ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
 				
 				while(foreignKeyRS.next()) {
-					ParentRefInfo ref = new ParentRefInfo();
+					RefInfo ref = new RefInfo();
 					
 					ref.setReferenceColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
 					ref.setReferenceTableInfo(SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"), this.relatedSyncTableInfoSource));
@@ -203,12 +203,12 @@ public class SyncTableConfiguration {
 		return childRefInfo;
 	}
 
-	public void setParentRefInfo(List<ParentRefInfo> parentRefInfo) {
+	public void setParentRefInfo(List<RefInfo> parentRefInfo) {
 		this.parentRefInfo = parentRefInfo;
 	}
 	
 	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
-		for (ParentRefInfo  parent : this.getParentRefInfo(conn)) {
+		for (RefInfo  parent : this.getParentRefInfo(conn)) {
 			if (parent.getReferenceColumnAsClassAttName().equals(parentAttName)) {
 				return parent.isIgnorable();
 			}
@@ -218,16 +218,16 @@ public class SyncTableConfiguration {
 	}
 	
 	
-	public synchronized List<ParentRefInfo> getParentRefInfo(Connection conn) {
+	public synchronized List<RefInfo> getParentRefInfo(Connection conn) {
 		if (this.parentRefInfo == null) {
 			
 			try {
-				this.parentRefInfo = new ArrayList<ParentRefInfo>();  
+				this.parentRefInfo = new ArrayList<RefInfo>();  
 				
 				ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(null, null, tableName);
 				
 				while(foreignKeyRS.next()) {
-					ParentRefInfo ref = new ParentRefInfo();
+					RefInfo ref = new RefInfo();
 					
 					ref.setReferenceColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
 					ref.setReferencedColumnName(foreignKeyRS.getString("PKCOLUMN_NAME"));
@@ -275,11 +275,7 @@ public class SyncTableConfiguration {
 	}
 
 	public Class<OpenMRSObject> getRecordClass() {
-		String root = getRelatedSynconfiguration().getPojoProjectLocation().getAbsolutePath();
-
-		File destinationFileLocation = new File(root + "/bin/");
-
-		this.syncRecordClass = OpenMRSClassGenerator.tryToGetExistingCLass(destinationFileLocation, this.generateFullClassName());
+		this.syncRecordClass = OpenMRSClassGenerator.tryToGetExistingCLass(getPOJOCopiledFilesDirectory(), this.generateFullClassName());
 	
 		if (this.syncRecordClass == null) throw new ForbiddenOperationException("No Sync Record Class found for: " + this.tableName);
 		
@@ -442,8 +438,8 @@ public class SyncTableConfiguration {
 		this.fullLoaded = true;
 	}
 
-	public ParentRefInfo getSharedKeyRefInfo(Connection conn) {
-		for (ParentRefInfo refInfo : getParentRefInfo(conn)) {
+	public RefInfo getSharedKeyRefInfo(Connection conn) {
+		for (RefInfo refInfo : getParentRefInfo(conn)) {
 			if (refInfo.isSharedPk()) return refInfo;
 		}
 			
@@ -461,5 +457,13 @@ public class SyncTableConfiguration {
 		if (!(obj instanceof SyncTableConfiguration)) return false;
 		
 		return this.getTableName().equalsIgnoreCase(((SyncTableConfiguration)obj).getTableName());
+	}
+
+	public File getPOJOCopiledFilesDirectory() {
+		return getRelatedSynconfiguration().getPOJOCompiledFilesDirectory();
+	}
+
+	public File getPOJOSourceFilesDirectory() {
+		return getRelatedSynconfiguration().getPOJOSourceFilesDirectory();
 	}
 }

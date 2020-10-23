@@ -2,6 +2,8 @@ package org.openmrs.module.eptssync;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +14,6 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
-import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class Main {
 
@@ -121,12 +122,21 @@ public class Main {
 		return true;
 	}
 	
-	
+	/*
 	public static File getProjectRoot() {
 		return new File(Main.class.getProtectionDomain().getCodeSource().getLocation().getPath());
 	}
+	*/
 	
-	public static File getProjectPOJODirectory() {
-		return new File(FileUtilities.getParent(getProjectRoot()).getAbsoluteFile() + "/epts-sync-pojo");
+	public static File getPOJOSourceFilesDirectory() {
+		Path root = Paths.get(".").normalize().toAbsolutePath();
+
+		return new File(root.toFile().getAbsoluteFile() + "/src/main/java");
+	}
+	
+	public static File getPOJOCompiledFilesDirectory() {
+		Path root = Paths.get(".").normalize().toAbsolutePath();
+
+		return new File(root.toFile().getAbsoluteFile() + "/target/classes");
 	}
 }

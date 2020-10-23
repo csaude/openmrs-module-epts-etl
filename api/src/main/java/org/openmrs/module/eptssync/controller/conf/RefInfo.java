@@ -1,6 +1,5 @@
 package org.openmrs.module.eptssync.controller.conf;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -19,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author jpboane
  *
  */
-public class ParentRefInfo {
+public class RefInfo {
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 
 	private SyncTableConfiguration referenceTableInfo;
@@ -48,7 +47,7 @@ public class ParentRefInfo {
 	
 	public String refColumnType;
 	
-	public ParentRefInfo() {
+	public RefInfo() {
 	}
 	
 	public String getRefColumnType() {
@@ -137,9 +136,7 @@ public class ParentRefInfo {
 		
 		String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + getReferencedTableInfo().getClasspackage() + "." + generateRelatedReferencedClassName();
 			
-		File targetLocation = new File(getReferencedTableInfo().getRelatedSynconfiguration().getPojoProjectLocation().getAbsolutePath() + "/bin");
-		
-		this.relatedReferencedClass = OpenMRSClassGenerator.tryToGetExistingCLass(targetLocation, fullClassName);
+		this.relatedReferencedClass = OpenMRSClassGenerator.tryToGetExistingCLass(getReferencedTableInfo().getRelatedSynconfiguration().getPOJOCompiledFilesDirectory(), fullClassName);
 		
 		if (this.relatedReferencedClass == null) {
 			generateRelatedReferencedClass(false, conn);
@@ -158,9 +155,7 @@ public class ParentRefInfo {
 
 			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + getReferenceTableInfo().getClasspackage() + "." + generateRelatedReferenceClassName();
 			
-			File targetLocation = new File(getReferencedTableInfo().getRelatedSynconfiguration().getPojoProjectLocation().getAbsolutePath() + "/bin");
-			
-			this.relatedReferenceClass = OpenMRSClassGenerator.tryToGetExistingCLass(targetLocation, fullClassName);
+			this.relatedReferenceClass = OpenMRSClassGenerator.tryToGetExistingCLass(getReferenceTableInfo().getPOJOCopiledFilesDirectory(), fullClassName);
 
 			if (this.relatedReferenceClass == null) {
 				this.relatedReferenceClass = OpenMRSClassGenerator.generateSkeleton(getReferenceTableInfo(), conn);

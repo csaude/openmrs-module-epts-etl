@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
+import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
@@ -47,7 +47,7 @@ public class PojoGenerationEngine extends Engine {
 		
 		getSyncTableConfiguration().generateRecordClass(true, conn);
 		
-		for (ParentRefInfo i: getSyncTableConfiguration().getChildRefInfo(conn)) {
+		for (RefInfo i: getSyncTableConfiguration().getChildRefInfo(conn)) {
 			if (!i.getReferenceTableInfo().isFullLoaded()) {
 				
 				logInfo("THE REF INFO IS NOT FULL LOADED. LOADING NOW ...["+ i.getReferenceTableInfo().getTableName() + "]");
@@ -73,7 +73,7 @@ public class PojoGenerationEngine extends Engine {
 		
 		logInfo("PREPARING PARENT INFO OF TABLE["+ getSyncTableConfiguration() + "]");
 		
-		for (ParentRefInfo i: getSyncTableConfiguration().getParentRefInfo(conn)) {
+		for (RefInfo i: getSyncTableConfiguration().getParentRefInfo(conn)) {
 			if (!i.getReferencedTableInfo().isFullLoaded()) {
 				logInfo("THE REF INFO IS NOT FULL LOADED. LOADING NOW ...["+ i.getReferencedTableInfo().getTableName() + "]");
 				

@@ -106,15 +106,10 @@ public abstract class OperationController implements Controller{
 		for (SyncTableConfiguration syncInfo: allSync) {
 			if (operationTableIsAlreadyFinished(syncInfo)) {
 				logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
-				
-				changeStatusToFinished();
-				break;		
 			}
 			else 
 			if (stopRequested()) {
 				logInfo("ABORTING THE ENGINE PROCESS DUE STOP REQUESTED!");
-				
-				changeStatusToStopped();
 				break;		
 			}
 			else {
@@ -131,16 +126,24 @@ public abstract class OperationController implements Controller{
 						logInfo(("The operation '" + getOperationType() + "' Is still working on table '" + syncInfo.getTableName() + "'").toUpperCase());
 					}
 					
-					TimeCountDown.sleep(15);
+					TimeCountDown.sleep(10);
 				}
 				
-				if (stopRequested() && engine.getMainEngine().isStopped()) {
+				if (stopRequested() && engine != null && engine.getMainEngine().isStopped()) {
 					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());
+					break;
 				}
 				else {
 					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' is finished!").toUpperCase());
 				}
 			}
+		}
+		
+		if (!stopRequested()) {
+			changeStatusToFinished();
+		}
+		else {
+			changeStatusToStopped();
 		}
 	}
 
@@ -350,28 +353,37 @@ public abstract class OperationController implements Controller{
 	}
 	
 	
-	public void markTableOperationAsFinished(SyncTableConfiguration conf, TimeController timer) {
+	public void markTableOperationAsFinished(SyncTableConfiguration conf, Engine engine, TimeController timer) {
 		String operationId = this.getControllerId() + "_" + conf.getTableName();
 		
 		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
 		
+		logInfo("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
+		
 		if (!new File(fileName).exists()) {
-			logInfo("FINISHING OPERATION... WRITING OPERATION STATUS ON "+ fileName);
+			logInfo("WRITING OPERATION STATUS ON "+ fileName);
 			
 			String desc = "";
+			
+			int qtyRecords = engine != null && engine.getProgressMeter() != null ? engine.getProgressMeter().getTotal() : 0;
 			
 			desc += "{\n";
 			desc += "	operationName: \"" + this.getControllerId() + "\",\n";
 			desc += "	operationTable: \"" + conf.getTableName() + "\"\n";
+			desc += "	qtyRecords: " + qtyRecords + ",\n";
 			desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(timer.getStartTime()) + "\",\n";
 			desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate()) + "\",\n";
-			desc += "	elapsedTime: \"" + timer.getDuration(TimeController.DURACAO_IN_HOURS) + "\"\n";
+			desc += "	elapsedTime: \"" + timer.getDuration(TimeController.DURACAO_IN_MINUTES) + "\"\n";
 			desc += "}";
 			
 			FileUtilities.write(fileName, desc);
 			
 			logInfo("FILE WROTE");
+		} 
+		else {
+			logInfo("THE FILE WAS ALREADY EXISTS");
 		}
+		
 	}
 	
 	public void markOperationAsFinished() {
@@ -379,8 +391,10 @@ public abstract class OperationController implements Controller{
 		
 		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
 		
+		logInfo("FINISHING OPERATION "+ getControllerId());
+		
 		if (!new File(fileName).exists()) {
-			logInfo("FINISHING OPERATION... WRITING OPERATION STATUS ON "+ fileName);
+			logInfo("WRITING OPERATION STATUS ON "+ fileName);
 			
 			String desc = "";
 			
@@ -395,7 +409,9 @@ public abstract class OperationController implements Controller{
 			
 			logInfo("FILE WROTE");
 		}
-		changeStatusToFinished();
+		else {
+			logInfo("THE FILE WAS ALREADY EXISTS");
+		}
 	}
 	
 	@Override
@@ -426,6 +442,8 @@ public abstract class OperationController implements Controller{
 	@Override
 	public void changeStatusToFinished() {
 		this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
+	
+		markOperationAsFinished();
 	}
 	
 	@Override	
@@ -450,8 +468,6 @@ public abstract class OperationController implements Controller{
 	public void onFinish() {
 		getTimer().stop();
 		
-		markOperationAsFinished();
-		
 		logInfo("FINISHING OPERATION");
 		OperationController nextOperation = getChild();
 		
@@ -460,6 +476,7 @@ public abstract class OperationController implements Controller{
 		}
 		
 		if (nextOperation != null) {
+			
 			if (!stopRequested()) {
 				ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(nextOperation.getControllerId());
 				executor.execute(nextOperation);
@@ -477,10 +494,12 @@ public abstract class OperationController implements Controller{
 		}
 		else
 		if (!stopRequested()) {
-			for (EngineActivityMonitor monitor : this.enginesActivititieMonitor) {
-				monitor.getMainEngine().requestStop();
+			if (this.enginesActivititieMonitor != null) {
+				for (EngineActivityMonitor monitor : this.enginesActivititieMonitor) {
+					monitor.getMainEngine().requestStop();
+				}
 			}
-		
+			
 			this.stopRequested = true;
 		}
 		

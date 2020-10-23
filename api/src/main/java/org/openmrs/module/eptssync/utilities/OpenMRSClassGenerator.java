@@ -3,7 +3,6 @@ package org.openmrs.module.eptssync.utilities;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -12,9 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;
@@ -22,8 +19,7 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import org.apache.log4j.Logger;
-import org.openmrs.module.eptssync.Main;
-import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
+import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
@@ -35,14 +31,11 @@ public class OpenMRSClassGenerator {
 	public static Class<OpenMRSObject> generate(SyncTableConfiguration syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
 		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad(conn);
 
-		String root = Main.getProjectPOJODirectory().getAbsolutePath();
-		
-		File sourceFile = new File(root + "/src/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
-		File destinationFileLocation = new File(root + "/bin/");
+		File sourceFile = new File(syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
 		
 		String fullClassName = syncTableInfo.generateFullClassName();
 		
-		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(destinationFileLocation, fullClassName);
+		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(syncTableInfo.getPOJOSourceFilesDirectory(), fullClassName);
 			
 		if (existingCLass != null && !utilities.createInstance(existingCLass).isGeneratedFromSkeletonClass() ) return existingCLass;
 	
@@ -202,7 +195,7 @@ public class OpenMRSClassGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public boolean hasParents() {\n";
 		
-		for(ParentRefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {		
+		for(RefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {		
 			if (refInfo.isNumericRefColumn()) {
 				methodFromSuperClass += "		if (this." + refInfo.getReferenceColumnAsClassAttName() + " != 0) return true;\n";
 			}
@@ -218,7 +211,7 @@ public class OpenMRSClassGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
 			
-		ParentRefInfo sharedKeyRefInfo = syncTableInfo.getSharedKeyRefInfo(conn);
+		RefInfo sharedKeyRefInfo = syncTableInfo.getSharedKeyRefInfo(conn);
 		
 		if (sharedKeyRefInfo != null) {
 			methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
@@ -240,7 +233,7 @@ public class OpenMRSClassGenerator {
 		methodFromSuperClass += "	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
 		methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
 		
-		for(ParentRefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {
+		for(RefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {
 			if (refInfo.isMetadata()) continue;
 			
 			if (!refInfo.existsRelatedReferencedClass(conn)) {
@@ -248,13 +241,9 @@ public class OpenMRSClassGenerator {
 			}
 			
 			if (!refInfo.isNumericRefColumn()) methodFromSuperClass += "/*\n";
-						
-			String pathToTarget = Main.getProjectPOJODirectory().getAbsolutePath() + "/bin";
-			
-			String parentClassDefinition = "this.tryToGetExistingCLass(new File(\""+ pathToTarget +"\"), \"" + refInfo.getReferencedClassFullName(conn) + "\")";
 			
 			methodFromSuperClass += "		parentOnDestination = loadParent(";
-			methodFromSuperClass += parentClassDefinition + ",";
+			methodFromSuperClass += refInfo.getReferencedClassFullName(conn) + ".class,";
 			
 			boolean ignorable = syncTableInfo.checkIfisIgnorableParentByClassAttName(refInfo.getReferenceColumnAsClassAttName(), conn);
 			
@@ -271,7 +260,7 @@ public class OpenMRSClassGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public int getParentValue(String parentAttName) {";
 		
-		for(ParentRefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {
+		for(RefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {
 			if (refInfo.isNumericRefColumn()) {
 				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getReferenceColumnAsClassAttName() + "\")) return this."+refInfo.getReferenceColumnAsClassAttName() + ";";
 			}
@@ -301,9 +290,6 @@ public class OpenMRSClassGenerator {
 		classDefinition += "import java.sql.Connection; \n";
 		classDefinition += "import java.sql.SQLException; \n";
 		classDefinition += "import java.sql.ResultSet; \n \n";
-		
-		classDefinition += "import java.io.File; \n \n";
-				
 		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";
 		
 		classDefinition += "public class " + syncTableInfo.generateClassName() + " extends AbstractOpenMRSObject implements OpenMRSObject { \n";
@@ -324,25 +310,22 @@ public class OpenMRSClassGenerator {
 
 		writer.close();
 		
-		compile(sourceFile, destinationFileLocation);
+		compile(sourceFile, syncTableInfo.getPOJOSourceFilesDirectory());
 		
 		st.close();
 		rs.close();
 				
-		return tryToGetExistingCLass(destinationFileLocation, fullClassName);
+		return tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
 	}
 	
 	public static Class<OpenMRSObject> generateSkeleton(SyncTableConfiguration syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
 		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad(conn);
-		
-		String root = Main.getProjectPOJODirectory().getAbsolutePath();
 			
-		File sourceFile = new File(root + "/src/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
-		File destinationFileLocation = new File(root + "/bin/");
+		File sourceFile = new File(syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
 		
 		String fullClassName = "org.openmrs.module.eptssync.model.openmrs." +  syncTableInfo.getClasspackage() + "." + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
 		
-		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(destinationFileLocation, fullClassName);
+		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
 			
 		if (existingCLass != null) return existingCLass;
 	
@@ -432,9 +415,9 @@ public class OpenMRSClassGenerator {
 
 		writer.close();
 
-		compile(sourceFile, destinationFileLocation);
-			
-		return tryToGetExistingCLass(destinationFileLocation, fullClassName);
+		compile(sourceFile, syncTableInfo.getPOJOCopiledFilesDirectory());
+		
+		return tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
 	}
 	
 	static Logger logger = Logger.getLogger(OpenMRSClassGenerator.class);
@@ -472,6 +455,20 @@ public class OpenMRSClassGenerator {
 		}
 	}
 	
+	
+	public static void compile(File sourceFile, File destinationFile) throws IOException {
+		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+
+		fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destinationFile));
+
+		// Compile the file
+		compiler.getTask(null, fileManager, null, null, null, fileManager.getJavaFileObjectsFromFiles(Arrays.asList(sourceFile))).call();
+		
+		fileManager.close();
+	}
+	
+	/*
 	public static void compile(File sourceFile, File destinationFile) throws IOException {
 		FileUtilities.tryToCreateDirectoryStructure(destinationFile.getAbsolutePath());
 		
@@ -501,5 +498,6 @@ public class OpenMRSClassGenerator {
 		
 		fileManager.close();
 	}
+	*/
 	
 }

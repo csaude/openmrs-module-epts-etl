@@ -2,7 +2,7 @@ package org.openmrs.module.eptssync.utilities;
 
 import java.sql.Connection;
 
-import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
+import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
@@ -272,7 +272,7 @@ public class AttDefinedElements {
 	}
 
 	private boolean isSharedKey(Connection conn) {
-		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo(conn)) {
+		for (RefInfo parent : this.syncTableInfo.getParentRefInfo(conn)) {
 			if (parent.isSharedPk() && parent.getReferenceColumnAsClassAttName().equals(this.attName)) {
 				return true;
 			}
@@ -282,7 +282,7 @@ public class AttDefinedElements {
 	}
 
 	private boolean isForeignKey(String dbAttName, Connection conn) {
-		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo(conn)) {
+		for (RefInfo parent : this.syncTableInfo.getParentRefInfo(conn)) {
 			if (parent.getReferenceColumnName().equalsIgnoreCase(dbAttName)) {
 				return true;
 			}

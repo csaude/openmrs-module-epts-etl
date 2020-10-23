@@ -35,7 +35,7 @@ public class PojoGenerationController extends OperationController {
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		return 1;
 	}
-	    
+	
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return false;

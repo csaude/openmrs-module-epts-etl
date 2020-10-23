@@ -3,7 +3,7 @@ package org.openmrs.module.eptssync.utilities.db.conn;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
+import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -19,22 +19,22 @@ public class InconsistentStateException extends SyncExeption {
 
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	Map<ParentRefInfo, Integer> missingParents;
+	Map<RefInfo, Integer> missingParents;
 	
 	public InconsistentStateException(){
 		super("The record is in inconsistent state. There are missing some parents");
 	}
 	
-	public InconsistentStateException(OpenMRSObject obj, Map<ParentRefInfo, Integer> missingParents){
+	public InconsistentStateException(OpenMRSObject obj, Map<RefInfo, Integer> missingParents){
 		super(generateMissingInfo(obj, missingParents));
 		
 		this.missingParents = missingParents;
 	}
 	
-	public static String generateMissingInfo(OpenMRSObject obj, Map<ParentRefInfo, Integer> missingParents) {
+	public static String generateMissingInfo(OpenMRSObject obj, Map<RefInfo, Integer> missingParents) {
 		String missingInfo = "";
 		
-		for (Entry<ParentRefInfo, Integer> missing : missingParents.entrySet()) {
+		for (Entry<RefInfo, Integer> missing : missingParents.entrySet()) {
 			missingInfo = utilities.concatStrings(missingInfo, "[" +missing.getKey().getReferencedTableInfo().getTableName() + ": " + missing.getValue() + "]", ";");
 		}
 		

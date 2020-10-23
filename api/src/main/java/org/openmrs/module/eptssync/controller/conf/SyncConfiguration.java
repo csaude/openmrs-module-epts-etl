@@ -146,8 +146,15 @@ public class SyncConfiguration {
 	}
 	*/
 	
+	
 	public boolean isDoIntegrityCheckInTheEnd(String operationType) {
-		return  findOperation(operationType).isDoIntegrityCheckInTheEnd();
+		logger.info("FINDING OPERATION "+operationType);
+		
+		SyncOperationConfig op = findOperation(operationType);
+	
+		logger.info("FOUND OPERATION "+op.getOperationType());
+		
+		return op.isDoIntegrityCheckInTheEnd();
 	}
 	
 	/*
@@ -314,19 +321,18 @@ public class SyncConfiguration {
 		for (SyncOperationConfig op : this.operations) {
 			if (op.equals(toFind)) return op;
 			
-			if (op.getChild() != null) {
-				
-				if (op.getChild().equals(toFind)) {
-					return op.getChild();
+			SyncOperationConfig child = op.getChild();
+			
+			while (child != null) {
+				if (child.equals(toFind)) {
+					return child;
 				}
-				else
-				if (op.getChild().getChild() != null && op.getChild().getChild().equals(toFind)) {
-					return op.getChild().getChild();
-				}
+			
+				child = child.getChild();
 			}
 		}
 		
-		return null;
+		throw new ForbiddenOperationException("THE OPERATION '" + operationType.toUpperCase() + "' WAS NOT FOUND!!!!");
 	}
 	
 	public void validate() throws ForbiddenOperationException{
@@ -355,7 +361,11 @@ public class SyncConfiguration {
 		return utilities.findOnArray(syncConfigs, this) != null;
 	}
 
-	public File getPojoProjectLocation() {
-		return Main.getProjectPOJODirectory();
+	public File getPOJOCompiledFilesDirectory() {
+		return Main.getPOJOCompiledFilesDirectory();
+	}
+
+	public File getPOJOSourceFilesDirectory() {
+		return Main.getPOJOSourceFilesDirectory();
 	}
 }

@@ -458,8 +458,12 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			
 			getTimer().stop();
 			
-			getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration(), getTimer());
+			markAsFinished();
 		}
+	}
+	
+	public void markAsFinished(){
+		getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration(), this, getTimer());
 	}
 		
 	@Override

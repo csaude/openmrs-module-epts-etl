@@ -120,7 +120,7 @@ public class EngineActivityMonitor implements Runnable{
 			else {
 				msg += " FINISHING....";
 				
-				getController().markTableOperationAsFinished(syncInfo, this.timer);
+				getController().markTableOperationAsFinished(syncInfo, null, this.timer);
 				
 				//this.changeStatusToFinished();
 			}

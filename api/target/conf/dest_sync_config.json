@@ -39,7 +39,7 @@
 					maxRecordPerProcessing: 25000,
 					maxSupportedEngines: 30,
 					minRecordsPerEngine: 1000,
-					disabled: false,
+					disabled: true,
 					processingMode: "sequencial",
 					
 					child:{
@@ -48,7 +48,7 @@
 						maxSupportedEngines: 30,
 						minRecordsPerEngine: 1000,
 						doIntegrityCheckInTheEnd: true,
-						disabled: false,
+						disabled: true,
 						processingMode: "sequencial",
 						
 						child: {
@@ -57,7 +57,7 @@
 							maxSupportedEngines: 1,
 							minRecordsPerEngine: 100,
 							doIntegrityCheckInTheEnd: true,
-							disabled: false,
+							disabled: true,
 							processingMode: "sequencial"
 						}
 					}

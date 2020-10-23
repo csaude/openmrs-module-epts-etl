@@ -137,7 +137,7 @@ public class ProcessController implements Controller{
 					OperationController child = controller.getChild() ;
 					
 					while(child != null) {
-						if (!child.isFinished()) {
+						if (!child.isFinished() && !child.getOperationConfig().isDisabled()) {
 							return false;
 						}
 						
@@ -179,6 +179,8 @@ public class ProcessController implements Controller{
 	
 	@Override
 	public void changeStatusToFinished() {
+		markProcessAsFinished();
+		
 		this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
 	}
 	
@@ -289,8 +291,6 @@ public class ProcessController implements Controller{
 
 	@Override
 	public void onFinish() {
-		markProcessAsFinished();
-		
 		if (this.childController != null) {
 			
 			ProcessController child = this.childController;
@@ -327,8 +327,6 @@ public class ProcessController implements Controller{
 			
 			logInfo("FILE WROTE");
 		}
-		
-		changeStatusToFinished();
 	}
 	
 

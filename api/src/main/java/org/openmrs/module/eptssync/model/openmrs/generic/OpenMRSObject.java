@@ -3,7 +3,7 @@ package org.openmrs.module.eptssync.model.openmrs.generic;
 import java.sql.Connection;
 import java.util.Map;
 
-import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
+import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
@@ -94,13 +94,13 @@ public interface OpenMRSObject extends SyncRecord{
 	//public abstract void moveToStageAreaDueInconsistency(SyncTableInfo syncTableInfo, InconsistentStateException exception, Connection conn) throws DBException;
 	
 	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, Connection conn) throws DBException;
-	public abstract String generateMissingInfo(Map<ParentRefInfo, Integer> missingParents);
+	public abstract String generateMissingInfo(Map<RefInfo, Integer> missingParents);
 	
 	public abstract void  remove(Connection conn) throws DBException;
 	
-	public abstract Map<ParentRefInfo, Integer>  loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException;
+	public abstract Map<RefInfo, Integer>  loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException;
 	
-	public abstract void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<ParentRefInfo, Integer> missingParents, Connection conn) throws DBException;
+	public abstract void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException;
 	
 	public abstract void markAsConsistent(Connection conn) throws DBException;
 		
