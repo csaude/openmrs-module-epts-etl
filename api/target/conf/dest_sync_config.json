@@ -36,27 +36,27 @@
 				child:{
 					operationType: "load",
 					maxRecordPerProcessing: 1000,
-					maxSupportedEngines: 10,
+					maxSupportedEngines: 5,
 					minRecordsPerEngine: 100,
-					disabled: true,
+					disabled: false,
 					processingMode: "sequencial",
 					
 					child:{
 						operationType: "synchronization",
 						maxRecordPerProcessing: 1000,
-						maxSupportedEngines: 10,
+						maxSupportedEngines: 5,
 						minRecordsPerEngine: 100,
 						doIntegrityCheckInTheEnd: true,
-						disabled: true,
+						disabled: false,
 						processingMode: "sequencial",
 						
 						child: {
 							operationType: "consolidation",
 							maxRecordPerProcessing: 1000,
-							maxSupportedEngines: 10,
+							maxSupportedEngines: 5,
 							minRecordsPerEngine: 100,
-							doIntegrityCheckInTheEnd: true,
-							disabled: true,
+							doIntegrityCheckInTheEnd: false,
+							disabled: false,
 							processingMode: "sequencial"
 						}
 					}

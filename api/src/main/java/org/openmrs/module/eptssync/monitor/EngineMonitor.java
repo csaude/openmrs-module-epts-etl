@@ -60,6 +60,7 @@ public class EngineMonitor implements Runnable{
 			TimeCountDown.sleep(60);
 			
 			if (getMainEngine().isFinished()) {
+				getMainEngine().markAsFinished();
 				getMainEngine().onFinish();
 				
 				running = false;
@@ -151,7 +152,7 @@ public class EngineMonitor implements Runnable{
 			
 			mainEngine.resetLimits(limits);
 			
-			logInfo("REALOCATED NEW RECORDS [" + mainEngine.getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
+			logInfo("ALOCATED RECORDS [" + mainEngine.getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
 			
 			if (mainEngine.getChildren() == null) {
 				mainEngine.setChildren(new ArrayList<Engine>());

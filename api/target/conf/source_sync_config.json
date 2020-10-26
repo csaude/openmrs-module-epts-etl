@@ -37,17 +37,17 @@
 				child:	{
 					operationType: "export",
 					maxRecordPerProcessing: 1000,
-					maxSupportedEngines: 10,
+					maxSupportedEngines: 5,
 					minRecordsPerEngine: 100,
-					disabled: true,
+					disabled: false,
 					processingMode: "sequencial",
 							
 					child:{
 						operationType: "transport",
 						maxRecordPerProcessing: 1000,
-						maxSupportedEngines: 10,
+						maxSupportedEngines: 5,
 						minRecordsPerEngine: 50,
-						disabled: true,
+						disabled: false,
 						processingMode: "sequencial"
 					}
 				}

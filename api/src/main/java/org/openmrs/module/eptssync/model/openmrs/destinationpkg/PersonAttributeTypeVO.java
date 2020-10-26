@@ -12,8 +12,6 @@ import java.sql.Connection;
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
-import java.io.File; 
- 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class PersonAttributeTypeVO extends AbstractOpenMRSObject implements OpenMRSObject { 
@@ -34,11 +32,6 @@ public class PersonAttributeTypeVO extends AbstractOpenMRSObject implements Open
 	private String editPrivilege;
 	private String uuid;
 	private double sortWeight;
-	private byte swappable;
-	private java.util.Date lastSyncDate;
-	private int originRecordId;
-	private String originAppLocationCode;
-	private int consistent;
  
 	public PersonAttributeTypeVO() { 
 		this.metadata = true;
@@ -175,52 +168,30 @@ public class PersonAttributeTypeVO extends AbstractOpenMRSObject implements Open
 	public void setSortWeight(double sortWeight){ 
 	 	this.sortWeight = sortWeight;
 	}
+
+
  
 	public double getSortWeight(){ 
 		return this.sortWeight;
+	}	public int getOriginRecordId(){ 
+		return 0;
 	}
  
-	public void setSwappable(byte swappable){ 
-	 	this.swappable = swappable;
-	}
- 
-	public byte getSwappable(){ 
-		return this.swappable;
-	}
- 
-	public void setLastSyncDate(java.util.Date lastSyncDate){ 
-	 	this.lastSyncDate = lastSyncDate;
-	}
- 
-	public java.util.Date getLastSyncDate(){ 
-		return this.lastSyncDate;
-	}
- 
-	public void setOriginRecordId(int originRecordId){ 
-	 	this.originRecordId = originRecordId;
-	}
- 
-	public int getOriginRecordId(){ 
-		return this.originRecordId;
-	}
- 
-	public void setOriginAppLocationCode(String originAppLocationCode){ 
-	 	this.originAppLocationCode = originAppLocationCode;
-	}
+	public void setOriginRecordId(int originRecordId){ }
  
 	public String getOriginAppLocationCode(){ 
-		return this.originAppLocationCode;
+		return null;
 	}
  
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
+	public void setOriginAppLocationCode(String originAppLocationCode){ }
  
 	public int getConsistent(){ 
-		return this.consistent;
+		return 0;
 	}
+ 
+	public void setConsistent(int consistent){ }
+ 
+
  
 	public int getObjectId() { 
  		return this.personAttributeTypeId; 
@@ -248,11 +219,6 @@ public class PersonAttributeTypeVO extends AbstractOpenMRSObject implements Open
 		this.editPrivilege = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("edit_privilege") != null ? rs.getString("edit_privilege").trim() : null);
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 		this.sortWeight = rs.getDouble("sort_weight");
-		this.swappable = rs.getByte("swappable");
-		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
-		this.originRecordId = rs.getInt("origin_record_id");
-		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
-		this.consistent = rs.getInt("consistent");
 	} 
  
 	@JsonIgnore
@@ -262,27 +228,27 @@ public class PersonAttributeTypeVO extends AbstractOpenMRSObject implements Open
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.name, this.description, this.format, this.foreignKey, this.searchable, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.editPrivilege, this.uuid, this.sortWeight, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.name, this.description, this.format, this.foreignKey, this.searchable, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.editPrivilege, this.uuid, this.sortWeight};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.name, this.description, this.format, this.foreignKey, this.searchable, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.editPrivilege, this.uuid, this.sortWeight, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.personAttributeTypeId};		return params; 
+ 		Object[] params = {this.name, this.description, this.format, this.foreignKey, this.searchable, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.editPrivilege, this.uuid, this.sortWeight, this.personAttributeTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO person_attribute_type(name, description, format, foreign_key, searchable, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, edit_privilege, uuid, sort_weight, swappable, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO person_attribute_type(name, description, format, foreign_key, searchable, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, edit_privilege, uuid, sort_weight) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE person_attribute_type SET name = ?, description = ?, format = ?, foreign_key = ?, searchable = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, edit_privilege = ?, uuid = ?, sort_weight = ?, swappable = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE person_attribute_type_id = ?;"; 
+ 		return "UPDATE person_attribute_type SET name = ?, description = ?, format = ?, foreign_key = ?, searchable = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, edit_privilege = ?, uuid = ?, sort_weight = ? WHERE person_attribute_type_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.format != null ? "\""+ utilities.scapeQuotationMarks(format)  +"\"" : null) + "," + (this.foreignKey) + "," + (this.searchable) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.editPrivilege != null ? "\""+ utilities.scapeQuotationMarks(editPrivilege)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.sortWeight) + "," + (this.swappable) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.format != null ? "\""+ utilities.scapeQuotationMarks(format)  +"\"" : null) + "," + (this.foreignKey) + "," + (this.searchable) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.editPrivilege != null ? "\""+ utilities.scapeQuotationMarks(editPrivilege)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.sortWeight); 
 	} 
  
 	@Override

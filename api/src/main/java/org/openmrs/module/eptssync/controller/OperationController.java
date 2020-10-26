@@ -101,6 +101,8 @@ public abstract class OperationController implements Controller{
 	}
 	
 	private void runIsSequencialMode() {
+		changeStatusToRunning();
+		
 		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
 		
 		for (SyncTableConfiguration syncInfo: allSync) {
@@ -116,7 +118,7 @@ public abstract class OperationController implements Controller{
 				logInfo(("Starting operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'").toUpperCase());
 				
 				EngineMonitor engine = initAndStartEngine(syncInfo);
-				
+
 				while (engine != null && !engine.getMainEngine().isFinished() && !engine.getMainEngine().isStopped()) {
 					if (stopRequested()) {
 						logInfo("STOP REQUEST!!! THE OPERATION ON TABLE " + syncInfo.getTableName().toUpperCase() + " WILL STOPPED SOON");
@@ -177,6 +179,8 @@ public abstract class OperationController implements Controller{
 				}
 			}
 		}
+		
+		changeStatusToRunning();
 	}
 
 	private boolean operationTableIsAlreadyFinished(SyncTableConfiguration conf) {
@@ -248,14 +252,12 @@ public abstract class OperationController implements Controller{
 	
 	@Override
 	public void run() {
-		changeStatusToRunning();
-		
 		timer = new TimeController();
 		timer.start();
 		
 		this.activitieMonitor = new ControllerMonitor(this);
 		
-		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId.toUpperCase() + "_MONIGTOR");
+		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId.toUpperCase() + "_MONITOR");
 		executor.execute(this.activitieMonitor);
 
 		if (stopRequested()) {
@@ -352,7 +354,6 @@ public abstract class OperationController implements Controller{
 		}
 	}
 	
-	
 	public void markTableOperationAsFinished(SyncTableConfiguration conf, Engine engine, TimeController timer) {
 		String operationId = this.getControllerId() + "_" + conf.getTableName();
 		
@@ -386,7 +387,7 @@ public abstract class OperationController implements Controller{
 		
 	}
 	
-	public void markOperationAsFinished() {
+	public void markAsFinished() {
 		String operationId = this.getControllerId();
 		
 		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
@@ -443,7 +444,7 @@ public abstract class OperationController implements Controller{
 	public void changeStatusToFinished() {
 		this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
 	
-		markOperationAsFinished();
+		markAsFinished();
 	}
 	
 	@Override	

@@ -12,8 +12,6 @@ import java.sql.Connection;
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
-import java.io.File; 
- 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class GaacFamilyMemberVO extends AbstractOpenMRSObject implements OpenMRSObject { 
@@ -250,12 +248,12 @@ public class GaacFamilyMemberVO extends AbstractOpenMRSObject implements OpenMRS
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.familyId == 0 ? null : this.familyId, this.memberId == 0 ? null : this.memberId, this.familyMemberRelacao == 0 ? null : this.familyMemberRelacao, this.startDate, this.endDate, this.reasonLeavingType == 0 ? null : this.reasonLeavingType, this.leaving, this.restart, this.restartDate, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid};		return params; 
+ 		Object[] params = {this.familyId, this.memberId == 0 ? null : this.memberId, this.familyMemberRelacao == 0 ? null : this.familyMemberRelacao, this.startDate, this.endDate, this.reasonLeavingType == 0 ? null : this.reasonLeavingType, this.leaving, this.restart, this.restartDate, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.familyId == 0 ? null : this.familyId, this.memberId == 0 ? null : this.memberId, this.familyMemberRelacao == 0 ? null : this.familyMemberRelacao, this.startDate, this.endDate, this.reasonLeavingType == 0 ? null : this.reasonLeavingType, this.leaving, this.restart, this.restartDate, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.familyMemberId};		return params; 
+ 		Object[] params = {this.familyId, this.memberId == 0 ? null : this.memberId, this.familyMemberRelacao == 0 ? null : this.familyMemberRelacao, this.startDate, this.endDate, this.reasonLeavingType == 0 ? null : this.reasonLeavingType, this.leaving, this.restart, this.restartDate, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.familyMemberId};		return params; 
 	} 
  
 	@JsonIgnore
@@ -270,7 +268,7 @@ public class GaacFamilyMemberVO extends AbstractOpenMRSObject implements OpenMRS
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.familyId == 0 ? null : this.familyId) + "," + (this.memberId == 0 ? null : this.memberId) + "," + (this.familyMemberRelacao == 0 ? null : this.familyMemberRelacao) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.reasonLeavingType == 0 ? null : this.reasonLeavingType) + "," + (this.leaving) + "," + (this.restart) + "," + (this.restartDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(restartDate)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null); 
+ 		return ""+(this.familyId) + "," + (this.memberId == 0 ? null : this.memberId) + "," + (this.familyMemberRelacao == 0 ? null : this.familyMemberRelacao) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.reasonLeavingType == 0 ? null : this.reasonLeavingType) + "," + (this.leaving) + "," + (this.restart) + "," + (this.restartDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(restartDate)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null); 
 	} 
  
 	@Override
@@ -280,7 +278,6 @@ public class GaacFamilyMemberVO extends AbstractOpenMRSObject implements OpenMRS
 
 	@Override
 	public boolean hasParents() {
-		if (this.familyId != 0) return true;
 		if (this.memberId != 0) return true;
 		if (this.reasonLeavingType != 0) return true;
 		if (this.familyMemberRelacao != 0) return true;
@@ -297,10 +294,6 @@ public class GaacFamilyMemberVO extends AbstractOpenMRSObject implements OpenMRS
 	@Override
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
 		OpenMRSObject parentOnDestination = null;
- 
-		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.GaacFamilyVO.class, this.familyId, false, conn); 
-		this.familyId = 0;
-		if (parentOnDestination  != null) this.familyId = parentOnDestination.getObjectId();
  
 		parentOnDestination = loadParent(org.openmrs.module.eptssync.model.openmrs.destinationpkg.PatientVO.class, this.memberId, false, conn); 
 		this.memberId = 0;
@@ -330,7 +323,6 @@ public class GaacFamilyMemberVO extends AbstractOpenMRSObject implements OpenMRS
 
 	@Override
 	public int getParentValue(String parentAttName) {		
-		if (parentAttName.equals("familyId")) return this.familyId;		
 		if (parentAttName.equals("memberId")) return this.memberId;		
 		if (parentAttName.equals("reasonLeavingType")) return this.reasonLeavingType;		
 		if (parentAttName.equals("familyMemberRelacao")) return this.familyMemberRelacao;		

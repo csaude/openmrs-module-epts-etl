@@ -25,6 +25,7 @@ public class ControllerMonitor implements Runnable{
 			TimeCountDown.sleep(controller.getWaitTimeToCheckStatus());
 			
 			if (this.controller.isFinished()) {
+				this.controller.markAsFinished();
 				this.controller.onFinish();
 			
 				running = false;

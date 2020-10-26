@@ -12,8 +12,6 @@ import java.sql.Connection;
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
-import java.io.File; 
- 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class RelationshipVO extends AbstractOpenMRSObject implements OpenMRSObject { 
@@ -32,10 +30,10 @@ public class RelationshipVO extends AbstractOpenMRSObject implements OpenMRSObje
 	private int changedBy;
 	private java.util.Date startDate;
 	private java.util.Date endDate;
+	private int consistent;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
-	private int consistent;
  
 	public RelationshipVO() { 
 		this.metadata = false;
@@ -161,6 +159,14 @@ public class RelationshipVO extends AbstractOpenMRSObject implements OpenMRSObje
 		return this.endDate;
 	}
  
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+ 
+	public int getConsistent(){ 
+		return this.consistent;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -180,19 +186,11 @@ public class RelationshipVO extends AbstractOpenMRSObject implements OpenMRSObje
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
+
+
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
-	}
- 
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
- 
-	public int getConsistent(){ 
-		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -219,10 +217,10 @@ public class RelationshipVO extends AbstractOpenMRSObject implements OpenMRSObje
 		this.changedBy = rs.getInt("changed_by");
 		this.startDate =  rs.getTimestamp("start_date") != null ? new java.util.Date( rs.getTimestamp("start_date").getTime() ) : null;
 		this.endDate =  rs.getTimestamp("end_date") != null ? new java.util.Date( rs.getTimestamp("end_date").getTime() ) : null;
+		this.consistent = rs.getInt("consistent");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
-		this.consistent = rs.getInt("consistent");
 	} 
  
 	@JsonIgnore
@@ -232,27 +230,27 @@ public class RelationshipVO extends AbstractOpenMRSObject implements OpenMRSObje
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.personA == 0 ? null : this.personA, this.relationship == 0 ? null : this.relationship, this.personB == 0 ? null : this.personB, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.startDate, this.endDate, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.personA == 0 ? null : this.personA, this.relationship == 0 ? null : this.relationship, this.personB == 0 ? null : this.personB, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.startDate, this.endDate, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.personA == 0 ? null : this.personA, this.relationship == 0 ? null : this.relationship, this.personB == 0 ? null : this.personB, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.startDate, this.endDate, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.relationshipId};		return params; 
+ 		Object[] params = {this.personA == 0 ? null : this.personA, this.relationship == 0 ? null : this.relationship, this.personB == 0 ? null : this.personB, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.startDate, this.endDate, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.relationshipId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO relationship(person_a, relationship, person_b, creator, date_created, voided, voided_by, date_voided, void_reason, uuid, date_changed, changed_by, start_date, end_date, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO relationship(person_a, relationship, person_b, creator, date_created, voided, voided_by, date_voided, void_reason, uuid, date_changed, changed_by, start_date, end_date, consistent, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE relationship SET person_a = ?, relationship = ?, person_b = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, date_changed = ?, changed_by = ?, start_date = ?, end_date = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE relationship_id = ?;"; 
+ 		return "UPDATE relationship SET person_a = ?, relationship = ?, person_b = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, date_changed = ?, changed_by = ?, start_date = ?, end_date = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE relationship_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.personA == 0 ? null : this.personA) + "," + (this.relationship == 0 ? null : this.relationship) + "," + (this.personB == 0 ? null : this.personB) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.personA == 0 ? null : this.personA) + "," + (this.relationship == 0 ? null : this.relationship) + "," + (this.personB == 0 ? null : this.personB) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null); 
 	} 
  
 	@Override

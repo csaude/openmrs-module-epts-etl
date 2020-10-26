@@ -12,8 +12,6 @@ import java.sql.Connection;
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
-import java.io.File; 
- 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements OpenMRSObject { 
@@ -34,12 +32,6 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 	private String uuid;
 	private String locationBehavior;
 	private String uniquenessBehavior;
-	private byte swappable;
-	private java.util.Date lastSyncDate;
-	private int originRecordId;
-	private java.util.Date dateChanged;
-	private String originAppLocationCode;
-	private int consistent;
  
 	public PatientIdentifierTypeVO() { 
 		this.metadata = true;
@@ -176,60 +168,30 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 	public void setUniquenessBehavior(String uniquenessBehavior){ 
 	 	this.uniquenessBehavior = uniquenessBehavior;
 	}
+
+
  
 	public String getUniquenessBehavior(){ 
 		return this.uniquenessBehavior;
+	}	public int getOriginRecordId(){ 
+		return 0;
 	}
  
-	public void setSwappable(byte swappable){ 
-	 	this.swappable = swappable;
-	}
- 
-	public byte getSwappable(){ 
-		return this.swappable;
-	}
- 
-	public void setLastSyncDate(java.util.Date lastSyncDate){ 
-	 	this.lastSyncDate = lastSyncDate;
-	}
- 
-	public java.util.Date getLastSyncDate(){ 
-		return this.lastSyncDate;
-	}
- 
-	public void setOriginRecordId(int originRecordId){ 
-	 	this.originRecordId = originRecordId;
-	}
- 
-	public int getOriginRecordId(){ 
-		return this.originRecordId;
-	}
- 
-	public void setDateChanged(java.util.Date dateChanged){ 
-	 	this.dateChanged = dateChanged;
-	}
- 
-	public java.util.Date getDateChanged(){ 
-		return this.dateChanged;
-	}
- 
-	public void setOriginAppLocationCode(String originAppLocationCode){ 
-	 	this.originAppLocationCode = originAppLocationCode;
-	}
+	public void setOriginRecordId(int originRecordId){ }
  
 	public String getOriginAppLocationCode(){ 
-		return this.originAppLocationCode;
+		return null;
 	}
  
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
+	public void setOriginAppLocationCode(String originAppLocationCode){ }
  
 	public int getConsistent(){ 
-		return this.consistent;
+		return 0;
 	}
+ 
+	public void setConsistent(int consistent){ }
+ 
+
  
 	public int getObjectId() { 
  		return this.patientIdentifierTypeId; 
@@ -257,12 +219,6 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 		this.locationBehavior = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("location_behavior") != null ? rs.getString("location_behavior").trim() : null);
 		this.uniquenessBehavior = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uniqueness_behavior") != null ? rs.getString("uniqueness_behavior").trim() : null);
-		this.swappable = rs.getByte("swappable");
-		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
-		this.originRecordId = rs.getInt("origin_record_id");
-		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
-		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
-		this.consistent = rs.getInt("consistent");
 	} 
  
 	@JsonIgnore
@@ -272,27 +228,27 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.swappable, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.swappable, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.consistent, this.patientIdentifierTypeId};		return params; 
+ 		Object[] params = {this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.patientIdentifierTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO patient_identifier_type(name, description, format, check_digit, creator, date_created, required, format_description, validator, retired, retired_by, date_retired, retire_reason, uuid, location_behavior, uniqueness_behavior, swappable, last_sync_date, origin_record_id, date_changed, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_identifier_type(name, description, format, check_digit, creator, date_created, required, format_description, validator, retired, retired_by, date_retired, retire_reason, uuid, location_behavior, uniqueness_behavior) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient_identifier_type SET name = ?, description = ?, format = ?, check_digit = ?, creator = ?, date_created = ?, required = ?, format_description = ?, validator = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, location_behavior = ?, uniqueness_behavior = ?, swappable = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ?, consistent = ? WHERE patient_identifier_type_id = ?;"; 
+ 		return "UPDATE patient_identifier_type SET name = ?, description = ?, format = ?, check_digit = ?, creator = ?, date_created = ?, required = ?, format_description = ?, validator = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, location_behavior = ?, uniqueness_behavior = ? WHERE patient_identifier_type_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.format != null ? "\""+ utilities.scapeQuotationMarks(format)  +"\"" : null) + "," + (this.checkDigit) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.required) + "," + (this.formatDescription != null ? "\""+ utilities.scapeQuotationMarks(formatDescription)  +"\"" : null) + "," + (this.validator != null ? "\""+ utilities.scapeQuotationMarks(validator)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.locationBehavior != null ? "\""+ utilities.scapeQuotationMarks(locationBehavior)  +"\"" : null) + "," + (this.uniquenessBehavior != null ? "\""+ utilities.scapeQuotationMarks(uniquenessBehavior)  +"\"" : null) + "," + (this.swappable) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.format != null ? "\""+ utilities.scapeQuotationMarks(format)  +"\"" : null) + "," + (this.checkDigit) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.required) + "," + (this.formatDescription != null ? "\""+ utilities.scapeQuotationMarks(formatDescription)  +"\"" : null) + "," + (this.validator != null ? "\""+ utilities.scapeQuotationMarks(validator)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.locationBehavior != null ? "\""+ utilities.scapeQuotationMarks(locationBehavior)  +"\"" : null) + "," + (this.uniquenessBehavior != null ? "\""+ utilities.scapeQuotationMarks(uniquenessBehavior)  +"\"" : null); 
 	} 
  
 	@Override

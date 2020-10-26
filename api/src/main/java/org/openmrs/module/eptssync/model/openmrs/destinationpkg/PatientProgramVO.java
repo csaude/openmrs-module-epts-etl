@@ -12,8 +12,6 @@ import java.sql.Connection;
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
-import java.io.File; 
- 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class PatientProgramVO extends AbstractOpenMRSObject implements OpenMRSObject { 
@@ -33,10 +31,10 @@ public class PatientProgramVO extends AbstractOpenMRSObject implements OpenMRSOb
 	private String uuid;
 	private int locationId;
 	private int outcomeConceptId;
+	private int consistent;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
-	private int consistent;
  
 	public PatientProgramVO() { 
 		this.metadata = false;
@@ -170,6 +168,14 @@ public class PatientProgramVO extends AbstractOpenMRSObject implements OpenMRSOb
 		return this.outcomeConceptId;
 	}
  
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
+	}
+ 
+	public int getConsistent(){ 
+		return this.consistent;
+	}
+ 
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
 	 	this.lastSyncDate = lastSyncDate;
 	}
@@ -189,19 +195,11 @@ public class PatientProgramVO extends AbstractOpenMRSObject implements OpenMRSOb
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
+
+
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
-	}
- 
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
- 
-	public int getConsistent(){ 
-		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -229,10 +227,10 @@ public class PatientProgramVO extends AbstractOpenMRSObject implements OpenMRSOb
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 		this.locationId = rs.getInt("location_id");
 		this.outcomeConceptId = rs.getInt("outcome_concept_id");
+		this.consistent = rs.getInt("consistent");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
-		this.consistent = rs.getInt("consistent");
 	} 
  
 	@JsonIgnore
@@ -242,27 +240,27 @@ public class PatientProgramVO extends AbstractOpenMRSObject implements OpenMRSOb
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.programId == 0 ? null : this.programId, this.dateEnrolled, this.dateCompleted, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.locationId == 0 ? null : this.locationId, this.outcomeConceptId == 0 ? null : this.outcomeConceptId, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.programId == 0 ? null : this.programId, this.dateEnrolled, this.dateCompleted, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.locationId == 0 ? null : this.locationId, this.outcomeConceptId == 0 ? null : this.outcomeConceptId, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.programId == 0 ? null : this.programId, this.dateEnrolled, this.dateCompleted, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.locationId == 0 ? null : this.locationId, this.outcomeConceptId == 0 ? null : this.outcomeConceptId, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.patientProgramId};		return params; 
+ 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.programId == 0 ? null : this.programId, this.dateEnrolled, this.dateCompleted, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.locationId == 0 ? null : this.locationId, this.outcomeConceptId == 0 ? null : this.outcomeConceptId, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.patientProgramId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO patient_program(patient_id, program_id, date_enrolled, date_completed, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, uuid, location_id, outcome_concept_id, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_program(patient_id, program_id, date_enrolled, date_completed, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, uuid, location_id, outcome_concept_id, consistent, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient_program SET patient_id = ?, program_id = ?, date_enrolled = ?, date_completed = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, location_id = ?, outcome_concept_id = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE patient_program_id = ?;"; 
+ 		return "UPDATE patient_program SET patient_id = ?, program_id = ?, date_enrolled = ?, date_completed = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, location_id = ?, outcome_concept_id = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE patient_program_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId == 0 ? null : this.patientId) + "," + (this.programId == 0 ? null : this.programId) + "," + (this.dateEnrolled != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateEnrolled)  +"\"" : null) + "," + (this.dateCompleted != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCompleted)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.outcomeConceptId == 0 ? null : this.outcomeConceptId) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.patientId == 0 ? null : this.patientId) + "," + (this.programId == 0 ? null : this.programId) + "," + (this.dateEnrolled != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateEnrolled)  +"\"" : null) + "," + (this.dateCompleted != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCompleted)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.outcomeConceptId == 0 ? null : this.outcomeConceptId) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null); 
 	} 
  
 	@Override

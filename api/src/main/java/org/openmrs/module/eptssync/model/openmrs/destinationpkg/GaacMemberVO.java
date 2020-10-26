@@ -12,8 +12,6 @@ import java.sql.Connection;
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
-import java.io.File; 
- 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class GaacMemberVO extends AbstractOpenMRSObject implements OpenMRSObject { 
@@ -36,10 +34,6 @@ public class GaacMemberVO extends AbstractOpenMRSObject implements OpenMRSObject
 	private java.util.Date dateVoided;
 	private String voidReason;
 	private String uuid;
-	private java.util.Date lastSyncDate;
-	private int originRecordId;
-	private String originAppLocationCode;
-	private int consistent;
  
 	public GaacMemberVO() { 
 		this.metadata = false;
@@ -192,44 +186,30 @@ public class GaacMemberVO extends AbstractOpenMRSObject implements OpenMRSObject
 	public void setUuid(String uuid){ 
 	 	this.uuid = uuid;
 	}
+
+
  
 	public String getUuid(){ 
 		return this.uuid;
+	}	public int getOriginRecordId(){ 
+		return 0;
 	}
  
-	public void setLastSyncDate(java.util.Date lastSyncDate){ 
-	 	this.lastSyncDate = lastSyncDate;
-	}
- 
-	public java.util.Date getLastSyncDate(){ 
-		return this.lastSyncDate;
-	}
- 
-	public void setOriginRecordId(int originRecordId){ 
-	 	this.originRecordId = originRecordId;
-	}
- 
-	public int getOriginRecordId(){ 
-		return this.originRecordId;
-	}
- 
-	public void setOriginAppLocationCode(String originAppLocationCode){ 
-	 	this.originAppLocationCode = originAppLocationCode;
-	}
+	public void setOriginRecordId(int originRecordId){ }
  
 	public String getOriginAppLocationCode(){ 
-		return this.originAppLocationCode;
+		return null;
 	}
  
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
+	public void setOriginAppLocationCode(String originAppLocationCode){ }
  
 	public int getConsistent(){ 
-		return this.consistent;
+		return 0;
 	}
+ 
+	public void setConsistent(int consistent){ }
+ 
+
  
 	public int getObjectId() { 
  		return this.gaacMemberId; 
@@ -259,10 +239,6 @@ public class GaacMemberVO extends AbstractOpenMRSObject implements OpenMRSObject
 		this.dateVoided =  rs.getTimestamp("date_voided") != null ? new java.util.Date( rs.getTimestamp("date_voided").getTime() ) : null;
 		this.voidReason = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null);
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
-		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
-		this.originRecordId = rs.getInt("origin_record_id");
-		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
-		this.consistent = rs.getInt("consistent");
 	} 
  
 	@JsonIgnore
@@ -272,27 +248,27 @@ public class GaacMemberVO extends AbstractOpenMRSObject implements OpenMRSObject
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.gaacId == 0 ? null : this.gaacId, this.memberId == 0 ? null : this.memberId, this.startDate, this.endDate, this.reasonLeavingType == 0 ? null : this.reasonLeavingType, this.description, this.leaving, this.restart, this.restartDate, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.gaacId == 0 ? null : this.gaacId, this.memberId == 0 ? null : this.memberId, this.startDate, this.endDate, this.reasonLeavingType == 0 ? null : this.reasonLeavingType, this.description, this.leaving, this.restart, this.restartDate, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.gaacId == 0 ? null : this.gaacId, this.memberId == 0 ? null : this.memberId, this.startDate, this.endDate, this.reasonLeavingType == 0 ? null : this.reasonLeavingType, this.description, this.leaving, this.restart, this.restartDate, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.gaacMemberId};		return params; 
+ 		Object[] params = {this.gaacId == 0 ? null : this.gaacId, this.memberId == 0 ? null : this.memberId, this.startDate, this.endDate, this.reasonLeavingType == 0 ? null : this.reasonLeavingType, this.description, this.leaving, this.restart, this.restartDate, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.gaacMemberId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO gaac_member(gaac_id, member_id, start_date, end_date, reason_leaving_type, description, leaving, restart, restart_date, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, uuid, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO gaac_member(gaac_id, member_id, start_date, end_date, reason_leaving_type, description, leaving, restart, restart_date, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, uuid) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE gaac_member SET gaac_id = ?, member_id = ?, start_date = ?, end_date = ?, reason_leaving_type = ?, description = ?, leaving = ?, restart = ?, restart_date = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE gaac_member_id = ?;"; 
+ 		return "UPDATE gaac_member SET gaac_id = ?, member_id = ?, start_date = ?, end_date = ?, reason_leaving_type = ?, description = ?, leaving = ?, restart = ?, restart_date = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ? WHERE gaac_member_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.gaacId == 0 ? null : this.gaacId) + "," + (this.memberId == 0 ? null : this.memberId) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.reasonLeavingType == 0 ? null : this.reasonLeavingType) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.leaving) + "," + (this.restart) + "," + (this.restartDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(restartDate)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.gaacId == 0 ? null : this.gaacId) + "," + (this.memberId == 0 ? null : this.memberId) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.reasonLeavingType == 0 ? null : this.reasonLeavingType) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.leaving) + "," + (this.restart) + "," + (this.restartDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(restartDate)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null); 
 	} 
  
 	@Override

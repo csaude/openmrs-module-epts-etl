@@ -184,7 +184,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 								this.requestANewJob();
 							}
 							else {
-								getRelatedOperationController().logInfo("NO '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
+								getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
 								
 								changeStatusToFinished();
 							}
@@ -360,7 +360,19 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	@Override
 	public void changeStatusToFinished() {
-		this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
+		if (this.hasChild()) {
+			for (Engine child : getChildren()) {
+				while(!child.isFinished()) {
+					logInfo("WAITING FOR ALL CHILD ENGINES TO BE FINISHED");
+					TimeCountDown.sleep(10);
+				}
+			}
+			
+			this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
+		}
+		else {
+			this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
+		}
 	}
 	
 	@Override	
@@ -463,7 +475,9 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 	
 	public void markAsFinished(){
-		getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration(), this, getTimer());
+		if (!this.hasParent()) {
+			getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration(), this, getTimer());
+		}
 	}
 		
 	@Override

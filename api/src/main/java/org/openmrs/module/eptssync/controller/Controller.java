@@ -6,4 +6,6 @@ public interface Controller extends MonitoredOperation{
 	void logInfo(String msg);
 
 	String getControllerId();
+	
+	void markAsFinished();
 }

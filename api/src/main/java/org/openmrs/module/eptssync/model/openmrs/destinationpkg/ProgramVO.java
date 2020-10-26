@@ -26,11 +26,10 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private String description;
 	private String uuid;
 	private int outcomesConceptId;
-	private byte swappable;
+	private int consistent;
 	private java.util.Date lastSyncDate;
 	private int originRecordId;
 	private String originAppLocationCode;
-	private int consistent;
  
 	public ProgramVO() { 
 		this.metadata = true;
@@ -124,12 +123,12 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.outcomesConceptId;
 	}
  
-	public void setSwappable(byte swappable){ 
-	 	this.swappable = swappable;
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
 	}
  
-	public byte getSwappable(){ 
-		return this.swappable;
+	public int getConsistent(){ 
+		return this.consistent;
 	}
  
 	public void setLastSyncDate(java.util.Date lastSyncDate){ 
@@ -151,19 +150,11 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setOriginAppLocationCode(String originAppLocationCode){ 
 	 	this.originAppLocationCode = originAppLocationCode;
 	}
+
+
  
 	public String getOriginAppLocationCode(){ 
 		return this.originAppLocationCode;
-	}
- 
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
- 
-	public int getConsistent(){ 
-		return this.consistent;
 	}
  
 	public int getObjectId() { 
@@ -186,11 +177,10 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.description = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("description") != null ? rs.getString("description").trim() : null);
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 		this.outcomesConceptId = rs.getInt("outcomes_concept_id");
-		this.swappable = rs.getByte("swappable");
+		this.consistent = rs.getInt("consistent");
 		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
 		this.originRecordId = rs.getInt("origin_record_id");
 		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
-		this.consistent = rs.getInt("consistent");
 	} 
  
 	@JsonIgnore
@@ -200,27 +190,27 @@ public class ProgramVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.swappable, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.programId};		return params; 
+ 		Object[] params = {this.conceptId == 0 ? null : this.conceptId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.name, this.description, this.uuid, this.outcomesConceptId == 0 ? null : this.outcomesConceptId, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.programId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO program(concept_id, creator, date_created, changed_by, date_changed, retired, name, description, uuid, outcomes_concept_id, swappable, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO program(concept_id, creator, date_created, changed_by, date_changed, retired, name, description, uuid, outcomes_concept_id, consistent, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE program SET concept_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, name = ?, description = ?, uuid = ?, outcomes_concept_id = ?, swappable = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE program_id = ?;"; 
+ 		return "UPDATE program SET concept_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, name = ?, description = ?, uuid = ?, outcomes_concept_id = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE program_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.conceptId == 0 ? null : this.conceptId) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.outcomesConceptId == 0 ? null : this.outcomesConceptId) + "," + (this.swappable) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.conceptId == 0 ? null : this.conceptId) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.outcomesConceptId == 0 ? null : this.outcomesConceptId) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null); 
 	} 
  
 	@Override

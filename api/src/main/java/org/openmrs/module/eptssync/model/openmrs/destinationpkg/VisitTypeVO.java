@@ -12,8 +12,6 @@ import java.sql.Connection;
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
-import java.io.File; 
- 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class VisitTypeVO extends AbstractOpenMRSObject implements OpenMRSObject { 
@@ -29,10 +27,6 @@ public class VisitTypeVO extends AbstractOpenMRSObject implements OpenMRSObject 
 	private int retiredBy;
 	private java.util.Date dateRetired;
 	private String retireReason;
-	private java.util.Date lastSyncDate;
-	private int originRecordId;
-	private String originAppLocationCode;
-	private int consistent;
  
 	public VisitTypeVO() { 
 		this.metadata = true;
@@ -129,44 +123,30 @@ public class VisitTypeVO extends AbstractOpenMRSObject implements OpenMRSObject 
 	public void setRetireReason(String retireReason){ 
 	 	this.retireReason = retireReason;
 	}
+
+
  
 	public String getRetireReason(){ 
 		return this.retireReason;
+	}	public int getOriginRecordId(){ 
+		return 0;
 	}
  
-	public void setLastSyncDate(java.util.Date lastSyncDate){ 
-	 	this.lastSyncDate = lastSyncDate;
-	}
- 
-	public java.util.Date getLastSyncDate(){ 
-		return this.lastSyncDate;
-	}
- 
-	public void setOriginRecordId(int originRecordId){ 
-	 	this.originRecordId = originRecordId;
-	}
- 
-	public int getOriginRecordId(){ 
-		return this.originRecordId;
-	}
- 
-	public void setOriginAppLocationCode(String originAppLocationCode){ 
-	 	this.originAppLocationCode = originAppLocationCode;
-	}
+	public void setOriginRecordId(int originRecordId){ }
  
 	public String getOriginAppLocationCode(){ 
-		return this.originAppLocationCode;
+		return null;
 	}
  
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
+	public void setOriginAppLocationCode(String originAppLocationCode){ }
  
 	public int getConsistent(){ 
-		return this.consistent;
+		return 0;
 	}
+ 
+	public void setConsistent(int consistent){ }
+ 
+
  
 	public int getObjectId() { 
  		return this.visitTypeId; 
@@ -189,10 +169,6 @@ public class VisitTypeVO extends AbstractOpenMRSObject implements OpenMRSObject 
 		this.retiredBy = rs.getInt("retired_by");
 		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
 		this.retireReason = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null);
-		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
-		this.originRecordId = rs.getInt("origin_record_id");
-		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
-		this.consistent = rs.getInt("consistent");
 	} 
  
 	@JsonIgnore
@@ -202,27 +178,27 @@ public class VisitTypeVO extends AbstractOpenMRSObject implements OpenMRSObject 
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.name, this.description, this.uuid, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.name, this.description, this.uuid, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.name, this.description, this.uuid, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.consistent, this.visitTypeId};		return params; 
+ 		Object[] params = {this.name, this.description, this.uuid, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.visitTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO visit_type(name, description, uuid, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, last_sync_date, origin_record_id, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO visit_type(name, description, uuid, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE visit_type SET name = ?, description = ?, uuid = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ?, consistent = ? WHERE visit_type_id = ?;"; 
+ 		return "UPDATE visit_type SET name = ?, description = ?, uuid = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ? WHERE visit_type_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null); 
 	} 
  
 	@Override

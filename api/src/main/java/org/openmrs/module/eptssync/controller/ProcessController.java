@@ -179,9 +179,8 @@ public class ProcessController implements Controller{
 	
 	@Override
 	public void changeStatusToFinished() {
-		markProcessAsFinished();
-		
 		this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
+		markAsFinished();
 	}
 	
 	@Override	
@@ -208,8 +207,6 @@ public class ProcessController implements Controller{
 
 	@Override
 	public void run() {
-		changeStatusToRunning();
-		
 		this.timer = new TimeController();
 		this.timer.start();
 	
@@ -243,6 +240,8 @@ public class ProcessController implements Controller{
 				conn.finalizeConnection();
 			}
 		}
+		
+		changeStatusToRunning();
 	}
 	
 	private void initOperationsControllers(Connection conn){
@@ -306,7 +305,7 @@ public class ProcessController implements Controller{
 		}
 	}
 	
-	private void markProcessAsFinished() {
+	public void markAsFinished() {
 		String operationId = this.getControllerId();
 		
 		String fileName = getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;

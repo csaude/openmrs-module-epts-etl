@@ -12,8 +12,6 @@ import java.sql.Connection;
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
-import java.io.File; 
- 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject { 
@@ -46,11 +44,6 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private String uuid;
 	private int previousVersion;
 	private String formNamespaceAndPath;
-	private java.util.Date lastSyncDate;
-	private int originRecordId;
-	private java.util.Date dateChanged;
-	private String originAppLocationCode;
-	private int consistent;
  
 	public ObsVO() { 
 		this.metadata = false;
@@ -283,52 +276,30 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setFormNamespaceAndPath(String formNamespaceAndPath){ 
 	 	this.formNamespaceAndPath = formNamespaceAndPath;
 	}
+
+
  
 	public String getFormNamespaceAndPath(){ 
 		return this.formNamespaceAndPath;
+	}	public int getOriginRecordId(){ 
+		return 0;
 	}
  
-	public void setLastSyncDate(java.util.Date lastSyncDate){ 
-	 	this.lastSyncDate = lastSyncDate;
-	}
- 
-	public java.util.Date getLastSyncDate(){ 
-		return this.lastSyncDate;
-	}
- 
-	public void setOriginRecordId(int originRecordId){ 
-	 	this.originRecordId = originRecordId;
-	}
- 
-	public int getOriginRecordId(){ 
-		return this.originRecordId;
-	}
- 
-	public void setDateChanged(java.util.Date dateChanged){ 
-	 	this.dateChanged = dateChanged;
-	}
- 
-	public java.util.Date getDateChanged(){ 
-		return this.dateChanged;
-	}
- 
-	public void setOriginAppLocationCode(String originAppLocationCode){ 
-	 	this.originAppLocationCode = originAppLocationCode;
-	}
+	public void setOriginRecordId(int originRecordId){ }
  
 	public String getOriginAppLocationCode(){ 
-		return this.originAppLocationCode;
+		return null;
 	}
  
-	public void setConsistent(int consistent){ 
-	 	this.consistent = consistent;
-	}
-
-
+	public void setOriginAppLocationCode(String originAppLocationCode){ }
  
 	public int getConsistent(){ 
-		return this.consistent;
+		return 0;
 	}
+ 
+	public void setConsistent(int consistent){ }
+ 
+
  
 	public int getObjectId() { 
  		return this.obsId; 
@@ -368,11 +339,6 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 		this.previousVersion = rs.getInt("previous_version");
 		this.formNamespaceAndPath = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("form_namespace_and_path") != null ? rs.getString("form_namespace_and_path").trim() : null);
-		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
-		this.originRecordId = rs.getInt("origin_record_id");
-		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
-		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
-		this.consistent = rs.getInt("consistent");
 	} 
  
 	@JsonIgnore
@@ -382,27 +348,27 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.consistent};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath, this.lastSyncDate, this.originRecordId, this.dateChanged, this.originAppLocationCode, this.consistent, this.obsId};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath, this.obsId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO obs(person_id, concept_id, encounter_id, order_id, obs_datetime, location_id, obs_group_id, accession_number, value_group_id, value_boolean, value_coded, value_coded_name_id, value_drug, value_datetime, value_numeric, value_modifier, value_text, comments, creator, date_created, voided, voided_by, date_voided, void_reason, value_complex, uuid, previous_version, form_namespace_and_path, last_sync_date, origin_record_id, date_changed, origin_app_location_code, consistent) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO obs(person_id, concept_id, encounter_id, order_id, obs_datetime, location_id, obs_group_id, accession_number, value_group_id, value_boolean, value_coded, value_coded_name_id, value_drug, value_datetime, value_numeric, value_modifier, value_text, comments, creator, date_created, voided, voided_by, date_voided, void_reason, value_complex, uuid, previous_version, form_namespace_and_path) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE obs SET person_id = ?, concept_id = ?, encounter_id = ?, order_id = ?, obs_datetime = ?, location_id = ?, obs_group_id = ?, accession_number = ?, value_group_id = ?, value_boolean = ?, value_coded = ?, value_coded_name_id = ?, value_drug = ?, value_datetime = ?, value_numeric = ?, value_modifier = ?, value_text = ?, comments = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, value_complex = ?, uuid = ?, previous_version = ?, form_namespace_and_path = ?, last_sync_date = ?, origin_record_id = ?, date_changed = ?, origin_app_location_code = ?, consistent = ? WHERE obs_id = ?;"; 
+ 		return "UPDATE obs SET person_id = ?, concept_id = ?, encounter_id = ?, order_id = ?, obs_datetime = ?, location_id = ?, obs_group_id = ?, accession_number = ?, value_group_id = ?, value_boolean = ?, value_coded = ?, value_coded_name_id = ?, value_drug = ?, value_datetime = ?, value_numeric = ?, value_modifier = ?, value_text = ?, comments = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, value_complex = ?, uuid = ?, previous_version = ?, form_namespace_and_path = ? WHERE obs_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.personId == 0 ? null : this.personId) + "," + (this.conceptId == 0 ? null : this.conceptId) + "," + (this.encounterId == 0 ? null : this.encounterId) + "," + (this.orderId == 0 ? null : this.orderId) + "," + (this.obsDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(obsDatetime)  +"\"" : null) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.obsGroupId == 0 ? null : this.obsGroupId) + "," + (this.accessionNumber != null ? "\""+ utilities.scapeQuotationMarks(accessionNumber)  +"\"" : null) + "," + (this.valueGroupId) + "," + (this.valueBoolean) + "," + (this.valueCoded == 0 ? null : this.valueCoded) + "," + (this.valueCodedNameId == 0 ? null : this.valueCodedNameId) + "," + (this.valueDrug == 0 ? null : this.valueDrug) + "," + (this.valueDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime)  +"\"" : null) + "," + (this.valueNumeric) + "," + (this.valueModifier != null ? "\""+ utilities.scapeQuotationMarks(valueModifier)  +"\"" : null) + "," + (this.valueText != null ? "\""+ utilities.scapeQuotationMarks(valueText)  +"\"" : null) + "," + (this.comments != null ? "\""+ utilities.scapeQuotationMarks(comments)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.valueComplex != null ? "\""+ utilities.scapeQuotationMarks(valueComplex)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.previousVersion == 0 ? null : this.previousVersion) + "," + (this.formNamespaceAndPath != null ? "\""+ utilities.scapeQuotationMarks(formNamespaceAndPath)  +"\"" : null) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null) + "," + (this.consistent); 
+ 		return ""+(this.personId == 0 ? null : this.personId) + "," + (this.conceptId == 0 ? null : this.conceptId) + "," + (this.encounterId == 0 ? null : this.encounterId) + "," + (this.orderId == 0 ? null : this.orderId) + "," + (this.obsDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(obsDatetime)  +"\"" : null) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.obsGroupId == 0 ? null : this.obsGroupId) + "," + (this.accessionNumber != null ? "\""+ utilities.scapeQuotationMarks(accessionNumber)  +"\"" : null) + "," + (this.valueGroupId) + "," + (this.valueBoolean) + "," + (this.valueCoded == 0 ? null : this.valueCoded) + "," + (this.valueCodedNameId == 0 ? null : this.valueCodedNameId) + "," + (this.valueDrug == 0 ? null : this.valueDrug) + "," + (this.valueDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime)  +"\"" : null) + "," + (this.valueNumeric) + "," + (this.valueModifier != null ? "\""+ utilities.scapeQuotationMarks(valueModifier)  +"\"" : null) + "," + (this.valueText != null ? "\""+ utilities.scapeQuotationMarks(valueText)  +"\"" : null) + "," + (this.comments != null ? "\""+ utilities.scapeQuotationMarks(comments)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.valueComplex != null ? "\""+ utilities.scapeQuotationMarks(valueComplex)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.previousVersion == 0 ? null : this.previousVersion) + "," + (this.formNamespaceAndPath != null ? "\""+ utilities.scapeQuotationMarks(formNamespaceAndPath)  +"\"" : null); 
 	} 
  
 	@Override

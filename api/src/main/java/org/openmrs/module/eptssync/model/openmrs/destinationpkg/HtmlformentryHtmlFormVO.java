@@ -12,8 +12,6 @@ import java.sql.Connection;
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
-import java.io.File; 
- 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class HtmlformentryHtmlFormVO extends AbstractOpenMRSObject implements OpenMRSObject { 
@@ -31,7 +29,6 @@ public class HtmlformentryHtmlFormVO extends AbstractOpenMRSObject implements Op
 	private int retiredBy;
 	private java.util.Date dateRetired;
 	private String retireReason;
-	private byte swappable;
  
 	public HtmlformentryHtmlFormVO() { 
 		this.metadata = false;
@@ -144,19 +141,11 @@ public class HtmlformentryHtmlFormVO extends AbstractOpenMRSObject implements Op
 	public void setRetireReason(String retireReason){ 
 	 	this.retireReason = retireReason;
 	}
+
+
  
 	public String getRetireReason(){ 
 		return this.retireReason;
-	}
- 
-	public void setSwappable(byte swappable){ 
-	 	this.swappable = swappable;
-	}
-
-
- 
-	public byte getSwappable(){ 
-		return this.swappable;
 	}	public int getOriginRecordId(){ 
 		return 0;
 	}
@@ -200,7 +189,6 @@ public class HtmlformentryHtmlFormVO extends AbstractOpenMRSObject implements Op
 		this.retiredBy = rs.getInt("retired_by");
 		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
 		this.retireReason = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null);
-		this.swappable = rs.getByte("swappable");
 	} 
  
 	@JsonIgnore
@@ -210,27 +198,27 @@ public class HtmlformentryHtmlFormVO extends AbstractOpenMRSObject implements Op
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.formId == 0 ? null : this.formId, this.name, this.xmlData, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.uuid, this.description, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.swappable};		return params; 
+ 		Object[] params = {this.formId == 0 ? null : this.formId, this.name, this.xmlData, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.uuid, this.description, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.formId == 0 ? null : this.formId, this.name, this.xmlData, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.uuid, this.description, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.swappable, this.id};		return params; 
+ 		Object[] params = {this.formId == 0 ? null : this.formId, this.name, this.xmlData, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.uuid, this.description, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO htmlformentry_html_form(form_id, name, xml_data, creator, date_created, changed_by, date_changed, retired, uuid, description, retired_by, date_retired, retire_reason, swappable) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO htmlformentry_html_form(form_id, name, xml_data, creator, date_created, changed_by, date_changed, retired, uuid, description, retired_by, date_retired, retire_reason) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE htmlformentry_html_form SET form_id = ?, name = ?, xml_data = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, uuid = ?, description = ?, retired_by = ?, date_retired = ?, retire_reason = ?, swappable = ? WHERE id = ?;"; 
+ 		return "UPDATE htmlformentry_html_form SET form_id = ?, name = ?, xml_data = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, uuid = ?, description = ?, retired_by = ?, date_retired = ?, retire_reason = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.formId == 0 ? null : this.formId) + "," + (this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.xmlData != null ? "\""+ utilities.scapeQuotationMarks(xmlData)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.swappable); 
+ 		return ""+(this.formId == 0 ? null : this.formId) + "," + (this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.xmlData != null ? "\""+ utilities.scapeQuotationMarks(xmlData)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null); 
 	} 
  
 	@Override

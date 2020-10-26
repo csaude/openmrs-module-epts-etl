@@ -262,7 +262,7 @@ public class DatabasePreparationEngine extends Engine {
 		SyncSearchParams<? extends SyncRecord> searchParams = new SyncSearchParams<SyncRecord>(null, limits) {
 			@Override
 			public int countAllRecords(Connection conn) throws DBException {
-				return 0;
+				return 1;
 			}
 
 			@Override
