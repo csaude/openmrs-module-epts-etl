@@ -30,6 +30,10 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 	private String uuid;
 	private java.util.Date dateChanged;
 	private int changedBy;
+	private int consistent;
+	private java.util.Date lastSyncDate;
+	private int originRecordId;
+	private String originAppLocationCode;
  
 	public PatientIdentifierVO() { 
 		this.metadata = false;
@@ -150,30 +154,44 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 	public void setChangedBy(int changedBy){ 
 	 	this.changedBy = changedBy;
 	}
-
-
  
 	public int getChangedBy(){ 
 		return this.changedBy;
-	}	public int getOriginRecordId(){ 
-		return 0;
 	}
  
-	public void setOriginRecordId(int originRecordId){ }
- 
-	public String getOriginAppLocationCode(){ 
-		return null;
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
 	}
- 
-	public void setOriginAppLocationCode(String originAppLocationCode){ }
  
 	public int getConsistent(){ 
-		return 0;
+		return this.consistent;
 	}
  
-	public void setConsistent(int consistent){ }
+	public void setLastSyncDate(java.util.Date lastSyncDate){ 
+	 	this.lastSyncDate = lastSyncDate;
+	}
  
+	public java.util.Date getLastSyncDate(){ 
+		return this.lastSyncDate;
+	}
+ 
+	public void setOriginRecordId(int originRecordId){ 
+	 	this.originRecordId = originRecordId;
+	}
+ 
+	public int getOriginRecordId(){ 
+		return this.originRecordId;
+	}
+ 
+	public void setOriginAppLocationCode(String originAppLocationCode){ 
+	 	this.originAppLocationCode = originAppLocationCode;
+	}
 
+
+ 
+	public String getOriginAppLocationCode(){ 
+		return this.originAppLocationCode;
+	}
  
 	public int getObjectId() { 
  		return this.patientIdentifierId; 
@@ -199,6 +217,10 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
 		this.changedBy = rs.getInt("changed_by");
+		this.consistent = rs.getInt("consistent");
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
 	} 
  
 	@JsonIgnore
@@ -208,27 +230,27 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.identifier, this.identifierType == 0 ? null : this.identifierType, this.preferred, this.locationId == 0 ? null : this.locationId, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy};		return params; 
+ 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.identifier, this.identifierType == 0 ? null : this.identifierType, this.preferred, this.locationId == 0 ? null : this.locationId, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.identifier, this.identifierType == 0 ? null : this.identifierType, this.preferred, this.locationId == 0 ? null : this.locationId, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.patientIdentifierId};		return params; 
+ 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.identifier, this.identifierType == 0 ? null : this.identifierType, this.preferred, this.locationId == 0 ? null : this.locationId, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.patientIdentifierId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO patient_identifier(patient_id, identifier, identifier_type, preferred, location_id, creator, date_created, voided, voided_by, date_voided, void_reason, uuid, date_changed, changed_by) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_identifier(patient_id, identifier, identifier_type, preferred, location_id, creator, date_created, voided, voided_by, date_voided, void_reason, uuid, date_changed, changed_by, consistent, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient_identifier SET patient_id = ?, identifier = ?, identifier_type = ?, preferred = ?, location_id = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, date_changed = ?, changed_by = ? WHERE patient_identifier_id = ?;"; 
+ 		return "UPDATE patient_identifier SET patient_id = ?, identifier = ?, identifier_type = ?, preferred = ?, location_id = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, date_changed = ?, changed_by = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE patient_identifier_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId == 0 ? null : this.patientId) + "," + (this.identifier != null ? "\""+ utilities.scapeQuotationMarks(identifier)  +"\"" : null) + "," + (this.identifierType == 0 ? null : this.identifierType) + "," + (this.preferred) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy); 
+ 		return ""+(this.patientId == 0 ? null : this.patientId) + "," + (this.identifier != null ? "\""+ utilities.scapeQuotationMarks(identifier)  +"\"" : null) + "," + (this.identifierType == 0 ? null : this.identifierType) + "," + (this.preferred) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null); 
 	} 
  
 	@Override

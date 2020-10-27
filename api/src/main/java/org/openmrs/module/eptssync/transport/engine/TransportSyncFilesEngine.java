@@ -6,9 +6,10 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.Engine;
+import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
@@ -40,15 +41,25 @@ public class TransportSyncFilesEngine extends Engine {
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) {
 		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords, TransportRecord.class);
 	
-		this.getMonitor().logInfo("COPYING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " SORUCE FILES TO IMPORT AREA");
+		this.getMonitor().logInfo("COPYING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " SOURCE FILES TO IMPORT AREA");
 		
 		
 		for (TransportRecord t : migrationRecordAsTransportRecord) {
 			t.transport();
+			
+			if (t.getDestinationFile().length() == 0) {
+				t.getDestinationFile().delete();
+				t.getMinimalDestinationFile().delete();
+				
+				throw new ForbiddenOperationException("FILE " + t.getDestinationFile().getAbsolutePath() +  " NOT TRANSPORTED!");
+			}
+		
 			t.moveToBackUpDirectory();
+		
+			logInfo("TRANSPORTED FILE " + t.getDestinationFile().getPath() + " WITH SIZE " + t.getDestinationFile().length());
 		}
 	
-		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " SORUCE FILES COPIED TO IMPORT AREA");
+		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " SOURCE FILES COPIED TO IMPORT AREA");
 	}
 
 	@Override
@@ -58,10 +69,8 @@ public class TransportSyncFilesEngine extends Engine {
 			
 			List<SyncRecord> syncRecords = new ArrayList<SyncRecord>();
 			
-			if (files != null) {
-				for (File f : files) {
-					syncRecords.add(new TransportRecord(f, getSyncDestinationDirectory(), getSyncBkpDirectory()));
-				}
+			if (files != null && files.length > 0) {
+				syncRecords.add(new TransportRecord(files[0], getSyncDestinationDirectory(), getSyncBkpDirectory()));
 			}
 			
 			return syncRecords;

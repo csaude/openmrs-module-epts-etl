@@ -100,7 +100,7 @@ public abstract class OperationController implements Controller{
 		return this.getOperationConfig().isParallelModeProcessing();
 	}
 	
-	private void runIsSequencialMode() {
+	private void runInSequencialMode() {
 		changeStatusToRunning();
 		
 		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
@@ -136,6 +136,13 @@ public abstract class OperationController implements Controller{
 					break;
 				}
 				else {
+					if (engine != null) {
+						markTableOperationAsFinished(syncInfo, engine.getMainEngine(), engine.getMainEngine().getTimer());
+					}
+					else {
+						markTableOperationAsFinished(syncInfo, null, null);
+					}
+					
 					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' is finished!").toUpperCase());
 				}
 			}
@@ -280,7 +287,7 @@ public abstract class OperationController implements Controller{
 			runInParallelMode();
 		}
 		else {
-			runIsSequencialMode();
+			runInSequencialMode();
 		}
 	}
 	
@@ -374,7 +381,7 @@ public abstract class OperationController implements Controller{
 			desc += "	qtyRecords: " + qtyRecords + ",\n";
 			desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(timer.getStartTime()) + "\",\n";
 			desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate()) + "\",\n";
-			desc += "	elapsedTime: \"" + timer.getDuration(TimeController.DURACAO_IN_MINUTES) + "\"\n";
+			desc += "	elapsedTime: " + (timer != null ? timer.getDuration(TimeController.DURACAO_IN_MINUTES) : 0) + "\n";
 			desc += "}";
 			
 			FileUtilities.write(fileName, desc);

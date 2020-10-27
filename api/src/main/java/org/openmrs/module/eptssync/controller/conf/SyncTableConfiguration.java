@@ -258,7 +258,7 @@ public class SyncTableConfiguration {
 		return parentRefInfo;
 	}
 			
-	private static SyncTableConfiguration init(String tableName, SyncConfiguration sourceInfo) {
+	public static SyncTableConfiguration init(String tableName, SyncConfiguration sourceInfo) {
 		SyncTableConfiguration tableInfo = sourceInfo.findPulledTableConfiguration(tableName);
 		
 		if (tableInfo == null) {

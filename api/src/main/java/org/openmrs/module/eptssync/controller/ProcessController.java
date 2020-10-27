@@ -239,9 +239,9 @@ public class ProcessController implements Controller{
 			finally {
 				conn.finalizeConnection();
 			}
+			
+			changeStatusToRunning();
 		}
-		
-		changeStatusToRunning();
 	}
 	
 	private void initOperationsControllers(Connection conn){

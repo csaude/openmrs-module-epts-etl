@@ -25,6 +25,9 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 		
 		searchClauses.addColumnToSelect("*");
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
+	
+		//Consolidate only records from sync
+		searchClauses.addToClauses("origin_app_location_code is not null");
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("consistent = -1");

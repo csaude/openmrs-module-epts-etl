@@ -28,6 +28,10 @@ public class EncounterProviderVO extends AbstractOpenMRSObject implements OpenMR
 	private int voidedBy;
 	private String voidReason;
 	private String uuid;
+	private int consistent;
+	private java.util.Date lastSyncDate;
+	private int originRecordId;
+	private String originAppLocationCode;
  
 	public EncounterProviderVO() { 
 		this.metadata = false;
@@ -132,30 +136,44 @@ public class EncounterProviderVO extends AbstractOpenMRSObject implements OpenMR
 	public void setUuid(String uuid){ 
 	 	this.uuid = uuid;
 	}
-
-
  
 	public String getUuid(){ 
 		return this.uuid;
-	}	public int getOriginRecordId(){ 
-		return 0;
 	}
  
-	public void setOriginRecordId(int originRecordId){ }
- 
-	public String getOriginAppLocationCode(){ 
-		return null;
+	public void setConsistent(int consistent){ 
+	 	this.consistent = consistent;
 	}
- 
-	public void setOriginAppLocationCode(String originAppLocationCode){ }
  
 	public int getConsistent(){ 
-		return 0;
+		return this.consistent;
 	}
  
-	public void setConsistent(int consistent){ }
+	public void setLastSyncDate(java.util.Date lastSyncDate){ 
+	 	this.lastSyncDate = lastSyncDate;
+	}
  
+	public java.util.Date getLastSyncDate(){ 
+		return this.lastSyncDate;
+	}
+ 
+	public void setOriginRecordId(int originRecordId){ 
+	 	this.originRecordId = originRecordId;
+	}
+ 
+	public int getOriginRecordId(){ 
+		return this.originRecordId;
+	}
+ 
+	public void setOriginAppLocationCode(String originAppLocationCode){ 
+	 	this.originAppLocationCode = originAppLocationCode;
+	}
 
+
+ 
+	public String getOriginAppLocationCode(){ 
+		return this.originAppLocationCode;
+	}
  
 	public int getObjectId() { 
  		return this.encounterProviderId; 
@@ -179,6 +197,10 @@ public class EncounterProviderVO extends AbstractOpenMRSObject implements OpenMR
 		this.voidedBy = rs.getInt("voided_by");
 		this.voidReason = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null);
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
+		this.consistent = rs.getInt("consistent");
+		this.lastSyncDate =  rs.getTimestamp("last_sync_date") != null ? new java.util.Date( rs.getTimestamp("last_sync_date").getTime() ) : null;
+		this.originRecordId = rs.getInt("origin_record_id");
+		this.originAppLocationCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("origin_app_location_code") != null ? rs.getString("origin_app_location_code").trim() : null);
 	} 
  
 	@JsonIgnore
@@ -188,27 +210,27 @@ public class EncounterProviderVO extends AbstractOpenMRSObject implements OpenMR
  
 	@JsonIgnore
 	public Object[]  getInsertParams(){ 
- 		Object[] params = {this.encounterId == 0 ? null : this.encounterId, this.providerId == 0 ? null : this.providerId, this.encounterRoleId == 0 ? null : this.encounterRoleId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.dateVoided, this.voidedBy == 0 ? null : this.voidedBy, this.voidReason, this.uuid};		return params; 
+ 		Object[] params = {this.encounterId == 0 ? null : this.encounterId, this.providerId == 0 ? null : this.providerId, this.encounterRoleId == 0 ? null : this.encounterRoleId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.dateVoided, this.voidedBy == 0 ? null : this.voidedBy, this.voidReason, this.uuid, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.encounterId == 0 ? null : this.encounterId, this.providerId == 0 ? null : this.providerId, this.encounterRoleId == 0 ? null : this.encounterRoleId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.dateVoided, this.voidedBy == 0 ? null : this.voidedBy, this.voidReason, this.uuid, this.encounterProviderId};		return params; 
+ 		Object[] params = {this.encounterId == 0 ? null : this.encounterId, this.providerId == 0 ? null : this.providerId, this.encounterRoleId == 0 ? null : this.encounterRoleId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.dateVoided, this.voidedBy == 0 ? null : this.voidedBy, this.voidReason, this.uuid, this.consistent, this.lastSyncDate, this.originRecordId, this.originAppLocationCode, this.encounterProviderId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQL(){ 
- 		return "INSERT INTO encounter_provider(encounter_id, provider_id, encounter_role_id, creator, date_created, changed_by, date_changed, voided, date_voided, voided_by, void_reason, uuid) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO encounter_provider(encounter_id, provider_id, encounter_role_id, creator, date_created, changed_by, date_changed, voided, date_voided, voided_by, void_reason, uuid, consistent, last_sync_date, origin_record_id, origin_app_location_code) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE encounter_provider SET encounter_id = ?, provider_id = ?, encounter_role_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, date_voided = ?, voided_by = ?, void_reason = ?, uuid = ? WHERE encounter_provider_id = ?;"; 
+ 		return "UPDATE encounter_provider SET encounter_id = ?, provider_id = ?, encounter_role_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, date_voided = ?, voided_by = ?, void_reason = ?, uuid = ?, consistent = ?, last_sync_date = ?, origin_record_id = ?, origin_app_location_code = ? WHERE encounter_provider_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterId == 0 ? null : this.encounterId) + "," + (this.providerId == 0 ? null : this.providerId) + "," + (this.encounterRoleId == 0 ? null : this.encounterRoleId) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null); 
+ 		return ""+(this.encounterId == 0 ? null : this.encounterId) + "," + (this.providerId == 0 ? null : this.providerId) + "," + (this.encounterRoleId == 0 ? null : this.encounterRoleId) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.consistent) + "," + (this.lastSyncDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(lastSyncDate)  +"\"" : null) + "," + (this.originRecordId) + "," + (this.originAppLocationCode != null ? "\""+ utilities.scapeQuotationMarks(originAppLocationCode)  +"\"" : null); 
 	} 
  
 	@Override

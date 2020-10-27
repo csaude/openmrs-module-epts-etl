@@ -35,7 +35,7 @@ public class OpenMRSClassGenerator {
 		
 		String fullClassName = syncTableInfo.generateFullClassName();
 		
-		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(syncTableInfo.getPOJOSourceFilesDirectory(), fullClassName);
+		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
 			
 		if (existingCLass != null && !utilities.createInstance(existingCLass).isGeneratedFromSkeletonClass() ) return existingCLass;
 	

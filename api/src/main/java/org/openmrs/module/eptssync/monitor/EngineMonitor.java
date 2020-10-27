@@ -190,7 +190,7 @@ public class EngineMonitor implements Runnable{
 			executor.execute(mainEngine);
 			
 			while(mainEngine.getProgressMeter() == null) {
-				logInfo("WAINTING FOR PROGRESS METER OF '" + mainEngine.getEngineId() + "' BEEN CREATED TO START RELATED CHILDREN ENGINES!!!");
+				logInfo("WAITING FOR PROGRESS METER OF '" + mainEngine.getEngineId() + "' BEEN CREATED TO START RELATED CHILDREN ENGINES!!!");
 				TimeCountDown.sleep(15);
 			}
 			

@@ -230,20 +230,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		int total = this.searchParams.countAllRecords(conn);
 		int processed = total - remaining;
 		
-		/*if (hasChild()) {
-			for (SyncEngine child : this.children) {
-				while (child.progressMeter == null) {
-					TimeCountDown countDown = TimeCountDown.wait(this, 10, "WAINTING FOR CHILD PROGRESS METER TO BE CREATED");
-					countDown.setIntervalForMessage(5);
-					
-					while (countDown.isInExecution()) {TimeCountDown.sleep(10);}
-				}
-				
-				remaining += child.getProgressMeter().getRemain();
-				processed += child.getProgressMeter().getProcessed();
-			}
-		}*/
-		
 		this.progressMeter = new SyncProgressMeter(this, "INITIALIZING", total, processed);
 	}
 	

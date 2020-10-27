@@ -8,6 +8,7 @@ import java.util.List;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.export.controller.SyncExportController;
 import org.openmrs.module.eptssync.export.model.SyncExportSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
@@ -65,8 +66,6 @@ public class ExportSyncEngine extends Engine {
 			this.getMonitor().logInfo("JSON [" + jsonFIle + ".json] CREATED!");
 			
 			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED");
-				
-			markAllAsSynchronized(utilities.parseList(syncRecords, OpenMRSObject.class));
 			
 			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED FINISHED");
 			
@@ -75,6 +74,16 @@ public class ExportSyncEngine extends Engine {
 			FileUtilities.renameTo(generateTmpMinimalJSONInfoFileName(jsonFIle), generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json");
 			FileUtilities.renameTo(jsonFIle.getAbsolutePath(), jsonFIle.getAbsolutePath() + ".json");
 			
+			logInfo("WRITEN FILE " + jsonFIle.getPath() + ".json" + " WITH SIZE " + new File(jsonFIle.getAbsolutePath() + ".json").length());
+			
+			if (new File(jsonFIle.getAbsolutePath() + ".json").length() == 0) {
+				new File(jsonFIle.getAbsolutePath() + ".json").delete();
+				new File(generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json").delete();
+				
+				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
+			}
+			
+			markAllAsSynchronized(utilities.parseList(syncRecords, OpenMRSObject.class));
 		} catch (IOException e) {
 			e.printStackTrace();
 			
