@@ -273,7 +273,7 @@ public class AttDefinedElements {
 
 	private boolean isSharedKey(Connection conn) {
 		for (RefInfo parent : this.syncTableInfo.getParentRefInfo(conn)) {
-			if (parent.isSharedPk() && parent.getReferenceColumnAsClassAttName().equals(this.attName)) {
+			if (parent.isSharedPk(conn) && parent.getReferenceColumnAsClassAttName().equals(this.attName)) {
 				return true;
 			}
 		}

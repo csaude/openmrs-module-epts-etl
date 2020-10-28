@@ -32,7 +32,7 @@ public class RefInfo {
 	/*
 	 * Indicate if this parent is metadata or not
 	 */
-	private boolean metadata;
+	//private boolean metadata;
 	
 	/*
 	 * Indicate if this parent can be ignored if not found in referenced table or not
@@ -43,7 +43,7 @@ public class RefInfo {
 	 * Indicate if this parent's PK is the same with the main table.
 	 * EX: The patient table and person, share the same primary key
 	 */
-	private boolean sharedPk;
+	//private boolean sharedPk;
 	
 	public String refColumnType;
 	
@@ -113,6 +113,7 @@ public class RefInfo {
 		this.ignorable = ignorable;
 	}
 
+	/*
 	public boolean isMetadata() {
 		return metadata;
 	}
@@ -120,15 +121,28 @@ public class RefInfo {
 	public void setMetadata(boolean metadata) {
 		this.metadata = metadata;
 	}
+	*/
 	
-	public boolean isSharedPk() {
-		return sharedPk;
+	public boolean isSharedPk(Connection conn) {
+		if (getReferenceTableInfo().getSharePkWith() == null) {
+			return false;
+		}
+		else
+		for (RefInfo refInfo : getReferenceTableInfo().getParentRefInfo(conn)) {
+			if (refInfo.getReferencedTableInfo().getTableName().equalsIgnoreCase(this.getReferenceTableInfo().getSharePkWith())) {
+				return true;
+			}
+		}
+		
+		throw new ForbiddenOperationException("The related table of shared pk " + this.getReferenceTableInfo().getSharePkWith() + " of table " + this.getReferenceTableInfo() + " is not listed inparents!");
 	}
 
+	/*
 	public void setSharedPk(boolean sharedPk) {
 		this.sharedPk = sharedPk;
 	}
-
+	*/
+	
 	@JsonIgnore
 	public Class<OpenMRSObject> determineRelatedReferencedClass(Connection conn) {
 		
@@ -185,7 +199,11 @@ public class RefInfo {
 	public boolean existsRelatedReferencedClass(Connection conn) {
 		try {
 			return determineRelatedReferencedClass(conn) != null;
-		} catch (RuntimeException e) {
+		} 
+		catch (ForbiddenOperationException e) {
+			throw e;
+		}
+		catch (RuntimeException e) {
 			return false;
 		}
 	}
@@ -288,7 +306,8 @@ public class RefInfo {
 		generateRelatedReferenceClass(false, conn);
 	}
 
+	/*
 	public boolean isRelatedReferenceTableConfiguredForSynchronization() {
 		return getReferenceTableInfo().getRelatedSynconfiguration().find(getReferenceTableInfo()) != null;
-	}
+	}*/
 }

@@ -4,6 +4,7 @@ package org.openmrs.module.eptssync.utilities;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Connection;
@@ -21,6 +22,7 @@ import javax.tools.ToolProvider;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -234,16 +236,28 @@ public class OpenMRSClassGenerator {
 		methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
 		
 		for(RefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {
-			if (refInfo.isMetadata()) continue;
-			
-			if (!refInfo.existsRelatedReferencedClass(conn)) {
-				refInfo.generateSkeletonOfRelatedReferencedClass(conn);
-			}
-			
+			if (refInfo.getReferencedTableInfo().isMetadata()) continue;
+			if (syncTableInfo.getSharePkWith() != null && syncTableInfo.getSharePkWith().equals(refInfo.getReferencedTableInfo().getTableName())) continue;
+				
 			if (!refInfo.isNumericRefColumn()) methodFromSuperClass += "/*\n";
 			
 			methodFromSuperClass += "		parentOnDestination = loadParent(";
-			methodFromSuperClass += refInfo.getReferencedClassFullName(conn) + ".class,";
+			
+			
+			String parentClass = "";
+			
+			if (!syncTableInfo.equals(refInfo.getReferencedTableInfo())) {
+				if (!refInfo.existsRelatedReferencedClass(conn)) {
+					refInfo.generateSkeletonOfRelatedReferencedClass(conn);
+				}
+				
+				parentClass = refInfo.getReferencedClassFullName(conn) + ".class";
+			}
+			else {
+				parentClass = "this.getClass()"; 
+			}
+			
+			methodFromSuperClass += parentClass + ",";
 			
 			boolean ignorable = syncTableInfo.checkIfisIgnorableParentByClassAttName(refInfo.getReferenceColumnAsClassAttName(), conn);
 			
@@ -310,7 +324,7 @@ public class OpenMRSClassGenerator {
 
 		writer.close();
 		
-		compile(sourceFile, syncTableInfo.getPOJOSourceFilesDirectory());
+		compile(sourceFile, syncTableInfo.getPOJOCopiledFilesDirectory(), new File(syncTableInfo.getRelatedSynconfiguration().getClassPath()));
 		
 		st.close();
 		rs.close();
@@ -324,6 +338,8 @@ public class OpenMRSClassGenerator {
 		File sourceFile = new File(syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
 		
 		String fullClassName = "org.openmrs.module.eptssync.model.openmrs." +  syncTableInfo.getClasspackage() + "." + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
+		
+		if (sourceFile.exists()) throw new ForbiddenOperationException("The source file exists [" + sourceFile.getAbsoluteFile() + "]");
 		
 		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
 			
@@ -415,7 +431,7 @@ public class OpenMRSClassGenerator {
 
 		writer.close();
 
-		compile(sourceFile, syncTableInfo.getPOJOCopiledFilesDirectory());
+		compile(sourceFile, syncTableInfo.getPOJOCopiledFilesDirectory(), new File(syncTableInfo.getRelatedSynconfiguration().getClassPath()));
 		
 		return tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
 	}
@@ -456,16 +472,31 @@ public class OpenMRSClassGenerator {
 	}
 	
 	
-	public static void compile(File sourceFile, File destinationFile) throws IOException {
+	public static void compile(File sourceFile, File destinationFile, File classPath) throws IOException {
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
 
 		fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destinationFile));
+		
+		fileManager.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(destinationFile, classPath));
 
 		// Compile the file
 		compiler.getTask(null, fileManager, null, null, null, fileManager.getJavaFileObjectsFromFiles(Arrays.asList(sourceFile))).call();
 		
 		fileManager.close();
+	}
+	
+	public static void addToClasspath(File file) {
+		try {
+			URL url = file.toURI().toURL();
+
+			URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+			Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+			method.setAccessible(true);
+			method.invoke(classLoader, url);
+		} catch (Exception e) {
+			throw new RuntimeException("Unexpected exception", e);
+		}
 	}
 	
 	/*

@@ -78,7 +78,7 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		Class<OpenMRSObject> clazz = tableInfo.getSyncRecordClass(conn);
+		Class<OpenMRSObject> clazz = tableInfo.getSyncRecordClass();
 		
 		OpenMRSObjectSearchParams<OpenMRSObject> migratedRecordSearchParams = new OpenMRSObjectSearchParams<OpenMRSObject>(clazz);
 		

@@ -88,11 +88,10 @@ public class SyncJSONInfo {
 		return utilities.parseToJSON(this);
 	}
 	
-	public static SyncJSONInfo loadFromJSON (String json) {
+	public static SyncJSONInfo loadFromJSON(String json) {
 		Exception ex = null;
 		
 		try {
-			
 			ObjectMapperProvider mapper = new ObjectMapperProvider();
 			
 			SyncJSONInfo synJsonInfo = mapper.getContext(SyncJSONInfo.class).readValue(json, SyncJSONInfo.class);

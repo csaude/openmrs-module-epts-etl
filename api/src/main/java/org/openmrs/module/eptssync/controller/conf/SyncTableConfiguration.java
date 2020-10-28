@@ -85,10 +85,10 @@ public class SyncTableConfiguration {
 	}
 
 	@JsonIgnore
-	public Class<OpenMRSObject> getSyncRecordClass(Connection conn) {
-		if (syncRecordClass == null) {
-			generateRecordClass(false, conn);
-		}
+	public Class<OpenMRSObject> getSyncRecordClass() {
+		if (syncRecordClass == null) this.syncRecordClass = OpenMRSClassGenerator.tryToGetExistingCLass(getRelatedSynconfiguration().getPOJOCompiledFilesDirectory(), generateFullClassName());
+		
+		if (syncRecordClass == null) throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");
 		
 		return syncRecordClass;
 	}
@@ -184,9 +184,9 @@ public class SyncTableConfiguration {
 					
 					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getReferenceTableInfo().getTableName(), ref.getReferenceColumnName(), conn));
 					
-					//Mark as metadata if there is no table info congigured
+					//Mark as metadata if there is no table info configured
 					if (getRelatedSynconfiguration().find(ref.getReferenceTableInfo()) == null) {
-						ref.setMetadata(true);
+						ref.getReferenceTableInfo().setMetadata(true);
 					}
 					
 					this.childRefInfo.add(ref);
@@ -239,12 +239,12 @@ public class SyncTableConfiguration {
 					
 					//Mark as metadata if is not specificaly mapped as parent in conf file
 					if (this.parents != null && !this.parents.contains(foreignKeyRS.getString("PKTABLE_NAME"))) {
-						ref.setMetadata(true);
+						ref.getReferencedTableInfo().setMetadata(true);
 					}
 					
-					if (this.sharePkWith != null && this.sharePkWith.equalsIgnoreCase(ref.getReferenceColumnName())) {
+					/*if (this.sharePkWith != null && this.sharePkWith.equalsIgnoreCase(ref.getReferenceColumnName())) {
 						ref.setSharedPk(true);
-					}
+					}*/
 					
 					this.parentRefInfo.add(ref);
 				}
@@ -437,11 +437,17 @@ public class SyncTableConfiguration {
 	}
 
 	public RefInfo getSharedKeyRefInfo(Connection conn) {
+		if (sharePkWith == null) {
+			return null;
+		}
+		else
 		for (RefInfo refInfo : getParentRefInfo(conn)) {
-			if (refInfo.isSharedPk()) return refInfo;
+			if (refInfo.getReferencedTableInfo().getTableName().equalsIgnoreCase(this.sharePkWith)) {
+				return refInfo;
+			}
 		}
 			
-		return null;
+		throw new ForbiddenOperationException("The related table of shared pk " + sharePkWith + " of table " + this.getTableName() + " is not listed inparents!");
 	}
 
 	@Override

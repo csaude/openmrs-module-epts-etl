@@ -128,6 +128,18 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public static GenericOpenMRSObject getById(String tableName, String pkColumnName, int id, Connection conn) throws DBException{
+		Object[] params = {id};
+		
+		String sql = "";
+		
+		sql += " SELECT * \n";
+		sql += " FROM  	" +  tableName + "\n";
+		sql += " WHERE 	" + pkColumnName + " = ?;";
+		
+		return find(GenericOpenMRSObject.class, sql, params, conn);		
+	}
 
 	public static OpenMRSObject getFirstRecord(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		String sql = "";
@@ -225,6 +237,8 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	}
 
 	public static void insertAll(List<OpenMRSObject> objects, Connection conn) throws DBException {
+		//logger.info("SQL :" + objects.get(0).getInsertSQL());
+		
 		String sql = "";
 		sql += objects.get(0).getInsertSQL().split("VALUES")[0];
 		sql += " VALUES";

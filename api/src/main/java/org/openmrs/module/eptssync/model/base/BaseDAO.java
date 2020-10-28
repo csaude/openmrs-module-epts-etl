@@ -43,14 +43,6 @@ public abstract class BaseDAO{
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	public static BaseVO getById(long id, String tableName, Connection conn) throws DBException{
-		String sql = "SELECT * FROM " + tableName + " WHERE SELF_ID = ? ";
-		
-		Object[] params = {id};
-		
-		return find(AnonymousVO.class, sql, params, conn);
-	}
-	
 	/**
 	 * The datasource (we need only one for the whole program).
 	 */

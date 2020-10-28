@@ -12,8 +12,6 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 /**
  * This interface represent any openMRS class subject of synchronization records. Ex. "Patient", "Enconter", "Obs"
  * 
@@ -21,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  *
  */
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "className")
+//@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "className")
 public interface OpenMRSObject extends SyncRecord{
 	public static final int CONSISTENCE_STATUS = 1;
 	public static final int INCONSISTENCE_STATUS = -1;

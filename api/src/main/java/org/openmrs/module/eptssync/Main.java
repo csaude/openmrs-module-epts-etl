@@ -2,8 +2,6 @@ package org.openmrs.module.eptssync;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +19,16 @@ public class Main {
 
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 
+	
+	/*public static void main(String[] args) {
+		File file = new File("");
+		
+		  System.out.println(file.getAbsolutePath());
+		  
+		 System.out.println(file.toPath().getRoot());
+		 
+	}*/
+	
 	public static void main(String[] synConfigFiles) throws IOException {
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);
 
@@ -35,7 +43,7 @@ public class Main {
 			
 			allController.add(controller);
 		}
-
+		
 		while (!isAllFinished(allController) && !isAllStoppedFinished(allController)){
 			TimeCountDown.sleep(10);
 		}
@@ -49,7 +57,7 @@ public class Main {
 		}
 		
 	}
-
+	
 	private static List<SyncConfiguration> loadSyncConfig(String[] synConfigFiles) throws ForbiddenOperationException, IOException {
 		List<SyncConfiguration> syncConfigs = new ArrayList<SyncConfiguration>(synConfigFiles.length);
 
@@ -128,6 +136,7 @@ public class Main {
 	}
 	*/
 	
+	/*
 	public static File getPOJOSourceFilesDirectory() {
 		Path root = Paths.get(".").normalize().toAbsolutePath();
 
@@ -138,5 +147,6 @@ public class Main {
 		Path root = Paths.get(".").normalize().toAbsolutePath();
 
 		return new File(root.toFile().getAbsoluteFile() + "/target/classes");
-	}
+	}*/
+	
 }

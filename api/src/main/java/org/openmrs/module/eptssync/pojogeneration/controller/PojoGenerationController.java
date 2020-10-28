@@ -9,12 +9,9 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.pojogeneration.engine.PojoGenerationEngine;
-import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
-import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 /**
  * This class is responsible for data base preparation
@@ -74,6 +71,7 @@ public class PojoGenerationController extends OperationController {
 	}
 
 	private void validateAllPOJO(java.sql.Connection conn) {
+		/*
 		for (SyncTableConfiguration conf : getConfiguration().getTablesConfigurations()) {
 			Class<OpenMRSObject> recordClass = null;
 			
@@ -81,18 +79,22 @@ public class PojoGenerationController extends OperationController {
 				recordClass = conf.getRecordClass();
 				
 				if (utilities().createInstance(recordClass).isGeneratedFromSkeletonClass()) {
-					conf.generateRecordClass(true, conn);
+					
+					throw new ForbiddenOperationException("The class " + recordClass.getCanonicalName() + " was not full generated");
+					//conf.generateRecordClass(true, conn);
 				}
 			} catch (Exception e) {
-				logInfo("THE POJO FOR TABLE " + conf.getTableName() + " WAS NOT ALREADY CREATED. CREATING NOW...");
+				e.printStackTrace();
 				
-				conf.generateRecordClass(true, conn);
+				logInfo("THE POJO FOR TABLE " + conf.getTableName() + " WAS NOT ALREADY CREATED. CREATING NOW...");
+	
+				throw new ForbiddenOperationException("The class " + recordClass.getCanonicalName() + " was not full generated");
+				//conf.generateRecordClass(true, conn);
 			}
-		}
-		
+		}*/
 		
 		//Now validate all classes under the openmrs package
-		
+		/*
 		String rootPackage = "org.openmrs.module.eptssync.model.openmrs." + getConfiguration().getClasspackage();
 		
 		File sourceFile = new File(getConfiguration().getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/openmrs/" + getConfiguration().getClasspackage());
@@ -118,7 +120,7 @@ public class PojoGenerationController extends OperationController {
 				tabConf.generateRecordClass(true, conn);
 				logInfo("POJO FOR TABLE " + obj.generateTableName() + " WAS FULL REGENERATED");
 			}
-	 	}
+	 	}*/
 	}
 	
 	public SyncConfiguration getConfiguration() {

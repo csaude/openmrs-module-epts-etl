@@ -1,6 +1,7 @@
 {
 	installationType: "destination",
 	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
+	classPath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/eptssync-api-1.0-SNAPSHOT.jar",
 	mustCreateStageSchemaElements: true,
 	syncStageSchema: "sync_import_stage",
 	originAppLocationCode: "central_db",
@@ -11,7 +12,7 @@
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
@@ -22,7 +23,7 @@
 			maxRecordPerProcessing: 1,
 			maxSupportedEngines: 1,
 			minRecordsPerEngine: 1,
-			disabled: true,
+			disabled: false,
 			processingMode: "parallel",
 			
 			child: {
@@ -38,7 +39,7 @@
 					maxRecordPerProcessing: 1000,
 					maxSupportedEngines: 5,
 					minRecordsPerEngine: 100,
-					disabled: true,
+					disabled: false,
 					processingMode: "sequencial",
 					
 					child:{
@@ -47,7 +48,7 @@
 						maxSupportedEngines: 1,
 						minRecordsPerEngine: 100,
 						doIntegrityCheckInTheEnd: true,
-						disabled: true,
+						disabled: false,
 						processingMode: "sequencial",
 						
 						child: {
@@ -56,7 +57,7 @@
 							maxSupportedEngines: 1,
 							minRecordsPerEngine: 100,
 							doIntegrityCheckInTheEnd: false,
-							disabled: false,
+							disabled: true,
 							processingMode: "sequencial"
 						}
 					}
@@ -68,168 +69,7 @@
 	tablesConfigurations:[
 		  
 				{	
-					tableName: "users",
-					parents: ["person", "users"]			
-				},
-		
-				{
-					tableName: "location",
-					parents: ["users", "location"],
-					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
-				},
-		
-				{
-					tableName: "person",
-					parents: ["users"]
-				},
-				
-				{
-					tableName: "person_address",
-					parents: ["person", "users"]
-				},
-				
-				{
-					tableName: "person_attribute",
-					parents: ["person", "users"]
-				},
-				
-				{
-					tableName: "person_name",
-					parents: ["person", "users"]
-				},
-				
-				{
-					tableName: "relationship",
-					parents: ["person", "users"]
-				},
-				
-				{
-					tableName: "patient",
-					sharePkWith: "person",
-					parents: ["person", "users"]
-				},
-				
-				{
-					tableName: "patient_identifier",
-					parents: ["patient", "location", "users"]
-				},
-				
-				{
-					tableName: "patient_program",
-					parents: ["patient", "location", "users"]
-				},
-				
-				{
-					tableName: "patient_state",
-					parents: ["patient_program", "users"]
-				},
-				
-				{
-					tableName: "visit",
-					parents: ["patient", "location", "users"]
-				},
-				
-				{
-					tableName: "visit_attribute",
-					parents: ["visit", "users"]
-				},
-				
-				
-				{
-					tableName: "encounter",
-					parents: ["patient", "location", "users", "visit", "form"]
-				},
-				
-				{
-					tableName: "provider",
-					parents: ["person", "users"],
-					mustRecompileTable: false
-				},
-				
-				{
-					tableName: "encounter_provider",
-					parents: ["encounter", "users", "provider"]
-				},
-				
-				{
-					tableName: "orders",
-					parents: ["encounter", "proverder", "orders", "patient", "users"]
-				},
-				
-				{
-					tableName: "obs",
-					parents: ["person", "location", "orders", "obs", "users", "encounter"]
-				},
-				
-				{
-					tableName: "note",
-					parents: ["encounter", "patient", "note", "users"]
-				},
-			
-				{
-					tableName: "concept_datatype",
-					parents: ["users"],
-					metadata: true
-				},
-				 
-				{
-					tableName: "concept",
-					parents: ["users", "concept_classes", "concept_datatype"],
-					metadata: true
-				},
-				
-				{
-					tableName: "person_attribute_type",
-					parents: ["users"],
-					metadata: true
-				},
-				 
-				{
-					tableName: "provider_attribute_type",
-					parents: ["users", "program_workflow"],
-					metadata: true
-				},
-				 
-				{
-					tableName: "program",
-					parents: ["users", "concept"],
-					metadata: true
-				},
-			
-				{
-					tableName: "program_workflow",
-					parents: ["users", "program", "concept"],
-					metadata: true
-				},
-			
-				{
-					tableName: "program_workflow_state",
-					parents: ["users", "program_workflow", "concept"],
-					metadata: true
-				},
-				
-				{
-					tableName: "encounter_type",
-					parents: ["users"],
-					metadata: true
-				},
-				
-				{
-					tableName: "visit_type",
-					parents: ["users"],
-					metadata: true
-				},
-				
-				{
-					tableName: "relationship_type",
-					parents: ["users"],
-					metadata: true
-				},
-				
-				{
-					tableName: "patient_identifier_type",
-					parents: ["users"],
-					metadata: true
+					tableName: "users"
 				}
 				
 	]

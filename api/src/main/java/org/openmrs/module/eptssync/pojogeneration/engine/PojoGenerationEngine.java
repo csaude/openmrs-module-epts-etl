@@ -4,14 +4,11 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.eptssync.pojogeneration.model.PojoGenerationRecord;
@@ -47,7 +44,7 @@ public class PojoGenerationEngine extends Engine {
 		
 		getSyncTableConfiguration().generateRecordClass(true, conn);
 		
-		for (RefInfo i: getSyncTableConfiguration().getChildRefInfo(conn)) {
+		/*for (RefInfo i: getSyncTableConfiguration().getChildRefInfo(conn)) {
 			if (!i.getReferenceTableInfo().isFullLoaded()) {
 				
 				logInfo("THE REF INFO IS NOT FULL LOADED. LOADING NOW ...["+ i.getReferenceTableInfo().getTableName() + "]");
@@ -70,7 +67,9 @@ public class PojoGenerationEngine extends Engine {
 				i.generateRelatedReferenceClass(true, conn);
 			}
 		}
+		*/
 		
+		/*
 		logInfo("PREPARING PARENT INFO OF TABLE["+ getSyncTableConfiguration() + "]");
 		
 		for (RefInfo i: getSyncTableConfiguration().getParentRefInfo(conn)) {
@@ -96,7 +95,7 @@ public class PojoGenerationEngine extends Engine {
 				i.generateRelatedReferencedClass(true, conn);
 			}
 		}
-		
+		*/
 	}
 	
 	@Override

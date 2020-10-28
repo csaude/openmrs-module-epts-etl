@@ -3,6 +3,7 @@ package org.openmrs.module.eptssync.controller.conf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.Connection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,11 +11,11 @@ import java.util.Map;
 import javax.ws.rs.ForbiddenException;
 
 import org.apache.log4j.Logger;
-import org.openmrs.module.eptssync.Main;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
+import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -55,8 +56,18 @@ public class SyncConfiguration {
 	
 	private static final String[] supportedInstallationTypes = {"source", "destination"};
 	
+	private String classPath;
+	
 	private SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
+	}
+	
+	public String getClassPath() {
+		return classPath;
+	}
+	
+	public void setClassPath(String classPath) {
+		this.classPath = classPath;
 	}
 	
 	public boolean isDisabled() {
@@ -230,14 +241,27 @@ public class SyncConfiguration {
 		return relatedConfFile;
 	}
 	
+	private boolean fullLoaded;
 	public static SyncConfiguration loadFromFile(File file) throws IOException {
 		SyncConfiguration conf = SyncConfiguration.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 		
 		conf.setRelatedConfFile(file);
 		
+		//addToClasspath(conf.getPOJOCompiledFilesDirectory());
+		
 		return conf;
 	}
-	
+
+	public void fullLoad(Connection conn) {
+		if (fullLoaded) return;
+		
+		for (SyncTableConfiguration conf : this.getTablesConfigurations()) {
+			conf.fullLoad(conn);
+		} 
+		
+		this.fullLoaded = true;
+	}
+
 	private static SyncConfiguration loadFromJSON (String json) {
 		try {
 			SyncConfiguration config = new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json, SyncConfiguration.class);
@@ -262,8 +286,15 @@ public class SyncConfiguration {
 		} 
 	}
 
-	public SyncTableConfiguration find(SyncTableConfiguration tablesConfigurations) {
-		return utilities.findOnList(this.tablesConfigurations, tablesConfigurations);
+	public SyncTableConfiguration findSyncTableConfiguration(String tableName) {
+		SyncTableConfiguration tableConfiguration = new SyncTableConfiguration();
+		tableConfiguration.setTableName(tableName);
+		
+		return find(tableConfiguration);
+	}
+	
+	public SyncTableConfiguration find(SyncTableConfiguration tableConfiguration) {
+		return utilities.findOnList(this.tablesConfigurations, tableConfiguration);
 	}
 
 	public String getDesignation() {
@@ -313,14 +344,27 @@ public class SyncConfiguration {
 	}
 	
 	public void validate() throws ForbiddenOperationException{
+		String errorMsg = "";
+		int errNum = 0;
+		
 		for (SyncOperationConfig operation : this.operations) {
 			if (this.isDestinationInstallationType()) {
-				if (!operation.canBeRunInDestinationInstallation()) throw new ForbiddenOperationException("This operation ["+ operation.getOperationType() + "] Cannot be configured in destination installation");
+				if (!operation.canBeRunInDestinationInstallation()) errorMsg += ++errNum + ". This operation ["+ operation.getOperationType() + "] Cannot be configured in destination installation";
 			}
 			else {
-				if (!operation.canBeRunInSourceInstallation()) throw new ForbiddenOperationException("This operation ["+ operation.getOperationType() + "] Cannot be configured in source installation");
+				if (!operation.canBeRunInSourceInstallation()) errorMsg += ++errNum + ". This operation ["+ operation.getOperationType() + "] Cannot be configured in source installation";
 			}
 		}
+		
+		for (SyncTableConfiguration tableConf : this.tablesConfigurations) {
+			if (tableConf.getParents() != null) {
+				for (String parent : tableConf.getParents()) {
+					if (findSyncTableConfiguration(parent) == null) errorMsg += ++errNum + ". The parent '" + parent + " of table " + tableConf.getTableName() + " is not configured\n";
+				}
+			}
+		}
+		
+		if (utilities.stringHasValue(errorMsg)) throw new ForbiddenOperationException(errorMsg);
 	}
 	
 	@Override
@@ -339,10 +383,10 @@ public class SyncConfiguration {
 	}
 
 	public File getPOJOCompiledFilesDirectory() {
-		return Main.getPOJOCompiledFilesDirectory();
+		return new File(getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() + "bin");
 	}
 
 	public File getPOJOSourceFilesDirectory() {
-		return Main.getPOJOSourceFilesDirectory();
+		return new File(getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() + "src");
 	}
 }

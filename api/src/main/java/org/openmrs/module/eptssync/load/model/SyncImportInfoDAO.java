@@ -266,6 +266,22 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQuery(sql, params, conn);
 	}
 	
+	
+	public static void refreshLastMigrationTrySync(SyncTableConfiguration tableInfo, SyncImportInfoVO syncRecord, Connection conn) throws DBException{
+		Object[] params = {DateAndTimeUtilities.getCurrentSystemDate(conn), 
+						   syncRecord.getId()
+						   };
+		
+		String sql = "";
+		
+		sql += " UPDATE " + tableInfo.generateFullStageTableName();
+		sql += " SET    last_migration_try_date = ? ";
+		sql += " WHERE  id = ? ";
+		
+		executeQuery(sql, params, conn);
+	}
+	
+	
 	public static void removeAll(List<SyncImportInfoVO> syncRecords, Connection conn) throws DBException{
 		Object[] params = {DateAndTimeUtilities.getCurrentSystemDate(conn), 
 						   syncRecords.get(0).getId(),
@@ -320,4 +336,6 @@ public class SyncImportInfoDAO extends BaseDAO {
 	public static void updateMigrationStatus(SyncTableConfiguration tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {
 		markAsToBeCompletedInFuture(record, tableInfo, record.getLastMigrationTryErr(), conn);		
 	}
+	
+	
 }

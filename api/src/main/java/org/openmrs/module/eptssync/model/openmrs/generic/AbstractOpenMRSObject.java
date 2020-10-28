@@ -186,13 +186,13 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		
 		for (RefInfo refInfo: syncTableInfo.getChildRefInfo(conn)) {
 			
-			if (!refInfo.isMetadata() && refInfo.isRelatedReferenceTableConfiguredForSynchronization()) {
+			//if (!refInfo.isMetadata() && refInfo.isRelatedReferenceTableConfiguredForSynchronization()) {
 				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferenceClass(conn), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
 				
 				for (OpenMRSObject child : children) {
 					child.consolidateData(refInfo.getReferenceTableInfo(), conn);
 				}
-			}
+			//}
 		}
 		
 	}
@@ -213,14 +213,18 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		Map<RefInfo, Integer> missingParents = new HashMap<RefInfo, Integer>();
 		
 		for (RefInfo refInfo: tableInfo.getParentRefInfo(conn)) {
-			 int parentId = getParentValue(refInfo.getReferenceColumnAsClassAttName());
+			if (tableInfo.getSharePkWith() != null && tableInfo.getSharePkWith().equals(refInfo.getReferencedTableInfo().getTableName())) {
+				continue;
+			}
+			
+			int parentId = getParentValue(refInfo.getReferenceColumnAsClassAttName());
 				 
 			try {
 				if (parentId != 0) {
 					OpenMRSObject parent;
 					
 					if (refInfo.getReferencedTableInfo().isMetadata()) {
-						parent = OpenMRSObjectDAO.getById(refInfo.determineRelatedReferencedClass(conn), parentId, conn);
+						parent = OpenMRSObjectDAO.getById(refInfo.getReferencedTableInfo().getTableName(), refInfo.getReferencedColumnName(), parentId , conn);
 					}
 					else {
 						parent = loadParent(refInfo.determineRelatedReferencedClass(conn), parentId, refInfo.isIgnorable(), conn);

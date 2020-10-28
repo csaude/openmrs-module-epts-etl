@@ -12,6 +12,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
+import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
@@ -91,7 +92,7 @@ public class ProcessController implements Controller{
 	
 	@Override
 	public boolean isStopped() {
-		if (isFinished()) return true;
+		//if (isFinished()) return true;
 		
 		if (utilities.arrayHasElement(this.operationsControllers)) {
 			for (OperationController controller : this.operationsControllers) {
@@ -212,6 +213,8 @@ public class ProcessController implements Controller{
 	
 		this.monitor = new ControllerMonitor(this);
 		
+		OpenMRSClassGenerator.addToClasspath(getConfiguration().getPOJOCompiledFilesDirectory());
+		
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId + "_MONITOR");
 		executor.execute(this.monitor);
 		
@@ -231,6 +234,8 @@ public class ProcessController implements Controller{
 		}
 		else {
 			OpenConnection conn = openConnection();
+			
+			//getConfiguration().fullLoad(conn);
 			
 			try {
 				initOperationsControllers(conn);
