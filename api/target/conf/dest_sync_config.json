@@ -11,7 +11,7 @@
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
@@ -30,7 +30,7 @@
 				maxRecordPerProcessing: 1,
 				maxSupportedEngines: 1,
 				minRecordsPerEngine: 1,
-				disabled: false,
+				disabled: true,
 				processingMode: "sequencial",	
 				
 				child:{
@@ -44,7 +44,7 @@
 					child:{
 						operationType: "synchronization",
 						maxRecordPerProcessing: 1000,
-						maxSupportedEngines: 5,
+						maxSupportedEngines: 1,
 						minRecordsPerEngine: 100,
 						doIntegrityCheckInTheEnd: true,
 						disabled: true,
@@ -53,10 +53,10 @@
 						child: {
 							operationType: "consolidation",
 							maxRecordPerProcessing: 1000,
-							maxSupportedEngines: 5,
+							maxSupportedEngines: 1,
 							minRecordsPerEngine: 100,
 							doIntegrityCheckInTheEnd: false,
-							disabled: true,
+							disabled: false,
 							processingMode: "sequencial"
 						}
 					}
@@ -133,9 +133,11 @@
 					tableName: "visit_attribute",
 					parents: ["visit", "users"]
 				},
+				
+				
 				{
 					tableName: "encounter",
-					parents: ["patient", "location", "users", "visit"]
+					parents: ["patient", "location", "users", "visit", "form"]
 				},
 				
 				{
@@ -203,6 +205,12 @@
 				{
 					tableName: "program_workflow_state",
 					parents: ["users", "program_workflow", "concept"],
+					metadata: true
+				},
+				
+				{
+					tableName: "encounter_type",
+					parents: ["users"],
 					metadata: true
 				},
 				

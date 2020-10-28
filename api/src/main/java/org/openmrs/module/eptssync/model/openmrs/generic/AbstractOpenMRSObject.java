@@ -219,8 +219,13 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				if (parentId != 0) {
 					OpenMRSObject parent;
 					
-					parent = loadParent(refInfo.determineRelatedReferencedClass(conn), parentId, refInfo.isIgnorable(), conn);
-					 
+					if (refInfo.getReferencedTableInfo().isMetadata()) {
+						parent = OpenMRSObjectDAO.getById(refInfo.determineRelatedReferencedClass(conn), parentId, conn);
+					}
+					else {
+						parent = loadParent(refInfo.determineRelatedReferencedClass(conn), parentId, refInfo.isIgnorable(), conn);
+					}
+					
 					 if (parent == null) {
 						missingParents.put(refInfo, parentId);
 					 }
