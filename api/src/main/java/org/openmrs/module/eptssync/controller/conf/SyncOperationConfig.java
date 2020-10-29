@@ -53,6 +53,19 @@ public class SyncOperationConfig {
 	
 	private String processingMode;
 	
+	private List<String> sourceFolders;
+	
+	public SyncOperationConfig() {
+	}
+	
+	public List<String> getSourceFolders() {
+		return sourceFolders;
+	}
+	
+	public void setSourceFolders(List<String> sourceFolders) {
+		this.sourceFolders = sourceFolders;
+	}
+	
 	public boolean isParallelModeProcessing() {
 		return this.processingMode.equalsIgnoreCase(SyncConfiguration.PROCESSING_MODE_PARALLEL);
 	}
@@ -71,10 +84,6 @@ public class SyncOperationConfig {
 			throw new ForbiddenOperationException("The processing mode '" + processingMode + "' is not supported. Supported modes are: " + supportedProcessingModes);
 		
 		this.processingMode = processingMode;
-	}
-	
-	
-	public SyncOperationConfig() {
 	}
 
 	public SyncOperationConfig getChild() {
@@ -218,9 +227,7 @@ public class SyncOperationConfig {
 		}
 		else			
 		if (isLoadOperation()) {
-			String[] allAvaliableOrigins = SyncDataLoadController.discoveryAllAvaliableOrigins(getRelatedSyncConfig());
-			
-			for (String appOriginCode : allAvaliableOrigins) {
+			for (String appOriginCode : this.sourceFolders) {
 				controllers.add(new SyncDataLoadController(processController, this, appOriginCode));
 			}
 		}

@@ -41,6 +41,7 @@
 					minRecordsPerEngine: 100,
 					disabled: false,
 					processingMode: "sequencial",
+					sourceFolders: ["zbz_pebane", "zbz_maganjadacosta"],
 					
 					child:{
 						operationType: "synchronization",

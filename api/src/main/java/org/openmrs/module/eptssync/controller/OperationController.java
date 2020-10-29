@@ -39,7 +39,7 @@ public abstract class OperationController implements Controller{
 	
 	private OperationController child;
 	
-	private String controllerId;
+	protected String controllerId;
 	
 	private int operationStatus;
 	private boolean stopRequested;

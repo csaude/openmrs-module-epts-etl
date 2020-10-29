@@ -6,7 +6,6 @@ import java.util.Arrays;
 
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
-import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
@@ -32,6 +31,7 @@ public class SyncDataLoadController extends OperationController {
 	public SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig);
 		
+		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_" + appOriginLocationCode;	
 		
 		this.appOriginLocationCode = appOriginLocationCode;
 	}
@@ -131,14 +131,5 @@ public class SyncDataLoadController extends OperationController {
 	@Override
 	public String getOperationType() {
 		return SyncOperationConfig.SYNC_OPERATION_LOAD;
-	}
-
-	public static String[] discoveryAllAvaliableOrigins(SyncConfiguration syncConfig) {
-		String roootyncImportDirectory = "";
-		roootyncImportDirectory += syncConfig.getSyncRootDirectory();
-		roootyncImportDirectory += FileUtilities.getPathSeparator();
-		roootyncImportDirectory += "import";
-
-		return (new File(roootyncImportDirectory)).list();
 	}
 }
