@@ -12,7 +12,7 @@
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_module_eptssync_test?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
@@ -41,7 +41,7 @@
 					minRecordsPerEngine: 100,
 					disabled: false,
 					processingMode: "sequencial",
-					sourceFolders: ["zbz_pebane", "zbz_maganjadacosta"],
+					sourceFolders: ["zbz_maganjadacosta"],
 					
 					child:{
 						operationType: "synchronization",
@@ -49,7 +49,7 @@
 						maxSupportedEngines: 1,
 						minRecordsPerEngine: 100,
 						doIntegrityCheckInTheEnd: true,
-						disabled: false,
+						disabled: true,
 						processingMode: "sequencial",
 						
 						child: {
@@ -69,8 +69,9 @@
 
 	tablesConfigurations:[
 		  
-				{	
-					tableName: "users"
+				{
+					tableName: "encounter_type",
+					metadata: true
 				}
 				
 	]
