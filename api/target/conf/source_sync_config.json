@@ -20,7 +20,7 @@
 		
 		{
 			operationType: "database_preparation",
-			maxRecordPerProcessing: 1,
+			maxRecordPerProcessing: 1, 
 			maxSupportedEngines: 1,
 			minRecordsPerEngine: 1,
 			disabled: false,
