@@ -7,8 +7,8 @@ import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.Engine;
+import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.export.engine.ExportSyncEngine;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
@@ -40,7 +40,7 @@ public class SyncExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecord(tableInfo, conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecord(tableInfo, null, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -60,7 +60,7 @@ public class SyncExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecord(tableInfo, conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecord(tableInfo, null, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			

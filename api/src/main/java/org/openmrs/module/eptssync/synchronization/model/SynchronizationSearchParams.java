@@ -18,12 +18,16 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 	private Date syncStartDate;
 	private boolean forProgressMeter;
 	
-	public SynchronizationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits) {
+	private String appOriginLocationCode;
+	
+	public SynchronizationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String appOriginLocationCode) {
 		super(tableInfo, limits);
 		
 		this.syncStartDate = DateAndTimeUtilities.getCurrentDate();
 		
 		setOrderByFields("id");
+		
+		this.appOriginLocationCode = appOriginLocationCode;
 	}
 	
 	public Date getSyncStartDate() {
@@ -41,6 +45,7 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 		searchClauses.addColumnToSelect(tableInfo.generateFullStageTableName() + ".*");
 		
 		searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName());
+		
 		
 		if (!forProgressMeter) {
 			if (this.tableInfo.isFirstExport()) {
@@ -63,6 +68,9 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 			searchClauses.addToParameters(SyncImportInfoVO.MIGRATION_STATUS_FAILED);
 			searchClauses.addToParameters(SyncImportInfoVO.MIGRATION_STATUS_PENDING);
 		}
+		
+		searchClauses.addToClauses("origin_app_location_code = ?");
+		searchClauses.addToParameters(this.appOriginLocationCode);
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());

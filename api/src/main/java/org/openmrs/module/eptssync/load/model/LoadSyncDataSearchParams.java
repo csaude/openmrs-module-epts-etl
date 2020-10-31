@@ -80,7 +80,7 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		SynchronizationSearchParams syncSearchParams = new SynchronizationSearchParams(tableInfo, null);
+		SynchronizationSearchParams syncSearchParams = new SynchronizationSearchParams(tableInfo, null, controller.getAppOriginLocationCode());
 		
 		int processed = syncSearchParams.countAllRecords(conn);
 		int notProcessed = countNotProcessedRecords(conn);

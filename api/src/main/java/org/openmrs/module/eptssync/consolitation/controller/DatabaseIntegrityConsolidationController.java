@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.consolitation.controller;
 
 import org.openmrs.module.eptssync.consolitation.engine.DatabaseIntegrityConsolidationEngine;
+import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
@@ -20,12 +21,35 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  *
  */
-public class DatabaseIntegrityConsolidationController extends OperationController {
-	
+public class DatabaseIntegrityConsolidationController extends OperationController implements DestinationOperationController{
+	private String appOriginLocationCode;
+
 	public DatabaseIntegrityConsolidationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
+		
+		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	}
 
+	private DatabaseIntegrityConsolidationController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+		super(processController, operationConfig);
+		
+		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_from_" + appOriginLocationCode;	
+	}
+	
+	public String getAppOriginLocationCode() {
+		return appOriginLocationCode;
+	}
+	
+	@Override
+	public OperationController cloneForOrigin(String appOriginLocationCode) {
+		OperationController controller = new DatabaseIntegrityConsolidationController(getProcessController(), getOperationConfig(), appOriginLocationCode);
+		
+		controller.setChild(this.getChild());
+		controller.setParent(this.getParent());
+		
+		return controller;
+	}
+			
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new DatabaseIntegrityConsolidationEngine(monitor, limits);
@@ -36,7 +60,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecord(tableInfo, conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecord(tableInfo, getAppOriginLocationCode(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -56,7 +80,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecord(tableInfo, conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecord(tableInfo, getAppOriginLocationCode(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			

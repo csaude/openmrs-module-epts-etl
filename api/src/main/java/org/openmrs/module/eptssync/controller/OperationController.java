@@ -484,10 +484,19 @@ public abstract class OperationController implements Controller{
 		}
 		
 		if (nextOperation != null) {
-			
 			if (!stopRequested()) {
-				ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(nextOperation.getControllerId());
-				executor.execute(nextOperation);
+				if (nextOperation instanceof DestinationOperationController) {
+					for (String appOriginCode : nextOperation.getOperationConfig().getSourceFolders()) {
+						OperationController clonedOperation = ((DestinationOperationController)nextOperation).cloneForOrigin(appOriginCode);
+						
+						ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(clonedOperation.getControllerId());
+						executor.execute(clonedOperation);
+					}
+				}
+				else {
+					ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(nextOperation.getControllerId());
+					executor.execute(nextOperation);
+				}
 			}
 			else {
 				logInfo("THE OPERATION " + nextOperation.getControllerId().toUpperCase() + " COULD NOT BE INITIALIZED BECAUSE THERE WAS A STOP REQUEST!!!");

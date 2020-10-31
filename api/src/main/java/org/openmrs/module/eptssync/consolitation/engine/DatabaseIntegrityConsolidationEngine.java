@@ -46,7 +46,7 @@ public class DatabaseIntegrityConsolidationEngine extends Engine {
 			
 			this.getMonitor().logInfo("INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " CONSOLIDATED!");
 	}
-	
+
 	/*
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
@@ -159,7 +159,7 @@ public class DatabaseIntegrityConsolidationEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DatabaseIntegrityConsolidationSearchParams(this.getSyncTableConfiguration(), limits, conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new DatabaseIntegrityConsolidationSearchParams(this.getSyncTableConfiguration(), limits, getRelatedOperationController().getAppOriginLocationCode(), conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 	
 		return searchParams;

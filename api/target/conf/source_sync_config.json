@@ -6,7 +6,6 @@
 	mustCreateStageSchemaElements: false,	
 	originAppLocationCode: "zbz_pebane",
 	firstExport: true,
-	classpackage: "sourcepkg",
 	automaticStart: true, 
 	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
 	
@@ -24,7 +23,7 @@
 			maxRecordPerProcessing: 1,
 			maxSupportedEngines: 1,
 			minRecordsPerEngine: 1,
-			disabled: true,
+			disabled: false,
 			processingMode: "parallel",
 			
 			child: {
@@ -32,7 +31,7 @@
 				maxRecordPerProcessing: 1,
 				maxSupportedEngines: 1,
 				minRecordsPerEngine: 1,
-				disabled: true,
+				disabled: false,
 				processingMode: "sequencial",
 				
 				child:	{
@@ -40,7 +39,7 @@
 					maxRecordPerProcessing: 1000,
 					maxSupportedEngines: 1,
 					minRecordsPerEngine: 100,
-					disabled: true,
+					disabled: false,
 					processingMode: "sequencial",
 							
 					child:{
@@ -48,7 +47,7 @@
 						maxRecordPerProcessing: 1000,
 						maxSupportedEngines: 1,
 						minRecordsPerEngine: 50,
-						disabled: true,
+						disabled: false,
 						processingMode: "sequencial"
 					}
 				}
@@ -57,9 +56,41 @@
 	],
 	
 	tablesConfigurations:[
-		  
-				{	
-					tableName: "users"
-				}				
-	]
+		  		{	
+					tableName: "users",
+					parents: ["person", "users"]
+				},
+		
+				{
+					tableName: "location",
+					parents: ["users", "location"],
+					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
+				},
+		
+				{
+					tableName: "person",
+					parents: ["users"]
+				},
+				
+				{
+					tableName: "person_address",
+					parents: ["person", "users"]
+				},
+				
+				{
+					tableName: "person_attribute",
+					parents: ["person", "users"]
+				},
+				
+				{
+					tableName: "person_name",
+					parents: ["person", "users"]
+				},
+				
+				{
+					tableName: "patient",
+					sharePkWith: "person",
+					parents: ["person", "users"]
+				}
+		]
 }

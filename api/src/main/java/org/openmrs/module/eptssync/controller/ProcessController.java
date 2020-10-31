@@ -234,9 +234,7 @@ public class ProcessController implements Controller{
 		}
 		else {
 			OpenConnection conn = openConnection();
-			
-			//getConfiguration().fullLoad(conn);
-			
+		
 			try {
 				initOperationsControllers(conn);
 				conn.markAsSuccessifullyTerminected();
@@ -253,30 +251,21 @@ public class ProcessController implements Controller{
 		this.operationsControllers = new ArrayList<OperationController>();
 		
 		for (SyncOperationConfig operation : configuration.getOperations()) {
-			SyncOperationConfig operationToAdd = operation;
+			OperationController controller = operation.generateRelatedController(this, conn);
 			
-			while(operationToAdd != null && operationToAdd.isDisabled()) {
-				if ( operationToAdd.getChild() != null) {
-					operationToAdd = operationToAdd.getChild();
-				}
-				else operationToAdd = null;
-			}
-			
-			if (operationToAdd != null) {
-				List<OperationController> controllers = operationToAdd.generateRelatedController(this, conn);
-	
-				for (OperationController controller : controllers) {
-					this.operationsControllers.add(controller);
-					
-					ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId());
-					executor.execute(controller);
+			if (controller instanceof DestinationOperationController) {
+				for (String appOriginCode : controller.getOperationConfig().getSourceFolders()) {
+					this.operationsControllers.add(((DestinationOperationController)controller).cloneForOrigin(appOriginCode));
 				}
 			}
+			else this.operationsControllers.add(controller);
 		}
 		
-		if (!utilities.arrayHasElement(this.operationsControllers)) {
-			logInfo("NO OPERATION TO EXECUTE... FINISHING NOW!!!");
-			changeStatusToFinished();
+		for (OperationController controller : this.operationsControllers) {
+			if (!controller.getOperationConfig().isDisabled()) {
+				ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId());
+				executor.execute(controller);
+			}
 		}
 	}
 	

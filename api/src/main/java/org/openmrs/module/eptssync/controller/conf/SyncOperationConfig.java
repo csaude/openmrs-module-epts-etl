@@ -1,7 +1,6 @@
 package org.openmrs.module.eptssync.controller.conf;
 
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.consolitation.controller.DatabaseIntegrityConsolidationController;
@@ -48,6 +47,7 @@ public class SyncOperationConfig {
 	
 	private boolean doIntegrityCheckInTheEnd;
 	private SyncOperationConfig child;
+	private SyncOperationConfig parent;
 	private SyncConfiguration relatedSyncConfig;
 	private boolean disabled;
 	
@@ -58,7 +58,14 @@ public class SyncOperationConfig {
 	public SyncOperationConfig() {
 	}
 	
+	
+	public String getDesignation() {
+		return this.getRelatedSyncConfig().getDesignation() + "_" + this.getOperationType();
+	}
+	
 	public List<String> getSourceFolders() {
+		if (this.sourceFolders == null) throw new ForbiddenOperationException("There is no source folder defined");
+		
 		return sourceFolders;
 	}
 	
@@ -86,12 +93,24 @@ public class SyncOperationConfig {
 		this.processingMode = processingMode;
 	}
 
+	public SyncOperationConfig getParent() {
+		return parent;
+	}
+	
+	public void setParent(SyncOperationConfig parent) {
+		this.parent = parent;
+	}
+	
 	public SyncOperationConfig getChild() {
 		return child;
 	}
 	
 	public void setChild(SyncOperationConfig child) {
 		this.child = child;
+		
+		if (this.child != null) {
+			this.child.setParent(this);
+		}
 	}
 	
 	public void setDisabled(boolean disabled) {
@@ -199,46 +218,44 @@ public class SyncOperationConfig {
 		return this.operationType.equalsIgnoreCase(((SyncOperationConfig)obj).operationType);
 	}
 	
-	public List<OperationController> generateRelatedController(ProcessController processController, Connection conn) {
-		List<OperationController> controllers = new ArrayList<OperationController>();
-		
-		if (isSynchronizationOperation()) {
-			controllers.add(new SyncController(processController, this));
+	public OperationController generateRelatedController(ProcessController parent, Connection conn) {
+		OperationController controller = null;
+	
+		if (isDatabasePreparationOperation()) {
+			controller = new DatabasePreparationController(parent, this);
+		}
+		else			
+		if (isPojoGeneration()) {
+			controller = new PojoGenerationController(parent, this);
+		}
+		else	
+		if (isExportOperation()) {
+			controller = new SyncExportController(parent, this);
 		}
 		else
 		if (isTransportOperation()) {
-			controllers.add(new SyncTransportController(processController, this));
+			controller = new SyncTransportController(parent, this);
+		}
+		else
+		if (isLoadOperation()) {
+			controller = new SyncDataLoadController(parent, this);
+		}
+		else
+		if (isSynchronizationOperation()) {
+			controller = new SyncController(parent, this);
 		}
 		else
 		if (isConsolidationOperation()) {
-			controllers.add(new DatabaseIntegrityConsolidationController(processController, this));
-		}
-		else
-		if (isExportOperation()) {
-			controllers.add(new SyncExportController(processController, this));
-		}
-		else
-		if (isPojoGeneration()) {
-			controllers.add(new PojoGenerationController(processController, this));
-		}
-		else	
-		if (isDatabasePreparationOperation()) {
-			controllers.add(new DatabasePreparationController(processController, this));
-		}
-		else			
-		if (isLoadOperation()) {
-			for (String appOriginCode : this.sourceFolders) {
-				controllers.add(new SyncDataLoadController(processController, this, appOriginCode));
-			}
+			controller = new DatabaseIntegrityConsolidationController(parent, this);
 		}
 		else throw new ForbiddenOperationException("Operationtype not supported!");
-		
-		if (this.child != null) {
-			controllers.get(0).setChild(child.generateRelatedController(processController, conn).get(0));
-			controllers.get(0).getChild().setParent(controllers.get(0));
+	
+		if (this.getChild() != null) {
+			controller.setChild(this.getChild().generateRelatedController(controller.getProcessController(), conn));
+			controller.getChild().setParent(controller);
 		}
 		
-		return controllers;
+		return controller;
 	}
 	
 	public boolean canBeRunInDestinationInstallation() {

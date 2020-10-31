@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
@@ -23,21 +24,33 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  *
  */
-public class SyncDataLoadController extends OperationController {
-	
-	//The data origin site
+public class SyncDataLoadController extends OperationController implements DestinationOperationController{
 	private String appOriginLocationCode;
 
-	public SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+	public SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_" + appOriginLocationCode;	
-		
-		this.appOriginLocationCode = appOriginLocationCode;
+		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	}
+
+	private SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+		super(processController, operationConfig);
 		
+		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_from_" + appOriginLocationCode;	
+	}
+	
 	public String getAppOriginLocationCode() {
 		return appOriginLocationCode;
+	}
+	
+	@Override
+	public OperationController cloneForOrigin(String appOriginLocationCode) {
+		OperationController controller = new SyncDataLoadController(getProcessController(), getOperationConfig(), appOriginLocationCode);
+		
+		controller.setChild(this.getChild());
+		controller.setParent(this.getParent());
+		
+		return controller;
 	}
 	
 	@Override

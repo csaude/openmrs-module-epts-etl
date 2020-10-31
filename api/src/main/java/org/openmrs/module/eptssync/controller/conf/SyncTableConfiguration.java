@@ -45,7 +45,7 @@ public class SyncTableConfiguration {
 	}
 	
 	public String getClasspackage() {
-		return getRelatedSynconfiguration().getClasspackage();
+		return getRelatedSynconfiguration().getPojoPackage();
 	}
 	
 	public boolean isDoIntegrityCheckInTheEnd(String operationType) {

@@ -141,7 +141,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		return find(GenericOpenMRSObject.class, sql, params, conn);		
 	}
 
-	public static OpenMRSObject getFirstRecord(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+	public static OpenMRSObject getFirstRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
 		String sql = "";
 		
 		OpenMRSObject obj = utilities.createInstance(tableInfo.getRecordClass());
@@ -153,6 +153,10 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		}
 		else {
 			clause = "last_sync_date is null";
+		}
+		
+		if (utilities.stringHasValue(originAppLocationCode)) {
+			clause = utilities.concatCondition(clause, "origin_app_location_code = '" + originAppLocationCode + "'");
 		}
 
 		sql += " SELECT * \n";
@@ -166,7 +170,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		return find(tableInfo.getRecordClass(), sql, null, conn);
 	}
 	
-	public static OpenMRSObject getLastRecord(SyncTableConfiguration tableInfo,  Connection conn) throws DBException {
+	public static OpenMRSObject getLastRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
 		String sql = "";
 		
 		OpenMRSObject obj = utilities.createInstance(tableInfo.getRecordClass());
@@ -180,6 +184,9 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			clause = "last_sync_date is null";
 		}
 
+		if (utilities.stringHasValue(originAppLocationCode)) {
+			clause = utilities.concatCondition(clause, "origin_app_location_code = '" + originAppLocationCode + "'");
+		}
 		
 		sql += " SELECT * \n";
 		sql += " FROM  	" + obj.generateTableName() + "\n";

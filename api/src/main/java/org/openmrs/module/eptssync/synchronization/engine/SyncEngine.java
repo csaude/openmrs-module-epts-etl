@@ -13,6 +13,7 @@ import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
+import org.openmrs.module.eptssync.synchronization.controller.SyncController;
 import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -31,6 +32,12 @@ public class SyncEngine extends Engine {
 	@Override
 	protected void restart() {
 		this.getSearchParams().setSyncStartDate(DateAndTimeUtilities.getCurrentDate());
+	}
+	
+	
+	@Override
+	public SyncController getRelatedOperationController() {
+		return (SyncController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -63,7 +70,7 @@ public class SyncEngine extends Engine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new SynchronizationSearchParams(this.getSyncTableConfiguration(), limits);
+		SyncSearchParams<? extends SyncRecord> searchParams = new SynchronizationSearchParams(this.getSyncTableConfiguration(), limits, this.getRelatedOperationController().getAppOriginLocationCode());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		//searchParams.setExtraCondition("json like \"%1f485395-b5ea-4889-8c1f-2b4f85a44776%\"");
 		

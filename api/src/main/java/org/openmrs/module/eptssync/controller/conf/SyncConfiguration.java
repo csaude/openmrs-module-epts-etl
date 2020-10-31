@@ -33,7 +33,6 @@ public class SyncConfiguration {
 	private boolean firstExport;
 	private DBConnectionInfo connInfo;
 	
-	private String classpackage;
 	private boolean mustCreateStageSchemaElements;
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
@@ -117,6 +116,11 @@ public class SyncConfiguration {
 		return this.installationType.equals(supportedInstallationTypes[1]);
 	}
 	
+	public boolean isSourceInstallationType() {
+		return this.installationType.equals(supportedInstallationTypes[0]);
+	}
+	
+	
 	public boolean mustCreateStageSchemaElements() {
 		return mustCreateStageSchemaElements;
 	}
@@ -129,12 +133,8 @@ public class SyncConfiguration {
 		this.mustCreateStageSchemaElements = mustCreateStageSchemaElements;
 	}
 	
-	public String getClasspackage() {
-		return classpackage;
-	}
-	
-	public void setClasspackage(String classpackage) {
-		this.classpackage = classpackage;
+	public String getPojoPackage() {
+		return isDestinationInstallationType() ? this.installationType : this.originAppLocationCode;
 	}
 	
 	public DBConnectionInfo getConnInfo() {
@@ -298,7 +298,7 @@ public class SyncConfiguration {
 	}
 
 	public String getDesignation() {
-		return this.installationType + "_" + this.originAppLocationCode;
+		return this.installationType + (utilities.stringHasValue(this.originAppLocationCode) ?  "_" + this.originAppLocationCode : "");
 	}
 	
 	public List<SyncOperationConfig> getOperations() {
@@ -346,6 +346,13 @@ public class SyncConfiguration {
 	public void validate() throws ForbiddenOperationException{
 		String errorMsg = "";
 		int errNum = 0;
+		
+		if (this.isSourceInstallationType()) {
+			if (utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You must specify value for 'originAppLocationCode' parameter";
+			if (utilities.stringHasValue(getSyncRootDirectory())) errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter";
+				
+		
+		}
 		
 		for (SyncOperationConfig operation : this.operations) {
 			if (this.isDestinationInstallationType()) {
