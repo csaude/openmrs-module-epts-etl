@@ -28,10 +28,14 @@ public class EngineMonitor implements Runnable{
 	
 	private TimeController timer;
 	
+	private String engineMonitorId;
+	
 	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<Engine>();
 		this.syncTableInfo = syncTableInfo;
+		
+		this.engineMonitorId = controller.getControllerId() + "_" + syncTableInfo.getTableName();
 	}
 	
 	public SyncTableConfiguration getSyncTableInfo() {
@@ -148,7 +152,7 @@ public class EngineMonitor implements Runnable{
 			mainEngine =  mainEngine == null ? retrieveAndRemoveSleepingEngin() : mainEngine;
 			
 			mainEngine = mainEngine == null ? controller.initRelatedEngine(this, limits) : mainEngine; 
-			mainEngine.setEngineId(getController().getControllerId() + "_" + syncInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(0, 2));
+			mainEngine.setEngineId(this.engineMonitorId + "_" + utilities.garantirXCaracterOnNumber(0, 2));
 			
 			mainEngine.resetLimits(limits);
 			
@@ -281,6 +285,10 @@ public class EngineMonitor implements Runnable{
 		return status;
 	}
 	
+	@Override
+	public String toString() {
+		return this.engineMonitorId;
+	}
 	/**
 	 * Schedule new job for this job. This is controller by {@link EngineMonitor}
 	 * 

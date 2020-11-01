@@ -465,10 +465,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration(), this, getTimer());
 		}
 	}
-		
+	
 	@Override
 	public int getWaitTimeToCheckStatus() {
-		return 0;
+		return 5;
 	}
 	
 	public void logInfo(String msg) {

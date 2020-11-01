@@ -348,18 +348,16 @@ public class SyncConfiguration {
 		int errNum = 0;
 		
 		if (this.isSourceInstallationType()) {
-			if (utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You must specify value for 'originAppLocationCode' parameter";
-			if (utilities.stringHasValue(getSyncRootDirectory())) errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter";
-				
-		
+			if (!utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You must specify value for 'originAppLocationCode' parameter \n" ;
+			if (!utilities.stringHasValue(getSyncRootDirectory())) errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter\n";
 		}
 		
 		for (SyncOperationConfig operation : this.operations) {
 			if (this.isDestinationInstallationType()) {
-				if (!operation.canBeRunInDestinationInstallation()) errorMsg += ++errNum + ". This operation ["+ operation.getOperationType() + "] Cannot be configured in destination installation";
+				if (!operation.canBeRunInDestinationInstallation()) errorMsg += ++errNum + ". This operation ["+ operation.getOperationType() + "] Cannot be configured in destination installation\n";
 			}
 			else {
-				if (!operation.canBeRunInSourceInstallation()) errorMsg += ++errNum + ". This operation ["+ operation.getOperationType() + "] Cannot be configured in source installation";
+				if (!operation.canBeRunInSourceInstallation()) errorMsg += ++errNum + ". This operation ["+ operation.getOperationType() + "] Cannot be configured in source installation\n";
 			}
 		}
 		

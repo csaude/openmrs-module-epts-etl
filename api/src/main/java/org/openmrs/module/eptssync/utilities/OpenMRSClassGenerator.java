@@ -473,6 +473,8 @@ public class OpenMRSClassGenerator {
 	
 	
 	public static void compile(File sourceFile, File destinationFile, File classPath) throws IOException {
+		if (!destinationFile.exists()) FileUtilities.tryToCreateDirectoryStructure(destinationFile.getAbsolutePath());
+		
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
 

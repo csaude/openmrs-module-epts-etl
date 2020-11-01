@@ -364,7 +364,7 @@ public abstract class OperationController implements Controller{
 	public void markTableOperationAsFinished(SyncTableConfiguration conf, Engine engine, TimeController timer) {
 		String operationId = this.getControllerId() + "_" + conf.getTableName();
 		
-		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
+		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() + "process_status" + FileUtilities.getPathSeparator() + operationId;
 		
 		logInfo("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
 		
@@ -397,7 +397,7 @@ public abstract class OperationController implements Controller{
 	public void markAsFinished() {
 		String operationId = this.getControllerId();
 		
-		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
+		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() + "process_status" + FileUtilities.getPathSeparator() + operationId;
 		
 		logInfo("FINISHING OPERATION "+ getControllerId());
 		
@@ -525,7 +525,7 @@ public abstract class OperationController implements Controller{
 	
 	@Override
 	public int getWaitTimeToCheckStatus() {
-		return 15;
+		return 5;
 	}
 	
 	@JsonIgnore

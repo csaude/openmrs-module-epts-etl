@@ -322,6 +322,10 @@ public class ProcessController implements Controller{
 		}
 	}
 	
+	@Override
+	public String toString() {
+		return this.controllerId;
+	}
 
 	private boolean processIsAlreadyFinished() {
 		String operationId = this.getControllerId();
@@ -334,7 +338,7 @@ public class ProcessController implements Controller{
 
 	@Override
 	public int getWaitTimeToCheckStatus() {
-		return 5;
+		return 180;
 	}
 	
 	public void forceFinish() {

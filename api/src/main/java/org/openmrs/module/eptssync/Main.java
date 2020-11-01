@@ -45,7 +45,7 @@ public class Main {
 		}
 		
 		while (!isAllFinished(allController) && !isAllStoppedFinished(allController)){
-			TimeCountDown.sleep(10);
+			TimeCountDown.sleep(120);
 		}
 		
 		if (isAllFinished(allController)) {

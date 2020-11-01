@@ -24,6 +24,10 @@ public class ControllerMonitor implements Runnable{
 		while(running) {
 			TimeCountDown.sleep(controller.getWaitTimeToCheckStatus());
 			
+			if (this.toString().equals("SOURCE_ZBZ_DERRE_CONTROLLER_DATABASE_PREPARATION_MONITOR")) {
+				System.out.println("STOP");
+			}
+			
 			if (this.controller.isFinished()) {
 				this.controller.markAsFinished();
 				this.controller.onFinish();
@@ -41,5 +45,10 @@ public class ControllerMonitor implements Runnable{
 				controller.requestStop();
 			}
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return (this.controller.getControllerId() + "_MONITOR").toUpperCase();
 	}
 }

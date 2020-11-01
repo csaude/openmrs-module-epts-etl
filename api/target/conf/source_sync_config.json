@@ -1,18 +1,18 @@
 {
 	installationType: "source",
-	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
-	classPath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/eptssync-api-1.0-SNAPSHOT.jar",
+	syncRootDirectory: "D:\\JEE\\Workspace\\FGH\\data\\sync",
+	classPath: "D:\\JEE\\Workspace\\FGH\\openmrs-module-eptssync\\api\\target\\eptssync-api-1.0-SNAPSHOT.jar",
 	syncStageSchema: "sync_import_stage",
 	mustCreateStageSchemaElements: false,	
-	originAppLocationCode: "zbz_pebane",
+	originAppLocationCode: "zbz_derre",
 	firstExport: true,
 	automaticStart: true, 
-	childConfigFilePath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
+	childConfigFilePath: "D:\\JEE\\Workspace\\FGH\\openmrs-module-eptssync\\api\\target\\conf\\dest_sync_config.json",
 	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3307/openmrs_pebane?autoReconnect=true&sessionVariables=storage_engine=InnoDB&useUnicode=true&ch",
+		connectionURI: "jdbc:mysql://localhost:3306/openmrs_derre?autoReconnect=true&useSSL=false",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
@@ -55,7 +55,7 @@
 		}
 	],
 	
-	tablesConfigurations:[
+	tablesConfigurations: [
 		  		{	
 					tableName: "users",
 					parents: ["person", "users"]
