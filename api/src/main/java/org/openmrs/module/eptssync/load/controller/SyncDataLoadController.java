@@ -36,6 +36,8 @@ public class SyncDataLoadController extends OperationController implements Desti
 	private SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig);
 		
+		this.appOriginLocationCode = appOriginLocationCode;
+		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_from_" + appOriginLocationCode;	
 	}
 	

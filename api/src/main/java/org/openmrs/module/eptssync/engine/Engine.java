@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -119,8 +120,16 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		this.parent = parent;
 	}
 	
+	//boolean alreadyFinished = false;
+	
+	boolean stared = false;
+	
 	@Override
 	public void run() {
+		if (stared) throw new ForbiddenOperationException("Starting operation gaing????? " + getEngineId());
+		
+		this.stared = true;
+		
 		this.changeStatusToRunning();
 		
 		if (this.timer == null && !this.hasParent()) {
@@ -186,6 +195,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 							}
 							else {
 								getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
+								
+								//if (this.alreadyFinished) throw new ForbiddenOperationException("Finishing already finished operation "+ getEngineId());
+								
+								//alreadyFinished = true;
 								
 								markAsFinished();
 							}
@@ -477,10 +490,11 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 					}
 				}
 			}
-			
+		
 			getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration(), this, getTimer());
 			changeStatusToFinished();
 		}
+		else changeStatusToFinished();
 	}
 	
 	@Override

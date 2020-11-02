@@ -45,7 +45,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 				searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
 			}
 		}
-
+		
 		searchClauses.addToClauses("origin_app_location_code = ?");
 		searchClauses.addToParameters(this.appOriginLocationCode);
 	

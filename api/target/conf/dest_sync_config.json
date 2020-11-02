@@ -44,8 +44,8 @@
 					child:{
 						operationType: "synchronization",
 						maxRecordPerProcessing: 1000,
-						maxSupportedEngines: 1,
-						minRecordsPerEngine: 100,
+						maxSupportedEngines: 5,
+						minRecordsPerEngine: 1000,
 						doIntegrityCheckInTheEnd: true,
 						disabled: false,
 						processingMode: "sequencial",
@@ -53,8 +53,8 @@
 						child: {
 							operationType: "consolidation",
 							maxRecordPerProcessing: 1000,
-							maxSupportedEngines: 1,
-							minRecordsPerEngine: 100,
+							maxSupportedEngines: 5,
+							minRecordsPerEngine: 1000,
 							doIntegrityCheckInTheEnd: false,
 							disabled: false,
 							processingMode: "sequencial"
@@ -69,7 +69,7 @@
 		  
 				{	
 					tableName: "users",
-					parents: ["person", "users"]
+					parents: ["person", "users"]			
 				},
 		
 				{
@@ -93,9 +93,13 @@
 					parents: ["person", "users"]
 				},
 				
-				
 				{
 					tableName: "person_name",
+					parents: ["person", "users"]
+				},
+				
+				{
+					tableName: "relationship",
 					parents: ["person", "users"]
 				},
 				
@@ -103,7 +107,130 @@
 					tableName: "patient",
 					sharePkWith: "person",
 					parents: ["person", "users"]
+				},
+				
+				{
+					tableName: "patient_identifier",
+					parents: ["patient", "location", "users"]
+				},
+				
+				{
+					tableName: "patient_program",
+					parents: ["patient", "location", "users"]
+				},
+				
+				{
+					tableName: "patient_state",
+					parents: ["patient_program", "users"]
+				},
+				
+				{
+					tableName: "visit",
+					parents: ["patient", "location", "users"]
+				},
+				
+				{
+					tableName: "visit_attribute",
+					parents: ["visit", "users"]
+				},
+				
+				
+				{
+					tableName: "encounter",
+					parents: ["patient", "location", "users", "visit"]
+				},
+				
+				{
+					tableName: "provider",
+					parents: ["person", "users"]
+				},
+				
+				{
+					tableName: "encounter_provider",
+					parents: ["encounter", "users", "provider"]
+				},
+				
+				{
+					tableName: "orders",
+					parents: ["encounter", "provider", "orders", "patient", "users"]
+				},
+				
+				{
+					tableName: "obs",
+					parents: ["person", "location", "orders", "obs", "users", "encounter"]
+				},
+				
+				{
+					tableName: "note",
+					parents: ["encounter", "patient", "note", "users"]
+				},
+			
+				{
+					tableName: "concept_datatype",
+					parents: ["users"],
+					metadata: true
+				},
+				 
+				{
+					tableName: "concept",
+					parents: ["users", "concept_datatype"],
+					metadata: true
+				},
+				
+				{
+					tableName: "person_attribute_type",
+					parents: ["users"],
+					metadata: true
+				},
+				 
+				{
+					tableName: "provider_attribute_type",
+					parents: ["users", "program_workflow"],
+					metadata: true
+				},
+				 
+				{
+					tableName: "program",
+					parents: ["users", "concept"],
+					metadata: true
+				},
+			
+				{
+					tableName: "program_workflow",
+					parents: ["users", "program", "concept"],
+					metadata: true
+				},
+			
+				{
+					tableName: "program_workflow_state",
+					parents: ["users", "program_workflow", "concept"],
+					metadata: true
+				},
+				
+				{
+					tableName: "encounter_type",
+					parents: ["users"],
+					metadata: true
+				},
+				
+				{
+					tableName: "visit_type",
+					parents: ["users"],
+					metadata: true
+				},
+				
+				{
+					tableName: "relationship_type",
+					parents: ["users"],
+					metadata: true
+				},
+				
+				{
+					tableName: "patient_identifier_type",
+					parents: ["users"],
+					metadata: true
 				}
+				
 				
 	]
 }

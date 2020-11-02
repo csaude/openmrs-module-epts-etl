@@ -512,6 +512,10 @@ public abstract class OperationController implements Controller{
 				else {
 					logInfo("STARTING NEXT OPERATION " + nextOperation.getControllerId());
 					
+					if (this instanceof DestinationOperationController) {
+						nextOperation = ((DestinationOperationController)nextOperation).cloneForOrigin( ((DestinationOperationController)this).getAppOriginLocationCode());
+					}
+					
 					ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(nextOperation.getControllerId());
 					executor.execute(nextOperation);
 				}

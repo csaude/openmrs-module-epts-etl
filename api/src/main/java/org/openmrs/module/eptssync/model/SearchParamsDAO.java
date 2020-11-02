@@ -11,7 +11,6 @@ import org.openmrs.module.eptssync.model.base.VO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.FuncoesGenericas;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.SQLUtilitie;
 
 public class SearchParamsDAO extends BaseDAO{
 	public static <T extends VO> int countAll(AbstractSearchParams<T> parametros, Connection conn) throws DBException {
@@ -51,12 +50,7 @@ public class SearchParamsDAO extends BaseDAO{
 		}
 		
 		String sql = searchClauses.generateSQL(conn);
-		
 
-		/*if (utilities.createInstance(searchParams.getRecordClass()).generateTableName().equals("obs")) {
-			utilities.logInfo("[EXPORT:obs] SQL = "+ sql, l);
-		}*/
-		
 		return search(searchParams.getRecordClass(), sql, searchClauses.getParameters(), conn);
 	}
 	
@@ -70,9 +64,7 @@ public class SearchParamsDAO extends BaseDAO{
 		
 		String sql = searchClauses.generateSQL(conn);
 		
-		String sqlToLog = SQLUtilitie.transformPreparedStatmentToFullSQLStatment(sql, searchClauses.getParameters(), conn);
-		
-
+		//String sqlToLog = SQLUtilitie.transformPreparedStatmentToFullSQLStatment(sql, searchClauses.getParameters(), conn);
 		
 		List<T> records = (List<T>) search(engine.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(), conn);
 		

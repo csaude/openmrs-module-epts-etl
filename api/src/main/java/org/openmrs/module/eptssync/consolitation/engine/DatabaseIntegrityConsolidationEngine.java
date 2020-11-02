@@ -40,11 +40,11 @@ public class DatabaseIntegrityConsolidationEngine extends Engine {
 		
 		this.getMonitor().logInfo("CONSOLIDATING INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
-			for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
-				obj.consolidateData(getSyncTableConfiguration(), conn);
-			}
-			
-			this.getMonitor().logInfo("INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " CONSOLIDATED!");
+		for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
+			obj.consolidateData(getSyncTableConfiguration(), conn);
+		}
+		
+		this.getMonitor().logInfo("INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " CONSOLIDATED!");
 	}
 
 	/*
