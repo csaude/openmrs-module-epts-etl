@@ -160,12 +160,12 @@ public class ProcessController implements Controller{
 	
 	@Override
 	public boolean isSleeping() {
-		return this.operationStatus == MonitoredOperation.STATUS_SLEEPENG;
+		return this.operationStatus == MonitoredOperation.STATUS_SLEEPING;
 	}
 
 	@Override
 	public void changeStatusToSleeping() {
-		this.operationStatus = MonitoredOperation.STATUS_SLEEPENG;
+		this.operationStatus = MonitoredOperation.STATUS_SLEEPING;
 	}
 	
 	@Override
@@ -177,11 +177,10 @@ public class ProcessController implements Controller{
 	public void changeStatusToStopped() {
 		this.operationStatus = MonitoredOperation.STATUS_STOPPED;		
 	}
-	
+
 	@Override
 	public void changeStatusToFinished() {
 		this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
-		markAsFinished();
 	}
 	
 	@Override	
@@ -215,7 +214,7 @@ public class ProcessController implements Controller{
 		
 		OpenMRSClassGenerator.addToClasspath(getConfiguration().getPOJOCompiledFilesDirectory());
 		
-		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId + "_MONITOR");
+		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.monitor.getMonitorId());
 		executor.execute(this.monitor);
 		
 		if (stopRequested()) {
@@ -285,7 +284,6 @@ public class ProcessController implements Controller{
 	@Override
 	public void onFinish() {
 		if (this.childController != null) {
-			
 			ProcessController child = this.childController;
 			
 			while (child != null && child.getConfiguration().isDisabled()) {
@@ -297,6 +295,15 @@ public class ProcessController implements Controller{
 				executor.execute(child);
 			}
 		}
+		
+		for (OperationController operationController : this.operationsControllers) {
+			operationController.killSelfCreatedThreads();
+			
+			ThreadPoolService.getInstance().terminateTread(logger, operationController.getControllerId());
+		}
+		
+		ThreadPoolService.getInstance().terminateTread(logger, this.monitor.getMonitorId());
+		ThreadPoolService.getInstance().terminateTread(logger, this.getControllerId());
 	}
 	
 	public void markAsFinished() {
@@ -320,6 +327,12 @@ public class ProcessController implements Controller{
 			
 			logInfo("FILE WROTE");
 		}
+		
+		
+		/*ThreadPoolService.getInstance().terminateTread(logger, this.monitor.getMonitorId());
+		ThreadPoolService.getInstance().terminateTread(logger, this.getControllerId());*/
+		
+		changeStatusToFinished();
 	}
 	
 	@Override
@@ -341,9 +354,10 @@ public class ProcessController implements Controller{
 		return 180;
 	}
 	
+	/*
 	public void forceFinish() {
 		this.changeStatusToFinished();
-	}
+	}*/
 
 	public String getControllerId() {
 		return this.controllerId;
@@ -353,4 +367,5 @@ public class ProcessController implements Controller{
 	public void logInfo(String msg) {
 		utilities.logInfo(msg, logger);
 	}
+
 }

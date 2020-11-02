@@ -9,6 +9,7 @@ import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
+import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -186,7 +187,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 							else {
 								getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
 								
-								changeStatusToFinished();
+								markAsFinished();
 							}
 						}
 					} catch (Exception e) {
@@ -326,12 +327,12 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			}
 		}
 
-		return this.operationStatus == MonitoredOperation.STATUS_SLEEPENG;
+		return this.operationStatus == MonitoredOperation.STATUS_SLEEPING;
 	}
 
 	@Override
 	public void changeStatusToSleeping() {
-		this.operationStatus = MonitoredOperation.STATUS_SLEEPENG;
+		this.operationStatus = MonitoredOperation.STATUS_SLEEPING;
 	}
 	
 	@Override
@@ -455,14 +456,30 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			}
 			
 			getTimer().stop();
-			
-			markAsFinished();
 		}
+		
+		if (hasChild()) {
+			for (Engine child : this.children) {
+				ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), child.getEngineId());
+			}
+		}
+			
+		ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), getEngineId());	
 	}
 	
 	public void markAsFinished(){
 		if (!this.hasParent()) {
+			if (hasChild()) {
+				for (Engine child : this.children) {
+					while(!child.isFinished()) {
+						logInfo("WATING FOR ALL CHILDREN BEEN TERMINATED!");
+						TimeCountDown.sleep(15);
+					}
+				}
+			}
+			
 			getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration(), this, getTimer());
+			changeStatusToFinished();
 		}
 	}
 	

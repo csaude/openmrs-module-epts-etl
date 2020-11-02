@@ -6,6 +6,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+import org.apache.log4j.Logger;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 /**
  * @author jpboane
@@ -29,6 +31,31 @@ public class ThreadPoolService {
         }
         
         return service;
+    }
+    
+    private ExecutorService retrieveExistingExecutor(String threadId) {
+    	ExecutorServiceManager manager = ExecutorServiceManager.find(this.createdThreadPools, threadId);
+    	
+    	if (manager != null) return manager.getExecutorService();
+    	
+    	return null;
+    }
+    
+    public void terminateTread(Logger logger, String threadId) {
+    	logger.info("TRYING TO TERMINATE THREAD [" + threadId + "]");
+    	
+    	ExecutorService service = retrieveExistingExecutor(threadId);
+    	
+    	if (service != null) {
+    		List<Runnable> a = service.shutdownNow();
+    		
+    		if (a != null && a.size() > 1) throw new ForbiddenOperationException("There were thread awating... " + a);
+    	
+    		logger.info("THREAD [" + threadId + "] WAS TERMINATED SUCCESSIFULY!");
+       }
+    	else {
+     		logger.info("THREAD [" + threadId + "] WAS NOT FOUND  IN THREAD POOL!!!!");
+     	}
     }
 	
 	public synchronized ExecutorService createNewThreadPoolExecutor(String namingPattern){

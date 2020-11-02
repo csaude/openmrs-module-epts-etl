@@ -13,8 +13,15 @@ import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 public class ControllerMonitor implements Runnable{
 	private Controller controller;
 	
+	private String monitorId;
+	
 	public ControllerMonitor(Controller controller) {
 		this.controller = controller;
+		this.monitorId = this.controller.getControllerId() + "_monitor"; 
+	}
+	
+	public String getMonitorId() {
+		return monitorId;
 	}
 	
 	@Override
@@ -46,6 +53,8 @@ public class ControllerMonitor implements Runnable{
 			}
 		}
 	}
+	
+	
 	
 	@Override
 	public String toString() {

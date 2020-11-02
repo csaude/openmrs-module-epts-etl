@@ -29,13 +29,23 @@ public class EngineMonitor implements Runnable{
 	private TimeController timer;
 	
 	private String engineMonitorId;
+	private String engineId;
 	
 	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<Engine>();
 		this.syncTableInfo = syncTableInfo;
 		
-		this.engineMonitorId = controller.getControllerId() + "_" + syncTableInfo.getTableName();
+		this.engineMonitorId = controller.getControllerId() + "_" + syncTableInfo.getTableName() + "_monitor";
+		this.engineId = getController().getControllerId() + "_" + syncTableInfo.getTableName();
+	}
+	
+	public String getEngineId() {
+		return engineId;
+	}
+	
+	public String getEngineMonitorId() {
+		return engineMonitorId;
 	}
 	
 	public SyncTableConfiguration getSyncTableInfo() {
@@ -152,7 +162,7 @@ public class EngineMonitor implements Runnable{
 			mainEngine =  mainEngine == null ? retrieveAndRemoveSleepingEngin() : mainEngine;
 			
 			mainEngine = mainEngine == null ? controller.initRelatedEngine(this, limits) : mainEngine; 
-			mainEngine.setEngineId(this.engineMonitorId + "_" + utilities.garantirXCaracterOnNumber(0, 2));
+			mainEngine.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(0, 2));
 			
 			mainEngine.resetLimits(limits);
 			
@@ -175,7 +185,7 @@ public class EngineMonitor implements Runnable{
 					 engine = getController().initRelatedEngine(this, limits);
 					 
 					 mainEngine.getChildren().add(engine);
-					 engine.setEngineId(getController().getControllerId() +"_" + syncInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
+					 engine.setEngineId(getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
 					 engine.setParent(mainEngine);
 				 }
 				 else {
@@ -306,5 +316,11 @@ public class EngineMonitor implements Runnable{
 		}
 		
 		return true;
+	}
+
+	public void killSelfCreatedThreads() {
+		for (Engine engine : this.ownEngines) {
+			ThreadPoolService.getInstance().terminateTread(getController().getLogger(), engine.getEngineId());
+		}
 	}
 }

@@ -49,6 +49,8 @@ public abstract class OperationController implements Controller{
 	
 	private TimeController timer;
 	
+	private boolean selfTreadKilled;
+	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = Logger.getLogger(this.getClass());
 		
@@ -58,6 +60,10 @@ public abstract class OperationController implements Controller{
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
+	}
+	
+	public Logger getLogger() {
+		return logger;
 	}
 	
 	public OperationController getParent() {
@@ -149,7 +155,7 @@ public abstract class OperationController implements Controller{
 		}
 		
 		if (!stopRequested()) {
-			changeStatusToFinished();
+			markAsFinished();
 		}
 		else {
 			changeStatusToStopped();
@@ -249,7 +255,7 @@ public abstract class OperationController implements Controller{
 	private void startAndAddToEnginesActivititieMonitor(EngineMonitor activitityMonitor) {
 		this.enginesActivititieMonitor.add(activitityMonitor);
 		
-		ThreadPoolService.getInstance().createNewThreadPoolExecutor(getControllerId().toUpperCase() + "_ENGINE_OPERATION_MONITOR").execute(activitityMonitor);
+		ThreadPoolService.getInstance().createNewThreadPoolExecutor(activitityMonitor.getEngineMonitorId()).execute(activitityMonitor);
 	}
 	
 	@Override
@@ -264,7 +270,7 @@ public abstract class OperationController implements Controller{
 		
 		this.activitieMonitor = new ControllerMonitor(this);
 		
-		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.controllerId.toUpperCase() + "_MONITOR");
+		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.activitieMonitor.getMonitorId());
 		executor.execute(this.activitieMonitor);
 
 		if (stopRequested()) {
@@ -420,6 +426,8 @@ public abstract class OperationController implements Controller{
 		else {
 			logInfo("THE FILE WAS ALREADY EXISTS");
 		}
+		
+		changeStatusToFinished();
 	}
 	
 	@Override
@@ -429,12 +437,12 @@ public abstract class OperationController implements Controller{
 	
 	@Override
 	public boolean isSleeping() {
-		return this.operationStatus == MonitoredOperation.STATUS_SLEEPENG;
+		return this.operationStatus == MonitoredOperation.STATUS_SLEEPING;
 	}
 
 	@Override
 	public void changeStatusToSleeping() {
-		this.operationStatus = MonitoredOperation.STATUS_SLEEPENG;
+		this.operationStatus = MonitoredOperation.STATUS_SLEEPING;
 	}
 	
 	@Override
@@ -450,8 +458,6 @@ public abstract class OperationController implements Controller{
 	@Override
 	public void changeStatusToFinished() {
 		this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
-	
-		markAsFinished();
 	}
 	
 	@Override	
@@ -470,6 +476,12 @@ public abstract class OperationController implements Controller{
 	@Override
 	public void onStop() {
 		logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
+		
+		for (EngineMonitor monitor : this.enginesActivititieMonitor) {
+			monitor.killSelfCreatedThreads();
+			
+			ThreadPoolService.getInstance().terminateTread(logger, monitor.getEngineMonitorId());
+		}
 	}
 	
 	@Override
@@ -502,8 +514,27 @@ public abstract class OperationController implements Controller{
 				logInfo("THE OPERATION " + nextOperation.getControllerId().toUpperCase() + " COULD NOT BE INITIALIZED BECAUSE THERE WAS A STOP REQUEST!!!");
 			}
 		}
+		
+		killSelfCreatedThreads();
 	}
 	
+	public void killSelfCreatedThreads() {
+		if (selfTreadKilled) return;
+		
+		
+		if (this.enginesActivititieMonitor != null) {
+			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
+				monitor.killSelfCreatedThreads();
+				
+				ThreadPoolService.getInstance().terminateTread(logger, monitor.getEngineMonitorId());
+			}
+		}
+		
+		ThreadPoolService.getInstance().terminateTread(logger, this.activitieMonitor.getMonitorId());
+		
+		selfTreadKilled = true;
+	}
+
 	@Override
 	public synchronized void requestStop() {
 		if (isNotInitialized()) {
@@ -541,4 +572,5 @@ public abstract class OperationController implements Controller{
 	
 	public void refresh() {
 	}
+
 }
