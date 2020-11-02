@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -278,6 +279,8 @@ public class ProcessController implements Controller{
 
 	@Override
 	public void onStop() {
+		//if (true) throw new ForbiddenOperationException("Stopped before time");
+		
 		logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
 	}
 

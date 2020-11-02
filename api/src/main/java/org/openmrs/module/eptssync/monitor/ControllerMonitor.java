@@ -1,7 +1,6 @@
 package org.openmrs.module.eptssync.monitor;
 
 import org.openmrs.module.eptssync.controller.Controller;
-import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 
@@ -31,15 +30,7 @@ public class ControllerMonitor implements Runnable{
 		
 		while(running) {
 			TimeCountDown.sleep(controller.getWaitTimeToCheckStatus());
-			
-			if (this.toString().equals("SOURCE_ZBZ_DERRE_CONTROLLER_DATABASE_PREPARATION_MONITOR")) {
-				System.out.println("STOP");
-			}
-			
-			if (controller instanceof DestinationOperationController) {
-				System.out.println("STOP");
-			}
-			
+		
 			if (this.controller.isFinished()) {
 				this.controller.markAsFinished();
 				this.controller.onFinish();
