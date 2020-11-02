@@ -296,10 +296,12 @@ public class ProcessController implements Controller{
 			}
 		}
 		
-		for (OperationController operationController : this.operationsControllers) {
-			operationController.killSelfCreatedThreads();
-			
-			ThreadPoolService.getInstance().terminateTread(logger, operationController.getControllerId());
+		if (this.operationsControllers != null) {
+			for (OperationController operationController : this.operationsControllers) {
+				operationController.killSelfCreatedThreads();
+				
+				ThreadPoolService.getInstance().terminateTread(logger, operationController.getControllerId());
+			}
 		}
 		
 		ThreadPoolService.getInstance().terminateTread(logger, this.monitor.getMonitorId());
@@ -351,7 +353,7 @@ public class ProcessController implements Controller{
 
 	@Override
 	public int getWaitTimeToCheckStatus() {
-		return 180;
+		return 30;
 	}
 	
 	/*

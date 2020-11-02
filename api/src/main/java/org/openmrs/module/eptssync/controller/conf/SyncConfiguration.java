@@ -343,6 +343,7 @@ public class SyncConfiguration {
 		throw new ForbiddenOperationException("THE OPERATION '" + operationType.toUpperCase() + "' WAS NOT FOUND!!!!");
 	}
 	
+	
 	public void validate() throws ForbiddenOperationException{
 		String errorMsg = "";
 		int errNum = 0;
@@ -355,6 +356,8 @@ public class SyncConfiguration {
 		for (SyncOperationConfig operation : this.operations) {
 			if (this.isDestinationInstallationType()) {
 				if (!operation.canBeRunInDestinationInstallation()) errorMsg += ++errNum + ". This operation ["+ operation.getOperationType() + "] Cannot be configured in destination installation\n";
+			
+				if (operation.isLoadOperation() && (operation.getSourceFolders() == null || operation.getSourceFolders().size() == 0))  errorMsg += ++errNum + ". There is no source folder defined";
 			}
 			else {
 				if (!operation.canBeRunInSourceInstallation()) errorMsg += ++errNum + ". This operation ["+ operation.getOperationType() + "] Cannot be configured in source installation\n";
@@ -369,7 +372,14 @@ public class SyncConfiguration {
 			}
 		}
 		
-		if (utilities.stringHasValue(errorMsg)) throw new ForbiddenOperationException(errorMsg);
+		if (utilities.stringHasValue(errorMsg)) {
+			errorMsg = "There are errors on config file " + this.relatedConfFile.getAbsolutePath() + "\n" + errorMsg;
+			throw new ForbiddenOperationException(errorMsg);
+		}
+		else
+		if (this.childConfig != null){
+			this.childConfig.validate();
+		}
 	}
 	
 	@Override

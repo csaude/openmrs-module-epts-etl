@@ -64,7 +64,7 @@ public class SyncOperationConfig {
 	}
 	
 	public List<String> getSourceFolders() {
-		if (this.sourceFolders == null) throw new ForbiddenOperationException("There is no source folder defined");
+		//if (this.sourceFolders == null) throw new ForbiddenOperationException("There is no source folder defined");
 		
 		return sourceFolders;
 	}

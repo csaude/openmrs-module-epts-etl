@@ -488,8 +488,10 @@ public abstract class OperationController implements Controller{
 	public void onFinish() {
 		getTimer().stop();
 		
-		logInfo("FINISHING OPERATION");
+		logInfo("FINISHING OPERATION " + getControllerId());
 		OperationController nextOperation = getChild();
+		
+		logInfo("TRY TO INIT NEXT OPERATION");
 		
 		while (nextOperation != null && nextOperation.getOperationConfig().isDisabled()) {
 			nextOperation = nextOperation.getChild();
@@ -497,8 +499,10 @@ public abstract class OperationController implements Controller{
 		
 		if (nextOperation != null) {
 			if (!stopRequested()) {
-				if (nextOperation instanceof DestinationOperationController) {
+				if (nextOperation instanceof DestinationOperationController && utilities().arrayHasElement(nextOperation.getOperationConfig().getSourceFolders())) {
 					for (String appOriginCode : nextOperation.getOperationConfig().getSourceFolders()) {
+						logInfo("STARTING DESTINATION OPERATION " + nextOperation.getControllerId() + " ON ORIGIN " + appOriginCode);
+						
 						OperationController clonedOperation = ((DestinationOperationController)nextOperation).cloneForOrigin(appOriginCode);
 						
 						ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(clonedOperation.getControllerId());
@@ -506,6 +510,8 @@ public abstract class OperationController implements Controller{
 					}
 				}
 				else {
+					logInfo("STARTING NEXT OPERATION " + nextOperation.getControllerId());
+					
 					ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(nextOperation.getControllerId());
 					executor.execute(nextOperation);
 				}
@@ -513,6 +519,9 @@ public abstract class OperationController implements Controller{
 			else {
 				logInfo("THE OPERATION " + nextOperation.getControllerId().toUpperCase() + " COULD NOT BE INITIALIZED BECAUSE THERE WAS A STOP REQUEST!!!");
 			}
+		}
+		else {
+			logInfo("THERE IS NO MORE OPERATION TO EXECUTE... FINALIZING PROCESS... "+this.getProcessController().getControllerId());
 		}
 		
 		killSelfCreatedThreads();

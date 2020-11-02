@@ -71,7 +71,7 @@ public class EngineMonitor implements Runnable{
 		boolean running = true;
 		
 		while(running) {
-			TimeCountDown.sleep(60);
+			TimeCountDown.sleep(15);
 			
 			if (getMainEngine().isFinished()) {
 				getMainEngine().markAsFinished();

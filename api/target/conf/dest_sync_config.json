@@ -39,7 +39,7 @@
 					minRecordsPerEngine: 100,
 					disabled: false,
 					processingMode: "sequencial",
-					sourceFolders: ["zbz_maganjadacosta", "zbz_altomolocue"],
+					sourceFolders: ["zbz_derre"],
 					
 					child:{
 						operationType: "synchronization",
