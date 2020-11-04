@@ -23,17 +23,17 @@ import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
-public class OpenMRSClassGenerator {
+public class OpenMRSPOJOGenerator {
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 
 	public static Class<OpenMRSObject> generate(SyncTableConfiguration syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
 		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad(conn);
 
-		File sourceFile = new File(syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
+		File sourceFile = new File(syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/pojo/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
 		
 		String fullClassName = syncTableInfo.generateFullClassName();
 		
@@ -292,10 +292,10 @@ public class OpenMRSClassGenerator {
 		
 		String classDefinition ="";
 		
-		classDefinition += "package org.openmrs.module.eptssync.model.openmrs." +  syncTableInfo.getClasspackage() + "; \n \n";
+		classDefinition += "package org.openmrs.module.eptssync.model.pojo." +  syncTableInfo.getClasspackage() + "; \n \n";
 		
 		
-		classDefinition += "import org.openmrs.module.eptssync.model.openmrs.generic.*; \n \n";
+		classDefinition += "import org.openmrs.module.eptssync.model.pojo.generic.*; \n \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; \n \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.AttDefinedElements; \n";
@@ -335,9 +335,9 @@ public class OpenMRSClassGenerator {
 	public static Class<OpenMRSObject> generateSkeleton(SyncTableConfiguration syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
 		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad(conn);
 			
-		File sourceFile = new File(syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/openmrs/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
+		File sourceFile = new File(syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/pojo/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
 		
-		String fullClassName = "org.openmrs.module.eptssync.model.openmrs." +  syncTableInfo.getClasspackage() + "." + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
+		String fullClassName = "org.openmrs.module.eptssync.model.pojo." +  syncTableInfo.getClasspackage() + "." + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
 		
 		if (sourceFile.exists()) throw new ForbiddenOperationException("The source file exists [" + sourceFile.getAbsoluteFile() + "]");
 		
@@ -403,9 +403,9 @@ public class OpenMRSClassGenerator {
 		String classDefinition ="";
 		
 		
-		classDefinition += "package org.openmrs.module.eptssync.model.openmrs." + syncTableInfo.getClasspackage() + "; \n \n";
+		classDefinition += "package org.openmrs.module.eptssync.model.pojo." + syncTableInfo.getClasspackage() + "; \n \n";
 		
-		classDefinition += "import org.openmrs.module.eptssync.model.openmrs.generic.*; \n \n";
+		classDefinition += "import org.openmrs.module.eptssync.model.pojo.generic.*; \n \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; \n \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
 		classDefinition += "import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; \n \n";
@@ -436,7 +436,7 @@ public class OpenMRSClassGenerator {
 		return tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
 	}
 	
-	static Logger logger = Logger.getLogger(OpenMRSClassGenerator.class);
+	static Logger logger = Logger.getLogger(OpenMRSPOJOGenerator.class);
 	
 	private static String generateDefaultGetterAndSetterDefinition(String attName, String attType) {
 		String getttersAndSetterDefinition = "";

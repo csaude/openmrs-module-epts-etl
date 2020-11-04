@@ -3,6 +3,7 @@
  */
 package org.openmrs.module.eptssync.utilities.concurrent;
 
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -41,8 +42,14 @@ public class ExecutorServiceManager {
 	public static ExecutorServiceManager find(List<ExecutorServiceManager> managers, String namingPattern){
 		ExecutorServiceManager toFind = new ExecutorServiceManager(null, namingPattern);
 		
-		for (ExecutorServiceManager manager : managers){
-			if (toFind.equals(manager)) return manager;
+		try {
+			for (ExecutorServiceManager manager : managers){
+				if (toFind.equals(manager)) return manager;
+			}
+		} catch (ConcurrentModificationException e) {
+			TimeCountDown.sleep(5);
+			
+			return find(managers, namingPattern);
 		}
 		
 		return null;

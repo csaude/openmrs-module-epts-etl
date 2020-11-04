@@ -10,7 +10,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 

@@ -8,7 +8,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 

@@ -1,13 +1,12 @@
-package org.openmrs.module.eptssync.consolitation.controller;
+package org.openmrs.module.eptssync.inconsistenceresolver.controller;
 
-import org.openmrs.module.eptssync.consolitation.engine.DatabaseIntegrityConsolidationEngine;
-import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.inconsistenceresolver.engine.InconsistenceSolverEngine;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
@@ -16,45 +15,21 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
- * This class is responsible for control the data export in the synchronization processs
+ * This class is responsible for control the data inconsistence resolving in the synchronization processs
  * 
  * @author jpboane
  *
  */
-public class DatabaseIntegrityConsolidationController extends OperationController implements DestinationOperationController{
-	private String appOriginLocationCode;
-
-	public DatabaseIntegrityConsolidationController(ProcessController processController, SyncOperationConfig operationConfig) {
+public class InconsistenceSolverController extends OperationController {
+	public InconsistenceSolverController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	}
-
-	private DatabaseIntegrityConsolidationController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
-		super(processController, operationConfig);
-		
-		this.appOriginLocationCode = appOriginLocationCode;
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_from_" + appOriginLocationCode;	
-	}
-	
-	public String getAppOriginLocationCode() {
-		return appOriginLocationCode;
-	}
-	
-	@Override
-	public OperationController cloneForOrigin(String appOriginLocationCode) {
-		OperationController controller = new DatabaseIntegrityConsolidationController(getProcessController(), getOperationConfig(), appOriginLocationCode);
-		
-		controller.setChild(this.getChild());
-		controller.setParent(this.getParent());
-		
-		return controller;
-	}
 			
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new DatabaseIntegrityConsolidationEngine(monitor, limits);
+		return new InconsistenceSolverEngine(monitor, limits);
 	}
 
 	@Override
@@ -62,7 +37,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecord(tableInfo, getAppOriginLocationCode(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecord(tableInfo, null, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -82,7 +57,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecord(tableInfo, getAppOriginLocationCode(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecord(tableInfo, null, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -104,7 +79,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 
 	@Override
 	public String getOperationType() {
-		return SyncOperationConfig.SYNC_OPERATION_CONSOLIDATION;
+		return SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER;
 	}
 	
 	@Override

@@ -324,7 +324,7 @@ public abstract class OperationController implements Controller{
 	
 	@Override
 	public boolean isStopped() {
-		//if (isFinished()) return true;
+		if (isNotInitialized()) return false;
 		
 		if (isParallelModeProcessing() && this.enginesActivititieMonitor != null) {
 			for (EngineMonitor monitor : this.enginesActivititieMonitor) {

@@ -11,7 +11,7 @@ import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;

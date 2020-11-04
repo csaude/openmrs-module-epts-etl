@@ -5,7 +5,7 @@ import java.util.Map.Entry;
 
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 /**

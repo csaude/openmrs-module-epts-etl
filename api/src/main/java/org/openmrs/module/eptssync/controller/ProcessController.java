@@ -9,11 +9,10 @@ import java.util.concurrent.ExecutorService;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
-import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
+import org.openmrs.module.eptssync.utilities.OpenMRSPOJOGenerator;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
@@ -93,7 +92,7 @@ public class ProcessController implements Controller{
 	
 	@Override
 	public boolean isStopped() {
-		//if (isFinished()) return true;
+		if (isNotInitialized()) return false;
 		
 		if (utilities.arrayHasElement(this.operationsControllers)) {
 			for (OperationController controller : this.operationsControllers) {
@@ -213,7 +212,7 @@ public class ProcessController implements Controller{
 	
 		this.monitor = new ControllerMonitor(this);
 		
-		OpenMRSClassGenerator.addToClasspath(getConfiguration().getPOJOCompiledFilesDirectory());
+		OpenMRSPOJOGenerator.addToClasspath(getConfiguration().getPOJOCompiledFilesDirectory());
 		
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.monitor.getMonitorId());
 		executor.execute(this.monitor);

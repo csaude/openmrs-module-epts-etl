@@ -36,7 +36,7 @@ public class FileUtilities {
 		try {
 			folderHierarchy = fileName.split(getPathSeparator());
         } catch (Exception e) {
-	        System.out.println("Error: You may be using Windows");
+	        //System.out.println("Error: You may be using Windows");
         }
 		
         
@@ -61,7 +61,7 @@ public class FileUtilities {
 		try {
 			folderHierarchy = fullPathToDirectory.split(getPathSeparator());
         } catch (Exception e) {
-	        System.out.println("Error: You may be using Windows");
+	        //System.out.println("Error: You may be using Windows");
         }
 		
         
@@ -462,7 +462,7 @@ public class FileUtilities {
 		try {
 			folderHierarchy = realPath.split(getPathSeparator());
         } catch (Exception e) {
-	        System.out.println("Error: You may be using Windows");
+	        //System.out.println("Error: You may be using Windows");
         }
 		
         

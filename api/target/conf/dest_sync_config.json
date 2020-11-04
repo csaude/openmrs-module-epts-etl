@@ -2,8 +2,6 @@
 	installationType: "destination",
 	syncRootDirectory: "D:\\JEE\\Workspace\\FGH\\data\\sync",
 	classPath: "D:\\JEE\\Workspace\\FGH\\openmrs-module-eptssync\\api\\target\\eptssync-api-1.0-SNAPSHOT.jar",
-	mustCreateStageSchemaElements: true,
-	syncStageSchema: "sync_import_stage",
 	firstExport: true,
 	automaticStart: false,
 	
@@ -39,7 +37,7 @@
 					minRecordsPerEngine: 100,
 					disabled: false,
 					processingMode: "sequencial",
-					sourceFolders: ["zbz_derre"],
+					sourceFolders: ["zbz_gile"],
 					
 					child:{
 						operationType: "synchronization",

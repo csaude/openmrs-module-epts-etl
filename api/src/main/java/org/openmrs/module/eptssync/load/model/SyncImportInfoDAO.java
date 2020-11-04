@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;

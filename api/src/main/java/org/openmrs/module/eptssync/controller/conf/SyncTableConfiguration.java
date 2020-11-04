@@ -9,10 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
-import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
+import org.openmrs.module.eptssync.utilities.OpenMRSPOJOGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -86,7 +86,7 @@ public class SyncTableConfiguration {
 
 	@JsonIgnore
 	public Class<OpenMRSObject> getSyncRecordClass() {
-		if (syncRecordClass == null) this.syncRecordClass = OpenMRSClassGenerator.tryToGetExistingCLass(getRelatedSynconfiguration().getPOJOCompiledFilesDirectory(), generateFullClassName());
+		if (syncRecordClass == null) this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(getRelatedSynconfiguration().getPOJOCompiledFilesDirectory(), generateFullClassName());
 		
 		if (syncRecordClass == null) throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");
 		
@@ -273,7 +273,7 @@ public class SyncTableConfiguration {
 	}
 
 	public Class<OpenMRSObject> getRecordClass() {
-		this.syncRecordClass = OpenMRSClassGenerator.tryToGetExistingCLass(getPOJOCopiledFilesDirectory(), this.generateFullClassName());
+		this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(getPOJOCopiledFilesDirectory(), this.generateFullClassName());
 	
 		if (this.syncRecordClass == null) throw new ForbiddenOperationException("No Sync Record Class found for: " + this.tableName);
 		
@@ -281,7 +281,7 @@ public class SyncTableConfiguration {
 	}
 
 	public String generateFullClassName() {
-		return "org.openmrs.module.eptssync.model.openmrs." + getClasspackage() + "." + generateClassName();
+		return "org.openmrs.module.eptssync.model.pojo." + getClasspackage() + "." + generateClassName();
 	}
 	
 	public String getOriginAppLocationCode() {
@@ -292,10 +292,10 @@ public class SyncTableConfiguration {
 	public void generateRecordClass(boolean fullClass, Connection conn) {
 		try {
 			if (fullClass) {
-				this.syncRecordClass = OpenMRSClassGenerator.generate(this, conn);
+				this.syncRecordClass = OpenMRSPOJOGenerator.generate(this, conn);
 			}
 			else {
-				this.syncRecordClass = OpenMRSClassGenerator.generateSkeleton(this, conn);
+				this.syncRecordClass = OpenMRSPOJOGenerator.generateSkeleton(this, conn);
 			}
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
@@ -315,7 +315,7 @@ public class SyncTableConfiguration {
 	
 	public void generateSkeletonRecordClass(Connection conn) {
 		try {
-			this.syncRecordClass = OpenMRSClassGenerator.generateSkeleton(this, conn);
+			this.syncRecordClass = OpenMRSPOJOGenerator.generateSkeleton(this, conn);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 
@@ -355,32 +355,7 @@ public class SyncTableConfiguration {
 	public void setMetadata(boolean metadata) {
 		this.metadata = metadata;
 	}
-
-	/*
-	private boolean isIndexOnFirtExportDoneColumn(Connection conn) throws SQLException {
-		return DBUtilities.isResourceExist(conn.getCatalog(), DBUtilities.RESOURCE_TYPE_INDEX,  generateNameOfIndexOnExportDoneColumn(), conn);
-	}
 	
-	private String generateNameOfIndexOnExportDoneColumn() {
-		return this.tableName + "__index";
-	}
-	 */
-	
-	/*
-	private void createIndexOnFirstExportDoneCOlumn(Connection conn) throws SQLException {
-		String sql = "CREATE INDEX " + generateNameOfIndexOnExportDoneColumn() + " ON " + this.tableName + "(first_export_done);";
-
-		Statement st = conn.createStatement();
-		st.addBatch(sql);
-		st.executeBatch();
-		st.close();
-	}*/
-
-
-	public boolean mustCreateStageSchemaElements() {
-		return getRelatedSynconfiguration().mustCreateStageSchemaElements();
-	}
-
 	public String generateRelatedStageTableName() {
 		return this.getTableName() + "_stage";
 	}
@@ -406,24 +381,6 @@ public class SyncTableConfiguration {
 			throw new RuntimeException(e);
 		}
 	}
-
-
-	/*
-	private boolean isFirstExportDoneColumnExistsOnTable(Connection conn) throws SQLException {
-		return DBUtilities.isColumnExistOnTable(getTableName(), "first_export_done", conn);
-	}
-
-	private String generateFirstExportColumnGeneration() {
-		return "first_export_done int(1) NULL";
-	}
-	*/
-	
-
-	/*
-	public int getQtyRecordsPerEngine(String operationType) {
-		return this.qtyRecordsPerEngine != 0 ? this.qtyRecordsPerEngine : getRelatedSyncTableInfoSource().getDefaultQtyRecordsPerEngine(operationType);
-	}*/
-	
 
 	public boolean isFullLoaded() {
 		return fullLoaded;

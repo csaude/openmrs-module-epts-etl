@@ -5,10 +5,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
-import org.openmrs.module.eptssync.utilities.OpenMRSClassGenerator;
+import org.openmrs.module.eptssync.utilities.OpenMRSPOJOGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -148,9 +148,9 @@ public class RefInfo {
 		
 		if (this.referencedTableInfo == null) throw new ForbiddenOperationException("No referenced parent info defined!");
 		
-		String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + getReferencedTableInfo().getClasspackage() + "." + generateRelatedReferencedClassName();
+		String fullClassName = "org.openmrs.module.eptssync.model.pojo." + getReferencedTableInfo().getClasspackage() + "." + generateRelatedReferencedClassName();
 			
-		this.relatedReferencedClass = OpenMRSClassGenerator.tryToGetExistingCLass(getReferencedTableInfo().getRelatedSynconfiguration().getPOJOCompiledFilesDirectory(), fullClassName);
+		this.relatedReferencedClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(getReferencedTableInfo().getRelatedSynconfiguration().getPOJOCompiledFilesDirectory(), fullClassName);
 		
 		if (this.relatedReferencedClass == null) {
 			generateRelatedReferencedClass(false, conn);
@@ -167,12 +167,12 @@ public class RefInfo {
 			if (this.referenceTableInfo == null)
 					throw new ForbiddenOperationException("No reference parent info defined!");
 
-			String fullClassName = "org.openmrs.module.eptssync.model.openmrs." + getReferenceTableInfo().getClasspackage() + "." + generateRelatedReferenceClassName();
+			String fullClassName = "org.openmrs.module.eptssync.model.pojo." + getReferenceTableInfo().getClasspackage() + "." + generateRelatedReferenceClassName();
 			
-			this.relatedReferenceClass = OpenMRSClassGenerator.tryToGetExistingCLass(getReferenceTableInfo().getPOJOCopiledFilesDirectory(), fullClassName);
+			this.relatedReferenceClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(getReferenceTableInfo().getPOJOCopiledFilesDirectory(), fullClassName);
 
 			if (this.relatedReferenceClass == null) {
-				this.relatedReferenceClass = OpenMRSClassGenerator.generateSkeleton(getReferenceTableInfo(), conn);
+				this.relatedReferenceClass = OpenMRSPOJOGenerator.generateSkeleton(getReferenceTableInfo(), conn);
 			}
 
 			if (this.relatedReferenceClass  == null) throw new RuntimeException("The class " + fullClassName + " could not be created");
@@ -251,10 +251,10 @@ public class RefInfo {
 		try {
 			
 			if (fullClass) {
-				this.relatedReferencedClass = OpenMRSClassGenerator.generate(this.getReferencedTableInfo(), conn);
+				this.relatedReferencedClass = OpenMRSPOJOGenerator.generate(this.getReferencedTableInfo(), conn);
 			}
 			else {
-				this.relatedReferencedClass = OpenMRSClassGenerator.generateSkeleton(this.getReferencedTableInfo(), conn);
+				this.relatedReferencedClass = OpenMRSPOJOGenerator.generateSkeleton(this.getReferencedTableInfo(), conn);
 			}
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
@@ -278,10 +278,10 @@ public class RefInfo {
 		
 		try {
 			if (fullClass) {
-				this.relatedReferenceClass = OpenMRSClassGenerator.generate(this.getReferenceTableInfo(), conn);
+				this.relatedReferenceClass = OpenMRSPOJOGenerator.generate(this.getReferenceTableInfo(), conn);
 			}
 			else {
-				this.relatedReferenceClass = OpenMRSClassGenerator.generateSkeleton(this.getReferenceTableInfo(), conn);
+				this.relatedReferenceClass = OpenMRSPOJOGenerator.generateSkeleton(this.getReferenceTableInfo(), conn);
 			}
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();

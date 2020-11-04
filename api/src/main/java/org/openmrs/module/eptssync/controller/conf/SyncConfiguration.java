@@ -10,7 +10,6 @@ import java.util.Map;
 
 import javax.ws.rs.ForbiddenException;
 
-import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
@@ -22,7 +21,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class SyncConfiguration {
 	private String syncRootDirectory;
-	private String syncStageSchema;
 	
 	private String originAppLocationCode;
 	
@@ -32,9 +30,7 @@ public class SyncConfiguration {
 	
 	private boolean firstExport;
 	private DBConnectionInfo connInfo;
-	
-	private boolean mustCreateStageSchemaElements;
-	
+
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String installationType;
@@ -56,6 +52,8 @@ public class SyncConfiguration {
 	private static final String[] supportedInstallationTypes = {"source", "destination"};
 	
 	private String classPath;
+	private boolean fullLoaded;
+	
 	
 	private SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
@@ -120,19 +118,6 @@ public class SyncConfiguration {
 		return this.installationType.equals(supportedInstallationTypes[0]);
 	}
 	
-	
-	public boolean mustCreateStageSchemaElements() {
-		return mustCreateStageSchemaElements;
-	}
-	
-	public boolean isMustCreateStageSchemaElements() {
-		return mustCreateStageSchemaElements;
-	}
-	
-	public void setMustCreateStageSchemaElements(boolean mustCreateStageSchemaElements) {
-		this.mustCreateStageSchemaElements = mustCreateStageSchemaElements;
-	}
-	
 	public String getPojoPackage() {
 		return isDestinationInstallationType() ? this.installationType : this.originAppLocationCode;
 	}
@@ -192,11 +177,12 @@ public class SyncConfiguration {
 	}
 	
 	public String getSyncStageSchema() {
-		return syncStageSchema;
-	}
-	
-	public void setSyncStageSchema(String syncStageSchema) {
-		this.syncStageSchema = syncStageSchema;
+		if (isSourceInstallationType()) {
+			return this.originAppLocationCode + "_sync_stage_area";
+		}
+		else {
+			return "sync_stage_area";
+		}
 	}
 	
 	public String getOriginAppLocationCode() {
@@ -207,32 +193,6 @@ public class SyncConfiguration {
 		this.originAppLocationCode = originAppLocationCode;
 	}	
 	
-	static Logger logger = Logger.getLogger(SyncConfiguration.class);
-	
-	
-	/*public SyncTableConfiguration retrieveTableInfoByTableName(String tableName, Connection conn) {
-		for (SyncTableConfiguration info : this.tablesConfigurations) {
-			logger.info("RETRIEVING TABLE INFO OF TABLE '" + tableName + "' ON CONFIGURATION [" + info + "]");
-			
-			if (info.getTableName().equals(tableName)) return info;
-		}
-		
-		for (SyncTableConfiguration info : this.tablesConfigurations) {
-			
-			for (ParentRefInfo child : info.getChildRefInfo(conn)) {
-				logger.info("RETRIEVING TABLE INFO OF TABLE '" + tableName + "' ON CHILD [" + child.getReferenceTableInfo().getTableName() + "] OF CONFIGURATION [" + info + "]");
-				
-				if (child.getReferenceTableInfo().getTableName().equals(tableName)) {
-					if (child.getReferenceTableInfo().isFullLoaded()) {
-						return child.getReferenceTableInfo();
-					}
-				}
-			}
-		}
-		
-		return null;
-	}*/
-
 	public void setRelatedConfFile(File relatedConfFile) {
 		this.relatedConfFile = relatedConfFile;
 	}
@@ -241,7 +201,6 @@ public class SyncConfiguration {
 		return relatedConfFile;
 	}
 	
-	private boolean fullLoaded;
 	public static SyncConfiguration loadFromFile(File file) throws IOException {
 		SyncConfiguration conf = SyncConfiguration.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 		
@@ -353,15 +312,12 @@ public class SyncConfiguration {
 			if (!utilities.stringHasValue(getSyncRootDirectory())) errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter\n";
 		}
 		
+		if (this.isDestinationInstallationType()) {
+			if (utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You cannot configure for 'originAppLocationCode' parameter in destination configuration\n" ;
+		}
+		
 		for (SyncOperationConfig operation : this.operations) {
-			if (this.isDestinationInstallationType()) {
-				if (!operation.canBeRunInDestinationInstallation()) errorMsg += ++errNum + ". This operation ["+ operation.getOperationType() + "] Cannot be configured in destination installation\n";
-			
-				if (operation.isLoadOperation() && (operation.getSourceFolders() == null || operation.getSourceFolders().size() == 0))  errorMsg += ++errNum + ". There is no source folder defined";
-			}
-			else {
-				if (!operation.canBeRunInSourceInstallation()) errorMsg += ++errNum + ". This operation ["+ operation.getOperationType() + "] Cannot be configured in source installation\n";
-			}
+			operation.validate(); 
 		}
 		
 		for (SyncTableConfiguration tableConf : this.tablesConfigurations) {
@@ -372,6 +328,12 @@ public class SyncConfiguration {
 			}
 		}
 		
+		List<String> supportedOperations = isSourceInstallationType() ? SyncOperationConfig.getSupportedOperationsInSourceInstallation() : SyncOperationConfig.getSupportedOperationsInDestinationInstallation();
+		
+		for (String operationType : supportedOperations) {
+			if (!isOperationConfigured(operationType)) errorMsg += ++errNum + ". The operation '" + operationType + " is not configured\n";
+		}
+		
 		if (utilities.stringHasValue(errorMsg)) {
 			errorMsg = "There are errors on config file " + this.relatedConfFile.getAbsolutePath() + "\n" + errorMsg;
 			throw new ForbiddenOperationException(errorMsg);
@@ -380,6 +342,26 @@ public class SyncConfiguration {
 		if (this.childConfig != null){
 			this.childConfig.validate();
 		}
+	}
+	
+	private boolean isOperationConfigured(String operationType) {
+		SyncOperationConfig operation = new SyncOperationConfig();
+		operation.setOperationType(operationType);
+		
+		
+		for (SyncOperationConfig op : this.getOperations()) {
+			if (operation.equals(op)) return true;
+			
+			SyncOperationConfig child = op.getChild();
+			
+			while(child != null) {
+				if (operation.equals(child)) return true;
+			
+				child = child.getChild();
+			}
+		}
+		
+		return false;
 	}
 	
 	@Override

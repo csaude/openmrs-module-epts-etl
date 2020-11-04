@@ -1,7 +1,5 @@
 package org.openmrs.module.eptssync.pojogeneration.controller;
 
-import java.io.File;
-
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
@@ -11,7 +9,6 @@ import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.pojogeneration.engine.PojoGenerationEngine;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
  * This class is responsible for data base preparation
@@ -50,8 +47,7 @@ public class PojoGenerationController extends OperationController {
 		return SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION;
 	}	
 	
-	@Override
-	public void changeStatusToFinished() {
+	/*public void changeStatusToFinished() {
 		String operationId = this.getControllerId();
 		
 		String fileName = getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
@@ -69,7 +65,11 @@ public class PojoGenerationController extends OperationController {
 		
 		super.changeStatusToFinished();
 	}
-
+	
+	
+	*/
+	
+	/*
 	private void validateAllPOJO(java.sql.Connection conn) {
 		/*
 		for (SyncTableConfiguration conf : getConfiguration().getTablesConfigurations()) {
@@ -91,10 +91,10 @@ public class PojoGenerationController extends OperationController {
 				throw new ForbiddenOperationException("The class " + recordClass.getCanonicalName() + " was not full generated");
 				//conf.generateRecordClass(true, conn);
 			}
-		}*/
+		}
 		
 		//Now validate all classes under the openmrs package
-		/*
+	
 		String rootPackage = "org.openmrs.module.eptssync.model.openmrs." + getConfiguration().getClasspackage();
 		
 		File sourceFile = new File(getConfiguration().getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/openmrs/" + getConfiguration().getClasspackage());
@@ -120,8 +120,8 @@ public class PojoGenerationController extends OperationController {
 				tabConf.generateRecordClass(true, conn);
 				logInfo("POJO FOR TABLE " + obj.generateTableName() + " WAS FULL REGENERATED");
 			}
-	 	}*/
-	}
+	 	}
+	}*/
 	
 	public SyncConfiguration getConfiguration() {
 		return getProcessController().getConfiguration();

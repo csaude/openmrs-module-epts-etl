@@ -58,26 +58,19 @@ public class DatabasePreparationEngine extends Engine {
 			throw new DBException(e);
 		}
 	}
-
 	
 	private void updateTableInfo(Connection conn) throws SQLException {
 		logInfo("UPGRATING TABLE INFO [" + this.getTableName() + "]");
 		
 		String newColumnDefinition = "";
 		
-		if (getSyncTableConfiguration().mustCreateStageSchemaElements() && !getSyncTableConfiguration().existRelatedExportStageTable(conn)) {
+		if (!getSyncTableConfiguration().existRelatedExportStageTable(conn)) {
 			logInfo("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
 			
 			createRelatedExportStageTable(conn);
 			
 			logInfo("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
-			
 		}
-		
-		/*if (!isFirstExportDoneColumnExistsOnTable(conn)) {
-			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateFirstExportColumnGeneration());
-		}*/
 		
 		if (!isConsistentColumnExistOnTable(conn)) {
 			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
@@ -88,11 +81,6 @@ public class DatabasePreparationEngine extends Engine {
 			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
 			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateLastSyncDateColumnCreation());
 		}
-
-		/*if (!isUuidColumnExistOnTable(conn)) {
-			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
-			newColumnDefinition = utilities.concatStrings(newColumnDefinition, generateUuidColumnCreation());
-		}*/
 
 		if (!isOriginRecordIdColumnExistOnTable(conn)) {
 			newColumnDefinition += utilities.stringHasValue(newColumnDefinition) ? "," : "";
@@ -131,11 +119,6 @@ public class DatabasePreparationEngine extends Engine {
 			BaseDAO.executeBatch(conn, batch);
 			logInfo("CREATING CONF COLUMNS FOR TABLE [" + this.getTableName() + "]");
 		}
-		
-		/*
-		if (!isIndexOnFirtExportDoneColumn(conn)) {
-			createIndexOnFirstExportDoneCOlumn(conn);
-		}*/
 		
 		if (!isExistRelatedTriggers(conn)) {
 			logInfo("CREATING RELATED TRIGGERS FOR [" + this.getTableName() + "]");
@@ -213,7 +196,7 @@ public class DatabasePreparationEngine extends Engine {
 	}
 	
 	private String generateConsistentColumnGeneration() {
-		return "consistent int(1) DEFAULT 1";
+		return "consistent int(1) DEFAULT -1";
 	}
 	
 	/*private boolean isUuidColumnExistOnTable(Connection conn) throws SQLException {

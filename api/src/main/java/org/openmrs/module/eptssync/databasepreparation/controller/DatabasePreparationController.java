@@ -29,7 +29,7 @@ public class DatabasePreparationController extends OperationController {
 	
 	@Override
 	public void run() {
-		if (getSyncConfiguration().mustCreateStageSchemaElements() && !this.isImportStageSchemaExists()) {
+		if (!this.isImportStageSchemaExists()) {
 			this.createStageSchema();
 		}
 			

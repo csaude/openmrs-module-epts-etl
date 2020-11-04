@@ -9,6 +9,7 @@ import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.databasepreparation.controller.DatabasePreparationController;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.export.controller.SyncExportController;
+import org.openmrs.module.eptssync.inconsistenceresolver.controller.InconsistenceSolverController;
 import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
 import org.openmrs.module.eptssync.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.eptssync.synchronization.controller.SyncController;
@@ -18,21 +19,23 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 public class SyncOperationConfig {
 	public static final String SYNC_OPERATION_DATABASE_PREPARATION = "database_preparation";
 	public static final String SYNC_OPERATION_POJO_GENERATION = "pojo_generation";
+	public static final String SYNC_OPERATION_INCONSISTENCY_SOLVER= "inconsistency_solver";
 	public static final String SYNC_OPERATION_EXPORT = "export";
 	public static final String SYNC_OPERATION_SYNCHRONIZATION = "synchronization";
 	public static final String SYNC_OPERATION_LOAD = "load";
 	public static final String SYNC_OPERATION_TRANSPORT = "transport";
 	public static final String SYNC_OPERATION_CONSOLIDATION= "consolidation";
-
-	private static final String[] SUPPORTED_OPERATIONS = {	SYNC_OPERATION_CONSOLIDATION, 
+	
+	public static final String[] SUPPORTED_OPERATIONS = {	SYNC_OPERATION_CONSOLIDATION, 
 			SYNC_OPERATION_EXPORT, 
 			SYNC_OPERATION_LOAD, 
 			SYNC_OPERATION_SYNCHRONIZATION, 
 			SYNC_OPERATION_TRANSPORT,
 			SYNC_OPERATION_DATABASE_PREPARATION,
-			SYNC_OPERATION_POJO_GENERATION};
+			SYNC_OPERATION_POJO_GENERATION,
+			SYNC_OPERATION_INCONSISTENCY_SOLVER};
 
-	public CommonUtilities utilities = CommonUtilities.getInstance();
+	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public static String PROCESSING_MODE_SEQUENCIAL="sequencial";
 	public static String PROCESSING_MODE_PARALLEL="parallel";
@@ -208,6 +211,9 @@ public class SyncOperationConfig {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION);
 	}
 	
+	public boolean isInconsistenceSolver() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER);
+	}
 	
 	@Override
 	public boolean equals(Object obj) {
@@ -248,7 +254,11 @@ public class SyncOperationConfig {
 		if (isConsolidationOperation()) {
 			controller = new DatabaseIntegrityConsolidationController(parent, this);
 		}
-		else throw new ForbiddenOperationException("Operationtype not supported!");
+		else
+		if (isInconsistenceSolver()) {
+			controller = new InconsistenceSolverController(parent, this);
+		}
+		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");
 	
 		if (this.getChild() != null) {
 			controller.setChild(this.getChild().generateRelatedController(controller.getProcessController(), conn));
@@ -258,20 +268,61 @@ public class SyncOperationConfig {
 		return controller;
 	}
 	
-	public boolean canBeRunInDestinationInstallation() {
-		return this.isConsolidationOperation() || 
-				this.isSynchronizationOperation() ||
-					this.isLoadOperation() ||
-						this.isDatabasePreparationOperation() ||
-							this.isPojoGeneration();
+	public void validate () {
+		String errorMsg = "";
+		int errNum = 0;
+		
+		if (this.getRelatedSyncConfig().isDestinationInstallationType()) {
+			if (!this.canBeRunInDestinationInstallation()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in destination installation\n";
+		
+			if (this.isLoadOperation() && (this.getSourceFolders() == null || this.getSourceFolders().size() == 0))  errorMsg += ++errNum + ". There is no source folder defined";
+		}
+		else {
+			if (!this.canBeRunInSourceInstallation()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in source installation\n";
+		}
+		
+		if (utilities.stringHasValue(errorMsg)) {
+			errorMsg = "There are errors on config operation configuration " + this.getOperationType() +  "[File:  " + this.getRelatedSyncConfig().getRelatedConfFile().getAbsolutePath() + "]\n" + errorMsg;
+			throw new ForbiddenOperationException(errorMsg);
+		}
+		else
+		if (this.getChild() != null){
+			this.getChild().validate();
+		}
 	}
 	
 	public boolean canBeRunInSourceInstallation() {
-		return this.isExportOperation() || 
-				this.isTransportOperation() ||
-					this.isDatabasePreparationOperation() ||
-						this.isPojoGeneration();
+		return utilities.existOnArray(getSupportedOperationsInSourceInstallation(), this.operationType);
 	}
+	
+	public static List<String> getSupportedOperationsInSourceInstallation() {
+		String[] supported = {SyncOperationConfig.SYNC_OPERATION_EXPORT,
+							  SyncOperationConfig.SYNC_OPERATION_TRANSPORT,
+							  SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER,
+							  SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION,
+							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION};
+		
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
+	public boolean canBeRunInDestinationInstallation() {
+		return utilities.existOnArray(getSupportedOperationsInDestinationInstallation(), this.operationType);
+	}
+	
+	
+	public static List<String> getSupportedOperationsInDestinationInstallation() {
+		String[] supported = {SyncOperationConfig.SYNC_OPERATION_CONSOLIDATION,
+							  SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION,
+							  SyncOperationConfig.SYNC_OPERATION_LOAD,
+							  SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION,
+							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION};
+		
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
+
 	
 	@Override
 	public String toString() {

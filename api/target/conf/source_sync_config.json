@@ -2,9 +2,7 @@
 	installationType: "source",
 	syncRootDirectory: "D:\\JEE\\Workspace\\FGH\\data\\sync",
 	classPath: "D:\\JEE\\Workspace\\FGH\\openmrs-module-eptssync\\api\\target\\eptssync-api-1.0-SNAPSHOT.jar",
-	syncStageSchema: "sync_import_stage",
-	mustCreateStageSchemaElements: false,	
-	originAppLocationCode: "zbz_derre",
+	originAppLocationCode: "zbz_gile",
 	firstExport: true,
 	automaticStart: true, 
 	childConfigFilePath: "D:\\JEE\\Workspace\\FGH\\openmrs-module-eptssync\\api\\target\\conf\\dest_sync_config.json",
@@ -12,12 +10,11 @@
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3306/openmrs_derre?autoReconnect=true&useSSL=false",
+		connectionURI: "jdbc:mysql://localhost:3306/openmrs_gile?autoReconnect=true&useSSL=false",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
 	operations: [
-		
 		{
 			operationType: "database_preparation",
 			maxRecordPerProcessing: 1, 
@@ -34,22 +31,33 @@
 				disabled: false,
 				processingMode: "sequencial",
 				
-				child:	{
-					operationType: "export",
-					maxRecordPerProcessing: 1000,
-					maxSupportedEngines: 5,
-					minRecordsPerEngine: 100,
-					disabled: false,
-					processingMode: "sequencial",
-							
-					child:{
-						operationType: "transport",
-						maxRecordPerProcessing: 1000,
+				child: {
+						operationType: "inconsistency_solver",
+						maxRecordPerProcessing: 1000, 
 						maxSupportedEngines: 5,
-						minRecordsPerEngine: 50,
+						minRecordsPerEngine: 1000,
 						disabled: false,
-						processingMode: "sequencial"
-					}
+						doIntegrityCheckInTheEnd: true,
+						processingMode: "sequencial",
+				
+						child:	{
+							operationType: "export",
+							maxRecordPerProcessing: 1000,
+							maxSupportedEngines: 5,
+							minRecordsPerEngine: 100,
+							disabled: false,
+							processingMode: "sequencial",
+									
+							child:{
+								operationType: "transport",
+								maxRecordPerProcessing: 1000,
+								maxSupportedEngines: 5,
+								minRecordsPerEngine: 50,
+								disabled: false,
+								processingMode: "sequencial"
+							}
+						}
+					
 				}
 			}
 		}

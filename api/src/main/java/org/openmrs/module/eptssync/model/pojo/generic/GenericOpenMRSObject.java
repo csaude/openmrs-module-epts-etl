@@ -1,10 +1,12 @@
-package org.openmrs.module.eptssync.model.openmrs.generic;
+package org.openmrs.module.eptssync.model.pojo.generic;
 
 import java.sql.Connection;
 
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 
 public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	private int originRecordId;
@@ -113,6 +115,11 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	
 	@Override
 	public String generateTableName() {
+		throw new ForbiddenOperationException("Forbidden Method");
+	}
+
+	@Override
+	public void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 }

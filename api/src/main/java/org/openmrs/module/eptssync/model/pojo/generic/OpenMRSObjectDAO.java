@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.openmrs.generic;
+package org.openmrs.module.eptssync.model.pojo.generic;
 
 import java.sql.Connection;
 import java.util.List;
@@ -58,6 +58,8 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	static Logger logger = Logger.getLogger(OpenMRSObjectDAO.class);
 	
 	public static <T extends OpenMRSObject> T thinGetByOriginRecordId(Class<T> openMRSClass, int originRecordId, String originAppLocationCode, Connection conn) throws DBException{
+		if (!utilities.stringHasValue(originAppLocationCode)) return thinGetByOriginRecordId(openMRSClass, originRecordId, conn);
+		
 		T instance = null;
 		
 		try {
@@ -71,6 +73,32 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			sql += " FROM  	" + instance.generateTableName() + "\n";
 			sql += " WHERE 	origin_record_id = ? \n";
 			sql += "		AND origin_app_location_code = ?;\n";
+			
+			return find(openMRSClass, sql, params, conn);
+		} catch (Exception e) {
+			logger.info("Error trying do retrieve record on table " + instance.generateTableName()  + "["+e.getMessage() + "]");
+			
+			TimeCountDown.sleep(2000);
+		
+			throw new RuntimeException("Error trying do retrieve record on table " + instance.generateTableName()  + "["+e.getMessage() + "]");
+			
+		}
+	}
+	
+	public static <T extends OpenMRSObject> T thinGetByOriginRecordId(Class<T> openMRSClass, int originRecordId, Connection conn) throws DBException{
+		T instance = null;
+		
+		try {
+			instance = openMRSClass.newInstance();
+			
+			Object[] params = {originRecordId};
+			
+			String sql = "";
+			
+			sql += " SELECT * \n";
+			sql += " FROM  	" + instance.generateTableName() + "\n";
+			sql += " WHERE 	origin_record_id = ? \n";
+			sql += "		AND origin_app_location_code is null;\n";
 			
 			return find(openMRSClass, sql, params, conn);
 		} catch (Exception e) {

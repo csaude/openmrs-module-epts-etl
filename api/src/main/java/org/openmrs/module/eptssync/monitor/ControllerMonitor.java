@@ -1,7 +1,9 @@
+
 package org.openmrs.module.eptssync.monitor;
 
 import org.openmrs.module.eptssync.controller.Controller;
 import org.openmrs.module.eptssync.controller.OperationController;
+import org.openmrs.module.eptssync.databasepreparation.controller.DatabasePreparationController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 
 /**
@@ -31,6 +33,10 @@ public class ControllerMonitor implements Runnable{
 		while(running) {
 			TimeCountDown.sleep(controller.getWaitTimeToCheckStatus());
 		
+			if (controller instanceof DatabasePreparationController) {
+				controller.logInfo("STOP.............. ON [ControllerMonitor]");
+			}
+			
 			if (this.controller.isFinished()) {
 				this.controller.markAsFinished();
 				this.controller.onFinish();

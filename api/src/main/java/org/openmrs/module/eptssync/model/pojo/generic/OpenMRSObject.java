@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.openmrs.generic;
+package org.openmrs.module.eptssync.model.pojo.generic;
 
 import java.sql.Connection;
 import java.util.Map;
@@ -89,8 +89,19 @@ public interface OpenMRSObject extends SyncRecord{
 	 * @throws DBException
 	 */
 	public abstract void consolidateData(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
-	//public abstract void moveToStageAreaDueInconsistency(SyncTableInfo syncTableInfo, InconsistentStateException exception, Connection conn) throws DBException;
-	
+
+	/**
+	 * Resolve the inconsistency of a record
+	 * <p> The resolution consists on checking if all parent of this records are present in data base. If not then this record will be moved
+	 * to staging area and all its children will be moved in cascade
+	 * 
+	 * @param tableInfo
+	 * @param conn
+	 * @throws InconsistentStateException
+	 * @throws DBException
+	 */
+	public abstract void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
+
 	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, Connection conn) throws DBException;
 	public abstract String generateMissingInfo(Map<RefInfo, Integer> missingParents);
 	

@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.openmrs.generic;
+package org.openmrs.module.eptssync.model.pojo.generic;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,10 +17,10 @@ import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
-import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -116,6 +116,42 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 	
 	@Override
+	public void resolveInconsistence(SyncTableConfiguration syncTableInfo, Connection conn) throws InconsistentStateException, DBException {
+		Map<RefInfo, Integer> missingParents = loadMissingParents(syncTableInfo, conn);
+		
+		if (missingParents.isEmpty()) {
+			markAsConsistent();
+		}
+		else {
+			moveToStageAreaDueInconsistency(syncTableInfo, missingParents, conn);
+		}
+	}
+	
+	public void moveToStageAreaDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
+		SyncImportInfoVO syncInfo = this.generateSyncInfo();
+		
+		syncInfo.setOriginAppLocationCode(syncTableInfo.getOriginAppLocationCode());
+		
+		syncInfo.setLastMigrationTryErr(generateMissingInfo(missingParents));
+		
+		SyncImportInfoDAO.insert(syncInfo, syncTableInfo, conn);
+		
+		this.remove(conn);
+		
+		for (RefInfo refInfo: syncTableInfo.getChildRefInfo(conn)) {
+			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferenceClass(conn), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
+			
+			for (OpenMRSObject child : children) {
+				child.resolveInconsistence(refInfo.getReferenceTableInfo(), conn);
+			}
+		}
+	}
+	
+	private SyncImportInfoVO generateSyncInfo() {
+		return SyncImportInfoVO.generateFromSyncRecord(this);
+	}
+
+	@Override
 	public void consolidateMetadata(Connection conn) throws DBException {
 		OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByUuid(this.getClass(), this.getUuid(), conn);
 		
@@ -166,33 +202,26 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			else syncInfo.delete(tableInfo, conn);
 			
 			this.markAsConsistent(conn);
-			
-			BaseDAO.commit(conn);
 		}
 	}
 	
 	public  SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		return SyncImportInfoDAO.retrieveFromOpenMRSObject(tableInfo, this, conn);
 	}
-
+	
 	public void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
 		SyncImportInfoVO syncInfo = this.retrieveRelatedSyncInfo(syncTableInfo, conn);
 		
 		syncInfo.markAsFailedToMigrate(syncTableInfo, generateMissingInfo(missingParents), conn);
 		
 		this.remove(conn);
-		
-		BaseDAO.commit(conn);
-		
+	
 		for (RefInfo refInfo: syncTableInfo.getChildRefInfo(conn)) {
+			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferenceClass(conn), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
 			
-			//if (!refInfo.isMetadata() && refInfo.isRelatedReferenceTableConfiguredForSynchronization()) {
-				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.determineRelatedReferenceClass(conn), refInfo.getReferenceColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
-				
-				for (OpenMRSObject child : children) {
-					child.consolidateData(refInfo.getReferenceTableInfo(), conn);
-				}
-			//}
+			for (OpenMRSObject child : children) {
+				child.consolidateData(refInfo.getReferenceTableInfo(), conn);
+			}
 		}
 		
 	}

@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.export.model;
+package org.openmrs.module.eptssync.inconsistenceresolver.model;
 
 import java.sql.Connection;
 
@@ -10,10 +10,10 @@ import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
+public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObject>{
 	private boolean selectAllRecords;
 	
-	public SyncExportSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
+	public InconsistenceSolverSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
 		super(tableInfo, limits);
 		
 		setOrderByFields(tableInfo.getPrimaryKey(conn));
@@ -27,12 +27,7 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
 		
 		if (!this.selectAllRecords) {
-			if (!tableInfo.isFirstExport()) {
-				searchClauses.addToClauses("date_changed > last_sync_date");
-			}
-			else {
-				searchClauses.addToClauses("last_sync_date is null");
-			}
+			searchClauses.addToClauses("consistent = -1");
 		
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey(conn) + " between ? and ?");
@@ -44,7 +39,7 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 				searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
 			}
 		}
-
+		
 		return searchClauses;
 	}	
 	
@@ -55,7 +50,7 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		SyncExportSearchParams auxSearchParams = new SyncExportSearchParams(this.tableInfo, this.limits, conn);
+		InconsistenceSolverSearchParams auxSearchParams = new InconsistenceSolverSearchParams(this.tableInfo, this.limits, conn);
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);
