@@ -477,11 +477,12 @@ public abstract class OperationController implements Controller{
 	public void onStop() {
 		logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
 		
-		for (EngineMonitor monitor : this.enginesActivititieMonitor) {
-			monitor.killSelfCreatedThreads();
-			
-			ThreadPoolService.getInstance().terminateTread(logger, monitor.getEngineMonitorId());
-		}
+		if (this.enginesActivititieMonitor != null)
+			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
+				monitor.killSelfCreatedThreads();
+				
+				ThreadPoolService.getInstance().terminateTread(logger, monitor.getEngineMonitorId());
+			}
 	}
 	
 	@Override

@@ -120,7 +120,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		Map<RefInfo, Integer> missingParents = loadMissingParents(syncTableInfo, conn);
 		
 		if (missingParents.isEmpty()) {
-			markAsConsistent();
+			markAsConsistent(conn);
 		}
 		else {
 			moveToStageAreaDueInconsistency(syncTableInfo, missingParents, conn);
@@ -256,7 +256,13 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 						parent = OpenMRSObjectDAO.getById(refInfo.getReferencedTableInfo().getTableName(), refInfo.getReferencedColumnName(), parentId , conn);
 					}
 					else {
-						parent = loadParent(refInfo.determineRelatedReferencedClass(conn), parentId, refInfo.isIgnorable(), conn);
+						
+						if (tableInfo.getRelatedSynconfiguration().isDestinationInstallationType()) {
+							parent = loadParent(refInfo.determineRelatedReferencedClass(conn), parentId, refInfo.isIgnorable(), conn);
+						}
+						else {
+							parent = OpenMRSObjectDAO.getById(refInfo.determineRelatedReferencedClass(conn), parentId, conn);
+						}
 					}
 					
 					 if (parent == null) {

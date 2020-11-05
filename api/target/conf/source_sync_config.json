@@ -1,16 +1,16 @@
 {
 	installationType: "source",
-	syncRootDirectory: "D:\\JEE\\Workspace\\FGH\\data\\sync",
-	classPath: "D:\\JEE\\Workspace\\FGH\\openmrs-module-eptssync\\api\\target\\eptssync-api-1.0-SNAPSHOT.jar",
+	syncRootDirectory: "/home/jpboane/working/prg/jee/workspace/data/sync",
+	classPath: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/eptssync-api-1.0-SNAPSHOT.jar",
 	originAppLocationCode: "zbz_gile",
 	firstExport: true,
 	automaticStart: true, 
-	childConfigFilePath: "D:\\JEE\\Workspace\\FGH\\openmrs-module-eptssync\\api\\target\\conf\\dest_sync_config.json",
+	childConfigFilePath_: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
 	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3306/openmrs_gile?autoReconnect=true&useSSL=false",
+		connectionURI: "jdbc:mysql://localhost:3307/openmrs_gile?autoReconnect=true&useSSL=false",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	

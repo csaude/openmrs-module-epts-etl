@@ -34,7 +34,7 @@ public class ControllerMonitor implements Runnable{
 			TimeCountDown.sleep(controller.getWaitTimeToCheckStatus());
 		
 			if (controller instanceof DatabasePreparationController) {
-				controller.logInfo("STOP.............. ON [ControllerMonitor]");
+				//controller.logInfo("STOP.............. ON [ControllerMonitor]");
 			}
 			
 			if (this.controller.isFinished()) {
