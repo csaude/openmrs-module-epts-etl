@@ -44,6 +44,8 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 				searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
 			}
 		}
+		
+		searchClauses.addToClauses("consistent = 1");
 
 		return searchClauses;
 	}	

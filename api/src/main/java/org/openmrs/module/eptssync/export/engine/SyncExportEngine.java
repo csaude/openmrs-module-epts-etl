@@ -21,9 +21,9 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
-public class ExportSyncEngine extends Engine {
+public class SyncExportEngine extends Engine {
 	
-	public ExportSyncEngine(EngineMonitor monitor, RecordLimits limits) {
+	public SyncExportEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 
@@ -59,6 +59,15 @@ public class ExportSyncEngine extends Engine {
 			
 			this.getMonitor().logInfo("WRITING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE [" + jsonFIle.getAbsolutePath() + ".json]");
 			
+			
+			//Try to remove not terminate files
+			{
+				FileUtilities.removeFile(jsonFIle.getAbsolutePath());
+				FileUtilities.removeFile(generateTmpMinimalJSONInfoFileName(jsonFIle));
+				FileUtilities.removeFile(jsonFIle.getAbsolutePath() + ".json");
+				FileUtilities.removeFile(generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json");
+			}
+			
 			FileUtilities.write(jsonFIle.getAbsolutePath(), jsonInfo.parseToJSON());
 			
 			FileUtilities.write(generateTmpMinimalJSONInfoFileName(jsonFIle), jsonInfo.generateMinimalInfo().parseToJSON());
@@ -70,6 +79,7 @@ public class ExportSyncEngine extends Engine {
 			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED FINISHED");
 			
 			this.getMonitor().logInfo("MAKING FILES AVALIABLE");
+			
 			
 			FileUtilities.renameTo(generateTmpMinimalJSONInfoFileName(jsonFIle), generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json");
 			FileUtilities.renameTo(jsonFIle.getAbsolutePath(), jsonFIle.getAbsolutePath() + ".json");
@@ -83,7 +93,7 @@ public class ExportSyncEngine extends Engine {
 				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
 			}
 			
-			markAllAsSynchronized(utilities.parseList(syncRecords, OpenMRSObject.class));
+			markAllAsSynchronized(utilities.parseList(syncRecords, OpenMRSObject.class));		
 		} catch (IOException e) {
 			e.printStackTrace();
 			

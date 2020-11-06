@@ -142,7 +142,7 @@ public class EngineMonitor implements Runnable{
 			return null;
 		}
 		else {
-			long qtyRecords = maxRecId - minRecId;
+			long qtyRecords = maxRecId - minRecId + 1;
 			long qtyEngines = determineQtyEngines(qtyRecords);
 			long qtyRecordsPerEngine = 0;
 			
@@ -150,7 +150,7 @@ public class EngineMonitor implements Runnable{
 			
 			qtyRecordsPerEngine = determineQtyRecordsPerEngine(qtyEngines, qtyRecords);
 			
-			long currMax = minRecId + qtyRecordsPerEngine;
+			long currMax = minRecId + qtyRecordsPerEngine - 1;
 			
 			if (qtyEngines == 1) currMax = maxRecId;
 			
@@ -175,7 +175,7 @@ public class EngineMonitor implements Runnable{
 			int i = 1;
 			
 			for (i = 1; i < qtyEngines; i++) {
-				 limits  = new RecordLimits(limits.getLastRecordId() + 1, limits.getLastRecordId() + qtyRecordsPerEngine + 1);
+				 limits  = new RecordLimits(limits.getLastRecordId() + 1, limits.getLastRecordId() + qtyRecordsPerEngine);
 				 
 				 if (i == qtyEngines) limits.setLastRecordId(maxRecId);
 				 

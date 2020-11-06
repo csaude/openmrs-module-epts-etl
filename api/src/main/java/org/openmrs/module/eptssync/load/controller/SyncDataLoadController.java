@@ -11,7 +11,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.load.engine.LoadSyncDataEngine;
+import org.openmrs.module.eptssync.load.engine.SyncDataLoadEngine;
 import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -57,7 +57,7 @@ public class SyncDataLoadController extends OperationController implements Desti
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new LoadSyncDataEngine(monitor, limits);
+		return new SyncDataLoadEngine(monitor, limits);
 	}
 
 	@Override

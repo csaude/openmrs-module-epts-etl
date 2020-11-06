@@ -9,7 +9,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.export.engine.ExportSyncEngine;
+import org.openmrs.module.eptssync.export.engine.SyncExportEngine;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
@@ -32,7 +32,7 @@ public class SyncExportController extends OperationController {
 
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new ExportSyncEngine(monitor, limits);
+		return new SyncExportEngine(monitor, limits);
 	}
 
 	@Override

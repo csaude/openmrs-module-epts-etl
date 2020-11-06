@@ -12,14 +12,14 @@ import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class TransportSyncFilesSearchParams extends SyncSearchParams<OpenMRSObject> implements FilenameFilter{
+public class TransportSyncSearchParams extends SyncSearchParams<OpenMRSObject> implements FilenameFilter{
 	private String firstFileName;
 	private String lastFileName;
 	
 	private String fileNamePathern;
 	private SyncTransportController controller;
 	
-	public TransportSyncFilesSearchParams(SyncTransportController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
+	public TransportSyncSearchParams(SyncTransportController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
 		super(tableInfo, limits);
 		
 		this.controller = controller;
@@ -28,6 +28,10 @@ public class TransportSyncFilesSearchParams extends SyncSearchParams<OpenMRSObje
 			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getFirstRecordId(), 10) + ".json"; 
 			this.lastFileName = tableInfo.getTableName() + "_" +  utilities.garantirXCaracterOnNumber(limits.getLastRecordId(), 10) + ".json"; 
 		}
+		
+		controller.logInfo("FIRT RECORD TO TRANSPORT " + this.firstFileName);
+		controller.logInfo("LAST RECORD TO TRANSPORT " + this.lastFileName);
+		
 	}
 	
 	public String getFileNamePathern() {
@@ -55,7 +59,15 @@ public class TransportSyncFilesSearchParams extends SyncSearchParams<OpenMRSObje
 		
 		boolean isInInterval = true;
 		
+		controller.logInfo("TRYING TO LOAD " + name);
+			
 		if (hasLimits()) {
+			
+			controller.logInfo("TRYING TO LOAD " + name);
+			
+			controller.logInfo(name + ".compareTo(" + this.firstFileName +") =" + name.compareTo(this.firstFileName));
+			controller.logInfo(name + ".compareTo(" + this.lastFileName +") =" + name.compareTo(this.lastFileName));
+			
 			isInInterval = isInInterval && name.compareTo(this.firstFileName) >= 0;
 			isInInterval = isInInterval && name.compareTo(this.lastFileName) <= 0;
 		}

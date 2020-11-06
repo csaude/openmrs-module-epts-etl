@@ -505,7 +505,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	public void logInfo(String msg) {
 		getRelatedOperationController().logInfo(msg);
 	}
-
+	
 	protected abstract void restart();
 
 	protected abstract SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn);

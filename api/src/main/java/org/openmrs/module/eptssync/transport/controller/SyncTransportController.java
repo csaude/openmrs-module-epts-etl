@@ -11,8 +11,8 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.transport.engine.TransportSyncFilesEngine;
-import org.openmrs.module.eptssync.transport.model.TransportSyncFilesSearchParams;
+import org.openmrs.module.eptssync.transport.engine.SyncTransportEngine;
+import org.openmrs.module.eptssync.transport.model.TransportSyncSearchParams;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 /**
@@ -29,12 +29,12 @@ public class SyncTransportController extends OperationController {
 
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new TransportSyncFilesEngine(monitor, limits);
+		return new SyncTransportEngine(monitor, limits);
 	}
 
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
-		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncFilesSearchParams(this, tableInfo, null));
+		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncSearchParams(this, tableInfo, null));
 	    
 		if (files == null || files.length == 0) return 0;
 		
@@ -51,7 +51,7 @@ public class SyncTransportController extends OperationController {
 
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
-		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncFilesSearchParams(this, tableInfo, null));
+		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncSearchParams(this, tableInfo, null));
 	    
 		if (files == null || files.length == 0) return 0;
 		

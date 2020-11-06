@@ -14,7 +14,7 @@ import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.transport.model.TransportRecord;
-import org.openmrs.module.eptssync.transport.model.TransportSyncFilesSearchParams;
+import org.openmrs.module.eptssync.transport.model.TransportSyncSearchParams;
 
 /**
  * The engine responsible for transport synchronization files from origin to
@@ -28,9 +28,9 @@ import org.openmrs.module.eptssync.transport.model.TransportSyncFilesSearchParam
  * 
  * @author jpboane
  */
-public class TransportSyncFilesEngine extends Engine {
+public class SyncTransportEngine extends Engine {
 
-	public TransportSyncFilesEngine(EngineMonitor monitor, RecordLimits limits) {
+	public SyncTransportEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 
@@ -42,7 +42,6 @@ public class TransportSyncFilesEngine extends Engine {
 		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords, TransportRecord.class);
 	
 		this.getMonitor().logInfo("COPYING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " SOURCE FILES TO IMPORT AREA");
-		
 		
 		for (TransportRecord t : migrationRecordAsTransportRecord) {
 			t.transport();
@@ -82,13 +81,13 @@ public class TransportSyncFilesEngine extends Engine {
 	}
 	
 	@Override
-	public TransportSyncFilesSearchParams getSearchParams() {
-		return (TransportSyncFilesSearchParams) super.getSearchParams();
+	public TransportSyncSearchParams getSearchParams() {
+		return (TransportSyncSearchParams) super.getSearchParams();
 	}
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new TransportSyncFilesSearchParams(getRelatedOperationController(), this.getSyncTableConfiguration(), limits);
+		SyncSearchParams<? extends SyncRecord> searchParams = new TransportSyncSearchParams(getRelatedOperationController(), this.getSyncTableConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
 
 		return searchParams;

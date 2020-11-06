@@ -180,6 +180,19 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	public void consolidateData(SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 		Map<RefInfo, Integer> missingParents = loadMissingParents(tableInfo, conn);
 		
+		if (!missingParents.isEmpty()) throw new SyncExeption(generateMissingInfo(missingParents) + ". You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
+		
+		loadDestParentInfo(conn);
+		
+		save(conn);
+		
+		this.markAsConsistent(conn);
+	}
+	
+	/*@Override
+	public void consolidateData(SyncTableConfiguration tableInfo, Connection conn) throws DBException{
+		Map<RefInfo, Integer> missingParents = loadMissingParents(tableInfo, conn);
+		
 		boolean missingNotIgnorableParent = false;
 		
 		for (Entry<RefInfo, Integer> missingParent : missingParents.entrySet()) {
@@ -206,7 +219,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			
 			this.markAsConsistent(conn);
 		}
-	}
+	}*/
 	
 	public  SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		return SyncImportInfoDAO.retrieveFromOpenMRSObject(tableInfo, this, conn);
