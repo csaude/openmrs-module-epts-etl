@@ -217,6 +217,8 @@ public class ProcessController implements Controller{
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.monitor.getMonitorId());
 		executor.execute(this.monitor);
 		
+		tryToRemoveOldStopRequested();
+		
 		if (stopRequested()) {
 			logInfo("THE PROCESS COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
 			
@@ -246,6 +248,12 @@ public class ProcessController implements Controller{
 		}
 	}
 	
+	private void tryToRemoveOldStopRequested() {
+		File file = new File (getConfiguration().getSyncRootDirectory()+"/process_status/stop_requested.info");
+		
+		if (file.exists()) file.delete();
+	}
+
 	private void initOperationsControllers(Connection conn){
 		this.operationsControllers = new ArrayList<OperationController>();
 		

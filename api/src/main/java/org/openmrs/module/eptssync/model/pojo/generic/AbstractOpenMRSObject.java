@@ -15,6 +15,7 @@ import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
+import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.base.BaseVO;
@@ -128,6 +129,8 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 	
 	public void moveToStageAreaDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
+		if (syncTableInfo.isMetadata()) throw new SyncExeption("There is missing metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId() + ". You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
+		
 		SyncImportInfoVO syncInfo = this.generateSyncInfo();
 		
 		syncInfo.setOriginAppLocationCode(syncTableInfo.getOriginAppLocationCode());
@@ -210,6 +213,8 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 	
 	public void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
+		if (syncTableInfo.isMetadata()) throw new SyncExeption("There is missing metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId() + ". You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
+		
 		SyncImportInfoVO syncInfo = this.retrieveRelatedSyncInfo(syncTableInfo, conn);
 		
 		syncInfo.markAsFailedToMigrate(syncTableInfo, generateMissingInfo(missingParents), conn);
