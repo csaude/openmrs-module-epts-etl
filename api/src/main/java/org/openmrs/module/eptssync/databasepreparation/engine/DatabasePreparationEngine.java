@@ -8,10 +8,10 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.databasepreparation.controller.DatabasePreparationController;
 import org.openmrs.module.eptssync.databasepreparation.model.DatabasePreparationRecord;
+import org.openmrs.module.eptssync.databasepreparation.model.DatabasePreparationSearchParams;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
@@ -38,6 +38,10 @@ public class DatabasePreparationEngine extends Engine {
 		super(monitor, limits);
 	}
 
+	public boolean isUpdateDone() {
+		return updateDone;
+	}
+	
 	@Override
 	protected void restart() {
 	}
@@ -242,29 +246,7 @@ public class DatabasePreparationEngine extends Engine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new SyncSearchParams<SyncRecord>(null, limits) {
-			@Override
-			public int countAllRecords(Connection conn) throws DBException {
-				return 1;
-			}
-
-			@Override
-			public int countNotProcessedRecords(Connection conn) throws DBException {
-				return 0;
-			}
-
-			@Override
-			public SearchClauses<SyncRecord> generateSearchClauses(Connection conn) throws DBException {
-				return null;
-			}
-
-			@Override
-			public Class<SyncRecord> getRecordClass() {
-				return null;
-			}
-		};
-
-		return searchParams;
+		return new DatabasePreparationSearchParams(this, limits, conn);
 	}
 
 	private void createRelatedExportStageTable(Connection conn) {

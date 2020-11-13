@@ -1,7 +1,5 @@
 package org.openmrs.module.eptssync.exceptions;
 
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-
 /**
  * This exception indicates a metadata Inconsistence state.
  * <pre>
@@ -20,7 +18,7 @@ import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 public class MetadataInconsistentException extends SyncExeption{
 	private static final long serialVersionUID = -2623572759817537893L;
 
-	public MetadataInconsistentException(OpenMRSObject centralRecord) {
-		super("This record share the same UUID with record [" + centralRecord.getObjectId() + "] on the central database. Please ajust data if is needed!");
+	public MetadataInconsistentException(String msg) {
+		super(msg);
 	}
 }

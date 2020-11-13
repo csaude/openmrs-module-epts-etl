@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
@@ -76,6 +77,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		this.setConsistent(-1);
 	}
 	
+	/*
 	@Override
 	public boolean isMetadata() {
 		return metadata;
@@ -83,7 +85,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 
 	public void setMetadata(boolean metadata) {
 		this.metadata = metadata;
-	}
+	}*/
 	
 	@JsonIgnore
 	public boolean hasIgnoredParent() {
@@ -95,15 +97,42 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 
 	@Override
-	public void save(Connection conn) throws DBException{ 
-		OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByOriginRecordId(this.getClass(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
- 
-		if (recordOnDB != null) {
-			this.setObjectId(recordOnDB.getObjectId());
-			OpenMRSObjectDAO.update(this, conn);
+	public void save(SyncTableConfiguration syncTableInfo, Connection conn) throws DBException{ 
+		if (syncTableInfo.isMetadata()) {
+			OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByUuid(this.getClass(), this.getUuid(), conn);
+			
+			if (recordOnDB == null) {
+				//Check if ID is free 
+				OpenMRSObject recOnDBById = OpenMRSObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
+				
+				if (recOnDBById == null) {
+					this.setOriginRecordId(this.getObjectId());
+					OpenMRSObjectDAO.insert(this, conn);
+				}
+				else {
+					String msg = "This record " + this.generateTableName() + " [object_id  = " + this.getObjectId() + ", uuid= " + this.getUuid() +"] share the same ID with record [uuid= " + recOnDBById.getUuid() + "] on the central database. Please ajust data if is needed!";
+
+					throw new MetadataInconsistentException(msg);
+				}
+			}
+			else {
+				if (recordOnDB.getObjectId() != this.getObjectId()) {
+					String msg = "This record " + this.generateTableName() + " [object_id  = " + this.getObjectId() + "] share the same UUID [" + this.getUuid() + "] with record [" + recordOnDB.getObjectId() + "] on the central database. Please ajust data if is needed!";
+					
+					throw new MetadataInconsistentException(msg);
+				}
+			}
 		}
 		else {
-			OpenMRSObjectDAO.insert(this, conn);
+			OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByOriginRecordId(this.getClass(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
+	 
+			if (recordOnDB != null) {
+				this.setObjectId(recordOnDB.getObjectId());
+				OpenMRSObjectDAO.update(this, conn);
+			}
+			else {
+				OpenMRSObjectDAO.insert(this, conn);
+			}
 		}
 	} 
 	
@@ -154,9 +183,14 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		return SyncImportInfoVO.generateFromSyncRecord(this);
 	}
 
+	/*
 	@Override
-	public void consolidateMetadata(Connection conn) throws DBException {
+	public void consolidateMetadata(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		OpenMRSObject recordOnDB = OpenMRSObjectDAO.thinGetByUuid(this.getClass(), this.getUuid(), conn);
+		
+		if (tableInfo.getTableName().equalsIgnoreCase("location") && recordOnDB == null && (this.getObjectId() == 1 || this.getObjectId() == 31)) {
+			throw new ForbiddenOperationException("This record is supposed to be on dest: " + tableInfo.getTableName() + " id = " + this.getObjectId() +" uuid = " + this.getUuid());
+		}
 		
 		if (recordOnDB == null) {
 			//Check if ID is free 
@@ -174,19 +208,23 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				throw new MetadataInconsistentException(recordOnDB);
 			}
 		}
-	}
+	}*/
+	
 	
 	@Override
 	public void consolidateData(SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 		Map<RefInfo, Integer> missingParents = loadMissingParents(tableInfo, conn);
-		
-		if (!missingParents.isEmpty()) throw new SyncExeption(generateMissingInfo(missingParents) + ". You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
-		
-		loadDestParentInfo(conn);
-		
-		save(conn);
-		
-		this.markAsConsistent(conn);
+	
+		if (!missingParents.isEmpty()) {
+			removeDueInconsistency(tableInfo, missingParents, conn);
+		}
+		else {
+			loadDestParentInfo(conn);
+			
+			save(tableInfo, conn);
+			
+			this.markAsConsistent(conn);
+		}
 	}
 	
 	/*@Override
@@ -289,6 +327,18 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				}
 				 
 			} catch (ParentNotYetMigratedException e) {
+				OpenMRSObject parent = utilities.createInstance(refInfo.determineRelatedReferencedClass(conn));
+				parent.setOriginRecordId(parentId);
+				parent.setOriginAppLocationCode(this.getOriginAppLocationCode());
+				
+				try {
+					SyncImportInfoDAO.retrieveFromOpenMRSObject(refInfo.getReferencedTableInfo(), parent, conn);
+				} catch (DBException e1) {
+					e1.printStackTrace();
+				} catch (ForbiddenOperationException e1) {
+					throw new ForbiddenOperationException("The parent '" + refInfo.getReferencedTableInfo().getTableName() + " = " + parentId + "' from '"+ this.getOriginAppLocationCode() + "' was not found in the main database nor in the stagging area. You must resolve this inconsistence manual!!!!!!"); 
+				}
+				
 				missingParents.put(refInfo, parentId);
 			} 
 		}
@@ -303,6 +353,8 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		if (!obj.getClass().equals(this.getClass())) return false;
 		
 		AbstractOpenMRSObject objAsOpenMrs = (AbstractOpenMRSObject)obj;
+		
+		if (this.getObjectId() > 0 && objAsOpenMrs.getObjectId() > 0) return this.getObjectId() == objAsOpenMrs.getObjectId();
 		
 		if (utilities.stringHasValue(this.getUuid()) && utilities.stringHasValue(objAsOpenMrs.getUuid())) {
 			return this.getUuid().equals(objAsOpenMrs.getUuid());

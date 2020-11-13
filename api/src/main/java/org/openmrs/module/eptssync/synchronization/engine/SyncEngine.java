@@ -48,7 +48,7 @@ public class SyncEngine extends Engine {
 			logInfo("PERFORMING SYNC WITHOUT INTEGRITY CHECK....");
 			List<OpenMRSObject> objects = SyncImportInfoVO.convertAllToOpenMRSObject(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
 			
-			OpenMRSObjectDAO.insertAll(objects, conn);
+			OpenMRSObjectDAO.insertAll(objects, getSyncTableConfiguration(), conn);
 			
 			SyncImportInfoDAO.refreshLastMigrationTrySync(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
 		}

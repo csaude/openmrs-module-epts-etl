@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -318,33 +319,53 @@ public class ProcessController implements Controller{
 		ThreadPoolService.getInstance().terminateTread(logger, this.getControllerId());
 	}
 	
-	public void markAsFinished() {
+	private File generateProcessStatusFile() {
 		String operationId = this.getControllerId();
 		
-		String fileName = getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
+		String subFolder = "";
 		
-		if (!new File(fileName).exists()) {
-			logInfo("FINISHING PROCESS... WRITING PROCESS STATUS ON "+ fileName);
-			
-			String desc = "";
-			
-			desc += "{\n";
-			desc += "	processName: \"" + this.getControllerId() + "\",\n";
-			desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(this.getTimer().getStartTime()) + "\",\n";
-			desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate()) + "\",\n";
-			desc += "	elapsedTime: \"" + this.getTimer().getDuration(TimeController.DURACAO_IN_HOURS) + "\"\n";
-			desc += "}";
-			
-			FileUtilities.write(fileName, desc);
-			
-			logInfo("FILE WROTE");
+		if (getConfiguration().isSourceInstallationType()) {
+			subFolder = "source"; 
+		}
+		else {
+			throw new ForbiddenOperationException("There is no status folder for destination operation");
 		}
 		
+		String fileName = getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator() + subFolder + FileUtilities.getPathSeparator() +  operationId;
+		
+		return new File(fileName);
+	}
+	
+	public void markAsFinished() {
+		logInfo("FINISHING PROCESS...");
+		
+		if (getConfiguration().isSourceInstallationType()) {
+			if (!generateProcessStatusFile().exists()) {
+				logInfo("FINISHING PROCESS... WRITING PROCESS STATUS ON FILE ["+ generateProcessStatusFile().getAbsolutePath() + "]") ;
+				
+				String desc = "";
+				
+				desc += "{\n";
+				desc += "	processName: \"" + this.getControllerId() + "\",\n";
+				desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(this.getTimer().getStartTime()) + "\",\n";
+				desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate()) + "\",\n";
+				desc += "	elapsedTime: \"" + this.getTimer().getDuration(TimeController.DURACAO_IN_HOURS) + "\"\n";
+				desc += "}";
+				
+				FileUtilities.tryToCreateDirectoryStructureForFile(generateProcessStatusFile().getAbsolutePath());
+				
+				FileUtilities.write(generateProcessStatusFile().getAbsolutePath(), desc);
+				
+				logInfo("FILE WROTE");
+			}
+		}
 		
 		/*ThreadPoolService.getInstance().terminateTread(logger, this.monitor.getMonitorId());
 		ThreadPoolService.getInstance().terminateTread(logger, this.getControllerId());*/
 		
 		changeStatusToFinished();
+	
+		logInfo("THE PROCESS IS FINISHED...");
 	}
 	
 	@Override
@@ -353,14 +374,9 @@ public class ProcessController implements Controller{
 	}
 
 	private boolean processIsAlreadyFinished() {
-		String operationId = this.getControllerId();
-		
-		String fileName = getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
-		
-		return new File(fileName).exists(); 
+		return  getConfiguration().isSourceInstallationType() ? generateProcessStatusFile().exists() : false; 
 	}
 	
-
 	@Override
 	public int getWaitTimeToCheckStatus() {
 		return 30;

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
@@ -112,27 +113,33 @@ public class SyncImportInfoDAO extends BaseDAO {
 	}
 	
 	public static void insert(SyncImportInfoVO record, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
-		Object[] params = {record.getRecordId(),
-						   record.getJson(),
-						   record.getMigrationStatus(),
-						   record.getLastMigrationTryErr(),
-						   record.getOriginAppLocationCode()};
-		
-		String sql = "";
-		
-		sql += "INSERT INTO \n"; 
-		sql += "	" + tableInfo.generateFullStageTableName() + "(	record_id,\n";
-		sql += "											 		json,\n";
-		sql += "											 		migration_status,\n";
-		sql += "											 		last_migration_try_err,\n";
-		sql += "													origin_app_location_code)";
-		sql += "	VALUES(?,\n";
-		sql += "		   ?,\n";
-		sql += "		   ?,\n";
-		sql += "		   ?,\n";
-		sql += "		   ?);";
-		
-		executeQuery(sql, params, conn);
+		try {
+			Object[] params = {record.getRecordId(),
+							   record.getJson(),
+							   record.getMigrationStatus(),
+							   record.getLastMigrationTryErr(),
+							   record.getOriginAppLocationCode()};
+			
+			String sql = "";
+			
+			sql += "INSERT INTO \n"; 
+			sql += "	" + tableInfo.generateFullStageTableName() + "(	record_id,\n";
+			sql += "											 		json,\n";
+			sql += "											 		migration_status,\n";
+			sql += "											 		last_migration_try_err,\n";
+			sql += "													origin_app_location_code)";
+			sql += "	VALUES(?,\n";
+			sql += "		   ?,\n";
+			sql += "		   ?,\n";
+			sql += "		   ?,\n";
+			sql += "		   ?);";
+			
+			executeQuery(sql, params, conn);
+		} catch (DBException e) {
+			if (!e.isDuplicatePrimaryKeyException()) {
+				throw e;
+			}
+		}
 	}
 	
 	public static SyncImportInfoVO getFirstRecord(SynchronizationSearchParams searchParams, Connection conn) throws DBException {
@@ -210,7 +217,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 	
 	
 
-	public static SyncImportInfoVO retrieveFromOpenMRSObject(SyncTableConfiguration tableInfo, OpenMRSObject object, Connection conn) throws DBException {
+	public static SyncImportInfoVO retrieveFromOpenMRSObject(SyncTableConfiguration tableInfo, OpenMRSObject object, Connection conn) throws DBException, ForbiddenOperationException {
 		Object[] params = {	object.getOriginRecordId(), 
 							object.getOriginAppLocationCode()};
 		
@@ -225,7 +232,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		
 		if (record == null) {
-			throw new RuntimeException("This record: "+ tableInfo.getTableName() +"[ id="+object.getOriginRecordId() + ", origin=" +object.getOriginAppLocationCode() + " was not found on staging area");
+			throw new ForbiddenOperationException("This record: "+ tableInfo.getTableName() +"[ id="+object.getOriginRecordId() + ", origin=" +object.getOriginAppLocationCode() + " was not found on staging area");
 		}
 		
 		return record;

@@ -120,16 +120,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		this.parent = parent;
 	}
 	
-	//boolean alreadyFinished = false;
-	
-	boolean stared = false;
+	boolean finalCheckDone;
 	
 	@Override
 	public void run() {
-		if (stared) throw new ForbiddenOperationException("Starting operation gaing????? " + getEngineId());
-		
-		this.stared = true;
-		
 		this.changeStatusToRunning();
 		
 		if (this.timer == null && !this.hasParent()) {
@@ -194,13 +188,25 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 								this.requestANewJob();
 							}
 							else {
-								getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
-								
-								//if (this.alreadyFinished) throw new ForbiddenOperationException("Finishing already finished operation "+ getEngineId());
-								
-								//alreadyFinished = true;
-								
-								markAsFinished();
+								if (this.isMainEngine() &&  !finalCheckDone) {
+									//Do the final check before finishing
+									
+									while(this.hasChild() && !isAllChildFinished()) {
+										logInfo("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK!");
+										TimeCountDown.sleep(5);
+									}
+									
+									finalCheckDone = true;
+									
+									this.resetLimits(null);
+									
+									run();
+								}
+								else {
+									getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
+									
+									markAsFinished();
+								}
 							}
 						}
 					} catch (Exception e) {
@@ -216,6 +222,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		}
 	}
 	
+	protected  boolean isMainEngine() {
+		return this.getParent() == null;
+	}
+
 	private int performe(Connection conn) throws DBException {
 		List<SyncRecord> records = searchNextRecords(conn);
 		
@@ -495,6 +505,16 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			changeStatusToFinished();
 		}
 		else changeStatusToFinished();
+	}
+	
+	public boolean isAllChildFinished(){
+		if (!hasChild()) throw new ForbiddenOperationException("This Engine does not have child!!!");
+		
+		for (Engine child : this.children) {
+			if(!child.isFinished()) return false;
+		}
+		
+		return true;
 	}
 	
 	@Override

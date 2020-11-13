@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.log4j.Logger;
+import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
@@ -35,7 +36,7 @@ public abstract class OperationController implements Controller{
 	private ProcessController processController;
 	
 	private List<EngineMonitor> enginesActivititieMonitor;
-	private ControllerMonitor activitieMonitor;
+	private ControllerMonitor activititieMonitor;
 	
 	private OperationController child;
 	
@@ -197,19 +198,11 @@ public abstract class OperationController implements Controller{
 	}
 
 	private boolean operationTableIsAlreadyFinished(SyncTableConfiguration conf) {
-		String operationId = this.getControllerId() + "_" + conf.getTableName();
-		
-		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
-		
-		return new File(fileName).exists(); 
+		return generateTableProcessStatusFile(conf).exists();
 	}
 
 	private boolean operationIsAlreadyFinished() {
-		String operationId = this.getControllerId();
-		
-		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + "/process_status/"+operationId;
-		
-		return new File(fileName).exists(); 
+		return generateProcessStatusFile().exists(); 
 	}
 
 	public String getControllerId() {
@@ -268,10 +261,10 @@ public abstract class OperationController implements Controller{
 		timer = new TimeController();
 		timer.start();
 		
-		this.activitieMonitor = new ControllerMonitor(this);
+		this.activititieMonitor = new ControllerMonitor(this);
 		
-		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.activitieMonitor.getMonitorId());
-		executor.execute(this.activitieMonitor);
+		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.activititieMonitor.getMonitorId());
+		executor.execute(this.activititieMonitor);
 
 		if (stopRequested()) {
 			logInfo("THE OPERATION " + getControllerId()  + " COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
@@ -368,9 +361,7 @@ public abstract class OperationController implements Controller{
 	}
 	
 	public void markTableOperationAsFinished(SyncTableConfiguration conf, Engine engine, TimeController timer) {
-		String operationId = this.getControllerId() + "_" + conf.getTableName();
-		
-		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() + "process_status" + FileUtilities.getPathSeparator() + operationId;
+		String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
 		
 		logInfo("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
 		
@@ -390,6 +381,8 @@ public abstract class OperationController implements Controller{
 			desc += "	elapsedTime: " + (timer != null ? timer.getDuration(TimeController.DURACAO_IN_MINUTES) : 0) + "\n";
 			desc += "}";
 			
+			FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
+			
 			FileUtilities.write(fileName, desc);
 			
 			logInfo("FILE WROTE");
@@ -397,18 +390,48 @@ public abstract class OperationController implements Controller{
 		else {
 			logInfo("THE FILE WAS ALREADY EXISTS");
 		}
+	}
+	
+	public SyncConfiguration getConfiguration() {
+		return this.getProcessController().getConfiguration();
+	}
+	
+	private File generateTableProcessStatusFile(SyncTableConfiguration conf) {
+		String operationId = this.getControllerId() + "_" + conf.getTableName();
 		
+		String fileName = generateProcessStatusFolder() + FileUtilities.getPathSeparator() +  operationId;
+		
+		return new File(fileName);
+	}
+	
+	private String generateProcessStatusFolder() {
+		String subFolder = "";
+		
+		if (getConfiguration().isSourceInstallationType()) {
+			subFolder = "source" + FileUtilities.getPathSeparator() + getOperationType() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
+		}
+		else {
+			String appOrigin =  this instanceof DestinationOperationController ?  FileUtilities.getPathSeparator() + ((DestinationOperationController)this).getAppOriginLocationCode() : "";
+					
+			subFolder = "destination" + FileUtilities.getPathSeparator() + getOperationType() + appOrigin; 
+		}
+		
+		return getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder;
+	}
+	
+	private File generateProcessStatusFile() {
+		String operationId = this.getControllerId();
+		
+		String fileName = generateProcessStatusFolder() + FileUtilities.getPathSeparator() +  operationId;
+		
+		return new File(fileName);
 	}
 	
 	public void markAsFinished() {
-		String operationId = this.getControllerId();
-		
-		String fileName = getProcessController().getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() + "process_status" + FileUtilities.getPathSeparator() + operationId;
-		
 		logInfo("FINISHING OPERATION "+ getControllerId());
 		
-		if (!new File(fileName).exists()) {
-			logInfo("WRITING OPERATION STATUS ON "+ fileName);
+		if (!generateProcessStatusFile().exists()) {
+			logInfo("WRITING OPERATION STATUS ON FILE ["+ generateProcessStatusFile().getAbsolutePath() + "]");
 			
 			String desc = "";
 			
@@ -419,7 +442,9 @@ public abstract class OperationController implements Controller{
 			desc += "	elapsedTime: \"" + this.getTimer().getDuration(TimeController.DURACAO_IN_HOURS) + "\"\n";
 			desc += "}";
 			
-			FileUtilities.write(fileName, desc);
+			FileUtilities.tryToCreateDirectoryStructureForFile(generateProcessStatusFile().getAbsolutePath());
+			
+			FileUtilities.write(generateProcessStatusFile().getAbsolutePath(), desc);
 			
 			logInfo("FILE WROTE");
 		}
@@ -428,6 +453,8 @@ public abstract class OperationController implements Controller{
 		}
 		
 		changeStatusToFinished();
+		
+		logInfo("OPERATION FINISHED!");
 	}
 	
 	@Override
@@ -544,7 +571,7 @@ public abstract class OperationController implements Controller{
 			}
 		}
 		
-		ThreadPoolService.getInstance().terminateTread(logger, this.activitieMonitor.getMonitorId());
+		ThreadPoolService.getInstance().terminateTread(logger, this.activititieMonitor.getMonitorId());
 		
 		selfTreadKilled = true;
 	}

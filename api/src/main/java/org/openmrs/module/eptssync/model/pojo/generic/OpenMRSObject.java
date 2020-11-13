@@ -49,9 +49,9 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract void setOriginAppLocationCode(String originAppLocationCode);
 	
 	public abstract boolean hasIgnoredParent();
-	public abstract void save(Connection conn) throws DBException;
+	public abstract void save(SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	
-	public abstract boolean isMetadata();
+	//public abstract boolean isMetadata();
 		
 	/**
 	 * Consolidate this object if it is an metadata object
@@ -59,7 +59,7 @@ public interface OpenMRSObject extends SyncRecord{
 	 * @param conn
 	 * @throws DBException
 	 */
-	public abstract void consolidateMetadata(Connection conn) throws DBException;	
+	//public abstract void consolidateMetadata(SyncTableConfiguration tableInfo, Connection conn) throws DBException;	
 	
 	public abstract String getUuid();
 	

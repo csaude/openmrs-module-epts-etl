@@ -155,43 +155,38 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		source.setOriginRecordId(source.getObjectId());
 		
 		try {
-			if (source.isMetadata()) {
-				source.consolidateMetadata(conn);
-			}
-			else {
 				
-				if (tableInfo.isDoIntegrityCheckInTheEnd(SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION)) {
-					if (source.hasParents()) {
-						source.markAsInconsistent();
-					}
-					
-					if (tableInfo.useSharedPKKey()) {
-						refrieveSharedPKKey(source, 0, conn);
-					}
-					else {
-						source.setObjectId(0);
-					}
-					
-					//Migrate now and ajust later
-					SyncImportInfoDAO.refreshLastMigrationTrySync(tableInfo, this, conn);
+			if (tableInfo.isDoIntegrityCheckInTheEnd(SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION)) {
+				if (source.hasParents()) {
+					source.markAsInconsistent();
+				}
+				
+				if (tableInfo.useSharedPKKey()) {
+					refrieveSharedPKKey(source, 0, conn);
 				}
 				else {
-					source.loadDestParentInfo(conn);
-					
-					if (source.hasIgnoredParent()) {
-						markAsToBeCompletedInFuture(tableInfo, conn);
-					}
-					else {
-						markAsMigrated(tableInfo, conn);
-					}
-					
-					if (!tableInfo.useSharedPKKey()) {
-						source.setObjectId(0);
-					}
+					source.setObjectId(0);
 				}
 				
-				source.save(conn);
+				//Migrate now and ajust later
+				SyncImportInfoDAO.refreshLastMigrationTrySync(tableInfo, this, conn);
 			}
+			else {
+				source.loadDestParentInfo(conn);
+				
+				if (source.hasIgnoredParent()) {
+					markAsToBeCompletedInFuture(tableInfo, conn);
+				}
+				else {
+					markAsMigrated(tableInfo, conn);
+				}
+				
+				if (!tableInfo.useSharedPKKey()) {
+					source.setObjectId(0);
+				}
+			}
+			
+			source.save(tableInfo, conn);
 		} catch (ParentNotYetMigratedException e) {
 			markAsFailedToMigrate(tableInfo, e.getLocalizedMessage(), conn);
 		} catch (MetadataInconsistentException e) {
@@ -255,8 +250,11 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 				rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), modifiedJSON);
 			}
 			
-			rec.setOriginRecordId(rec.getObjectId());
-			rec.setObjectId(0);
+			if (!tableInfo.isMetadata()) {
+				rec.setOriginRecordId(rec.getObjectId());
+				rec.setObjectId(0);
+			}
+			
 			rec.setConsistent(OpenMRSObject.INCONSISTENCE_STATUS);
 			records.add(rec);
 		}

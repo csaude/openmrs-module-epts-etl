@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
@@ -270,10 +272,25 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		return search(clazz, sql, params, conn);
 	}
-
-	public static void insertAll(List<OpenMRSObject> objects, Connection conn) throws DBException {
-		//logger.info("SQL :" + objects.get(0).getInsertSQL());
+	
+	private static void insertAllMetadata(List<OpenMRSObject> records, SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+		if (!tableInfo.isMetadata()) throw new ForbiddenOperationException("You tried to insert " + tableInfo.getTableName() + " as metadata but it is not a metadata!!!");
 		
+		for (OpenMRSObject record : records) {
+			record.save(tableInfo, conn);
+		}
+	}
+
+	public static void insertAll(List<OpenMRSObject> objects, SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException {
+		if (syncTableConfiguration.isMetadata()) {
+			insertAllMetadata(objects, syncTableConfiguration, conn);
+		}
+		else {
+			insertAllData(objects, syncTableConfiguration, conn);
+		}
+	}
+	
+	private static void insertAllData(List<OpenMRSObject> objects, SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException {
 		String sql = "";
 		sql += objects.get(0).getInsertSQL().split("VALUES")[0];
 		sql += " VALUES";
@@ -293,14 +310,20 @@ public class OpenMRSObjectDAO extends BaseDAO {
 				executeBatch(conn, sql);
 			} catch (DBException e) {
 				if (e.isDuplicatePrimaryKeyException()) {
-					OpenMRSObject problematicRecord = retrieveProblematicObjectFromExceptionInfo(objects.get(0).getClass(), e, conn);
+					OpenMRSObject problematicRecordOnDB = retrieveProblematicObjectFromExceptionInfo(objects.get(0).getClass(), e, conn);
 					
-					problematicRecord = utilities.findOnArray(objects, problematicRecord);
-					problematicRecord.setExcluded(true);
+					OpenMRSObject problematicRecordOnArray = utilities.findOnArray(objects, problematicRecordOnDB);
+					problematicRecordOnArray.setExcluded(true);
 					
-					update(problematicRecord, conn);
-						
-					insertAll(objects, conn);
+					if (problematicRecordOnDB.getObjectId() == problematicRecordOnArray.getObjectId()) {
+						update(problematicRecordOnDB, conn);
+					}
+					else {
+						SyncImportInfoVO source = problematicRecordOnArray.retrieveRelatedSyncInfo(syncTableConfiguration, conn);
+						source.markAsSyncFailedToMigrate(syncTableConfiguration, e.getLocalizedMessage(), conn);
+					}
+					
+					insertAll(objects, syncTableConfiguration, conn);
 				}
 				else throw e;
 			}

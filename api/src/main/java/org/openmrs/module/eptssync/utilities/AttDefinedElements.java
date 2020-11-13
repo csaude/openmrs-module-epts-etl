@@ -149,7 +149,7 @@ public class AttDefinedElements {
 		String aspasAbrir = "\"\\\"\"+";
 		String aspasFechar = "+\"\\\"\"";
 		
-		if (!isObjectId || isSharedKey(conn)) {
+		if (!isObjectId || isSharedKey(conn) || isMetadata(conn)) {
 			this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
 			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
 			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
@@ -186,6 +186,10 @@ public class AttDefinedElements {
 		}	
 	}
 	
+	private boolean isMetadata(Connection conn) {
+		return this.syncTableInfo.isMetadata();
+	}
+
 	public static String removeStrangeCharactersOnString(String str) {
 		if (!utilities.stringHasValue(str)) return str;
 		
