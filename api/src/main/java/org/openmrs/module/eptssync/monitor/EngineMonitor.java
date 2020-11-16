@@ -9,6 +9,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
@@ -18,7 +19,7 @@ import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
  *  
  * @author jpboane
  */
-public class EngineMonitor implements Runnable{
+public class EngineMonitor implements MonitoredOperation{
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private OperationController controller;
@@ -31,6 +32,9 @@ public class EngineMonitor implements Runnable{
 	private String engineMonitorId;
 	private String engineId;
 	
+	private int operationStatus;
+	private boolean stopRequested;
+	
 	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<Engine>();
@@ -38,6 +42,8 @@ public class EngineMonitor implements Runnable{
 		
 		this.engineMonitorId = controller.getControllerId() + "_" + syncTableInfo.getTableName() + "_monitor";
 		this.engineId = getController().getControllerId() + "_" + syncTableInfo.getTableName();
+		
+		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 	}
 	
 	public String getEngineId() {
@@ -63,42 +69,56 @@ public class EngineMonitor implements Runnable{
 			return this.ownEngines.get(0);
 		}
 		
-		throw new RuntimeException("No engine defined for this monitor "+getController().getControllerId() + "_" + getSyncTableInfo().getTableName());
+		
+		return null;
+		
+		//throw new RuntimeException("No engine defined for this monitor "+getController().getControllerId() + "_" + getSyncTableInfo().getTableName());
 	}
 	
 	@Override
 	public void run() {
-		boolean running = true;
+		initEngine();
 		
-		while(running) {
-			TimeCountDown.sleep(15);
+		if (!utilities.arrayHasElement(ownEngines)) {
+			logInfo("NO ENGINE FOR '" + getController().getOperationType().toUpperCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
 			
-			if (getMainEngine().isFinished()) {
-				getMainEngine().markAsFinished();
-				getMainEngine().onFinish();
+			this.operationStatus = MonitoredOperation.STATUS_FINISHED;
+		}
+		else {
+			onStart();
+			
+			logInfo("INITIALIZED '" + getController().getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "'");
+			
+			while(isRunning()) {
+				TimeCountDown.sleep(15);
 				
-				running = false;
-			}
-			else
-			if(getMainEngine().isStopped()) {
-				getMainEngine().onStop();
-				
-				running = false;
-			}
-			else
-			if (!isAllEnginesRequestedNewJob()) {
-				//this.controller.logInfo(msg);
-			}
-			else {
-				if (utilities.arrayHasElement(this.ownEngines)) {
-					for (Engine engine : this.ownEngines) {
-						engine.setNewJobRequested(false);
-					}
+				if (getMainEngine().isFinished()) {
+					getMainEngine().markAsFinished();
+					getMainEngine().onFinish();
 					
-					this.realocateJobToEngines();
+					onFinish();
+				}
+				else
+				if(getMainEngine().isStopped()) {
+					getMainEngine().onStop();
+					
+					onStop();
+				}
+				else
+				if (!isAllEnginesRequestedNewJob()) {
+					//this.controller.logInfo(msg);
 				}
 				else {
-					initEngine();
+					if (utilities.arrayHasElement(this.ownEngines)) {
+						for (Engine engine : this.ownEngines) {
+							engine.setNewJobRequested(false);
+						}
+						
+						this.realocateJobToEngines();
+					}
+					else {
+						initEngine();
+					}
 				}
 			}
 		}
@@ -108,7 +128,7 @@ public class EngineMonitor implements Runnable{
 		return controller;
 	}
 	
-	public Engine initEngine() {
+	private void initEngine() {
 		if (timer == null) {
 			this.timer = new TimeController();
 			this.timer.start();
@@ -138,8 +158,6 @@ public class EngineMonitor implements Runnable{
 			}
 			
 			logInfo(msg);
-			
-			return null;
 		}
 		else {
 			long qtyRecords = maxRecId - minRecId + 1;
@@ -220,8 +238,6 @@ public class EngineMonitor implements Runnable{
 			}
 			
 			logInfo("ENGINE FOR TABLE '" + syncInfo.getTableName() + "' INITIALIZED!");
-		
-			return mainEngine;
 		}
 	}
 	
@@ -321,6 +337,149 @@ public class EngineMonitor implements Runnable{
 	public void killSelfCreatedThreads() {
 		for (Engine engine : this.ownEngines) {
 			ThreadPoolService.getInstance().terminateTread(getController().getLogger(), engine.getEngineId());
+		}
+	}
+
+	public static EngineMonitor init(OperationController controller, SyncTableConfiguration syncTableInfo) {
+		return new EngineMonitor(controller, syncTableInfo);
+	}
+	
+	
+	@Override
+	public boolean isPaused() {
+		return this.operationStatus == MonitoredOperation.STATUS_PAUSED;
+	}
+	
+	@Override
+	public boolean isSleeping() {
+		return this.operationStatus == MonitoredOperation.STATUS_SLEEPING;
+	}
+
+	@Override
+	public void changeStatusToSleeping() {
+		this.operationStatus = MonitoredOperation.STATUS_SLEEPING;
+	}
+	
+	@Override
+	public void changeStatusToRunning() {
+		this.operationStatus = MonitoredOperation.STATUS_RUNNING;
+	}
+	
+	@Override
+	public void changeStatusToStopped() {
+		this.operationStatus = MonitoredOperation.STATUS_STOPPED;		
+	}
+	
+	@Override
+	public void changeStatusToFinished() {
+		this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
+	}
+	
+	@Override	
+	public void changeStatusToPaused() {
+		this.operationStatus = MonitoredOperation.STATUS_PAUSED;	
+	}
+
+	@Override
+	public void onStart() {
+		this.operationStatus = MonitoredOperation.STATUS_RUNNING;
+	}
+
+	@Override
+	public void onSleep() {
+		this.operationStatus = MonitoredOperation.STATUS_SLEEPING;
+	}
+
+	@Override
+	public void onStop() {
+		getTimer().stop();
+		
+		this.operationStatus = MonitoredOperation.STATUS_STOPPED;
+	}
+	
+	@Override
+	public void onFinish() {
+		getTimer().stop();
+		
+		this.operationStatus = MonitoredOperation.STATUS_FINISHED;
+	}
+	
+	@Override
+	public TimeController getTimer() {
+		return this.timer;
+	}
+	
+	@Override
+	public boolean stopRequested() {
+		return this.stopRequested;
+	}
+
+	public boolean isInitialized() {
+		return this.operationStatus != MonitoredOperation.STATUS_NOT_INITIALIZED;
+	}
+
+	@Override
+	public boolean isNotInitialized() {
+		return this.operationStatus == MonitoredOperation.STATUS_NOT_INITIALIZED;
+	}
+	
+	@Override
+	public boolean isRunning() {
+		return this.operationStatus == MonitoredOperation.STATUS_RUNNING;
+	}
+	
+	@Override
+	public boolean isStopped() {
+		if (isNotInitialized()) return false;
+	
+		if (!utilities.arrayHasElement(this.ownEngines)) {
+			return this.operationStatus == MonitoredOperation.STATUS_STOPPED;
+		}
+		else
+		for (Engine engine : this.ownEngines ) {
+			if (!engine.isStopped()) {
+				return false;
+			}
+		}
+			
+		return true;
+	}
+	
+	@Override
+	public boolean isFinished() {
+		if(isNotInitialized()) {
+			return false;
+		}
+		
+		if (!utilities.arrayHasElement(this.ownEngines)) {
+			return this.operationStatus == MonitoredOperation.STATUS_FINISHED;
+		}
+		else
+		for (Engine engine: this.ownEngines) {
+			if (!engine.isFinished()) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	@Override
+	public int getWaitTimeToCheckStatus() {
+		return 5;
+	}
+	
+
+	@Override
+	public synchronized void requestStop() {
+		if (isNotInitialized()) {
+			changeStatusToStopped();
+		}
+		else
+		if (!stopRequested()) {
+			if (getMainEngine() != null) getMainEngine().requestStop();
+			
+			this.stopRequested = true;
 		}
 	}
 }

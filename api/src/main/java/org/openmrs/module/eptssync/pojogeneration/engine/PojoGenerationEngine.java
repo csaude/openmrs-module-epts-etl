@@ -43,59 +43,6 @@ public class PojoGenerationEngine extends Engine {
 		this.pojoGenerated = true;
 		
 		getSyncTableConfiguration().generateRecordClass(true, conn);
-		
-		/*for (RefInfo i: getSyncTableConfiguration().getChildRefInfo(conn)) {
-			if (!i.getReferenceTableInfo().isFullLoaded()) {
-				
-				logInfo("THE REF INFO IS NOT FULL LOADED. LOADING NOW ...["+ i.getReferenceTableInfo().getTableName() + "]");
-				i.getReferenceTableInfo().fullLoad(conn);
-			}
-			else {
-				logInfo("THE REF INFO WAS ALREADY LOADED ["+ i.getReferenceTableInfo().getTableName() + "]");
-			}
-			
-			try {
-				Class<OpenMRSObject> referenceClass = i.getReferenceTableInfo().getRecordClass();
-				
-				if (utilities.createInstance(referenceClass).isGeneratedFromSkeletonClass()) {
-					logInfo("THE POJO IS SKELETON... NOW RECOMPILING REFERENCE POJO AGAIN["+ i.getReferenceTableInfo().getTableName()+ "]");
-					
-					i.generateRelatedReferenceClass(true, conn);
-				}
-			} catch (ForbiddenOperationException e) {
-				logInfo("THE TABLE POJO DOES NOT EXISTT... CREATING IT ["+i.getReferenceTableInfo().getTableName() + "]");
-				i.generateRelatedReferenceClass(true, conn);
-			}
-		}
-		*/
-		
-		/*
-		logInfo("PREPARING PARENT INFO OF TABLE["+ getSyncTableConfiguration() + "]");
-		
-		for (RefInfo i: getSyncTableConfiguration().getParentRefInfo(conn)) {
-			if (!i.getReferencedTableInfo().isFullLoaded()) {
-				logInfo("THE REF INFO IS NOT FULL LOADED. LOADING NOW ...["+ i.getReferencedTableInfo().getTableName() + "]");
-				
-				i.getReferencedTableInfo().fullLoad(conn);
-			}
-			else {
-				logInfo("THE REF INFO WAS ALREADY LOADED ["+ i.getReferencedTableInfo().getTableName() + "]");
-			}
-			
-			try {
-				Class<OpenMRSObject> referencedClass = i.getReferencedTableInfo().getRecordClass();
-				
-				if (utilities.createInstance(referencedClass).isGeneratedFromSkeletonClass()) {
-					logInfo("THE POJO IS SKELETON... NOW RECOMPILING REFERENCE POJO AGAIN["+ i.getReferencedTableInfo().getTableName()+ "]");
-											
-					i.generateRelatedReferencedClass(true, conn);
-				}
-			} catch (ForbiddenOperationException e) {
-				logInfo("THE TABLE POJO DOES NOT EXISTT... CREATING IT ["+i.getReferenceTableInfo().getTableName() + "]");
-				i.generateRelatedReferencedClass(true, conn);
-			}
-		}
-		*/
 	}
 	
 	@Override

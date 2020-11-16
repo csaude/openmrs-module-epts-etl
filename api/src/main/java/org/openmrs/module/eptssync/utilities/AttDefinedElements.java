@@ -1,7 +1,5 @@
 package org.openmrs.module.eptssync.utilities;
 
-import java.sql.Connection;
-
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -41,11 +39,11 @@ public class AttDefinedElements {
 	private boolean isLast;
 	private SyncTableConfiguration syncTableInfo;
 	
-	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, SyncTableConfiguration syncTableInfo, Connection conn) {
+	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, SyncTableConfiguration syncTableInfo) {
 		this.dbAttName = dbAttName;
 		this.dbAttType = dbAttType;
 		
-		this.isObjectId = dbAttName.equalsIgnoreCase(syncTableInfo.getPrimaryKey(conn));
+		this.isObjectId = dbAttName.equalsIgnoreCase(syncTableInfo.getPrimaryKey());
 		
 		this.isLast = isLast;
 		this.syncTableInfo = syncTableInfo;
@@ -137,7 +135,7 @@ public class AttDefinedElements {
 	
 	
 
-	private void generateElemets(Connection conn) {
+	private void generateElemets() {
 		this.attType = convertMySQLTypeTOJavaType(dbAttType);
 		this.attName = convertTableAttNameToClassAttName(dbAttName);
 
@@ -149,12 +147,12 @@ public class AttDefinedElements {
 		String aspasAbrir = "\"\\\"\"+";
 		String aspasFechar = "+\"\\\"\"";
 		
-		if (!isObjectId || isSharedKey(conn) || isMetadata(conn)) {
+		if (!isObjectId || isSharedKey() || isMetadata()) {
 			this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
 			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
 			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
 			
-			if (isForeignKey(dbAttName, conn) && isNumeric()) {
+			if (isForeignKey(dbAttName) && isNumeric()) {
 				this.sqlInsertParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
 				this.sqlUpdateParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
 				this.sqlInsertValues = "this." + attName + " == 0 ? null : this." + attName;
@@ -186,7 +184,7 @@ public class AttDefinedElements {
 		}	
 	}
 	
-	private boolean isMetadata(Connection conn) {
+	private boolean isMetadata() {
 		return this.syncTableInfo.isMetadata();
 	}
 
@@ -275,9 +273,9 @@ public class AttDefinedElements {
 		return utilities.isStringIn(attType, "int", "long", "byte", "short", "double", "float");
 	}
 
-	private boolean isSharedKey(Connection conn) {
-		for (RefInfo parent : this.syncTableInfo.getParentRefInfo(conn)) {
-			if (parent.isSharedPk(conn) && parent.getReferenceColumnAsClassAttName().equals(this.attName)) {
+	private boolean isSharedKey() {
+		for (RefInfo parent : this.syncTableInfo.getParents()) {
+			if (parent.isSharedPk() && parent.getRefColumnAsClassAttName().equals(this.attName)) {
 				return true;
 			}
 		}
@@ -285,9 +283,9 @@ public class AttDefinedElements {
 		return false;
 	}
 
-	private boolean isForeignKey(String dbAttName, Connection conn) {
-		for (RefInfo parent : this.syncTableInfo.getParentRefInfo(conn)) {
-			if (parent.getReferenceColumnName().equalsIgnoreCase(dbAttName)) {
+	private boolean isForeignKey(String dbAttName) {
+		for (RefInfo parent : this.syncTableInfo.getParents()) {
+			if (parent.getRefColumnName().equalsIgnoreCase(dbAttName)) {
 				return true;
 			}
 		}
@@ -295,9 +293,9 @@ public class AttDefinedElements {
 		return false;
 	}
 
-	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast, SyncTableConfiguration syncTableInfo, Connection conn) {
-		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, syncTableInfo, conn);
-		elements.generateElemets(conn);
+	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast, SyncTableConfiguration syncTableInfo) {
+		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, syncTableInfo);
+		elements.generateElemets();
 		
 		return elements;
 	}

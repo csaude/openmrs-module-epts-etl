@@ -18,7 +18,6 @@ import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
-import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -124,27 +123,16 @@ public abstract class OperationController implements Controller{
 			else {
 				logInfo(("Starting operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'").toUpperCase());
 				
-				EngineMonitor engine = initAndStartEngine(syncInfo);
-
-				while (engine != null && !engine.getMainEngine().isFinished() && !engine.getMainEngine().isStopped()) {
-					if (stopRequested()) {
-						logInfo("STOP REQUEST!!! THE OPERATION ON TABLE " + syncInfo.getTableName().toUpperCase() + " WILL STOPPED SOON");
-						engine.getMainEngine().requestStop();
-					}
-					else {
-						logInfo(("The operation '" + getOperationType() + "' Is still working on table '" + syncInfo.getTableName() + "'").toUpperCase());
-					}
-					
-					TimeCountDown.sleep(10);
-				}
+				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo);
+				engineMonitor.run();
 				
-				if (stopRequested() && engine != null && engine.getMainEngine().isStopped()) {
+				if (stopRequested() && engineMonitor.isStopped()) {
 					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());
 					break;
 				}
 				else {
-					if (engine != null) {
-						markTableOperationAsFinished(syncInfo, engine.getMainEngine(), engine.getMainEngine().getTimer());
+					if (engineMonitor.getMainEngine() != null) {
+						markTableOperationAsFinished(syncInfo, engineMonitor.getMainEngine(), engineMonitor.getMainEngine().getTimer());
 					}
 					else {
 						markTableOperationAsFinished(syncInfo, null, null);
@@ -181,22 +169,13 @@ public abstract class OperationController implements Controller{
 			else{
 				logInfo("INITIALIZING '" + getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
 					
-				EngineMonitor activitityMonitor = initAndStartEngine(syncInfo);
-					
-				if (activitityMonitor != null) {
-					startAndAddToEnginesActivititieMonitor(activitityMonitor);
-					
-					logInfo("INITIALIZED '" + getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
-				}
-				else {
-					logInfo("NO ENGINE FOR '" + getOperationType().toUpperCase() + "' FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "' WAS CREATED...");
-				}
+				startAndAddToEnginesActivititieMonitor(EngineMonitor.init(this, syncInfo));
 			}
 		}
 		
 		changeStatusToRunning();
 	}
-
+	
 	private boolean operationTableIsAlreadyFinished(SyncTableConfiguration conf) {
 		return generateTableProcessStatusFile(conf).exists();
 	}
@@ -233,16 +212,6 @@ public abstract class OperationController implements Controller{
 	
 	public void logDebug(String msg) {
 		utilities().logDebug(msg, logger);
-	}
-
-	protected EngineMonitor initAndStartEngine(SyncTableConfiguration syncInfo) {
-		EngineMonitor activitityMonitor = new EngineMonitor(this, syncInfo);
-		Engine engine = activitityMonitor.initEngine();
-		
-		if (engine != null) {
-			return activitityMonitor;
-		}
-		else return null;
 	}
 	
 	private void startAndAddToEnginesActivititieMonitor(EngineMonitor activitityMonitor) {
@@ -321,11 +290,7 @@ public abstract class OperationController implements Controller{
 		
 		if (isParallelModeProcessing() && this.enginesActivititieMonitor != null) {
 			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
-				Engine engine = monitor.getMainEngine();
-				
-				if (engine == null) throw new RuntimeException("No engine for minitor '" + monitor.getSyncTableInfo().getTableName() + "'");
-				
-				if (!engine.isStopped()) {
+				if (!monitor.isStopped()) {
 					return false;
 				}
 			}
@@ -344,11 +309,7 @@ public abstract class OperationController implements Controller{
 		
 		if (isParallelModeProcessing() && this.enginesActivititieMonitor != null) {
 			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
-				Engine engine = monitor.getMainEngine();
-				
-				if (engine == null) throw new RuntimeException("No engine for minitor '" + monitor.getSyncTableInfo().getTableName() + "'");
-				
-				if (!engine.isFinished()) {
+				if (!monitor.isFinished()) {
 					return false;
 				}
 			}
@@ -585,7 +546,7 @@ public abstract class OperationController implements Controller{
 		if (!stopRequested()) {
 			if (this.enginesActivititieMonitor != null) {
 				for (EngineMonitor monitor : this.enginesActivititieMonitor) {
-					monitor.getMainEngine().requestStop();
+					monitor.requestStop();
 				}
 			}
 			

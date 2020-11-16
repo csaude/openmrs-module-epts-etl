@@ -43,8 +43,8 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	}
 	
 	public static void insert(OpenMRSObject record, Connection conn) throws DBException{
-		Object[] params = record.getInsertParams();
-		String sql = record.getInsertSQL();
+		Object[] params = record.getInsertParamsWithoutObjectId();
+		String sql = record.getInsertSQLWithoutObjectId();
 		
 		executeQuery(sql, params, conn);
 	}
@@ -164,7 +164,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " SELECT * \n";
+		sql += " SELECT " + pkColumnName + " as object_id";
 		sql += " FROM  	" +  tableName + "\n";
 		sql += " WHERE 	" + pkColumnName + " = ?;";
 		
@@ -174,7 +174,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	public static OpenMRSObject getFirstRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
 		String sql = "";
 		
-		OpenMRSObject obj = utilities.createInstance(tableInfo.getRecordClass());
+		OpenMRSObject obj = utilities.createInstance(tableInfo.getSyncRecordClass());
 		
 		String clause = "";
 		
@@ -197,13 +197,13 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		sql += "				WHERE  " + clause + "\n";
 		sql += "				)";
 		
-		return find(tableInfo.getRecordClass(), sql, null, conn);
+		return find(tableInfo.getSyncRecordClass(), sql, null, conn);
 	}
 	
 	public static OpenMRSObject getLastRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
 		String sql = "";
 		
-		OpenMRSObject obj = utilities.createInstance(tableInfo.getRecordClass());
+		OpenMRSObject obj = utilities.createInstance(tableInfo.getSyncRecordClass());
 		
 		String clause = "";
 		
@@ -226,7 +226,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		sql += "				WHERE  " + clause + "\n";
 		sql += "				)";
 		
-		return find(tableInfo.getRecordClass(), sql, null, conn);
+		return find(tableInfo.getSyncRecordClass(), sql, null, conn);
 	}
 
 	public static void markAsConsistent(OpenMRSObject record, Connection conn) throws DBException {
@@ -282,6 +282,12 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	}
 
 	public static void insertAll(List<OpenMRSObject> objects, SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException {
+		boolean isInMetadata = utilities.isStringIn(syncTableConfiguration.getTableName(), "location", "concept_datatype", "concept", "person_attribute_type", "provider_attribute_type", "program", "program_workflow", "program_workflow_state", "encounter_type", "visit_type", "relationship_type", "patient_identifier_type");
+		
+		if (syncTableConfiguration.isMetadata() && !isInMetadata) {
+			throw new ForbiddenOperationException("The table " + syncTableConfiguration.getTableName() + " is been treated as metadata but it is not");
+		}
+		
 		if (syncTableConfiguration.isMetadata()) {
 			insertAllMetadata(objects, syncTableConfiguration, conn);
 		}
@@ -292,7 +298,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	
 	private static void insertAllData(List<OpenMRSObject> objects, SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException {
 		String sql = "";
-		sql += objects.get(0).getInsertSQL().split("VALUES")[0];
+		sql += objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
 		sql += " VALUES";
 		
 		String values = "";

@@ -29,19 +29,25 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	}
 
 	@Override
-	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
+	public Object[] getInsertParamsWithoutObjectId() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
 	@Override
-	public Object[] getInsertParams() {
+	public String getInsertSQLWithoutObjectId() {
+		throw new ForbiddenOperationException("Forbidden Method");
+	}
+	
+	@Override
+	public Object[] getInsertParamsWithObjectId() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
 	@Override
-	public String getInsertSQL() {
+	public String getInsertSQLWithObjectId() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
+
 
 	@Override
 	public String getUpdateSQL() {
@@ -120,6 +126,11 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 
 	@Override
 	public void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException {
+		throw new ForbiddenOperationException("Forbidden Method");
+	}
+
+	@Override
+	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 }

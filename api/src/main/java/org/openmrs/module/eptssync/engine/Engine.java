@@ -322,6 +322,8 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	@Override
 	public boolean isFinished() {
+		if (isNotInitialized()) return false;
+		
 		if (utilities.arrayHasElement(this.children)) {
 			for (Engine engine : this.children) {
 				if (!engine.isFinished()) return false;

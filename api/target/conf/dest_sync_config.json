@@ -13,7 +13,7 @@
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_module_eptssync_test?autoReconnect=true&useSSL=false",
+		connectionURI: "jdbc:mysql://localhost:3306/openmrs_module_eptssync_test?autoReconnect=true&useSSL=false",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
@@ -56,7 +56,7 @@
 						child: {
 							operationType: "consolidation",
 							maxRecordPerProcessing: 1000,
-							maxSupportedEngines: 5,
+							maxSupportedEngines: 1,
 							minRecordsPerEngine: 1000,
 							doIntegrityCheckInTheEnd: false,
 							disabled: false,
@@ -72,169 +72,168 @@
 		  
 				{	
 					tableName: "users",
-					parents: ["person", "users"]			
+					parents: [{tableName: "person", defaultValueDueInconsistency: 1}, {tableName: "users", defaultValueDueInconsistency: 1}],
+					removeForbidden: true
 				},
-		
-				{
-					tableName: "location",
-					parents: ["users", "location"],
-					metadata: true,
-					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
-				},
-		
+				
 				{
 					tableName: "person",
-					parents: ["users"]
+					parents: [{tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "person_address",
-					parents: ["person", "users"]
+					parents: [{tableName: "person"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "person_attribute",
-					parents: ["person", "users"]
+					parents: [{tableName: "person"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "person_name",
-					parents: ["person", "users"]
+					parents: [{tableName: "person"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "relationship",
-					parents: ["person", "users"]
+					parents: [{tableName: "person"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "patient",
 					sharePkWith: "person",
-					parents: ["person", "users"]
+					parents: [{tableName: "person"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "patient_identifier",
-					parents: ["patient", "location", "users"]
+					parents: [{tableName: "patient"}, {tableName: "location"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "patient_program",
-					parents: ["patient", "location", "users"]
+					parents: [{tableName: "patient"}, {tableName: "location"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "patient_state",
-					parents: ["patient_program", "users"]
+					parents: [{tableName: "patient_program"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "visit",
-					parents: ["patient", "location", "users"]
+					parents: [{tableName: "patient"}, {tableName: "location"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "visit_attribute",
-					parents: ["visit", "users"]
+					parents: [{tableName: "visit"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				
 				{
 					tableName: "encounter",
-					parents: ["patient", "location", "users", "visit"]
+					parents: [{tableName: "patient"}, {tableName: "location"}, {tableName: "users", defaultValueDueInconsistency: 1}, {tableName: "visit"}]
 				},
 				
 				{
 					tableName: "provider",
-					parents: ["person", "users"]
+					parents: [{tableName: "person"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "encounter_provider",
-					parents: ["encounter", "users", "provider"]
+					parents: [{tableName: "encounter"}, {tableName: "provider"}, {tableName: "users", defaultValueDueInconsistency: 1}, {tableName: "visit"}]
 				},
 				
 				{
 					tableName: "orders",
-					parents: ["encounter", "provider", "orders", "patient", "users"]
+					parents: [{tableName: "encounter"}, {tableName: "provider"}, {tableName: "orders"}, {tableName: "patient"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
 				
 				{
 					tableName: "obs",
-					parents: ["person", "location", "orders", "obs", "users", "encounter"]
+					parents: [{tableName: "person"}, {tableName: "location"}, {tableName: "orders"}, {tableName: "obs"}, {tableName: "encounter"}, {tableName: "users", defaultValueDueInconsistency: 1}, {tableName: "visit"}]
 				},
 				
 				{
 					tableName: "note",
-					parents: ["encounter", "patient", "note", "users"]
+					parents: [{tableName: "encounter"}, {tableName: "patient"}, {tableName: "note"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
-			
+				
+				{
+					tableName: "location",
+					parents: [{tableName: "location", defaultValueDueInconsistency: 1}, {tableName: "users", defaultValueDueInconsistency: 1}],
+					metadata: true,
+					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
+				},
+				
 				{
 					tableName: "concept_datatype",
-					parents: ["users"],
+					parents: [{tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				},
 				 
 				{
 					tableName: "concept",
-					parents: ["users", "concept_datatype"],
+					parents: [{tableName: "concept_datatype"}, {tableName: "visit"}, {tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				},
 				
 				{
 					tableName: "person_attribute_type",
-					parents: ["users"],
+					parents: [{tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				},
 				 
 				{
 					tableName: "provider_attribute_type",
-					parents: ["users", "program_workflow"],
+					parents: [{tableName: "program_workflow"}, {tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				},
 				 
 				{
 					tableName: "program",
-					parents: ["users", "concept"],
+					parents: [{tableName: "concept"}, {tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				},
 			
 				{
 					tableName: "program_workflow",
-					parents: ["users", "program", "concept"],
+					parents: [{tableName: "program"}, {tableName: "concept"}, {tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				},
 			
 				{
 					tableName: "program_workflow_state",
-					parents: ["users", "program_workflow", "concept"],
+					parents: [{tableName: "program_workflow"}, {tableName: "concept"}, {tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				},
 				
 				{
 					tableName: "encounter_type",
-					parents: ["users"],
+					parents: [{tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				},
 				
 				{
 					tableName: "visit_type",
-					parents: ["users"],
+					parents: [{tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				},
 				
 				{
 					tableName: "relationship_type",
-					parents: ["users"],
+					parents: [{tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				},
 				
 				{
 					tableName: "patient_identifier_type",
-					parents: ["users"],
+					parents: [{tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true
 				}
-				
-				
 	]
 }

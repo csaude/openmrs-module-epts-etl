@@ -36,10 +36,13 @@ public interface OpenMRSObject extends SyncRecord{
 	 * @param conn
 	 * @throws DBException
 	 */
-	public abstract void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException;
-	public abstract Object[] getInsertParams();
-	public abstract String getInsertSQL();
-	
+	public abstract void loadDestParentInfo(SyncTableConfiguration tableConfiguration, Connection conn) throws ParentNotYetMigratedException, DBException;
+	public abstract Object[] getInsertParamsWithoutObjectId();
+	public abstract String getInsertSQLWithoutObjectId();
+
+	public abstract Object[] getInsertParamsWithObjectId();
+	public abstract String getInsertSQLWithObjectId();
+
 	public abstract String getUpdateSQL();
 	public abstract Object[] getUpdateParams();
 	
@@ -113,4 +116,6 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract void markAsConsistent(Connection conn) throws DBException;
 		
+	public abstract void changeParentValue(String parentAttName, OpenMRSObject newParent);
+
 }

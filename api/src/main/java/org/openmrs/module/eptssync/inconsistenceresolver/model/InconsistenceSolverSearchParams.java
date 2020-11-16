@@ -16,7 +16,7 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObj
 	public InconsistenceSolverSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
 		super(tableInfo, limits);
 		
-		setOrderByFields(tableInfo.getPrimaryKey(conn));
+		setOrderByFields(tableInfo.getPrimaryKey());
 	}
 	
 	@Override
@@ -30,7 +30,7 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObj
 			searchClauses.addToClauses("consistent = -1");
 		
 			if (limits != null) {
-				searchClauses.addToClauses(tableInfo.getPrimaryKey(conn) + " between ? and ?");
+				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
 				searchClauses.addToParameters(this.limits.getFirstRecordId());
 				searchClauses.addToParameters(this.limits.getLastRecordId());
 			}
@@ -45,7 +45,7 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObj
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getRecordClass();
+		return this.tableInfo.getSyncRecordClass();
 	}
 
 	@Override

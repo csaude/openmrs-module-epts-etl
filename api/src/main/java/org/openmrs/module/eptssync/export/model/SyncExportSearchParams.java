@@ -16,7 +16,7 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 	public SyncExportSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
 		super(tableInfo, limits);
 		
-		setOrderByFields(tableInfo.getPrimaryKey(conn));
+		setOrderByFields(tableInfo.getPrimaryKey());
 	}
 	
 	@Override
@@ -35,7 +35,7 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 			}
 		
 			if (limits != null) {
-				searchClauses.addToClauses(tableInfo.getPrimaryKey(conn) + " between ? and ?");
+				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
 				searchClauses.addToParameters(this.limits.getFirstRecordId());
 				searchClauses.addToParameters(this.limits.getLastRecordId());
 			}
@@ -52,7 +52,7 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getRecordClass();
+		return this.tableInfo.getSyncRecordClass();
 	}
 
 	@Override

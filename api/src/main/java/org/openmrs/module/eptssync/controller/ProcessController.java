@@ -44,7 +44,7 @@ public class ProcessController implements Controller{
 	
 	public ProcessController(SyncConfiguration configuration){
 		this.configuration = configuration;
-		
+		this.configuration.setRelatedController(this);
 		
 		if (configuration.getChildConfig() != null) {
 			this.childController = new ProcessController(configuration.getChildConfig());
@@ -219,6 +219,8 @@ public class ProcessController implements Controller{
 		executor.execute(this.monitor);
 		
 		tryToRemoveOldStopRequested();
+		
+		this.getConfiguration().fullLoad();
 		
 		if (stopRequested()) {
 			logInfo("THE PROCESS COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");

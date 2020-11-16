@@ -256,7 +256,7 @@ public class DatabasePreparationEngine extends Engine {
 		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
 		sql += "	record_id int(11) NOT NULL,\n";
 		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
-		sql += "	json VARCHAR(7500) NOT NULL,\n";
+		sql += "	json VARCHAR(17500) NOT NULL,\n";
 		sql += "	origin_app_location_code VARCHAR(100) NOT NULL,\n";
 		sql += "	last_migration_try_date DATETIME DEFAULT NULL,\n";
 		sql += "	last_migration_try_err varchar(250) DEFAULT NULL,\n";

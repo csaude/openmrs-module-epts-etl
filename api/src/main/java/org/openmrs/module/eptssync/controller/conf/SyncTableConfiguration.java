@@ -14,6 +14,7 @@ import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.OpenMRSPOJOGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -22,10 +23,8 @@ public class SyncTableConfiguration {
 
 	private String tableName;
 	
-	private List<String> parents;
-	
-	private List<RefInfo> parentRefInfo;
-	private List<RefInfo> childRefInfo;
+	private List<RefInfo> parents;
+	private List<RefInfo> childred;
 	
 	private Class<OpenMRSObject> syncRecordClass;
 
@@ -40,8 +39,25 @@ public class SyncTableConfiguration {
 	private boolean metadata;
 	
 	private boolean fullLoaded;
+	private boolean removeForbidden;
 	
 	public SyncTableConfiguration() {
+	}
+	
+	public boolean isRemoveForbidden() {
+		return removeForbidden;
+	}
+	
+	public void setRemoveForbidden(boolean removeForbidden) {
+		this.removeForbidden = removeForbidden;
+	}
+	
+	public List<RefInfo> getChildred() {
+		return childred;
+	}
+	
+	public void setChildred(List<RefInfo> childred) {
+		this.childred = childred;
 	}
 	
 	public String getClasspackage() {
@@ -60,11 +76,11 @@ public class SyncTableConfiguration {
 		return this.relatedSyncTableInfoSource.isFirstExport();
 	}
 	
-	public List<String> getParents() {
+	public List<RefInfo> getParents() {
 		return parents;
 	}
 	
-	public void setParents(List<String> parents) {
+	public void setParents(List<RefInfo> parents) {
 		this.parents = parents;
 	}
 	
@@ -82,19 +98,6 @@ public class SyncTableConfiguration {
 
 	public void setSharePkWith(String sharePkWith) {
 		this.sharePkWith = sharePkWith;
-	}
-
-	@JsonIgnore
-	public Class<OpenMRSObject> getSyncRecordClass() {
-		if (syncRecordClass == null) this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(getRelatedSynconfiguration().getPOJOCompiledFilesDirectory(), generateFullClassName());
-		
-		if (syncRecordClass == null) throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");
-		
-		return syncRecordClass;
-	}
-
-	public void setSyncRecordClass(Class<OpenMRSObject> syncRecordClass) {
-		this.syncRecordClass = syncRecordClass;
 	}
 
 	public SyncConfiguration getRelatedSynconfiguration() {
@@ -117,12 +120,18 @@ public class SyncTableConfiguration {
 		return utilities.stringHasValue(this.sharePkWith);
 	}
 	
-	public String getPrimaryKeyAsClassAtt(Connection conn) {
-		return convertTableAttNameToClassAttName(getPrimaryKey(conn));
+	public String getPrimaryKeyAsClassAtt() {
+		return convertTableAttNameToClassAttName(getPrimaryKey());
 	}
-
-	public String getPrimaryKey(Connection conn) {
+	
+	public OpenConnection openConnection() {
+		return relatedSyncTableInfoSource.openConnetion();
+	}
+	
+	public String getPrimaryKey() {
 		if (primaryKey == null) {
+			
+			OpenConnection conn = openConnection();
 			
 			try {
 				ResultSet rs = conn.getMetaData().getPrimaryKeys(null, null, tableName);
@@ -139,12 +148,17 @@ public class SyncTableConfiguration {
 				
 				throw new RuntimeException(e);
 			}
+			finally {
+				conn.finalizeConnection();
+			}
 		}
 		
 		return primaryKey;
 	}
 	
 	public String getPrimaryKeyType() {
+		if (primaryKeyType == null) getPrimaryKey();
+		
 		return primaryKeyType;
 	}
 	
@@ -152,12 +166,8 @@ public class SyncTableConfiguration {
 		return AttDefinedElements.isNumeric(this.getPrimaryKeyType());
 	}
 	
-	public boolean hasPK(Connection conn) {
-		return getPrimaryKey(conn) != null;
-	}
-	
-	public void setChildRefInfo(List<RefInfo> childRefInfo) {
-		this.parentRefInfo = childRefInfo;
+	public boolean hasPK() {
+		return getPrimaryKey() != null;
 	}
 	
 	private static String convertTableAttNameToClassAttName(String tableAttName) {
@@ -165,49 +175,10 @@ public class SyncTableConfiguration {
 	}
 	
 	
-	public synchronized List<RefInfo> getChildRefInfo(Connection conn) {
-		if (this.childRefInfo == null) {
-			
-			try {
-				this.childRefInfo = new ArrayList<RefInfo>();  
-				
-				ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
-				
-				while(foreignKeyRS.next()) {
-					RefInfo ref = new RefInfo();
-					
-					ref.setReferenceColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
-					ref.setReferenceTableInfo(SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"), this.relatedSyncTableInfoSource));
-					
-					ref.setReferencedColumnName(foreignKeyRS.getString("PKCOLUMN_NAME"));
-					ref.setReferencedTableInfo(this);
-					
-					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getReferenceTableInfo().getTableName(), ref.getReferenceColumnName(), conn));
-					
-					//Mark as metadata if there is no table info configured
-					if (getRelatedSynconfiguration().find(ref.getReferenceTableInfo()) == null) {
-						ref.getReferenceTableInfo().setMetadata(true);
-					}
-					
-					this.childRefInfo.add(ref);
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
-		}
-		
-		return childRefInfo;
-	}
-
-	public void setParentRefInfo(List<RefInfo> parentRefInfo) {
-		this.parentRefInfo = parentRefInfo;
-	}
 	
 	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
-		for (RefInfo  parent : this.getParentRefInfo(conn)) {
-			if (parent.getReferenceColumnAsClassAttName().equals(parentAttName)) {
+		for (RefInfo  parent : this.getParents()) {
+			if (parent.getRefColumnAsClassAttName().equals(parentAttName)) {
 				return parent.isIgnorable();
 			}
 		}
@@ -215,47 +186,88 @@ public class SyncTableConfiguration {
 		throw new ForbiddenOperationException("The att '" + parentAttName + "' doesn't represent any defined parent att");
 	}
 	
+	private synchronized void loadChildren(Connection conn) throws SQLException {
+		logInfo("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
+		
+		this.childred = new ArrayList<RefInfo>();  
+		
+		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
+		
+		foreignKeyRS.last();
+		
+		logInfo("DISCOVERED '" + foreignKeyRS.getRow() + "' CHILDREN FOR TABLE '" + getTableName() + "'");
+		
+		foreignKeyRS.beforeFirst();
 	
-	public synchronized List<RefInfo> getParentRefInfo(Connection conn) {
-		if (this.parentRefInfo == null) {
+		while(foreignKeyRS.next()) {
+			logInfo("CONFIGURING CHILD [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
 			
-			try {
-				this.parentRefInfo = new ArrayList<RefInfo>();  
-				
-				ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(null, null, tableName);
-				
-				while(foreignKeyRS.next()) {
-					RefInfo ref = new RefInfo();
-					
-					ref.setReferenceColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
-					ref.setReferencedColumnName(foreignKeyRS.getString("PKCOLUMN_NAME"));
-					ref.setReferenceTableInfo(this);
-					
-					ref.setReferencedTableInfo(SyncTableConfiguration.init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource));
-					
-					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(this.tableName, ref.getReferenceColumnName(), conn));
-					
-					ref.setRefColumnType(AttDefinedElements.convertMySQLTypeTOJavaType(DBUtilities.determineColunType(this.getTableName(), ref.getReferenceColumnName(), conn)));
-					
-					//Mark as metadata if is not specificaly mapped as parent in conf file
-					if (this.parents != null && !this.parents.contains(foreignKeyRS.getString("PKTABLE_NAME"))) {
-						ref.getReferencedTableInfo().setMetadata(true);
-					}
-					
-					/*if (this.sharePkWith != null && this.sharePkWith.equalsIgnoreCase(ref.getReferenceColumnName())) {
-						ref.setSharedPk(true);
-					}*/
-					
-					this.parentRefInfo.add(ref);
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
+			RefInfo ref = new RefInfo();
+			
+			ref.setRefType(RefInfo.CHILD_REF_TYPE);
+			ref.setRefColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
+			ref.setRefTableConfiguration(SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"), this.relatedSyncTableInfoSource));
+			ref.setRefColumnType(AttDefinedElements.convertMySQLTypeTOJavaType(DBUtilities.determineColunType(ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(), conn)));
+			ref.setRelatedSyncTableConfiguration(this);
+			ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(), conn));
+			
+			//Mark as metadata if there is no table info configured
+			if (getRelatedSynconfiguration().find(ref.getRefTableConfiguration()) == null) {
+				ref.getRefTableConfiguration().setMetadata(true);
 			}
+			
+			this.childred.add(ref);
+			
+			logInfo("CHILDREN [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
+		}
+	}
+	
+	public void logInfo(String msg) {
+		getRelatedSynconfiguration().logInfo(msg);
+	}
+	
+	private synchronized void loadParents(Connection conn) throws SQLException {
+		logInfo("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
+		
+		List<RefInfo> auxRefInfo = new ArrayList<RefInfo>();  
+		
+		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(null, null, tableName);
+		
+		foreignKeyRS.last();
+		
+		logInfo("DISCOVERED '" + foreignKeyRS.getRow() + "' PARENTS FOR TABLE '" + getTableName() + "'");
+		
+		foreignKeyRS.beforeFirst();
+		
+		while(foreignKeyRS.next()) {
+			logInfo("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
+			
+			RefInfo ref = new RefInfo();
+			ref.setRefType(RefInfo.PARENT_REF_TYPE);
+			
+			ref.setRefColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
+			ref.setRefTableConfiguration(SyncTableConfiguration.init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource));
+			ref.setIgnorable(DBUtilities.isTableColumnAllowNull(this.tableName, ref.getRefColumnName(), conn));
+			ref.setRefColumnType(AttDefinedElements.convertMySQLTypeTOJavaType(DBUtilities.determineColunType(this.getTableName(), ref.getRefColumnName(), conn)));
+			ref.setRelatedSyncTableConfiguration(this);
+			
+			RefInfo configuredParent = findParent(ref);
+			
+			if (configuredParent != null) {
+				ref.setDefaultValueDueInconsistency(configuredParent.getDefaultValueDueInconsistency());
+			}
+			
+			//Mark as metadata if is not specificaly mapped as parent in conf file
+			if (!ref.getRefTableConfiguration().isConfigured()) {
+				ref.getRefTableConfiguration().setMetadata(true);
+			}
+			
+			logInfo("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
+			
+			auxRefInfo.add(ref);
 		}
 		
-		return parentRefInfo;
+		this.parents = auxRefInfo;
 	}
 			
 	public static SyncTableConfiguration init(String tableName, SyncConfiguration sourceInfo) {
@@ -271,13 +283,27 @@ public class SyncTableConfiguration {
 		
 		return tableInfo;
 	}
-
-	public Class<OpenMRSObject> getRecordClass() {
-		this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(getPOJOCopiledFilesDirectory(), this.generateFullClassName());
 	
-		if (this.syncRecordClass == null) throw new ForbiddenOperationException("No Sync Record Class found for: " + this.tableName);
+	@JsonIgnore
+	public Class<OpenMRSObject> getSyncRecordClass() throws ForbiddenOperationException{
+		if (syncRecordClass == null) this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(getRelatedSynconfiguration().getPOJOCompiledFilesDirectory(), generateFullClassName());
 		
-		return this.syncRecordClass; 
+		if (syncRecordClass == null) throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");
+		
+		return syncRecordClass;
+	}
+	
+	public boolean existsSyncRecordClass() {
+		try {
+			return getSyncRecordClass() != null;
+		} catch (ForbiddenOperationException e) {
+			
+			return false;
+		}
+	}
+
+	public void setSyncRecordClass(Class<OpenMRSObject> syncRecordClass) {
+		this.syncRecordClass = syncRecordClass;
 	}
 
 	public String generateFullClassName() {
@@ -349,11 +375,15 @@ public class SyncTableConfiguration {
 	}
 
 	public boolean isMetadata() {
+		if (utilities.isStringIn(this.getTableName(), "obs") && metadata) throw new ForbiddenOperationException("Obs cannot be metadata");
+
 		return metadata;
 	}
 
 	public void setMetadata(boolean metadata) {
 		this.metadata = metadata;
+		
+		if (utilities.isStringIn(this.getTableName(), "obs") && metadata) throw new ForbiddenOperationException("Obs cannot be metadata");
 	}
 	
 	public String generateRelatedStageTableName() {
@@ -386,11 +416,37 @@ public class SyncTableConfiguration {
 		return fullLoaded;
 	}
 	
-	public synchronized void fullLoad(Connection conn) {
-		getParentRefInfo(conn);
-		getChildRefInfo(conn);
-
-		this.fullLoaded = true;
+	public boolean isConfigured() {
+		for (SyncTableConfiguration tabConf : getRelatedSynconfiguration().getTablesConfigurations()) {
+			if (tabConf.equals(this)) return true;
+		}
+		
+		return false;
+	}
+	
+	public synchronized void fullLoad() {
+		OpenConnection conn = openConnection();
+		
+		try {
+			getPrimaryKey();
+			
+			loadParents(conn);
+			
+			if (isMetadata() || isRemoveForbidden()) {
+				//Dont load children as records from this table cannot be removed
+			}
+			else {
+				loadChildren(conn);
+			}
+			this.fullLoaded = true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
 	}
 
 	public RefInfo getSharedKeyRefInfo(Connection conn) {
@@ -398,8 +454,8 @@ public class SyncTableConfiguration {
 			return null;
 		}
 		else
-		for (RefInfo refInfo : getParentRefInfo(conn)) {
-			if (refInfo.getReferencedTableInfo().getTableName().equalsIgnoreCase(this.sharePkWith)) {
+		for (RefInfo refInfo : getParents()) {
+			if (refInfo.getRefTableConfiguration().getTableName().equalsIgnoreCase(this.sharePkWith)) {
 				return refInfo;
 			}
 		}
@@ -426,5 +482,9 @@ public class SyncTableConfiguration {
 
 	public File getPOJOSourceFilesDirectory() {
 		return getRelatedSynconfiguration().getPOJOSourceFilesDirectory();
+	}
+	
+	public RefInfo findParent(RefInfo parent) {
+		return utilities.findOnList(this.parents, parent);
 	}
 }

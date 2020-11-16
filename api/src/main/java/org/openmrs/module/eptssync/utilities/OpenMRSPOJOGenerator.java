@@ -31,7 +31,7 @@ public class OpenMRSPOJOGenerator {
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 
 	public static Class<OpenMRSObject> generate(SyncTableConfiguration syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
-		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad(conn);
+		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad();
 
 		File sourceFile = new File(syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/pojo/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
 		
@@ -51,14 +51,12 @@ public class OpenMRSPOJOGenerator {
 		ResultSetMetaData rsMetaData = rs.getMetaData();
 
 		
-		String insertSQLStart = "INSERT INTO " + syncTableInfo.getTableName() + "(";
-		String insertSQLEnd = "VALUES(";
+		String insertSQLFieldsWithoutObjectId = "";
+		String insertSQLQuestionMarksWithoutObjectId = "";
 		
-		String insertSQLDefinition;
+		String updateSQLDefinition = "UPDATE " + syncTableInfo.getTableName() + " SET ";
 		
-		String updaSQLDefinition = "UPDATE " + syncTableInfo.getTableName() + " SET ";
-		
-		String insertParamsDefinition = "Object[] params = {";
+		String insertParamsWithoutObjectId = "";
 		String updateParamsDefinition = "Object[] params = {";
 		
 		String insertValuesDefinition = "";
@@ -66,7 +64,7 @@ public class OpenMRSPOJOGenerator {
 		AttDefinedElements attElements;
 		
 		for (int i = 1; i <= rsMetaData.getColumnCount() - 1; i++) {
-			attElements = AttDefinedElements.define(rsMetaData.getColumnName(i), rsMetaData.getColumnTypeName(i), false, syncTableInfo, conn);
+			attElements = AttDefinedElements.define(rsMetaData.getColumnName(i), rsMetaData.getColumnTypeName(i), false, syncTableInfo);
 			
 			attsDefinition = utilities.concatStrings(attsDefinition, attElements.getAttDefinition(), "\n");
 			getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, attElements.getSetterDefinition());
@@ -76,14 +74,14 @@ public class OpenMRSPOJOGenerator {
 
 			getttersAndSetterDefinition += "\n \n";
 			
-			insertSQLStart = utilities.concatStrings(insertSQLStart, attElements.getSqlInsertFirstPartDefinition());
-			insertSQLEnd = utilities.concatStrings(insertSQLEnd, attElements.getSqlInsertLastEndPartDefinition());
+			insertSQLFieldsWithoutObjectId = utilities.concatStrings(insertSQLFieldsWithoutObjectId, attElements.getSqlInsertFirstPartDefinition());
+			insertSQLQuestionMarksWithoutObjectId = utilities.concatStrings(insertSQLQuestionMarksWithoutObjectId, attElements.getSqlInsertLastEndPartDefinition());
 			
-			updaSQLDefinition = utilities.concatStrings(updaSQLDefinition, attElements.getSqlUpdateDefinition());
+			updateSQLDefinition = utilities.concatStrings(updateSQLDefinition, attElements.getSqlUpdateDefinition());
 			
 			insertValuesDefinition = utilities.concatStrings(insertValuesDefinition, attElements.getSqlInsertValues());
 			
-			insertParamsDefinition = utilities.concatStrings(insertParamsDefinition, attElements.getSqlInsertParamDefinifion());
+			insertParamsWithoutObjectId = utilities.concatStrings(insertParamsWithoutObjectId, attElements.getSqlInsertParamDefinifion());
 			
 			updateParamsDefinition = utilities.concatStrings(updateParamsDefinition, attElements.getSqlUpdateParamDefinifion());
 			
@@ -91,7 +89,7 @@ public class OpenMRSPOJOGenerator {
 			resultSetLoadDefinition += "\n		";
 		}
 	
-		attElements = AttDefinedElements.define(rsMetaData.getColumnName(rsMetaData.getColumnCount()), rsMetaData.getColumnTypeName(rsMetaData.getColumnCount()), true, syncTableInfo, conn);
+		attElements = AttDefinedElements.define(rsMetaData.getColumnName(rsMetaData.getColumnCount()), rsMetaData.getColumnTypeName(rsMetaData.getColumnCount()), true, syncTableInfo);
 		
 		attsDefinition = utilities.concatStrings(attsDefinition, attElements.getAttDefinition(), "\n");
 		getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, attElements.getSetterDefinition());
@@ -101,27 +99,32 @@ public class OpenMRSPOJOGenerator {
 		getttersAndSetterDefinition += "\n \n";
 		getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, attElements.getGetterDefinition());
 		
-		insertSQLStart += attElements.getSqlInsertFirstPartDefinition() + ")";
-		insertSQLEnd += attElements.getSqlInsertLastEndPartDefinition() + ")";
+		updateSQLDefinition += attElements.getSqlUpdateDefinition() + " WHERE " + syncTableInfo.getPrimaryKey() + " = ?;";
 		
-		updaSQLDefinition += attElements.getSqlUpdateDefinition() + " WHERE " + syncTableInfo.getPrimaryKey(conn) + " = ?;";
-		
-		insertParamsDefinition += attElements.getSqlInsertParamDefinifion() + "};";
 		updateParamsDefinition += attElements.getSqlUpdateParamDefinifion();
 		
 		resultSetLoadDefinition += attElements.getResultSetLoadDefinition();
 		resultSetLoadDefinition += "\n";
 		
-		if (syncTableInfo.getPrimaryKey(conn) != null) {
-			updateParamsDefinition += ", this." + syncTableInfo.getPrimaryKeyAsClassAtt(conn) + "};"; 
+		insertParamsWithoutObjectId += attElements.getSqlInsertParamDefinifion();
+	
+		insertSQLFieldsWithoutObjectId = utilities.concatStrings(insertSQLFieldsWithoutObjectId, attElements.getSqlInsertFirstPartDefinition());
+		insertSQLQuestionMarksWithoutObjectId = utilities.concatStrings(insertSQLQuestionMarksWithoutObjectId, attElements.getSqlInsertLastEndPartDefinition());
+		
+		if (syncTableInfo.getPrimaryKey() != null) {
+			updateParamsDefinition += ", this." + syncTableInfo.getPrimaryKeyAsClassAtt() + "};"; 
 		}
 		else {
 			updateParamsDefinition += ", null};"; 				
 		}
-		insertSQLDefinition = insertSQLStart + " " + insertSQLEnd + ";";
+		
+		String insertSQLDefinitionWithoutObjectId = "INSERT INTO " + syncTableInfo.getTableName() + "(" + insertSQLFieldsWithoutObjectId + ") VALUES( " + insertSQLQuestionMarksWithoutObjectId + ");";
+		String insertParamsWithoutObjectIdDefinition = "Object[] params = {" + insertParamsWithoutObjectId + "};";
+		
+		String insertSQLDefinitionWithObjectId = "INSERT INTO " + syncTableInfo.getTableName() + "(" + syncTableInfo.getPrimaryKey() + ", " + insertSQLFieldsWithoutObjectId + ") VALUES(?, " + insertSQLQuestionMarksWithoutObjectId + ");";
+		String insertParamsWithObjectIdDefinition = "Object[] params = {this." + syncTableInfo.getPrimaryKeyAsClassAtt() + ", "  + insertParamsWithoutObjectId + "};";
 		
 		insertValuesDefinition += attElements.getSqlInsertValues();
-		
 		
 		//GENERATE INFO FOR UNAVALIABLE COLUMNS
 		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "uuid", conn)) {
@@ -142,15 +145,15 @@ public class OpenMRSPOJOGenerator {
 
 		String methodFromSuperClass = "";
 
-		String primaryKeyAtt = syncTableInfo.hasPK(conn) ? syncTableInfo.getPrimaryKeyAsClassAtt(conn) : null;
+		String primaryKeyAtt = syncTableInfo.hasPK() ? syncTableInfo.getPrimaryKeyAsClassAtt() : null;
 		
 		methodFromSuperClass += "	public int getObjectId() { \n ";
-		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK(conn)) methodFromSuperClass += "		return this."+ primaryKeyAtt + "; \n";
+		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK()) methodFromSuperClass += "		return this."+ primaryKeyAtt + "; \n";
 		else methodFromSuperClass += "		return 0; \n";
 		methodFromSuperClass += "	} \n \n";
 
 		methodFromSuperClass += "	public void setObjectId(int selfId){ \n";
-		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK(conn)) methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
+		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK()) methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
 		methodFromSuperClass += "	} \n \n";
 	
 		methodFromSuperClass += "	public void load(ResultSet rs) throws SQLException{ \n";
@@ -159,12 +162,28 @@ public class OpenMRSPOJOGenerator {
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
 		methodFromSuperClass += "	public String generateDBPrimaryKeyAtt(){ \n ";
-		methodFromSuperClass += "		return \""+ syncTableInfo.getPrimaryKey(conn) + "\"; \n";
+		methodFromSuperClass += "		return \""+ syncTableInfo.getPrimaryKey() + "\"; \n";
+		methodFromSuperClass += "	} \n \n";
+
+		methodFromSuperClass += "	@JsonIgnore\n";
+		methodFromSuperClass += "	public String getInsertSQLWithoutObjectId(){ \n ";
+		methodFromSuperClass += "		return \""+ insertSQLDefinitionWithoutObjectId + "\"; \n";
+		methodFromSuperClass += "	} \n \n";
+
+		methodFromSuperClass += "	@JsonIgnore\n";
+		methodFromSuperClass += "	public Object[]  getInsertParamsWithoutObjectId(){ \n ";
+		methodFromSuperClass += "		" + insertParamsWithoutObjectIdDefinition;
+		methodFromSuperClass += "		return params; \n";
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
-		methodFromSuperClass += "	public Object[]  getInsertParams(){ \n ";
-		methodFromSuperClass += "		" + insertParamsDefinition;
+		methodFromSuperClass += "	public String getInsertSQLWithObjectId(){ \n ";
+		methodFromSuperClass += "		return \""+ insertSQLDefinitionWithObjectId + "\"; \n";
+		methodFromSuperClass += "	} \n \n";
+
+		methodFromSuperClass += "	@JsonIgnore\n";
+		methodFromSuperClass += "	public Object[]  getInsertParamsWithObjectId(){ \n ";
+		methodFromSuperClass += "		" + insertParamsWithObjectIdDefinition;
 		methodFromSuperClass += "		return params; \n";
 		methodFromSuperClass += "	} \n \n";
 	
@@ -173,15 +192,10 @@ public class OpenMRSPOJOGenerator {
 		methodFromSuperClass += "		" + updateParamsDefinition;
 		methodFromSuperClass += "		return params; \n";
 		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	@JsonIgnore\n";
-		methodFromSuperClass += "	public String getInsertSQL(){ \n ";
-		methodFromSuperClass += "		return \""+ insertSQLDefinition + "\"; \n";
-		methodFromSuperClass += "	} \n \n";
 	
 		methodFromSuperClass += "	@JsonIgnore\n";
 		methodFromSuperClass += "	public String getUpdateSQL(){ \n ";
-		methodFromSuperClass += "		return \""+ updaSQLDefinition + "\"; \n";
+		methodFromSuperClass += "		return \""+ updateSQLDefinition + "\"; \n";
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
@@ -197,12 +211,12 @@ public class OpenMRSPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public boolean hasParents() {\n";
 		
-		for(RefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {		
+		for(RefInfo refInfo : syncTableInfo.getParents()) {		
 			if (refInfo.isNumericRefColumn()) {
-				methodFromSuperClass += "		if (this." + refInfo.getReferenceColumnAsClassAttName() + " != 0) return true;\n";
+				methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName() + " != 0) return true;\n\n";
 			}
 			else {
-				methodFromSuperClass += "		if (this." + refInfo.getReferenceColumnAsClassAttName() + " != null) return true;\n";
+				methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName() + " != null) return true;\n\n";
 			}
 		}
 	
@@ -218,10 +232,10 @@ public class OpenMRSPOJOGenerator {
 		if (sharedKeyRefInfo != null) {
 			methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
 			
-			methodFromSuperClass += "		parentOnDestination = loadParent(";
-			methodFromSuperClass += sharedKeyRefInfo.getReferencedClassFullName(conn) + ".class,";
+			methodFromSuperClass += "		parentOnDestination = retrieveParentInDestination(";
+			methodFromSuperClass += sharedKeyRefInfo.getRefTableConfiguration().generateFullClassName() + ".class,";
 				
-			methodFromSuperClass += " this." +  sharedKeyRefInfo.getReferenceColumnAsClassAttName() + ", false, conn); \n";
+			methodFromSuperClass += " this." +  sharedKeyRefInfo.getRefColumnAsClassAttName() + ", false, conn); \n";
 			methodFromSuperClass += "		return parentOnDestination.getObjectId();\n \n";
 		}
 		else {
@@ -230,56 +244,15 @@ public class OpenMRSPOJOGenerator {
 		
 		methodFromSuperClass += "	}\n\n";
 		
-		
-		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
-		methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
-		
-		for(RefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {
-			if (refInfo.getReferencedTableInfo().isMetadata()) continue;
-			if (syncTableInfo.getSharePkWith() != null && syncTableInfo.getSharePkWith().equals(refInfo.getReferencedTableInfo().getTableName())) continue;
-				
-			if (!refInfo.isNumericRefColumn()) methodFromSuperClass += "/*\n";
-			
-			methodFromSuperClass += "		parentOnDestination = loadParent(";
-			
-			
-			String parentClass = "";
-			
-			if (!syncTableInfo.equals(refInfo.getReferencedTableInfo())) {
-				if (!refInfo.existsRelatedReferencedClass(conn)) {
-					refInfo.generateSkeletonOfRelatedReferencedClass(conn);
-				}
-				
-				parentClass = refInfo.getReferencedClassFullName(conn) + ".class";
-			}
-			else {
-				parentClass = "this.getClass()"; 
-			}
-			
-			methodFromSuperClass += parentClass + ",";
-			
-			boolean ignorable = syncTableInfo.checkIfisIgnorableParentByClassAttName(refInfo.getReferenceColumnAsClassAttName(), conn);
-			
-			methodFromSuperClass += " this." +  refInfo.getReferenceColumnAsClassAttName() + ", " + ignorable + ", conn); \n";
-			methodFromSuperClass += "		this." + refInfo.getReferenceColumnAsClassAttName() + " = 0;\n";
-			methodFromSuperClass += "		if (parentOnDestination  != null) this." + refInfo.getReferenceColumnAsClassAttName() + " = parentOnDestination.getObjectId();\n \n";
-			
-			if (!refInfo.isNumericRefColumn()) methodFromSuperClass += "*/\n";
-			
-		}
-		
-		methodFromSuperClass += "	}\n\n";
-		
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public int getParentValue(String parentAttName) {";
 		
-		for(RefInfo refInfo : syncTableInfo.getParentRefInfo(conn)) {
+		for(RefInfo refInfo : syncTableInfo.getParents()) {
 			if (refInfo.isNumericRefColumn()) {
-				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getReferenceColumnAsClassAttName() + "\")) return this."+refInfo.getReferenceColumnAsClassAttName() + ";";
+				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName() + "\")) return this."+refInfo.getRefColumnAsClassAttName() + ";";
 			}
 			else {
-				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getReferenceColumnAsClassAttName() + "\")) return 0;";
+				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName() + "\")) return 0;";
 			}
 		}
 		
@@ -289,11 +262,30 @@ public class OpenMRSPOJOGenerator {
 		
 		methodFromSuperClass += "	}\n\n";
 		
+	
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {";
+		
+		for(RefInfo refInfo : syncTableInfo.getParents()) {
+			if (refInfo.isNumericRefColumn()) {
+				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."+refInfo.getRefColumnAsClassAttName() + " = newParent.getObjectId();\n			return;\n		}";
+			}
+			else {
+				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."+refInfo.getRefColumnAsClassAttName() + " = \"\" + newParent.getObjectId();\n			return;\n		}";
+			}
+		}
+		
+		methodFromSuperClass += "\n\n";
+		
+		methodFromSuperClass += "		throw new RuntimeException(\"No found parent for: \" + parentAttName);\n";
+		
+		methodFromSuperClass += "	}\n\n";
+	
+		
 		
 		String classDefinition ="";
 		
 		classDefinition += "package org.openmrs.module.eptssync.model.pojo." +  syncTableInfo.getClasspackage() + "; \n \n";
-		
 		
 		classDefinition += "import org.openmrs.module.eptssync.model.pojo.generic.*; \n \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; \n \n";
@@ -333,7 +325,7 @@ public class OpenMRSPOJOGenerator {
 	}
 	
 	public static Class<OpenMRSObject> generateSkeleton(SyncTableConfiguration syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
-		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad(conn);
+		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad();
 			
 		File sourceFile = new File(syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/pojo/" + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
 		
@@ -383,7 +375,7 @@ public class OpenMRSPOJOGenerator {
 		methodFromSuperClass += "	}\n\n";
 
 		methodFromSuperClass += "	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
-		methodFromSuperClass += "		throw new RuntimeException(\"No PKSharedInfo defined!\");";
+		methodFromSuperClass += "		throw new RuntimeException(\"No PKSharedInfo defined!\");\n";
 		methodFromSuperClass += "	}\n\n";
 		
 		methodFromSuperClass += "	@Override\n";

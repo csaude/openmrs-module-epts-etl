@@ -53,7 +53,7 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getRecordClass();
+		return this.tableInfo.getSyncRecordClass();
 	}
 	
 	@Override

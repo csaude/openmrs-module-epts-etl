@@ -26,7 +26,7 @@ public class InconsistenceSolverController extends OperationController {
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	}
-			
+	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new InconsistenceSolverEngine(monitor, limits);

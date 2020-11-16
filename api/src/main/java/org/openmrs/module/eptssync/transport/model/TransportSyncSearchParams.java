@@ -48,7 +48,7 @@ public class TransportSyncSearchParams extends SyncSearchParams<OpenMRSObject> i
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getRecordClass();
+		return this.tableInfo.getSyncRecordClass();
 	}
 	
 	@Override

@@ -111,15 +111,17 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	public OpenConnection openConnection() {
 		OpenConnection conn = super.openConnection();
 	
-		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
-			try {
-				DBUtilities.disableForegnKeyChecks(conn);
-			} catch (DBException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
+		//if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
+		
+		try {
+			DBUtilities.disableForegnKeyChecks(conn);
+		} catch (DBException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
 		}
+		
+		//}
 		
 		return conn;
 	}

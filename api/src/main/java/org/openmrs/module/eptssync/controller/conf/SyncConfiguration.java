@@ -3,17 +3,18 @@ package org.openmrs.module.eptssync.controller.conf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Connection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.ForbiddenException;
 
+import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -53,10 +54,22 @@ public class SyncConfiguration {
 	
 	private String classPath;
 	private boolean fullLoaded;
-	
+	private ProcessController relatedController;
 	
 	private SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
+	}
+	
+	public void setRelatedController(ProcessController relatedController) {
+		this.relatedController = relatedController;
+	}
+	
+	public ProcessController getRelatedController() {
+		return relatedController;
+	}
+	
+	public OpenConnection openConnetion() {
+		return relatedController.openConnection();
 	}
 	
 	public String getClassPath() {
@@ -211,16 +224,36 @@ public class SyncConfiguration {
 		return conf;
 	}
 
-	public void fullLoad(Connection conn) {
-		if (fullLoaded) return;
+	public void fullLoad() {
+		if (this.fullLoaded) return;
 		
-		for (SyncTableConfiguration conf : this.getTablesConfigurations()) {
-			conf.fullLoad(conn);
-		} 
+		OpenConnection conn = openConnetion();
 		
-		this.fullLoaded = true;
+		try {
+			for (SyncTableConfiguration conf : this.getTablesConfigurations()) {
+				if (!conf.isFullLoaded()) {
+					logInfo("PERFORMING FULL CONFIGURATION LOAD ON TABLE '"  + conf.getTableName() + "'");
+					conf.fullLoad();
+				}
+			
+				logInfo("THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '"  + conf.getTableName() + "'");
+			} 
+			
+			this.fullLoaded = true;
+			
+			conn.markAsSuccessifullyTerminected();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
 	}
 
+	
+	public void logInfo(String msg) {
+		getRelatedController().logInfo(msg);
+	}
 	private static SyncConfiguration loadFromJSON (String json) {
 		try {
 			SyncConfiguration config = new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json, SyncConfiguration.class);
@@ -322,8 +355,8 @@ public class SyncConfiguration {
 		
 		for (SyncTableConfiguration tableConf : this.tablesConfigurations) {
 			if (tableConf.getParents() != null) {
-				for (String parent : tableConf.getParents()) {
-					if (findSyncTableConfiguration(parent) == null) errorMsg += ++errNum + ". The parent '" + parent + " of table " + tableConf.getTableName() + " is not configured\n";
+				for (RefInfo parent : tableConf.getParents()) {
+					if (findSyncTableConfiguration(parent.getTableName()) == null) errorMsg += ++errNum + ". The parent '" + parent + " of table " + tableConf.getTableName() + " is not configured\n";
 				}
 			}
 		}
@@ -386,4 +419,19 @@ public class SyncConfiguration {
 	public File getPOJOSourceFilesDirectory() {
 		return new File(getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() + "src");
 	}
+
+	/*
+	public void tryToCreateDefaultRecords(Connection conn) throws DBException {
+		for (SyncTableConfiguration tabConf : getTablesConfigurations()) {
+			if (utilities.arrayHasElement(tabConf.getParents())) {
+				for (RefInfo parent : tabConf.getParents()) {
+					if (parent.getDefaultValueDueInconsistency() > 0) {
+						OpenMRSObject obj = OpenMRSObjectDAO.getById(parent.getRefObjectClass(), parent.getDefaultValueDueInconsistency(), conn);
+						
+						
+					}
+				}
+			}
+		}
+	}*/
 }

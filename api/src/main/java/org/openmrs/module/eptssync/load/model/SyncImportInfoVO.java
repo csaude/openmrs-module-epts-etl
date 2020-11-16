@@ -172,7 +172,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 				SyncImportInfoDAO.refreshLastMigrationTrySync(tableInfo, this, conn);
 			}
 			else {
-				source.loadDestParentInfo(conn);
+				source.loadDestParentInfo(tableInfo, conn);
 				
 				if (source.hasIgnoredParent()) {
 					markAsToBeCompletedInFuture(tableInfo, conn);
