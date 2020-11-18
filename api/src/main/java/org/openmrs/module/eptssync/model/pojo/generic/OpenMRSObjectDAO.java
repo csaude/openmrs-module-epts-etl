@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
+import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
@@ -259,6 +260,23 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		executeQuery(sql, params, conn);
 	}
 	
+
+	public static int countAllOfOriginParentId(Class<OpenMRSObject> clazz, String parentField, int parentOriginId, String appOriginCode, Connection conn) throws DBException {
+		Object[] params = {parentOriginId, 
+				   appOriginCode};
+
+		OpenMRSObject obj = utilities.createInstance(clazz);
+		
+		String sql = " SELECT count(*) value" +
+					 " FROM     " + obj.generateTableName() +
+					 " WHERE 	" + parentField + " = ? " +
+					 "			AND origin_app_location_code = ? ";
+	
+		SimpleValue v = find(SimpleValue.class, sql, params, conn);
+		
+		return v.intValue();
+	}	
+	
 	public static List<OpenMRSObject> getByOriginParentId(Class<OpenMRSObject> clazz, String parentField, int parentOriginId, String appOriginCode, Connection conn) throws DBException {
 		Object[] params = {parentOriginId, 
 						   appOriginCode};
@@ -318,6 +336,12 @@ public class OpenMRSObjectDAO extends BaseDAO {
 				if (e.isDuplicatePrimaryKeyException()) {
 					OpenMRSObject problematicRecordOnDB = retrieveProblematicObjectFromExceptionInfo(objects.get(0).getClass(), e, conn);
 					
+					/*
+					OpenMRSObject existingObjectInDestination
+					if (syncTableConfiguration.getRelatedSynconfiguration().isDestinationInstallationType()) {
+						
+					}*/
+					
 					OpenMRSObject problematicRecordOnArray = utilities.findOnArray(objects, problematicRecordOnDB);
 					problematicRecordOnArray.setExcluded(true);
 					
@@ -354,5 +378,6 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			
 			return thinGetByOriginRecordId(class1, objectId, originAppLocationCode, conn);
 		}
-	}		
+	}
+	
 }

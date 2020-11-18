@@ -251,16 +251,17 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 
 	@Override
 	public void consolidateData(SyncTableConfiguration tableInfo, Connection conn) throws DBException{
-		
-		if (this.getObjectId() == 4807) {
-			System.out.println("STOP..");
-		}
-		
 		Map<RefInfo, Integer> missingParents = loadMissingParents(tableInfo, conn);
 	
 		boolean inconsistencySolved = true;
 		
 		if (!missingParents.isEmpty()) {
+			if (tableInfo.getTableName().equalsIgnoreCase("provider")) {
+				System.out.println("STOP");
+				
+				throw new ForbiddenOperationException("Check this...");
+			}
+			
 			for (Entry<RefInfo, Integer> entry : missingParents.entrySet()) {
 				//try to load the default parent
 				 if (entry.getKey().getDefaultValueDueInconsistency() > 0) {
@@ -318,6 +319,31 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					parent = retrieveParentInDestination(refInfo.getRefObjectClass(), parentId, refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
 				}
 				
+				if (parent == null) {
+					//Try to recover the parent from stage_area and check if this record doesnt exist on destination with same uuid
+					
+					OpenMRSObject parentFromSource = new GenericOpenMRSObject();
+					
+					parentFromSource.setOriginRecordId(parentId);
+					parentFromSource.setOriginAppLocationCode(this.getOriginAppLocationCode());
+					
+					SyncImportInfoVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(refInfo.getRefTableConfiguration(), parentFromSource, conn);
+					
+					parentFromSource = sourceInfo.convertToOpenMRSObject(refInfo.getRefTableConfiguration(), conn);
+					
+					OpenMRSObject parentFromDestionationSharingSameObjectId = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(), parentId, conn);
+					
+					boolean sameUuid = true;
+					
+					sameUuid = sameUuid && parentFromDestionationSharingSameObjectId  != null;
+					sameUuid = sameUuid && parentFromDestionationSharingSameObjectId.getUuid() != null && parentFromSource.getUuid() != null;
+					sameUuid = sameUuid && parentFromSource.getUuid().equals(parentFromDestionationSharingSameObjectId.getUuid());
+										
+					if (sameUuid) {
+						parent = parentFromDestionationSharingSameObjectId;
+					}
+				}
+				
 				 if (parent == null && refInfo.getDefaultValueDueInconsistency() > 0) {
 					 parent = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(), refInfo.getDefaultValueDueInconsistency(), conn);
 				 }
@@ -342,14 +368,25 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	
 		for (RefInfo refInfo: syncTableInfo.getChildred()) {
 			if (!refInfo.getRefTableConfiguration().isConfigured()) continue;
-				
-			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
 			
-			for (OpenMRSObject child : children) {
-				child.consolidateData(refInfo.getRefTableConfiguration(), conn);
+			
+			int qtyChildren = OpenMRSObjectDAO.countAllOfOriginParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
+				
+			if (qtyChildren == 0) {
+				continue;
+			}
+			else
+			if (qtyChildren > 999) {
+				throw new ForbiddenOperationException("The operation is trying to remove this record [" + syncTableInfo.getTableName() + " = " + this.getOriginRecordId() + ", from " + this.getOriginAppLocationCode() + " but it has " + qtyChildren + " " + refInfo.getTableName() + " related to. Please check this inconsistence before continue");
+			}
+			else {
+				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
+				
+				for (OpenMRSObject child : children) {
+					child.consolidateData(refInfo.getRefTableConfiguration(), conn);
+				}
 			}
 		}
-		
 	}
 	
 	public void  remove(Connection conn) throws DBException {
@@ -385,14 +422,47 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 						
 						if (tableInfo.getRelatedSynconfiguration().isDestinationInstallationType()) {
 							parent = retrieveParentInDestination(refInfo.getRefObjectClass(), parentId, refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
+							
+							if (parent == null) {
+								//Try to recover the parent from stage_area and check if this record doesnt exist on destination with same uuid
+								
+								OpenMRSObject parentFromSource = new GenericOpenMRSObject();
+								
+								parentFromSource.setOriginRecordId(parentId);
+								parentFromSource.setOriginAppLocationCode(this.getOriginAppLocationCode());
+								
+								SyncImportInfoVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(refInfo.getRefTableConfiguration(), parentFromSource, conn);
+								
+								parentFromSource = sourceInfo.convertToOpenMRSObject(refInfo.getRefTableConfiguration(), conn);
+								
+								OpenMRSObject parentFromDestionationSharingSameObjectId = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(), parentId, conn);
+								
+								boolean sameUuid = true;
+								
+								sameUuid = sameUuid && parentFromDestionationSharingSameObjectId  != null;
+								sameUuid = sameUuid && parentFromDestionationSharingSameObjectId.getUuid() != null && parentFromSource.getUuid() != null;
+								sameUuid = sameUuid && parentFromSource.getUuid().equals(parentFromDestionationSharingSameObjectId.getUuid());
+													
+								if (sameUuid) {
+									parent = parentFromDestionationSharingSameObjectId;
+								}
+							}
 						}
 						else {
 							parent = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(), parentId, conn);
 						}
 					}
 				
+					
+					
+					
 					 if (parent == null) {
-						 missingParents.put(refInfo, parentId);
+						 if (refInfo.getRefTableConfiguration().isMetadata()) {
+							 throw new ForbiddenOperationException("There is missing a metadata [" + refInfo.getRefTableConfiguration().getTableName() + " = " + parentId + "!!! You must resolve this inconsistence manual!!!");
+						 }
+						 else {
+							 missingParents.put(refInfo, parentId);
+						 }
 					 }
 				}
 				 

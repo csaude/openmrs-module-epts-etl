@@ -262,6 +262,30 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		return records;
 	}
 	
+	public OpenMRSObject convertToOpenMRSObject(SyncTableConfiguration tableInfo, Connection conn) {
+		String modifiedJSON = this.getJson();
+			
+		OpenMRSObject rec = null;
+			
+		try {
+			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), modifiedJSON );
+		} catch (Exception e) {
+			
+			//try to resolve pathern problems
+			modifiedJSON = utilities.resolveScapeCharacter(modifiedJSON);
+			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), modifiedJSON);
+		}
+		
+		if (!tableInfo.isMetadata()) {
+			rec.setOriginRecordId(rec.getObjectId());
+			rec.setObjectId(0);
+		}
+			
+		rec.setConsistent(OpenMRSObject.INCONSISTENCE_STATUS);
+		
+		return rec;
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) return false;

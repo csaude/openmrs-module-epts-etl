@@ -13,7 +13,7 @@
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://localhost:3306/openmrs_module_eptssync_test?autoReconnect=true&useSSL=false",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_module_eptssync_test?autoReconnect=true&useSSL=false",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
@@ -131,7 +131,6 @@
 					tableName: "visit_attribute",
 					parents: [{tableName: "visit"}, {tableName: "users", defaultValueDueInconsistency: 1}]
 				},
-				
 				
 				{
 					tableName: "encounter",

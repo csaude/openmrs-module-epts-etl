@@ -18,6 +18,7 @@ import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
+import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -50,6 +51,8 @@ public abstract class OperationController implements Controller{
 	private TimeController timer;
 	
 	private boolean selfTreadKilled;
+
+	private Exception lastException;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = Logger.getLogger(this.getClass());
@@ -463,7 +466,14 @@ public abstract class OperationController implements Controller{
 
 	@Override
 	public void onStop() {
-		logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
+		if (lastException == null) {
+			logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
+		}
+		else {
+			logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED DUE ERROR!!!");
+		
+			lastException.printStackTrace();
+		}
 		
 		if (this.enginesActivititieMonitor != null)
 			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
@@ -575,4 +585,32 @@ public abstract class OperationController implements Controller{
 	public void refresh() {
 	}
 
+	public void requestStopDueError(EngineMonitor monitor, Exception e) {
+		lastException = e;
+		this.stopRequested = true;
+		
+		if (utilities().arrayHasElement(this.enginesActivititieMonitor)) {
+			for (EngineMonitor m : this.enginesActivititieMonitor) {
+				m.requestStopDueError();
+			}
+		
+			while(!isStopped()) {
+				logInfo("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
+				TimeCountDown.sleep(5);
+			}
+		}
+		else {
+			monitor.requestStopDueError();
+			
+			while(!monitor.isStopped()) {
+				logInfo("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
+				TimeCountDown.sleep(5);
+			}
+		}
+		
+		if (getChild() != null) getChild().requestStop();
+		
+		
+		
+	}
 }

@@ -44,6 +44,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	private String engineId;
 
 	private boolean newJobRequested;
+	private Exception lastException;
 	
 	public Engine(EngineMonitor monitr, RecordLimits limits) {
 		this.monitor = monitr;
@@ -148,8 +149,11 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 				initProgressMeter(conn);
 				conn.markAsSuccessifullyTerminected();
 			} catch (DBException e) {
+				reportError(e);
+				
 				e.printStackTrace();
 			
+				
 				throw new RuntimeException(e);
 			}
 			finally {
@@ -212,7 +216,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 					} catch (Exception e) {
 						e.printStackTrace();
 						
-						throw new RuntimeException(e);
+						reportError(e);
 					}
 					finally {
 						conn.finalizeConnection();
@@ -220,6 +224,16 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 				}
 			}
 		}
+	}
+	
+	private void reportError(Exception e) {
+		this.lastException = e;
+		
+		getRelatedOperationController().requestStopDueError(getMonitor(), e);
+	}
+
+	public Exception getLastException() {
+		return lastException;
 	}
 	
 	protected  boolean isMainEngine() {
@@ -444,6 +458,30 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			
 			this.stopRequested = true;
 		}
+	}
+	
+	public synchronized void requestStopDueError() {
+		if (this.hasChild()) {
+			for (Engine engine : this.getChildren()) {
+				engine.requestStop();
+			}
+		}
+
+		this.stopRequested = true;
+
+		if (lastException != null) {
+			if (this.hasChild()) {
+				for (Engine engine : this.getChildren()) {
+					while(!engine.isStopped() && !engine.isFinished()) {
+						logInfo("AN ERROR OCURRED... WAITING FOR ALL CHILD STOP TO REPORT THE ERROR END STOP THE OPERATION");
+						
+						TimeCountDown.sleep(5);
+					}
+				}
+			}
+			
+			changeStatusToStopped(); 
+		}		
 	}
 	
 	/**

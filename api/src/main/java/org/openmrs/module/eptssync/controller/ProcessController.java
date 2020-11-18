@@ -220,8 +220,6 @@ public class ProcessController implements Controller{
 		
 		tryToRemoveOldStopRequested();
 		
-		this.getConfiguration().fullLoad();
-		
 		if (stopRequested()) {
 			logInfo("THE PROCESS COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
 			
@@ -289,8 +287,6 @@ public class ProcessController implements Controller{
 
 	@Override
 	public void onStop() {
-		//if (true) throw new ForbiddenOperationException("Stopped before time");
-		
 		logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
 	}
 

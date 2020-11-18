@@ -77,50 +77,58 @@ public class EngineMonitor implements MonitoredOperation{
 	
 	@Override
 	public void run() {
-		initEngine();
-		
-		if (!utilities.arrayHasElement(ownEngines)) {
-			logInfo("NO ENGINE FOR '" + getController().getOperationType().toUpperCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
+		try {
+			if (!getSyncTableInfo().isFullLoaded()) getSyncTableInfo().fullLoad();
 			
-			this.operationStatus = MonitoredOperation.STATUS_FINISHED;
-		}
-		else {
-			onStart();
+			initEngine();
 			
-			logInfo("INITIALIZED '" + getController().getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "'");
-			
-			while(isRunning()) {
-				TimeCountDown.sleep(15);
+			if (!utilities.arrayHasElement(ownEngines)) {
+				logInfo("NO ENGINE FOR '" + getController().getOperationType().toUpperCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
 				
-				if (getMainEngine().isFinished()) {
-					getMainEngine().markAsFinished();
-					getMainEngine().onFinish();
+				this.operationStatus = MonitoredOperation.STATUS_FINISHED;
+			}
+			else {
+				onStart();
+				
+				logInfo("INITIALIZED '" + getController().getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "'");
+				
+				while(isRunning()) {
+					TimeCountDown.sleep(15);
 					
-					onFinish();
-				}
-				else
-				if(getMainEngine().isStopped()) {
-					getMainEngine().onStop();
-					
-					onStop();
-				}
-				else
-				if (!isAllEnginesRequestedNewJob()) {
-					//this.controller.logInfo(msg);
-				}
-				else {
-					if (utilities.arrayHasElement(this.ownEngines)) {
-						for (Engine engine : this.ownEngines) {
-							engine.setNewJobRequested(false);
-						}
+					if (getMainEngine().isFinished()) {
+						getMainEngine().markAsFinished();
+						getMainEngine().onFinish();
 						
-						this.realocateJobToEngines();
+						onFinish();
+					}
+					else
+					if(getMainEngine().isStopped()) {
+						getMainEngine().onStop();
+						
+						onStop();
+					}
+					else
+					if (!isAllEnginesRequestedNewJob()) {
+						//this.controller.logInfo(msg);
 					}
 					else {
-						initEngine();
+						if (utilities.arrayHasElement(this.ownEngines)) {
+							for (Engine engine : this.ownEngines) {
+								engine.setNewJobRequested(false);
+							}
+							
+							this.realocateJobToEngines();
+						}
+						else {
+							initEngine();
+						}
 					}
 				}
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			
+			getController().requestStopDueError(this, e);
 		}
 	}
 	
@@ -482,4 +490,14 @@ public class EngineMonitor implements MonitoredOperation{
 			this.stopRequested = true;
 		}
 	}
+
+	public void requestStopDueError() {
+		if (getMainEngine() != null) {
+			getMainEngine().requestStopDueError();
+		}
+		else this.operationStatus = MonitoredOperation.STATUS_STOPPED;
+			
+		this.stopRequested = true;
+	}
+	
 }
