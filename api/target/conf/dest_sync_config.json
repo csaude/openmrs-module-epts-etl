@@ -42,12 +42,12 @@
 					minRecordsPerEngine: 100,
 					disabled: false,
 					processingMode: "sequencial",
-					sourceFolders: ["zbz_gile"],
+					sourceFolders: ["zbz_inhassunge"],
 					
 					child:{
 						operationType: "synchronization",
 						maxRecordPerProcessing: 1000,
-						maxSupportedEngines: 5,
+						maxSupportedEngines: 1,
 						minRecordsPerEngine: 1000,
 						doIntegrityCheckInTheEnd: true,
 						disabled: false,

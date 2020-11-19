@@ -333,34 +333,31 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			try {
 				executeBatch(conn, sql);
 			} catch (DBException e) {
-				if (e.isDuplicatePrimaryKeyException()) {
-					OpenMRSObject problematicRecordOnDB = retrieveProblematicObjectFromExceptionInfo(objects.get(0).getClass(), e, conn);
-					
-					/*
-					OpenMRSObject existingObjectInDestination
-					if (syncTableConfiguration.getRelatedSynconfiguration().isDestinationInstallationType()) {
-						
-					}*/
-					
-					OpenMRSObject problematicRecordOnArray = utilities.findOnArray(objects, problematicRecordOnDB);
-					problematicRecordOnArray.setExcluded(true);
-					
-					if (problematicRecordOnDB.getObjectId() == problematicRecordOnArray.getObjectId()) {
-						update(problematicRecordOnDB, conn);
-					}
-					else {
-						SyncImportInfoVO source = problematicRecordOnArray.retrieveRelatedSyncInfo(syncTableConfiguration, conn);
-						source.markAsSyncFailedToMigrate(syncTableConfiguration, e.getLocalizedMessage(), conn);
-					}
-					
-					insertAll(objects, syncTableConfiguration, conn);
-				}
-				else throw e;
+				insertAllDataOneByOne(objects, syncTableConfiguration, conn);
 			}
 		}
 	}
 	
-	
+	private static void insertAllDataOneByOne(List<OpenMRSObject> objects, SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException {
+		for (OpenMRSObject record : objects) {
+			try {
+				insert(record, conn);
+			} catch (DBException e) {
+				if (e.isDuplicatePrimaryKeyException()) {
+					OpenMRSObject problematicRecordOnDB = retrieveProblematicObjectFromExceptionInfo(objects.get(0).getClass(), e, conn);
+					
+					if (problematicRecordOnDB.getObjectId() == record.getObjectId()) {
+						//update(problematicRecordOnDB, conn);
+						continue;
+					}
+				}
+				
+				SyncImportInfoVO source = record.retrieveRelatedSyncInfo(syncTableConfiguration, conn);
+				source.markAsSyncFailedToMigrate(syncTableConfiguration, e.getLocalizedMessage(), conn);
+			}
+		}
+	}
+
 	private static OpenMRSObject retrieveProblematicObjectFromExceptionInfo(Class<? extends OpenMRSObject> class1, DBException e, Connection conn) throws DBException {
 	 	//UUID duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
 		String s = e.getLocalizedMessage().split("'")[1];

@@ -9,14 +9,14 @@
 	classPath_: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/eptssync-api-1.0-SNAPSHOT.jar",
 	childConfigFilePath_: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
 	
-	originAppLocationCode: "zbz_gile",
+	originAppLocationCode: "zbz_ile",
 	firstExport: true,
 	automaticStart: true, 
 	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_gurue?autoReconnect=true&useSSL=false",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_ile?autoReconnect=true&useSSL=false",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
@@ -166,7 +166,7 @@
 					tableName: "location",
 					parents: [{tableName: "location", defaultValueDueInconsistency: 1}, {tableName: "users", defaultValueDueInconsistency: 1}],
 					metadata: true,
-					extraConditionForExport: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
+					extraConditionForExport_: "exists (select encounter_id from encounter where encounter.location_id = location.location_id)"
 				},
 				
 				{

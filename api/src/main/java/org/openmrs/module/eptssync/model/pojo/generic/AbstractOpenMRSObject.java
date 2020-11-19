@@ -133,6 +133,10 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					
 					throw new MetadataInconsistentException(msg);
 				}
+				else {
+					this.setOriginRecordId(getObjectId());
+					OpenMRSObjectDAO.update(this, conn);
+				}
 			}
 		}
 		else {
@@ -196,6 +200,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				this.save(syncTableInfo, conn);
 				markAsConsistent(conn);
 				
+				this.setOriginAppLocationCode(syncTableInfo.getOriginAppLocationCode());
+				this.setOriginRecordId(this.getObjectId());
+				
 				copyToStageAreaDueInconsistencySolvedByDefaultParents(syncTableInfo, missingParents, conn);
 			}
 			else {
@@ -229,6 +236,8 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 	
 	public void copyToStageAreaDueInconsistencySolvedByDefaultParents(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
+		//if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) throw new SyncExeption("This metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId() + ". is missing its some parents [" + generateMissingInfo(missingParents) +"] You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
+				
 		SyncImportInfoVO syncInfo = this.generateSyncInfo();
 		
 		if (utilities.stringHasValue(this.getOriginAppLocationCode())) {
@@ -237,6 +246,8 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		else {
 			syncInfo.setOriginAppLocationCode(syncTableInfo.getOriginAppLocationCode());
 		}
+		
+		if (!utilities.stringHasValue(syncInfo.getOriginAppLocationCode())) throw new ForbiddenOperationException("The OriginAppLocationCode could not found!!!!");
 		
 		SyncImportInfoDAO.insert(syncInfo, syncTableInfo, conn);
 		
@@ -254,14 +265,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		Map<RefInfo, Integer> missingParents = loadMissingParents(tableInfo, conn);
 	
 		boolean inconsistencySolved = true;
+		boolean removeSyncInfo = false;
 		
 		if (!missingParents.isEmpty()) {
-			if (tableInfo.getTableName().equalsIgnoreCase("provider")) {
-				System.out.println("STOP");
-				
-				throw new ForbiddenOperationException("Check this...");
-			}
-			
 			for (Entry<RefInfo, Integer> entry : missingParents.entrySet()) {
 				//try to load the default parent
 				 if (entry.getKey().getDefaultValueDueInconsistency() > 0) {
@@ -287,6 +293,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				removeDueInconsistency(tableInfo, missingParents, conn);
 			}
 		}
+		else {
+			removeSyncInfo = true;
+		}
 		
 		if (inconsistencySolved) {
 			loadDestParentInfo(tableInfo, conn);
@@ -295,6 +304,14 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			
 			this.markAsConsistent(conn);
 		}
+		
+		if (removeSyncInfo) {
+			SyncImportInfoVO syncInfo = retrieveRelatedSyncInfo(tableInfo, conn);
+			
+			SyncImportInfoDAO.remove(syncInfo, tableInfo, conn);
+		}
+		
+		
 	}
 
 	
@@ -358,7 +375,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 	
 	public void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
-		if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) throw new SyncExeption("This metadata metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId() + ". is missing its some parents [" + generateMissingInfo(missingParents) +"] You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
+		if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) throw new SyncExeption("This metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId() + ". is missing its some parents [" + generateMissingInfo(missingParents) +"] You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
 		
 		SyncImportInfoVO syncInfo = this.retrieveRelatedSyncInfo(syncTableInfo, conn);
 		
@@ -453,16 +470,13 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 						}
 					}
 				
-					
-					
-					
 					 if (parent == null) {
-						 if (refInfo.getRefTableConfiguration().isMetadata()) {
-							 throw new ForbiddenOperationException("There is missing a metadata [" + refInfo.getRefTableConfiguration().getTableName() + " = " + parentId + "!!! You must resolve this inconsistence manual!!!");
-						 }
-						 else {
+						// if (refInfo.getRefTableConfiguration().isMetadata()) {
+							 //throw new ForbiddenOperationException("There is missing a metadata [" + refInfo.getRefTableConfiguration().getTableName() + " = " + parentId + "!!! You must resolve this inconsistence manual!!!");
+						 //}
+						 //else {
 							 missingParents.put(refInfo, parentId);
-						 }
+						 //}
 					 }
 				}
 				 
