@@ -65,7 +65,7 @@ public interface OpenMRSObject extends SyncRecord{
 	//public abstract void consolidateMetadata(SyncTableConfiguration tableInfo, Connection conn) throws DBException;	
 	
 	public abstract String getUuid();
-	
+	public abstract void setUuid(String uuid);
 	public abstract void markAsInconsistent();
 	public abstract void markAsConsistent();
 	public abstract void setConsistent(int consistent);
@@ -117,5 +117,8 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract void markAsConsistent(Connection conn) throws DBException;
 		
 	public abstract void changeParentValue(String parentAttName, OpenMRSObject newParent);
+	
+	public abstract void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException;
+	public abstract void changeParentForAllChildren(OpenMRSObject newParent, SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
 
 }

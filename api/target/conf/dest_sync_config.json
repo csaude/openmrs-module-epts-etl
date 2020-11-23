@@ -38,16 +38,16 @@
 				child:{
 					operationType: "load",
 					maxRecordPerProcessing: 1000,
-					maxSupportedEngines: 5,
+					maxSupportedEngines: 15,
 					minRecordsPerEngine: 100,
 					disabled: false,
 					processingMode: "sequencial",
-					sourceFolders: ["zbz_inhassunge"],
+					sourceFolders: ["zbz_mocuba"],
 					
 					child:{
 						operationType: "synchronization",
 						maxRecordPerProcessing: 1000,
-						maxSupportedEngines: 1,
+						maxSupportedEngines: 15,
 						minRecordsPerEngine: 1000,
 						doIntegrityCheckInTheEnd: true,
 						disabled: false,

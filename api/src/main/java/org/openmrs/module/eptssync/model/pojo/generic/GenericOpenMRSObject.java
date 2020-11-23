@@ -12,10 +12,20 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	private int originRecordId;
 	private String originAppLocationCode;
 	private int objectId;
+	private String uuid;
+	
+	private SyncTableConfiguration syncTableConfiguration;
+	
+	public GenericOpenMRSObject() {
+	}
+	
+	public GenericOpenMRSObject(SyncTableConfiguration syncTableConfiguration) {
+		this.syncTableConfiguration = syncTableConfiguration;
+	}
 	
 	@Override
 	public String generateDBPrimaryKeyAtt() {
-		throw new ForbiddenOperationException("Forbidden Method");
+		return this.syncTableConfiguration.getPrimaryKey();
 	}
 
 	@Override
@@ -76,9 +86,14 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 
 	@Override
 	public String getUuid() {
-		throw new ForbiddenOperationException("Forbidden Method");
+		return this.uuid;
 	}
 
+	@Override
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+	
 	@Override
 	public void setConsistent(int consistent) {
 		throw new ForbiddenOperationException("Forbidden Method");
@@ -121,7 +136,7 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	
 	@Override
 	public String generateTableName() {
-		throw new ForbiddenOperationException("Forbidden Method");
+		return this.syncTableConfiguration.getTableName();
 	}
 
 	@Override
@@ -133,4 +148,12 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
+	
+	public static GenericOpenMRSObject fastCreate(int objectId, SyncTableConfiguration syncTableConfiguration) {
+		GenericOpenMRSObject obj = new GenericOpenMRSObject(syncTableConfiguration);
+		obj.setObjectId(objectId);
+		
+		return obj;
+	}
+	
 }

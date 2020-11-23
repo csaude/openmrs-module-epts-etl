@@ -9,14 +9,14 @@
 	classPath_: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/eptssync-api-1.0-SNAPSHOT.jar",
 	childConfigFilePath_: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
 	
-	originAppLocationCode: "zbz_ile",
+	originAppLocationCode: "zbz_mocuba",
 	firstExport: true,
 	automaticStart: true, 
 	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_ile?autoReconnect=true&useSSL=false",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_mocuba?autoReconnect=true&useSSL=false",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	
@@ -40,7 +40,7 @@
 				child: {
 						operationType: "inconsistency_solver",
 						maxRecordPerProcessing: 1000, 
-						maxSupportedEngines: 1,
+						maxSupportedEngines: 15,
 						minRecordsPerEngine: 1000,
 						disabled: false,
 						doIntegrityCheckInTheEnd: true,
@@ -49,7 +49,7 @@
 						child:	{
 							operationType: "export",
 							maxRecordPerProcessing: 1000,
-							maxSupportedEngines: 5,
+							maxSupportedEngines: 15,
 							minRecordsPerEngine: 100,
 							disabled: false,
 							processingMode: "sequencial",
@@ -57,7 +57,7 @@
 							child:{
 								operationType: "transport",
 								maxRecordPerProcessing: 1000,
-								maxSupportedEngines: 5,
+								maxSupportedEngines: 15,
 								minRecordsPerEngine: 50,
 								disabled: false,
 								processingMode: "sequencial"

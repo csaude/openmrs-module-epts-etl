@@ -45,7 +45,6 @@ public class SyncEngine extends Engine {
 		getRelatedOperationController().logInfo("SYNCHRONIZING '"+syncRecords.size() + "' "+ getSyncTableConfiguration().getTableName().toUpperCase());
 		
 		if (getSyncTableConfiguration().isDoIntegrityCheckInTheEnd(getRelatedOperationController().getOperationType()) && !getSyncTableConfiguration().useSharedPKKey()) {
-			logInfo("PERFORMING SYNC WITHOUT INTEGRITY CHECK....");
 			List<OpenMRSObject> objects = SyncImportInfoVO.convertAllToOpenMRSObject(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
 			
 			OpenMRSObjectDAO.insertAll(objects, getSyncTableConfiguration(), conn);
@@ -53,8 +52,6 @@ public class SyncEngine extends Engine {
 			SyncImportInfoDAO.refreshLastMigrationTrySync(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
 		}
 		else{
-			logInfo("PERFORMING SYNC WITH INTEGRITY CHECK....");
-			
 			for (SyncRecord record : syncRecords) {
 				((SyncImportInfoVO)record).sync(this.getSyncTableConfiguration(), conn);
 			}

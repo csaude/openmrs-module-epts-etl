@@ -50,7 +50,13 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		executeQuery(sql, params, conn);
 	}
 	
-
+	public static void insertWithObjectId(OpenMRSObject record, Connection conn) throws DBException{
+		Object[] params = record.getInsertParamsWithObjectId();
+		String sql = record.getInsertSQLWithObjectId();
+		
+		executeQuery(sql, params, conn);
+	}
+	
 	public static void update(OpenMRSObject record, Connection conn) throws DBException {
 		Object[] params = record.getUpdateParams();
 		String sql = record.getUpdateSQL();
@@ -158,6 +164,16 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public static List<OpenMRSObject> getByParentId(SyncTableConfiguration tableConfiguration, String parentField, int parentId, Connection conn) throws DBException {
+		Object[] params = {parentField};
+		
+		String sql = " SELECT " + tableConfiguration.getPrimaryKey() + " as object_id "+
+					 " FROM     " + tableConfiguration.getTableName() +
+					 " WHERE 	" + parentField + " = ?";
+		
+		return utilities.parseList(search(GenericOpenMRSObject.class, sql, params, conn), OpenMRSObject.class);
 	}
 	
 	public static GenericOpenMRSObject getById(String tableName, String pkColumnName, int id, Connection conn) throws DBException{
@@ -291,6 +307,19 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		return search(clazz, sql, params, conn);
 	}
 	
+	
+	public static List<OpenMRSObject> getByParentId(Class<OpenMRSObject> clazz, String parentField, int parentId, Connection conn) throws DBException {
+		Object[] params = {parentField};
+		
+		OpenMRSObject obj = utilities.createInstance(clazz);
+		
+		String sql = " SELECT * " +
+					 " FROM     " + obj.generateTableName() +
+					 " WHERE 	" + parentField + " = ?";
+		
+		return search(clazz, sql, params, conn);
+	}
+	
 	private static void insertAllMetadata(List<OpenMRSObject> records, SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		if (!tableInfo.isMetadata()) throw new ForbiddenOperationException("You tried to insert " + tableInfo.getTableName() + " as metadata but it is not a metadata!!!");
 		
@@ -374,6 +403,32 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			String originAppLocationCode = idParts[1];
 			
 			return thinGetByOriginRecordId(class1, objectId, originAppLocationCode, conn);
+		}
+	}
+	
+	public static int getAvaliableObjectId(SyncTableConfiguration syncTableInfo, int maxAcceptableId, Connection conn) throws DBException {
+		if (maxAcceptableId <= 0) throw new ForbiddenOperationException("There was not find any avaliable id for " + syncTableInfo.getTableName());
+		
+		String sql = "";  
+		
+		sql += " SELECT max(" + syncTableInfo.getPrimaryKey() + ") object_id \n";
+		sql += " FROM  	" + syncTableInfo.getTableName() + ";\n";
+		 
+		OpenMRSObject maxObj = find(GenericOpenMRSObject.class, sql, null, conn);
+		
+		if (maxObj != null) {
+			if (maxObj.getObjectId() < maxAcceptableId) {
+				return maxAcceptableId;
+			}
+			else {
+				if (getById(syncTableInfo.getSyncRecordClass(), maxAcceptableId - 1, conn) == null) {
+					return maxAcceptableId - 1;
+				}
+				else return getAvaliableObjectId(syncTableInfo, maxAcceptableId - 1, conn);
+			}
+		}
+		else{
+			return maxAcceptableId;
 		}
 	}
 	

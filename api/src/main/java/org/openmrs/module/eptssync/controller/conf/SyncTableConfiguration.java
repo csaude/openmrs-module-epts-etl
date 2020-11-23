@@ -431,13 +431,7 @@ public class SyncTableConfiguration {
 			getPrimaryKey();
 			
 			loadParents(conn);
-			
-			if (isMetadata() || isRemoveForbidden()) {
-				//Dont load children as records from this table cannot be removed
-			}
-			else {
-				loadChildren(conn);
-			}
+			loadChildren(conn);
 			this.fullLoaded = true;
 		} catch (SQLException e) {
 			e.printStackTrace();
