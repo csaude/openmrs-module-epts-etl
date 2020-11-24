@@ -144,11 +144,21 @@ public class EngineMonitor implements MonitoredOperation{
 		
 		SyncTableConfiguration syncInfo = getSyncTableInfo();
 		
+		//logInfo("DETERMINING MIN RECORD FOR " + getSyncTableInfo().getTableName());
+		
 		long minRecId = getController().getMinRecordId(getSyncTableInfo());
+		
+		//logInfo("FOUND MIN RECORD " + getSyncTableInfo() + " = " + minRecId);
+		
+		//logInfo("DETERMINING MAX RECORD FOR " + getSyncTableInfo().getTableName());
+	
 		long maxRecId =  getController().getMaxRecordId(getSyncTableInfo());
+		//logInfo("FOUND MAX RECORD " + getSyncTableInfo() + " = " + maxRecId);
 			
 		if (maxRecId == 0 && minRecId == 0) {
 			String msg = "NO RECORD TO PROCESS FOR TABLE '"+ getSyncTableInfo().getTableName().toUpperCase() + "' NO ENGINE WILL BE CRIETED BY NOW!";
+			
+			//if (maxRecId < 10) throw new ForbiddenOperationException(msg);
 			
 			logInfo(msg);
 			

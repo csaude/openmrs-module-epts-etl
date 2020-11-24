@@ -293,6 +293,21 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		return v.intValue();
 	}	
 	
+	
+	public static int countAllOfParentId(Class<OpenMRSObject> clazz, String parentField, int parentId, Connection conn) throws DBException {
+		Object[] params = {parentId};
+
+		OpenMRSObject obj = utilities.createInstance(clazz);
+		
+		String sql = " SELECT count(*) value" +
+					 " FROM     " + obj.generateTableName() +
+					 " WHERE 	" + parentField + " = ? " ;
+		
+		SimpleValue v = find(SimpleValue.class, sql, params, conn);
+		
+		return v.intValue();
+	}	
+	
 	public static List<OpenMRSObject> getByOriginParentId(Class<OpenMRSObject> clazz, String parentField, int parentOriginId, String appOriginCode, Connection conn) throws DBException {
 		Object[] params = {parentOriginId, 
 						   appOriginCode};

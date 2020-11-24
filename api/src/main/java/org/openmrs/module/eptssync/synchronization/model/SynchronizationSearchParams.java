@@ -89,6 +89,7 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 		Class<OpenMRSObject> clazz = tableInfo.getSyncRecordClass();
 		
 		OpenMRSObjectSearchParams<OpenMRSObject> migratedRecordSearchParams = new OpenMRSObjectSearchParams<OpenMRSObject>(clazz);
+		migratedRecordSearchParams.setOriginAppLocationCode(this.appOriginLocationCode);
 		
 		int migrated = SearchParamsDAO.countAll(migratedRecordSearchParams, conn);
 		int notMigrated = countNotProcessedRecords(conn);

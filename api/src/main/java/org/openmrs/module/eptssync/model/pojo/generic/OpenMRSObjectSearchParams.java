@@ -23,6 +23,10 @@ public class OpenMRSObjectSearchParams <T extends OpenMRSObject> extends Abstrac
 		this.defaultObject = utilities.createInstance(openMRSObjectClass);
 	}
 	
+	public void setOriginAppLocationCode(String originAppLocationCode) {
+		this.originAppLocationCode = originAppLocationCode;
+	}
+	
 	@Override
 	public SearchClauses<T> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<T> searchClauses = new SearchClauses<T>(this);

@@ -9,14 +9,14 @@
 	classPath_: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/eptssync-api-1.0-SNAPSHOT.jar",
 	childConfigFilePath_: "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json",
 	
-	originAppLocationCode: "zbz_mocuba",
+	originAppLocationCode: "zbz_morrumbala",
 	firstExport: true,
 	automaticStart: true, 
 	
 	connInfo: {
 		dataBaseUserName: "root",
 		dataBaseUserPassword: "root",
-		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_mocuba?autoReconnect=true&useSSL=false",
+		connectionURI: "jdbc:mysql://10.10.2.2:3307/openmrs_morrumbala?autoReconnect=true&useSSL=false",
 		driveClassName: "com.mysql.jdbc.Driver"
 	},
 	

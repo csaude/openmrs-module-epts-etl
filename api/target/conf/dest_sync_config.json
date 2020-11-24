@@ -42,7 +42,7 @@
 					minRecordsPerEngine: 100,
 					disabled: false,
 					processingMode: "sequencial",
-					sourceFolders: ["zbz_mocuba"],
+					sourceFolders: ["zbz_morrumbala"],
 					
 					child:{
 						operationType: "synchronization",

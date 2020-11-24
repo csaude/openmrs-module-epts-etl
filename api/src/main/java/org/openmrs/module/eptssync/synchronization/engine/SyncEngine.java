@@ -49,7 +49,7 @@ public class SyncEngine extends Engine {
 			
 			OpenMRSObjectDAO.insertAll(objects, getSyncTableConfiguration(), conn);
 			
-			SyncImportInfoDAO.refreshLastMigrationTrySync(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
+			SyncImportInfoDAO.markAsToBeCompletedInFuture(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
 		}
 		else{
 			for (SyncRecord record : syncRecords) {
