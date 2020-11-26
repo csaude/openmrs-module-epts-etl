@@ -30,7 +30,7 @@ public class AdminList extends AdministrationSectionExt {
 	 */
 	public Extension.MEDIA_TYPE getMediaType() {
 		return Extension.MEDIA_TYPE.html;
-	}
+	} 
 	
 	/**
 	 * @see AdministrationSectionExt#getTitle()

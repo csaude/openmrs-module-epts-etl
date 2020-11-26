@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @Controller
 public class  EptsSynchronizeManageController {
 	
-	protected final Log log = LogFactory.getLog(getClass());
+	protected final  Log log = LogFactory.getLog(getClass());
 	
 	@RequestMapping(value = "/module/eptssync/manage", method = RequestMethod.GET)
 	public void manage(ModelMap model) {
