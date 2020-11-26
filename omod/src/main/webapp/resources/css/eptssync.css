@@ -1,0 +1,68 @@
+p {
+	border: 1px solid black;
+}
+
+table {
+	border: 3px solid #1aac9b;
+	border-collapse: collapse;
+}
+
+th {
+	background-color: #1aac9b;
+	padding: 5px;
+	text-align: left;
+}
+
+tr:first-child label {
+	padding: 4px !important;
+	color: #fff;
+	font-weight: bold;
+	margin: 4px !important;
+	text-shadow: 0 0 .3em black;
+	font-size: 12pt;
+	border: 1px solid #1aac9b;
+}
+
+td {
+	border: 1px solid #1aac9b;
+	padding: 5px;
+	text-align: left;
+}
+
+.style1 {
+	font-size: 14px;
+	font-weight: bold;
+}
+
+.obs {
+	font-size: 14px;
+	font-weight: bold;
+}
+
+.submit-btn {
+	flex: 1;
+	margin: 10px 15px;
+}
+
+.submit-btn input {
+	color: #fff;
+	background: #1aac9b;
+	padding: 8px;
+	width: 12.8em;
+	font-weight: bold;
+	text-shadow: 0 0 .3em black;
+	font-size: 9pt;
+	border-radius: 5px 5px;
+}
+
+#error_msg {
+	background-color: #FFB6C1;
+}
+.errorTD {
+    border: 1px dashed darkred;
+    padding: 1px 6px 1px 6px;
+    margin-left: 4px;
+    margin-right: 4px;
+    vertical-align: middle;
+    background-color: lightpink;
+}
