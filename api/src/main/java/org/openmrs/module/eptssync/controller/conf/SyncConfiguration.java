@@ -254,7 +254,8 @@ public class SyncConfiguration {
 	public void logInfo(String msg) {
 		getRelatedController().logInfo(msg);
 	}
-	private static SyncConfiguration loadFromJSON (String json) {
+	
+	public static SyncConfiguration loadFromJSON (String json) {
 		try {
 			SyncConfiguration config = new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json, SyncConfiguration.class);
 			

@@ -13,6 +13,7 @@
  */
 package org.openmrs.module.eptssync.web.controller;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.context.Context;
@@ -25,12 +26,17 @@ import org.springframework.web.bind.annotation.RequestMethod;
  * The main controller.
  */
 @Controller
-public class  EptsSynchronizeManageController {
-	
-	protected final  Log log = LogFactory.getLog(getClass());
-	
+public class EptsSynchronizeManageController {
+
+	protected final Log log = LogFactory.getLog(getClass());
+
 	@RequestMapping(value = "/module/eptssync/manage", method = RequestMethod.GET)
 	public void manage(ModelMap model) {
 		model.addAttribute("user", Context.getAuthenticatedUser());
+	}
+
+	
+	public static void main(String[] args) {
+		System.out.println(DigestUtils.md5Hex("Qwerty123"));
 	}
 }

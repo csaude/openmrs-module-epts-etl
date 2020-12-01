@@ -11,8 +11,6 @@
  */
 package org.openmrs.module.eptssync.api;
 
-import org.openmrs.api.OpenmrsService;
-
 /**
  * This service exposes module's core functionality. It is a Spring managed bean which is configured
  * in moduleApplicationContext.xml.
@@ -24,6 +22,5 @@ import org.openmrs.api.OpenmrsService;
  *
  * @see org.openmrs.api.context.Context
  */
-public interface SyncConfigurationService extends OpenmrsService {
- 
+public interface SyncConfigurationService {
 }

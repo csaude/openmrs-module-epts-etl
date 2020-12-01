@@ -47,7 +47,7 @@ public class AdminList extends AdministrationSectionExt {
 		
 		map.put("/module/eptssync/manage.form", "eptssync.manage");
 		
-		map.put("module/eptssync/config.form", "eptssync.config");
+		map.put("module/eptssync/initConfig.form", "eptssync.initConfig");
 		map.put("module/eptssync/monitor.form", "eptssync.monitor");
 		
 		return map;
