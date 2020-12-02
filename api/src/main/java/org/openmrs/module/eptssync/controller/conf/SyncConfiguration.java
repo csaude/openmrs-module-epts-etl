@@ -3,6 +3,7 @@ package org.openmrs.module.eptssync.controller.conf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,7 @@ public class SyncConfiguration {
 	
 	private String installationType;
 	private File relatedConfFile;
-
+	
 	private List<SyncOperationConfig> operations;
 	
 	//If true, all operations defined within this conf won't run on start. But may run if this sync configuration is nested to another configuration
@@ -316,7 +317,7 @@ public class SyncConfiguration {
 		this.operations = operations;
 	}
 	
-	private SyncOperationConfig findOperation(String operationType) {
+	public SyncOperationConfig findOperation(String operationType) {
 		SyncOperationConfig toFind = SyncOperationConfig.fastCreate(operationType);
 		
 		for (SyncOperationConfig op : this.operations) {
@@ -336,6 +337,23 @@ public class SyncConfiguration {
 		throw new ForbiddenOperationException("THE OPERATION '" + operationType.toUpperCase() + "' WAS NOT FOUND!!!!");
 	}
 	
+	public List<SyncOperationConfig> getOperationsAsList(){
+		List<SyncOperationConfig>  operationsAsList = new ArrayList<SyncOperationConfig>();
+		
+		for (SyncOperationConfig op : this.operations) {
+			operationsAsList.add(op);
+			
+			SyncOperationConfig child = op.getChild();
+			
+			while (child != null) {
+				operationsAsList.add(child);
+				
+				child = child.getChild();
+			}
+		}
+		
+		return operationsAsList;
+	}
 	
 	public void validate() throws ForbiddenOperationException{
 		String errorMsg = "";

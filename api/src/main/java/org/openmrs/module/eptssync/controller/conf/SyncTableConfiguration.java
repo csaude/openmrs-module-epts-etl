@@ -75,6 +75,22 @@ public class SyncTableConfiguration {
 	public boolean isFirstExport() {
 		return this.relatedSyncTableInfoSource.isFirstExport();
 	}
+
+	
+	public String getParentsAsString() {
+		String sourceFoldersAsString = "";
+		
+		if (utilities.arrayHasElement(this.getParents())) {
+			for (int i = 0; i < this.getParents().size() - 1; i++) {
+				sourceFoldersAsString += this.getParents().get(i).getTableName() + ",";
+			}
+			
+			sourceFoldersAsString += this.getParents().get(this.getParents().size() - 1).getTableName();
+		}
+		
+		return sourceFoldersAsString;
+	}
+	
 	
 	public List<RefInfo> getParents() {
 		return parents;

@@ -1,35 +1,34 @@
 package org.openmrs.module.eptssync.web.controller;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
-import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
-import org.openmrs.module.eptssync.model.ConfigData;
-import org.openmrs.module.eptssync.utilities.io.FileUtilities;
-import org.openmrs.util.OpenmrsUtil;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.model.ConfVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
+import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * @uthor JP Boane <jpboane@gmail.com> on 25/11/2020.
  */
 
 @Controller(SyncConfigController.CONTROLLER_NAME)
+@SessionAttributes({ "vm" })
 public class SyncConfigController {
 	public static final String CONTROLLER_NAME = "eptssync.syncConfigurationController";
 	public static final String SYNC_CONFIGURATION_INIT_STEP = "/module/eptssync/initConfig";
@@ -54,87 +53,52 @@ public class SyncConfigController {
 		model.addAttribute("user", Context.getAuthenticatedUser());
 	}
 	
-	/*@RequestMapping(value = "/module/eptssync/config", method = RequestMethod.GET)
-	public void initConfig(HttpServletRequest request, @RequestParam String installationType, @ModelAttribute("syncConfiguration") SyncConfiguration syncConfiguration) throws IOException {
-		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory() + FileUtilities.getPathSeparator() + "syncConf";
+	@RequestMapping(value = "/module/eptssync/loadOperation", method = RequestMethod.GET)
+	public ModelAndView loadOperation(Model model, HttpServletRequest request, @RequestParam String operationType) throws IOException {
+		ConfVM vm = (ConfVM) request.getSession().getAttribute("vm");
 		
-		String configFileName = installationType.equals("source") ? "source_sync_config.json" : "dest_sync_config.json";
-
-		File config = new File(rootDirectory + FileUtilities.getPathSeparator() + configFileName);
+		vm.selectOperation(operationType);
+		
+		return new ModelAndView("redirect:config.form?installationType=");
+	}
 	
-		if (config.exists()) {
-			syncConfiguration = SyncConfiguration.loadFromFile(config);
-		} else {
-						
-			String json = installationType.equals("source") ? ConfigData.generateDefaultSourcetConfig() : ConfigData.generateDefaultDestinationConfig();
-			
-			config = new File(rootDirectory + FileUtilities.getPathSeparator() + "resources" + FileUtilities.getPathSeparator() + configFileName);
-
-			syncConfiguration = SyncConfiguration.loadFromJSON(json);
-		}
+	@RequestMapping(value = "/module/eptssync/loadTable", method = RequestMethod.GET)
+	public ModelAndView loadTable(Model model, HttpServletRequest request, @RequestParam String tableName) throws IOException {
+		ConfVM vm = (ConfVM) request.getSession().getAttribute("vm");
 		
-		syncConfiguration.setClassPath(retrieveClassPath());
-	}*/
+		vm.selectTable(tableName);
+		
+		return new ModelAndView("redirect:config.form?installationType=");
+	}
+	
+	@RequestMapping(value = "/module/eptssync/activeteTab", method = RequestMethod.GET)
+	public ModelAndView activateTab(Model model, HttpServletRequest request, @RequestParam String tab) throws IOException {
+		ConfVM vm = (ConfVM) request.getSession().getAttribute("vm");
+		
+		vm.activateTab(tab);
+		
+		return new ModelAndView("redirect:config.form?installationType=");
+	}
+	
 	
 	@RequestMapping(value = "/module/eptssync/config", method = RequestMethod.GET)
 	public void initConfig(Model model, HttpServletRequest request, @RequestParam String installationType) throws IOException {
-		//ModelAndView modelAndView = new ModelAndView();
 		
-		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory() + FileUtilities.getPathSeparator();
-		
-		String configFileName = installationType.equals("source") ? "source_sync_config.json" : "dest_sync_config.json";
-
-		File config = new File(rootDirectory + FileUtilities.getPathSeparator() + "syncConf" + FileUtilities.getPathSeparator() + configFileName);
-
-		SyncConfiguration syncConfiguration = null;
-
-		if (config.exists()) {
-			syncConfiguration = SyncConfiguration.loadFromFile(config);
-		} else {
-						
-			String json = installationType.equals("source") ? ConfigData.generateDefaultSourcetConfig() : ConfigData.generateDefaultDestinationConfig();
-			
-			config = new File(rootDirectory + FileUtilities.getPathSeparator() + "resources" + FileUtilities.getPathSeparator() + configFileName);
-
-			syncConfiguration = SyncConfiguration.loadFromJSON(json);
-			syncConfiguration.setSyncRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "syncConf");
-		
-			Properties properties = new Properties();
-			
-			File openMrsRuntimePropertyFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "openmrs-runtime.properties");
-			
-			properties.load(FileUtilities.createStreamFromFile(openMrsRuntimePropertyFile));
-			
-			syncConfiguration.getConnInfo().setConnectionURI(properties.getProperty("connection.url"));
-			syncConfiguration.getConnInfo().setDataBaseUserName(properties.getProperty("connection.username"));
-			syncConfiguration.getConnInfo().setDataBaseUserPassword(properties.getProperty("connection.password"));
+		if (!installationType.isEmpty()) {
+			model.addAttribute("vm", new ConfVM(request, installationType));
 		}
-		
-		syncConfiguration.setClassPath(retrieveClassPath());
-		
-		
-		model.addAttribute("syncConfiguration", syncConfiguration);
+	}
+
 	
-		//modelAndView.addObject("syncConfiguration", syncConfiguration);
-		//return modelAndView;
-	}
 
-	private String retrieveClassPath() {
-		String rootDirectory = Paths.get(".").normalize().toAbsolutePath().toString();
+	@RequestMapping(value = "/module/eptssync/saveOperation", method = RequestMethod.POST)
+	public ModelAndView save(@ModelAttribute("vm") final ConfVM vm, final Errors errors) {
+		SyncOperationConfig confi = vm.getSelectedOperation();
 		
-		File[] allFiles = new File(rootDirectory + FileUtilities.getPathSeparator() + "temp").listFiles();
-		
-		Arrays.sort(allFiles);
-		
-		for (int i = allFiles.length - 1; i >= 0; i--) {
-			if (allFiles[i].isDirectory() && allFiles[i].getAbsolutePath().contains("openmrs-lib-cache")) {
-				File classPath = new File(allFiles[i].getAbsoluteFile() + FileUtilities.getPathSeparator() + "eptssync" + FileUtilities.getPathSeparator() + "lib");
-				
-				return classPath.getAbsolutePath();
-			}
+		if (errors.hasErrors()) {
+			return new ModelAndView();
 		}
-		
-		return null;
-	}
 
+		return new ModelAndView("redirect:config.form?installationType=");
+	}
 }

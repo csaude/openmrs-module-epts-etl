@@ -72,6 +72,20 @@ public class SyncOperationConfig {
 		return sourceFolders;
 	}
 	
+	public String getSourceFoldersAsString() {
+		String sourceFoldersAsString = "";
+		
+		if (utilities.arrayHasElement(this.getSourceFolders())) {
+			for (int i = 0; i < this.getSourceFolders().size() - 1; i++) {
+				sourceFoldersAsString += this.getSourceFolders().get(i) + ",";
+			}
+			
+			sourceFoldersAsString += this.getSourceFolders().get(this.getSourceFolders().size() - 1);
+		}
+		
+		return sourceFoldersAsString;
+	}
+	
 	public void setSourceFolders(List<String> sourceFolders) {
 		this.sourceFolders = sourceFolders;
 	}
