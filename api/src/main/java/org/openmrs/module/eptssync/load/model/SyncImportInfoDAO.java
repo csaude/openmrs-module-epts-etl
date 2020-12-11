@@ -60,7 +60,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 				try {
 					executeBatch(conn, sql);
 				} catch (DBException e) {
-					e.printStackTrace();
+					//e.printStackTrace();
 					
 					 if (e.isDuplicatePrimaryKeyException()) {
 						 	//Error Pather... Duplicate Entry 'objectId-origin_app' for bla bla 

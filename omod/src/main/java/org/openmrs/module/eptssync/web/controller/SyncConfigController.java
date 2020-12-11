@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
-import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.model.ConfVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,15 +89,15 @@ public class SyncConfigController {
 		}
 	}
 
-	
-
-	@RequestMapping(value = "/module/eptssync/saveOperation", method = RequestMethod.POST)
-	public ModelAndView save(@ModelAttribute("vm") final ConfVM vm, final Errors errors) {
-		SyncOperationConfig confi = vm.getSelectedOperation();
+	@RequestMapping(value = "/module/eptssync/saveConfig", method = RequestMethod.POST)
+	public ModelAndView save(@ModelAttribute("vm") ConfVM vm, Model model) {
+		SyncConfiguration confi = vm.getSyncConfiguration();
 		
-		if (errors.hasErrors()) {
+		System.out.println(confi);
+		
+		/*if (errors.hasErrors()) {
 			return new ModelAndView();
-		}
+		}*/
 
 		return new ModelAndView("redirect:config.form?installationType=");
 	}

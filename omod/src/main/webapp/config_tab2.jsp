@@ -28,7 +28,9 @@
 									<spring:message code="eptssync.config.operation.maxSupportedEngines" />
 								</td>
 								<td>
-									<input type="text" name="maxSupportedEngines" value="${vm.selectedOperation.maxSupportedEngines}" size="100" />
+									<spring:bind path="vm.selectedOperation.maxSupportedEngines">
+										<input type="text" name="maxSupportedEngines" value="${vm.selectedOperation.maxSupportedEngines}" size="100" />
+									</spring:bind>
 								</td> 
 							</tr>
 							<tr>
@@ -36,7 +38,9 @@
 									<spring:message code="eptssync.config.operation.maxRecordPerProcessing" />
 								</td>
 								<td>
-									<input type="text" name="maxRecordPerProcessing" value="${vm.selectedOperation.maxRecordPerProcessing}" size="100" />
+									<spring:bind path="vm.selectedOperation.maxSupportedEngines">
+										<input type="text" name="maxRecordPerProcessing" value="${vm.selectedOperation.maxRecordPerProcessing}" size="100" />
+									</spring:bind>
 								</td> 
 							</tr>	
 							<tr>
@@ -77,7 +81,7 @@
 				</tr>
 				<tr>
 					<td>
-						<input type="button" value='<spring:message code="eptssync.config.operation.save"/>' name="saveOperation" onclick="window.location='saveOperation.form'" />
+						<input type="submit" value='<spring:message code="eptssync.config.operation.save"/>' name="saveConfig"/>
 						<input type="button" value='<spring:message code="eptssync.config.operation.close"/>' name="closeOperation" onclick="window.location='loadOperation.form?operationType='" />
 					</td>
 				</tr>

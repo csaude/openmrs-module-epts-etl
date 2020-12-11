@@ -46,7 +46,7 @@
 				</tr>
 				<tr>
 					<td>
-						<input type="button" value='<spring:message code="eptssync.config.operation.save"/>' name="saveOperation" onclick="window.location='saveTable.form'" />
+						<input type="submit" value='<spring:message code="eptssync.config.table.save"/>' name="saveConfig"/>
 						<input type="button" value='<spring:message code="eptssync.config.operation.close"/>' name="closeOperation" onclick="window.location='loadTable.form?tableName='" />
 					</td>
 				</tr>

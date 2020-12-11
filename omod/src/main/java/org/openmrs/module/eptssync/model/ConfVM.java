@@ -32,7 +32,7 @@ public class ConfVM {
 		
 		//ModelAndView modelAndView = new ModelAndView();
 		
-		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory() + FileUtilities.getPathSeparator();
+		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
 		
 		String configFileName = installationType.equals("source") ? "source_sync_config.json" : "dest_sync_config.json";
 
@@ -71,6 +71,18 @@ public class ConfVM {
 		return selectedTable;
 	}
 	
+	public void setSyncConfiguration(SyncConfiguration syncConfiguration) {
+		this.syncConfiguration = syncConfiguration;
+	}
+
+	public void setSelectedOperation(SyncOperationConfig selectedOperation) {
+		this.selectedOperation = selectedOperation;
+	}
+
+	public void setSelectedTable(SyncTableConfiguration selectedTable) {
+		this.selectedTable = selectedTable;
+	}
+
 	private String retrieveClassPath() {
 		String rootDirectory = Paths.get(".").normalize().toAbsolutePath().toString();
 		

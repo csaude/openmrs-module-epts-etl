@@ -13,10 +13,10 @@
 <br />
 
 
-<springform:form modelAttribute="syncConfig" method="post" action="initConfig.form">
+<springform:form modelAttribute="vm" method="GET" action="initConfig.form">
 	<table>
 		<tr>
-			<td style="width: 75%;">
+			<td>
 				<select name="installationType" id="installationType">
 					<option value=""><spring:message code="eptssync.config.installationType.select" /></option>
 					<option value="source"><spring:message code="eptssync.config.installationType.source" /></option>
@@ -24,7 +24,6 @@
 				</select>
 				
 				<input type="button" value="<spring:message code="eptssync.config.button.initConfig"/>" name="config" onclick="window.location='config.form?installationType=' + document.getElementById('installationType').value" />
-				
 			</td> 
 		</tr>
 	</table>	
