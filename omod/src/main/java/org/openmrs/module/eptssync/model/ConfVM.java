@@ -8,6 +8,7 @@ import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
@@ -47,6 +48,10 @@ public class ConfVM {
 			config = new File(rootDirectory + FileUtilities.getPathSeparator() + "resources" + FileUtilities.getPathSeparator() + configFileName);
 
 			syncConfiguration = SyncConfiguration.loadFromJSON(json);
+			
+			new ProcessController(syncConfiguration);
+			
+			
 			syncConfiguration.setSyncRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "syncConf");
 		
 			Properties properties = new Properties();
@@ -58,6 +63,8 @@ public class ConfVM {
 			syncConfiguration.getConnInfo().setConnectionURI(properties.getProperty("connection.url"));
 			syncConfiguration.getConnInfo().setDataBaseUserName(properties.getProperty("connection.username"));
 			syncConfiguration.getConnInfo().setDataBaseUserPassword(properties.getProperty("connection.password"));
+			
+			syncConfiguration.loadAllTables();
 		}
 		
 		syncConfiguration.setClassPath(retrieveClassPath());
@@ -111,9 +118,12 @@ public class ConfVM {
 	}
 	
 	public void selectTable(String tableName) {
-		this.selectedTable = syncConfiguration.findSyncTableConfiguration(tableName);
+		this.selectedTable = syncConfiguration.findSyncTableConfigurationOnAllTables(tableName);
+		
+		if (syncConfiguration.find(this.selectedTable) == null || !this.selectedTable.isFullLoaded()) {
+			this.selectedTable.fullLoad();
+		}
 	}
-	
 	
 	public String getActiveTab() {
 		return activeTab;

@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.controller.conf;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.consolitation.controller.DatabaseIntegrityConsolidationController;
@@ -61,6 +62,9 @@ public class SyncOperationConfig {
 	public SyncOperationConfig() {
 	}
 	
+	public boolean isSourceFoldersRequired() {
+		return isLoadOperation();
+	}
 	
 	public String getDesignation() {
 		return this.getRelatedSyncConfig().getDesignation() + "_" + this.getOperationType();
@@ -70,6 +74,18 @@ public class SyncOperationConfig {
 		//if (this.sourceFolders == null) throw new ForbiddenOperationException("There is no source folder defined");
 		
 		return sourceFolders;
+	}
+	
+	public void setSourceFoldersAsString(String foldersStr) {
+		this.sourceFolders = new ArrayList<String>();
+		
+		String[] folders = utilities.stringHasValue(foldersStr) ? foldersStr.split(",") : null;
+		
+		if (folders != null) {
+			for (String f : folders) {
+				this.sourceFolders.add(f);
+			}
+		}
 	}
 	
 	public String getSourceFoldersAsString() {

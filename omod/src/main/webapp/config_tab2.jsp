@@ -12,7 +12,7 @@
 									<spring:message code="eptssync.config.operation.operationType" />
 								</td>
 								<td style="width: 100%;">
-									<input type="text" name="operationType" value="${vm.selectedOperation.operationType}" size="100" readonly="readonly"/>
+									<input type="text" name="operationType" value="${vm.selectedOperation.operationType}" size="100" disabled="disabled"/>
 								</td> 
 							</tr>
 							<tr>
@@ -20,7 +20,7 @@
 									<spring:message code="eptssync.config.operation.processingMode" />
 								</td>
 								<td>
-									<input type="text" name="processingMode" value="${vm.selectedOperation.processingMode}" size="100" readonly="readonly"/>
+									<input type="text" name="processingMode" value="${vm.selectedOperation.processingMode}" size="100" disabled="disabled"/>
 								</td> 
 							</tr>
 							<tr>
@@ -29,7 +29,7 @@
 								</td>
 								<td>
 									<spring:bind path="vm.selectedOperation.maxSupportedEngines">
-										<input type="text" name="maxSupportedEngines" value="${vm.selectedOperation.maxSupportedEngines}" size="100" />
+										<input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" size="100" />
 									</spring:bind>
 								</td> 
 							</tr>
@@ -38,8 +38,8 @@
 									<spring:message code="eptssync.config.operation.maxRecordPerProcessing" />
 								</td>
 								<td>
-									<spring:bind path="vm.selectedOperation.maxSupportedEngines">
-										<input type="text" name="maxRecordPerProcessing" value="${vm.selectedOperation.maxRecordPerProcessing}" size="100" />
+									<spring:bind path="vm.selectedOperation.maxRecordPerProcessing">
+										<input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" size="100" />
 									</spring:bind>
 								</td> 
 							</tr>	
@@ -48,7 +48,9 @@
 									<spring:message code="eptssync.config.operation.minRecordsPerEngine" />
 								</td>
 								<td>
-									<input type="text" name="minRecordsPerEngine" value="${vm.selectedOperation.minRecordsPerEngine}" size="100" />
+									<spring:bind path="vm.selectedOperation.minRecordsPerEngine">
+										<input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" size="100" />
+									</spring:bind>
 								</td> 
 							</tr>
 							<tr>
@@ -56,7 +58,9 @@
 									<spring:message code="eptssync.config.operation.sourceFolders" />
 								</td>
 								<td>
-									<input type="text" name="minRecordsPerEngine" value="${vm.selectedOperation.sourceFoldersAsString}" size="100" />
+									<spring:bind path="vm.selectedOperation.sourceFoldersAsString">
+										<input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" size="100" ${!vm.selectedOperation.sourceFoldersRequired ? 'disabled' : ''}/>
+									</spring:bind>
 								</td> 
 							</tr>
 							
@@ -65,7 +69,7 @@
 									<spring:message code="eptssync.config.operation.doIntegrityCheckInTheEnd" />
 								</td>
 								<td>
-									<input type="text" name="doIntegrityCheckInTheEnd" value="${vm.selectedOperation.doIntegrityCheckInTheEnd ? 'Sim' : 'Nao'}" size="100" readonly="readonly"/>
+									<input type="text" name="doIntegrityCheckInTheEnd" value="${vm.selectedOperation.doIntegrityCheckInTheEnd ? 'Sim' : 'Nao'}" size="100" disabled="disabled"/>
 								</td> 
 							</tr>
 							<tr>
@@ -73,7 +77,7 @@
 									<spring:message code="eptssync.config.operation.disabled" />
 								</td>
 								<td>
-									<input type="text" name="disabled" value="${vm.selectedOperation.disabled ? 'Inativo' : 'Activo'}" size="100" readonly="readonly" />
+									<input type="text" name="disabled" value="${vm.selectedOperation.disabled ? 'Inativo' : 'Activo'}" size="100" disabled="disabled" />
 								</td> 
 							</tr>
 						</table>
@@ -82,6 +86,7 @@
 				<tr>
 					<td>
 						<input type="submit" value='<spring:message code="eptssync.config.operation.save"/>' name="saveConfig"/>
+						
 						<input type="button" value='<spring:message code="eptssync.config.operation.close"/>' name="closeOperation" onclick="window.location='loadOperation.form?operationType='" />
 					</td>
 				</tr>

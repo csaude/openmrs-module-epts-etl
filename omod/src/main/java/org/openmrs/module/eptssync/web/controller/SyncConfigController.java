@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
-import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -92,6 +91,7 @@ public class SyncConfigController {
 	@RequestMapping(value = "/module/eptssync/saveConfig", method = RequestMethod.POST)
 	public ModelAndView save(@ModelAttribute("vm") ConfVM vm, Model model) {
 		SyncConfiguration confi = vm.getSyncConfiguration();
+		confi.refreshTables();
 		
 		System.out.println(confi);
 		

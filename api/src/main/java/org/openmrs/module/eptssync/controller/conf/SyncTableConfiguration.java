@@ -18,7 +18,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SyncTableConfiguration {
+public class SyncTableConfiguration implements Comparable<SyncTableConfiguration>{
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 
 	private String tableName;
@@ -41,7 +41,17 @@ public class SyncTableConfiguration {
 	private boolean fullLoaded;
 	private boolean removeForbidden;
 	
+	private boolean disabled;
+	
 	public SyncTableConfiguration() {
+	}
+	
+	public boolean isDisabled() {
+		return disabled;
+	}
+	
+	public void setDisabled(boolean disabled) {
+		this.disabled = disabled;
 	}
 	
 	public boolean isRemoveForbidden() {
@@ -496,5 +506,12 @@ public class SyncTableConfiguration {
 	
 	public RefInfo findParent(RefInfo parent) {
 		return utilities.findOnList(this.parents, parent);
+	}
+
+	@Override
+	public int compareTo(SyncTableConfiguration o) {
+		if (this.equals(o)) return 0;
+		
+		return this.tableName.compareTo(o.getTableName());
 	}
 }

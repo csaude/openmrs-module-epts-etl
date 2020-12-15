@@ -3,6 +3,9 @@ package org.openmrs.module.eptssync.controller.conf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,9 +60,55 @@ public class SyncConfiguration {
 	private boolean fullLoaded;
 	private ProcessController relatedController;
 	
+	private List<SyncTableConfiguration> allTables;
+	
 	private SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
+		this.allTables = new ArrayList<SyncTableConfiguration>();
 	}
+	
+	public List<SyncTableConfiguration> getAllTables() {
+		return allTables;
+	}
+	
+	public void setAllTables(List<SyncTableConfiguration> allTables) {
+		this.allTables = allTables;
+	}
+	
+	/*
+	public void refreshTables() {
+		List<SyncTableConfiguration> activeTablesTables = new ArrayList<SyncTableConfiguration>();
+		List<SyncTableConfiguration> disabledtables = new ArrayList<SyncTableConfiguration>();
+		
+		
+		for (SyncTableConfiguration conf : this.tablesConfigurations) {
+			if (conf.isDisabled()) {
+				disabledtables.add(conf);
+			}
+			else {
+				activeTablesTables.add(conf);
+			}
+		}
+		
+		for (SyncTableConfiguration conf : this.notIncludedTables) {
+			if (conf.isDisabled()) {
+				disabledtables.add(conf);
+			}
+			else {
+				activeTablesTables.add(conf);
+			}
+		}
+		
+		this.tablesConfigurations = activeTablesTables;
+		this.notIncludedTables = disabledtables;
+		
+		
+		for (SyncTableConfiguration conf : this.getTablesConfigurations()) {
+			if (!conf.isFullLoaded()) {
+				conf.fullLoad();
+			}
+		} 
+	}*/
 	
 	public void setRelatedController(ProcessController relatedController) {
 		this.relatedController = relatedController;
@@ -239,7 +288,7 @@ public class SyncConfiguration {
 			
 				logInfo("THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '"  + conf.getTableName() + "'");
 			} 
-			
+
 			this.fullLoaded = true;
 			
 			conn.markAsSuccessifullyTerminected();
@@ -251,6 +300,34 @@ public class SyncConfiguration {
 		}
 	}
 
+	public void loadAllTables() {
+		OpenConnection conn = openConnetion();
+		
+        try {
+			DatabaseMetaData dbmd = conn.getMetaData();
+			String[] types = {"TABLE"};
+			
+			ResultSet rs = dbmd.getTables(conn.getCatalog(), null, "%", types);
+			
+			while (rs.next()) {
+				SyncTableConfiguration tab = SyncTableConfiguration.init(rs.getString("TABLE_NAME"), this);
+			
+				if (tab.getTableName().startsWith("_")) continue;
+				
+				if (find(tab) == null) {
+					tab.setDisabled(true);
+				}
+				
+				this.allTables.add(tab);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+        finally {
+			conn.finalizeConnection();
+		}
+		
+	}
 	
 	public void logInfo(String msg) {
 		getRelatedController().logInfo(msg);
@@ -285,6 +362,13 @@ public class SyncConfiguration {
 		tableConfiguration.setTableName(tableName);
 		
 		return find(tableConfiguration);
+	}
+	
+	public SyncTableConfiguration findSyncTableConfigurationOnAllTables(String tableName) {
+		SyncTableConfiguration tableConfiguration = new SyncTableConfiguration();
+		tableConfiguration.setTableName(tableName);
+		
+		return utilities.findOnList(this.allTables, tableConfiguration);
 	}
 	
 	public SyncTableConfiguration find(SyncTableConfiguration tableConfiguration) {
@@ -437,6 +521,23 @@ public class SyncConfiguration {
 
 	public File getPOJOSourceFilesDirectory() {
 		return new File(getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() + "src");
+	}
+
+	public void refreshTables() {
+		List<SyncTableConfiguration> tablesConfigurations = new ArrayList<SyncTableConfiguration>();
+		
+		for (SyncTableConfiguration conf : this.allTables) {
+			if (!conf.isDisabled()) {
+				tablesConfigurations.add(conf);
+				
+				//Newly activated table
+				if (this.find(conf) == null) {
+					conf.fullLoad();
+				}
+			}
+		}
+		
+		this.tablesConfigurations = tablesConfigurations;
 	}
 
 	/*
