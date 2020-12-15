@@ -215,6 +215,29 @@ public class FuncoesGenericas {
 		return notSpaced;
 	}	
 	
+	/**
+	 * Remove todas as ocorrencias de espa�o
+	 * @param text
+	 * @return
+	 */
+	public static String replaceAllEmptySpace(String text, char replacement){
+		if (!stringHasValue(text)) return "";
+		
+		String notSpaced = "";
+		
+		int i;
+		for (i =0; i < text.length();i++){
+			if (text.charAt(i) != ' '){
+				notSpaced += text.charAt(i);
+			}
+			else {
+				notSpaced += replacement;
+			}
+		}
+		
+		return notSpaced;
+	}	
+	
 	
 	/**
 	 * Forca a aproximacao por excesso do numero recebido pelo parametro

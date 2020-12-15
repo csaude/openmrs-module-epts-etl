@@ -197,6 +197,11 @@ public class  CommonUtilities implements Serializable{
 	}
 	
 	
+
+	public String replaceAllEmptySpace(String text, char replacement){
+		return FuncoesGenericas.replaceAllEmptySpace(text, replacement);
+	}
+	
 	/**
 	 * Remove todas as ocorrencias de espa�o superiores a 1
 	 * @param text

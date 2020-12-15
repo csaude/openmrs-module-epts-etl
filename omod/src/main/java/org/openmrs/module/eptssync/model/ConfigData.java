@@ -14,7 +14,6 @@ public class ConfigData {
 					"classPath: \"/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/eptssync-api-1.0-SNAPSHOT.jar\",\n"+
 					//"childConfigFilePath: \"/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/conf/dest_sync_config.json\",\n"+
 					
-					"originAppLocationCode: \"zbz_morrumbala\",\n"+
 					"firstExport: true,\n"+
 					"automaticStart: true, \n"+
 					
@@ -121,7 +120,6 @@ public class ConfigData {
 										"minRecordsPerEngine: 1000,\n"+
 										"disabled: false,\n"+
 										"processingMode: \"sequencial\",\n"+
-										"sourceFolders: [\"zbz_morrumbala\"],"+
 										
 										"child:	{\n"+
 											"operationType: \"synchronization\",\n"+

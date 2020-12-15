@@ -24,18 +24,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.ModelAndView;
 
-/**
- * @uthor JP Boane <jpboane@gmail.com> on 25/11/2020.
- */
-
-@Controller(SyncConfigController.CONTROLLER_NAME)
+@Controller(SyncController.CONTROLLER_NAME)
 @SessionAttributes({ "vm" })
-public class SyncConfigController {
-	public static final String CONTROLLER_NAME = "eptssync.syncConfigurationController";
-	public static final String SYNC_CONFIGURATION_INIT_STEP = "/module/eptssync/initConfig";
-
+public class SyncController {
+	public static final String CONTROLLER_NAME = "eptssync.syncController";
+	
 	@SuppressWarnings("unused")
-	private static final Logger LOGGER = LoggerFactory.getLogger(SyncConfigController.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SyncController.class);
 
 	//@SuppressWarnings("unused")
 	//@Autowired
@@ -49,42 +44,13 @@ public class SyncConfigController {
 	@Autowired
 	private AdministrationService adminService;
 
-	@RequestMapping(value = "/module/eptssync/initConfig", method = RequestMethod.GET)
-	public void config(ModelMap model) {
+	@RequestMapping(value = "/module/eptssync/initSync", method = RequestMethod.GET)
+	public void initSync(ModelMap model) {
 		model.addAttribute("user", Context.getAuthenticatedUser());
 	}
 	
-	@RequestMapping(value = "/module/eptssync/loadOperation", method = RequestMethod.GET)
-	public ModelAndView loadOperation(Model model, HttpServletRequest request, @RequestParam String operationType) throws IOException {
-		ConfVM vm = (ConfVM) request.getSession().getAttribute("vm");
-		
-		vm.selectOperation(operationType);
-		
-		return new ModelAndView("redirect:config.form?installationType=");
-	}
-	
-	@RequestMapping(value = "/module/eptssync/loadTable", method = RequestMethod.GET)
-	public ModelAndView loadTable(Model model, HttpServletRequest request, @RequestParam String tableName) throws IOException {
-		ConfVM vm = (ConfVM) request.getSession().getAttribute("vm");
-		
-		vm.selectTable(tableName);
-		
-		return new ModelAndView("redirect:config.form?installationType=");
-	}
-	
-	@RequestMapping(value = "/module/eptssync/activeteTab", method = RequestMethod.GET)
-	public ModelAndView activateTab(Model model, HttpServletRequest request, @RequestParam String tab) throws IOException {
-		ConfVM vm = (ConfVM) request.getSession().getAttribute("vm");
-		
-		vm.activateTab(tab);
-		
-		vm.save();
-		
-		return new ModelAndView("redirect:config.form?installationType=");
-	}
-	
-	@RequestMapping(value = "/module/eptssync/config", method = RequestMethod.GET)
-	public void initConfig(Model model, HttpServletRequest request, @RequestParam String installationType) throws IOException, DBException {
+	@RequestMapping(value = "/module/eptssync/startSync", method = RequestMethod.GET)
+	public void startSync(Model model, HttpServletRequest request, @RequestParam String installationType) throws IOException, DBException {
 		
 		if (!installationType.isEmpty()) {
 			model.addAttribute("vm", ConfVM.getInstance(request, installationType));

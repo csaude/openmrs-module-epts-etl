@@ -7,67 +7,41 @@ import java.util.Arrays;
 import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.ForbiddenException;
 
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsUtil;
 
 public class ConfVM {
+	private static ConfVM sourceConfVM;
+	private static ConfVM destConfVM;
+	
 	private static final String INSTALATION_TAB = "1";
 	private static final String OPERATIONS_TAB = "2";
 	private static String TABLES_TAB = "3";
 	
 	private SyncConfiguration syncConfiguration;
+	private SyncConfiguration otherSyncConfiguration;
+	
 	private String activeTab;
 	
 	private SyncOperationConfig selectedOperation;
 	
 	private SyncTableConfiguration selectedTable;
 	
-	public ConfVM(HttpServletRequest request, String installationType) throws IOException {
-		this.activeTab = ConfVM.INSTALATION_TAB;
-		
-		
-		//ModelAndView modelAndView = new ModelAndView();
-		
-		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
-		
-		String configFileName = installationType.equals("source") ? "source_sync_config.json" : "dest_sync_config.json";
-
-		File config = new File(rootDirectory + FileUtilities.getPathSeparator() + "syncConf" + FileUtilities.getPathSeparator() + configFileName);
+	private File configFile;
+	private String statusMessage;
 	
-		if (config.exists()) {
-			syncConfiguration = SyncConfiguration.loadFromFile(config);
-		} else {
-						
-			String json = installationType.equals("source") ? ConfigData.generateDefaultSourcetConfig() : ConfigData.generateDefaultDestinationConfig();
-			
-			config = new File(rootDirectory + FileUtilities.getPathSeparator() + "resources" + FileUtilities.getPathSeparator() + configFileName);
-
-			syncConfiguration = SyncConfiguration.loadFromJSON(json);
-			
-			new ProcessController(syncConfiguration);
-			
-			
-			syncConfiguration.setSyncRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "syncConf");
+	private ConfVM(HttpServletRequest request, String installationType) throws IOException, DBException {
+		this.syncConfiguration = new SyncConfiguration();
+		this.syncConfiguration.setInstallationType(installationType);
 		
-			Properties properties = new Properties();
-			
-			File openMrsRuntimePropertyFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "openmrs-runtime.properties");
-			
-			properties.load(FileUtilities.createStreamFromFile(openMrsRuntimePropertyFile));
-			
-			syncConfiguration.getConnInfo().setConnectionURI(properties.getProperty("connection.url"));
-			syncConfiguration.getConnInfo().setDataBaseUserName(properties.getProperty("connection.username"));
-			syncConfiguration.getConnInfo().setDataBaseUserPassword(properties.getProperty("connection.password"));
-			
-			syncConfiguration.loadAllTables();
-		}
-		
-		syncConfiguration.setClassPath(retrieveClassPath());
+		reset();
 	}
 	
 	public SyncOperationConfig getSelectedOperation() {
@@ -90,6 +64,14 @@ public class ConfVM {
 		this.selectedTable = selectedTable;
 	}
 
+	public String getStatusMessage() {
+		return statusMessage;
+	}
+	
+	public void setStatusMessage(String statusMessage) {
+		this.statusMessage = statusMessage;
+	}
+	
 	private String retrieveClassPath() {
 		String rootDirectory = Paths.get(".").normalize().toAbsolutePath().toString();
 		
@@ -108,6 +90,115 @@ public class ConfVM {
 		return null;
 	}
 	
+	public static ConfVM getInstance(HttpServletRequest request, String installationType) throws IOException, DBException {
+		ConfVM vm = null;
+		
+		if (installationType.equals("source")) {
+			if (sourceConfVM != null) {
+				vm = sourceConfVM;
+				
+				vm.reset();
+			}
+			else {
+				vm = new ConfVM(request, installationType);
+			}
+			
+			sourceConfVM = vm;
+			
+			if (destConfVM != null) {
+				vm.otherSyncConfiguration = destConfVM.getSyncConfiguration();
+			}
+			
+		}
+		else {
+			if (destConfVM != null) {
+				vm = destConfVM;
+				
+				vm.reset();
+			}
+			else {
+				vm = new ConfVM(request, installationType);
+				
+			}
+
+			if (sourceConfVM != null) {
+				vm.otherSyncConfiguration = sourceConfVM.getSyncConfiguration();
+			}
+			
+			destConfVM = vm;
+		}
+		
+		if (vm.otherSyncConfiguration == null) {
+			vm.determineOtherSyncConfiguration(request);
+		}
+		
+		return vm;
+	}
+	
+	private void determineOtherSyncConfiguration(HttpServletRequest request) throws DBException {
+		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
+		
+		String otherConfFile = this.syncConfiguration.getInstallationType().equals("source") ? "dest_sync_config.json" : "source_sync_config.json";
+
+		File otherConfigFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "resources" + FileUtilities.getPathSeparator() + otherConfFile);
+		
+		if (otherConfigFile.exists()) {
+			try {
+				this.otherSyncConfiguration = ConfVM.getInstance(request, this.syncConfiguration.getInstallationType().equals("source") ? "destination" : "source").getSyncConfiguration();
+			} catch (IOException e) {
+				throw new ForbiddenException(e);
+			}
+		}
+	}
+
+	private void reset() throws IOException, DBException {
+		this.activeTab = ConfVM.INSTALATION_TAB;
+		
+		SyncConfiguration reloadedSyncConfiguration = null;
+		
+		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
+		
+		String configFileName = this.syncConfiguration.getInstallationType().equals("source") ? "source_sync_config.json" : "dest_sync_config.json";
+
+		this.configFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "resources" + FileUtilities.getPathSeparator() + configFileName);
+
+		if (this.configFile.exists()) {
+			reloadedSyncConfiguration = SyncConfiguration.loadFromFile(this.configFile);
+		} else {
+			String json = this.syncConfiguration.getInstallationType().equals("source") ? ConfigData.generateDefaultSourcetConfig() : ConfigData.generateDefaultDestinationConfig();
+		
+			reloadedSyncConfiguration = SyncConfiguration.loadFromJSON(json);
+			
+			reloadedSyncConfiguration.setSyncRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "syncConf");
+			reloadedSyncConfiguration.setRelatedConfFile(this.configFile);
+			
+			Properties properties = new Properties();
+			
+			File openMrsRuntimePropertyFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "openmrs-runtime.properties");
+			
+			properties.load(FileUtilities.createStreamFromFile(openMrsRuntimePropertyFile));
+			
+			reloadedSyncConfiguration.getConnInfo().setConnectionURI(properties.getProperty("connection.url"));
+			reloadedSyncConfiguration.getConnInfo().setDataBaseUserName(properties.getProperty("connection.username"));
+			reloadedSyncConfiguration.getConnInfo().setDataBaseUserPassword(properties.getProperty("connection.password"));
+		}
+		
+		reloadedSyncConfiguration.setRelatedController(this.syncConfiguration.getRelatedController() == null ? new ProcessController(reloadedSyncConfiguration) : this.syncConfiguration.getRelatedController());
+		reloadedSyncConfiguration.getRelatedController().setConfiguration(reloadedSyncConfiguration);
+		reloadedSyncConfiguration.loadAllTables();
+		
+		reloadedSyncConfiguration.setClassPath(retrieveClassPath());
+		
+		this.syncConfiguration = reloadedSyncConfiguration;
+		
+		if (this.syncConfiguration.isSourceInstallationType()) {
+			if (this.syncConfiguration.getOriginAppLocationCode() == null) {
+				this.syncConfiguration.tryToDetermineOriginAppLocationCode();
+			}
+		}
+		
+	}
+
 	public void selectOperation(String operationType) {
 		if (!operationType.isEmpty()) {
 			this.selectedOperation = syncConfiguration.findOperation(operationType);
@@ -147,5 +238,22 @@ public class ConfVM {
 	
 	public boolean isTablesTabActive() {
 		return this.activeTab.equals(ConfVM.TABLES_TAB);
+	}
+
+	public void save() {
+		FileUtilities.removeFile(this.configFile.getAbsolutePath());
+		
+		this.syncConfiguration.setAutomaticStart(true);
+		FileUtilities.write(this.configFile.getAbsolutePath(), this.syncConfiguration.parseToJSON());
+		
+		//Make others not automcatic start
+		
+		if (this.otherSyncConfiguration != null && this.otherSyncConfiguration.getRelatedConfFile().exists()) {
+			this.otherSyncConfiguration.setAutomaticStart(false);
+			
+			FileUtilities.removeFile(this.otherSyncConfiguration.getRelatedConfFile().getAbsolutePath());
+			
+			FileUtilities.write(this.otherSyncConfiguration.getRelatedConfFile().getAbsolutePath(), otherSyncConfiguration.parseToJSON());
+		}
 	}
 }

@@ -7,6 +7,8 @@ import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Define the refencial information betwen a {@link SyncTableConfiguration} and its main parent;
  * 
@@ -42,14 +44,17 @@ public class RefInfo {
 		this.relatedSyncTableConfiguration = relatedSyncTableConfiguration;
 	}
 	
+	@JsonIgnore
 	public SyncTableConfiguration getRelatedSyncTableConfiguration() {
 		return relatedSyncTableConfiguration;
 	}
 	
+	@JsonIgnore
 	public String getRefType() {
 		return refType;
 	}
 	
+	@JsonIgnore
 	public Class<OpenMRSObject> getRefObjectClass() {
 		return this.refTableConfiguration.getSyncRecordClass();
 	}
@@ -66,6 +71,7 @@ public class RefInfo {
 		return defaultValueDueInconsistency;
 	}
 	
+	@JsonIgnore
 	public SyncTableConfiguration getRefTableConfiguration() {
 		return refTableConfiguration;
 	}
@@ -88,10 +94,12 @@ public class RefInfo {
 		this.defaultValueDueInconsistency = defaultValueDueInconsistency;
 	}
 
+	@JsonIgnore
 	public boolean isNumericRefColumn() {
 		return AttDefinedElements.isNumeric(getRefColumnType());
 	}
 	
+	@JsonIgnore
 	public String getRefColumnName() {
 		return refColumnName;
 	}
@@ -100,10 +108,12 @@ public class RefInfo {
 		this.refColumnName = refColumnName;
 	}
 	
+	@JsonIgnore
 	public String getRefColumnAsClassAttName() {
 		return utilities.convertTableAttNameToClassAttName(this.getRefColumnName());
 	}
 	
+	@JsonIgnore
 	public String getRefColumnType() {
 		return refColumnType;
 	}
@@ -124,6 +134,7 @@ public class RefInfo {
 		this.ignorable = ignorable;
 	}
 
+	@JsonIgnore
 	public boolean isSharedPk() {
 		if (getRefTableConfiguration().getSharePkWith() == null) {
 			return false;
@@ -138,15 +149,18 @@ public class RefInfo {
 		throw new ForbiddenOperationException("The related table of shared pk " + this.getRefTableConfiguration().getSharePkWith() + " of table " + this.getRefTableConfiguration().getTableName() + " is not listed inparents!");
 	}
 	
+	@JsonIgnore
 	public boolean isParent() {
 		return this.refType.equals(PARENT_REF_TYPE);
 	}
 	
+	@JsonIgnore
 	public boolean isChild() {
 		return this.refType.equals(CHILD_REF_TYPE);
 	}
 	
 	@Override
+	@JsonIgnore
 	public String toString() {
 		String str = "[TYPE: " + this.refType;
 		

@@ -59,6 +59,10 @@ public class ProcessController implements Controller{
 		return configuration;
 	}
 	
+	public void setConfiguration(SyncConfiguration configuration) {
+		this.configuration = configuration;
+	}
+	
 	public ProcessController getChildController() {
 		return childController;
 	}

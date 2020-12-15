@@ -30,16 +30,18 @@
 						</spring:bind>
 					</td> 
 				</tr>
+				
 				<tr>
 					<td>
 						<spring:message code="eptssync.config.originAppLocationCode.label" />
 					</td>
 					<td>	
 						<spring:bind path="vm.syncConfiguration.originAppLocationCode">
-							<input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" size="100" />
+							<input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" size="100" ${vm.syncConfiguration.sourceInstallationType ? '' : 'disabled'}/>
 						</spring:bind>
 					</td> 
 				</tr>	
+				
 				<tr>
 					<td>
 						<spring:message code="eptssync.config.dataBaseUserName.label" />

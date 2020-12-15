@@ -17,6 +17,8 @@ import org.openmrs.module.eptssync.synchronization.controller.SyncController;
 import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class SyncOperationConfig {
 	public static final String SYNC_OPERATION_DATABASE_PREPARATION = "database_preparation";
 	public static final String SYNC_OPERATION_POJO_GENERATION = "pojo_generation";
@@ -62,17 +64,17 @@ public class SyncOperationConfig {
 	public SyncOperationConfig() {
 	}
 	
+	@JsonIgnore
 	public boolean isSourceFoldersRequired() {
 		return isLoadOperation();
 	}
 	
+	@JsonIgnore
 	public String getDesignation() {
 		return this.getRelatedSyncConfig().getDesignation() + "_" + this.getOperationType();
 	}
 	
 	public List<String> getSourceFolders() {
-		//if (this.sourceFolders == null) throw new ForbiddenOperationException("There is no source folder defined");
-		
 		return sourceFolders;
 	}
 	
@@ -88,6 +90,7 @@ public class SyncOperationConfig {
 		}
 	}
 	
+	@JsonIgnore
 	public String getSourceFoldersAsString() {
 		String sourceFoldersAsString = "";
 		
@@ -106,10 +109,12 @@ public class SyncOperationConfig {
 		this.sourceFolders = sourceFolders;
 	}
 	
+	@JsonIgnore
 	public boolean isParallelModeProcessing() {
 		return this.processingMode.equalsIgnoreCase(SyncConfiguration.PROCESSING_MODE_PARALLEL);
 	}
 	
+	@JsonIgnore
 	public boolean isSequencialModeProcessing() {
 		return this.processingMode.equalsIgnoreCase(SyncConfiguration.PROCESSING_MODE_SEQUENCIAL);
 	}
@@ -119,13 +124,13 @@ public class SyncOperationConfig {
 	}
 	
 	public void setProcessingMode(String processingMode) {
-		
 		if (!utilities.isStringIn(processingMode, supportedProcessingModes)) 
 			throw new ForbiddenOperationException("The processing mode '" + processingMode + "' is not supported. Supported modes are: " + supportedProcessingModes);
 		
 		this.processingMode = processingMode;
 	}
 
+	@JsonIgnore
 	public SyncOperationConfig getParent() {
 		return parent;
 	}
@@ -154,6 +159,7 @@ public class SyncOperationConfig {
 		return disabled;
 	}
 	
+	@JsonIgnore
 	public SyncConfiguration getRelatedSyncConfig() {
 		return relatedSyncConfig;
 	}
@@ -212,35 +218,42 @@ public class SyncOperationConfig {
 		return op;
 	}
 	
-	
+	@JsonIgnore
 	public boolean isExportOperation() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_EXPORT);
 	}
 	
+	@JsonIgnore
 	public boolean isSynchronizationOperation() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION);
 	}
 	
+	@JsonIgnore
 	public boolean isLoadOperation() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_LOAD);
 	}
 	
+	@JsonIgnore
 	public boolean isTransportOperation() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_TRANSPORT);
 	}
 	
+	@JsonIgnore
 	public boolean isConsolidationOperation() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_CONSOLIDATION);
 	}
 	
+	@JsonIgnore
 	public boolean isDatabasePreparationOperation() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION);
 	}
 	
+	@JsonIgnore
 	public boolean isPojoGeneration() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION);
 	}
 	
+	@JsonIgnore
 	public boolean isInconsistenceSolver() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER);
 	}
@@ -321,6 +334,7 @@ public class SyncOperationConfig {
 		}
 	}
 	
+	@JsonIgnore
 	public boolean canBeRunInSourceInstallation() {
 		return utilities.existOnArray(getSupportedOperationsInSourceInstallation(), this.operationType);
 	}
@@ -336,6 +350,7 @@ public class SyncOperationConfig {
 		return utilities.parseArrayToList(supported);
 	}
 	
+	@JsonIgnore
 	public boolean canBeRunInDestinationInstallation() {
 		return utilities.existOnArray(getSupportedOperationsInDestinationInstallation(), this.operationType);
 	}
@@ -352,9 +367,8 @@ public class SyncOperationConfig {
 		return utilities.parseArrayToList(supported);
 	}
 	
-
-	
 	@Override
+	@JsonIgnore
 	public String toString() {
 		return getRelatedSyncConfig().getDesignation() + "_" + this.operationType;
 	}

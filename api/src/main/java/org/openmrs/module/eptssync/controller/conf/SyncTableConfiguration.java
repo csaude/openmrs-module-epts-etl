@@ -62,6 +62,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		this.removeForbidden = removeForbidden;
 	}
 	
+	@JsonIgnore
 	public List<RefInfo> getChildred() {
 		return childred;
 	}
@@ -70,6 +71,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		this.childred = childred;
 	}
 	
+	@JsonIgnore
 	public String getClasspackage() {
 		return getRelatedSynconfiguration().getPojoPackage();
 	}
@@ -78,15 +80,17 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return getRelatedSynconfiguration().isDoIntegrityCheckInTheEnd(operationType);
 	}
 	
+	@JsonIgnore
 	public String getId() {
 		return this.getRelatedSynconfiguration().getDesignation() + "_" + this.tableName;
 	}
 	
+	@JsonIgnore
 	public boolean isFirstExport() {
 		return this.relatedSyncTableInfoSource.isFirstExport();
 	}
-
 	
+	@JsonIgnore
 	public String getParentsAsString() {
 		String sourceFoldersAsString = "";
 		
@@ -100,7 +104,6 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		return sourceFoldersAsString;
 	}
-	
 	
 	public List<RefInfo> getParents() {
 		return parents;
@@ -126,6 +129,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		this.sharePkWith = sharePkWith;
 	}
 
+	@JsonIgnore
 	public SyncConfiguration getRelatedSynconfiguration() {
 		return relatedSyncTableInfoSource;
 	}
@@ -142,18 +146,22 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		this.tableName = tableName;
 	}
 	
+	@JsonIgnore
 	public boolean useSharedPKKey() {
 		return utilities.stringHasValue(this.sharePkWith);
 	}
 	
+	@JsonIgnore
 	public String getPrimaryKeyAsClassAtt() {
 		return convertTableAttNameToClassAttName(getPrimaryKey());
 	}
 	
+	@JsonIgnore
 	public OpenConnection openConnection() {
 		return relatedSyncTableInfoSource.openConnetion();
 	}
 	
+	@JsonIgnore
 	public String getPrimaryKey() {
 		if (primaryKey == null) {
 			
@@ -182,16 +190,19 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return primaryKey;
 	}
 	
+	@JsonIgnore
 	public String getPrimaryKeyType() {
 		if (primaryKeyType == null) getPrimaryKey();
 		
 		return primaryKeyType;
 	}
 	
+	@JsonIgnore
 	public boolean isNumericColumnType() {
 		return AttDefinedElements.isNumeric(this.getPrimaryKeyType());
 	}
 	
+	@JsonIgnore
 	public boolean hasPK() {
 		return getPrimaryKey() != null;
 	}
@@ -199,8 +210,6 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	private static String convertTableAttNameToClassAttName(String tableAttName) {
 		return utilities.convertTableAttNameToClassAttName(tableAttName);
 	}
-	
-	
 	
 	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
 		for (RefInfo  parent : this.getParents()) {
@@ -319,6 +328,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return syncRecordClass;
 	}
 	
+	@JsonIgnore
 	public boolean existsSyncRecordClass() {
 		try {
 			return getSyncRecordClass() != null;
@@ -332,14 +342,15 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		this.syncRecordClass = syncRecordClass;
 	}
 
+	@JsonIgnore
 	public String generateFullClassName() {
 		return "org.openmrs.module.eptssync.model.pojo." + getClasspackage() + "." + generateClassName();
 	}
 	
+	@JsonIgnore
 	public String getOriginAppLocationCode() {
 		return getRelatedSynconfiguration().getOriginAppLocationCode();
 	}
-
 	
 	public void generateRecordClass(boolean fullClass, Connection conn) {
 		try {
@@ -364,7 +375,6 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		}
 	}
 
-	
 	public void generateSkeletonRecordClass(Connection conn) {
 		try {
 			this.syncRecordClass = OpenMRSPOJOGenerator.generateSkeleton(this, conn);
@@ -382,8 +392,8 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			throw new RuntimeException(e);
 		}
 	}
-
 	
+	@JsonIgnore
 	public String generateClassName() {
 		return generateClassName(this.tableName);
 	}
@@ -401,8 +411,6 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 
 	public boolean isMetadata() {
-		if (utilities.isStringIn(this.getTableName(), "obs") && metadata) throw new ForbiddenOperationException("Obs cannot be metadata");
-
 		return metadata;
 	}
 
@@ -412,14 +420,17 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		if (utilities.isStringIn(this.getTableName(), "obs") && metadata) throw new ForbiddenOperationException("Obs cannot be metadata");
 	}
 	
+	@JsonIgnore
 	public String generateRelatedStageTableName() {
 		return this.getTableName() + "_stage";
 	}
 
+	@JsonIgnore
 	public String getSyncStageSchema() {
 		return getRelatedSynconfiguration().getSyncStageSchema();
 	}
 
+	@JsonIgnore
 	public String generateFullStageTableName() {
 		return getSyncStageSchema() + "." + generateRelatedStageTableName();
 	}
@@ -438,10 +449,12 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		}
 	}
 
+	@JsonIgnore
 	public boolean isFullLoaded() {
 		return fullLoaded;
 	}
 	
+	@JsonIgnore
 	public boolean isConfigured() {
 		for (SyncTableConfiguration tabConf : getRelatedSynconfiguration().getTablesConfigurations()) {
 			if (tabConf.equals(this)) return true;
@@ -484,6 +497,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 
 	@Override
+	@JsonIgnore
 	public String toString() {
 		return "Table [name:" + this.tableName + ", pk: " + this.primaryKey +"]";
 	}
@@ -496,10 +510,12 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return this.getTableName().equalsIgnoreCase(((SyncTableConfiguration)obj).getTableName());
 	}
 
+	@JsonIgnore
 	public File getPOJOCopiledFilesDirectory() {
 		return getRelatedSynconfiguration().getPOJOCompiledFilesDirectory();
 	}
 
+	@JsonIgnore
 	public File getPOJOSourceFilesDirectory() {
 		return getRelatedSynconfiguration().getPOJOSourceFilesDirectory();
 	}

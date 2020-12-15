@@ -4,14 +4,14 @@
 	<fieldset>
 		<table style="width: 100%">
 			<tr style="display: ${not empty vm.selectedTable ? 'block' : 'none'}">
-				<td>
+				<td style="width: 100%">
 					<table style="width: 100%">		
 						<tr>
 							<td style="width: 25%;">
 								<spring:message code="eptssync.config.table.tableName" />
 							</td>
 							<td style="width: 75%;" colspan="2">
-								<input type="text" name="tableName" value="${vm.selectedTable.tableName}" size="100" readonly="readonly"/>
+								<input type="text" name="tableName" value="${vm.selectedTable.tableName}" size="75" readonly="readonly"/>
 							</td> 
 						</tr>
 						<tr>
@@ -32,12 +32,8 @@
 								<spring:message code="eptssync.config.table.active" />
 							</td>
 							<td colspan="2">
-								<spring:bind path="vm.selectedTable.disabled">
-									<input type="hidden" id="selectedTabletableDisabled" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>"/>
-								</spring:bind>
-								
-								<spring:message code="eptssync.config.answer.yes"/><input type="radio" value="false" name="radioDisabledTable" onclick="document.getElementById('selectedTabletableDisabled').value = this.value" ${vm.selectedTable.disabled ? '' : 'checked'}/>
-								<spring:message code="eptssync.config.answer.no"/> <input type="radio" value="true" name="radioDisabledTable" onclick="document.getElementById('selectedTabletableDisabled').value = this.value" ${vm.selectedTable.disabled ? 'checked' : ''}/>
+								<spring:message code="eptssync.config.answer.yes"/> <input type="radio" value="false"  name="radioDisabledTable" onclick="document.getElementById('${vm.selectedTable.tableName}').value = this.value" ${!vm.selectedTable.disabled ? 'checked' : ''}/>
+								<spring:message code="eptssync.config.answer.no"/>  <input type="radio" value="true" name="radioDisabledTable" onclick="document.getElementById('${vm.selectedTable.tableName}').value = this.value" ${vm.selectedTable.disabled ? 'checked' : ''}/>
 							</td> 
 						</tr>
 						<tr>
@@ -45,7 +41,7 @@
 								<spring:message code="eptssync.config.table.removeForbidden" />
 							</td>
 							<td colspan="2">
-								<input type="text" name="doIntegrityCheckInTheEnd" value="${vm.selectedTable.removeForbidden ? 'Nao' : 'Sim'}" size="100" readonly="readonly"/>
+								<input type="text" name="doIntegrityCheckInTheEnd" value="${vm.selectedTable.removeForbidden ? 'Nao' : 'Sim'}" size="75" readonly="readonly"/>
 							</td> 
 						</tr>
 						

@@ -6,12 +6,14 @@
 <%@ include file="template/localHeader.jsp"%>
 
 <h2>
-	<spring:message code="eptssync.config.status" />
+	<spring:message code="eptssync.config.header" />
 </h2>
 
 <br />
 <br />
-
+<span> 
+	<spring:message code="${openmrs_msg}" text="${vm.statusMessage}" />
+</span>
 
 <form:form id="configForm" modelAttribute="vm" method="post" action="saveConfig.form">
 	<input type="button" ${vm.installationTabActive ? 'disabled' : ''} style="height: ${vm.installationTabActive ? '35px' : '30px'}; width: ${vm.installationTabActive ? '75px' : '75px'}" value='<spring:message code="eptssync.config.button.installation"/>' name="initConfig" onclick="window.location='activeteTab.form?tab=1'" />

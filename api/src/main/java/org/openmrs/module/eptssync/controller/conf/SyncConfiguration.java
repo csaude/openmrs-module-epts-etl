@@ -15,12 +15,16 @@ import javax.ws.rs.ForbiddenException;
 
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.model.SimpleValue;
+import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
@@ -62,7 +66,7 @@ public class SyncConfiguration {
 	
 	private List<SyncTableConfiguration> allTables;
 	
-	private SyncConfiguration() {
+	public SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
 		this.allTables = new ArrayList<SyncTableConfiguration>();
 	}
@@ -75,49 +79,16 @@ public class SyncConfiguration {
 		this.allTables = allTables;
 	}
 	
-	/*
-	public void refreshTables() {
-		List<SyncTableConfiguration> activeTablesTables = new ArrayList<SyncTableConfiguration>();
-		List<SyncTableConfiguration> disabledtables = new ArrayList<SyncTableConfiguration>();
-		
-		
-		for (SyncTableConfiguration conf : this.tablesConfigurations) {
-			if (conf.isDisabled()) {
-				disabledtables.add(conf);
-			}
-			else {
-				activeTablesTables.add(conf);
-			}
-		}
-		
-		for (SyncTableConfiguration conf : this.notIncludedTables) {
-			if (conf.isDisabled()) {
-				disabledtables.add(conf);
-			}
-			else {
-				activeTablesTables.add(conf);
-			}
-		}
-		
-		this.tablesConfigurations = activeTablesTables;
-		this.notIncludedTables = disabledtables;
-		
-		
-		for (SyncTableConfiguration conf : this.getTablesConfigurations()) {
-			if (!conf.isFullLoaded()) {
-				conf.fullLoad();
-			}
-		} 
-	}*/
-	
 	public void setRelatedController(ProcessController relatedController) {
 		this.relatedController = relatedController;
 	}
 	
+	@JsonIgnore
 	public ProcessController getRelatedController() {
 		return relatedController;
 	}
 	
+	@JsonIgnore
 	public OpenConnection openConnetion() {
 		return relatedController.openConnection();
 	}
@@ -138,6 +109,7 @@ public class SyncConfiguration {
 		this.disabled = disabled;
 	}
 	
+	@JsonIgnore
 	public SyncConfiguration getChildConfig() {
 		return childConfig;
 	}
@@ -173,14 +145,17 @@ public class SyncConfiguration {
 		this.installationType = installationType;
 	}
 	
+	@JsonIgnore
 	public boolean isDestinationInstallationType() {
 		return this.installationType.equals(supportedInstallationTypes[1]);
 	}
 	
+	@JsonIgnore
 	public boolean isSourceInstallationType() {
 		return this.installationType.equals(supportedInstallationTypes[0]);
 	}
 	
+	@JsonIgnore
 	public String getPojoPackage() {
 		return isDestinationInstallationType() ? this.installationType : this.originAppLocationCode;
 	}
@@ -193,6 +168,7 @@ public class SyncConfiguration {
 		this.connInfo = connInfo;
 	}
 	
+	@JsonIgnore
 	public boolean isDoIntegrityCheckInTheEnd(String operationType) {
 		SyncOperationConfig op = findOperation(operationType);
 		
@@ -260,6 +236,7 @@ public class SyncConfiguration {
 		this.relatedConfFile = relatedConfFile;
 	}
 	
+	@JsonIgnore
 	public File getRelatedConfFile() {
 		return relatedConfFile;
 	}
@@ -375,6 +352,7 @@ public class SyncConfiguration {
 		return utilities.findOnList(this.tablesConfigurations, tableConfiguration);
 	}
 
+	@JsonIgnore
 	public String getDesignation() {
 		return this.installationType + (utilities.stringHasValue(this.originAppLocationCode) ?  "_" + this.originAppLocationCode : "");
 	}
@@ -421,6 +399,7 @@ public class SyncConfiguration {
 		throw new ForbiddenOperationException("THE OPERATION '" + operationType.toUpperCase() + "' WAS NOT FOUND!!!!");
 	}
 	
+	@JsonIgnore
 	public List<SyncOperationConfig> getOperationsAsList(){
 		List<SyncOperationConfig>  operationsAsList = new ArrayList<SyncOperationConfig>();
 		
@@ -515,10 +494,12 @@ public class SyncConfiguration {
 		return utilities.findOnArray(syncConfigs, this) != null;
 	}
 
+	@JsonIgnore
 	public File getPOJOCompiledFilesDirectory() {
 		return new File(getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() + "bin");
 	}
 
+	@JsonIgnore
 	public File getPOJOSourceFilesDirectory() {
 		return new File(getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() + "src");
 	}
@@ -539,19 +520,31 @@ public class SyncConfiguration {
 		
 		this.tablesConfigurations = tablesConfigurations;
 	}
+	
+	@JsonIgnore
+	public String parseToJSON() {
+		return utilities.parseToJSON(this);
+	}
 
-	/*
-	public void tryToCreateDefaultRecords(Connection conn) throws DBException {
-		for (SyncTableConfiguration tabConf : getTablesConfigurations()) {
-			if (utilities.arrayHasElement(tabConf.getParents())) {
-				for (RefInfo parent : tabConf.getParents()) {
-					if (parent.getDefaultValueDueInconsistency() > 0) {
-						OpenMRSObject obj = OpenMRSObjectDAO.getById(parent.getRefObjectClass(), parent.getDefaultValueDueInconsistency(), conn);
-						
-						
-					}
-				}
+	public void tryToDetermineOriginAppLocationCode() throws DBException {
+		OpenConnection conn = openConnetion();
+		
+		String sql = " SELECT location.name as designacao, count(*) as value " +
+					 " FROM visit INNER JOIN location on location.location_id = visit.location_id " +
+					 " GROUP BY location.name ";
+		
+		List<SimpleValue> locations = BaseDAO.search(SimpleValue.class, sql, null, conn);
+		
+		SimpleValue locationWithMoreRecords = !locations.isEmpty() ? locations.get(0) : null;
+		
+		for (SimpleValue location : locations) {
+			if (location.intValue() > locationWithMoreRecords.intValue()) {
+				locationWithMoreRecords = location;
 			}
 		}
-	}*/
+		
+		if (locationWithMoreRecords != null) {
+			this.setOriginAppLocationCode(utilities.replaceAllEmptySpace(locationWithMoreRecords.getDesignacao(), '_'));
+		}
+	}
 }
