@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 /**
@@ -41,7 +41,7 @@ public class ThreadPoolService {
     	return null;
     }
     
-    public void terminateTread(Logger logger, String threadId) {
+    public void terminateTread(Log logger, String threadId) {
     	logger.info("TRYING TO TERMINATE THREAD [" + threadId + "]");
     	
     	ExecutorService service = retrieveExistingExecutor(threadId);
@@ -70,7 +70,7 @@ public class ThreadPoolService {
 				.build();
 		
 		
-		this.createdThreadPools.add(new ExecutorServiceManager(Executors.newSingleThreadExecutor(threadFactory), namingPattern));
+		this.createdThreadPools.add(new ExecutorServiceManager(Executors.newCachedThreadPool(threadFactory), namingPattern));
 		
 		return this.createdThreadPools.get(this.createdThreadPools.size()-1).getExecutorService();
 	}

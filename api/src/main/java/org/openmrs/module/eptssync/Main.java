@@ -13,21 +13,11 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 
-public class Main {
+public class Main implements Runnable{
 
 	static Logger logger = Logger.getLogger(Main.class);
 
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
-
-	
-	/*public static void main(String[] args) {
-		File file = new File("");
-		
-		  System.out.println(file.getAbsolutePath());
-		  
-		 System.out.println(file.toPath().getRoot());
-		 
-	}*/
 	
 	public static void main(String[] synConfigFiles) throws IOException {
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);
@@ -37,6 +27,8 @@ public class Main {
 		List<ProcessController> allController = new ArrayList<ProcessController>();
 
 		for (SyncConfiguration conf : syncConfigs) {
+			if (!conf.isAutomaticStart()) continue;
+			
 			ProcessController controller = new ProcessController(conf);
 			
 			ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId()).execute(controller);
@@ -58,7 +50,51 @@ public class Main {
 		
 	}
 	
-	private static List<SyncConfiguration> loadSyncConfig(String[] synConfigFiles) throws ForbiddenOperationException, IOException {
+	public static void runSync(SyncConfiguration configuration) {
+		/*try {
+			URL[] classPaths = new URL[] {configuration.getPOJOCompiledFilesDirectory().toURI().toURL()};
+			
+			URLClassLoader loader = URLClassLoader.newInstance(classPaths);
+			
+			Class<?> c = null;
+			
+			c = (Class<?>) loader.loadClass("org.openmrs.module.eptssync.controller.ProcessController");
+			
+	        loader.close();
+	        
+	        ProcessController p = (ProcessController) c.newInstance();
+			p.init(configuration);
+	        
+			ThreadPoolService.getInstance().createNewThreadPoolExecutor(p.getControllerId()).execute(p);
+		} 
+		catch (ClassNotFoundException e) {
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			// TODO Auto-generated catch blockq
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+		
+		ProcessController controller = new ProcessController(configuration);
+		ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId()).execute(controller);
+	}
+	
+	public static List<SyncConfiguration> loadSyncConfig(File[] syncConfigFiles) throws ForbiddenOperationException, IOException {
+		String[] pathToFiles = new String[syncConfigFiles.length];
+		
+		
+		for (int i = 0; i < syncConfigFiles.length; i++) {
+			pathToFiles[i] = syncConfigFiles[i].getAbsolutePath();
+		}
+	
+		return loadSyncConfig(pathToFiles);
+	}
+	
+	public static List<SyncConfiguration> loadSyncConfig(String[] synConfigFiles) throws ForbiddenOperationException, IOException {
 		List<SyncConfiguration> syncConfigs = new ArrayList<SyncConfiguration>(synConfigFiles.length);
 
 		for (String confFile : synConfigFiles) {
@@ -79,17 +115,17 @@ public class Main {
 
 				conf.validate();
 
-				if (conf.isAutomaticStart()) {
+				//if (conf.isAutomaticStart()) {
 					if (!conf.existsOnArray(syncConfigs)) {
 						logger.info("FOUND CONFIGURATION FILE " + conf.getRelatedConfFile().getAbsolutePath() + " AND ADDED AS " + conf.getDesignation());
 						syncConfigs.add(conf);
 					} else
 						throw new ForbiddenOperationException(
 								"The configuration [" + conf.getDesignation() + "] exists in more than one files");
-				}
-				else {
+				//}
+				//else {
 					logger.info("FOUND CONFIGURATION FILE " + conf.getRelatedConfFile().getAbsolutePath() + " AS " + conf.getDesignation() + " BUT WON'T START");
-				}
+				//}
 			}
 		}
 
@@ -127,6 +163,10 @@ public class Main {
 		}
 		
 		return true;
+	}
+
+	@Override
+	public void run() {
 	}
 	
 	/*

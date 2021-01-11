@@ -1,5 +1,7 @@
 package org.openmrs.module.eptssync.model.pojo.generic;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.util.List;
 
@@ -9,9 +11,11 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
+import org.openmrs.module.eptssync.utilities.ClassPathUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class OpenMRSObjectDAO extends BaseDAO {
 	public static void refreshLastSyncDate(OpenMRSObject syncRecord, Connection conn) throws DBException{
@@ -190,6 +194,22 @@ public class OpenMRSObjectDAO extends BaseDAO {
 
 	public static OpenMRSObject getFirstRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
 		String sql = "";
+	
+		String pojoPackageDir = tableInfo.getPOJOCopiledFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/pojo/" + tableInfo.getRelatedSynconfiguration().getPojoPackage();
+		
+		try {
+			ClassPathUtilities.addToClasspath(new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableInfo.generateClassName() + ".class"), tableInfo.getRelatedSynconfiguration());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		OpenMRSObject.class.getClassLoader().getResource("org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/ConceptVO.class");
+		OpenMRSObject.class.getClassLoader().getResource("org/openmrs/module/eptssync/exceptions/ForbiddenOperationException.class");
+		
+		tableInfo.getSyncRecordClass().getClassLoader().getResource("org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/ConceptVO.class");
+		
 		
 		OpenMRSObject obj = utilities.createInstance(tableInfo.getSyncRecordClass());
 		

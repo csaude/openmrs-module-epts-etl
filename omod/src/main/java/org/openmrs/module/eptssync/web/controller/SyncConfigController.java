@@ -50,7 +50,7 @@ public class SyncConfigController {
 	private AdministrationService adminService;
 
 	@RequestMapping(value = "/module/eptssync/initConfig", method = RequestMethod.GET)
-	public void config(ModelMap model) {
+	public void initConfig(ModelMap model) {
 		model.addAttribute("user", Context.getAuthenticatedUser());
 	}
 	
@@ -84,18 +84,10 @@ public class SyncConfigController {
 	}
 	
 	@RequestMapping(value = "/module/eptssync/config", method = RequestMethod.GET)
-	public void initConfig(Model model, HttpServletRequest request, @RequestParam String installationType) throws IOException, DBException {
+	public void config(Model model,@RequestParam String installationType) throws IOException, DBException {
 		
 		if (!installationType.isEmpty()) {
-			model.addAttribute("vm", ConfVM.getInstance(request, installationType));
-		}
-	}
-	
-	@RequestMapping(value = "/module/eptssync/syncInit", method = RequestMethod.GET)
-	public void initSync(Model model, HttpServletRequest request, @RequestParam String installationType) throws IOException, DBException {
-		
-		if (!installationType.isEmpty()) {
-			model.addAttribute("vm", ConfVM.getInstance(request, installationType));
+			model.addAttribute("vm", ConfVM.getInstance(installationType));
 		}
 	}
 
@@ -111,11 +103,7 @@ public class SyncConfigController {
 		} catch (ForbiddenOperationException e) {
 			vm.setStatusMessage(e.getLocalizedMessage());
 		}
-		
-		/*if (errors.hasErrors()) {
-			return new ModelAndView();
-		}*/
-
+	
 		return new ModelAndView("redirect:config.form?installationType=");
 	}
 }

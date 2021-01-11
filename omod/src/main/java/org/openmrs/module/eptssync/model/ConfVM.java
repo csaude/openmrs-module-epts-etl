@@ -1,12 +1,12 @@
 package org.openmrs.module.eptssync.model;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ForbiddenException;
 
 import org.openmrs.module.eptssync.controller.ProcessController;
@@ -37,7 +37,7 @@ public class ConfVM {
 	private File configFile;
 	private String statusMessage;
 	
-	private ConfVM(HttpServletRequest request, String installationType) throws IOException, DBException {
+	private ConfVM(String installationType) throws IOException, DBException {
 		this.syncConfiguration = new SyncConfiguration();
 		this.syncConfiguration.setInstallationType(installationType);
 		
@@ -72,16 +72,23 @@ public class ConfVM {
 		this.statusMessage = statusMessage;
 	}
 	
-	private String retrieveClassPath() {
+	protected static String retrieveClassPath() {
 		String rootDirectory = Paths.get(".").normalize().toAbsolutePath().toString();
 		
-		File[] allFiles = new File(rootDirectory + FileUtilities.getPathSeparator() + "temp").listFiles();
+		File[] allFiles = new File(rootDirectory + FileUtilities.getPathSeparator() + "temp").listFiles(new FileFilter() {
+			
+			@Override
+			public boolean accept(File pathname) {
+				return pathname.getAbsolutePath().contains("openmrs-lib-cache");
+			}
+		}); 
 		
 		Arrays.sort(allFiles);
 		
 		for (int i = allFiles.length - 1; i >= 0; i--) {
-			if (allFiles[i].isDirectory() && allFiles[i].getAbsolutePath().contains("openmrs-lib-cache")) {
-				File classPath = new File(allFiles[i].getAbsoluteFile() + FileUtilities.getPathSeparator() + "eptssync" + FileUtilities.getPathSeparator() + "lib");
+			if (allFiles[i].isDirectory()) {
+				//File classPath = new File(allFiles[i].getAbsoluteFile() + FileUtilities.getPathSeparator() + "eptssync" + FileUtilities.getPathSeparator() + "lib" + FileUtilities.getPathSeparator() + "eptssync.jar");
+				File classPath = new File(allFiles[i].getAbsoluteFile() + FileUtilities.getPathSeparator() + "eptssync" + FileUtilities.getPathSeparator() + "eptssync.jar");
 				
 				return classPath.getAbsolutePath();
 			}
@@ -90,7 +97,39 @@ public class ConfVM {
 		return null;
 	}
 	
-	public static ConfVM getInstance(HttpServletRequest request, String installationType) throws IOException, DBException {
+	protected static File retrieveModuleFolder(SyncConfiguration syncConfiguration) {
+		String rootDirectory = Paths.get(".").normalize().toAbsolutePath().toString();
+		
+		File[] allFiles = new File(rootDirectory + FileUtilities.getPathSeparator() + "temp").listFiles(new FileFilter() {
+			
+			@Override
+			public boolean accept(File pathname) {
+				return pathname.getAbsolutePath().contains("openmrs-lib-cache");
+			}
+		}); 
+		
+		Arrays.sort(allFiles);
+		
+		for (int i = allFiles.length - 1; i >= 0; i--) {
+			if (allFiles[i].isDirectory()) {
+				
+				String pojoFolderOnModule = "";
+				
+				pojoFolderOnModule += allFiles[i].getAbsoluteFile() + FileUtilities.getPathSeparator();
+				pojoFolderOnModule += "eptssync" + FileUtilities.getPathSeparator();
+				/*pojoFolderOnModule += "org" + FileUtilities.getPathSeparator();
+				pojoFolderOnModule += "openmrs" + FileUtilities.getPathSeparator();
+				pojoFolderOnModule += "module" + FileUtilities.getPathSeparator();
+				pojoFolderOnModule += "eptssync" + FileUtilities.getPathSeparator();*/
+				
+				return new File( pojoFolderOnModule);
+			}
+		}
+		
+		return null;
+	}
+	
+	public static ConfVM getInstance(String installationType) throws IOException, DBException {
 		ConfVM vm = null;
 		
 		if (installationType.equals("source")) {
@@ -100,7 +139,7 @@ public class ConfVM {
 				vm.reset();
 			}
 			else {
-				vm = new ConfVM(request, installationType);
+				vm = new ConfVM(installationType);
 			}
 			
 			sourceConfVM = vm;
@@ -117,7 +156,7 @@ public class ConfVM {
 				vm.reset();
 			}
 			else {
-				vm = new ConfVM(request, installationType);
+				vm = new ConfVM(installationType);
 				
 			}
 
@@ -129,13 +168,13 @@ public class ConfVM {
 		}
 		
 		if (vm.otherSyncConfiguration == null) {
-			vm.determineOtherSyncConfiguration(request);
+			vm.determineOtherSyncConfiguration();
 		}
 		
 		return vm;
 	}
 	
-	private void determineOtherSyncConfiguration(HttpServletRequest request) throws DBException {
+	private void determineOtherSyncConfiguration() throws DBException {
 		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
 		
 		String otherConfFile = this.syncConfiguration.getInstallationType().equals("source") ? "dest_sync_config.json" : "source_sync_config.json";
@@ -144,7 +183,7 @@ public class ConfVM {
 		
 		if (otherConfigFile.exists()) {
 			try {
-				this.otherSyncConfiguration = ConfVM.getInstance(request, this.syncConfiguration.getInstallationType().equals("source") ? "destination" : "source").getSyncConfiguration();
+				this.otherSyncConfiguration = ConfVM.getInstance(this.syncConfiguration.getInstallationType().equals("source") ? "destination" : "source").getSyncConfiguration();
 			} catch (IOException e) {
 				throw new ForbiddenException(e);
 			}
@@ -160,7 +199,7 @@ public class ConfVM {
 		
 		String configFileName = this.syncConfiguration.getInstallationType().equals("source") ? "source_sync_config.json" : "dest_sync_config.json";
 
-		this.configFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "resources" + FileUtilities.getPathSeparator() + configFileName);
+		this.configFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "conf" + FileUtilities.getPathSeparator() + configFileName);
 
 		if (this.configFile.exists()) {
 			reloadedSyncConfiguration = SyncConfiguration.loadFromFile(this.configFile);
@@ -169,7 +208,7 @@ public class ConfVM {
 		
 			reloadedSyncConfiguration = SyncConfiguration.loadFromJSON(json);
 			
-			reloadedSyncConfiguration.setSyncRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "syncConf");
+			reloadedSyncConfiguration.setSyncRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "data");
 			reloadedSyncConfiguration.setRelatedConfFile(this.configFile);
 			
 			Properties properties = new Properties();
@@ -188,6 +227,7 @@ public class ConfVM {
 		reloadedSyncConfiguration.loadAllTables();
 		
 		reloadedSyncConfiguration.setClassPath(retrieveClassPath());
+		reloadedSyncConfiguration.setModuleRootDirectory(retrieveModuleFolder(getSyncConfiguration()));
 		
 		this.syncConfiguration = reloadedSyncConfiguration;
 		

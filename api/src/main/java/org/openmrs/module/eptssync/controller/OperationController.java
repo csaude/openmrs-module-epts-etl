@@ -5,7 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
@@ -31,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  *
  */
 public abstract class OperationController implements Controller{
-	protected Logger logger;
+	protected Log logger;
 	
 	private ProcessController processController;
 	
@@ -55,7 +56,7 @@ public abstract class OperationController implements Controller{
 	private Exception lastException;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
-		this.logger = Logger.getLogger(this.getClass());
+		this.logger = LogFactory.getLog(this.getClass());
 		
 		this.processController = processController;
 		this.operationConfig = operationConfig;
@@ -65,7 +66,7 @@ public abstract class OperationController implements Controller{
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 	}
 	
-	public Logger getLogger() {
+	public Log getLogger() {
 		return logger;
 	}
 	
@@ -232,6 +233,8 @@ public abstract class OperationController implements Controller{
 	public void run() {
 		timer = new TimeController();
 		timer.start();
+		
+		onStart();
 		
 		this.activititieMonitor = new ControllerMonitor(this);
 		

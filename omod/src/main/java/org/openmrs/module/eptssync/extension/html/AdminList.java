@@ -45,10 +45,10 @@ public class AdminList extends AdministrationSectionExt {
 	public Map<String, String> getLinks() {
 		Map<String, String> map = new LinkedHashMap<String, String>();
 		
-		map.put("/module/eptssync/manage.form", "eptssync.manage");
+		map.put("/module/eptssync/manage.form", "eptssync.manage.label");
 		
-		map.put("module/eptssync/initConfig.form", "eptssync.initConfig");
-		map.put("module/eptssync/monitor.form", "eptssync.monitor");
+		map.put("/module/eptssync/initConfig.form", "eptssync.initConfig.label");
+		map.put("/module/eptssync/initSync.form", "eptssync.initSync.label");
 		
 		return map;
 	}

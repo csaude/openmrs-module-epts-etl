@@ -503,6 +503,8 @@ public class FileUtilities {
 	}
 
 	public static void copyFile(File source, File destination) throws IOException {
+		tryToCreateDirectoryStructureForFile(destination.getAbsolutePath());
+		
 		FileUtils.copyFile(source, destination);
 	}
 

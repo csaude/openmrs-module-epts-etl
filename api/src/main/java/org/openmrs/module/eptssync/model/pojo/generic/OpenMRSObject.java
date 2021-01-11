@@ -80,7 +80,8 @@ public interface OpenMRSObject extends SyncRecord{
 	 * Indicate if this object was generated or not using an eskeleton class
 	 * @return
 	 */
-	public abstract boolean isGeneratedFromSkeletonClass();
+	//public abstract boolean isGeneratedFromSkeletonClass();
+	
 	/**
 	 * Consolidate data for database consistency
 	 * <p> The consolidation consist on re-arranging foreign keys between records from different tables

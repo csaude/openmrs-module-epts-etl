@@ -5,11 +5,8 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.openmrs.api.AdministrationService;
-import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
-import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.ConfVM;
+import org.openmrs.module.eptssync.model.SyncVM;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,43 +41,21 @@ public class SyncController {
 	private AdministrationService adminService;
 
 	@RequestMapping(value = "/module/eptssync/initSync", method = RequestMethod.GET)
-	public void initSync(ModelMap model) {
-		model.addAttribute("user", Context.getAuthenticatedUser());
+	public void initSync(ModelMap model) throws DBException, IOException {
+		model.addAttribute("vm", SyncVM.getInstance());
 	}
 	
 	@RequestMapping(value = "/module/eptssync/startSync", method = RequestMethod.GET)
-	public void startSync(Model model, HttpServletRequest request, @RequestParam String installationType) throws IOException, DBException {
+	public ModelAndView startSync(Model model, HttpServletRequest request, @RequestParam String selectedConfiguration) throws IOException, DBException {
+		SyncVM vm = (SyncVM) request.getSession().getAttribute("vm");
 		
-		if (!installationType.isEmpty()) {
-			model.addAttribute("vm", ConfVM.getInstance(request, installationType));
-		}
+		vm.startSync(selectedConfiguration);
+		
+		return new ModelAndView("redirect:syncStatus.form");
 	}
 	
-	@RequestMapping(value = "/module/eptssync/syncInit", method = RequestMethod.GET)
-	public void initSync(Model model, HttpServletRequest request, @RequestParam String installationType) throws IOException, DBException {
-		
-		if (!installationType.isEmpty()) {
-			model.addAttribute("vm", ConfVM.getInstance(request, installationType));
-		}
-	}
-
-	@RequestMapping(value = "/module/eptssync/saveConfig", method = RequestMethod.POST)
-	public ModelAndView save(@ModelAttribute("vm") ConfVM vm, Model model) {
-		SyncConfiguration confi = vm.getSyncConfiguration();
-		confi.refreshTables();
-	
-		try {
-			confi.validate();
-			
-			vm.save();
-		} catch (ForbiddenOperationException e) {
-			vm.setStatusMessage(e.getLocalizedMessage());
-		}
-		
-		/*if (errors.hasErrors()) {
-			return new ModelAndView();
-		}*/
-
-		return new ModelAndView("redirect:config.form?installationType=");
+	@RequestMapping(value = "/module/eptssync/syncStatus", method = RequestMethod.GET)
+	public void showSyncStatus(ModelMap model) throws DBException, IOException {
+		System.out.println("");
 	}
 }

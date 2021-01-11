@@ -13,6 +13,8 @@ import java.util.Map;
 
 import javax.ws.rs.ForbiddenException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SimpleValue;
@@ -20,6 +22,7 @@ import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
+import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -61,16 +64,22 @@ public class SyncConfiguration {
 	private static final String[] supportedInstallationTypes = {"source", "destination"};
 	
 	private String classPath;
+	private File moduleRootDirectory;
+	
 	private boolean fullLoaded;
 	private ProcessController relatedController;
 	
 	private List<SyncTableConfiguration> allTables;
+	private DBConnectionService connService;
+
+	private static Log logger = LogFactory.getLog(SyncConfiguration.class);
 	
 	public SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
 		this.allTables = new ArrayList<SyncTableConfiguration>();
 	}
 	
+	@JsonIgnore
 	public List<SyncTableConfiguration> getAllTables() {
 		return allTables;
 	}
@@ -90,11 +99,17 @@ public class SyncConfiguration {
 	
 	@JsonIgnore
 	public OpenConnection openConnetion() {
-		return relatedController.openConnection();
+		if (connService == null) connService = DBConnectionService.init(this.getConnInfo());
+		
+		return connService.openConnection();
 	}
 	
 	public String getClassPath() {
 		return classPath;
+	}
+	
+	public File getClassPathAsFile() {
+		return new File(classPath);
 	}
 	
 	public void setClassPath(String classPath) {
@@ -254,8 +269,6 @@ public class SyncConfiguration {
 	public void fullLoad() {
 		if (this.fullLoaded) return;
 		
-		OpenConnection conn = openConnetion();
-		
 		try {
 			for (SyncTableConfiguration conf : this.getTablesConfigurations()) {
 				if (!conf.isFullLoaded()) {
@@ -267,13 +280,8 @@ public class SyncConfiguration {
 			} 
 
 			this.fullLoaded = true;
-			
-			conn.markAsSuccessifullyTerminected();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
 		}
 	}
 
@@ -307,7 +315,7 @@ public class SyncConfiguration {
 	}
 	
 	public void logInfo(String msg) {
-		getRelatedController().logInfo(msg);
+		utilities.logInfo(msg, logger);
 	}
 	
 	public static SyncConfiguration loadFromJSON (String json) {
@@ -438,7 +446,7 @@ public class SyncConfiguration {
 		for (SyncTableConfiguration tableConf : this.tablesConfigurations) {
 			if (tableConf.getParents() != null) {
 				for (RefInfo parent : tableConf.getParents()) {
-					if (findSyncTableConfiguration(parent.getTableName()) == null) errorMsg += ++errNum + ". The parent '" + parent + " of table " + tableConf.getTableName() + " is not configured\n";
+					//if (findSyncTableConfiguration(parent.getTableName()) == null) errorMsg += ++errNum + ". The parent '" + parent + " of table " + tableConf.getTableName() + " is not configured\n";
 				}
 			}
 		}
@@ -544,7 +552,38 @@ public class SyncConfiguration {
 		}
 		
 		if (locationWithMoreRecords != null) {
-			this.setOriginAppLocationCode(utilities.replaceAllEmptySpace(locationWithMoreRecords.getDesignacao(), '_'));
+			this.setOriginAppLocationCode(utilities.replaceAllEmptySpace(locationWithMoreRecords.getDesignacao(), '_').toLowerCase());
 		}
+	}
+	
+	@JsonIgnore
+	public File getModuleRootDirectory() {
+		return moduleRootDirectory;
+	}
+	
+	public void setModuleRootDirectory(File moduleRootDirectory) {
+		this.moduleRootDirectory = moduleRootDirectory;
+	}
+	
+	public File getPojoPackageAsDirectory() {
+		String pojoPackageDir = "";
+		pojoPackageDir += getPOJOCompiledFilesDirectory().getAbsolutePath() + FileUtilities.getPathSeparator();
+		pojoPackageDir += getPojoPackageRelativePath();
+		
+		return new File(pojoPackageDir);
+	}
+	
+	public String getPojoPackageRelativePath() {
+		String pojoPackageDir = "";
+		
+		pojoPackageDir += "org" + FileUtilities.getPathSeparator();
+		pojoPackageDir += "openmrs" + FileUtilities.getPathSeparator();
+		pojoPackageDir += "module" + FileUtilities.getPathSeparator();
+		pojoPackageDir += "eptssync" + FileUtilities.getPathSeparator();
+		pojoPackageDir += "model" + FileUtilities.getPathSeparator();
+		pojoPackageDir += "pojo" + FileUtilities.getPathSeparator();
+		pojoPackageDir += this.getPojoPackage() + FileUtilities.getPathSeparator();
+		
+		return pojoPackageDir;
 	}
 }

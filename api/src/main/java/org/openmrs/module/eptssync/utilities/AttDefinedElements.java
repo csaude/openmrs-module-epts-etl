@@ -273,13 +273,16 @@ public class AttDefinedElements {
 		return utilities.isStringIn(attType, "int", "long", "byte", "short", "double", "float");
 	}
 
+	private boolean isPK() {
+		return syncTableInfo.getPrimaryKeyAsClassAtt().equals(this.attName);
+	}
 	private boolean isSharedKey() {
-		for (RefInfo parent : this.syncTableInfo.getParents()) {
-			if (parent.isSharedPk() && parent.getRefColumnAsClassAttName().equals(this.attName)) {
-				return true;
-			}
-		}
+		if (!isPK()) return false;
 		
+		if (syncTableInfo.getSharePkWith() != null) {
+			return true;
+		}
+			
 		return false;
 	}
 

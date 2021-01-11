@@ -120,11 +120,6 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	}
 
 	@Override
-	public boolean isGeneratedFromSkeletonClass() {
-		throw new ForbiddenOperationException("Forbidden Method");
-	}
-
-	@Override
 	public int getObjectId() {
 		return this.objectId;
 	}

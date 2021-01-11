@@ -321,7 +321,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	@JsonIgnore
 	public Class<OpenMRSObject> getSyncRecordClass() throws ForbiddenOperationException{
-		if (syncRecordClass == null) this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(getRelatedSynconfiguration().getPOJOCompiledFilesDirectory(), generateFullClassName());
+		if (syncRecordClass == null) this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(generateFullClassName(), getRelatedSynconfiguration());
 		
 		if (syncRecordClass == null) throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");
 		
@@ -463,9 +463,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return false;
 	}
 	
-	public synchronized void fullLoad() {
-		OpenConnection conn = openConnection();
-		
+	private synchronized void fullLoad(Connection conn) {
 		try {
 			getPrimaryKey();
 			
@@ -476,6 +474,15 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
+		}
+		
+	}
+	
+	public synchronized void fullLoad() {
+		OpenConnection conn = openConnection();
+		
+		try {
+			fullLoad(conn);
 		}
 		finally {
 			conn.finalizeConnection();
@@ -529,5 +536,10 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		if (this.equals(o)) return 0;
 		
 		return this.tableName.compareTo(o.getTableName());
+	}
+
+	@JsonIgnore
+	public File getClassPath() {
+		return new File(relatedSyncTableInfoSource.getClassPath());
 	}
 }

@@ -4,7 +4,6 @@ package org.openmrs.module.eptssync.utilities;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Connection;
@@ -12,7 +11,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;
@@ -21,8 +22,8 @@ import javax.tools.ToolProvider;
 
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -37,9 +38,13 @@ public class OpenMRSPOJOGenerator {
 		
 		String fullClassName = syncTableInfo.generateFullClassName();
 		
-		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
+		/*Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 			
-		if (existingCLass != null && !utilities.createInstance(existingCLass).isGeneratedFromSkeletonClass() ) return existingCLass;
+		if (existingCLass != null) {
+			if (!Modifier.isAbstract(existingCLass.getModifiers())) {
+				return existingCLass;
+			}
+		}*/
 	
 		String attsDefinition = "";
 		String getttersAndSetterDefinition = "";
@@ -204,11 +209,6 @@ public class OpenMRSPOJOGenerator {
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public boolean isGeneratedFromSkeletonClass() {\n";
-		methodFromSuperClass += "		return false;\n";
-		methodFromSuperClass += "	}\n\n";
-			
-		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public boolean hasParents() {\n";
 		
 		for(RefInfo refInfo : syncTableInfo.getParents()) {		
@@ -231,6 +231,12 @@ public class OpenMRSPOJOGenerator {
 		
 		if (sharedKeyRefInfo != null) {
 			methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
+			
+			Class<OpenMRSObject> skeleton = tryToGetExistingCLass(sharedKeyRefInfo.getRefTableConfiguration().generateFullClassName(), syncTableInfo.getRelatedSynconfiguration());
+			
+			if (skeleton == null) {
+				generateSkeleton(sharedKeyRefInfo.getRefTableConfiguration(), conn);
+			}
 			
 			methodFromSuperClass += "		parentOnDestination = retrieveParentInDestination(";
 			methodFromSuperClass += sharedKeyRefInfo.getRefTableConfiguration().generateFullClassName() + ".class,";
@@ -316,12 +322,12 @@ public class OpenMRSPOJOGenerator {
 
 		writer.close();
 		
-		compile(sourceFile, syncTableInfo.getPOJOCopiledFilesDirectory(), new File(syncTableInfo.getRelatedSynconfiguration().getClassPath()));
+		compile(sourceFile, syncTableInfo);
 		
 		st.close();
 		rs.close();
 				
-		return tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
+		return tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 	}
 	
 	public static Class<OpenMRSObject> generateSkeleton(SyncTableConfiguration syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
@@ -331,89 +337,20 @@ public class OpenMRSPOJOGenerator {
 		
 		String fullClassName = "org.openmrs.module.eptssync.model.pojo." +  syncTableInfo.getClasspackage() + "." + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
 		
-		if (sourceFile.exists()) throw new ForbiddenOperationException("The source file exists [" + sourceFile.getAbsoluteFile() + "]");
-		
-		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
+		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 			
 		if (existingCLass != null) return existingCLass;
 	
-		//String getttersAndSetterDefinition = "";
-		String methodFromSuperClass = "";
-			
-		methodFromSuperClass += generateDefaultGetterAndSetterDefinition("originRecordId", "int");
-		methodFromSuperClass += generateDefaultGetterAndSetterDefinition("originAppLocationCode", "String");
-		methodFromSuperClass += generateDefaultGetterAndSetterDefinition("consistent", "int");
-		methodFromSuperClass += generateDefaultGetterAndSetterDefinition("objectId", "int");
-		methodFromSuperClass += generateDefaultGetterAndSetterDefinition("uuid", "String");
-		
-		methodFromSuperClass += "	public String generateDBPrimaryKeyAtt(){ \n ";
-		methodFromSuperClass += "		return null; \n";
-		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	public Object[]  getInsertParams(){ \n ";
-		methodFromSuperClass += "		return null; \n";
-		methodFromSuperClass += "	} \n \n";
-	
-		methodFromSuperClass += "	public Object[]  getUpdateParams(){ \n ";
-		methodFromSuperClass += "		return null; \n";
-		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	public String getInsertSQL(){ \n ";
-		methodFromSuperClass += "		return null; \n";
-		methodFromSuperClass += "	} \n \n";
-	
-		methodFromSuperClass += "	public String getUpdateSQL(){ \n ";
-		methodFromSuperClass += "		return null; \n";
-		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	public String generateInsertValues(){ \n ";
-		methodFromSuperClass += "		return null; \n";
-		methodFromSuperClass += "	} \n \n";
-			
-		methodFromSuperClass += "	public boolean hasParents() {\n";
-		methodFromSuperClass += "		return false;\n";
-		methodFromSuperClass += "	}\n\n";
-
-		methodFromSuperClass += "	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
-		methodFromSuperClass += "		throw new RuntimeException(\"No PKSharedInfo defined!\");\n";
-		methodFromSuperClass += "	}\n\n";
-		
-		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
-		methodFromSuperClass += "	}\n\n";
-		
-		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public int getParentValue(String parentAttName) {";
-		methodFromSuperClass += "		return 0;\n";
-		methodFromSuperClass += "	}\n\n";
-		
-		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public boolean isGeneratedFromSkeletonClass() {\n";
-		methodFromSuperClass += "		return true;\n";
-		methodFromSuperClass += "	}\n\n";
-		
 		String classDefinition ="";
-		
 		
 		classDefinition += "package org.openmrs.module.eptssync.model.pojo." + syncTableInfo.getClasspackage() + "; \n \n";
 		
 		classDefinition += "import org.openmrs.module.eptssync.model.pojo.generic.*; \n \n";
-		classDefinition += "import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; \n \n";
-		classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
-		classDefinition += "import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; \n \n";
 		
-		classDefinition += "import java.sql.Connection; \n";
-		classDefinition += "import java.sql.SQLException; \n";
-		classDefinition += "import java.sql.ResultSet; \n \n";
-				
-		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";
-		
-		classDefinition += "public class " + syncTableInfo.generateClassName() + " extends AbstractOpenMRSObject implements OpenMRSObject { \n";
+		classDefinition += "public abstract class " + syncTableInfo.generateClassName() + " extends AbstractOpenMRSObject implements OpenMRSObject { \n";
 		classDefinition += "	public " + syncTableInfo.generateClassName() + "() { \n";
 		classDefinition += "	} \n \n";
-		classDefinition +=  	methodFromSuperClass + "\n";
 		classDefinition += "}";
-		
 		
 		FileUtilities.tryToCreateDirectoryStructureForFile(sourceFile.getAbsolutePath());
 
@@ -423,9 +360,9 @@ public class OpenMRSPOJOGenerator {
 
 		writer.close();
 
-		compile(sourceFile, syncTableInfo.getPOJOCopiledFilesDirectory(), new File(syncTableInfo.getRelatedSynconfiguration().getClassPath()));
+		compile(sourceFile, syncTableInfo);
 		
-		return tryToGetExistingCLass(syncTableInfo.getPOJOCopiledFilesDirectory(), fullClassName);
+		return tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 	}
 	
 	static Logger logger = Logger.getLogger(OpenMRSPOJOGenerator.class);
@@ -443,13 +380,67 @@ public class OpenMRSPOJOGenerator {
 		return getttersAndSetterDefinition;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static Class<OpenMRSObject> tryToGetExistingCLass(File targetDirectory, String fullClassName) {
+	public static Class<OpenMRSObject> tryToGetExistingCLass(String fullClassName, SyncConfiguration syncConfiguration) {
+		//Class<OpenMRSObject> clazz1 = tryToLoadFromOpenMRSClassLoader("org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject");
+		
+		//clazz1 = tryToLoadFromClassPath("org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject", syncConfiguration.getClassPathAsFile());
+		
+		//clazz1 = tryToLoadFromClassPath("org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject", new File("/usr/local/tomcat/temp/eptssync-1.0-SNAPSHOT.jar"));
+		
+		
+		Class<OpenMRSObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
+		
+		//Class<OpenMRSObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
+		
+		if (clazz == null) {
+			clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getClassPathAsFile());
+		}
+		
+		/*
 		try {
-			URLClassLoader loader = URLClassLoader.newInstance(new URL[] {targetDirectory.toURI().toURL()});
-	        
-	        Class<OpenMRSObject> c = (Class<OpenMRSObject>) loader.loadClass(fullClassName);
-	        
+			clazz = tryToLoadFromOpenMRSClassLoader("org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject");
+		
+		
+			ClassLoader loader = clazz.getClassLoader();
+			loader.getResource("org/openmrs/module/eptssync/model/pojo/generic/OpenMRSObject.class");
+			loader.getResource("org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/ConceptVO.class");
+	
+			loader.getResource(clazz.getName());
+			loader.getResource(clazz.getSimpleName());
+			//loader.getResource(clazz.getTypeName());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
+				
+		*/
+		
+		return clazz;
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	private static Class<OpenMRSObject> tryToLoadFromOpenMRSClassLoader(String fullClassName) {
+		try {
+			return (Class<OpenMRSObject>) Class.forName(fullClassName);
+		} catch (ClassNotFoundException e) {
+			return null;
+		}
+	}
+	
+	@SuppressWarnings({ "unchecked", "unused" })
+	private static Class<OpenMRSObject> tryToLoadFromClassPath(String fullClassName, File classPath) {
+		
+		try {
+			URL[] classPaths = new URL[] {classPath.toURI().toURL()};
+			
+			URLClassLoader loader = URLClassLoader.newInstance(classPaths);
+			
+			Class<OpenMRSObject> c = null;
+			
+			c = (Class<OpenMRSObject>) loader.loadClass(fullClassName);
+			
 	        loader.close();
 	        
 	        return c;
@@ -463,8 +454,19 @@ public class OpenMRSPOJOGenerator {
 		}
 	}
 	
+	private static void addAllToClassPath(List<File> classPath, File file) {
+		classPath.add(file);
+		
+		if (file.isDirectory()) {
+			for (File f : file.listFiles()) {
+				addAllToClassPath(classPath, f);
+			}
+		}
+	}
 	
-	public static void compile(File sourceFile, File destinationFile, File classPath) throws IOException {
+	public static void compile(File sourceFile, SyncTableConfiguration tableConfiguration) throws IOException {
+		File destinationFile = tableConfiguration.getPOJOCopiledFilesDirectory();
+		
 		if (!destinationFile.exists()) FileUtilities.tryToCreateDirectoryStructure(destinationFile.getAbsolutePath());
 		
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -472,57 +474,46 @@ public class OpenMRSPOJOGenerator {
 
 		fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destinationFile));
 		
-		fileManager.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(destinationFile, classPath));
-
-		// Compile the file
-		compiler.getTask(null, fileManager, null, null, null, fileManager.getJavaFileObjectsFromFiles(Arrays.asList(sourceFile))).call();
+		List<File> classPathFiles = new ArrayList<File>();
 		
-		fileManager.close();
-	}
-	
-	public static void addToClasspath(File file) {
-		try {
-			URL url = file.toURI().toURL();
-
-			URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-			Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-			method.setAccessible(true);
-			method.invoke(classLoader, url);
-		} catch (Exception e) {
-			throw new RuntimeException("Unexpected exception", e);
-		}
-	}
-	
-	/*
-	public static void compile(File sourceFile, File destinationFile) throws IOException {
-		FileUtilities.tryToCreateDirectoryStructure(destinationFile.getAbsolutePath());
+		classPathFiles.add(destinationFile);
 		
-		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-
-		fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destinationFile));
+		addAllToClassPath(classPathFiles, tableConfiguration.getClassPath());
 		
-		File[] jars = FileUtilities.getParent(Main.getProjectRoot()).listFiles(new FilenameFilter() {
-																			@Override
-																				public boolean accept(File dir, String name) {
-																					return name.toLowerCase().endsWith("jar");
-																				}
-																			});
-		
-		 List<File> classPathFiles = new ArrayList<File>();
-		 classPathFiles.add(destinationFile);
-		 
-		 for (File classPath : jars) {
-			 classPathFiles.add(classPath);
-		 }
-		 
 		fileManager.setLocation(StandardLocation.CLASS_PATH, classPathFiles);
-		
-		// Compile the file
+
+		List<String> optionList = new ArrayList<String>();
+		// set compiler's classpath to be same as the runtime's
+		optionList.addAll(Arrays.asList("-classpath",System.getProperty("java.class.path")));
+
 		compiler.getTask(null, fileManager, null, null, null, fileManager.getJavaFileObjectsFromFiles(Arrays.asList(sourceFile))).call();
 		
+		// Compile the file
+		//compiler.getTask(null, fileManager, null, optionList, null, fileManager.getJavaFileObjectsFromFiles(Arrays.asList(sourceFile))).call();
+		
 		fileManager.close();
-	}
-	*/
+		
+		//String pojoPackageDir = tableConfiguration.getPOJOCopiledFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/pojo/" + tableConfiguration.getRelatedSynconfiguration().getPojoPackage();
+		
+		//ClassPathUtilities.addToClasspath(new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class"), tableConfiguration.getRelatedSynconfiguration());
+		
+		//ClassPathUtilities.tryToCopyPOJOToClasspathJar(tableConfiguration.getRelatedSynconfiguration());
+		
+		//addClassToModule(new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class"), "/org/openmrs/module/eptssync/model/pojo/" + tableConfiguration.getRelatedSynconfiguration().getPojoPackage());
 	
+		//ClassPathUtilities.tryToCopyPOJOToClasspathJar(tableConfiguration.getRelatedSynconfiguration());
+		
+		addClassToClassPath(tableConfiguration);
+		
+		Object a = tryToGetExistingCLass(tableConfiguration.generateFullClassName(), tableConfiguration.getRelatedSynconfiguration());
+	}
+	
+	static void addClassToClassPath(SyncTableConfiguration tableConfiguration){
+		String pojoPackageDir = tableConfiguration.getRelatedSynconfiguration().getPojoPackageAsDirectory().getAbsolutePath();
+		
+		File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class");
+		
+		ZipUtilities.addFileToZip(ZipUtilities.retrieveModuleFile(), clazzFile, tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath());
+		ZipUtilities.addFileToZip(ZipUtilities.retrieveModuleJar(), clazzFile, tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath());
+	}
 }

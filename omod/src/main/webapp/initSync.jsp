@@ -12,18 +12,17 @@
 <br />
 <br />
 
-
 <springform:form modelAttribute="vm" method="GET" action="syncStatus.form">
 	<table>
 		<tr>
 			<td>
-				<select name="installationType" id="installationType">
+				<select name="selectedConfiguration" id="selectedConfiguration">
 					<c:forEach items="${vm.avaliableConfigurations}" var="item" varStatus="itemsRow">
-						<option value="${item.installationType}">${item.installationType}</option>
+						<option value="${item.designation}" ${vm.activeConfiguration == item ? 'selected' : ''}>${item.designation}</option>
 					</c:forEach>
 				</select>
 				
-				<input type="button" value="<spring:message code="eptssync.sync.button.start"/>" name="config" onclick="window.location='syncStatus.form?installationType=' + document.getElementById('installationType').value" />
+				<input type="button" value="<spring:message code="eptssync.sync.button.start"/>" name="startSync" onclick="window.location='startSync.form?selectedConfiguration=' + document.getElementById('selectedConfiguration').value" />
 			</td> 
 		</tr>
 	</table>	

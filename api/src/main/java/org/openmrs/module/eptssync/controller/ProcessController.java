@@ -1,23 +1,23 @@
 package org.openmrs.module.eptssync.controller;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
-import org.openmrs.module.eptssync.utilities.OpenMRSPOJOGenerator;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -34,15 +34,29 @@ public class ProcessController implements Controller{
 	private ProcessController childController;
 	private ControllerMonitor monitor;
 	
-	private DBConnectionService connService;
-	private String controllerId;
+		private String controllerId;
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
-	private static Logger logger = Logger.getLogger(ProcessController.class);
+	private static Log logger = LogFactory.getLog(ProcessController.class);
 	
 	private TimeController timer;
 	
+	public ProcessController(){
+	}
+	
 	public ProcessController(SyncConfiguration configuration){
+		init(configuration);
+	}
+	
+	public void init(File syncCongigurationFile) {
+		try {
+			init(SyncConfiguration.loadFromFile(syncCongigurationFile));
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void init(SyncConfiguration configuration) {
 		this.configuration = configuration;
 		this.configuration.setRelatedController(this);
 		
@@ -68,9 +82,7 @@ public class ProcessController implements Controller{
 	}
 
 	public OpenConnection openConnection() {
-		if (connService == null) connService = DBConnectionService.init(configuration.getConnInfo());
-		
-		return connService.openConnection();
+	return this.getConfiguration().openConnetion();
 	}
 	
 	@Override
@@ -217,7 +229,8 @@ public class ProcessController implements Controller{
 	
 		this.monitor = new ControllerMonitor(this);
 		
-		OpenMRSPOJOGenerator.addToClasspath(getConfiguration().getPOJOCompiledFilesDirectory());
+		//OpenMRSPOJOGenerator.addToClasspath(getConfiguration().getPOJOCompiledFilesDirectory());
+		//OpenMRSPOJOGenerator.tryToAddAllPOJOToClassPath(getConfiguration());
 		
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.monitor.getMonitorId());
 		executor.execute(this.monitor);
