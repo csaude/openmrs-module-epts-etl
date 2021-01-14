@@ -381,41 +381,12 @@ public class OpenMRSPOJOGenerator {
 	}
 	
 	public static Class<OpenMRSObject> tryToGetExistingCLass(String fullClassName, SyncConfiguration syncConfiguration) {
-		//Class<OpenMRSObject> clazz1 = tryToLoadFromOpenMRSClassLoader("org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject");
-		
-		//clazz1 = tryToLoadFromClassPath("org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject", syncConfiguration.getClassPathAsFile());
-		
-		//clazz1 = tryToLoadFromClassPath("org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject", new File("/usr/local/tomcat/temp/eptssync-1.0-SNAPSHOT.jar"));
-		
-		
 		Class<OpenMRSObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
 		
-		//Class<OpenMRSObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
-		
+		/*
 		if (clazz == null) {
 			clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getClassPathAsFile());
-		}
-		
-		/*
-		try {
-			clazz = tryToLoadFromOpenMRSClassLoader("org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject");
-		
-		
-			ClassLoader loader = clazz.getClassLoader();
-			loader.getResource("org/openmrs/module/eptssync/model/pojo/generic/OpenMRSObject.class");
-			loader.getResource("org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/ConceptVO.class");
-	
-			loader.getResource(clazz.getName());
-			loader.getResource(clazz.getSimpleName());
-			//loader.getResource(clazz.getTypeName());
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
-				
-		*/
+		}*/
 		
 		return clazz;
 	}
@@ -481,31 +452,12 @@ public class OpenMRSPOJOGenerator {
 		addAllToClassPath(classPathFiles, tableConfiguration.getClassPath());
 		
 		fileManager.setLocation(StandardLocation.CLASS_PATH, classPathFiles);
-
-		List<String> optionList = new ArrayList<String>();
-		// set compiler's classpath to be same as the runtime's
-		optionList.addAll(Arrays.asList("-classpath",System.getProperty("java.class.path")));
-
+	
 		compiler.getTask(null, fileManager, null, null, null, fileManager.getJavaFileObjectsFromFiles(Arrays.asList(sourceFile))).call();
 		
-		// Compile the file
-		//compiler.getTask(null, fileManager, null, optionList, null, fileManager.getJavaFileObjectsFromFiles(Arrays.asList(sourceFile))).call();
-		
 		fileManager.close();
-		
-		//String pojoPackageDir = tableConfiguration.getPOJOCopiledFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/pojo/" + tableConfiguration.getRelatedSynconfiguration().getPojoPackage();
-		
-		//ClassPathUtilities.addToClasspath(new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class"), tableConfiguration.getRelatedSynconfiguration());
-		
-		//ClassPathUtilities.tryToCopyPOJOToClasspathJar(tableConfiguration.getRelatedSynconfiguration());
-		
-		//addClassToModule(new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class"), "/org/openmrs/module/eptssync/model/pojo/" + tableConfiguration.getRelatedSynconfiguration().getPojoPackage());
 	
-		//ClassPathUtilities.tryToCopyPOJOToClasspathJar(tableConfiguration.getRelatedSynconfiguration());
-		
 		addClassToClassPath(tableConfiguration);
-		
-		Object a = tryToGetExistingCLass(tableConfiguration.generateFullClassName(), tableConfiguration.getRelatedSynconfiguration());
 	}
 	
 	static void addClassToClassPath(SyncTableConfiguration tableConfiguration){

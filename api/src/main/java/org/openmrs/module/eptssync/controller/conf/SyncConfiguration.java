@@ -108,6 +108,7 @@ public class SyncConfiguration {
 		return classPath;
 	}
 	
+	@JsonIgnore
 	public File getClassPathAsFile() {
 		return new File(classPath);
 	}
@@ -565,6 +566,7 @@ public class SyncConfiguration {
 		this.moduleRootDirectory = moduleRootDirectory;
 	}
 	
+	@JsonIgnore
 	public File getPojoPackageAsDirectory() {
 		String pojoPackageDir = "";
 		pojoPackageDir += getPOJOCompiledFilesDirectory().getAbsolutePath() + FileUtilities.getPathSeparator();
@@ -573,6 +575,7 @@ public class SyncConfiguration {
 		return new File(pojoPackageDir);
 	}
 	
+	@JsonIgnore
 	public String getPojoPackageRelativePath() {
 		String pojoPackageDir = "";
 		

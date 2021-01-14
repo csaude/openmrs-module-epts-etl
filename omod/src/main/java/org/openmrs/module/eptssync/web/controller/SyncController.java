@@ -58,4 +58,13 @@ public class SyncController {
 	public void showSyncStatus(ModelMap model) throws DBException, IOException {
 		System.out.println("");
 	}
+	
+	@RequestMapping(value = "/module/eptssync/activeteOperationTab", method = RequestMethod.GET)
+	public ModelAndView activateTab(Model model, HttpServletRequest request, @RequestParam String tab) throws IOException {
+		SyncVM vm = (SyncVM) request.getSession().getAttribute("vm");
+		
+		vm.activateTab(tab);
+		
+		return new ModelAndView("redirect:syncStatus.form");
+	}
 }

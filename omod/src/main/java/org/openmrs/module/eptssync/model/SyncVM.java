@@ -6,13 +6,14 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.Main;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.utilities.ClassPathUtilities;
-import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.OpenMRSPOJOGenerator;
+import org.openmrs.module.eptssync.utilities.ZipUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -20,13 +21,16 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsUtil;
 
 public class SyncVM {
-	private static CommonUtilities utilities = CommonUtilities.getInstance();
+	//private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private List<SyncConfiguration> avaliableConfigurations;
 	
 	private SyncConfiguration activeConfiguration;
 	private File configFile;
 
+	private String activeTab;
+	private String statusMessage;
+	
 	private SyncVM() throws IOException, DBException {
 		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
 	
@@ -48,6 +52,10 @@ public class SyncVM {
 		String configFileName = this.activeConfiguration.getInstallationType().equals("source") ? "source_sync_config.json" : "dest_sync_config.json";
 
 		this.configFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "conf" + FileUtilities.getPathSeparator() + configFileName);
+	
+		this.activeTab = this.activeConfiguration.getOperationsAsList().get(0).getOperationType();
+
+		ZipUtilities.copyModuleTagsToOpenMRS();	
 	}
 	
 	public SyncConfiguration getActiveConfiguration() {
@@ -63,7 +71,26 @@ public class SyncVM {
 		
 		return vm;
 	}
-
+	public String getActiveTab() {
+		return activeTab;
+	}
+	
+	public String getStatusMessage() {
+		return statusMessage;
+	}
+	
+	public void setStatusMessage(String statusMessage) {
+		this.statusMessage = statusMessage;
+	}
+	
+	public void activateTab(String tab) {
+		this.activeTab = tab;
+	}
+	
+	public boolean isActivatedOperationTab(SyncOperationConfig operation) {
+		return this.activeTab.equals(operation.getOperationType());
+	}
+	
 	public void startSync(String selectedConfiguration) {
 		for (SyncConfiguration conf : this.avaliableConfigurations) {
 			if (conf.getDesignation().equals(selectedConfiguration)) {
@@ -73,13 +100,15 @@ public class SyncVM {
 		}
 		
 		this.activeConfiguration.setClassPath(ConfVM.retrieveClassPath());
-		this.activeConfiguration.setModuleRootDirectory(ConfVM.retrieveModuleFolder(this.activeConfiguration));
+		this.activeConfiguration.setModuleRootDirectory(ConfVM.retrieveModuleFolder());
 		
 		saveConfigFile(this.activeConfiguration);
 		
+		
 		//Main.runSync(this.activeConfiguration);
 		
-		tmpSync();
+		
+		//tmpSync();
 	}
 	
 	public void saveConfigFile(SyncConfiguration syncConfiguration) {
@@ -89,7 +118,7 @@ public class SyncVM {
 	}
 	
 	
-	private void tmpSync() {
+	protected void tmpSync() {
 		DBConnectionService connService = DBConnectionService.init(this.activeConfiguration.getConnInfo());
 		
 		OpenConnection conn = connService.openConnection();

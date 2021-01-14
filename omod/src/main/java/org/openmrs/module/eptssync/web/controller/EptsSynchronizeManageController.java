@@ -13,7 +13,6 @@
  */
 package org.openmrs.module.eptssync.web.controller;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.context.Context;
@@ -37,6 +36,6 @@ public class EptsSynchronizeManageController {
 
 	
 	public static void main(String[] args) {
-		System.out.println(DigestUtils.md5Hex("Qwerty123"));
+		//System.out.println(DigestUtils.md5Hex("Qwerty123"));
 	}
 }

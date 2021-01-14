@@ -25,3 +25,5 @@
 	<%@ include file="config_tab2.jsp" %>
 	<%@ include file="config_tab3.jsp" %>	
 </form:form>
+
+<%@ include file="/WEB-INF/template/footer.jsp"%>

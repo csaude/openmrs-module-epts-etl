@@ -79,6 +79,12 @@
 		    <version>1.2.17</version>
 		</dependency>
 		 -->
+		<dependency>
+		    <groupId>org.openmrs.module</groupId>
+		    <artifactId>legacyui-omod</artifactId>
+		    <version>1.5.0</version>
+		    <scope>provided</scope>
+		</dependency>
 		 
 	</dependencies>
 
@@ -104,6 +110,11 @@
 					<include>resources</include>
 				</includes>
 				<targetPath>web/module</targetPath>
+			</resource>
+			<resource>
+				<directory>src/main/webapp/tags</directory>
+				<filtering>false</filtering>
+				<targetPath>META-INF/tags</targetPath>
 			</resource>
 		</resources>
 
