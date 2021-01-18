@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.eptssync.model.openmrs.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
@@ -27,16 +28,29 @@ public class SyncJSONInfo {
 	private Date dateGenerated;
 	private String originAppLocationCode;
 	
-	private List<OpenMRSObject> syncRecords;
-
+	private List<SyncImportInfoVO> syncInfo;
+	/**
+	 * The minimal info of this object
+	 */
+	private SyncJSONInfo minimalJSONInfo;
+	
 	public SyncJSONInfo() {
 	}
 	
 	public SyncJSONInfo(List<OpenMRSObject> syncRecords) {
-		this.syncRecords = syncRecords;
 		this.qtyRecords = utilities.arraySize(syncRecords);
-
+		
+		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(syncRecords);
+		
 		this.dateGenerated = DateAndTimeUtilities.getCurrentDate();
+	}
+	
+	public List<SyncImportInfoVO> getSyncInfo() {
+		return syncInfo;
+	}
+	
+	public void setSyncInfo(List<SyncImportInfoVO> syncInfo) {
+		this.syncInfo = syncInfo;
 	}
 	
 	public String getOriginAppLocationCode() {
@@ -63,14 +77,6 @@ public class SyncJSONInfo {
 		this.dateGenerated = dateGenerated;
 	}
 
-	public List<OpenMRSObject> getSyncRecords() {
-		return syncRecords;
-	}
-
-	public void setSyncRecords(List<OpenMRSObject> syncRecords) {
-		this.syncRecords = syncRecords;
-	}
-
 	public static SyncJSONInfo generate(List<OpenMRSObject> syncRecords) {
 		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(syncRecords);
 
@@ -82,7 +88,9 @@ public class SyncJSONInfo {
 		return utilities.parseToJSON(this);
 	}
 	
-	public static SyncJSONInfo loadFromJSON (String json) {
+	public static SyncJSONInfo loadFromJSON(String json) {
+		Exception ex = null;
+		
 		try {
 			ObjectMapperProvider mapper = new ObjectMapperProvider();
 			
@@ -92,16 +100,46 @@ public class SyncJSONInfo {
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 		
+			ex = e;
+			
 			throw new RuntimeException(e);
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
 		
+			ex = e;
+			
 			throw new RuntimeException(e);
 		} catch (IOException e) {
 			e.printStackTrace();
 			
+			ex = e;
+			
 			throw new RuntimeException(e);
 		}
+		finally {
+			if (ex != null) {
+				//System.out.println(json);
+			}
+		}
+		
 	}	
 	
+	public SyncJSONInfo generateMinimalInfo() {
+		this.minimalJSONInfo = new SyncJSONInfo();
+		this.minimalJSONInfo.qtyRecords = this.qtyRecords;
+		this.minimalJSONInfo.originAppLocationCode = this.originAppLocationCode;
+		this.minimalJSONInfo.dateGenerated = this.dateGenerated;
+		
+		return this.minimalJSONInfo;
+	}
+
+	private String fileName;
+	
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
+
+	public String getFileName() {
+		return fileName;
+	}
 }

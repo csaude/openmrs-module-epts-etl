@@ -30,6 +30,13 @@ public class TimeCountDown extends ScheduledOperation {
 		this.remainTime = this.totalTimeToCount*1000;
 	}
 	
+	/**
+	 * Initialize an instance of TimeCountDown which could be initialized using {@link #restart()}
+	 * 
+	 * @param initializer the initializer where this {@link TimeCountDown} was initialized
+	 * @param message: the message to be shown during the process
+	 * @param totalTimeToCount: total time to count is seconds
+	 */
 	public TimeCountDown(TimeCountDownInitializer initializer, String message, long totalTimeToCount){
 		this.message = message;
 		this.inExecution = true;
@@ -38,6 +45,11 @@ public class TimeCountDown extends ScheduledOperation {
 		this.initializer = initializer;
 	}
 	
+	/**
+	 * Change the interval for displaying the message in seconds
+	 * 
+	 * @param intervalForMessage
+	 */
 	public void setIntervalForMessage(long intervalForMessage) {
 		if (this.intervalForMessage > this.totalTimeToCount) {
 			throw new ForbiddenOperationException("O intervalo para mensagens nao pode ser superior que o tempo total");
@@ -76,7 +88,7 @@ public class TimeCountDown extends ScheduledOperation {
 	
 	@Override
 	public void run() {
-		if (this.intervalForMessage == 0) this.intervalForMessage = 1;
+		if (this.intervalForMessage == 0) this.intervalForMessage = 10;
 		
 		while (this.remainTime > 0) {
 			try {

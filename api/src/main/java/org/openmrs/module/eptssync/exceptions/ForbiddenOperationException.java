@@ -9,8 +9,12 @@ package org.openmrs.module.eptssync.exceptions;
  *
  */
 public class ForbiddenOperationException extends RuntimeException {
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1414389901658588032L;
+	
 	private Object currentObject;
+	
+	public ForbiddenOperationException() {
+	}
 	
 	public ForbiddenOperationException(String msg){
 		super(msg);

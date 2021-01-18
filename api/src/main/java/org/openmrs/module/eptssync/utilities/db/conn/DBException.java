@@ -22,6 +22,8 @@ public class DBException extends SQLException
 	public static final int ORACLE_NAME_IS_ALREADY_USED_BY_AN_EXISTING_OBJECT=17081;
 	public static final int ORACLE_TABLE_OR_VIEW_DOES_NOT_EXIST=942;
 	
+	public static final int MYSQL_UNIQUE_CONSTRAINTS_VIOLATED_COD=1062;
+	
 	
 	
 	public DBException(String errorMessage, SQLException e){
@@ -97,6 +99,13 @@ public class DBException extends SQLException
 		if (this.dataBaseName.equals(DBUtilities.ORACLE_DATABASE)){
 			return this.SQLCodeError == ORACLE_UNIQUE_CONSTRAINTS_VIOLATED_COD;
 		}
+		
+		if (this.dataBaseName.equals(DBUtilities.MYSQL_DATABASE)){
+			return this.SQLCodeError == MYSQL_UNIQUE_CONSTRAINTS_VIOLATED_COD;
+		}
+		 //SQL Error [1062] [23000]: Duplicate entry '1' for key 'tmp_unq'
+		 //SQL Error [1062] [23000]: Duplicate entry '1' for key 'PRIMARY'
+	
 		
 		System.err.println("WARNING: Nao foi possivel determinar a base de dados");
 		return false;

@@ -177,16 +177,4 @@ public class SimpleValue extends BaseVO{
 	public double doubleValue(){
 		return Double.parseDouble(value);
 	}
-
-	@Override
-	public int getObjectId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public void setObjectId(int selfId) {
-		// TODO Auto-generated method stub
-		
-	}
 }

@@ -22,6 +22,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
+
 
 public class FileUtilities {
 	/**
@@ -34,7 +36,7 @@ public class FileUtilities {
 		try {
 			folderHierarchy = fileName.split(getPathSeparator());
         } catch (Exception e) {
-	        System.out.println("Error: You may be using Windows");
+	        //System.out.println("Error: You may be using Windows");
         }
 		
         
@@ -59,7 +61,7 @@ public class FileUtilities {
 		try {
 			folderHierarchy = fullPathToDirectory.split(getPathSeparator());
         } catch (Exception e) {
-	        System.out.println("Error: You may be using Windows");
+	        //System.out.println("Error: You may be using Windows");
         }
 		
         
@@ -79,6 +81,25 @@ public class FileUtilities {
     }
 	
 	public static void write(String fileName, List<String> linesToWrite){
+		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
+		
+		try {
+			
+			FileWriter file = new FileWriter(fileName, true);
+			BufferedWriter buffer = new BufferedWriter(file);
+			
+			for (String str:linesToWrite){
+				buffer.write(str);
+				buffer.newLine();
+			}
+			buffer.close();
+			file.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void write(String fileName, String ... linesToWrite){
 		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
 		
 		try {
@@ -441,7 +462,7 @@ public class FileUtilities {
 		try {
 			folderHierarchy = realPath.split(getPathSeparator());
         } catch (Exception e) {
-	        System.out.println("Error: You may be using Windows");
+	        //System.out.println("Error: You may be using Windows");
         }
 		
         
@@ -480,6 +501,14 @@ public class FileUtilities {
 		
 		return  i>1 ? fileName.substring(0, i-1) : fileName;
 	}
-	
-	
+
+	public static void copyFile(File source, File destination) throws IOException {
+		tryToCreateDirectoryStructureForFile(destination.getAbsolutePath());
+		
+		FileUtils.copyFile(source, destination);
+	}
+
+	public static File getParent(File f) {
+		return f.getParentFile();
+	}
 }

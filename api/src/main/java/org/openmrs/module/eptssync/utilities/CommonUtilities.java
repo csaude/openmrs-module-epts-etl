@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -194,6 +194,12 @@ public class  CommonUtilities implements Serializable{
 
 	public String removeAllEmptySpace(String text){
 		return FuncoesGenericas.removeAllEmptySpace(text);
+	}
+	
+	
+
+	public String replaceAllEmptySpace(String text, char replacement){
+		return FuncoesGenericas.replaceAllEmptySpace(text, replacement);
 	}
 	
 	/**
@@ -722,7 +728,7 @@ public class  CommonUtilities implements Serializable{
 	 */
 	public <T> T loadObjectFormJSON(Class<T> clazz, String json) {
 		try {
-			return new ObjectMapper().readValue(json, clazz);
+			return new ObjectMapperProvider().getContext(clazz).readValue(json, clazz);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -858,15 +864,101 @@ public class  CommonUtilities implements Serializable{
 		return attName;
 	}
 	
-	public void logInfo(String msg, Logger logger) {
-		logger.info(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
+	public void logInfo(String msg, Log logger) {
+		logger.info(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
-	public void logErr(String msg, Logger logger) {
+	public void logErr(String msg, Log logger) {
 		logger.error(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
 	}
 	
-	public void logDebug(String msg, Logger logger) {
+	public void logDebug(String msg, Log logger) {
 		logger.debug(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
+	}
+
+	public boolean isValidUUID(String str) {
+		 try {
+	         UUID.fromString(str);
+	         return true;
+	      } catch (IllegalArgumentException ex) {
+	         return false;
+	      }	 
+	}
+
+	public String scapeQuotationMarks(String str) {
+		str = new String(str.replaceAll("\"", "\\\\\""));
+		
+		str = str.replaceAll("\\\\\\\\", "\\\\\\\\\\\\");
+		
+		return str;
+	}
+	
+	public String removeLastChar(String str) {
+		return str.substring(0, str.length() -1);
+	}
+	
+
+	public String removeCharactersOnString(String str, String ... characters) {
+		if (!stringHasValue(str) || characters == null) return str;
+		
+		
+		
+		for (String c : characters) {
+			str = str.replaceAll(c, "");
+		}
+		
+		return str;
+	}
+	
+
+	public String resolveScapeCharacter(String str) {
+		if (!stringHasValue(str)) return str;
+		
+		char scapeCaracter = '\\';
+		
+		String resolved = "";
+		
+		for (int i=0; i < str.length(); i++) {
+			if (str.charAt(i) == scapeCaracter) {
+				if (i+1 < str.length()) {
+					if (!isSpecialCharacter(str.charAt(i+1))) {
+						//Force to be scaped
+						resolved += str.charAt(i) + "\\";
+					}
+				}
+				else {
+					//Force to be scaped
+					resolved += str.charAt(i) + "\\";
+				}
+			}
+			else resolved += str.charAt(i);
+		}
+		
+		return resolved;
+	}
+	
+	
+	private boolean isSpecialCharacter(char charAt) {
+		char[] spectials = {'\\', '\"'};
+		
+		
+		return getPosOnArray(spectials, charAt) >= 0;
+	}
+
+	private int getPosOnArray(char[] array, char toFind) {
+		for (int i =0; i < array.length; i++){
+			if (array[i] == toFind) return i;
+		}
+		
+		return -1;
+	}
+
+	public static void main(String[] args) {
+		String strWithStrangeCharacters = "\\a\\\"";
+		
+		System.out.println(strWithStrangeCharacters);
+	
+		
+		System.out.println(getInstance().resolveScapeCharacter(strWithStrangeCharacters));
 	}
 }

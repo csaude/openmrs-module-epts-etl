@@ -1,7 +1,7 @@
 package org.openmrs.module.eptssync.utilities;
 
-import org.openmrs.module.eptssync.controller.conf.ParentRefInfo;
-import org.openmrs.module.eptssync.controller.conf.SyncTableInfo;
+import org.openmrs.module.eptssync.controller.conf.RefInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 /**
@@ -25,6 +25,7 @@ public class AttDefinedElements {
 
 	private String sqlInsertParamDefinifion;
 	private String sqlUpdateParamDefinifion;
+	private String sqlInsertValues;
 
 	private String attName;
 	private String attType;
@@ -36,9 +37,9 @@ public class AttDefinedElements {
 	
 	private boolean isObjectId;
 	private boolean isLast;
-	private SyncTableInfo syncTableInfo;
+	private SyncTableConfiguration syncTableInfo;
 	
-	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, SyncTableInfo syncTableInfo) {
+	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, SyncTableConfiguration syncTableInfo) {
 		this.dbAttName = dbAttName;
 		this.dbAttType = dbAttType;
 		
@@ -131,6 +132,8 @@ public class AttDefinedElements {
 	public String getResultSetLoadDefinition() {
 		return resultSetLoadDefinition;
 	}
+	
+	
 
 	private void generateElemets() {
 		this.attType = convertMySQLTypeTOJavaType(dbAttType);
@@ -141,22 +144,66 @@ public class AttDefinedElements {
 		this.getterDefinition = defineGetterMethod(attName, attType);
 		this.resultSetLoadDefinition = defineResultSetLOadDefinition();
 		
-		if (!isObjectId || isSharedKey()) {
+		String aspasAbrir = "\"\\\"\"+";
+		String aspasFechar = "+\"\\\"\"";
+		
+		if (!isObjectId || isSharedKey() || isMetadata()) {
 			this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
 			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
 			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
-
 			
 			if (isForeignKey(dbAttName) && isNumeric()) {
 				this.sqlInsertParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
 				this.sqlUpdateParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
+				this.sqlInsertValues = "this." + attName + " == 0 ? null : this." + attName;
+				
+				this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + "); 
+				
 			}
 			else {
 				this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
 				this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
 	
+				if (isNumeric()) {
+					this.sqlInsertValues = "this." + attName;
+				}
+				else
+				if (isDate()) {
+					this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + " DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(" + attName + ")  " + aspasFechar + " : null";
+				}
+				else
+				if (isString()) {
+					this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + " utilities.scapeQuotationMarks(" + attName + ")  " + aspasFechar + " : null";
+				}
+				else {
+					this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + attName + aspasFechar + " : null";
+				}
+				
+				this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + "); 
 			}
 		}	
+	}
+	
+	private boolean isMetadata() {
+		return this.syncTableInfo.isMetadata();
+	}
+
+	public static String removeStrangeCharactersOnString(String str) {
+		if (!utilities.stringHasValue(str)) return str;
+		
+		return utilities.removeCharactersOnString(str, "\\\\");
+	}
+	
+	public String getSqlInsertValues() {
+		return sqlInsertValues;
+	}
+	
+	public static void main(String[] args) {
+		String a = "2020-20-20 10:11";
+		
+		String s = "\"" + a + "\"";
+		
+		System.out.println(s);
 	}
 	
 	private String defineResultSetLOadDefinition() {
@@ -182,7 +229,7 @@ public class AttDefinedElements {
 		}
 		else 
 		if (attType.equals("String")) {
-			return "this." + this.attName + " = rs.getString(\"" + dbAttName + "\") != null ? rs.getString(\"" + dbAttName + "\").trim() : null;"; 
+			return "this." + this.attName + " = AttDefinedElements.removeStrangeCharactersOnString(rs.getString(\"" + dbAttName + "\") != null ? rs.getString(\"" + dbAttName + "\").trim() : null);"; 
 		} 
 		else 
 		if (attType.equals("java.util.Date")) {
@@ -200,28 +247,48 @@ public class AttDefinedElements {
 		if (attType.equals("short")) {
 			return "this." + this.attName + " = rs.getShort(\"" + dbAttName + "\");"; 
 		}
+		else
+		if (attType.equals("byte[]")) {
+			return "this." + this.attName + " = rs.getBytes(\"" + dbAttName + "\");"; 
+		}
 		else {
 			return "this." + this.attName + " = rs.getObject(\"" + dbAttName + "\");"; 
 		}		
-	}
-
-	private boolean isNumeric() {
-		return utilities.isStringIn(this.attType, "int", "long");
-	}
-
-	private boolean isSharedKey() {
-		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo()) {
-			if (parent.isSharedPk() && parent.getReferenceColumnAsClassAttName().equals(this.attName)) {
-				return true;
-			}
-		}
 		
+	}
+	
+	private boolean isDate() {
+		return utilities.isStringIn(this.attType, "java.util.Date", "Date");
+	}
+	
+	private boolean isString() {
+		return utilities.isStringIn(this.attType, "java.lang.String", "String");
+	}
+	
+	private boolean isNumeric() {
+		return utilities.isStringIn(this.attType, "int", "long", "byte", "short", "double", "float");
+	}
+	
+	public static boolean isNumeric(String attType) {
+		return utilities.isStringIn(attType, "int", "long", "byte", "short", "double", "float");
+	}
+
+	private boolean isPK() {
+		return syncTableInfo.getPrimaryKeyAsClassAtt().equals(this.attName);
+	}
+	private boolean isSharedKey() {
+		if (!isPK()) return false;
+		
+		if (syncTableInfo.getSharePkWith() != null) {
+			return true;
+		}
+			
 		return false;
 	}
 
 	private boolean isForeignKey(String dbAttName) {
-		for (ParentRefInfo parent : this.syncTableInfo.getParentRefInfo()) {
-			if (parent.getReferenceColumnName().equalsIgnoreCase(dbAttName)) {
+		for (RefInfo parent : this.syncTableInfo.getParents()) {
+			if (parent.getRefColumnName().equalsIgnoreCase(dbAttName)) {
 				return true;
 			}
 		}
@@ -229,7 +296,7 @@ public class AttDefinedElements {
 		return false;
 	}
 
-	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast, SyncTableInfo syncTableInfo) {
+	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast, SyncTableConfiguration syncTableInfo) {
 		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, syncTableInfo);
 		elements.generateElemets();
 		
@@ -254,11 +321,28 @@ public class AttDefinedElements {
 				+ " = " + attName + ";\n" + "	}";
 	}
 
+	
+	public static String defineDefaultGetterMethod(String attName, String attType) {
+		String cAttName = attName.toUpperCase().charAt(0) + attName.substring(1);
+
+		if (isNumeric(attType)) return "	public " + attType + " get" + cAttName + "(){ \n" + "		return 0;\n" + "	}";
+
+		return 	"	public " + attType + " get" + cAttName + "(){ \n" + "		return null;\n" + "	}";
+		
+	}
+
+	public static String defineDefaultSetterMethod(String attName, String attType) {
+		String cAttName = attName.toUpperCase().charAt(0) + attName.substring(1);
+
+		return "	public void set" + cAttName + "(" + attType + " " + attName + "){ }";
+	}
+
+	
 	private static String convertTableAttNameToClassAttName(String tableAttName) {
 		return utilities.convertTableAttNameToClassAttName(tableAttName);
 	}
 
-	private static String convertMySQLTypeTOJavaType(String mySQLTypeName) {
+	public static String convertMySQLTypeTOJavaType(String mySQLTypeName) {
 		mySQLTypeName = mySQLTypeName.toUpperCase();
 
 		if (utilities.isStringIn(mySQLTypeName, "INT", "MEDIUMINT"))
@@ -275,11 +359,11 @@ public class AttDefinedElements {
 			return "float";
 		if (utilities.isStringIn(mySQLTypeName, "VARCHAR", "CHAR"))
 			return "String";
-		if (utilities.isStringIn(mySQLTypeName, "VARBINARY", "BLOB", "TEXT"))
+		if (utilities.isStringIn(mySQLTypeName, "VARBINARY", "BLOB", "TEXT", "LONGBLOB"))
 			return "byte[]";
 		if (utilities.isStringIn(mySQLTypeName, "DATE", "DATETIME", "TIME", "TIMESTAMP"))
 			return "java.util.Date";
-
+		
 		throw new ForbiddenOperationException("Unknown data type [" + mySQLTypeName + "]");
 	}
 	

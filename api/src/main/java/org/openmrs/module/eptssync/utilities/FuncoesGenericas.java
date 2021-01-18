@@ -49,15 +49,15 @@ public class FuncoesGenericas {
 	 * @return
 	 */
 	public static String concatStrings(String currentString, String toConcant, String scapeStr){
-		if (!stringHasValue(currentString)) return toConcant;
-		
 		if (!stringHasValue(toConcant)) return currentString;
+		
+		if (!stringHasValue(currentString)) return toConcant;
 		
 		return currentString + scapeStr+ toConcant; 
 	}
 	
 	public static String concatStrings(String value, String... inValues){
-		if (value==null) return value;
+		if (inValues == null) return value;
 		
 		for (String str : inValues){
 			value = concatStrings(value, str, "");
@@ -209,6 +209,29 @@ public class FuncoesGenericas {
 		for (i =0; i < text.length();i++){
 			if (text.charAt(i) != ' '){
 				notSpaced += text.charAt(i);
+			}
+		}
+		
+		return notSpaced;
+	}	
+	
+	/**
+	 * Remove todas as ocorrencias de espa�o
+	 * @param text
+	 * @return
+	 */
+	public static String replaceAllEmptySpace(String text, char replacement){
+		if (!stringHasValue(text)) return "";
+		
+		String notSpaced = "";
+		
+		int i;
+		for (i =0; i < text.length();i++){
+			if (text.charAt(i) != ' '){
+				notSpaced += text.charAt(i);
+			}
+			else {
+				notSpaced += replacement;
 			}
 		}
 		

@@ -15,6 +15,14 @@ public class RecordLimits {
 		this.lastRecordId = lastRecordId;
 	}
 	
+	public void setFirstRecordId(long firstRecordId) {
+		this.firstRecordId = firstRecordId;
+	}
+	
+	public void setLastRecordId(long lastRecordId) {
+		this.lastRecordId = lastRecordId;
+	}
+	
 	public long getFirstRecordId() {
 		return firstRecordId;
 	}
@@ -22,4 +30,9 @@ public class RecordLimits {
 	public long getLastRecordId() {
 		return lastRecordId;
 	}
+	
+	@Override
+		public String toString() {
+			return this.firstRecordId + " - " + this.lastRecordId;
+		}
 }

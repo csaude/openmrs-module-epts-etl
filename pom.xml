@@ -12,7 +12,7 @@
 	
 	<developers>
 		<developer>
-			<name>guimino</name>
+			<name>FGH</name>
 		</developer>
 	</developers>
 	
@@ -33,7 +33,7 @@
 	</modules>
 	
 	<properties>
-		<openMRSVersion>1.11.5</openMRSVersion>
+		<openMRSVersion>2.3.2</openMRSVersion>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 

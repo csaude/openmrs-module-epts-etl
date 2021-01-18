@@ -21,16 +21,16 @@ import org.openmrs.module.web.extension.AdministrationSectionExt;
 
 /**
  * This class defines the links that will appear on the administration page under the
+ * 
  * "eptssync.title" heading. 
  */
 public class AdminList extends AdministrationSectionExt {
-	
 	/**
 	 * @see AdministrationSectionExt#getMediaType()
 	 */
 	public Extension.MEDIA_TYPE getMediaType() {
 		return Extension.MEDIA_TYPE.html;
-	}
+	} 
 	
 	/**
 	 * @see AdministrationSectionExt#getTitle()
@@ -43,8 +43,13 @@ public class AdminList extends AdministrationSectionExt {
 	 * @see AdministrationSectionExt#getLinks()
 	 */
 	public Map<String, String> getLinks() {
-		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
-		map.put("/module/eptssync/manage.form", "eptssync.manage");
+		Map<String, String> map = new LinkedHashMap<String, String>();
+		
+		map.put("/module/eptssync/manage.form", "eptssync.manage.label");
+		
+		map.put("/module/eptssync/initConfig.form", "eptssync.initConfig.label");
+		map.put("/module/eptssync/initSync.form", "eptssync.initSync.label");
+		
 		return map;
 	}
 	

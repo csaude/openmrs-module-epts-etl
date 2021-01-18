@@ -3,6 +3,8 @@ package org.openmrs.module.eptssync.model;
 import java.sql.Connection;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.VO;
@@ -38,6 +40,7 @@ public class SearchParamsDAO extends BaseDAO{
 		return 0;
 	}
 
+	static Logger l = Logger.getLogger(SearchParamsDAO.class);
 	
 	public static <T extends VO>  List<T> search(AbstractSearchParams<T> searchParams, Connection conn) throws DBException{
 		SearchClauses<T> searchClauses = searchParams.generateSearchClauses(conn);
@@ -47,7 +50,30 @@ public class SearchParamsDAO extends BaseDAO{
 		}
 		
 		String sql = searchClauses.generateSQL(conn);
-		
+
 		return search(searchParams.getRecordClass(), sql, searchClauses.getParameters(), conn);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T extends VO>  List<T> search(Engine engine, Connection conn) throws DBException{
+		SearchClauses<T> searchClauses = (SearchClauses<T>) engine.getSearchParams().generateSearchClauses(conn);
+		
+		if (engine.getSearchParams().getOrderByFields() != null) {
+			searchClauses.addToOrderByFields(engine.getSearchParams().getOrderByFields());
+		}
+		
+		String sql = searchClauses.generateSQL(conn);
+		
+		//String sqlToLog = SQLUtilitie.transformPreparedStatmentToFullSQLStatment(sql, searchClauses.getParameters(), conn);
+		
+		List<T> records = (List<T>) search(engine.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(), conn);
+		
+		/*if (!utilities.arrayHasElement(records) && utilities.createInstance(engine.getSearchParams().getRecordClass()).generateTableName().equals("obs")) {
+			engine.getRelatedOperationController().logInfo(sqlToLog);
+			
+			records = (List<T>) search(engine.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(), conn);
+		}*/
+		
+		return records;	
 	}
 }
