@@ -61,6 +61,8 @@ public class SyncOperationConfig {
 	
 	private List<String> sourceFolders;
 	
+	private OperationController relatedController;
+	
 	public SyncOperationConfig() {
 	}
 	
@@ -88,6 +90,11 @@ public class SyncOperationConfig {
 				this.sourceFolders.add(f);
 			}
 		}
+	}
+	
+	@JsonIgnore
+	public OperationController getRelatedController() {
+		return relatedController;
 	}
 	
 	@JsonIgnore
@@ -268,47 +275,45 @@ public class SyncOperationConfig {
 	}
 	
 	public OperationController generateRelatedController(ProcessController parent, Connection conn) {
-		OperationController controller = null;
-	
 		if (isDatabasePreparationOperation()) {
-			controller = new DatabasePreparationController(parent, this);
+			this.relatedController = new DatabasePreparationController(parent, this);
 		}
 		else			
 		if (isPojoGeneration()) {
-			controller = new PojoGenerationController(parent, this);
+			this.relatedController  = new PojoGenerationController(parent, this);
 		}
 		else	
 		if (isExportOperation()) {
-			controller = new SyncExportController(parent, this);
+			this.relatedController  = new SyncExportController(parent, this);
 		}
 		else
 		if (isTransportOperation()) {
-			controller = new SyncTransportController(parent, this);
+			this.relatedController  = new SyncTransportController(parent, this);
 		}
 		else
 		if (isLoadOperation()) {
-			controller = new SyncDataLoadController(parent, this);
+			this.relatedController  = new SyncDataLoadController(parent, this);
 		}
 		else
 		if (isSynchronizationOperation()) {
-			controller = new SyncController(parent, this);
+			this.relatedController  = new SyncController(parent, this);
 		}
 		else
 		if (isConsolidationOperation()) {
-			controller = new DatabaseIntegrityConsolidationController(parent, this);
+			this.relatedController  = new DatabaseIntegrityConsolidationController(parent, this);
 		}
 		else
 		if (isInconsistenceSolver()) {
-			controller = new InconsistenceSolverController(parent, this);
+			this.relatedController  = new InconsistenceSolverController(parent, this);
 		}
 		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");
 	
 		if (this.getChild() != null) {
-			controller.setChild(this.getChild().generateRelatedController(controller.getProcessController(), conn));
-			controller.getChild().setParent(controller);
+			this.relatedController .setChild(this.getChild().generateRelatedController(this.relatedController .getProcessController(), conn));
+			this.relatedController .getChild().setParent(this.relatedController );
 		}
 		
-		return controller;
+		return this.relatedController ;
 	}
 	
 	public void validate () {

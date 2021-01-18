@@ -8,6 +8,7 @@ import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.engine.SyncProgressMeter;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
@@ -56,6 +57,12 @@ public class EngineMonitor implements MonitoredOperation{
 	
 	public SyncTableConfiguration getSyncTableInfo() {
 		return syncTableInfo;
+	}
+	
+	public SyncProgressMeter getProgressMeter() {
+		if (this.getMainEngine() != null) return this.getMainEngine().getProgressMeter();
+		
+		return null;
 	}
 	
 	public Engine getMainEngine() {
@@ -359,7 +366,9 @@ public class EngineMonitor implements MonitoredOperation{
 	}
 
 	public static EngineMonitor init(OperationController controller, SyncTableConfiguration syncTableInfo) {
-		return new EngineMonitor(controller, syncTableInfo);
+		EngineMonitor monitor = new EngineMonitor(controller, syncTableInfo);
+		
+		return monitor;
 	}
 	
 	

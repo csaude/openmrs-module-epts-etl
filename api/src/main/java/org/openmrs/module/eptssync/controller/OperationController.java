@@ -12,8 +12,10 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.model.SyncProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
+import org.openmrs.module.eptssync.status.OperationStatus;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
@@ -37,6 +39,8 @@ public abstract class OperationController implements Controller{
 	private ProcessController processController;
 	
 	private List<EngineMonitor> enginesActivititieMonitor;
+	private List<EngineMonitor> allGeneratedEngineMonitor;
+	
 	private ControllerMonitor activititieMonitor;
 	
 	private OperationController child;
@@ -55,6 +59,8 @@ public abstract class OperationController implements Controller{
 
 	private Exception lastException;
 	
+	private List<SyncProgressInfo> syncProgressInfo;
+	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = LogFactory.getLog(this.getClass());
 		
@@ -64,6 +70,8 @@ public abstract class OperationController implements Controller{
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
+		
+		initProgressMeter();
 	}
 	
 	public Log getLogger() {
@@ -110,6 +118,14 @@ public abstract class OperationController implements Controller{
 		return this.getOperationConfig().isParallelModeProcessing();
 	}
 	
+	public List<EngineMonitor> getAllGeneratedEngineMonitor() {
+		return allGeneratedEngineMonitor;
+	}
+	
+	public void setAllGeneratedEngineMonitor(List<EngineMonitor> allGeneratedEngineMonitor) {
+		this.allGeneratedEngineMonitor = allGeneratedEngineMonitor;
+	}
+	
 	private void runInSequencialMode() {
 		changeStatusToRunning();
 		
@@ -129,6 +145,8 @@ public abstract class OperationController implements Controller{
 				
 				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo);
 				engineMonitor.run();
+				
+				updateProgressInfo(engineMonitor);
 				
 				if (stopRequested() && engineMonitor.isStopped()) {
 					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());
@@ -154,6 +172,14 @@ public abstract class OperationController implements Controller{
 			changeStatusToStopped();
 		}
 	}
+	
+	private void updateProgressInfo(EngineMonitor engineMonitor) {
+		for (SyncProgressInfo info : this.syncProgressInfo) {
+			if (info.getSyncTableName().equals(engineMonitor.getSyncTableInfo().getTableName())) {
+				info.setEngineMonitor(engineMonitor);
+			}
+		}
+	}
 
 	private void runInParallelMode() {
 		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
@@ -173,7 +199,12 @@ public abstract class OperationController implements Controller{
 			else{
 				logInfo("INITIALIZING '" + getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
 					
-				startAndAddToEnginesActivititieMonitor(EngineMonitor.init(this, syncInfo));
+				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo);
+				
+				updateProgressInfo(engineMonitor);
+				
+				
+				startAndAddToEnginesActivititieMonitor(engineMonitor);
 			}
 		}
 		
@@ -194,6 +225,46 @@ public abstract class OperationController implements Controller{
 	
 	public List<EngineMonitor> getEnginesActivititieMonitor() {
 		return enginesActivititieMonitor;
+	}
+	
+	private void initProgressMeter() {
+		this.syncProgressInfo = new ArrayList<SyncProgressInfo>();
+		
+		for (SyncTableConfiguration tabConf: this.getConfiguration().getTablesConfigurations()) {
+			SyncProgressInfo pm = new SyncProgressInfo(tabConf);
+			
+			if (operationTableIsAlreadyFinished(tabConf)) {
+				File syncStatus = generateTableProcessStatusFile(tabConf);
+				
+				//String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
+				
+				OperationStatus op = OperationStatus.loadFromFile(syncStatus);
+				
+				pm.setProgressMeter(op.parseToProgressMeter());
+			}
+			
+			this.syncProgressInfo.add(pm);
+		}
+	}
+	
+	public void refreshProgressInfo() {
+		for (SyncProgressInfo tabConf: this.syncProgressInfo) {
+			tabConf.tryToReloadProgressMeter();
+		}
+	}
+	
+	public SyncProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
+		for (SyncProgressInfo progressInfo : this.syncProgressInfo) {
+			if (progressInfo.getSyncTableName().equals(tableConfiguration.getTableName())) {
+				return progressInfo;
+			}
+		}
+		
+		return null;
+	}
+	
+	public List<SyncProgressInfo> getSyncProgressInfo() {
+		return syncProgressInfo;
 	}
 	
 	@JsonIgnore
@@ -335,8 +406,9 @@ public abstract class OperationController implements Controller{
 		if (!new File(fileName).exists()) {
 			logInfo("WRITING OPERATION STATUS ON "+ fileName);
 			
-			String desc = "";
+			String desc = new OperationStatus(this, conf, engine, timer).parseToJSON();
 			
+			/*
 			int qtyRecords = engine != null && engine.getProgressMeter() != null ? engine.getProgressMeter().getTotal() : 0;
 			
 			desc += "{\n";
@@ -346,7 +418,7 @@ public abstract class OperationController implements Controller{
 			desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(timer.getStartTime()) + "\",\n";
 			desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate()) + "\",\n";
 			desc += "	elapsedTime: " + (timer != null ? timer.getDuration(TimeController.DURACAO_IN_MINUTES) : 0) + "\n";
-			desc += "}";
+			desc += "}";*/
 			
 			FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
 			

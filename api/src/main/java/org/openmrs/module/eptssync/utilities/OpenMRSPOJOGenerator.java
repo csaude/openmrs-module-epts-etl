@@ -465,7 +465,7 @@ public class OpenMRSPOJOGenerator {
 		
 		File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class");
 		
-		ZipUtilities.addFileToZip(ZipUtilities.retrieveModuleFile(), clazzFile, tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath());
 		ZipUtilities.addFileToZip(ZipUtilities.retrieveModuleJar(), clazzFile, tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath());
+		ZipUtilities.addFileToZip(ZipUtilities.retrieveModuleFile(), clazzFile, tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath());
 	}
 }

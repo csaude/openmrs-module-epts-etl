@@ -29,9 +29,16 @@ public class ZipUtilities {
 	    try{
 	        File tmpZip = File.createTempFile(source.getName(), null);
 	        tmpZip.delete();
-	        if(!source.renameTo(tmpZip)){
+	        
+	        source.setExecutable(true); 
+	        
+	        FileUtilities.copyFile(source, tmpZip);
+	        source.delete();
+	        
+	        /*if(!source.renameTo(tmpZip)){
 	            throw new Exception("Could not make temp file (" + source.getName() + ")");
-	        }
+	        }*/
+	        
 	        byte[] buffer = new byte[4096];
 	        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(source));
 	        for(int i = 0; i < files.length; i++){

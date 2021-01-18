@@ -4,6 +4,31 @@
 <%@ attribute name="active" required="true"%>
 <%@ attribute name="operation" required="true" type="org.openmrs.module.eptssync.controller.conf.SyncOperationConfig"%>
 
+<style>
+	.progress {
+	  height: 1.5em;
+	  width: 100%;
+	  background-color: #c9c9c9;
+	  position: relative;
+	  line-height: 10px;
+	}
+	.progress:before {
+	  content: attr(data-label);
+	  font-size: 1em;
+	  position: absolute;
+	  text-align: center;
+	  color: #000000;
+	  top: 5px;
+	  left: 0;
+	  right: 0;
+	}
+	.progress .value {
+	  background-color: #4CAF50;
+	  display: inline-block;
+	  height: 100%;
+	}
+</style>
+
 <c:if test="${active}">
 	
 	<fieldset>
@@ -12,9 +37,9 @@
 		<table style="width: 100%">		
 			<thead>
 				<tr>
-					<th><spring:message code="eptssync.config.table.tableName"/></th>
-					<th><spring:message code="eptssync.sync.progress.bar" /></th>
-					<th><spring:message code="eptssync.sync.progress.summary"/></th>
+					<th style="width: 20%"><spring:message code="eptssync.config.table.tableName"/></th>
+					<th style="width: 60%"><spring:message code="eptssync.sync.progress.bar" /></th>
+					<th style="width: 20%"><spring:message code="eptssync.sync.progress.summary"/></th>
 				</tr>
 			</thead>
 
@@ -22,11 +47,20 @@
 				<c:forEach items="${operation.relatedSyncConfig.tablesConfigurations}" var="item" varStatus="itemsRow">
 					<tr>
 						<td>${item.tableName}</td>
-						<td></td>
-						<td></td>
+						<td>
+							<c:set var="progressInfo" value="${vm.retrieveProgressInfo(operation, item)}"/>
+							<c:set var="progressMeter" value="${progressInfo.progressMeter}"/>
+						
+							<div class="progress" data-label="${not empty progressMeter  ? progressMeter.progress : 'Not Started'}${not empty progressMeter ? '%' : ''}">
+							  <span class="value" style="width:${not empty progressMeter ? progressMeter.progress : 0}%;"></span>
+							</div>
+						</td>
+						<td>${progressInfo.progressMeter.processed}/${progressInfo.progressMeter.total}</td>
 					</tr>
 				</c:forEach>
 			</tbody>
 		</table>
 	</fieldset>
+	<input type="button" value="Refresh" name="btnRefreshStatus" onclick="window.location='syncStatus.form?'" />
+
 </c:if>

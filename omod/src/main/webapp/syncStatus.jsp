@@ -24,7 +24,7 @@
 	
 	<br/>
 	
-	<c:forEach items="${vm.activeConfiguration.operationsAsList}" var="item" varStatus="itemsRow">
+	<c:forEach items="${vm.operations}" var="item" varStatus="itemsRow">
 		<eptssync:syncStatusTab operation="${item}" active="${vm.isActivatedOperationTab(item)}"/>
 	</c:forEach>
 </form:form>
