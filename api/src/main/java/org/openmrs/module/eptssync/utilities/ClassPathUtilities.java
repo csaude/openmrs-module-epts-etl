@@ -2,204 +2,91 @@ package org.openmrs.module.eptssync.utilities;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Enumeration;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
-import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsUtil;
 
-public class ClassPathUtilities {
-	
-	public static void tryToCopyPOJOToClasspathJar(SyncConfiguration syncConfiguration) throws IOException {
-		File jarTmpFolder = new File (syncConfiguration.getSyncRootDirectory() + FileUtilities.getPathSeparator() + "temp");
-	
-		FileUtilities.tryToCreateDirectoryStructure(jarTmpFolder.getAbsolutePath());
+public class ZipUtilities {
+	public static void addFileToZip(File source, File file, String path){
+		File[] files = {file};
 		
-		String jarFileName = jarTmpFolder.getAbsoluteFile() + FileUtilities.getPathSeparator() + FileUtilities.generateFileNameFromRealPath(syncConfiguration.getClassPath());
-		
-		syncConfiguration.getClass().getClassLoader().getResource("org/openmrs/module/eptssync/controller/conf/SyncConfiguration.class");
-		
-		FileOutputStream newJarFileOut = new FileOutputStream(jarFileName);
-		JarOutputStream newJar = new JarOutputStream(newJarFileOut);
-		
-		File classPathContentTempDir = new File(jarTmpFolder + FileUtilities.getPathSeparator() + "classPathContent");
-		
-		FileUtilities.tryToCreateDirectoryStructure(classPathContentTempDir.getAbsolutePath());
-		
-		copyClassPathContentToFolder(syncConfiguration.getPojoPackageAsDirectory(), new File(classPathContentTempDir.getAbsoluteFile() + FileUtilities.getPathSeparator() + syncConfiguration.getPojoPackageRelativePath()));
-	
-		for(File f : classPathContentTempDir.listFiles()) {
-			copyEntryToJar(f, newJar, classPathContentTempDir);
-		}
-		
-		newJar.close();
-		newJarFileOut.close();
-		
-		FileUtilities.removeFile(syncConfiguration.getClassPath());
-		FileUtilities.copyFile(new File(jarFileName), syncConfiguration.getClassPathAsFile());
+		addFilesToZip(source, files, path);		
 	}
 	
-	/*
-	public static void updateClassPathJar(SyncConfiguration syncConfiguration) throws IOException {
-		File jarTmpFolder = new File (syncConfiguration.getSyncRootDirectory() + FileUtilities.getPathSeparator() + "temp");
-	
-		FileUtilities.tryToCreateDirectoryStructure(jarTmpFolder.getAbsolutePath());
-		
-		String jarFileName = jarTmpFolder.getAbsoluteFile() + FileUtilities.getPathSeparator() + FileUtilities.generateFileNameFromRealPath(syncConfiguration.getClassPath());
-		
-		syncConfiguration.getClass().getClassLoader().getResource("org/openmrs/module/eptssync/controller/conf/SyncConfiguration.class");
-		
-		FileOutputStream newJarFileOut = new FileOutputStream(jarFileName);
-		JarOutputStream newJar = new JarOutputStream(newJarFileOut);
-		
-		File classPathContentTempDir = new File(jarTmpFolder + FileUtilities.getPathSeparator() + "classPathContent");
-		
-		FileUtilities.tryToCreateDirectoryStructure(classPathContentTempDir.getAbsolutePath());
-		
-		copyJarContentToFolder(syncConfiguration.getClassPathAsFile(), classPathContentTempDir);
-		
-		copyClassPathContentToFolder(syncConfiguration.getPojoPackageAsDirectory(), new File(classPathContentTempDir.getAbsoluteFile() + FileUtilities.getPathSeparator() + syncConfiguration.getPojoPackageRelativePath()));
-	
-		for(File f : classPathContentTempDir.listFiles()) {
-			copyEntryToJar(f, newJar, classPathContentTempDir);
-		}
-		
-		newJar.close();
-		newJarFileOut.close();
-	}*/
-	
-	public static void copyEntryToJar(File source, JarOutputStream jarOut, File jarLocationRootFolder) throws IOException {
-		if (source.isDirectory()) {
-			
-			for(File f : source.listFiles()) {
-				copyEntryToJar(f, jarOut, jarLocationRootFolder);
-			}
-		}
-		else {
-			String entryName = getEntryNamePackage(source, jarLocationRootFolder);
-			entryName += (!entryName.isEmpty() ? FileUtilities.getPathSeparator() : "") + source.getName();
-			
-			jarOut.putNextEntry(new ZipEntry(entryName));
-			jarOut.write(FileUtilities.readFileAsByte(source.getAbsolutePath()));
-		
-			jarOut.closeEntry();
-		}
+	public static void addFilesToZip(File source, File[] files, String path){
+	    try{
+	        File tmpZip = File.createTempFile(source.getName(), null);
+	        tmpZip.delete();
+	        
+	        source.setExecutable(true); 
+	        
+	        FileUtilities.copyFile(source, tmpZip);
+	        source.delete();
+	        
+	        /*if(!source.renameTo(tmpZip)){
+	            throw new Exception("Could not make temp file (" + source.getName() + ")");
+	        }*/
+	        
+	        byte[] buffer = new byte[4096];
+	        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(source));
+	        for(int i = 0; i < files.length; i++){
+	            InputStream in = new FileInputStream(files[i]);
+	            out.putNextEntry(new ZipEntry(path + files[i].getName()));
+	           
+	            //out.write(FileUtilities.readFileAsByte(files[i].getAbsolutePath()));
+	    		
+	            for(int read = in.read(buffer); read > -1; read = in.read(buffer)){
+	                out.write(buffer, 0, read);
+	            }
+	            
+	            out.closeEntry();
+	            in.close();
+	        }
+	       
+	        ZipInputStream zin = new ZipInputStream(new FileInputStream(tmpZip));
+		     
+	        for(ZipEntry ze = zin.getNextEntry(); ze != null; ze = zin.getNextEntry()){
+	            if(!zipEntryMatch(ze.getName(), files, path)){
+	                out.putNextEntry(ze);
+	                for(int read = zin.read(buffer); read > -1; read = zin.read(buffer)){
+	                    out.write(buffer, 0, read);
+	                }
+	                out.closeEntry();
+	            }
+	        }
+	        
+	        out.close();
+	        zin.close();
+	        tmpZip.delete();
+	    }catch(Exception e){
+	        e.printStackTrace();
+	    }
 	}
-	
-	public static String getEntryNamePackage(File file, File jarLocationRootFolder) throws FileNotFoundException {
-		String path;
-		
-		if (file.isDirectory()) {
-			path = file.getAbsolutePath();
-		}
-		else {
-			path = FileUtilities.getDirectory(file.getAbsolutePath()).getAbsolutePath();
-		}
-		
-		return path.substring((int)jarLocationRootFolder.getAbsolutePath().length());
-	}
-	
-	public static void copyClassPathContentToFolder(File classPath, File destinationFolder) throws IOException {
-		if (classPath.isDirectory()) {
-			for (File file : classPath.listFiles()) {
-				if (file.isDirectory()) {
-					copyClassPathContentToFolder(classPath, destinationFolder);
-				}
-				else
-				if (FileUtilities.determineExtencaoApartirDoNome(file.getAbsolutePath()).equalsIgnoreCase("jar")){
-					copyJarContentToFolder(file, destinationFolder);
-				}
-				else {
-					FileUtilities.copyFile(file, new File(destinationFolder.getAbsolutePath() + FileUtilities.getPathSeparator() + file.getName()));	
-				}
-			} 
-		}
-		else
-		if (FileUtilities.determineExtencaoApartirDoNome(classPath.getAbsolutePath()).equalsIgnoreCase("jar")){
-			copyJarContentToFolder(classPath, destinationFolder);
-		}
-		else {
-			FileUtilities.copyFile(classPath, new File(destinationFolder.getAbsolutePath() + FileUtilities.getPathSeparator() + classPath.getName()));	
-		}
-	}
-	
-	public static void copyJarContentToFolder(File jarFile, File destinationFolder) throws IOException {
-		JarFile jar = new JarFile(jarFile);
- 
-		for (Enumeration<JarEntry> enums = jar.entries(); enums.hasMoreElements();) {
-			JarEntry entry = (JarEntry) enums.nextElement();
- 
-			String fileName = destinationFolder.getAbsolutePath() + FileUtilities.getPathSeparator() + entry.getName();
-			
-			FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
-			
-			File f = new File(fileName);
- 
-			if (!fileName.endsWith("/")) {
-				InputStream is = jar.getInputStream(entry);
-				FileOutputStream fos = new FileOutputStream(f);
- 
-				while (is.available() > 0) {
-					fos.write(is.read());
-				}
- 
-				fos.close();
-				is.close();
-			}
-		}
-		
-		jar.close();
-	}
-	
-	public static void addToClasspath(File file, SyncConfiguration syncConfiguration) throws IOException {
-		FileUtilities.copyFile(file, new File(retrievePojoFolderOnModuleDirectory(syncConfiguration) + FileUtilities.getPathSeparator() + file.getName()));
-			
-		/*try {
-			URL url = file.toURI().toURL();
 
-			URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-			Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-			method.setAccessible(true);
-			method.invoke(classLoader, url);
-		} catch (Exception e) {
-			throw new RuntimeException("Unexpected exception", e);
-		}*/
-	}	
-	
-	public static void tryToAddAllPOJOToClassPath(SyncConfiguration syncConfiguration) {
-		File pojoPackageDir = new File(syncConfiguration.getPOJOCompiledFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/pojo/" + syncConfiguration.getPojoPackage());
-		
-		File[] existingClasses = pojoPackageDir.listFiles();
-		
-		if (existingClasses != null) {
-			try {
-				URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-				
-				Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-				method.setAccessible(true);
-				
-				for (File classFile : existingClasses) {
-					method.invoke(classLoader, classFile.toURI().toURL());
-				}
-			}catch (Exception e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			} 
-		}
+	private static boolean zipEntryMatch(String zeName, File[] files, String path){
+	    for(int i = 0; i < files.length; i++){
+	        if((path + files[i].getName()).equals(zeName)){
+	            return true;
+	        }
+	    }
+	    return false;
 	}
+	
+	public static File retrieveModuleFolder() {
+		return retrieveModuleFile().getParentFile();
+	}	
 	
 	/**
 	 * Identify a eptssync module file
@@ -223,13 +110,93 @@ public class ClassPathUtilities {
 		return allFiles[0];
 	}
 	
-	protected static File retrievePojoFolderOnModuleDirectory(SyncConfiguration syncConfiguration) {
-		String pojoFolderOnModule = "";
+	public static File retrieveModuleJar() {
+		File moduleJar = null;
 		
-		pojoFolderOnModule += syncConfiguration.getModuleRootDirectory().getAbsoluteFile() + FileUtilities.getPathSeparator();
-		pojoFolderOnModule += "eptssync" + FileUtilities.getPathSeparator();
-		pojoFolderOnModule += syncConfiguration.getPojoPackageRelativePath();
+		try {
+			moduleJar = retrieveModuleJarOnOpenMRS2x();
+			
+			if (moduleJar != null) return moduleJar;
+			
+		} catch (Exception e) {
+		}
 		
-		return new File( pojoFolderOnModule);
+		
+		return retrieveModuleJarOnOpenMRS1x();
+	}
+	
+	private static File retrieveModuleJarOnOpenMRS2x() {
+		File moduleFilesDirectory = new File(OpenmrsUtil.getApplicationDataDirectory() + FileUtilities.getPathSeparator() + ".openmrs-lib-cache" + FileUtilities.getPathSeparator() + "eptssync");
+		
+		return new File(moduleFilesDirectory.getAbsolutePath() + FileUtilities.getPathSeparator() + "eptssync.jar");	
+	}
+	
+	private static File retrieveModuleJarOnOpenMRS1x() {
+		String rootDirectory = Paths.get(".").normalize().toAbsolutePath().toString();
+		
+		File[] allFiles = new File(rootDirectory + FileUtilities.getPathSeparator() + "temp").listFiles(new FileFilter() {
+			
+			@Override
+			public boolean accept(File pathname) {
+				return pathname.getAbsolutePath().contains("openmrs-lib-cache");
+			}
+		}); 
+		
+		Arrays.sort(allFiles);
+		
+		for (int i = allFiles.length - 1; i >= 0; i--) {
+			if (allFiles[i].isDirectory()) {
+				//File classPath = new File(allFiles[i].getAbsoluteFile() + FileUtilities.getPathSeparator() + "eptssync" + FileUtilities.getPathSeparator() + "lib" + FileUtilities.getPathSeparator() + "eptssync.jar");
+				return new File(allFiles[i].getAbsoluteFile() + FileUtilities.getPathSeparator() + "eptssync" + FileUtilities.getPathSeparator() + "eptssync.jar");
+			}
+		}
+		
+		return null;
+	}
+	
+	public static File retrieveOpenMRSWebAppFolder() {
+		String rootDirectory = Paths.get(".").normalize().toAbsolutePath().toString();
+		
+		return  new File(rootDirectory + FileUtilities.getPathSeparator() + "webapps" + FileUtilities.getPathSeparator() + "openmrs");
+	}
+	
+	public static void copyFileToOpenMRSTagsDirectory(File file) throws IOException {
+		File tagDir = new File(retrieveOpenMRSWebAppFolder().getAbsoluteFile() + FileUtilities.getPathSeparator() + "WEB-INF" + FileUtilities.getPathSeparator() + "tags");
+	
+		FileUtilities.copyFile(file, new File(tagDir.getAbsolutePath() + FileUtilities.getPathSeparator() + file.getName()));
+	}
+	
+	public static void main(String[] args) {
+		File[] files = new File[1];
+		files[0] = new File("/home/jpboane/working/prg/jee/tmp/cs_1_de_maio");
+		
+		//addFilesToZip(new File("/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/omod/target/eptssync-1.0-SNAPSHOT_bkp.omod"), files, "/org/openmrs/module/eptssync/model/pojo/");
+		addFilesToZip(new File("/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/omod/target/eptssync-1.0-SNAPSHOT.omod"), new File("/home/jpboane/working/prg/jee/tmp/cs_1_de_maio").listFiles(), "org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/");
+	}
+
+	public static void copyModuleTagsToOpenMRS() {
+		try {
+			ZipFile zipfile = new ZipFile(retrieveModuleJar());
+			
+			ZipEntry tagEntry = zipfile.getEntry("web/module/tags/syncStatusTab.tag");
+			
+			File tagDir = new File(retrieveOpenMRSWebAppFolder().getAbsoluteFile() + FileUtilities.getPathSeparator() + "WEB-INF" + FileUtilities.getPathSeparator() + "tags");
+			
+			File destFile = new File(tagDir.getAbsolutePath() + FileUtilities.getPathSeparator() + FileUtilities.generateFileNameFromRealPath(tagEntry.getName()));
+			
+			destFile.delete();
+			
+			FileUtilities.write(destFile.getAbsolutePath(), zipfile.getInputStream(tagEntry));
+			
+		} catch (ZipException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	
+		
 	}
 }
