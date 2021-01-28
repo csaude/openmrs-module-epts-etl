@@ -14,11 +14,15 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsUtil;
 
-public class ZipUtilities {
+public class ClassPathUtilities {
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
+	
 	public static void addFileToZip(File source, File file, String path){
 		File[] files = {file};
 		
@@ -74,6 +78,18 @@ public class ZipUtilities {
 	        e.printStackTrace();
 	    }
 	}
+	
+	
+	public static void addFilesToFolder(File folder, File[] files, String path)  {
+		 try {
+			for (File file : files) {
+				FileUtilities.copyFile(file, new File (folder.getAbsoluteFile() + FileUtilities.getPathSeparator() + path + FileUtilities.getPathSeparator() + file.getName())); 
+			 }
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 
 	private static boolean zipEntryMatch(String zeName, File[] files, String path){
 	    for(int i = 0; i < files.length; i++){
@@ -84,7 +100,7 @@ public class ZipUtilities {
 	    return false;
 	}
 	
-	public static File retrieveModuleFolder() {
+	public static File retrieveOpenMRSModuleFolder() {
 		return retrieveModuleFile().getParentFile();
 	}	
 	
@@ -97,7 +113,7 @@ public class ZipUtilities {
 		File[] allFiles = modulesDirectory.listFiles(new FileFilter() {
 			@Override
 			public boolean accept(File pathname) {
-				return pathname.getAbsolutePath().contains("eptssync");
+				return pathname.getName().startsWith("eptssync") && pathname.getName().endsWith("omod");
 			}
 		}); 
 		
@@ -123,6 +139,10 @@ public class ZipUtilities {
 		
 		
 		return retrieveModuleJarOnOpenMRS1x();
+	}
+	
+	public static File retrieveModuleFolder() {
+		return new File(retrieveModuleJar().getParent());
 	}
 	
 	private static File retrieveModuleJarOnOpenMRS2x() {
@@ -195,8 +215,41 @@ public class ZipUtilities {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	public static void addClassToClassPath(SyncTableConfiguration tableConfiguration){
+		String pojoPackageDir = tableConfiguration.getRelatedSynconfiguration().getPojoPackageAsDirectory().getAbsolutePath();
 		
+		File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class");
+		
+		if (clazzFile.exists()) {
+			addClassToClassPath(utilities.parseObjectToArray(clazzFile), tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath());
+		}
+	}
 	
-		
+	public static void addClassToClassPath(File[] clazzFiless, String path){
+		ClassPathUtilities.addFilesToZip(ClassPathUtilities.retrieveModuleJar(), clazzFiless, path);
+		ClassPathUtilities.addFilesToZip(ClassPathUtilities.retrieveModuleFile(), clazzFiless, path);	
+		ClassPathUtilities.addFilesToFolder(ClassPathUtilities.retrieveModuleFolder(), clazzFiless, path);
+	}
+	
+
+	public static void tryToCopyPOJOToClassPath(SyncConfiguration syncConfiguration) {
+		if (syncConfiguration.getPojoPackageAsDirectory().exists()) {
+			File[] clazzFiless = new File[syncConfiguration.getTablesConfigurations().size()];
+			String pojoPackageDir = syncConfiguration.getPojoPackageAsDirectory().getAbsolutePath();
+			
+			for (int i = 0; i < syncConfiguration.getTablesConfigurations().size(); i++) {
+				SyncTableConfiguration tableConfiguration = syncConfiguration.getTablesConfigurations().get(i);
+				
+				File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class");
+				
+				if (clazzFile.exists()) {
+					clazzFiless[i] = clazzFile;
+				}
+			}
+			
+			addClassToClassPath(clazzFiless, syncConfiguration.getPojoPackageRelativePath());
+		}
 	}
 }

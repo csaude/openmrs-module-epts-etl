@@ -10,7 +10,7 @@ import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.utilities.ZipUtilities;
+import org.openmrs.module.eptssync.utilities.ClassPathUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsUtil;
@@ -71,11 +71,11 @@ public class ConfVM {
 	}
 	
 	protected static String retrieveClassPath() {
-		return ZipUtilities.retrieveModuleJar().getAbsolutePath();
+		return ClassPathUtilities.retrieveModuleJar().getAbsolutePath();
 	}
 	
 	protected static File retrieveModuleFolder() {
-		return ZipUtilities.retrieveModuleFolder();
+		return ClassPathUtilities.retrieveModuleFolder();
 	}
 	
 	public static ConfVM getInstance(String installationType) throws IOException, DBException {

@@ -12,6 +12,7 @@ import org.openmrs.module.eptssync.engine.SyncProgressMeter;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
+import org.openmrs.util.DateUtil;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -36,7 +37,7 @@ public class OperationStatus {
 		
 		qtyRecords = engine != null && engine.getProgressMeter() != null ? engine.getProgressMeter().getTotal() : 0;
 		
-		startTime = timer.getStartTime();
+		startTime = timer != null ? timer.getStartTime(): DateAndTimeUtilities.getCurrentDate();
 		finishTime = DateAndTimeUtilities.getCurrentDate();
 		elapsedTime = timer != null ? timer.getDuration(TimeController.DURACAO_IN_MINUTES) : 0;
 	}

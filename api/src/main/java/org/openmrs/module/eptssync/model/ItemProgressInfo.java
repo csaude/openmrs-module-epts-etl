@@ -6,12 +6,12 @@ import org.openmrs.module.eptssync.monitor.EngineMonitor;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SyncProgressInfo {
+public class ItemProgressInfo {
 	private SyncTableConfiguration tableConfiguration;
 	private EngineMonitor engineMonitor;
 	private SyncProgressMeter progressMeter;
 	
-	public SyncProgressInfo(SyncTableConfiguration tableConfiguration) {
+	public ItemProgressInfo(SyncTableConfiguration tableConfiguration) {
 		this.tableConfiguration = tableConfiguration;
 		
 		tryToReloadProgressMeter();
@@ -55,6 +55,10 @@ public class SyncProgressInfo {
 	
 	public String getSyncTableName() {
 		return this.tableConfiguration.getTableName();
+	}
+	
+	public void doLastProgressMeterRefresh(int totalRecords) {
+		if (this.progressMeter == null) this.progressMeter = new SyncProgressMeter(this.engineMonitor, "Finished", totalRecords, totalRecords); 
 	}
 	
 	

@@ -383,10 +383,10 @@ public class OpenMRSPOJOGenerator {
 	public static Class<OpenMRSObject> tryToGetExistingCLass(String fullClassName, SyncConfiguration syncConfiguration) {
 		Class<OpenMRSObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
 		
-		/*
 		if (clazz == null) {
+			clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getModuleRootDirectory());
 			clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getClassPathAsFile());
-		}*/
+		}
 		
 		return clazz;
 	}
@@ -394,7 +394,8 @@ public class OpenMRSPOJOGenerator {
 	@SuppressWarnings({ "unchecked" })
 	private static Class<OpenMRSObject> tryToLoadFromOpenMRSClassLoader(String fullClassName) {
 		try {
-			return (Class<OpenMRSObject>) Class.forName(fullClassName);
+			return (Class<OpenMRSObject>) OpenMRSObject.class.getClassLoader().loadClass(fullClassName);
+			//return (Class<OpenMRSObject>) Class.forName(fullClassName);
 		} catch (ClassNotFoundException e) {
 			return null;
 		}
@@ -457,15 +458,8 @@ public class OpenMRSPOJOGenerator {
 		
 		fileManager.close();
 	
-		addClassToClassPath(tableConfiguration);
+		ClassPathUtilities.addClassToClassPath(tableConfiguration);
 	}
 	
-	static void addClassToClassPath(SyncTableConfiguration tableConfiguration){
-		String pojoPackageDir = tableConfiguration.getRelatedSynconfiguration().getPojoPackageAsDirectory().getAbsolutePath();
-		
-		File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class");
-		
-		ZipUtilities.addFileToZip(ZipUtilities.retrieveModuleJar(), clazzFile, tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath());
-		ZipUtilities.addFileToZip(ZipUtilities.retrieveModuleFile(), clazzFile, tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath());
-	}
+	
 }

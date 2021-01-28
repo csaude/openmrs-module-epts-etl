@@ -557,6 +557,10 @@ public class SyncConfiguration {
 		}
 	}
 	
+	public String generateControllerId() {
+		return this.getDesignation() + "_controller";
+	}
+	
 	@JsonIgnore
 	public File getModuleRootDirectory() {
 		return moduleRootDirectory;

@@ -377,4 +377,8 @@ public class SyncOperationConfig {
 	public String toString() {
 		return getRelatedSyncConfig().getDesignation() + "_" + this.operationType;
 	}
+
+	public String generateControllerId() {
+		return relatedSyncConfig.generateControllerId() + "_" + getOperationType();
+	}
 }

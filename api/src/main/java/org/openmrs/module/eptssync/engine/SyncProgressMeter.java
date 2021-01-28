@@ -2,7 +2,6 @@ package org.openmrs.module.eptssync.engine;
 
 import java.util.Date;
 
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
@@ -110,7 +109,7 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	 * @param timer Temporizador da migracao
 	 */
 	public synchronized void refresh(String statusMsg, int total, int processed){
-		if (_default) throw new ForbiddenOperationException("You cannot refresh a default progress meter!");
+		//if (_default) throw new ForbiddenOperationException("You cannot refresh a default progress meter!");
 		
 		this.total = total;
 		this.processed = processed;

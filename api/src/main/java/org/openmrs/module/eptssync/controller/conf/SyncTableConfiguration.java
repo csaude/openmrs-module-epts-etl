@@ -321,6 +321,12 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	@JsonIgnore
 	public Class<OpenMRSObject> getSyncRecordClass() throws ForbiddenOperationException{
+		OpenMRSObject.class.getClassLoader().getResource("org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/ConceptVO.class");
+		OpenMRSObject.class.getClassLoader().getResource("org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/Location.class");
+		OpenMRSObject.class.getClassLoader().getResource("org/openmrs/module/eptssync/exceptions/ForbiddenOperationException.class");
+		
+		//this.getSyncRecordClass().getClassLoader().getResource("org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/ConceptVO.class");
+		
 		if (syncRecordClass == null) this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(generateFullClassName(), getRelatedSynconfiguration());
 		
 		if (syncRecordClass == null) throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");

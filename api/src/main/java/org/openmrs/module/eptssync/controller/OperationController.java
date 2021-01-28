@@ -12,7 +12,8 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.model.SyncProgressInfo;
+import org.openmrs.module.eptssync.model.ItemProgressInfo;
+import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.status.OperationStatus;
@@ -59,7 +60,7 @@ public abstract class OperationController implements Controller{
 
 	private Exception lastException;
 	
-	private List<SyncProgressInfo> syncProgressInfo;
+	private OperationProgressInfo progressInfo;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = LogFactory.getLog(this.getClass());
@@ -67,11 +68,15 @@ public abstract class OperationController implements Controller{
 		this.processController = processController;
 		this.operationConfig = operationConfig;
 		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
+		this.controllerId = operationConfig.generateControllerId();	
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 		
-		initProgressMeter();
+		this.progressInfo = this.processController.initOperationProgressMeter(this);
+	}
+	
+	public OperationProgressInfo getProgressInfo() {
+		return progressInfo;
 	}
 	
 	public Log getLogger() {
@@ -146,7 +151,7 @@ public abstract class OperationController implements Controller{
 				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo);
 				engineMonitor.run();
 				
-				updateProgressInfo(engineMonitor);
+				this.progressInfo.updateProgressInfo(engineMonitor);
 				
 				if (stopRequested() && engineMonitor.isStopped()) {
 					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());
@@ -172,14 +177,6 @@ public abstract class OperationController implements Controller{
 			changeStatusToStopped();
 		}
 	}
-	
-	private void updateProgressInfo(EngineMonitor engineMonitor) {
-		for (SyncProgressInfo info : this.syncProgressInfo) {
-			if (info.getSyncTableName().equals(engineMonitor.getSyncTableInfo().getTableName())) {
-				info.setEngineMonitor(engineMonitor);
-			}
-		}
-	}
 
 	private void runInParallelMode() {
 		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
@@ -201,7 +198,7 @@ public abstract class OperationController implements Controller{
 					
 				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo);
 				
-				updateProgressInfo(engineMonitor);
+				this.progressInfo.updateProgressInfo(engineMonitor);
 				
 				
 				startAndAddToEnginesActivititieMonitor(engineMonitor);
@@ -211,7 +208,7 @@ public abstract class OperationController implements Controller{
 		changeStatusToRunning();
 	}
 	
-	private boolean operationTableIsAlreadyFinished(SyncTableConfiguration conf) {
+	public boolean operationTableIsAlreadyFinished(SyncTableConfiguration conf) {
 		return generateTableProcessStatusFile(conf).exists();
 	}
 
@@ -227,46 +224,7 @@ public abstract class OperationController implements Controller{
 		return enginesActivititieMonitor;
 	}
 	
-	private void initProgressMeter() {
-		this.syncProgressInfo = new ArrayList<SyncProgressInfo>();
-		
-		for (SyncTableConfiguration tabConf: this.getConfiguration().getTablesConfigurations()) {
-			SyncProgressInfo pm = new SyncProgressInfo(tabConf);
-			
-			if (operationTableIsAlreadyFinished(tabConf)) {
-				File syncStatus = generateTableProcessStatusFile(tabConf);
-				
-				//String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
-				
-				OperationStatus op = OperationStatus.loadFromFile(syncStatus);
-				
-				pm.setProgressMeter(op.parseToProgressMeter());
-			}
-			
-			this.syncProgressInfo.add(pm);
-		}
-	}
-	
-	public void refreshProgressInfo() {
-		for (SyncProgressInfo tabConf: this.syncProgressInfo) {
-			tabConf.tryToReloadProgressMeter();
-		}
-	}
-	
-	public SyncProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
-		for (SyncProgressInfo progressInfo : this.syncProgressInfo) {
-			if (progressInfo.getSyncTableName().equals(tableConfiguration.getTableName())) {
-				return progressInfo;
-			}
-		}
-		
-		return null;
-	}
-	
-	public List<SyncProgressInfo> getSyncProgressInfo() {
-		return syncProgressInfo;
-	}
-	
+
 	@JsonIgnore
 	public OpenConnection openConnection() {
 		return processController.openConnection();
@@ -403,10 +361,14 @@ public abstract class OperationController implements Controller{
 		
 		logInfo("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
 		
+		 OperationStatus status = new OperationStatus(this, conf, engine, timer);
+		 
 		if (!new File(fileName).exists()) {
 			logInfo("WRITING OPERATION STATUS ON "+ fileName);
 			
-			String desc = new OperationStatus(this, conf, engine, timer).parseToJSON();
+			String desc = status.parseToJSON();
+			
+			retrieveProgressInfo(conf).doLastProgressMeterRefresh(status.getQtyRecords());
 			
 			/*
 			int qtyRecords = engine != null && engine.getProgressMeter() != null ? engine.getProgressMeter().getTotal() : 0;
@@ -435,7 +397,7 @@ public abstract class OperationController implements Controller{
 		return this.getProcessController().getConfiguration();
 	}
 	
-	private File generateTableProcessStatusFile(SyncTableConfiguration conf) {
+	public File generateTableProcessStatusFile(SyncTableConfiguration conf) {
 		String operationId = this.getControllerId() + "_" + conf.getTableName();
 		
 		String fileName = generateProcessStatusFolder() + FileUtilities.getPathSeparator() +  operationId;
@@ -684,8 +646,9 @@ public abstract class OperationController implements Controller{
 		}
 		
 		if (getChild() != null) getChild().requestStop();
-		
-		
-		
+	}
+
+	public ItemProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
+		return progressInfo.retrieveProgressInfo(tableConfiguration);
 	}
 }

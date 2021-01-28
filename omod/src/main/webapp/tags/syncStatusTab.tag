@@ -4,6 +4,8 @@
 <%@ attribute name="active" required="true"%>
 <%@ attribute name="operation" required="true" type="org.openmrs.module.eptssync.controller.conf.SyncOperationConfig"%>
 
+<%@ taglib prefix="eptssync" uri="taglibs/eptssync.tld"%>
+
 <style>
 	.progress {
 	  height: 1.5em;
@@ -62,5 +64,29 @@
 		</table>
 	</fieldset>
 	<input type="button" value="Refresh" name="btnRefreshStatus" onclick="window.location='syncStatus.form?'" />
-
+	<input type="button" value="Refresh" name="btnRefreshStatusAjax" onclick="refreshStatus()" />
 </c:if>
+
+<script type="text/javascript">
+	//window.setInterval(refreshStatus, 10000);
+
+	function refreshStatus(){
+	    /*
+		$.ajax({
+		       url: './module/eptssync/syncStatus',
+		       type: 'GET',
+		       data: data,
+		       dataType: 'json',
+		       processData: false, 
+		       contentType: false,
+		       success: function(data) {
+		    	  alert('Refreshed');
+		    		
+		    	   return true;
+		       },
+		       error: function(data, textStatus, jqXHR){
+		    	  alert('Error ' + textStatus)
+		       }
+		    });*/
+	}
+</script>
