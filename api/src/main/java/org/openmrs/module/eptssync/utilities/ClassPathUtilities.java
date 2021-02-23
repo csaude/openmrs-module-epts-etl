@@ -7,18 +7,20 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import org.openmrs.module.ModuleUtil;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
-import org.openmrs.util.OpenmrsUtil;
+import org.openmrs.util.OpenmrsClassLoader;
 
 public class ClassPathUtilities {
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
@@ -100,15 +102,11 @@ public class ClassPathUtilities {
 	    return false;
 	}
 	
-	public static File retrieveOpenMRSModuleFolder() {
-		return retrieveModuleFile().getParentFile();
-	}	
-	
 	/**
 	 * Identify a eptssync module file
 	 */
 	public static File retrieveModuleFile() {
-		File modulesDirectory = new File(OpenmrsUtil.getApplicationDataDirectory() + FileUtilities.getPathSeparator() + "modules");
+		File modulesDirectory = ModuleUtil.getModuleRepository();
 			
 		File[] allFiles = modulesDirectory.listFiles(new FileFilter() {
 			@Override
@@ -127,25 +125,18 @@ public class ClassPathUtilities {
 	}
 	
 	public static File retrieveModuleJar() {
-		File moduleJar = null;
-		
-		try {
-			moduleJar = retrieveModuleJarOnOpenMRS2x();
-			
-			if (moduleJar != null) return moduleJar;
-			
-		} catch (Exception e) {
-		}
-		
-		
-		return retrieveModuleJarOnOpenMRS1x();
+		File moduleFilesDirectory = new File(OpenmrsClassLoader.getLibCacheFolder().getAbsolutePath() + FileUtilities.getPathSeparator() + FileUtilities.getPathSeparator() + "eptssync");
+	
+		return new File(moduleFilesDirectory.getAbsolutePath() + FileUtilities.getPathSeparator() + "eptssync.jar");	
 	}
 	
 	public static File retrieveModuleFolder() {
 		return new File(retrieveModuleJar().getParent());
 	}
 	
-	private static File retrieveModuleJarOnOpenMRS2x() {
+	/*private static File retrieveModuleJarOnOpenMRS2x() {
+		File f = OpenmrsClassLoader.getLibCacheFolder();
+		
 		File moduleFilesDirectory = new File(OpenmrsUtil.getApplicationDataDirectory() + FileUtilities.getPathSeparator() + ".openmrs-lib-cache" + FileUtilities.getPathSeparator() + "eptssync");
 		
 		return new File(moduleFilesDirectory.getAbsolutePath() + FileUtilities.getPathSeparator() + "eptssync.jar");	
@@ -173,6 +164,7 @@ public class ClassPathUtilities {
 		
 		return null;
 	}
+	*/
 	
 	public static File retrieveOpenMRSWebAppFolder() {
 		String rootDirectory = Paths.get(".").normalize().toAbsolutePath().toString();
@@ -184,14 +176,6 @@ public class ClassPathUtilities {
 		File tagDir = new File(retrieveOpenMRSWebAppFolder().getAbsoluteFile() + FileUtilities.getPathSeparator() + "WEB-INF" + FileUtilities.getPathSeparator() + "tags");
 	
 		FileUtilities.copyFile(file, new File(tagDir.getAbsolutePath() + FileUtilities.getPathSeparator() + file.getName()));
-	}
-	
-	public static void main(String[] args) {
-		File[] files = new File[1];
-		files[0] = new File("/home/jpboane/working/prg/jee/tmp/cs_1_de_maio");
-		
-		//addFilesToZip(new File("/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/omod/target/eptssync-1.0-SNAPSHOT_bkp.omod"), files, "/org/openmrs/module/eptssync/model/pojo/");
-		addFilesToZip(new File("/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/omod/target/eptssync-1.0-SNAPSHOT.omod"), new File("/home/jpboane/working/prg/jee/tmp/cs_1_de_maio").listFiles(), "org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/");
 	}
 
 	public static void copyModuleTagsToOpenMRS() {
@@ -239,17 +223,18 @@ public class ClassPathUtilities {
 			File[] clazzFiless = new File[syncConfiguration.getTablesConfigurations().size()];
 			String pojoPackageDir = syncConfiguration.getPojoPackageAsDirectory().getAbsolutePath();
 			
-			for (int i = 0; i < syncConfiguration.getTablesConfigurations().size(); i++) {
-				SyncTableConfiguration tableConfiguration = syncConfiguration.getTablesConfigurations().get(i);
-				
+			List<File> clazzListFiless = new  ArrayList<File>();
+			
+			
+			for (SyncTableConfiguration tableConfiguration : syncConfiguration.getTablesConfigurations()) {
 				File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class");
 				
 				if (clazzFile.exists()) {
-					clazzFiless[i] = clazzFile;
+					clazzListFiless.add(clazzFile);
 				}
 			}
 			
-			addClassToClassPath(clazzFiless, syncConfiguration.getPojoPackageRelativePath());
+			addClassToClassPath(utilities.parseListToArray(clazzListFiless), syncConfiguration.getPojoPackageRelativePath());
 		}
 	}
 }

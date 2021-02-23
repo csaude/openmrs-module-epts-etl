@@ -611,6 +611,19 @@ public class  CommonUtilities implements Serializable{
 		return parsedList;
 	}
 	
+	public <T extends Object> T[] parseListToArray(List<T> list){
+		if (!arrayHasElement(list)) return null;
+		
+		@SuppressWarnings("unchecked")
+		T[] parsedList = (T[]) Array.newInstance(list.get(0).getClass(), list.size());
+		
+		for (int i = 0; i < list.size(); i++){
+			parsedList[i] = list.get(i);
+		}
+		
+		return parsedList;
+	}
+	
 	public <T> List<T> cloneList(List<T> list){
 		if (list == null) return null;
 		
