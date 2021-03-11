@@ -66,21 +66,19 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	
 	static Logger logger = Logger.getLogger(OpenMRSObjectDAO.class);
 	
-	public static <T extends OpenMRSObject> T thinGetByOriginRecordId(Class<T> openMRSClass, int originRecordId, String originAppLocationCode, Connection conn) throws DBException{
-		if (!utilities.stringHasValue(originAppLocationCode)) return thinGetByOriginRecordId(openMRSClass, originRecordId, conn);
-		
+	public static <T extends OpenMRSObject> T thinGetByRecordOrigin(int recordOriginId, String recordOriginLocationCode, Class<T> openMRSClass, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 		T instance = null;
 		
 		try {
 			instance = openMRSClass.newInstance();
 			
-			Object[] params = {originRecordId, originAppLocationCode};
+			Object[] params = {recordOriginId, recordOriginLocationCode};
 			
 			String sql = "";
 			
-			sql += " SELECT * \n";
-			sql += " FROM  	" + instance.generateTableName() + "\n";
-			sql += " WHERE 	origin_record_id = ? \n";
+			sql += " SELECT " + instance.generateTableName() + ".* \n";
+			sql += " FROM  	" + instance.generateTableName() + " INNER JOIN " + tableInfo.generateFullStageTableName() + " ON destination_record_id = " + tableInfo.getPrimaryKey() + "\n";
+			sql += " WHERE 	record_origin_id = ? \n";
 			sql += "		AND origin_app_location_code = ?;\n";
 			
 			return find(openMRSClass, sql, params, conn);
@@ -94,32 +92,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static <T extends OpenMRSObject> T thinGetByOriginRecordId(Class<T> openMRSClass, int originRecordId, Connection conn) throws DBException{
-		T instance = null;
-		
-		try {
-			instance = openMRSClass.newInstance();
-			
-			Object[] params = {originRecordId};
-			
-			String sql = "";
-			
-			sql += " SELECT * \n";
-			sql += " FROM  	" + instance.generateTableName() + "\n";
-			sql += " WHERE 	origin_record_id = ? \n";
-			sql += "		AND origin_app_location_code is null;\n";
-			
-			return find(openMRSClass, sql, params, conn);
-		} catch (Exception e) {
-			logger.info("Error trying do retrieve record on table " + instance.generateTableName()  + "["+e.getMessage() + "]");
-			
-			TimeCountDown.sleep(2000);
-		
-			throw new RuntimeException("Error trying do retrieve record on table " + instance.generateTableName()  + "["+e.getMessage() + "]");
-			
-		}
-	}
-
+	
 	public static <T extends OpenMRSObject> T thinGetByUuid(Class<T> openMRSClass, String uuid, Connection conn) throws DBException{
 		try {
 			Object[] params = {uuid};
@@ -190,12 +163,6 @@ public class OpenMRSObjectDAO extends BaseDAO {
 
 	public static OpenMRSObject getFirstRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
 		String sql = "";
-	
-		OpenMRSObject.class.getClassLoader().getResource("org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/ConceptVO.class");
-		OpenMRSObject.class.getClassLoader().getResource("org/openmrs/module/eptssync/exceptions/ForbiddenOperationException.class");
-		
-		tableInfo.getSyncRecordClass().getClassLoader().getResource("org/openmrs/module/eptssync/model/pojo/cs_1_de_maio/ConceptVO.class");
-		
 		
 		OpenMRSObject obj = utilities.createInstance(tableInfo.getSyncRecordClass());
 		
@@ -252,16 +219,6 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		return find(tableInfo.getSyncRecordClass(), sql, null, conn);
 	}
 
-	public static void markAsConsistent(OpenMRSObject record, Connection conn) throws DBException {
-		Object[] params = {OpenMRSObject.CONSISTENCE_STATUS, record.getObjectId()};
-		
-		String sql = " UPDATE " + record.generateTableName() + 
-					 " SET    consistent = ? " +
-					 " WHERE  " + record.generateDBPrimaryKeyAtt() + " =  ? ";
-		
-		executeQuery(sql, params, conn);
-	}
-
 	public static void remove(OpenMRSObject record, Connection conn) throws DBException{
 		Object[] params = {record.getObjectId()};
 		
@@ -272,27 +229,15 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		executeQuery(sql, params, conn);
 	}
 	
-	public static void removeByOriginId(OpenMRSObject record, Connection conn) throws DBException{
-		Object[] params = {record.getOriginRecordId()};
+	public static int countAllOfOriginParentId(String parentField, int parentOriginId, String appOriginCode, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		
-		String sql = " DELETE" +
-					 " FROM " + record.generateTableName() +
-					 " WHERE  origin_record_id = ? ";
-		
-		executeQuery(sql, params, conn);
-	}
-	
+		Object[] params = { parentOriginId, 
+							appOriginCode};
 
-	public static int countAllOfOriginParentId(Class<OpenMRSObject> clazz, String parentField, int parentOriginId, String appOriginCode, Connection conn) throws DBException {
-		Object[] params = {parentOriginId, 
-				   appOriginCode};
-
-		OpenMRSObject obj = utilities.createInstance(clazz);
-		
-		String sql = " SELECT count(*) value" +
-					 " FROM     " + obj.generateTableName() +
-					 " WHERE 	" + parentField + " = ? " +
-					 "			AND origin_app_location_code = ? ";
+		String 	sql =	" SELECT count(*) value";
+		  		sql +=	" FROM  	" + tableConfiguration.getTableName() + " INNER JOIN " + tableConfiguration.generateFullStageTableName() + " ON destination_record_id = " + tableConfiguration.getPrimaryKey() + "\n";
+		  		sql +=	" WHERE 	" + parentField + " = ? ";
+				sql +=  "			AND origin_app_location_code = ? ";
 	
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
 		
@@ -314,18 +259,18 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		return v.intValue();
 	}	
 	
-	public static List<OpenMRSObject> getByOriginParentId(Class<OpenMRSObject> clazz, String parentField, int parentOriginId, String appOriginCode, Connection conn) throws DBException {
+	public static List<OpenMRSObject> getByOriginParentId(String parentField, int parentOriginId, String appOriginCode, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		//OpenMRSObject parentOnDest = thinGetByOriginRecordId(openMRSClass, relatedSyncInfo, tableInfo, conn);
+		
 		Object[] params = {parentOriginId, 
 						   appOriginCode};
 		
-		OpenMRSObject obj = utilities.createInstance(clazz);
+		String 	sql = 	" SELECT * ";
+				sql +=	" FROM  	" + tableConfiguration.getTableName() + " INNER JOIN " + tableConfiguration.generateFullStageTableName() + " ON destination_record_id = " + tableConfiguration.getPrimaryKey() + "\n";
+  				sql +=	" WHERE 	" + parentField + " = ? ";
+				sql +=	"			AND origin_app_location_code = ? ";
 		
-		String sql = " SELECT * " +
-					 " FROM     " + obj.generateTableName() +
-					 " WHERE 	" + parentField + " = ? " +
-					 "			AND origin_app_location_code = ? ";
-		
-		return search(clazz, sql, params, conn);
+		return search(tableConfiguration.getSyncRecordClass(), sql, params, conn);
 	}
 	
 	
@@ -394,7 +339,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 				insert(record, conn);
 			} catch (DBException e) {
 				if (e.isDuplicatePrimaryKeyException()) {
-					OpenMRSObject problematicRecordOnDB = retrieveProblematicObjectFromExceptionInfo(objects.get(0).getClass(), e, conn);
+					OpenMRSObject problematicRecordOnDB = retrieveProblematicObjectFromExceptionInfo(syncTableConfiguration, e, conn);
 					
 					if (problematicRecordOnDB.getObjectId() == record.getObjectId()) {
 						//update(problematicRecordOnDB, conn);
@@ -408,13 +353,13 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		}
 	}
 
-	private static OpenMRSObject retrieveProblematicObjectFromExceptionInfo(Class<? extends OpenMRSObject> class1, DBException e, Connection conn) throws DBException {
+	private static OpenMRSObject retrieveProblematicObjectFromExceptionInfo(SyncTableConfiguration tableConfiguration, DBException e, Connection conn) throws DBException {
 	 	//UUID duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
 		String s = e.getLocalizedMessage().split("'")[1];
 		
 		//Check if is uuid duplication
 		if (utilities.isValidUUID(s)) {
-			return thinGetByUuid(class1, s, conn);
+			return thinGetByUuid(tableConfiguration.getSyncRecordClass(), s, conn);
 		}	
 		else {
 		 	//ORIGIN duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
@@ -423,7 +368,8 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			int objectId = Integer.parseInt(idParts[0]);
 			String originAppLocationCode = idParts[1];
 			
-			return thinGetByOriginRecordId(class1, objectId, originAppLocationCode, conn);
+			
+			return thinGetByRecordOrigin(objectId, originAppLocationCode, tableConfiguration.getSyncRecordClass(), tableConfiguration, conn);
 		}
 	}
 	

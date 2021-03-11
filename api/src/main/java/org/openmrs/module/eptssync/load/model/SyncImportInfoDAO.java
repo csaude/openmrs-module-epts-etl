@@ -6,6 +6,7 @@ import java.util.List;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
+import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -25,7 +26,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 				e.printStackTrace();
 			
 				 if (e.isDuplicatePrimaryKeyException()) {
-					 SyncImportInfoVO recordOnDB = getByOriginIdAndLocation(tableInfo, record.getRecordId(), record.getOriginAppLocationCode(), conn);
+					 SyncImportInfoVO recordOnDB = getByOriginIdAndLocation(tableInfo, record.getRecordOriginId(), record.getRecordOriginLocationCode(), conn);
 						
 					updateByRecordIdAndAppOriginCode(tableInfo, recordOnDB, conn);
 				 }
@@ -38,9 +39,10 @@ public class SyncImportInfoDAO extends BaseDAO {
 			String sql = "";
 					
 			sql += "INSERT INTO \n"; 
-			sql += "	" + tableInfo.generateFullStageTableName() + "(	record_id,\n";
+			sql += "	" + tableInfo.generateFullStageTableName() + "(	record_origin_id,\n";
+			sql += "	" + tableInfo.generateFullStageTableName() + "(	record_uuid,\n";
 			sql += "											 		json,\n";
-			sql += "													origin_app_location_code)\n";
+			sql += "													record_origin_location_code)\n";
 			sql += "VALUES\n";
 			
 			String values = "";
@@ -50,7 +52,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 				
 				if (record.isExcluded()) continue;
 					
-				values += "(" + record.getRecordId() + ",\"" + utilities.scapeQuotationMarks(record.getJson()) + "\",\"" + record.getOriginAppLocationCode() +"\"),";
+				values += "(" + record.getRecordOriginId() + ",\""  + record.getRecordUuid() +"\",\"" + utilities.scapeQuotationMarks(record.getJson()) + "\",\"" + record.getRecordOriginLocationCode() +"\"),";
 			}
 			
 			if (utilities.stringHasValue(values)) {
@@ -90,36 +92,39 @@ public class SyncImportInfoDAO extends BaseDAO {
 	
 	private static void updateByRecordIdAndAppOriginCode(SyncTableConfiguration tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {
 		Object[] params = {record.getJson(),
-						   record.getRecordId(),	
-				   		   record.getOriginAppLocationCode()};
+						   record.getRecordOriginId(),	
+				   		   record.getRecordOriginLocationCode()};
 
 		String sql = "";
 		
 		sql += " UPDATE " + tableInfo.generateFullStageTableName();
 		sql += " SET json = ? ";
-		sql += " WHERE 	record_id = ? ";
-		sql += " 		AND origin_app_location_code = ? ";
+		sql += " WHERE 	record_origin_id = ? ";
+		sql += " 		AND record_origin_location_code = ? ";
 		
 		executeQuery(sql, params, conn);
 	}
 	
 	public static void insert(SyncImportInfoVO record, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 		try {
-			Object[] params = {record.getRecordId(),
+			Object[] params = {record.getRecordOriginId(),
+							   record.getRecordUuid(),
 							   record.getJson(),
 							   record.getMigrationStatus(),
 							   record.getLastMigrationTryErr(),
-							   record.getOriginAppLocationCode()};
+							   record.getRecordOriginLocationCode()};
 			
 			String sql = "";
 			
 			sql += "INSERT INTO \n"; 
-			sql += "	" + tableInfo.generateFullStageTableName() + "(	record_id,\n";
+			sql += "	" + tableInfo.generateFullStageTableName() + "(	record_origin_id,\n";
+			sql += "											 		record_uuid,\n";
 			sql += "											 		json,\n";
 			sql += "											 		migration_status,\n";
 			sql += "											 		last_migration_try_err,\n";
-			sql += "													origin_app_location_code)";
+			sql += "													record_origin_location_code)";
 			sql += "	VALUES(?,\n";
+			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
@@ -140,8 +145,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		sql += " SELECT * \n";
 		sql += " FROM  	" + tableConfiguration.generateFullStageTableName() + "\n";
-		sql += " WHERE 	record_id = ? \n";
-		sql += " 		AND origin_app_location_code = ? \n";
+		sql += " WHERE 	record_origin_id = ? \n";
+		sql += " 		AND record_origin_location_code = ? \n";
 		
 		return find(SyncImportInfoVO.class, sql, params, conn);
 	}
@@ -212,9 +217,9 @@ public class SyncImportInfoDAO extends BaseDAO {
 	 */
 	public static List<SyncImportInfoVO> getDefaultRecordForEachOriginAppLocatin(String tableName, Connection conn) throws DBException{
 		String sql = "";
-		sql += " SELECT origin_app_location_code \n";
+		sql += " SELECT record_origin_location_code \n";
 		sql += " FROM 	" + tableName + "\n";
-		sql += " GROUP BY origin_app_location_code";
+		sql += " GROUP BY record_origin_location_code";
 		
 		return  BaseDAO.search(SyncImportInfoVO.class , sql, null, conn);
 	}
@@ -223,21 +228,19 @@ public class SyncImportInfoDAO extends BaseDAO {
 	
 
 	public static SyncImportInfoVO retrieveFromOpenMRSObject(SyncTableConfiguration tableInfo, OpenMRSObject object, Connection conn) throws DBException, ForbiddenOperationException {
-		Object[] params = {	object.getOriginRecordId(), 
-							object.getOriginAppLocationCode()};
+		Object[] params = {	object.getUuid(), 
+							object.getRelatedSyncInfo().getRecordOriginLocationCode()};
 		
 		String sql = "";
 		sql += " SELECT * \n";
 		sql += " FROM 	" + tableInfo.generateFullStageTableName() + "\n";
-		sql += " WHERE record_id = ? ";
-		sql += "  	   AND origin_app_location_code = ? ";
+		sql += " WHERE record_uuid = ? ";
+		sql += "  	   AND record_origin_location_code = ? ";
 		
 		SyncImportInfoVO record = BaseDAO.find(SyncImportInfoVO.class , sql, params, conn);
 		
-		
-		
 		if (record == null) {
-			throw new ForbiddenOperationException("This record: "+ tableInfo.getTableName() +"[ id="+object.getOriginRecordId() + ", origin=" +object.getOriginAppLocationCode() + " was not found on staging area");
+			throw new ForbiddenOperationException("This record: "+ tableInfo.getTableName() +"[ uuid="+object.getUuid() + ", origin=" +object.getRelatedSyncInfo().getRecordOriginLocationCode() + " was not found on staging area");
 		}
 		
 		return record;
@@ -312,6 +315,29 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQuery(sql, params, conn);
 	}
 	
+	public static void updateDestinationRecordId(SyncTableConfiguration tableInfo, SyncImportInfoVO syncRecord, SyncRecord destinationRecord, Connection conn) throws DBException{
+		Object[] params = {destinationRecord.getObjectId(), 
+						   syncRecord.getId()
+						   };
+		
+		String sql = "";
+		
+		sql += " UPDATE " + tableInfo.generateFullStageTableName();
+		sql += " SET    destination_record_id = ? ";
+		sql += " WHERE  id = ? ";
+		
+		executeQuery(sql, params, conn);
+	}
+	
+	public static void markAsConsistent(SyncTableConfiguration tableInfo, SyncImportInfoVO syncRecord, Connection conn) throws DBException {
+		Object[] params = {OpenMRSObject.CONSISTENCE_STATUS, syncRecord.getId()};
+		
+		String sql = " UPDATE " + tableInfo.generateFullStageTableName() + 
+					 " SET    consistent = ? " +
+					 " WHERE  id =  ? ";
+		
+		executeQuery(sql, params, conn);
+	}
 	
 	public static void removeAll(List<SyncImportInfoVO> syncRecords, Connection conn) throws DBException{
 		Object[] params = {DateAndTimeUtilities.getCurrentSystemDate(conn), 

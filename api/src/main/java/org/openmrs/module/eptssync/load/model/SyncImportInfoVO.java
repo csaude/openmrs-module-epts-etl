@@ -31,15 +31,71 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	public static final int MIGRATION_STATUS_FAILED = -1;
 	
 	private int id;
-	private int recordId;
+	private int recordOriginId;
+	private int recordDestinationId;
+	private String recordUuid;
+	private String recordOriginLocationCode;
+	
 	private String json;
-	private String originAppLocationCode;
+	
 	private Date lastMigrationTryDate;
 	private String lastMigrationTryErr;
+	
+	private Date lastUpdateDate;
+	
+	private int consistent;
 	private int migrationStatus;
 	
 	public SyncImportInfoVO(){
 		this.migrationStatus = MIGRATION_STATUS_PENDING;
+	}
+
+	public int getRecordOriginId() {
+		return recordOriginId;
+	}
+
+	public void setRecordOriginId(int recordOriginId) {
+		this.recordOriginId = recordOriginId;
+	}
+
+	public int getRecordDestinationId() {
+		return recordDestinationId;
+	}
+
+	public void setRecordDestinationId(int recordDestinationId) {
+		this.recordDestinationId = recordDestinationId;
+	}
+
+	public String getRecordUuid() {
+		return recordUuid;
+	}
+
+	public void setRecordUuid(String recordUuid) {
+		this.recordUuid = recordUuid;
+	}
+
+	public String getRecordOriginLocationCode() {
+		return recordOriginLocationCode;
+	}
+
+	public void setRecordOriginLocationCode(String recordOriginLocationCode) {
+		this.recordOriginLocationCode = recordOriginLocationCode;
+	}
+
+	public int isConsistent() {
+		return consistent;
+	}
+
+	public void setConsistent(int consistent) {
+		this.consistent = consistent;
+	}
+
+	public Date getLastUpdateDate() {
+		return lastUpdateDate;
+	}
+
+	public void setLastUpdateDate(Date lastUpdateDate) {
+		this.lastUpdateDate = lastUpdateDate;
 	}
 
 	public Date getLastMigrationTryDate() {
@@ -69,14 +125,6 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.id = id;
 	}
 
-	public int getRecordId() {
-		return recordId;
-	}
-
-	public void setRecordId(int recordId) {
-		this.recordId = recordId;
-	}
-
 	public String getJson() {
 		return json;
 	}
@@ -87,26 +135,26 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 
 	@Override
 	public int getObjectId() {
-		return this.recordId;
+		return this.recordOriginId;
 	}
 
 	@Override
 	public void setObjectId(int id) {
-		this.recordId = id;
+		this.recordOriginId = id;
 	}
 	
-	public String getOriginAppLocationCode() {
-		return originAppLocationCode;
-	}
-
-	public void setOriginAppLocationCode(String originAppLocationCode) {
-		this.originAppLocationCode = originAppLocationCode;
-	}
-
 	public void markAsPartialMigrated() {
 		this.migrationStatus = MIGRATION_STATUS_INCOMPLETE;
 	}
 
+	public void markAsConcistent(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+		SyncImportInfoDAO.markAsConsistent(tableInfo, this, conn);
+	}
+	
+	public void updateDestinationRecordId(SyncTableConfiguration tableInfo, SyncRecord destinationRecord, Connection conn) throws DBException{
+		SyncImportInfoDAO.updateDestinationRecordId(tableInfo, this, destinationRecord, conn);
+	}
+	
 	public void markAsPartialMigrated(SyncTableConfiguration tableInfo, String errMsg, Connection conn) throws DBException {
 		this.migrationStatus = MIGRATION_STATUS_INCOMPLETE;
 		this.lastMigrationTryErr = errMsg;
@@ -129,36 +177,34 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		return migrationStatus;
 	}
 	
-	public static List<SyncImportInfoVO> generateFromSyncRecord(List<OpenMRSObject> syncRecords) {
+	public static List<SyncImportInfoVO> generateFromSyncRecord(List<OpenMRSObject> syncRecords, String recordOriginLocationCode) {
 		List<SyncImportInfoVO> importInfo = new ArrayList<SyncImportInfoVO>();
 	
 		for (OpenMRSObject syncRecord : syncRecords) {
-			importInfo.add(generateFromSyncRecord(syncRecord));
+			importInfo.add(generateFromSyncRecord(syncRecord, recordOriginLocationCode));
 		}
 		
 		return importInfo;
 	}
 	
-	public static SyncImportInfoVO generateFromSyncRecord(OpenMRSObject syncRecord) {
+	public static SyncImportInfoVO generateFromSyncRecord(OpenMRSObject syncRecord, String recordOriginLocationCode) {
 		SyncImportInfoVO syncInfo = new SyncImportInfoVO();
 		
-		syncInfo.setRecordId(syncRecord.getObjectId());
+		syncInfo.setRecordOriginId(syncRecord.getObjectId());
 		syncInfo.setJson(utilities.parseToJSON(syncRecord));
-		syncInfo.setOriginAppLocationCode(syncRecord.getOriginAppLocationCode());
+		syncInfo.setRecordOriginLocationCode (recordOriginLocationCode);
 		
 		return syncInfo;
 	}
 
 	public void sync(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		OpenMRSObject source = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), this.json);
-		
-		source.setOriginRecordId(source.getObjectId());
-		
+		source.setRelatedSyncInfo(this);
 		try {
 				
 			if (tableInfo.isDoIntegrityCheckInTheEnd(SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION)) {
 				if (source.hasParents()) {
-					source.markAsInconsistent();
+					this.markAsConcistent(tableInfo, conn);
 				}
 				
 				if (tableInfo.useSharedPKKey()) {
@@ -172,7 +218,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 				SyncImportInfoDAO.refreshLastMigrationTrySync(tableInfo, this, conn);
 			}
 			else {
-				source.loadDestParentInfo(tableInfo, conn);
+				source.loadDestParentInfo(tableInfo, this.recordOriginLocationCode, conn);
 				
 				if (source.hasIgnoredParent()) {
 					markAsToBeCompletedInFuture(tableInfo, conn);
@@ -251,11 +297,11 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 			}
 			
 			if (!tableInfo.isMetadata()) {
-				rec.setOriginRecordId(rec.getObjectId());
 				rec.setObjectId(0);
 			}
 			
-			rec.setConsistent(OpenMRSObject.INCONSISTENCE_STATUS);
+			
+			imp.setConsistent(OpenMRSObject.INCONSISTENCE_STATUS);
 			records.add(rec);
 		}
 		
@@ -277,11 +323,10 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		}
 		
 		if (!tableInfo.isMetadata()) {
-			rec.setOriginRecordId(rec.getObjectId());
 			rec.setObjectId(0);
 		}
 			
-		rec.setConsistent(OpenMRSObject.INCONSISTENCE_STATUS);
+		this.setConsistent(OpenMRSObject.INCONSISTENCE_STATUS);
 		
 		return rec;
 	}
@@ -294,7 +339,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		
 		SyncImportInfoVO otherObj = (SyncImportInfoVO)obj;
 		
-		return this.originAppLocationCode.equalsIgnoreCase(otherObj.originAppLocationCode) && this.recordId == otherObj.getRecordId();
+		return this.getRecordOriginLocationCode().equalsIgnoreCase(otherObj.getRecordOriginLocationCode()) && this.getRecordOriginId() == otherObj.getRecordOriginId();
 	}
 
 	public void delete(SyncTableConfiguration tableInfo, Connection conn) throws DBException {

@@ -27,14 +27,16 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObj
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
 		
 		if (!this.selectAllRecords) {
-			searchClauses.addToClauses("consistent = -1");
-		
+			searchClauses.addToClauses("NOT EXISTS (SELECT 	id " +
+									   "			FROM    " + tableInfo.generateFullStageTableName() + 
+									   "			WHERE   record_origin_id = " + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey());
+			
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
 				searchClauses.addToParameters(this.limits.getFirstRecordId());
 				searchClauses.addToParameters(this.limits.getLastRecordId());
 			}
-		
+			
 			if (this.tableInfo.getExtraConditionForExport() != null) {
 				searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
 			}

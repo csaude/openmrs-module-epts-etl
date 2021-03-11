@@ -37,12 +37,11 @@ public class SyncJSONInfo {
 	public SyncJSONInfo() {
 	}
 	
-	public SyncJSONInfo(List<OpenMRSObject> syncRecords) {
+	public SyncJSONInfo(List<OpenMRSObject> syncRecords, String recordOriginLocationCode) {
 		this.qtyRecords = utilities.arraySize(syncRecords);
-		
-		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(syncRecords);
-		
+		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(syncRecords, recordOriginLocationCode);
 		this.dateGenerated = DateAndTimeUtilities.getCurrentDate();
+		this.originAppLocationCode = recordOriginLocationCode;
 	}
 	
 	public List<SyncImportInfoVO> getSyncInfo() {
@@ -77,8 +76,8 @@ public class SyncJSONInfo {
 		this.dateGenerated = dateGenerated;
 	}
 
-	public static SyncJSONInfo generate(List<OpenMRSObject> syncRecords) {
-		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(syncRecords);
+	public static SyncJSONInfo generate(List<OpenMRSObject> syncRecords, String recordOriginLocationCode) {
+		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(syncRecords, recordOriginLocationCode);
 
 		return syncJSONInfo;
 	}

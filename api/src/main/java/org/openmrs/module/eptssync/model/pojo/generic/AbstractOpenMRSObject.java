@@ -33,6 +33,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	 */
 	private boolean hasIgnoredParent;
 	
+	private SyncImportInfoVO relatedSyncInfo;
 	/**
 	 * Retrieve a specific parent of this record. The parent is loaded using the origin (source) identification key
 	 * 
@@ -45,14 +46,15 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	 * @throws ParentNotYetMigratedException if the parent is not ignorable and is not found on database
 	 * @throws DBException
 	 */
-	public <T extends OpenMRSObject> T retrieveParentInDestination(Class<T> parentClass, int parentId, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException {
+	public OpenMRSObject retrieveParentInDestination(int parentId, SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException {
 		if (parentId == 0) return null;
 		
-		T parentOnDestination;
+		OpenMRSObject parentOnDestination;
+		
 		try {
-			parentOnDestination = OpenMRSObjectDAO.thinGetByOriginRecordId(parentClass, parentId, this.getOriginAppLocationCode(), conn);
+			parentOnDestination = OpenMRSObjectDAO.thinGetByRecordOrigin(parentId, getRelatedSyncInfo().getRecordOriginLocationCode(), parentTableConfiguration.getSyncRecordClass(), parentTableConfiguration, conn);
 		} catch (DBException e) {
-			logger.info("NEW ERROR PERFORMING LOAD OF " + parentClass.getName());
+			logger.info("NEW ERROR PERFORMING LOAD OF " + parentTableConfiguration.getSyncRecordClass().getName());
 			
 			e.printStackTrace();
 
@@ -70,28 +72,23 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			return null;
 		}
 			
-		throw new ParentNotYetMigratedException(parentId, utilities.createInstance(parentClass).generateTableName(), this.getOriginAppLocationCode());
+		throw new ParentNotYetMigratedException(parentId, parentTableConfiguration.getTableName(), this.relatedSyncInfo.getRecordOriginLocationCode());
+	}
+	
+	@Override
+	public SyncImportInfoVO getRelatedSyncInfo() {
+		return relatedSyncInfo;
+	}
+	
+	@Override
+	public void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo) {
+		this.relatedSyncInfo = relatedSyncInfo;
 	}
 	
 	@Override
 	public void setUuid(String uuid) {
 	}
-	
-	@Override
-	public boolean isConsistent() {
-		return this.getConsistent() > 0;
-	}
-	
-	@Override
-	public void markAsConsistent() {
-		this.setConsistent(1);
-	}
-	
-	@Override
-	public void markAsInconsistent() {
-		this.setConsistent(-1);
-	}
-	
+
 	/*
 	@Override
 	public boolean isMetadata() {
@@ -101,7 +98,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	public void setMetadata(boolean metadata) {
 		this.metadata = metadata;
 	}*/
-	
+
 	@JsonIgnore
 	public boolean hasIgnoredParent() {
 		return hasIgnoredParent;
@@ -121,7 +118,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				OpenMRSObject recOnDBById = OpenMRSObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
 				
 				if (recOnDBById == null) {
-					this.setOriginRecordId(this.getObjectId());
+					//this.setOriginRecordId(this.getObjectId());
 					
 					OpenMRSObjectDAO.insert(this, conn);
 				}
@@ -151,7 +148,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			OpenMRSObject recordOnDB = null;
 			
 			if (syncTableInfo.getRelatedSynconfiguration().isDestinationInstallationType()) {
-				recordOnDB = OpenMRSObjectDAO.thinGetByOriginRecordId(this.getClass(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
+				recordOnDB = OpenMRSObjectDAO.thinGetByUuid(this.getClass(), this.getRelatedSyncInfo().getRecordUuid(), conn);
 			}
 			else {
 				recordOnDB = OpenMRSObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
@@ -180,8 +177,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		//Object Id Collision
 		if (this.getObjectId() == recordInConflict.getObjectId()) {
 			recordInConflict.changeObjectId(syncTableInfo, conn);
-			
-			this.setOriginRecordId(this.getObjectId());
+	
 			OpenMRSObjectDAO.insert(this, conn);
 		}
 		else 
@@ -198,13 +194,11 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			
 			if (recOnDBById == null) {
 				//3. Save the new record
-				this.setOriginRecordId(this.getObjectId());
 				OpenMRSObjectDAO.insert(this, conn);
 			}
 			else {
 				recOnDBById.changeObjectId(syncTableInfo, conn);
 				
-				this.setOriginRecordId(this.getObjectId());
 				OpenMRSObjectDAO.insert(this, conn);
 			}
 			
@@ -217,18 +211,14 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	@Override
 	public void changeObjectId(SyncTableConfiguration syncTableInfo, Connection conn) throws DBException {
 		//1. backup the old record
-		GenericOpenMRSObject oldRecod = GenericOpenMRSObject.fastCreate(this.getObjectId(), syncTableInfo);
-		oldRecod .setOriginRecordId(this.getOriginRecordId());
-		oldRecod.setOriginAppLocationCode(this.getOriginAppLocationCode());
-		oldRecod.setUuid(this.getUuid());
+		GenericOpenMRSObject oldRecod = GenericOpenMRSObject.fastCreate(getRelatedSyncInfo(), syncTableInfo);
 		
 		//2. Retrieve any avaliable id for old record
 		int avaliableId = OpenMRSObjectDAO.getAvaliableObjectId(syncTableInfo, 999999999, conn);
 		
 		this.setObjectId(avaliableId);
 		this.setUuid("tmp" + avaliableId);
-		this.setOriginRecordId(0);
-		this.setOriginAppLocationCode(null);
+		this.setRelatedSyncInfo(null);
 		
 		//3. Save the new recod
 		OpenMRSObjectDAO.insert(this, conn);
@@ -241,8 +231,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		
 		//6. Reset record info
 		this.setUuid(oldRecod.getUuid());
-		this.setOriginAppLocationCode(oldRecod.getOriginAppLocationCode());
-		this.setOriginRecordId(oldRecod.getOriginRecordId());
+		this.setRelatedSyncInfo(oldRecod.getRelatedSyncInfo());
 		
 		OpenMRSObjectDAO.update(this, conn);
 	}
@@ -275,7 +264,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		Map<RefInfo, Integer> missingParents = loadMissingParents(syncTableInfo, conn);
 		
 		if (missingParents.isEmpty()) {
-			markAsConsistent(conn);
+			getRelatedSyncInfo().markAsConcistent(syncTableInfo, conn);
 		}
 		else {
 			boolean inconsistencySolved = true;
@@ -299,19 +288,12 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			}
 			
 			if (inconsistencySolved) {
-				//OpenMRSObjectDAO.update(this, conn);
 				this.save(syncTableInfo, conn);
-				markAsConsistent(conn);
-				
-				this.setOriginAppLocationCode(syncTableInfo.getOriginAppLocationCode());
-				this.setOriginRecordId(this.getObjectId());
+				getRelatedSyncInfo().markAsConcistent(syncTableInfo, conn);
 				
 				copyToStageAreaDueInconsistencySolvedByDefaultParents(syncTableInfo, missingParents, conn);
 			}
 			else {
-				this.setOriginAppLocationCode(syncTableInfo.getOriginAppLocationCode());
-				this.setOriginRecordId(this.getObjectId());
-			
 				moveToStageAreaDueInconsistency(syncTableInfo, missingParents, conn);
 			}
 		}
@@ -322,9 +304,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		
 		if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) throw new SyncExeption("This metadata metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId() + ". is missing its some parents [" + generateMissingInfo(missingParents) +"] You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
 		
-		SyncImportInfoVO syncInfo = this.generateSyncInfo();
+		SyncImportInfoVO syncInfo = this.generateSyncInfo(syncTableInfo.getOriginAppLocationCode());
 		
-		syncInfo.setOriginAppLocationCode(syncTableInfo.getOriginAppLocationCode());
+		syncInfo.setRecordOriginLocationCode(syncTableInfo.getOriginAppLocationCode());
 		syncInfo.setLastMigrationTryErr(generateMissingInfo(missingParents));
 		
 		SyncImportInfoDAO.insert(syncInfo, syncTableInfo, conn);
@@ -334,14 +316,14 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		for (RefInfo refInfo: syncTableInfo.getChildred()) {
 			if (!refInfo.getRefTableConfiguration().isConfigured()) continue;
 			
-			int qtyChildren = OpenMRSObjectDAO.countAllOfParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getOriginRecordId(), conn);
+			int qtyChildren = OpenMRSObjectDAO.countAllOfParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getRelatedSyncInfo().getRecordOriginId(), conn);
 			
 			if (qtyChildren == 0) {
 				continue;
 			}
 			
 			if (qtyChildren > 999) {
-				throw new ForbiddenOperationException("The operation is trying to remove this record [" + syncTableInfo.getTableName() + " = " + this.getOriginRecordId() + ", from " + this.getOriginAppLocationCode() + " but it has " + qtyChildren + " " + refInfo.getTableName() + " related to. Please check this inconsistence before continue");
+				throw new ForbiddenOperationException("The operation is trying to remove this record [" + syncTableInfo.getTableName() + " = " + this.getUuid() + ", from " + this.getRelatedSyncInfo().getRecordOriginLocationCode() + " but it has " + qtyChildren + " " + refInfo.getTableName() + " related to. Please check this inconsistence before continue");
 			}
 			
 			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getObjectId(), conn);
@@ -353,18 +335,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 	
 	public void copyToStageAreaDueInconsistencySolvedByDefaultParents(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
-		//if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) throw new SyncExeption("This metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId() + ". is missing its some parents [" + generateMissingInfo(missingParents) +"] You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
-				
-		SyncImportInfoVO syncInfo = this.generateSyncInfo();
+		SyncImportInfoVO syncInfo = this.generateSyncInfo(syncTableInfo.getOriginAppLocationCode());
 		
-		if (utilities.stringHasValue(this.getOriginAppLocationCode())) {
-			syncInfo.setOriginAppLocationCode(this.getOriginAppLocationCode());
-		}
-		else {
-			syncInfo.setOriginAppLocationCode(syncTableInfo.getOriginAppLocationCode());
-		}
-		
-		if (!utilities.stringHasValue(syncInfo.getOriginAppLocationCode())) throw new ForbiddenOperationException("The OriginAppLocationCode could not found!!!!");
+		if (!utilities.stringHasValue(syncInfo.getRecordOriginLocationCode())) throw new ForbiddenOperationException("The OriginAppLocationCode could not found!!!!");
 		
 		SyncImportInfoDAO.insert(syncInfo, syncTableInfo, conn);
 		
@@ -373,8 +346,8 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		syncInfo.markAsPartialMigrated(syncTableInfo, generateMissingInfoForSolvedInconsistency(missingParents), conn);
 	}
 	
-	private SyncImportInfoVO generateSyncInfo() {
-		return SyncImportInfoVO.generateFromSyncRecord(this);
+	private SyncImportInfoVO generateSyncInfo(String recordOriginLocationCode) {
+		return SyncImportInfoVO.generateFromSyncRecord(this, recordOriginLocationCode);
 	}
 
 	@Override
@@ -417,11 +390,11 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		}
 		
 		if (inconsistencySolved) {
-			loadDestParentInfo(tableInfo, conn);
+			loadDestParentInfo(tableInfo, getRelatedSyncInfo().getRecordOriginLocationCode(), conn);
 			
 			save(tableInfo, conn);
 			
-			this.markAsConsistent(conn);
+			this.getRelatedSyncInfo().markAsConcistent(tableInfo, conn);
 		}
 		
 		if (removeSyncInfo) {
@@ -435,7 +408,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 
 	
 	@Override
-	public void loadDestParentInfo(SyncTableConfiguration tableInfo, Connection conn) throws ParentNotYetMigratedException, DBException {
+	public void loadDestParentInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn) throws ParentNotYetMigratedException, DBException {
 		if (!tableInfo.getRelatedSynconfiguration().isDestinationInstallationType()) throw new ForbiddenOperationException("You can only load destination parent in a destination installation");
 		
 		for (RefInfo refInfo: tableInfo.getParents()) {
@@ -452,16 +425,16 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					parent = OpenMRSObjectDAO.getById(refInfo.getRefTableConfiguration().getTableName(), refInfo.getRefTableConfiguration().getPrimaryKey(), parentId , conn);
 				}
 				else {
-					parent = retrieveParentInDestination(refInfo.getRefObjectClass(), parentId, refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
+					parent = retrieveParentInDestination(parentId, refInfo.getRefTableConfiguration(),  refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
 				}
 				
 				if (parent == null) {
 					//Try to recover the parent from stage_area and check if this record doesnt exist on destination with same uuid
 					
 					OpenMRSObject parentFromSource = new GenericOpenMRSObject(refInfo.getRefTableConfiguration());
+					parentFromSource.setObjectId(parentId);
 					
-					parentFromSource.setOriginRecordId(parentId);
-					parentFromSource.setOriginAppLocationCode(this.getOriginAppLocationCode());
+					parentFromSource.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(parentFromSource, recordOriginLocationCode));
 					
 					SyncImportInfoVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(refInfo.getRefTableConfiguration(), parentFromSource, conn);
 					
@@ -506,7 +479,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			if (!refInfo.getRefTableConfiguration().isConfigured()) continue;
 			
 			
-			int qtyChildren = OpenMRSObjectDAO.countAllOfOriginParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
+			/*int qtyChildren = OpenMRSObjectDAO.countAllOfOriginParentId(refInfo.getRefColumnName(), getRelatedSyncInfo().getRecordOriginId(), getRelatedSyncInfo().getRecordOriginLocationCode(), conn);
 				
 			if (qtyChildren == 0) {
 				continue;
@@ -515,24 +488,20 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			if (qtyChildren > 999) {
 				throw new ForbiddenOperationException("The operation is trying to remove this record [" + syncTableInfo.getTableName() + " = " + this.getOriginRecordId() + ", from " + this.getOriginAppLocationCode() + " but it has " + qtyChildren + " " + refInfo.getTableName() + " related to. Please check this inconsistence before continue");
 			}
-			else {
-				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
+			else {*/
+				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.getRefColumnName(), getRelatedSyncInfo().getRecordOriginId(), getRelatedSyncInfo().getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(), conn);
+						
+						//(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getOriginRecordId(), this.getOriginAppLocationCode(), conn);
 				
 				for (OpenMRSObject child : children) {
 					child.consolidateData(refInfo.getRefTableConfiguration(), conn);
 				}
-			}
+			//}
 		}
 	}
 	
 	public void  remove(Connection conn) throws DBException {
 		OpenMRSObjectDAO.remove(this, conn);
-	}
-
-	public void markAsConsistent(Connection conn) throws DBException{
-		markAsConsistent();
-		
-		OpenMRSObjectDAO.markAsConsistent(this, conn);
 	}
 
 	Logger logger = Logger.getLogger(AbstractOpenMRSObject.class);
@@ -563,15 +532,15 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					else {
 						
 						if (tableInfo.getRelatedSynconfiguration().isDestinationInstallationType()) {
-							parent = retrieveParentInDestination(refInfo.getRefObjectClass(), parentId, refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
+							parent = retrieveParentInDestination(parentId, refInfo.getRefTableConfiguration(),  refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
 							
 							if (parent == null) {
 								//Try to recover the parent from stage_area and check if this record doesnt exist on destination with same uuid
 								
 								OpenMRSObject parentFromSource = new GenericOpenMRSObject(refInfo.getRefTableConfiguration());
+								parentFromSource.setObjectId(parentId);
 								
-								parentFromSource.setOriginRecordId(parentId);
-								parentFromSource.setOriginAppLocationCode(this.getOriginAppLocationCode());
+								parentFromSource.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(parentFromSource, getRelatedSyncInfo().getRecordOriginLocationCode()));
 								
 								SyncImportInfoVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(refInfo.getRefTableConfiguration(), parentFromSource, conn);
 								
@@ -607,15 +576,14 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				 
 			} catch (ParentNotYetMigratedException e) {
 				OpenMRSObject parent = utilities.createInstance(refInfo.getRefObjectClass());
-				parent.setOriginRecordId(parentId);
-				parent.setOriginAppLocationCode(this.getOriginAppLocationCode());
+				parent.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(parent, getRelatedSyncInfo().getRecordOriginLocationCode()));
 				
 				try {
 					SyncImportInfoDAO.retrieveFromOpenMRSObject(refInfo.getRefTableConfiguration(), parent, conn);
 				} catch (DBException e1) {
 					e1.printStackTrace();
 				} catch (ForbiddenOperationException e1) {
-					throw new ForbiddenOperationException("The parent '" + refInfo.getRefTableConfiguration().getTableName() + " = " + parentId + "' from '"+ this.getOriginAppLocationCode() + "' was not found in the main database nor in the stagging area. You must resolve this inconsistence manual!!!!!!"); 
+					throw new ForbiddenOperationException("The parent '" + refInfo.getRefTableConfiguration().getTableName() + " = " + parentId + "' from '"+ this.getRelatedSyncInfo().getRecordOriginLocationCode() + "' was not found in the main database nor in the stagging area. You must resolve this inconsistence manual!!!!!!"); 
 				}
 				
 				missingParents.put(refInfo, parentId);
