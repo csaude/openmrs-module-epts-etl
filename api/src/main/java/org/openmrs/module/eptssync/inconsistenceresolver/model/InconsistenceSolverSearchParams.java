@@ -29,7 +29,7 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObj
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("NOT EXISTS (SELECT 	id " +
 									   "			FROM    " + tableInfo.generateFullStageTableName() + 
-									   "			WHERE   record_origin_id = " + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey());
+									   "			WHERE   record_origin_id = " + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey() + ")");
 			
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");

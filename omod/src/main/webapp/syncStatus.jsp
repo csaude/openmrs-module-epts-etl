@@ -1,4 +1,3 @@
-<%@ taglib prefix="eptssync" uri="taglibs/eptssync.tld"%>
 <%@ include file="/WEB-INF/template/include.jsp"%>
 
 <openmrs:htmlInclude file="${pageContext.request.contextPath}/moduleResources/eptssync/css/eptssync.css" />

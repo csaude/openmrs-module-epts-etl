@@ -151,59 +151,33 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return find(SyncImportInfoVO.class, sql, params, conn);
 	}
 	
-	
-	public static SyncImportInfoVO getFirstRecord(SynchronizationSearchParams searchParams, Connection conn) throws DBException {
+	private static SyncImportInfoVO getGenericSpecificRecord(SynchronizationSearchParams searchParams, String function, Connection conn) throws DBException {
 		Object[] params = {};
 		
 		String extraCondition;
 		
-		if (searchParams.getTableInfo().isFirstExport()) {
-			extraCondition = "last_migration_try_date is null";
-		}
-		else {
-			extraCondition = "last_migration_try_date is null or last_migration_try_date < ?";
+		extraCondition = "last_migration_try_date IS NULL OR last_migration_try_date < ?";
 			
-			utilities.setParam(params.length, params, searchParams.getSyncStartDate());
-		}
+		utilities.setParam(params.length, params, searchParams.getSyncStartDate());
 	
 		String sql = "";
 		
 		sql += " SELECT * \n";
 		sql += " FROM  	" + searchParams.getTableInfo().generateFullStageTableName() + "\n";
 		sql += " WHERE 	id = \n";
-		sql += " 			 (	SELECT min(id)\n";
+		sql += " 			 (	SELECT " + function+ "(id)\n";
 		sql += "				FROM   " + searchParams.getTableInfo().generateFullStageTableName();
 		sql += "				WHERE " +  extraCondition + ")";
 		
-		return find(SyncImportInfoVO.class, sql, params, conn);
+		return find(SyncImportInfoVO.class, sql, params, conn);		
+	}
+	
+	public static SyncImportInfoVO getFirstRecord(SynchronizationSearchParams searchParams, Connection conn) throws DBException {
+		return getGenericSpecificRecord(searchParams, "min", conn);
 	}
 	
 	public static SyncImportInfoVO getLastRecord(SynchronizationSearchParams searchParams, Connection conn) throws DBException {
-		Object[] params = {};
-		
-		String extraCondition;
-		
-		if (searchParams.getTableInfo().isFirstExport()) {
-			extraCondition = "last_migration_try_date is null";
-		}
-		else {
-			extraCondition = "last_migration_try_date is null or last_migration_try_date < ?";
-			
-			utilities.setParam(params.length, params, searchParams.getSyncStartDate());
-		}
-		
-		
-		String sql = "";
-		
-		sql += " SELECT * \n";
-		sql += " FROM  	" + searchParams.getTableInfo().generateFullStageTableName() + "\n";
-		sql += " WHERE 	id = \n";
-		sql += " 			 (	SELECT max(id)\n";
-		sql += "				FROM   " + searchParams.getTableInfo().generateFullStageTableName();
-		sql += "				WHERE  " +  extraCondition + ")";
-		
-		
-		return find(SyncImportInfoVO.class, sql, params, conn);
+		return getGenericSpecificRecord(searchParams, "max", conn);
 	}
 	
 	
@@ -393,6 +367,5 @@ public class SyncImportInfoDAO extends BaseDAO {
 	public static void updateMigrationStatus(SyncTableConfiguration tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {
 		markAsToBeCompletedInFuture(record, tableInfo, record.getLastMigrationTryErr(), conn);		
 	}
-	
-	
+
 }

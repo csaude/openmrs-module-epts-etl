@@ -9,17 +9,18 @@ import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.SyncProgressMeter;
+import org.openmrs.module.eptssync.model.ItemProgressInfo;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
-import org.openmrs.util.DateUtil;
+import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-public class OperationStatus {
+public class TableOperationStatus {
 	private String operationName;
 	private String operationTable;
 	private int qtyRecords;
@@ -27,19 +28,28 @@ public class OperationStatus {
 	private Date finishTime;
 	private double elapsedTime;
 	
-	public OperationStatus() {
-		
+	private SyncTableConfiguration conf;
+	private OperationController controller;
+	private Engine engine;
+	private TimeController timer;
+	
+	public TableOperationStatus() {
 	}
 	
-	public OperationStatus(OperationController controller, SyncTableConfiguration conf, Engine engine, TimeController timer) {
-		operationName = controller.getControllerId();
-		operationTable = conf.getTableName();
+	public TableOperationStatus(OperationController controller, SyncTableConfiguration conf, Engine engine, TimeController timer) {
+		this.conf = conf;
+		this.controller = controller;
+		this.engine = engine;
+		this.timer = timer ;
 		
-		qtyRecords = engine != null && engine.getProgressMeter() != null ? engine.getProgressMeter().getTotal() : 0;
+		operationName = this.controller.getControllerId();
+		operationTable = this.conf.getTableName();
 		
-		startTime = timer != null ? timer.getStartTime(): DateAndTimeUtilities.getCurrentDate();
+		qtyRecords = this.engine != null && this.engine.getProgressMeter() != null ? this.engine.getProgressMeter().getTotal() : 0;
+		
+		startTime = this.timer != null ? this.timer.getStartTime(): DateAndTimeUtilities.getCurrentDate();
 		finishTime = DateAndTimeUtilities.getCurrentDate();
-		elapsedTime = timer != null ? timer.getDuration(TimeController.DURACAO_IN_MINUTES) : 0;
+		elapsedTime = this.timer != null ? this.timer.getDuration(TimeController.DURACAO_IN_MINUTES) : 0;
 	}
 	
 	public String getOperationName() {
@@ -93,23 +103,23 @@ public class OperationStatus {
 	@JsonIgnore
 	public String parseToJSON(){
 		try {
-			return new ObjectMapperProvider().getContext(OperationStatus.class).writeValueAsString(this);
+			return new ObjectMapperProvider().getContext(TableOperationStatus.class).writeValueAsString(this);
 		} catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public static OperationStatus loadFromFile(File file) {
+	public static TableOperationStatus loadFromFile(File file) {
 		try {
-			return OperationStatus.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
+			return TableOperationStatus.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 		} catch (IOException e) {
 			throw new RuntimeException();
 		}
 	}
 	
-	public static OperationStatus loadFromJSON (String json) {
+	public static TableOperationStatus loadFromJSON (String json) {
 		try {
-			OperationStatus config = new ObjectMapperProvider().getContext(OperationStatus.class).readValue(json, OperationStatus.class);
+			TableOperationStatus config = new ObjectMapperProvider().getContext(TableOperationStatus.class).readValue(json, TableOperationStatus.class);
 		
 			return config;
 		} catch (JsonParseException e) {
@@ -134,5 +144,25 @@ public class OperationStatus {
 		pm.refresh("FINISHED", this.qtyRecords, this.qtyRecords);
 		
 		return pm;
+	}
+
+	public void save() {
+		String fileName = this.controller.generateTableProcessStatusFile(conf).getAbsolutePath();
+		
+		if (new File(fileName).exists()) {
+			FileUtilities.removeFile(fileName);
+		}	
+		
+		String desc = this.parseToJSON();
+		
+		retrieveProgressInfo(this.conf).doLastProgressMeterRefresh(this.getQtyRecords());
+		
+		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
+		
+		FileUtilities.write(fileName, desc);
+	}
+	
+	private ItemProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
+		return this.controller.getProgressInfo().retrieveProgressInfo(tableConfiguration);
 	}
 }

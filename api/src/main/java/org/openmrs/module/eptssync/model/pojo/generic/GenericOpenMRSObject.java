@@ -4,7 +4,6 @@ import java.sql.Connection;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
@@ -75,11 +74,6 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 
 	@Override
 	public boolean hasParents() {
-		throw new ForbiddenOperationException("Forbidden Method");
-	}
-
-	@Override
-	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 

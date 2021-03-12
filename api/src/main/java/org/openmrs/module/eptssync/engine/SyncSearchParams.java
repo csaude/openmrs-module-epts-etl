@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.engine;
 
 import java.sql.Connection;
+import java.util.Date;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.AbstractSearchParams;
@@ -11,12 +12,22 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSearchParams <T> {
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
+	private Date syncStartDate;
+	
 	protected RecordLimits limits;
 	protected SyncTableConfiguration tableInfo;
 	
 	public SyncSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits) {
 		this.tableInfo = tableInfo;
 		this.limits = limits;
+	}
+	
+	public Date getSyncStartDate() {
+		return syncStartDate;
+	}
+	
+	public void setSyncStartDate(Date syncStartDate) {
+		this.syncStartDate = syncStartDate;
 	}
 	
 	public SyncTableConfiguration getTableInfo() {

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
@@ -20,6 +21,7 @@ public class Main implements Runnable{
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public static void main(String[] synConfigFiles) throws IOException {
+		BasicConfigurator.configure();
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);
 
 		if (countQtyDestination(syncConfigs) > 1) throw new ForbiddenOperationException("You must define only one destination file");

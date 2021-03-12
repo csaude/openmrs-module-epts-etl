@@ -85,10 +85,10 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return this.getRelatedSynconfiguration().getDesignation() + "_" + this.tableName;
 	}
 	
-	@JsonIgnore
+	/*@JsonIgnore
 	public boolean isFirstExport() {
 		return this.relatedSyncTableInfoSource.isFirstExport();
-	}
+	}*/
 	
 	@JsonIgnore
 	public String getParentsAsString() {

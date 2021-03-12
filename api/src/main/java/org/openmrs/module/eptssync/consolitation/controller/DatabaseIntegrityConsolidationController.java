@@ -62,7 +62,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecord(tableInfo, getAppOriginLocationCode(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecordOnDestination(tableInfo, getAppOriginLocationCode(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -82,7 +82,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecord(tableInfo, getAppOriginLocationCode(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecordOnDestination(tableInfo, getAppOriginLocationCode(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			

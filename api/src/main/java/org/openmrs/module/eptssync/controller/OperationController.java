@@ -12,11 +12,11 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.model.ItemProgressInfo;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.status.OperationStatus;
+import org.openmrs.module.eptssync.status.SyncOperationStatus;
+import org.openmrs.module.eptssync.status.TableOperationStatus;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
@@ -37,30 +37,31 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public abstract class OperationController implements Controller{
 	protected Log logger;
 	
-	private ProcessController processController;
+	protected ProcessController processController;
 	
-	private List<EngineMonitor> enginesActivititieMonitor;
-	private List<EngineMonitor> allGeneratedEngineMonitor;
+	protected List<EngineMonitor> enginesActivititieMonitor;
+	protected List<EngineMonitor> allGeneratedEngineMonitor;
 	
-	private ControllerMonitor activititieMonitor;
+	protected ControllerMonitor activititieMonitor;
 	
-	private OperationController child;
+	protected OperationController child;
 	
 	protected String controllerId;
 	
-	private int operationStatus;
-	private boolean stopRequested;
+	protected int operationStatus;
+	protected boolean stopRequested;
 	
-	private SyncOperationConfig operationConfig;
-	private OperationController parent;
+	protected SyncOperationConfig operationConfig;
+	protected OperationController parent;
 	
-	private TimeController timer;
+	protected TimeController timer;
 	
-	private boolean selfTreadKilled;
+	protected boolean selfTreadKilled;
 
-	private Exception lastException;
+	protected Exception lastException;
 	
-	private OperationProgressInfo progressInfo;
+	protected OperationProgressInfo progressInfo;
+	protected SyncOperationStatus syncOperationStatus;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = LogFactory.getLog(this.getClass());
@@ -73,6 +74,15 @@ public abstract class OperationController implements Controller{
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 		
 		this.progressInfo = this.processController.initOperationProgressMeter(this);
+		
+		if (generateProcessStatusFile().exists()) {
+			this.syncOperationStatus = SyncOperationStatus.loadFromFile(generateProcessStatusFile());
+			this.syncOperationStatus.setController(this);
+		}
+	}
+	
+	public SyncOperationStatus getSyncOperationStatus() {
+		return syncOperationStatus;
 	}
 	
 	public OperationProgressInfo getProgressInfo() {
@@ -213,7 +223,7 @@ public abstract class OperationController implements Controller{
 	}
 
 	private boolean operationIsAlreadyFinished() {
-		return generateProcessStatusFile().exists(); 
+		return this.syncOperationStatus.isFinished();
 	}
 
 	public String getControllerId() {
@@ -264,6 +274,14 @@ public abstract class OperationController implements Controller{
 		timer.start();
 		
 		onStart();
+		
+		if (this.syncOperationStatus == null) {
+			this.syncOperationStatus = new SyncOperationStatus(this);
+			
+			this.syncOperationStatus.setStartTime(DateAndTimeUtilities.getCurrentDate());
+			
+			this.syncOperationStatus.changeStatusToRunning();
+		}
 		
 		this.activititieMonitor = new ControllerMonitor(this);
 		
@@ -357,40 +375,18 @@ public abstract class OperationController implements Controller{
 	}
 	
 	public void markTableOperationAsFinished(SyncTableConfiguration conf, Engine engine, TimeController timer) {
-		String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
 		
 		logInfo("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
 		
-		 OperationStatus status = new OperationStatus(this, conf, engine, timer);
-		 
-		if (!new File(fileName).exists()) {
-			logInfo("WRITING OPERATION STATUS ON "+ fileName);
+		TableOperationStatus status = new TableOperationStatus(this, conf, engine, timer);
 			
-			String desc = status.parseToJSON();
+		String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
 			
-			retrieveProgressInfo(conf).doLastProgressMeterRefresh(status.getQtyRecords());
-			
-			/*
-			int qtyRecords = engine != null && engine.getProgressMeter() != null ? engine.getProgressMeter().getTotal() : 0;
-			
-			desc += "{\n";
-			desc += "	operationName: \"" + this.getControllerId() + "\",\n";
-			desc += "	operationTable: \"" + conf.getTableName() + "\"\n";
-			desc += "	qtyRecords: " + qtyRecords + ",\n";
-			desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(timer.getStartTime()) + "\",\n";
-			desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate()) + "\",\n";
-			desc += "	elapsedTime: " + (timer != null ? timer.getDuration(TimeController.DURACAO_IN_MINUTES) : 0) + "\n";
-			desc += "}";*/
-			
-			FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
-			
-			FileUtilities.write(fileName, desc);
-			
-			logInfo("FILE WROTE");
-		} 
-		else {
-			logInfo("THE FILE WAS ALREADY EXISTS");
-		}
+		logInfo("WRITING OPERATION STATUS ON "+ fileName);
+		
+		status.save();
+		
+		logInfo("FILE WROTE");
 	}
 	
 	public SyncConfiguration getConfiguration() {
@@ -405,7 +401,7 @@ public abstract class OperationController implements Controller{
 		return new File(fileName);
 	}
 	
-	private String generateProcessStatusFolder() {
+	protected String generateProcessStatusFolder() {
 		String subFolder = "";
 		
 		if (getConfiguration().isSourceInstallationType()) {
@@ -420,7 +416,7 @@ public abstract class OperationController implements Controller{
 		return getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder;
 	}
 	
-	private File generateProcessStatusFile() {
+	public File generateProcessStatusFile() {
 		String operationId = this.getControllerId();
 		
 		String fileName = generateProcessStatusFolder() + FileUtilities.getPathSeparator() +  operationId;
@@ -431,27 +427,9 @@ public abstract class OperationController implements Controller{
 	public void markAsFinished() {
 		logInfo("FINISHING OPERATION "+ getControllerId());
 		
-		if (!generateProcessStatusFile().exists()) {
-			logInfo("WRITING OPERATION STATUS ON FILE ["+ generateProcessStatusFile().getAbsolutePath() + "]");
-			
-			String desc = "";
-			
-			desc += "{\n";
-			desc += "	operationName: \"" + this.getControllerId() + "\",\n";
-			desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(this.getTimer().getStartTime()) + "\",\n";
-			desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate()) + "\",\n";
-			desc += "	elapsedTime: \"" + this.getTimer().getDuration(TimeController.DURACAO_IN_HOURS) + "\"\n";
-			desc += "}";
-			
-			FileUtilities.tryToCreateDirectoryStructureForFile(generateProcessStatusFile().getAbsolutePath());
-			
-			FileUtilities.write(generateProcessStatusFile().getAbsolutePath(), desc);
-			
-			logInfo("FILE WROTE");
-		}
-		else {
-			logInfo("THE FILE WAS ALREADY EXISTS");
-		}
+		logInfo("WRITING OPERATION STATUS ON FILE ["+ generateProcessStatusFile().getAbsolutePath() + "]");
+		
+		if (!this.syncOperationStatus.isFinished()) this.syncOperationStatus.changeStatusToFinished();
 		
 		changeStatusToFinished();
 		
@@ -648,7 +626,4 @@ public abstract class OperationController implements Controller{
 		if (getChild() != null) getChild().requestStop();
 	}
 
-	public ItemProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
-		return progressInfo.retrieveProgressInfo(tableConfiguration);
-	}
 }

@@ -26,7 +26,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 public class SyncController extends OperationController implements DestinationOperationController{	
 	
 	private String appOriginLocationCode;
-
+	
 	public SyncController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
@@ -83,6 +83,7 @@ public class SyncController extends OperationController implements DestinationOp
 		
 		try {
 			SynchronizationSearchParams searchParams = new SynchronizationSearchParams(tableInfo, null, this.appOriginLocationCode);
+			searchParams.setSyncStartDate(this.syncOperationStatus.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
 		
@@ -105,6 +106,7 @@ public class SyncController extends OperationController implements DestinationOp
 		
 		try {
 			SynchronizationSearchParams searchParams = new SynchronizationSearchParams(tableInfo, null, this.appOriginLocationCode);
+			searchParams.setSyncStartDate(this.syncOperationStatus.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getLastRecord(searchParams, conn);
 		

@@ -25,15 +25,11 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 		
 		searchClauses.addColumnToSelect("*");
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
+		searchClauses.addToClauseFrom("LEFT JOIN " + tableInfo.generateFullStageTableName() + " ON record_origin_id  = " + tableInfo.getPrimaryKey());
 		
 		if (!this.selectAllRecords) {
-			if (!tableInfo.isFirstExport()) {
-				searchClauses.addToClauses("date_changed > last_sync_date");
-			}
-			else {
-				searchClauses.addToClauses("last_sync_date is null");
-			}
-		
+			searchClauses.addToClauses("last_sync_date IS NULL OR last_update_date > last_sync_date ");
+			
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
 				searchClauses.addToParameters(this.limits.getFirstRecordId());

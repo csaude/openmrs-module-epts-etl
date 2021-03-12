@@ -79,7 +79,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			sql += " SELECT " + instance.generateTableName() + ".* \n";
 			sql += " FROM  	" + instance.generateTableName() + " INNER JOIN " + tableInfo.generateFullStageTableName() + " ON destination_record_id = " + tableInfo.getPrimaryKey() + "\n";
 			sql += " WHERE 	record_origin_id = ? \n";
-			sql += "		AND origin_app_location_code = ?;\n";
+			sql += "		AND record_origin_location_code = ?;\n";
 			
 			return find(openMRSClass, sql, params, conn);
 		} catch (Exception e) {
@@ -161,64 +161,46 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		return find(GenericOpenMRSObject.class, sql, params, conn);		
 	}
 
-	public static OpenMRSObject getFirstRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
+	private static OpenMRSObject getGenericSpecificRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, String function, boolean isOnOrigin, Connection conn) throws DBException, ForbiddenOperationException {
 		String sql = "";
+		
+		String connectionField = isOnOrigin ? "record_origin_id" : "record_destination_id";
 		
 		OpenMRSObject obj = utilities.createInstance(tableInfo.getSyncRecordClass());
 		
 		String clause = "";
-		
-		if (!tableInfo.isFirstExport()) {
-			clause = "date_changed > last_sync_date";
-		}
-		else {
-			clause = "last_sync_date is null";
-		}
-		
+
 		if (utilities.stringHasValue(originAppLocationCode)) {
-			clause = utilities.concatCondition(clause, "origin_app_location_code = '" + originAppLocationCode + "'");
+			clause = utilities.concatCondition(clause, "record_origin_location_code = '" + originAppLocationCode + "'");
 		}
 
 		sql += " SELECT * \n";
 		sql += " FROM  	" + obj.generateTableName() + "\n";
-		sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + "\n";
-		sql += " 			= (	SELECT min(" + obj.generateDBPrimaryKeyAtt() + ")\n";
-		sql += "				FROM   " + obj.generateTableName() + "\n";
-		sql += "				WHERE  " + clause + "\n";
-		sql += "				)";
+		sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + "	= (	SELECT " + function + "(" + obj.generateDBPrimaryKeyAtt() + ")\n";
+		sql += "													FROM   " + obj.generateTableName() + " LEFT JOIN " + tableInfo.generateFullStageTableName() + " ON " + connectionField + " = " + tableInfo.getPrimaryKey() + "\n";
+		sql += "													WHERE  last_sync_date IS NULL OR last_update_date > last_sync_date \n";
+		sql += "												   )";
 		
 		return find(tableInfo.getSyncRecordClass(), sql, null, conn);
+
 	}
 	
-	public static OpenMRSObject getLastRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
-		String sql = "";
-		
-		OpenMRSObject obj = utilities.createInstance(tableInfo.getSyncRecordClass());
-		
-		String clause = "";
-		
-		if (!tableInfo.isFirstExport()) {
-			clause = "date_changed > last_sync_date";
-		}
-		else {
-			clause = "last_sync_date is null";
-		}
-
-		if (utilities.stringHasValue(originAppLocationCode)) {
-			clause = utilities.concatCondition(clause, "origin_app_location_code = '" + originAppLocationCode + "'");
-		}
-		
-		sql += " SELECT * \n";
-		sql += " FROM  	" + obj.generateTableName() + "\n";
-		sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + "\n";
-		sql += " 			= (	SELECT max(" + obj.generateDBPrimaryKeyAtt() + ")\n";
-		sql += "				FROM   " + obj.generateTableName() + "\n";
-		sql += "				WHERE  " + clause + "\n";
-		sql += "				)";
-		
-		return find(tableInfo.getSyncRecordClass(), sql, null, conn);
+	public static OpenMRSObject getFirstRecordOnOrigin(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
+		return getGenericSpecificRecord(tableInfo, originAppLocationCode, "min", true, conn);
+	}
+	
+	public static OpenMRSObject getLastRecordOnOrigin(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
+		return getGenericSpecificRecord(tableInfo, originAppLocationCode, "max", true, conn);
 	}
 
+	public static OpenMRSObject getFirstRecordOnDestination(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
+		return getGenericSpecificRecord(tableInfo, originAppLocationCode, "min", false, conn);
+	}
+	
+	public static OpenMRSObject getLastRecordOnDestination(SyncTableConfiguration tableInfo, String originAppLocationCode, Connection conn) throws DBException {
+		return getGenericSpecificRecord(tableInfo, originAppLocationCode, "max", false, conn);
+	}
+	
 	public static void remove(OpenMRSObject record, Connection conn) throws DBException{
 		Object[] params = {record.getObjectId()};
 		
@@ -237,7 +219,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		String 	sql =	" SELECT count(*) value";
 		  		sql +=	" FROM  	" + tableConfiguration.getTableName() + " INNER JOIN " + tableConfiguration.generateFullStageTableName() + " ON destination_record_id = " + tableConfiguration.getPrimaryKey() + "\n";
 		  		sql +=	" WHERE 	" + parentField + " = ? ";
-				sql +=  "			AND origin_app_location_code = ? ";
+				sql +=  "			AND record_origin_location_code = ? ";
 	
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
 		
@@ -268,7 +250,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		String 	sql = 	" SELECT * ";
 				sql +=	" FROM  	" + tableConfiguration.getTableName() + " INNER JOIN " + tableConfiguration.generateFullStageTableName() + " ON destination_record_id = " + tableConfiguration.getPrimaryKey() + "\n";
   				sql +=	" WHERE 	" + parentField + " = ? ";
-				sql +=	"			AND origin_app_location_code = ? ";
+				sql +=	"			AND record_origin_location_code = ? ";
 		
 		return search(tableConfiguration.getSyncRecordClass(), sql, params, conn);
 	}

@@ -11,7 +11,6 @@ import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectSearchParams;
-import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfoVO>{
@@ -23,19 +22,9 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 	public SynchronizationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String appOriginLocationCode) {
 		super(tableInfo, limits);
 		
-		this.syncStartDate = DateAndTimeUtilities.getCurrentDate();
-		
 		setOrderByFields("id");
 		
 		this.appOriginLocationCode = appOriginLocationCode;
-	}
-	
-	public Date getSyncStartDate() {
-		return syncStartDate;
-	}
-	
-	public void setSyncStartDate(Date syncStartDate) {
-		this.syncStartDate = syncStartDate;
 	}
 	
 	@Override
@@ -48,16 +37,11 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 		
 		
 		if (!forProgressMeter) {
-			if (this.tableInfo.isFirstExport()) {
-				searchClauses.addToClauses("last_migration_try_date is null");
-			}
-			else {
-				searchClauses.addToClauses("last_migration_try_date is null or last_migration_try_date < ?");
-				searchClauses.addToParameters(this.syncStartDate);
-			}
+			searchClauses.addToClauses("last_migration_try_date is null or last_migration_try_date < ?");
+			searchClauses.addToParameters(this.syncStartDate);
 			
 			if (limits != null) {
-				searchClauses.addToClauses("id between ? and ?");
+			  	searchClauses.addToClauses("id between ? and ?");
 				searchClauses.addToParameters(this.limits.getFirstRecordId());
 				searchClauses.addToParameters(this.limits.getLastRecordId());
 			}

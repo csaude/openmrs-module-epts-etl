@@ -48,7 +48,7 @@ public class SyncExportEngine extends Engine {
 			
 			this.getMonitor().logInfo("GENERATING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE");
 			
-			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(syncRecordsAsOpenMRSObjects, getSyncTableConfiguration().getOriginAppLocationCode());
+			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getSyncTableConfiguration(), syncRecordsAsOpenMRSObjects, getSyncTableConfiguration().getOriginAppLocationCode(), conn);
 		
 			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecords.get(0).getObjectId(), syncRecords.get(syncRecords.size() - 1).getObjectId());
 			
@@ -94,6 +94,11 @@ public class SyncExportEngine extends Engine {
 			
 			throw new RuntimeException(e);
 		}
+		catch (DBException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
 	}
 
 	private String generateTmpMinimalJSONInfoFileName(File mainTempJSONInfoFile) {
@@ -130,6 +135,7 @@ public class SyncExportEngine extends Engine {
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new SyncExportSearchParams(this.getSyncTableConfiguration(), limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		searchParams.setSyncStartDate(this.getRelatedOperationController().getSyncOperationStatus().getStartTime());
 		
 		return searchParams;
 	}

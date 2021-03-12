@@ -4,6 +4,7 @@ package org.openmrs.module.eptssync.utilities;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Connection;
@@ -38,13 +39,13 @@ public class OpenMRSPOJOGenerator {
 		
 		String fullClassName = syncTableInfo.generateFullClassName();
 		
-		/*Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
+		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 			
 		if (existingCLass != null) {
 			if (!Modifier.isAbstract(existingCLass.getModifiers())) {
 				return existingCLass;
 			}
-		}*/
+		}
 	
 		String attsDefinition = "";
 		String getttersAndSetterDefinition = "";
@@ -136,6 +137,7 @@ public class OpenMRSPOJOGenerator {
 			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("uuid", "String");
 		}
 		
+		/*
 		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "origin_record_id", conn)) {
 			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("originRecordId", "int");
 		}
@@ -146,7 +148,7 @@ public class OpenMRSPOJOGenerator {
 		
 		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "consistent", conn)) {
 			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("consistent", "int");
-		}
+		}*/
 
 		String methodFromSuperClass = "";
 
@@ -221,32 +223,6 @@ public class OpenMRSPOJOGenerator {
 		}
 	
 		methodFromSuperClass += "		return false;\n";
-		
-		methodFromSuperClass += "	}\n\n";
-
-		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {\n";
-			
-		RefInfo sharedKeyRefInfo = syncTableInfo.getSharedKeyRefInfo(conn);
-		
-		if (sharedKeyRefInfo != null) {
-			methodFromSuperClass += "		OpenMRSObject parentOnDestination = null;\n \n";
-			
-			Class<OpenMRSObject> skeleton = tryToGetExistingCLass(sharedKeyRefInfo.getRefTableConfiguration().generateFullClassName(), syncTableInfo.getRelatedSynconfiguration());
-			
-			if (skeleton == null) {
-				generateSkeleton(sharedKeyRefInfo.getRefTableConfiguration(), conn);
-			}
-			
-			methodFromSuperClass += "		parentOnDestination = retrieveParentInDestination(";
-			methodFromSuperClass += sharedKeyRefInfo.getRefTableConfiguration().generateFullClassName() + ".class,";
-				
-			methodFromSuperClass += " this." +  sharedKeyRefInfo.getRefColumnAsClassAttName() + ", false, conn); \n";
-			methodFromSuperClass += "		return parentOnDestination.getObjectId();\n \n";
-		}
-		else {
-			methodFromSuperClass += "		throw new RuntimeException(\"No PKSharedInfo defined!\");";
-		}
 		
 		methodFromSuperClass += "	}\n\n";
 		
@@ -384,8 +360,11 @@ public class OpenMRSPOJOGenerator {
 		Class<OpenMRSObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
 		
 		if (clazz == null) {
-			clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getModuleRootDirectory());
-			clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getClassPathAsFile());
+			if (syncConfiguration.getModuleRootDirectory() != null) clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getModuleRootDirectory());
+			
+			if (clazz == null) {
+				clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getClassPathAsFile());
+			}
 		}
 		
 		return clazz;

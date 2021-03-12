@@ -40,7 +40,7 @@ public class SyncConfiguration {
 	
 	private List<SyncTableConfiguration> tablesConfigurations;
 	
-	private boolean firstExport;
+	//private boolean firstExport;
 	private DBConnectionInfo connInfo;
 
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
@@ -191,13 +191,13 @@ public class SyncConfiguration {
 		return op.isDoIntegrityCheckInTheEnd();
 	}
 	
-	public boolean isFirstExport() {
+	/*public boolean isFirstExport() {
 		return firstExport;
 	}
 
 	public void setFirstExport(boolean firstExport) {
 		this.firstExport = firstExport;
-	}
+	}*/
 	
 	public List<SyncTableConfiguration> getTablesConfigurations() {
 		return tablesConfigurations;

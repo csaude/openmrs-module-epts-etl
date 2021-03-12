@@ -12,6 +12,7 @@ import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -177,22 +178,34 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		return migrationStatus;
 	}
 	
-	public static List<SyncImportInfoVO> generateFromSyncRecord(List<OpenMRSObject> syncRecords, String recordOriginLocationCode) {
+	public static List<SyncImportInfoVO> generateFromSyncRecord(SyncTableConfiguration tableConfiguration, List<OpenMRSObject> syncRecords, String recordOriginLocationCode, Connection conn) throws DBException {
 		List<SyncImportInfoVO> importInfo = new ArrayList<SyncImportInfoVO>();
 	
 		for (OpenMRSObject syncRecord : syncRecords) {
-			importInfo.add(generateFromSyncRecord(syncRecord, recordOriginLocationCode));
+			importInfo.add(generateFromSyncRecord(tableConfiguration, syncRecord, recordOriginLocationCode, conn));
 		}
 		
 		return importInfo;
 	}
 	
-	public static SyncImportInfoVO generateFromSyncRecord(OpenMRSObject syncRecord, String recordOriginLocationCode) {
+	public static SyncImportInfoVO generateFromSyncRecord(SyncTableConfiguration tableConfiguration, OpenMRSObject syncRecord, String recordOriginLocationCode, Connection conn) throws DBException {
 		SyncImportInfoVO syncInfo = new SyncImportInfoVO();
 		
+		if (tableConfiguration.useSharedPKKey()) {
+			OpenMRSObject parent = OpenMRSObjectDAO.getById(tableConfiguration.getSharedKeyRefInfo(conn).getRefObjectClass(), syncRecord.getObjectId(), conn);
+		
+			if (parent != null) {
+				syncInfo.setRecordUuid(parent.getUuid());
+			}
+		}
+		else {
+			syncInfo.setRecordUuid(syncRecord.getUuid());
+		}
+		
 		syncInfo.setRecordOriginId(syncRecord.getObjectId());
-		syncInfo.setJson(utilities.parseToJSON(syncRecord));
 		syncInfo.setRecordOriginLocationCode (recordOriginLocationCode);
+		
+		syncInfo.setJson(utilities.parseToJSON(syncRecord));
 		
 		return syncInfo;
 	}
@@ -208,7 +221,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 				}
 				
 				if (tableInfo.useSharedPKKey()) {
-					refrieveSharedPKKey(source, 0, conn);
+					refrieveSharedPKKey(tableInfo, source, 0, conn);
 				}
 				else {
 					source.setObjectId(0);
@@ -251,15 +264,21 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	 * @throws ParentNotYetMigratedException
 	 * @throws DBException
 	 */
-	private void refrieveSharedPKKey(OpenMRSObject source, int qtyTry, Connection conn) throws ParentNotYetMigratedException, DBException {
+	private void refrieveSharedPKKey(SyncTableConfiguration tableConfiguration, OpenMRSObject source, int qtyTry, Connection conn) throws ParentNotYetMigratedException, DBException {
 		try {
-			source.setObjectId(source.retrieveSharedPKKey(conn));
+			OpenMRSObject obj = OpenMRSObjectDAO.thinGetByUuid(tableConfiguration.getSharedKeyRefInfo(conn).getRefObjectClass(), this.getRecordUuid(), conn);
+			
+			if (obj != null) {
+				source.setObjectId(obj.getObjectId());
+			}
+			else throw new ParentNotYetMigratedException();
+			
 		} catch (ParentNotYetMigratedException e) {
 			
 			if (qtyTry > 0) {
 				//Wait 10 seconds before try again
 				TimeCountDown.sleep(1);
-				refrieveSharedPKKey(source, --qtyTry, conn);
+				refrieveSharedPKKey(tableConfiguration, source, --qtyTry, conn);
 			}
 			else throw e;
 		}

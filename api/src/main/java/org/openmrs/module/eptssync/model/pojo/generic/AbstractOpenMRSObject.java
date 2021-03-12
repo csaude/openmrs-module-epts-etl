@@ -32,6 +32,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	 * Indicate if there where parents which have been ingored
 	 */
 	private boolean hasIgnoredParent;
+	private String uuid;
 	
 	private SyncImportInfoVO relatedSyncInfo;
 	/**
@@ -87,8 +88,14 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	
 	@Override
 	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 
+	@Override
+	public String getUuid() {
+		return this.uuid;
+	}
+	
 	/*
 	@Override
 	public boolean isMetadata() {
@@ -304,7 +311,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		
 		if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) throw new SyncExeption("This metadata metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId() + ". is missing its some parents [" + generateMissingInfo(missingParents) +"] You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
 		
-		SyncImportInfoVO syncInfo = this.generateSyncInfo(syncTableInfo.getOriginAppLocationCode());
+		SyncImportInfoVO syncInfo = this.generateSyncInfo(syncTableInfo, syncTableInfo.getOriginAppLocationCode(), conn);
 		
 		syncInfo.setRecordOriginLocationCode(syncTableInfo.getOriginAppLocationCode());
 		syncInfo.setLastMigrationTryErr(generateMissingInfo(missingParents));
@@ -335,7 +342,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 	
 	public void copyToStageAreaDueInconsistencySolvedByDefaultParents(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
-		SyncImportInfoVO syncInfo = this.generateSyncInfo(syncTableInfo.getOriginAppLocationCode());
+		SyncImportInfoVO syncInfo = this.generateSyncInfo(syncTableInfo, syncTableInfo.getOriginAppLocationCode(), conn);
 		
 		if (!utilities.stringHasValue(syncInfo.getRecordOriginLocationCode())) throw new ForbiddenOperationException("The OriginAppLocationCode could not found!!!!");
 		
@@ -346,8 +353,8 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		syncInfo.markAsPartialMigrated(syncTableInfo, generateMissingInfoForSolvedInconsistency(missingParents), conn);
 	}
 	
-	private SyncImportInfoVO generateSyncInfo(String recordOriginLocationCode) {
-		return SyncImportInfoVO.generateFromSyncRecord(this, recordOriginLocationCode);
+	private SyncImportInfoVO generateSyncInfo(SyncTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn) throws DBException {
+		return SyncImportInfoVO.generateFromSyncRecord(tableConfiguration, this, recordOriginLocationCode, conn);
 	}
 
 	@Override
@@ -434,7 +441,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					OpenMRSObject parentFromSource = new GenericOpenMRSObject(refInfo.getRefTableConfiguration());
 					parentFromSource.setObjectId(parentId);
 					
-					parentFromSource.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(parentFromSource, recordOriginLocationCode));
+					parentFromSource.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(refInfo.getRefTableConfiguration(), parentFromSource, recordOriginLocationCode, conn));
 					
 					SyncImportInfoVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(refInfo.getRefTableConfiguration(), parentFromSource, conn);
 					
@@ -540,7 +547,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 								OpenMRSObject parentFromSource = new GenericOpenMRSObject(refInfo.getRefTableConfiguration());
 								parentFromSource.setObjectId(parentId);
 								
-								parentFromSource.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(parentFromSource, getRelatedSyncInfo().getRecordOriginLocationCode()));
+								parentFromSource.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(refInfo.getRefTableConfiguration(), parentFromSource, getRelatedSyncInfo().getRecordOriginLocationCode(), conn));
 								
 								SyncImportInfoVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(refInfo.getRefTableConfiguration(), parentFromSource, conn);
 								
@@ -576,7 +583,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				 
 			} catch (ParentNotYetMigratedException e) {
 				OpenMRSObject parent = utilities.createInstance(refInfo.getRefObjectClass());
-				parent.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(parent, getRelatedSyncInfo().getRecordOriginLocationCode()));
+				parent.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(tableInfo, parent, getRelatedSyncInfo().getRecordOriginLocationCode(), conn));
 				
 				try {
 					SyncImportInfoDAO.retrieveFromOpenMRSObject(refInfo.getRefTableConfiguration(), parent, conn);

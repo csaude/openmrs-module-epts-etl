@@ -1,14 +1,17 @@
 package org.openmrs.module.eptssync.model;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.Date;
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -37,9 +40,9 @@ public class SyncJSONInfo {
 	public SyncJSONInfo() {
 	}
 	
-	public SyncJSONInfo(List<OpenMRSObject> syncRecords, String recordOriginLocationCode) {
+	public SyncJSONInfo(SyncTableConfiguration tableConfiguration, List<OpenMRSObject> syncRecords, String recordOriginLocationCode, Connection conn) throws DBException {
 		this.qtyRecords = utilities.arraySize(syncRecords);
-		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(syncRecords, recordOriginLocationCode);
+		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(tableConfiguration, syncRecords, recordOriginLocationCode, conn);
 		this.dateGenerated = DateAndTimeUtilities.getCurrentDate();
 		this.originAppLocationCode = recordOriginLocationCode;
 	}
@@ -76,8 +79,8 @@ public class SyncJSONInfo {
 		this.dateGenerated = dateGenerated;
 	}
 
-	public static SyncJSONInfo generate(List<OpenMRSObject> syncRecords, String recordOriginLocationCode) {
-		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(syncRecords, recordOriginLocationCode);
+	public static SyncJSONInfo generate(SyncTableConfiguration tableConfiguration, List<OpenMRSObject> syncRecords, String recordOriginLocationCode, Connection conn) throws DBException {
+		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(tableConfiguration, syncRecords, recordOriginLocationCode, conn);
 
 		return syncJSONInfo;
 	}

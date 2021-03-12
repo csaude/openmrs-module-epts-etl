@@ -72,7 +72,7 @@ public interface OpenMRSObject extends SyncRecord{
 	//public abstract boolean isConsistent();
 	//public abstract int getConsistent();
 	public abstract boolean hasParents();
-	public abstract int retrieveSharedPKKey(Connection conn)  throws ParentNotYetMigratedException, DBException;
+	//public abstract int retrieveSharedPKKey(Connection conn)  throws ParentNotYetMigratedException, DBException;
 	
 	public abstract int getParentValue(String parentAttName);
 	

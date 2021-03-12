@@ -8,7 +8,7 @@ import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.status.OperationStatus;
+import org.openmrs.module.eptssync.status.TableOperationStatus;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -42,7 +42,7 @@ public class OperationProgressInfo {
 				
 				//String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
 				
-				OperationStatus op = OperationStatus.loadFromFile(syncStatus);
+				TableOperationStatus op = TableOperationStatus.loadFromFile(syncStatus);
 				
 				pm.setProgressMeter(op.parseToProgressMeter());
 			}

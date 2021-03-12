@@ -104,7 +104,7 @@ public class DatabasePreparationEngine extends Engine {
 		String uniqueOrigin = "";
 		
 		if (!isUniqueOriginConstraintsExists(conn)) {
-			uniqueOrigin = "UNIQUE KEY " + generateUniqueOriginConstraintsName() + "(origin_record_id, origin_app_location_code)";
+			uniqueOrigin = "UNIQUE KEY " + generateUniqueOriginConstraintsName() + "(record_origin_id, origin_app_location_code)";
 		}
 		
 		String batch = "";
@@ -196,7 +196,7 @@ public class DatabasePreparationEngine extends Engine {
 	
 	@SuppressWarnings("unused")
 	private String generateOriginRecordIdColumnGeneration() {
-		return "origin_record_id int(11) NULL";
+		return "record_origin_id int(11) NULL";
 	}
 	
 	@SuppressWarnings("unused")
@@ -221,7 +221,7 @@ public class DatabasePreparationEngine extends Engine {
 	
 	@SuppressWarnings("unused")
 	private boolean isOriginRecordIdColumnExistOnTable(Connection conn) throws SQLException {
-		return DBUtilities.isColumnExistOnTable(getTableName(), "origin_record_id", conn);
+		return DBUtilities.isColumnExistOnTable(getTableName(), "record_origin_id", conn);
 	}
 
 	@SuppressWarnings("unused")
@@ -282,7 +282,7 @@ public class DatabasePreparationEngine extends Engine {
 		sql += "	migration_status int(1) DEFAULT 1,\n";
 		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
 		sql += "	CONSTRAINT CHK_" + getSyncTableConfiguration().generateRelatedStageTableName() + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
-		sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD(record_id, origin_app_location_code),\n";
+		sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD(record_origin_id, record_origin_location_code),\n";
 		sql += "	PRIMARY KEY (id)\n";
 		sql += ")\n";
 		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";
