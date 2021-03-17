@@ -54,6 +54,7 @@ public class SyncOperationStatus {
 		this.controller = controller;
 	}
 	
+	@JsonIgnore
 	public OperationController getController() {
 		return controller;
 	}
@@ -119,7 +120,6 @@ public class SyncOperationStatus {
 	public String getLastMsgFromController() {
 		return lastMsgFromController;
 	}
-
 
 	public void setLastMsgFromController(String lastMsgFromController) {
 		this.lastMsgFromController = lastMsgFromController;
@@ -222,6 +222,8 @@ public class SyncOperationStatus {
 		if (new File(fileName).exists()) {
 			FileUtilities.removeFile(fileName);
 		}	
+		
+		this.elapsedTime = this.elapsedTime + DateAndTimeUtilities.dateDiff(DateAndTimeUtilities.getCurrentDate(), this.startTime, DateAndTimeUtilities.MINUTE_FORMAT);
 		
 		String desc = this.parseToJSON();
 		

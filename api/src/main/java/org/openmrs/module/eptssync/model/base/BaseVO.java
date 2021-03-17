@@ -23,10 +23,9 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 public abstract class BaseVO  implements VO{
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	/**
-	 * Data da criacao
-	 */
-	protected Date creationDate;
+	protected Date dateCreated;
+	
+	protected Date dateChanged;
 	
 	protected boolean excluded;
 	/**
@@ -54,22 +53,20 @@ public abstract class BaseVO  implements VO{
 		}
 	}
 	
-	/**
-	 * @return O valor do atributo {@link #creationDate}
-	 */
-	public Date getCreationDate() {
-		return creationDate;
+	public Date getDateChanged() {
+		return dateChanged;
 	}
 
-	/**
-	 * Modifica o valor do atributo {@link #creationDate} para o valor fornecido
-	 * pelo parametro <code>creationDate</code>
-	 * 
-	 * @param creationDate
-	 *            Novo valor para o atributo {@link #creationDate}
-	 */
-	public void setCreationDate(Date creationDate) {
-		this.creationDate = creationDate;
+	public void setDateChanged(Date dateChanged) {
+		this.dateChanged = dateChanged;
+	}
+
+	public Date getDateCreated() {
+		return dateCreated;
+	}
+	
+	public void setDateCreated(Date dateCreated) {
+		this.dateCreated = dateCreated;
 	}
 
 	/**

@@ -20,6 +20,7 @@ import org.openmrs.util.OpenmrsUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class SyncVM {
+	@SuppressWarnings("unused")
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private List<SyncConfiguration> avaliableConfigurations;

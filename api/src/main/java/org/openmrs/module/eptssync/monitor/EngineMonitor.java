@@ -149,6 +149,8 @@ public class EngineMonitor implements MonitoredOperation{
 			this.timer.start();
 		}
 		
+		logInfo("INITIALIZING ENGINE");
+		
 		SyncTableConfiguration syncInfo = getSyncTableInfo();
 		
 		//logInfo("DETERMINING MIN RECORD FOR " + getSyncTableInfo().getTableName());

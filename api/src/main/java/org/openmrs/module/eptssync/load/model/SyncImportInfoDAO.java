@@ -112,7 +112,10 @@ public class SyncImportInfoDAO extends BaseDAO {
 							   record.getJson(),
 							   record.getMigrationStatus(),
 							   record.getLastMigrationTryErr(),
-							   record.getRecordOriginLocationCode()};
+							   DateAndTimeUtilities.getCurrentDate(),
+							   record.getRecordOriginLocationCode(),
+							   record.getLastUpdateDate(),
+							   record.getConsistent()};
 			
 			String sql = "";
 			
@@ -122,8 +125,14 @@ public class SyncImportInfoDAO extends BaseDAO {
 			sql += "											 		json,\n";
 			sql += "											 		migration_status,\n";
 			sql += "											 		last_migration_try_err,\n";
-			sql += "													record_origin_location_code)";
+			sql += "											 		last_migration_try_date,\n";
+			sql += "													record_origin_location_code,";
+			sql += "													last_update_date,";
+			sql += "													consistent)";
 			sql += "	VALUES(?,\n";
+			sql += "		   ?,\n";
+			sql += "		   ?,\n";
+			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
@@ -136,6 +145,23 @@ public class SyncImportInfoDAO extends BaseDAO {
 				throw e;
 			}
 		}
+	}
+	
+	public static void update(SyncImportInfoVO record, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
+		Object[] params = {record.getJson(),
+						   record.getMigrationStatus(),
+						   record.getLastMigrationTryErr(),
+						   record.getRecordOriginId()};
+		
+		String sql = "";
+		
+		sql += " UPDATE " + tableInfo.generateFullStageTableName() + "\n";
+		sql += " SET	json = ?,\n";
+		sql += "		migration_status = ?,\n";
+		sql += "		last_migration_try_err = ?\n";
+		sql += " WHERE record_origin_id = ? \n";
+		
+		executeQuery(sql, params, conn);
 	}
 	
 	public static SyncImportInfoVO getByOriginIdAndLocation(SyncTableConfiguration tableConfiguration, int originRecordId, String originAppLocationCode, Connection conn) throws DBException {
