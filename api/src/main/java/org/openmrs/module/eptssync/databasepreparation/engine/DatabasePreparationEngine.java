@@ -70,7 +70,7 @@ public class DatabasePreparationEngine extends Engine {
 		if (!getSyncTableConfiguration().existRelatedExportStageTable(conn)) {
 			logInfo("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
 			
-			createRelatedExportStageTable(conn);
+			createRelatedSyncStageAreaTable(conn);
 			
 			logInfo("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
 		}
@@ -260,15 +260,15 @@ public class DatabasePreparationEngine extends Engine {
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
 		return new DatabasePreparationSearchParams(this, limits, conn);
 	}
-
-	private void createRelatedExportStageTable(Connection conn) {
+	
+	private void createRelatedSyncStageAreaTable(Connection conn) {
 		String sql = "";
 
-		sql += "CREATE TABLE " + getSyncTableConfiguration().getSyncStageSchema() + "." + getSyncTableConfiguration().generateRelatedStageTableName() + "(\n";
+		sql += "CREATE TABLE " + getSyncTableConfiguration().generateFullStageTableName() + "(\n";
 		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
 		sql += "	record_origin_id int(11) NOT NULL,\n";
 		sql += "	record_destination_id int(11) NULL,\n";
-		sql += "	record_uuid varchar(28) NOT NULL,\n";
+		sql += "	record_uuid varchar(38) NOT NULL,\n";
 		sql += "	record_origin_location_code VARCHAR(100) NOT NULL,\n";
 		
 		sql += "	json text NOT NULL,\n";

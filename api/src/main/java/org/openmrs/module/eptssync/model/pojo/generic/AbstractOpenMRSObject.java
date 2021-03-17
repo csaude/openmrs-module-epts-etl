@@ -16,6 +16,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
+import org.openmrs.module.eptssync.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.base.BaseVO;
@@ -31,10 +32,10 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	/*
 	 * Indicate if there where parents which have been ingored
 	 */
-	private boolean hasIgnoredParent;
-	private String uuid;
+	protected boolean hasIgnoredParent;
+	protected String uuid;
 	
-	private SyncImportInfoVO relatedSyncInfo;
+	protected SyncImportInfoVO relatedSyncInfo;
 	/**
 	 * Retrieve a specific parent of this record. The parent is loaded using the origin (source) identification key
 	 * 
@@ -264,14 +265,21 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		}
 	}
 	
+	private void generateRelatedSyncInfo(SyncTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn) throws DBException {
+		this.relatedSyncInfo = SyncImportInfoVO.generateFromSyncRecord(tableConfiguration, this, recordOriginLocationCode, conn);
+	}
+	
 	@Override
-	public void resolveInconsistence(SyncTableConfiguration syncTableInfo, Connection conn) throws InconsistentStateException, DBException {
-		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad();
+	public void resolveInconsistence(SyncTableConfiguration tableConfiguration, Connection conn) throws InconsistentStateException, DBException {
+		if (!tableConfiguration.isFullLoaded()) tableConfiguration.fullLoad();
 		
-		Map<RefInfo, Integer> missingParents = loadMissingParents(syncTableInfo, conn);
+		generateRelatedSyncInfo(tableConfiguration, tableConfiguration.getOriginAppLocationCode(), conn);
+		
+		Map<RefInfo, Integer> missingParents = loadMissingParents(tableConfiguration, conn);
 		
 		if (missingParents.isEmpty()) {
-			getRelatedSyncInfo().markAsConcistent(syncTableInfo, conn);
+			getRelatedSyncInfo().setConsistent(OpenMRSObject.CONSISTENCE_STATUS);
+			getRelatedSyncInfo().save(tableConfiguration, conn);
 		}
 		else {
 			boolean inconsistencySolved = true;
@@ -283,29 +291,48 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					 
 					 if (parent == null) {
 						 inconsistencySolved = false;
+						 
+						 saveInconsistence(tableConfiguration,  entry, false, conn);
+						 
 						 break;
 					 }
 					 
 					 this.changeParentValue(entry.getKey().getRefColumnAsClassAttName(), parent);
+					 saveInconsistence(tableConfiguration, entry, true, conn);
 				 }
 				 else {
 					 inconsistencySolved = false;
+					 
+					 saveInconsistence(tableConfiguration, entry, false, conn);
+					 
 					 break; 
 				 }
+				 
+				
 			}
 			
 			if (inconsistencySolved) {
-				this.save(syncTableInfo, conn);
-				getRelatedSyncInfo().markAsConcistent(syncTableInfo, conn);
+				this.save(tableConfiguration, conn);
+				getRelatedSyncInfo().markAsConcistent(tableConfiguration, conn);
 				
-				copyToStageAreaDueInconsistencySolvedByDefaultParents(syncTableInfo, missingParents, conn);
+				copyToStageAreaDueInconsistencySolvedByDefaultParents(tableConfiguration, missingParents, conn);
+				
 			}
 			else {
-				moveToStageAreaDueInconsistency(syncTableInfo, missingParents, conn);
+				moveToStageAreaDueInconsistency(tableConfiguration, missingParents, conn);
 			}
 		}
 	}
 	
+	private void saveInconsistence(SyncTableConfiguration tableConfiguration, Entry<RefInfo, Integer> inconsistenceInfoSource, boolean inconsistenceResoloved, Connection conn) throws DBException {
+		int defaultParent = inconsistenceInfoSource.getKey().getDefaultValueDueInconsistency();
+		
+		if (!inconsistenceResoloved) defaultParent = 0;
+		
+		 InconsistenceInfo info = InconsistenceInfo.generate(tableConfiguration.getTableName(), this.getObjectId(), inconsistenceInfoSource.getKey().getTableName(), inconsistenceInfoSource.getValue(), defaultParent);
+		 info.save(tableConfiguration, conn);
+	}
+
 	public void moveToStageAreaDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
 		if (!syncTableInfo.getRelatedSynconfiguration().isSourceInstallationType())  throw new SyncExeption("You cannot move record to stage area in a installation different to source") {private static final long serialVersionUID = 1L;};
 		
@@ -316,7 +343,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		syncInfo.setRecordOriginLocationCode(syncTableInfo.getOriginAppLocationCode());
 		syncInfo.setLastMigrationTryErr(generateMissingInfo(missingParents));
 		
-		SyncImportInfoDAO.insert(syncInfo, syncTableInfo, conn);
+		syncInfo.save(syncTableInfo, conn);
 		
 		this.remove(conn);
 		
@@ -346,7 +373,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		
 		if (!utilities.stringHasValue(syncInfo.getRecordOriginLocationCode())) throw new ForbiddenOperationException("The OriginAppLocationCode could not found!!!!");
 		
-		SyncImportInfoDAO.insert(syncInfo, syncTableInfo, conn);
+		syncInfo.save(syncTableInfo, conn);
 		
 		syncInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(syncTableInfo, this, conn);
 		

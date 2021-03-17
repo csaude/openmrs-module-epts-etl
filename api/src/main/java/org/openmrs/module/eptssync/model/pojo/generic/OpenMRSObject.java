@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.model.pojo.generic;
 
 import java.sql.Connection;
+import java.util.Date;
 import java.util.Map;
 
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
@@ -125,5 +126,6 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException;
 	public abstract void changeParentForAllChildren(OpenMRSObject newParent, SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
+	public abstract Date getDateChanged();
 
 }

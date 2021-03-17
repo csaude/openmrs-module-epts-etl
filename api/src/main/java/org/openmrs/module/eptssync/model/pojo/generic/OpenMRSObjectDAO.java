@@ -21,7 +21,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " UPDATE " + syncRecord.generateTableName();
-		sql += " SET    last_sync_date = ? ";
+		sql += " SET    last_migration_try_date = ? ";
 		sql += " WHERE  " + syncRecord.generateDBPrimaryKeyAtt() + " = ? ";
 		
 		
@@ -37,7 +37,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " UPDATE " + syncRecords.get(0).generateTableName();
-		sql += " SET    last_sync_date = ? ";
+		sql += " SET    last_migration_try_date = ? ";
 		sql += " WHERE  " + syncRecords.get(0).generateDBPrimaryKeyAtt() + " between ? and ? ";
 		
 		executeQuery(sql, params, conn);
@@ -168,7 +168,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		OpenMRSObject obj = utilities.createInstance(tableInfo.getSyncRecordClass());
 		
-		String clause = "";
+		String clause = "(last_migration_try_date IS NULL OR last_update_date > last_migration_try_date)";
 
 		if (utilities.stringHasValue(originAppLocationCode)) {
 			clause = utilities.concatCondition(clause, "record_origin_location_code = '" + originAppLocationCode + "'");
@@ -178,7 +178,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		sql += " FROM  	" + obj.generateTableName() + "\n";
 		sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + "	= (	SELECT " + function + "(" + obj.generateDBPrimaryKeyAtt() + ")\n";
 		sql += "													FROM   " + obj.generateTableName() + " LEFT JOIN " + tableInfo.generateFullStageTableName() + " ON " + connectionField + " = " + tableInfo.getPrimaryKey() + "\n";
-		sql += "													WHERE  last_sync_date IS NULL OR last_update_date > last_sync_date \n";
+		sql += "													WHERE " + clause + " \n";
 		sql += "												   )";
 		
 		return find(tableInfo.getSyncRecordClass(), sql, null, conn);

@@ -50,7 +50,11 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	public SyncImportInfoVO(){
 		this.migrationStatus = MIGRATION_STATUS_PENDING;
 	}
-
+	
+	public int getConsistent() {
+		return consistent;
+	}
+	
 	public int getRecordOriginId() {
 		return recordOriginId;
 	}
@@ -206,6 +210,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		syncInfo.setRecordOriginLocationCode (recordOriginLocationCode);
 		
 		syncInfo.setJson(utilities.parseToJSON(syncRecord));
+		syncInfo.setLastUpdateDate(syncRecord.getDateChanged());
 		
 		return syncInfo;
 	}
@@ -363,6 +368,15 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 
 	public void delete(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		SyncImportInfoDAO.remove(this, tableInfo, conn);
+	}
+
+	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		if (getId() > 0) {
+			SyncImportInfoDAO.update(this, tableConfiguration, conn);
+		}
+		else {
+			SyncImportInfoDAO.insert(this, tableConfiguration, conn);
+		}
 	}
 
 }

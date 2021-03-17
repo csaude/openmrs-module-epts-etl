@@ -12,6 +12,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.model.ItemProgressInfo;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
@@ -626,4 +627,13 @@ public abstract class OperationController implements Controller{
 		if (getChild() != null) getChild().requestStop();
 	}
 
-}
+	public ItemProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
+		
+		for (ItemProgressInfo item : progressInfo.getItemsProgressInfo()) {
+			if (item.getTableConfiguration().equals(tableConfiguration)) return item;
+		}
+		
+		return null;
+	}
+
+} 
