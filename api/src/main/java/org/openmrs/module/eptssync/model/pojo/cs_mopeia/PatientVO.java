@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.molocue; 
+package org.openmrs.module.eptssync.model.pojo.cs_mopeia; 
  
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  
@@ -18,6 +18,7 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private int voidedBy;
 	private java.util.Date dateVoided;
 	private String voidReason;
+	private String allergyStatus;
  
 	public PatientVO() { 
 		this.metadata = false;
@@ -74,11 +75,19 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setVoidReason(String voidReason){ 
 	 	this.voidReason = voidReason;
 	}
-
-
  
 	public String getVoidReason(){ 
 		return this.voidReason;
+	}
+ 
+	public void setAllergyStatus(String allergyStatus){ 
+	 	this.allergyStatus = allergyStatus;
+	}
+
+
+ 
+	public String getAllergyStatus(){ 
+		return this.allergyStatus;
 	}	public String getUuid(){ 
 		return null;
 	}
@@ -105,6 +114,7 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.voidedBy = rs.getInt("voided_by");
 		this.dateVoided =  rs.getTimestamp("date_voided") != null ? new java.util.Date( rs.getTimestamp("date_voided").getTime() ) : null;
 		this.voidReason = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("void_reason") != null ? rs.getString("void_reason").trim() : null);
+		this.allergyStatus = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("allergy_status") != null ? rs.getString("allergy_status").trim() : null);
 	} 
  
 	@JsonIgnore
@@ -114,37 +124,37 @@ public class PatientVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO patient(patient_id, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient(patient_id, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, allergy_status) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason};		return params; 
+ 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.allergyStatus};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO patient(patient_id, patient_id, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient(patient_id, patient_id, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, allergy_status) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.patientId, this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason};		return params; 
+ 		Object[] params = {this.patientId, this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.allergyStatus};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.patientId};		return params; 
+ 		Object[] params = {this.patientId == 0 ? null : this.patientId, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.allergyStatus, this.patientId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient SET patient_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ? WHERE patient_id = ?;"; 
+ 		return "UPDATE patient SET patient_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, allergy_status = ? WHERE patient_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId == 0 ? null : this.patientId) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null); 
+ 		return ""+(this.patientId == 0 ? null : this.patientId) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.allergyStatus != null ? "\""+ utilities.scapeQuotationMarks(allergyStatus)  +"\"" : null); 
 	} 
  
 	@Override

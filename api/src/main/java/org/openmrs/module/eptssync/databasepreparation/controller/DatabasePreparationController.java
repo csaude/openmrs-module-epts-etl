@@ -87,7 +87,7 @@ public class DatabasePreparationController extends OperationController {
 		
 		String schema = getSyncConfiguration().getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = "INCONSISTENCE_INFO";
+		String tabName = "inconsistence_info";
 
 		try {
 			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
@@ -132,7 +132,7 @@ public class DatabasePreparationController extends OperationController {
 		
 		String sql = "";
 		
-		sql += "CREATE TABLE " + getSyncConfiguration().getSyncStageSchema() + "."  + " INCONSISTENCE_INFO (\n";
+		sql += "CREATE TABLE " + getSyncConfiguration().getSyncStageSchema() + ".inconsistence_info (\n";
 		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
 		sql += "table_name varchar(100) NOT NULL,\n";
 		sql += "record_id int(11) NOT NULL,\n";
@@ -141,7 +141,7 @@ public class DatabasePreparationController extends OperationController {
 		sql += "default_parent_id int(11) DEFAULT NULL,\n";
 		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
 		sql += "PRIMARY KEY (id),\n";
-		sql += "UNIQUE KEY INCONSISTENCE_INFO_UNQ (table_name,record_id, parent_table_name, parent_id)\n";
+		sql += "UNIQUE KEY inconsistence_info_unq (table_name,record_id, parent_table_name, parent_id)\n";
 		sql += ") ENGINE=InnoDB;\n";
 				
 		try {

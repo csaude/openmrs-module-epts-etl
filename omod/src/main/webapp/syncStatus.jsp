@@ -49,6 +49,7 @@
 
 			    	data.itemsProgressInfo.forEach(function(progressInfo) {
 			    		var progressMeter = progressInfo.progressMeter;
+			    		
 			    		var _progress = progressMeter != null  ? ('' + progressMeter.progress + '%') : 'Not Started';
 						console.log('_progress ' + _progress);
 			    		
@@ -57,7 +58,12 @@
 			    		
 						var _summary = progressMeter != null ? ('' + progressMeter.processed + '/' + progressMeter.total) : '-';
 						console.log('_summary ' + _summary);
-			    			
+
+						if (_progress == 0 && _value == 0) {
+							_value = 1;
+							_progress = 1;
+						}
+		    			
 			    		$('#'+progressInfo.syncTableName+'_progress').attr('data-label', _progress);
 			    		$('#'+progressInfo.syncTableName+'_value').attr('style', _value);
 			    		$('#'+progressInfo.syncTableName+'_summary').html(_summary);

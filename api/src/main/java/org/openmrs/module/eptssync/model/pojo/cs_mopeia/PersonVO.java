@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.molocue; 
+package org.openmrs.module.eptssync.model.pojo.cs_mopeia; 
  
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  
@@ -26,6 +26,7 @@ public class PersonVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private String voidReason;
 	private byte deathdateEstimated;
 	private java.util.Date birthtime;
+	private String causeOfDeathNonCoded;
  
 	public PersonVO() { 
 		this.metadata = false;
@@ -146,11 +147,19 @@ public class PersonVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public void setBirthtime(java.util.Date birthtime){ 
 	 	this.birthtime = birthtime;
 	}
-
-
  
 	public java.util.Date getBirthtime(){ 
 		return this.birthtime;
+	}
+ 
+	public void setCauseOfDeathNonCoded(String causeOfDeathNonCoded){ 
+	 	this.causeOfDeathNonCoded = causeOfDeathNonCoded;
+	}
+
+
+ 
+	public String getCauseOfDeathNonCoded(){ 
+		return this.causeOfDeathNonCoded;
 	}
  
 	public int getObjectId() { 
@@ -180,6 +189,7 @@ public class PersonVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 		this.deathdateEstimated = rs.getByte("deathdate_estimated");
 		this.birthtime =  rs.getTimestamp("birthtime") != null ? new java.util.Date( rs.getTimestamp("birthtime").getTime() ) : null;
+		this.causeOfDeathNonCoded = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("cause_of_death_non_coded") != null ? rs.getString("cause_of_death_non_coded").trim() : null);
 	} 
  
 	@JsonIgnore
@@ -189,37 +199,37 @@ public class PersonVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO person(gender, birthdate, birthdate_estimated, dead, death_date, cause_of_death, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, uuid, deathdate_estimated, birthtime) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO person(gender, birthdate, birthdate_estimated, dead, death_date, cause_of_death, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, uuid, deathdate_estimated, birthtime, cause_of_death_non_coded) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.gender, this.birthdate, this.birthdateEstimated, this.dead, this.deathDate, this.causeOfDeath == 0 ? null : this.causeOfDeath, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.deathdateEstimated, this.birthtime};		return params; 
+ 		Object[] params = {this.gender, this.birthdate, this.birthdateEstimated, this.dead, this.deathDate, this.causeOfDeath == 0 ? null : this.causeOfDeath, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.deathdateEstimated, this.birthtime, this.causeOfDeathNonCoded};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO person(person_id, gender, birthdate, birthdate_estimated, dead, death_date, cause_of_death, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, uuid, deathdate_estimated, birthtime) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO person(person_id, gender, birthdate, birthdate_estimated, dead, death_date, cause_of_death, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, uuid, deathdate_estimated, birthtime, cause_of_death_non_coded) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.personId, this.gender, this.birthdate, this.birthdateEstimated, this.dead, this.deathDate, this.causeOfDeath == 0 ? null : this.causeOfDeath, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.deathdateEstimated, this.birthtime};		return params; 
+ 		Object[] params = {this.personId, this.gender, this.birthdate, this.birthdateEstimated, this.dead, this.deathDate, this.causeOfDeath == 0 ? null : this.causeOfDeath, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.deathdateEstimated, this.birthtime, this.causeOfDeathNonCoded};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.gender, this.birthdate, this.birthdateEstimated, this.dead, this.deathDate, this.causeOfDeath == 0 ? null : this.causeOfDeath, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.deathdateEstimated, this.birthtime, this.personId};		return params; 
+ 		Object[] params = {this.gender, this.birthdate, this.birthdateEstimated, this.dead, this.deathDate, this.causeOfDeath == 0 ? null : this.causeOfDeath, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.uuid, this.deathdateEstimated, this.birthtime, this.causeOfDeathNonCoded, this.personId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE person SET gender = ?, birthdate = ?, birthdate_estimated = ?, dead = ?, death_date = ?, cause_of_death = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, deathdate_estimated = ?, birthtime = ? WHERE person_id = ?;"; 
+ 		return "UPDATE person SET gender = ?, birthdate = ?, birthdate_estimated = ?, dead = ?, death_date = ?, cause_of_death = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, uuid = ?, deathdate_estimated = ?, birthtime = ?, cause_of_death_non_coded = ? WHERE person_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.gender != null ? "\""+ utilities.scapeQuotationMarks(gender)  +"\"" : null) + "," + (this.birthdate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(birthdate)  +"\"" : null) + "," + (this.birthdateEstimated) + "," + (this.dead) + "," + (this.deathDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(deathDate)  +"\"" : null) + "," + (this.causeOfDeath == 0 ? null : this.causeOfDeath) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.deathdateEstimated) + "," + (this.birthtime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(birthtime)  +"\"" : null); 
+ 		return ""+(this.gender != null ? "\""+ utilities.scapeQuotationMarks(gender)  +"\"" : null) + "," + (this.birthdate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(birthdate)  +"\"" : null) + "," + (this.birthdateEstimated) + "," + (this.dead) + "," + (this.deathDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(deathDate)  +"\"" : null) + "," + (this.causeOfDeath == 0 ? null : this.causeOfDeath) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.deathdateEstimated) + "," + (this.birthtime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(birthtime)  +"\"" : null) + "," + (this.causeOfDeathNonCoded != null ? "\""+ utilities.scapeQuotationMarks(causeOfDeathNonCoded)  +"\"" : null); 
 	} 
  
 	@Override

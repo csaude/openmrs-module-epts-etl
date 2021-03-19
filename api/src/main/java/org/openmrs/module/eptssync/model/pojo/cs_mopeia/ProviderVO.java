@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.molocue; 
+package org.openmrs.module.eptssync.model.pojo.cs_mopeia; 
  
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  
@@ -21,6 +21,9 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private int retiredBy;
 	private java.util.Date dateRetired;
 	private String retireReason;
+	private int roleId;
+	private int specialityId;
+	private int providerRoleId;
  
 	public ProviderVO() { 
 		this.metadata = false;
@@ -106,7 +109,31 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		return this.retireReason;
 	}
  
+	public void setRoleId(int roleId){ 
+	 	this.roleId = roleId;
+	}
+ 
+	public int getRoleId(){ 
+		return this.roleId;
+	}
+ 
+	public void setSpecialityId(int specialityId){ 
+	 	this.specialityId = specialityId;
+	}
+ 
+	public int getSpecialityId(){ 
+		return this.specialityId;
+	}
+ 
+	public void setProviderRoleId(int providerRoleId){ 
+	 	this.providerRoleId = providerRoleId;
+	}
 
+
+ 
+	public int getProviderRoleId(){ 
+		return this.providerRoleId;
+	}
  
 	public int getObjectId() { 
  		return this.providerId; 
@@ -130,6 +157,9 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
 		this.retireReason = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null);
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
+		this.roleId = rs.getInt("role_id");
+		this.specialityId = rs.getInt("speciality_id");
+		this.providerRoleId = rs.getInt("provider_role_id");
 	} 
  
 	@JsonIgnore
@@ -139,37 +169,37 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO provider(person_id, name, identifier, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, uuid) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO provider(person_id, name, identifier, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, uuid, role_id, speciality_id, provider_role_id) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.roleId == 0 ? null : this.roleId, this.specialityId == 0 ? null : this.specialityId, this.providerRoleId == 0 ? null : this.providerRoleId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO provider(provider_id, person_id, name, identifier, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, uuid) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO provider(provider_id, person_id, name, identifier, creator, date_created, changed_by, date_changed, retired, retired_by, date_retired, retire_reason, uuid, role_id, speciality_id, provider_role_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.providerId, this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid};		return params; 
+ 		Object[] params = {this.providerId, this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.roleId == 0 ? null : this.roleId, this.specialityId == 0 ? null : this.specialityId, this.providerRoleId == 0 ? null : this.providerRoleId};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.providerId};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.name, this.identifier, this.creator == 0 ? null : this.creator, this.dateCreated, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.roleId == 0 ? null : this.roleId, this.specialityId == 0 ? null : this.specialityId, this.providerRoleId == 0 ? null : this.providerRoleId, this.providerId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE provider SET person_id = ?, name = ?, identifier = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ? WHERE provider_id = ?;"; 
+ 		return "UPDATE provider SET person_id = ?, name = ?, identifier = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, role_id = ?, speciality_id = ?, provider_role_id = ? WHERE provider_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.personId == 0 ? null : this.personId) + "," + (this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.identifier != null ? "\""+ utilities.scapeQuotationMarks(identifier)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null); 
+ 		return ""+(this.personId == 0 ? null : this.personId) + "," + (this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.identifier != null ? "\""+ utilities.scapeQuotationMarks(identifier)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.roleId == 0 ? null : this.roleId) + "," + (this.specialityId == 0 ? null : this.specialityId) + "," + (this.providerRoleId == 0 ? null : this.providerRoleId); 
 	} 
  
 	@Override
@@ -178,9 +208,15 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 
 		if (this.creator != 0) return true;
 
+		if (this.providerRoleId != 0) return true;
+
 		if (this.personId != 0) return true;
 
 		if (this.retiredBy != 0) return true;
+
+		if (this.roleId != 0) return true;
+
+		if (this.specialityId != 0) return true;
 
 		return false;
 	}
@@ -189,8 +225,11 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	public int getParentValue(String parentAttName) {		
 		if (parentAttName.equals("changedBy")) return this.changedBy;		
 		if (parentAttName.equals("creator")) return this.creator;		
+		if (parentAttName.equals("providerRoleId")) return this.providerRoleId;		
 		if (parentAttName.equals("personId")) return this.personId;		
-		if (parentAttName.equals("retiredBy")) return this.retiredBy;
+		if (parentAttName.equals("retiredBy")) return this.retiredBy;		
+		if (parentAttName.equals("roleId")) return this.roleId;		
+		if (parentAttName.equals("specialityId")) return this.specialityId;
 
 		throw new RuntimeException("No found parent for: " + parentAttName);	}
 
@@ -204,12 +243,24 @@ public class ProviderVO extends AbstractOpenMRSObject implements OpenMRSObject {
 			this.creator = newParent.getObjectId();
 			return;
 		}		
+		if (parentAttName.equals("providerRoleId")) {
+			this.providerRoleId = newParent.getObjectId();
+			return;
+		}		
 		if (parentAttName.equals("personId")) {
 			this.personId = newParent.getObjectId();
 			return;
 		}		
 		if (parentAttName.equals("retiredBy")) {
 			this.retiredBy = newParent.getObjectId();
+			return;
+		}		
+		if (parentAttName.equals("roleId")) {
+			this.roleId = newParent.getObjectId();
+			return;
+		}		
+		if (parentAttName.equals("specialityId")) {
+			this.specialityId = newParent.getObjectId();
 			return;
 		}
 

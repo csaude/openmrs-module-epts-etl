@@ -111,8 +111,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 							   record.getRecordUuid(),
 							   record.getJson(),
 							   record.getMigrationStatus(),
-							   record.getLastMigrationTryErr(),
-							   DateAndTimeUtilities.getCurrentDate(),
+							   record.getLastSyncTryErr(),
 							   record.getRecordOriginLocationCode(),
 							   record.getLastUpdateDate(),
 							   record.getConsistent()};
@@ -124,13 +123,11 @@ public class SyncImportInfoDAO extends BaseDAO {
 			sql += "											 		record_uuid,\n";
 			sql += "											 		json,\n";
 			sql += "											 		migration_status,\n";
-			sql += "											 		last_migration_try_err,\n";
-			sql += "											 		last_migration_try_date,\n";
+			sql += "											 		last_sync_try_err,\n";
 			sql += "													record_origin_location_code,";
 			sql += "													last_update_date,";
 			sql += "													consistent)";
 			sql += "	VALUES(?,\n";
-			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
@@ -150,7 +147,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 	public static void update(SyncImportInfoVO record, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 		Object[] params = {record.getJson(),
 						   record.getMigrationStatus(),
-						   record.getLastMigrationTryErr(),
+						   record.getLastSyncTryErr(),
 						   record.getRecordOriginId()};
 		
 		String sql = "";
@@ -158,7 +155,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += " UPDATE " + tableInfo.generateFullStageTableName() + "\n";
 		sql += " SET	json = ?,\n";
 		sql += "		migration_status = ?,\n";
-		sql += "		last_migration_try_err = ?\n";
+		sql += "		last_sync_try_err = ?\n";
 		sql += " WHERE record_origin_id = ? \n";
 		
 		executeQuery(sql, params, conn);
@@ -182,7 +179,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String extraCondition;
 		
-		extraCondition = "last_migration_try_date IS NULL OR last_migration_try_date < ?";
+		extraCondition = "last_sync_date IS NULL OR last_sync_date < ?";
 			
 		utilities.setParam(params.length, params, searchParams.getSyncStartDate());
 	
@@ -259,14 +256,14 @@ public class SyncImportInfoDAO extends BaseDAO {
 			
 			sql += "UPDATE 	" + tableInfo.generateFullStageTableName() + "\n";
 			sql += "SET	   	migration_status = ?, \n";
-			sql += "	   	last_migration_try_err = ?, \n";
-			sql += "	   	last_migration_try_date = ? \n";
+			sql += "	   	last_sync_try_err = ?, \n";
+			sql += "	   	last_sync_date = ? \n";
 			sql += "WHERE 	id = ?";
 	
 			executeQuery(sql, params, conn);
 	}
 
-	public static void refreshLastMigrationTrySync(SyncTableConfiguration tableInfo, List<SyncImportInfoVO> syncRecords, Connection conn) throws DBException{
+	public static void refreshLastMigrationTrySyncDate(SyncTableConfiguration tableInfo, List<SyncImportInfoVO> syncRecords, Connection conn) throws DBException{
 		Object[] params = {DateAndTimeUtilities.getCurrentSystemDate(conn), 
 						   syncRecords.get(0).getId(),
 						   syncRecords.get(syncRecords.size() - 1).getId()
@@ -275,7 +272,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " UPDATE " + tableInfo.generateFullStageTableName();
-		sql += " SET    last_migration_try_date = ? ";
+		sql += " SET    last_sync_date = ? ";
 		sql += " WHERE  id between ? and ? ";
 		
 		executeQuery(sql, params, conn);
@@ -293,7 +290,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		sql += " UPDATE " + tableInfo.generateFullStageTableName();
 		sql += " SET    migration_status = ?, ";
-		sql += "		last_migration_try_date = ? ";
+		sql += "		last_sync_date = ? ";
 		sql += " WHERE  id between ? and ? ";
 		
 		executeQuery(sql, params, conn);
@@ -301,7 +298,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 	
 	
 	
-	public static void refreshLastMigrationTrySync(SyncTableConfiguration tableInfo, SyncImportInfoVO syncRecord, Connection conn) throws DBException{
+	public static void refreshLastMigrationTrySyncDate(SyncTableConfiguration tableInfo, SyncImportInfoVO syncRecord, Connection conn) throws DBException{
 		Object[] params = {DateAndTimeUtilities.getCurrentSystemDate(conn), 
 						   syncRecord.getId()
 						   };
@@ -309,7 +306,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " UPDATE " + tableInfo.generateFullStageTableName();
-		sql += " SET    last_migration_try_date = ? ";
+		sql += " SET    last_sync_date = ? ";
 		sql += " WHERE  id = ? ";
 		
 		executeQuery(sql, params, conn);
@@ -383,15 +380,15 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		sql += "UPDATE 	" + tableInfo.generateFullStageTableName() + "\n";
 		sql += "SET	   	migration_status = ?, \n";
-		sql += "	   	last_migration_try_err = ?, \n";
-		sql += "	   	last_migration_try_date = ? \n";
+		sql += "	   	last_sync_try_err = ?, \n";
+		sql += "	   	last_sync_date = ? \n";
 		sql += "WHERE 	id = ?";
 		
 		executeQuery(sql, params, conn);
 	}
 
 	public static void updateMigrationStatus(SyncTableConfiguration tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {
-		markAsToBeCompletedInFuture(record, tableInfo, record.getLastMigrationTryErr(), conn);		
+		markAsToBeCompletedInFuture(record, tableInfo, record.getLastSyncTryErr(), conn);		
 	}
 
 }

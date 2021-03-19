@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.molocue; 
+package org.openmrs.module.eptssync.model.pojo.cs_mopeia; 
  
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  
@@ -196,6 +196,8 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 	public boolean hasParents() {
 		if (this.identifierType != 0) return true;
 
+		if (this.patientId != 0) return true;
+
 		if (this.creator != 0) return true;
 
 		if (this.voidedBy != 0) return true;
@@ -212,6 +214,7 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 	@Override
 	public int getParentValue(String parentAttName) {		
 		if (parentAttName.equals("identifierType")) return this.identifierType;		
+		if (parentAttName.equals("patientId")) return this.patientId;		
 		if (parentAttName.equals("creator")) return this.creator;		
 		if (parentAttName.equals("voidedBy")) return this.voidedBy;		
 		if (parentAttName.equals("patientId")) return this.patientId;		
@@ -224,6 +227,10 @@ public class PatientIdentifierVO extends AbstractOpenMRSObject implements OpenMR
 	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {		
 		if (parentAttName.equals("identifierType")) {
 			this.identifierType = newParent.getObjectId();
+			return;
+		}		
+		if (parentAttName.equals("patientId")) {
+			this.patientId = newParent.getObjectId();
 			return;
 		}		
 		if (parentAttName.equals("creator")) {

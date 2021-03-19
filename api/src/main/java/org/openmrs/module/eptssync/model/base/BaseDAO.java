@@ -130,7 +130,7 @@ public abstract class BaseDAO{
 			}			
 		}
 		catch(Exception e){
-			//e.printStackTrace();
+			e.printStackTrace();
 		}
 		finally{
 			releaseDBResources(st, rs, conn);

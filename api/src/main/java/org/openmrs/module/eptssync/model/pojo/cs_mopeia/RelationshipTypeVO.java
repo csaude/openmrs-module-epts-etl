@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.molocue; 
+package org.openmrs.module.eptssync.model.pojo.cs_mopeia; 
  
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  
@@ -22,6 +22,7 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
 	private int retiredBy;
 	private java.util.Date dateRetired;
 	private String retireReason;
+	private int changedBy;
  
 	public RelationshipTypeVO() { 
 		this.metadata = true;
@@ -110,11 +111,19 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
 	public void setRetireReason(String retireReason){ 
 	 	this.retireReason = retireReason;
 	}
-
-
  
 	public String getRetireReason(){ 
 		return this.retireReason;
+	}
+ 
+	public void setChangedBy(int changedBy){ 
+	 	this.changedBy = changedBy;
+	}
+
+
+ 
+	public int getChangedBy(){ 
+		return this.changedBy;
 	}
  
 	public int getObjectId() { 
@@ -139,6 +148,8 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
 		this.retiredBy = rs.getInt("retired_by");
 		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
 		this.retireReason = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null);
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.changedBy = rs.getInt("changed_by");
 	} 
  
 	@JsonIgnore
@@ -148,41 +159,43 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO relationship_type(relationship_type_id, a_is_to_b, b_is_to_a, preferred, weight, description, creator, date_created, uuid, retired, retired_by, date_retired, retire_reason) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO relationship_type(relationship_type_id, a_is_to_b, b_is_to_a, preferred, weight, description, creator, date_created, uuid, retired, retired_by, date_retired, retire_reason, date_changed, changed_by) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.relationshipTypeId, this.aIsToB, this.bIsToA, this.preferred, this.weight, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.uuid, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason};		return params; 
+ 		Object[] params = {this.relationshipTypeId, this.aIsToB, this.bIsToA, this.preferred, this.weight, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.uuid, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.dateChanged, this.changedBy == 0 ? null : this.changedBy};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO relationship_type(relationship_type_id, relationship_type_id, a_is_to_b, b_is_to_a, preferred, weight, description, creator, date_created, uuid, retired, retired_by, date_retired, retire_reason) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO relationship_type(relationship_type_id, relationship_type_id, a_is_to_b, b_is_to_a, preferred, weight, description, creator, date_created, uuid, retired, retired_by, date_retired, retire_reason, date_changed, changed_by) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.relationshipTypeId, this.relationshipTypeId, this.aIsToB, this.bIsToA, this.preferred, this.weight, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.uuid, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason};		return params; 
+ 		Object[] params = {this.relationshipTypeId, this.relationshipTypeId, this.aIsToB, this.bIsToA, this.preferred, this.weight, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.uuid, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.dateChanged, this.changedBy == 0 ? null : this.changedBy};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.relationshipTypeId, this.aIsToB, this.bIsToA, this.preferred, this.weight, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.uuid, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.relationshipTypeId};		return params; 
+ 		Object[] params = {this.relationshipTypeId, this.aIsToB, this.bIsToA, this.preferred, this.weight, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.uuid, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.relationshipTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE relationship_type SET relationship_type_id = ?, a_is_to_b = ?, b_is_to_a = ?, preferred = ?, weight = ?, description = ?, creator = ?, date_created = ?, uuid = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ? WHERE relationship_type_id = ?;"; 
+ 		return "UPDATE relationship_type SET relationship_type_id = ?, a_is_to_b = ?, b_is_to_a = ?, preferred = ?, weight = ?, description = ?, creator = ?, date_created = ?, uuid = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, date_changed = ?, changed_by = ? WHERE relationship_type_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.relationshipTypeId) + "," + (this.aIsToB != null ? "\""+ utilities.scapeQuotationMarks(aIsToB)  +"\"" : null) + "," + (this.bIsToA != null ? "\""+ utilities.scapeQuotationMarks(bIsToA)  +"\"" : null) + "," + (this.preferred) + "," + (this.weight) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null); 
+ 		return ""+(this.relationshipTypeId) + "," + (this.aIsToB != null ? "\""+ utilities.scapeQuotationMarks(aIsToB)  +"\"" : null) + "," + (this.bIsToA != null ? "\""+ utilities.scapeQuotationMarks(bIsToA)  +"\"" : null) + "," + (this.preferred) + "," + (this.weight) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy); 
 	} 
  
 	@Override
 	public boolean hasParents() {
+		if (this.changedBy != 0) return true;
+
 		if (this.creator != 0) return true;
 
 		if (this.retiredBy != 0) return true;
@@ -192,6 +205,7 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
 
 	@Override
 	public int getParentValue(String parentAttName) {		
+		if (parentAttName.equals("changedBy")) return this.changedBy;		
 		if (parentAttName.equals("creator")) return this.creator;		
 		if (parentAttName.equals("retiredBy")) return this.retiredBy;
 
@@ -199,6 +213,10 @@ public class RelationshipTypeVO extends AbstractOpenMRSObject implements OpenMRS
 
 	@Override
 	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {		
+		if (parentAttName.equals("changedBy")) {
+			this.changedBy = newParent.getObjectId();
+			return;
+		}		
 		if (parentAttName.equals("creator")) {
 			this.creator = newParent.getObjectId();
 			return;

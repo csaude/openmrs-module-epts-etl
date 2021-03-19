@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.molocue; 
+package org.openmrs.module.eptssync.model.pojo.cs_mopeia; 
  
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  
@@ -21,6 +21,7 @@ public class EncounterTypeVO extends AbstractOpenMRSObject implements OpenMRSObj
 	private String retireReason;
 	private String viewPrivilege;
 	private String editPrivilege;
+	private int changedBy;
  
 	public EncounterTypeVO() { 
 		this.metadata = true;
@@ -101,12 +102,20 @@ public class EncounterTypeVO extends AbstractOpenMRSObject implements OpenMRSObj
 	public void setEditPrivilege(String editPrivilege){ 
 	 	this.editPrivilege = editPrivilege;
 	}
-
-
  
 	public String getEditPrivilege(){ 
 		return this.editPrivilege;
 	}
+ 
+	public void setChangedBy(int changedBy){ 
+	 	this.changedBy = changedBy;
+	}
+ 
+	public int getChangedBy(){ 
+		return this.changedBy;
+	}
+ 
+
  
 	public int getObjectId() { 
  		return this.encounterTypeId; 
@@ -129,6 +138,8 @@ public class EncounterTypeVO extends AbstractOpenMRSObject implements OpenMRSObj
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 		this.viewPrivilege = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("view_privilege") != null ? rs.getString("view_privilege").trim() : null);
 		this.editPrivilege = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("edit_privilege") != null ? rs.getString("edit_privilege").trim() : null);
+		this.changedBy = rs.getInt("changed_by");
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
 	} 
  
 	@JsonIgnore
@@ -138,41 +149,43 @@ public class EncounterTypeVO extends AbstractOpenMRSObject implements OpenMRSObj
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO encounter_type(encounter_type_id, name, description, creator, date_created, retired, retired_by, date_retired, retire_reason, uuid, view_privilege, edit_privilege) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO encounter_type(encounter_type_id, name, description, creator, date_created, retired, retired_by, date_retired, retire_reason, uuid, view_privilege, edit_privilege, changed_by, date_changed) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.encounterTypeId, this.name, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.viewPrivilege, this.editPrivilege};		return params; 
+ 		Object[] params = {this.encounterTypeId, this.name, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.viewPrivilege, this.editPrivilege, this.changedBy == 0 ? null : this.changedBy, this.dateChanged};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO encounter_type(encounter_type_id, encounter_type_id, name, description, creator, date_created, retired, retired_by, date_retired, retire_reason, uuid, view_privilege, edit_privilege) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO encounter_type(encounter_type_id, encounter_type_id, name, description, creator, date_created, retired, retired_by, date_retired, retire_reason, uuid, view_privilege, edit_privilege, changed_by, date_changed) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.encounterTypeId, this.encounterTypeId, this.name, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.viewPrivilege, this.editPrivilege};		return params; 
+ 		Object[] params = {this.encounterTypeId, this.encounterTypeId, this.name, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.viewPrivilege, this.editPrivilege, this.changedBy == 0 ? null : this.changedBy, this.dateChanged};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.encounterTypeId, this.name, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.viewPrivilege, this.editPrivilege, this.encounterTypeId};		return params; 
+ 		Object[] params = {this.encounterTypeId, this.name, this.description, this.creator == 0 ? null : this.creator, this.dateCreated, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.viewPrivilege, this.editPrivilege, this.changedBy == 0 ? null : this.changedBy, this.dateChanged, this.encounterTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE encounter_type SET encounter_type_id = ?, name = ?, description = ?, creator = ?, date_created = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, view_privilege = ?, edit_privilege = ? WHERE encounter_type_id = ?;"; 
+ 		return "UPDATE encounter_type SET encounter_type_id = ?, name = ?, description = ?, creator = ?, date_created = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, view_privilege = ?, edit_privilege = ?, changed_by = ?, date_changed = ? WHERE encounter_type_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterTypeId) + "," + (this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.viewPrivilege != null ? "\""+ utilities.scapeQuotationMarks(viewPrivilege)  +"\"" : null) + "," + (this.editPrivilege != null ? "\""+ utilities.scapeQuotationMarks(editPrivilege)  +"\"" : null); 
+ 		return ""+(this.encounterTypeId) + "," + (this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.viewPrivilege != null ? "\""+ utilities.scapeQuotationMarks(viewPrivilege)  +"\"" : null) + "," + (this.editPrivilege != null ? "\""+ utilities.scapeQuotationMarks(editPrivilege)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null); 
 	} 
  
 	@Override
 	public boolean hasParents() {
+		if (this.changedBy != 0) return true;
+
 		if (this.editPrivilege != null) return true;
 
 		if (this.viewPrivilege != null) return true;
@@ -186,6 +199,7 @@ public class EncounterTypeVO extends AbstractOpenMRSObject implements OpenMRSObj
 
 	@Override
 	public int getParentValue(String parentAttName) {		
+		if (parentAttName.equals("changedBy")) return this.changedBy;		
 		if (parentAttName.equals("editPrivilege")) return 0;		
 		if (parentAttName.equals("viewPrivilege")) return 0;		
 		if (parentAttName.equals("creator")) return this.creator;		
@@ -195,6 +209,10 @@ public class EncounterTypeVO extends AbstractOpenMRSObject implements OpenMRSObj
 
 	@Override
 	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {		
+		if (parentAttName.equals("changedBy")) {
+			this.changedBy = newParent.getObjectId();
+			return;
+		}		
 		if (parentAttName.equals("editPrivilege")) {
 			this.editPrivilege = "" + newParent.getObjectId();
 			return;

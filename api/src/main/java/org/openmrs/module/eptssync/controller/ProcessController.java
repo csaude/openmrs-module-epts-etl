@@ -15,7 +15,6 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.model.ProcessProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
-import org.openmrs.module.eptssync.utilities.ClassPathUtilities;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
@@ -85,7 +84,7 @@ public class ProcessController implements Controller{
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
-		ClassPathUtilities.tryToCopyPOJOToClassPath(this.configuration);
+		//ClassPathUtilities.tryToCopyPOJOToClassPath(this.configuration);
 	}
 	
 	@JsonIgnore
@@ -287,9 +286,42 @@ public class ProcessController implements Controller{
 			
 			changeStatusToRunning();
 			this.progressInfoLoaded = true;
+			
+			monitor();
+			
 		}
 	}
 	
+	private void monitor() {
+		while(true) {
+			OperationController active = retrieveActiveOperationController ();
+			
+			if (active != null) {
+				active.getProgressInfo().refreshProgressInfo();
+				
+				try {Thread.sleep(5000);} catch (InterruptedException e) {}
+			}
+		}
+	}
+	
+	private OperationController retrieveActiveOperationController() {
+		
+		for (OperationController controller : this.operationsControllers) {
+			if (controller.isRunning()) return controller;
+			
+			OperationController child = controller.getChild();
+			
+			while(child != null) {
+				if (child.isRunning()) return child;
+				
+				child = child.getChild();
+			}
+		}
+		
+		return null;
+	}
+	
+
 	private void tryToRemoveOldStopRequested() {
 		File file = new File (getConfiguration().getSyncRootDirectory()+"/process_status/stop_requested.info");
 		

@@ -160,9 +160,9 @@ public abstract class OperationController implements Controller{
 				logInfo(("Starting operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'").toUpperCase());
 				
 				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo);
-				engineMonitor.run();
-				
 				this.progressInfo.updateProgressInfo(engineMonitor);
+				
+				engineMonitor.run();
 				
 				if (stopRequested() && engineMonitor.isStopped()) {
 					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());

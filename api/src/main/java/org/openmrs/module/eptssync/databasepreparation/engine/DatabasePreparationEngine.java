@@ -273,8 +273,8 @@ public class DatabasePreparationEngine extends Engine {
 		
 		sql += "	json text NOT NULL,\n";
 		
-		sql += "	last_migration_try_date DATETIME DEFAULT NULL,\n";
-		sql += "	last_migration_try_err varchar(250) DEFAULT NULL,\n";
+		sql += "	last_sync_date DATETIME DEFAULT NULL,\n";
+		sql += "	last_sync_try_err varchar(250) DEFAULT NULL,\n";
 		sql += "	last_update_date DATETIME DEFAULT NULL,\n";
 		
 		sql += "	consistent int(1) DEFAULT -1,\n";

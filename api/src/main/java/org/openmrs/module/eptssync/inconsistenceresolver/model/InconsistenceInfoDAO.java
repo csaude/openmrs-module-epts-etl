@@ -19,7 +19,7 @@ public class InconsistenceInfoDAO extends BaseDAO{
 			
 			String sql = "";
 			
-			sql += "INSERT INTO " + syncStageSchema + ".INCONSISTENCE_INFO(	table_name,\n";
+			sql += "INSERT INTO " + syncStageSchema + ".inconsistence_info(	table_name,\n";
 			sql += "														record_id,\n";
 			sql += "														parent_table_name,\n";
 			sql += "														parent_id,\n";

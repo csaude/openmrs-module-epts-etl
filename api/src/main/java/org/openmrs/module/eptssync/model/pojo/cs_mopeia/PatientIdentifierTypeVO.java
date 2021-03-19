@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.molocue; 
+package org.openmrs.module.eptssync.model.pojo.cs_mopeia; 
  
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  
@@ -26,6 +26,7 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 	private String retireReason;
 	private String locationBehavior;
 	private String uniquenessBehavior;
+	private int changedBy;
  
 	public PatientIdentifierTypeVO() { 
 		this.metadata = true;
@@ -146,11 +147,19 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 	public void setUniquenessBehavior(String uniquenessBehavior){ 
 	 	this.uniquenessBehavior = uniquenessBehavior;
 	}
-
-
  
 	public String getUniquenessBehavior(){ 
 		return this.uniquenessBehavior;
+	}
+ 
+	public void setChangedBy(int changedBy){ 
+	 	this.changedBy = changedBy;
+	}
+
+
+ 
+	public int getChangedBy(){ 
+		return this.changedBy;
 	}
  
 	public int getObjectId() { 
@@ -179,6 +188,8 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 		this.locationBehavior = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("location_behavior") != null ? rs.getString("location_behavior").trim() : null);
 		this.uniquenessBehavior = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uniqueness_behavior") != null ? rs.getString("uniqueness_behavior").trim() : null);
+		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+		this.changedBy = rs.getInt("changed_by");
 	} 
  
 	@JsonIgnore
@@ -188,41 +199,43 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO patient_identifier_type(patient_identifier_type_id, name, description, format, check_digit, creator, date_created, required, format_description, validator, retired, retired_by, date_retired, retire_reason, uuid, location_behavior, uniqueness_behavior) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_identifier_type(patient_identifier_type_id, name, description, format, check_digit, creator, date_created, required, format_description, validator, retired, retired_by, date_retired, retire_reason, uuid, location_behavior, uniqueness_behavior, date_changed, changed_by) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientIdentifierTypeId, this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior};		return params; 
+ 		Object[] params = {this.patientIdentifierTypeId, this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.dateChanged, this.changedBy == 0 ? null : this.changedBy};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO patient_identifier_type(patient_identifier_type_id, patient_identifier_type_id, name, description, format, check_digit, creator, date_created, required, format_description, validator, retired, retired_by, date_retired, retire_reason, uuid, location_behavior, uniqueness_behavior) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_identifier_type(patient_identifier_type_id, patient_identifier_type_id, name, description, format, check_digit, creator, date_created, required, format_description, validator, retired, retired_by, date_retired, retire_reason, uuid, location_behavior, uniqueness_behavior, date_changed, changed_by) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.patientIdentifierTypeId, this.patientIdentifierTypeId, this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior};		return params; 
+ 		Object[] params = {this.patientIdentifierTypeId, this.patientIdentifierTypeId, this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.dateChanged, this.changedBy == 0 ? null : this.changedBy};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientIdentifierTypeId, this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.patientIdentifierTypeId};		return params; 
+ 		Object[] params = {this.patientIdentifierTypeId, this.name, this.description, this.format, this.checkDigit, this.creator == 0 ? null : this.creator, this.dateCreated, this.required, this.formatDescription, this.validator, this.retired, this.retiredBy == 0 ? null : this.retiredBy, this.dateRetired, this.retireReason, this.uuid, this.locationBehavior, this.uniquenessBehavior, this.dateChanged, this.changedBy == 0 ? null : this.changedBy, this.patientIdentifierTypeId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient_identifier_type SET patient_identifier_type_id = ?, name = ?, description = ?, format = ?, check_digit = ?, creator = ?, date_created = ?, required = ?, format_description = ?, validator = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, location_behavior = ?, uniqueness_behavior = ? WHERE patient_identifier_type_id = ?;"; 
+ 		return "UPDATE patient_identifier_type SET patient_identifier_type_id = ?, name = ?, description = ?, format = ?, check_digit = ?, creator = ?, date_created = ?, required = ?, format_description = ?, validator = ?, retired = ?, retired_by = ?, date_retired = ?, retire_reason = ?, uuid = ?, location_behavior = ?, uniqueness_behavior = ?, date_changed = ?, changed_by = ? WHERE patient_identifier_type_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientIdentifierTypeId) + "," + (this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.format != null ? "\""+ utilities.scapeQuotationMarks(format)  +"\"" : null) + "," + (this.checkDigit) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.required) + "," + (this.formatDescription != null ? "\""+ utilities.scapeQuotationMarks(formatDescription)  +"\"" : null) + "," + (this.validator != null ? "\""+ utilities.scapeQuotationMarks(validator)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.locationBehavior != null ? "\""+ utilities.scapeQuotationMarks(locationBehavior)  +"\"" : null) + "," + (this.uniquenessBehavior != null ? "\""+ utilities.scapeQuotationMarks(uniquenessBehavior)  +"\"" : null); 
+ 		return ""+(this.patientIdentifierTypeId) + "," + (this.name != null ? "\""+ utilities.scapeQuotationMarks(name)  +"\"" : null) + "," + (this.description != null ? "\""+ utilities.scapeQuotationMarks(description)  +"\"" : null) + "," + (this.format != null ? "\""+ utilities.scapeQuotationMarks(format)  +"\"" : null) + "," + (this.checkDigit) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.required) + "," + (this.formatDescription != null ? "\""+ utilities.scapeQuotationMarks(formatDescription)  +"\"" : null) + "," + (this.validator != null ? "\""+ utilities.scapeQuotationMarks(validator)  +"\"" : null) + "," + (this.retired) + "," + (this.retiredBy == 0 ? null : this.retiredBy) + "," + (this.dateRetired != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateRetired)  +"\"" : null) + "," + (this.retireReason != null ? "\""+ utilities.scapeQuotationMarks(retireReason)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.locationBehavior != null ? "\""+ utilities.scapeQuotationMarks(locationBehavior)  +"\"" : null) + "," + (this.uniquenessBehavior != null ? "\""+ utilities.scapeQuotationMarks(uniquenessBehavior)  +"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy == 0 ? null : this.changedBy); 
 	} 
  
 	@Override
 	public boolean hasParents() {
+		if (this.changedBy != 0) return true;
+
 		if (this.creator != 0) return true;
 
 		if (this.retiredBy != 0) return true;
@@ -232,6 +245,7 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 
 	@Override
 	public int getParentValue(String parentAttName) {		
+		if (parentAttName.equals("changedBy")) return this.changedBy;		
 		if (parentAttName.equals("creator")) return this.creator;		
 		if (parentAttName.equals("retiredBy")) return this.retiredBy;
 
@@ -239,6 +253,10 @@ public class PatientIdentifierTypeVO extends AbstractOpenMRSObject implements Op
 
 	@Override
 	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {		
+		if (parentAttName.equals("changedBy")) {
+			this.changedBy = newParent.getObjectId();
+			return;
+		}		
 		if (parentAttName.equals("creator")) {
 			this.creator = newParent.getObjectId();
 			return;

@@ -89,6 +89,8 @@ public class EngineMonitor implements MonitoredOperation{
 			
 			initEngine();
 			
+			//this.controller.getProgressInfo().updateProgressInfo(this);
+			
 			if (!utilities.arrayHasElement(ownEngines)) {
 				logInfo("NO ENGINE FOR '" + getController().getOperationType().toUpperCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
 				

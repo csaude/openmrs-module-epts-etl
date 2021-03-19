@@ -341,7 +341,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		SyncImportInfoVO syncInfo = this.generateSyncInfo(syncTableInfo, syncTableInfo.getOriginAppLocationCode(), conn);
 		
 		syncInfo.setRecordOriginLocationCode(syncTableInfo.getOriginAppLocationCode());
-		syncInfo.setLastMigrationTryErr(generateMissingInfo(missingParents));
+		syncInfo.setLastSyncTryErr(generateMissingInfo(missingParents));
 		
 		syncInfo.save(syncTableInfo, conn);
 		
