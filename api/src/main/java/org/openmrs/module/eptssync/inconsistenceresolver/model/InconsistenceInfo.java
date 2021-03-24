@@ -14,18 +14,30 @@ public class InconsistenceInfo extends BaseVO{
 	private String parentTableName;
 	private int parentId;
 	private int defaultParentId;
+	private String recordOriginLocationCode;
 	
 	public InconsistenceInfo() {
 	}
 	
 	
-	public InconsistenceInfo(String tableName, int recordId, String parentTableName, int parentId, int defaultParentId) {
+	public InconsistenceInfo(String tableName, int recordId, String parentTableName, int parentId, int defaultParentId, String recordOriginLocationCode) {
 		this.tableName = tableName;
 		this.recordId = recordId;
 		this.parentTableName = parentTableName;
+		this.recordOriginLocationCode = recordOriginLocationCode;
 		this.parentId = parentId;
 		this.defaultParentId = defaultParentId;
 	}
+
+	public String getRecordOriginLocationCode() {
+		return recordOriginLocationCode;
+	}
+
+
+	public void setRecordOriginLocationCode(String recordOriginLocationCode) {
+		this.recordOriginLocationCode = recordOriginLocationCode;
+	}
+
 
 	public int getId() {
 		return id;
@@ -75,14 +87,14 @@ public class InconsistenceInfo extends BaseVO{
 		this.defaultParentId = defaultParentId;
 	}
 	
-	public static InconsistenceInfo generate(OpenMRSObject record, OpenMRSObject parent, int defaultParentId) {
-		InconsistenceInfo info = new InconsistenceInfo(record.generateTableName(), record.getObjectId(), parent.generateTableName(), parent.getObjectId(), defaultParentId);
+	public static InconsistenceInfo generate(OpenMRSObject record, OpenMRSObject parent, int defaultParentId, String recordOriginLocationCode) {
+		InconsistenceInfo info = new InconsistenceInfo(record.generateTableName(), record.getObjectId(), parent.generateTableName(), parent.getObjectId(), defaultParentId, recordOriginLocationCode);
 	
 		return info;
 	}
 	
-	public static InconsistenceInfo generate(String tableName, int recordId, String parentTableName, int parentId, int defaultParentId) {
-		InconsistenceInfo info = new InconsistenceInfo(tableName, recordId, parentTableName, parentId, defaultParentId);
+	public static InconsistenceInfo generate(String tableName, int recordId, String parentTableName, int parentId, int defaultParentId, String recordOriginLocationCode) {
+		InconsistenceInfo info = new InconsistenceInfo(tableName, recordId, parentTableName, parentId, defaultParentId, recordOriginLocationCode);
 	
 		return info;
 	}

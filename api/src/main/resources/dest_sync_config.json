@@ -562,17 +562,17 @@
         "child" : {
           "operationType" : "synchronization",
           "maxRecordPerProcessing" : 1000,
-          "maxSupportedEngines" : 1,
+          "maxSupportedEngines" : 15,
           "minRecordsPerEngine" : 100,
           "doIntegrityCheckInTheEnd" : true,
           "child" : {
             "operationType" : "consolidation",
             "maxRecordPerProcessing" : 1000,
-            "maxSupportedEngines" : 15,
+            "maxSupportedEngines" : 1,
             "minRecordsPerEngine" : 50,
             "doIntegrityCheckInTheEnd" : false,
             "child" : null,
-            "disabled" : true,
+            "disabled" : false,
             "processingMode" : "sequencial",
             "sourceFolders" : null
           },

@@ -8,6 +8,7 @@ import org.openmrs.module.eptssync.consolitation.model.DatabaseIntegrityConsolid
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
@@ -41,6 +42,8 @@ public class DatabaseIntegrityConsolidationEngine extends Engine {
 		this.getMonitor().logInfo("CONSOLIDATING INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
+			obj.setRelatedSyncInfo(SyncImportInfoVO.retrieveFromSyncRecord(getSyncTableConfiguration(), obj, getRelatedOperationController().getAppOriginLocationCode(), conn));
+			
 			obj.consolidateData(getSyncTableConfiguration(), conn);
 		}
 		

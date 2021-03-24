@@ -124,12 +124,15 @@ public class DatabasePreparationEngine extends Engine {
 		}
 		*/
 		
-		if (!isExistRelatedTriggers(conn)) {
-			logInfo("CREATING RELATED TRIGGERS FOR [" + this.getTableName() + "]");
-			
-			createLastUpdateDateMonitorTrigger(conn);
 		
-			logInfo("RELATED TRIGGERS FOR [" + this.getTableName() + "] CREATED");
+		if (!getSyncTableConfiguration().isDestinationInstallationType()) {
+			if (!isExistRelatedTriggers(conn)) {
+				logInfo("CREATING RELATED TRIGGERS FOR [" + this.getTableName() + "]");
+				
+				createLastUpdateDateMonitorTrigger(conn);
+			
+				logInfo("RELATED TRIGGERS FOR [" + this.getTableName() + "] CREATED");
+			}
 		}
 		
 		logInfo("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
@@ -267,7 +270,6 @@ public class DatabasePreparationEngine extends Engine {
 		sql += "CREATE TABLE " + getSyncTableConfiguration().generateFullStageTableName() + "(\n";
 		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
 		sql += "	record_origin_id int(11) NOT NULL,\n";
-		sql += "	record_destination_id int(11) NULL,\n";
 		sql += "	record_uuid varchar(38) NOT NULL,\n";
 		sql += "	record_origin_location_code VARCHAR(100) NOT NULL,\n";
 		
@@ -282,7 +284,16 @@ public class DatabasePreparationEngine extends Engine {
 		sql += "	migration_status int(1) DEFAULT 1,\n";
 		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
 		sql += "	CONSTRAINT CHK_" + getSyncTableConfiguration().generateRelatedStageTableName() + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
-		sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD(record_origin_id, record_origin_location_code),\n";
+		
+		if (getSyncTableConfiguration().isDestinationInstallationType()) {
+			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_UUID(record_uuid, record_origin_location_code),\n";
+			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_ID(record_origin_id, record_origin_location_code),\n";
+		}
+		else {
+			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_UUID(record_uuid),\n";
+			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_ID(record_origin_id),\n";
+		}
+		
 		sql += "	PRIMARY KEY (id)\n";
 		sql += ")\n";
 		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";

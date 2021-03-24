@@ -10,6 +10,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.status.TableOperationStatus;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -40,11 +41,15 @@ public class OperationProgressInfo {
 			if (controller.operationTableIsAlreadyFinished(tabConf)) {
 				File syncStatus = controller.generateTableProcessStatusFile(tabConf);
 				
-				//String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
-				
-				TableOperationStatus op = TableOperationStatus.loadFromFile(syncStatus);
-				
-				pm.setProgressMeter(op.parseToProgressMeter());
+				try {
+					TableOperationStatus op = TableOperationStatus.loadFromFile(syncStatus);
+					pm.setProgressMeter(op.parseToProgressMeter());
+					//this.itemsProgressInfo.add(pm);
+				} catch (Exception e) {
+					e.printStackTrace();
+					
+					FileUtilities.removeFile(syncStatus.getAbsolutePath());
+				}
 			}
 			
 			this.itemsProgressInfo.add(pm);

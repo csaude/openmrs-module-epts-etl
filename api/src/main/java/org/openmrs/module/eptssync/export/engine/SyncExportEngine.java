@@ -50,7 +50,7 @@ public class SyncExportEngine extends Engine {
 			
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getSyncTableConfiguration(), syncRecordsAsOpenMRSObjects, getSyncTableConfiguration().getOriginAppLocationCode(), conn);
 		
-			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecords.get(0).getObjectId(), syncRecords.get(syncRecords.size() - 1).getObjectId());
+			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(), syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
 			
 			this.getMonitor().logInfo("WRITING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE [" + jsonFIle.getAbsolutePath() + ".json]");
 			
@@ -109,7 +109,7 @@ public class SyncExportEngine extends Engine {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObjectDAO.refreshLastSyncDate(syncRecords, conn);
+			OpenMRSObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSyncTableConfiguration(), getSyncTableConfiguration().getOriginAppLocationCode(), conn);
 			
 			conn.markAsSuccessifullyTerminected();
 		} 

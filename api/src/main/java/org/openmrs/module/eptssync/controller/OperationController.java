@@ -76,10 +76,10 @@ public abstract class OperationController implements Controller{
 		
 		this.progressInfo = this.processController.initOperationProgressMeter(this);
 		
-		if (generateProcessStatusFile().exists()) {
+		/*if (generateProcessStatusFile().exists()) {
 			this.syncOperationStatus = SyncOperationStatus.loadFromFile(generateProcessStatusFile());
 			this.syncOperationStatus.setController(this);
-		}
+		}*/
 	}
 	
 	public SyncOperationStatus getSyncOperationStatus() {
@@ -474,6 +474,10 @@ public abstract class OperationController implements Controller{
 
 	@Override
 	public void onStart() {
+		if (generateProcessStatusFile().exists()) {
+			this.syncOperationStatus = SyncOperationStatus.loadFromFile(generateProcessStatusFile());
+			this.syncOperationStatus.setController(this);
+		}
 	}
 
 	@Override

@@ -128,6 +128,7 @@ public class ConfigData {
 											"minRecordsPerEngine: 100,\n"+
 											"disabled: false,\n"+
 											"processingMode: \"sequencial\",\n"+
+											"doIntegrityCheckInTheEnd: \"true\",\n"+
 													
 											"child:{\n"+
 												"operationType: \"consolidation\",\n"+

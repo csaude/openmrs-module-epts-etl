@@ -439,7 +439,7 @@ public abstract class BaseDAO{
 	public static Object executeBDProcedureWithReturnValue (Connection conn, String procedureName, Object... params) throws SQLException, IOException{
 		Double valor = null;
 		
-		params = utilities.setParam(params.length, params, valor);
+		params = utilities.addToParams(params.length, params, valor);
 		
 		CallableStatement call = conn.prepareCall("{call " +  generateCallStatementString(procedureName, params)  + "}") ;
 		

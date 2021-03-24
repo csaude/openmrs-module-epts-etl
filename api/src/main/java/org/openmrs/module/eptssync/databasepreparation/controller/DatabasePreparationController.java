@@ -139,9 +139,9 @@ public class DatabasePreparationController extends OperationController {
 		sql += "parent_table_name varchar(100) NOT NULL,\n";
 		sql += "parent_id int(11) NOT NULL,\n";
 		sql += "default_parent_id int(11) DEFAULT NULL,\n";
+		sql += "record_origin_location_code VARCHAR(100) NOT NULL,\n";
 		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
-		sql += "PRIMARY KEY (id),\n";
-		sql += "UNIQUE KEY inconsistence_info_unq (table_name,record_id, parent_table_name, parent_id)\n";
+		sql += "PRIMARY KEY (id)\n";
 		sql += ") ENGINE=InnoDB;\n";
 				
 		try {
