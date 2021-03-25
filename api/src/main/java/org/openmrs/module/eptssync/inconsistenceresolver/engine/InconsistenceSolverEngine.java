@@ -55,7 +55,7 @@ public class InconsistenceSolverEngine extends Engine {
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new InconsistenceSolverSearchParams(this.getSyncTableConfiguration(), limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(this.getRelatedOperationController().getSyncOperationStatus().getStartTime());
+		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
 		
 		return searchParams;
 	}

@@ -12,12 +12,10 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.model.ItemProgressInfo;
+import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.status.SyncOperationStatus;
-import org.openmrs.module.eptssync.status.TableOperationStatus;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
@@ -62,7 +60,6 @@ public abstract class OperationController implements Controller{
 	protected Exception lastException;
 	
 	protected OperationProgressInfo progressInfo;
-	protected SyncOperationStatus syncOperationStatus;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = LogFactory.getLog(this.getClass());
@@ -75,15 +72,6 @@ public abstract class OperationController implements Controller{
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 		
 		this.progressInfo = this.processController.initOperationProgressMeter(this);
-		
-		/*if (generateProcessStatusFile().exists()) {
-			this.syncOperationStatus = SyncOperationStatus.loadFromFile(generateProcessStatusFile());
-			this.syncOperationStatus.setController(this);
-		}*/
-	}
-	
-	public SyncOperationStatus getSyncOperationStatus() {
-		return syncOperationStatus;
 	}
 	
 	public OperationProgressInfo getProgressInfo() {
@@ -224,7 +212,7 @@ public abstract class OperationController implements Controller{
 	}
 
 	private boolean operationIsAlreadyFinished() {
-		return this.syncOperationStatus.isFinished();
+		return this.progressInfo.isFinished();
 	}
 
 	public String getControllerId() {
@@ -275,14 +263,6 @@ public abstract class OperationController implements Controller{
 		timer.start();
 		
 		onStart();
-		
-		if (this.syncOperationStatus == null) {
-			this.syncOperationStatus = new SyncOperationStatus(this);
-			
-			this.syncOperationStatus.setStartTime(DateAndTimeUtilities.getCurrentDate());
-			
-			this.syncOperationStatus.changeStatusToRunning();
-		}
 		
 		this.activititieMonitor = new ControllerMonitor(this);
 		
@@ -379,13 +359,13 @@ public abstract class OperationController implements Controller{
 		
 		logInfo("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
 		
-		TableOperationStatus status = new TableOperationStatus(this, conf, engine, timer);
-			
+		TableOperationProgressInfo progressInfo = this.retrieveProgressInfo(conf);
+				
 		String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
 			
 		logInfo("WRITING OPERATION STATUS ON "+ fileName);
 		
-		status.save();
+		progressInfo.save();
 		
 		logInfo("FILE WROTE");
 	}
@@ -430,7 +410,7 @@ public abstract class OperationController implements Controller{
 		
 		logInfo("WRITING OPERATION STATUS ON FILE ["+ generateProcessStatusFile().getAbsolutePath() + "]");
 		
-		if (!this.syncOperationStatus.isFinished()) this.syncOperationStatus.changeStatusToFinished();
+		if (!this.progressInfo.isFinished()) this.progressInfo.changeStatusToFinished();
 		
 		changeStatusToFinished();
 		
@@ -475,8 +455,13 @@ public abstract class OperationController implements Controller{
 	@Override
 	public void onStart() {
 		if (generateProcessStatusFile().exists()) {
-			this.syncOperationStatus = SyncOperationStatus.loadFromFile(generateProcessStatusFile());
-			this.syncOperationStatus.setController(this);
+			this.progressInfo = OperationProgressInfo.loadFromFile(generateProcessStatusFile());
+			this.progressInfo.setController(this);
+		}
+		else {
+			this.progressInfo = new OperationProgressInfo(this);
+			this.progressInfo.setStartTime(DateAndTimeUtilities.getCurrentDate());
+			this.progressInfo.changeStatusToRunning();
 		}
 	}
 
@@ -631,9 +616,9 @@ public abstract class OperationController implements Controller{
 		if (getChild() != null) getChild().requestStop();
 	}
 
-	public ItemProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
+	public TableOperationProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
 		
-		for (ItemProgressInfo item : progressInfo.getItemsProgressInfo()) {
+		for (TableOperationProgressInfo item : progressInfo.getItemsProgressInfo()) {
 			if (item.getTableConfiguration().equals(tableConfiguration)) return item;
 		}
 		

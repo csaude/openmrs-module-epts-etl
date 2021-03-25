@@ -1110,6 +1110,22 @@ public class DateAndTimeUtilities {
 	}
 	
 	/**
+	 * Adiciona uma um perido de tempo (em segundos) a uma data passada pelo parametro
+	 * @param dataInicial
+	 * @param qtdSeconds
+	 * @return Retorna a dataInicial adicionada ao tempo passado pelo parametro qtdMinutes
+	 */
+	public static Date addSecondsToDate(Date dataInicial, int qtdSeconds){     
+	    Calendar calendar = Calendar.getInstance();
+	    
+	    calendar.setTime(dataInicial);
+	       	   
+	    calendar.add(Calendar.SECOND, qtdSeconds);
+	    
+		return calendar.getTime();
+	}
+	
+	/**
 	 * Adiciona uma um perido de tempo (em dias) a uma data passada pelo parametro
 	 * @param dataInicial
 	 * @param qtdDias

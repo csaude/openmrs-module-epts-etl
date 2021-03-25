@@ -268,7 +268,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		int total = this.searchParams.countAllRecords(conn);
 		int processed = total - remaining;
 		
-		this.progressMeter = new SyncProgressMeter(this, "INITIALIZING", total, processed);
+		this.progressMeter = new SyncProgressMeter("INITIALIZING", total, processed);
 	}
 	
 	protected boolean hasChild() {
@@ -423,7 +423,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		log += "[TOTAL RECS: " + globalProgressMeter.getTotal() + ", ";
 		log += "PROCESSED: " + globalProgressMeter.getDetailedProgress() + ", ";
 		log += "REMAINING: " + globalProgressMeter.getDetailedRemaining() + ",";
-		log += "TIME: " + globalProgressMeter.getTime() + "]";
+		log += "TIME: " + globalProgressMeter.getHumanReadbleTime() + "]";
 		
 		this.monitor.logInfo(log);
 	}

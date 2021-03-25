@@ -40,7 +40,7 @@ public class SyncExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecordOnOrigin(tableInfo, null, getSyncOperationStatus().getStartTime(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecordOnOrigin(tableInfo, null, getProgressInfo().getStartTime(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -60,7 +60,7 @@ public class SyncExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecordOnOrigin(tableInfo, null, getSyncOperationStatus().getStartTime(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecordOnOrigin(tableInfo, null, getProgressInfo().getStartTime(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			

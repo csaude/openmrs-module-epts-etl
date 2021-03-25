@@ -14,6 +14,8 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.FuncoesGenericas;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class TimeController implements Runnable, Serializable{
 	private static final long serialVersionUID = 1L;
 	Thread timer = null;
@@ -33,6 +35,30 @@ public class TimeController implements Runnable, Serializable{
 		dias=0;
 		
 		this.startTime = DateAndTimeUtilities.getCurrentDate();
+	}
+	
+	/**
+	 * 
+	 * @param startTime
+	 * @param elapsedTime in minutes
+	 */
+	public TimeController(Date startTime, double elapsedTime){
+		int elapsedTimeInSeconds = (int) (60 * elapsedTime);
+		
+		Date currTime = DateAndTimeUtilities.addSecondsToDate(startTime, elapsedTimeInSeconds);
+		
+		segundos = (long) DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.SECOND_FORMAT);
+		minutos = (long) DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.MINUTE_FORMAT);
+		horas = (long) DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.HOUR_FORMAT);
+		dias = (long) DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.DAY_FORMAT);
+		
+		this.startTime = startTime;
+	}
+	
+	public static TimeController retrieveTimer(Date startDate, double elapsedTime) {
+		TimeController timer = new TimeController(startDate, elapsedTime);
+		
+		return timer;
 	}
 	
 	public Date getStartTime() {
@@ -87,6 +113,7 @@ public class TimeController implements Runnable, Serializable{
 		 return totalInSeconds/60/60/24;
 	}
 	
+	@JsonIgnore
 	@Override
 	public String toString() {
 		return FuncoesGenericas.garantirXCaracterOnNumber(horas, 2)+":"+FuncoesGenericas.garantirXCaracterOnNumber(minutos, 2)+":"+FuncoesGenericas.garantirXCaracterOnNumber(segundos, 2);
@@ -94,16 +121,13 @@ public class TimeController implements Runnable, Serializable{
 	public void start(){
 		if (timer == null){
 			timer = new Thread(this);
-			segundos = 0;
-			minutos = 0;
-			horas = 0;
-			dias=0;
 			
-			this.startTime = DateAndTimeUtilities.getCurrentDate();
+			if (this.startTime == null) this.startTime = DateAndTimeUtilities.getCurrentDate();
 			
 			timer.start();
 			
 		}
+		else throw new ForbiddenOperationException("The timer is already running!!!");
 	}
 	
 	public void restar(){

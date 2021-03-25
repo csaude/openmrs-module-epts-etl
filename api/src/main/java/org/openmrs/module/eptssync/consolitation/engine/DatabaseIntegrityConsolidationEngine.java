@@ -58,7 +58,7 @@ public class DatabaseIntegrityConsolidationEngine extends Engine {
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DatabaseIntegrityConsolidationSearchParams(this.getSyncTableConfiguration(), limits, getRelatedOperationController().getAppOriginLocationCode(), conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(this.getRelatedOperationController().getSyncOperationStatus().getStartTime());
+		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
 		
 		return searchParams;
 	}
