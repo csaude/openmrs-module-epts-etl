@@ -590,7 +590,7 @@
       "sourceFolders" : null
     },
     "disabled" : false,
-    "processingMode" : "parallel",
+    "processingMode" : "sequencial",
     "sourceFolders" : null
   } ],
   "automaticStart" : true,

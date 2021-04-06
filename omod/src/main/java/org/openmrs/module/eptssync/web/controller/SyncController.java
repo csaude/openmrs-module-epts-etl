@@ -100,8 +100,6 @@ public class SyncController {
    public String refreshStatus(@ModelAttribute("syncVm") SyncVM syncVm) {
 	 FileUtilities.write("/home/jpboane/working/prg/jee/tmp/response.json", syncVm.getActiveOperationController().getProgressInfo().parseToJSON());
 	 
-	 syncVm.getActiveOperationController().getProgressInfo().refreshProgressInfo();
-	 
      return syncVm.getActiveOperationController().getProgressInfo().parseToJSON();
    }
    

@@ -1168,25 +1168,6 @@ public class DateAndTimeUtilities {
 		*/
 	}	
 	
-	public static void main(String[] args) {
-		//Connection conn = BaseDAO.openConnection("oracle.jdbc.OracleDriver", "jdbc:oracle:thin:@192.1:1521:lims", "lims", "exi2k12");
-		
-		
-		System.out.println(determineDateFormat("14-03-2019"));
-		
-		
-		/*List<Date> holidays = generatePublicHolidays(2019, 2019, "mz");
-		
-		Date oldDate = createDate("26-04-2019 12:44:35", DATE_TIME_FORMAT);
-		
-		Date datePlus = addDaysDate(oldDate, 40);
-		
-		System.out.println(datePlus);
-		System.out.println(getNextBusinessDate(addDaysDate(datePlus, -1), holidays));*/
-		
-	}
-	
-	
 	/**
 	 * @author Jorge Boane
 	 * @return Retorna a segunda feira da semana cuja data esta especificada no parametro Hoje 

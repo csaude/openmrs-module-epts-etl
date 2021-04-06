@@ -27,25 +27,28 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 public class SyncDataLoadController extends OperationController implements DestinationOperationController{
 	private String appOriginLocationCode;
 
-	public SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig) {
+	/*public SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
-	}
+	}*/
 
-	private SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+	public SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig);
 		
 		this.appOriginLocationCode = appOriginLocationCode;
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_from_" + appOriginLocationCode;	
+		
+		this.progressInfo = this.processController.initOperationProgressMeter(this);
 	}
 	
+	@Override
 	public String getAppOriginLocationCode() {
 		return appOriginLocationCode;
 	}
 	
-	@Override
+	/*@Override
 	public OperationController cloneForOrigin(String appOriginLocationCode) {
 		OperationController controller = new SyncDataLoadController(getProcessController(), getOperationConfig(), appOriginLocationCode);
 		
@@ -53,7 +56,7 @@ public class SyncDataLoadController extends OperationController implements Desti
 		controller.setParent(this.getParent());
 		
 		return controller;
-	}
+	}*/
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {

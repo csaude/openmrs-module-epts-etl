@@ -556,13 +556,13 @@
       "child" : {
         "operationType" : "load",
         "maxRecordPerProcessing" : 1000,
-        "maxSupportedEngines" : 15,
+        "maxSupportedEngines" : 1,
         "minRecordsPerEngine" : 1000,
         "doIntegrityCheckInTheEnd" : false,
         "child" : {
           "operationType" : "synchronization",
           "maxRecordPerProcessing" : 1000,
-          "maxSupportedEngines" : 15,
+          "maxSupportedEngines" : 1,
           "minRecordsPerEngine" : 100,
           "doIntegrityCheckInTheEnd" : true,
           "child" : {
@@ -582,7 +582,7 @@
         },
         "disabled" : false,
         "processingMode" : "sequencial",
-        "sourceFolders" : [ "cs_mopeia" ]
+        "sourceFolders" : [ "cs_mopeia"]
       },
       "disabled" : false,
       "processingMode" : "sequencial",

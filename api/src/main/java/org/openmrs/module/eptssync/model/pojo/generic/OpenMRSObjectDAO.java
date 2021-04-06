@@ -183,16 +183,24 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	}
 
 	private static OpenMRSObject getGenericSpecificRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, String function, Date syncStartDate, Connection conn) throws DBException, ForbiddenOperationException {
-		Object[] params = {syncStartDate};
+		Object[] params = {};
 		
 		String sql = "";
-	
-		String recordTableName	= tableInfo.getTableName().equalsIgnoreCase("patient") ? "person" : tableInfo.getTableName();
 		
 		OpenMRSObject obj = utilities.createInstance(tableInfo.getSyncRecordClass());
+	
+		String recordTableName	= tableInfo.getTableName().equalsIgnoreCase("patient") ? "person" : tableInfo.getTableName();
+		String pk = tableInfo.getTableName().equalsIgnoreCase("patient") ? "person_id" : obj.generateDBPrimaryKeyAtt();
 		
-		String clause = "(last_sync_date IS NULL OR last_sync_date < ?)";
+		String clause = "1 = 1";
 
+		if (syncStartDate != null) {
+			clause = utilities.concatCondition(clause, "last_sync_date >= ?");
+			
+			params = utilities.addToParams(params.length, params, syncStartDate);
+		}
+		
+		
 		if (utilities.stringHasValue(originAppLocationCode)) {
 			clause = utilities.concatCondition(clause, "record_origin_location_code = ?");
 		
@@ -201,15 +209,18 @@ public class OpenMRSObjectDAO extends BaseDAO {
 
 		sql += " SELECT * \n";
 		sql += " FROM  	" + obj.generateTableName() + "\n";
-		sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + "	= (	SELECT " + function + "(" + obj.generateDBPrimaryKeyAtt() + ")\n";
-		sql += "													FROM   " + recordTableName + " LEFT JOIN " + tableInfo.generateFullStageTableName() + " ON record_uuid = uuid\n";
-		sql += "													WHERE " + clause + " \n";
+		sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + "	= (	SELECT " + function + "(" + pk + ")\n";
+		sql += "													FROM   " + recordTableName + " \n";
+		sql += "													WHERE  NOT EXISTS ( SELECT * \n";
+		sql += "																		FROM " + tableInfo.generateFullStageTableName() + "\n";
+		sql += "																		WHERE record_uuid = " + recordTableName + ".uuid\n";
+		sql += "																			  AND " + clause + ")";
 		sql += "												   )";
 		
 		return find(tableInfo.getSyncRecordClass(), sql, params, conn);
 	}
 	
-	public static OpenMRSObject getFirstRecordOnOrigin(SyncTableConfiguration tableInfo, String originAppLocationCode, Date syncStartDate, Connection conn) throws DBException {
+	public static OpenMRSObject getFirstSyncRecordOnOrigin(SyncTableConfiguration tableInfo, String originAppLocationCode, Date syncStartDate, Connection conn) throws DBException {
 		return getGenericSpecificRecord(tableInfo, originAppLocationCode, "min", syncStartDate, conn);
 	}
 	

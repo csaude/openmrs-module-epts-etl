@@ -37,6 +37,7 @@ public class TableOperationProgressInfo {
 		this.controller = controller;
 	}
 	
+	@JsonIgnore
 	public SyncTableConfiguration getTableConfiguration() {
 		return tableConfiguration;
 	}
@@ -103,10 +104,6 @@ public class TableOperationProgressInfo {
 		
 		FileUtilities.write(fileName, desc);
 	}
-	
-	public String getSyncTableName() {
-		return this.tableConfiguration.getTableName();
-	}
 
 	@JsonIgnore
 	public String parseToJSON(){
@@ -121,6 +118,8 @@ public class TableOperationProgressInfo {
 		try {
 			TableOperationProgressInfo top = TableOperationProgressInfo.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 			top.getProgressMeter().retrieveTimer();
+			
+			return top;
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new RuntimeException();

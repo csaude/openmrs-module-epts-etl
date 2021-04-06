@@ -35,15 +35,19 @@ public class OpenMRSObjectSearchParams <T extends OpenMRSObject> extends Abstrac
 	public SearchClauses<T> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<T> searchClauses = new SearchClauses<T>(this);
 		
-		searchClauses.addColumnToSelect("*");
+		searchClauses.addColumnToSelect(defaultObject.generateTableName() + ".*");
 		searchClauses.addToClauseFrom(defaultObject.generateTableName());
 		
+		if (defaultObject.generateTableName().equalsIgnoreCase("patient")) {
+			searchClauses.addToClauseFrom("INNER JOIN person ON person.person_id = patient.patient_id");
+			searchClauses.addToClauseFrom("INNER JOIN " + this.tableConfiguration.generateFullStageTableName() + " ON uuid = record_uuid");
+		}
+		else {
+			searchClauses.addToClauseFrom("INNER JOIN " + this.tableConfiguration.generateFullStageTableName() + " ON uuid = record_uuid");
+		}
+		
 		if (isByAppOriginLocation()) {
-			String originDestin = tableConfiguration.isDestinationInstallationType() ? "record_destination_id" : "record_origin_id";
-			
-			searchClauses.addToClauseFrom("INNER JOIN " + this.tableConfiguration.generateFullStageTableName() + " ON " + this.tableConfiguration.getPrimaryKey() + " = " + originDestin);
-			
-			searchClauses.addToClauses("record_origin_location_code = ?");
+				searchClauses.addToClauses("record_origin_location_code = ?");
 			searchClauses.addToParameters(this.originAppLocationCode);
 		}
 	

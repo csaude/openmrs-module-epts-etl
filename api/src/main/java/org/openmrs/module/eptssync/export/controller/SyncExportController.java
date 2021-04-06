@@ -40,7 +40,7 @@ public class SyncExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecordOnOrigin(tableInfo, null, getProgressInfo().getStartTime(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getFirstSyncRecordOnOrigin(tableInfo, null, getProgressInfo().getStartTime(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			

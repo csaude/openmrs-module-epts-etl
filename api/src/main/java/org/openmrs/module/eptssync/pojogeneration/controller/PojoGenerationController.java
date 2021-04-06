@@ -26,53 +26,6 @@ public class PojoGenerationController extends OperationController {
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new PojoGenerationEngine(monitor, limits);
 	}
-
-	@Override
-	public void onStart() {
-		/*File classPath = new File (getConfiguration().getClassPath());
-		
-		try {
-			copyClassPathContentToFolder(classPath, getConfiguration().getPOJOCompiledFilesDirectory());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}*/
-	}
-	
-	@Override
-	public void onFinish() {
-		/*try {
-			updateClassPathJar();
-			
-			URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-	        Method m = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
-	        m.setAccessible(true);
-	        m.invoke(urlClassLoader, new File(getConfiguration().getClassPath()).toURI().toURL());
-	        String cp = System.getProperty("java.class.path");
-	        
-	        if (cp != null) {
-	            cp += File.pathSeparatorChar + getConfiguration().getClassPath();
-	        } else {
-	            cp = new File(getConfiguration().getClassPath()).toURI().getPath();
-	        }
-	        
-	        System.setProperty("java.class.path", cp);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		}
-		*/
-		
-		super.onFinish();
-	}
 	
 	@Override
 	public void markAsFinished() {

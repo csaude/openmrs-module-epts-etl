@@ -141,25 +141,5 @@ public class TimeController implements Runnable, Serializable{
 		   timer = null;
 	   }
 	}
-	
-	public static void main(String[] args) {
-		TimeController r = new TimeController();
-		r.start();
-		
-		while (r.minutos <= 2){
-			System.out.println(r);
-			
-			System.out.println("DURACAO EM SEGUNDOS " + r.getDuration(DURACAO_IN_SECONDS));
-			System.out.println("DURACAO EM MINUTOS " + r.getDuration(DURACAO_IN_MINUTES));
-			System.out.println("DURACAO EM HORAS " + r.getDuration(DURACAO_IN_HOURS));
-			System.out.println("DURACAO EM DIAS " + r.getDuration(DURACAO_IN_DAYS));
-			
-			
-			try {
-				Thread.sleep(10000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+
 }

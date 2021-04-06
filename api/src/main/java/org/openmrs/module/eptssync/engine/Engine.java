@@ -36,8 +36,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	protected SyncSearchParams<? extends SyncRecord> searchParams;
 	protected RecordLimits limits;
 	
-	private TimeController timer;
-	
 	private int operationStatus;
 	private boolean stopRequested;
 	
@@ -109,6 +107,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		return progressMeter;
 	}
 	
+	public void setProgressMeter(SyncProgressMeter progressMeter) {
+		this.progressMeter = progressMeter;
+	}
+	
 	public OpenConnection openConnection() {
 		return getRelatedOperationController().openConnection();
 	}
@@ -126,12 +128,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	@Override
 	public void run() {
 		this.changeStatusToRunning();
-		
-		if (this.timer == null && !this.hasParent()) {
-			this.timer = new TimeController();
-			this.timer.start();
-		}
-		
+	
 		if (stopRequested()) {
 			changeStatusToStopped();
 			
@@ -146,13 +143,17 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			OpenConnection conn = openConnection();
 			
 			try {
-				initProgressMeter(conn);
+				
+				if (!this.hasParent()) {
+					doInitProgressMeterRefresh(conn);
+					this.progressMeter.changeStatusToRunning();
+				}
+				
 				conn.markAsSuccessifullyTerminected();
 			} catch (DBException e) {
 				reportError(e);
 				
 				e.printStackTrace();
-			
 				
 				throw new RuntimeException(e);
 			}
@@ -192,7 +193,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 								this.requestANewJob();
 							}
 							else {
-								if (this.isMainEngine() &&  !finalCheckDone) {
+								if (this.isMainEngine() && this.hasChild() && !finalCheckDone) {
 									//Do the final check before finishing
 									
 									while(this.hasChild() && !isAllChildFinished()) {
@@ -261,14 +262,16 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		else this.progressMeter.refresh("RUNNING", this.progressMeter.getTotal(), this.getProgressMeter().getProcessed() + newlyProcessedRecords);
 	}
 
-	private synchronized void initProgressMeter(Connection conn) throws DBException  {
+	private synchronized void doInitProgressMeterRefresh(Connection conn) throws DBException  {
 		if (this.hasParent()) return;
 		
 		int remaining = this.searchParams.countNotProcessedRecords(conn);
 		int total = this.searchParams.countAllRecords(conn);
 		int processed = total - remaining;
 		
-		this.progressMeter = new SyncProgressMeter("INITIALIZING", total, processed);
+		//this.progressMeter = new SyncProgressMeter("INITIALIZING", total, processed);
+		
+		this.progressMeter.refresh(this.progressMeter.getStatusMsg(), total, processed);
 	}
 	
 	protected boolean hasChild() {
@@ -281,7 +284,13 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	@Override
 	public TimeController getTimer() {
-		return this.timer;
+		SyncProgressMeter pm = this.progressMeter;
+		
+		if (this.hasParent()) {
+			pm = this.parent.getProgressMeter();
+		}
+		
+		return pm != null ? pm.getTimer() : null;
 	}
 	
 	@Override
@@ -381,7 +390,17 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	@Override
 	public void changeStatusToStopped() {
-		this.operationStatus = MonitoredOperation.STATUS_STOPPED;		
+		this.operationStatus = MonitoredOperation.STATUS_STOPPED;	
+		
+		SyncProgressMeter pm = this.progressMeter;
+		
+		if (this.hasParent()) {
+			pm = this.parent.getProgressMeter();
+		}
+		
+		if (pm != null) {
+			pm.changeStatusToStopped();
+		}
 	}
 	
 	@Override
@@ -398,6 +417,16 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		}
 		else {
 			this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
+		}
+		
+		SyncProgressMeter pm = this.progressMeter;
+		
+		if (this.hasParent()) {
+			pm = this.parent.getProgressMeter();
+		}
+		
+		if (pm != null) {
+			pm.changeStatusToFinished();
 		}
 	}
 	

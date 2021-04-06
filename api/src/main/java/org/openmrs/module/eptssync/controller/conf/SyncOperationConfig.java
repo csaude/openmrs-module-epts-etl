@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.consolitation.controller.DatabaseIntegrityConsolidationController;
+import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.databasepreparation.controller.DatabasePreparationController;
@@ -61,7 +62,7 @@ public class SyncOperationConfig {
 	
 	private List<String> sourceFolders;
 	
-	private OperationController relatedController;
+	private List<OperationController> relatedControllers;
 	
 	public SyncOperationConfig() {
 	}
@@ -93,8 +94,26 @@ public class SyncOperationConfig {
 	}
 	
 	@JsonIgnore
-	public OperationController getRelatedController() {
-		return relatedController;
+	public List<OperationController> getRelatedControllers() {
+		return relatedControllers;
+	}
+	
+	public OperationController getRelatedController(String appOriginCode) {
+		if (relatedControllers == null) return null;
+		
+		if (appOriginCode == null || !(this.relatedControllers.get(0) instanceof DestinationOperationController)) {
+			OperationController activeController = this.relatedControllers.get(0);
+			
+			return activeController;
+		}
+		
+		for (OperationController controller : this.relatedControllers) {
+			if ( ((DestinationOperationController)controller).getAppOriginLocationCode().equalsIgnoreCase(appOriginCode)) {
+				return controller;
+			}
+		}
+		
+		return null;
 	}
 	
 	@JsonIgnore
@@ -274,46 +293,67 @@ public class SyncOperationConfig {
 		return this.operationType.equalsIgnoreCase(((SyncOperationConfig)obj).operationType);
 	}
 	
-	public OperationController generateRelatedController(ProcessController parent, Connection conn) {
+	public List<OperationController> generateRelatedController(ProcessController parent, String appOriginCode_, Connection conn) {
+		this.relatedControllers = new ArrayList<OperationController>();
+		
+		if (getSourceFolders() == null) {
+			this.relatedControllers.add(generateSigle(parent, appOriginCode_, conn));
+		}
+		else
+		for (String appOriginCode : getSourceFolders()) {
+			this.relatedControllers.add(generateSigle(parent, appOriginCode, conn));
+		}
+		
+		if (this.getChild() != null) {
+			for (OperationController controller : this.relatedControllers){
+				String appOrigin = controller instanceof DestinationOperationController ? ((DestinationOperationController)controller).getAppOriginLocationCode() : null;
+				
+				controller.setChildren(this.getChild().generateRelatedController(controller.getProcessController(), appOrigin, conn));
+				
+				for (OperationController child : controller.getChildren()) {
+					child.setParent(controller);
+				}
+			}
+		}
+		
+		return this.relatedControllers;
+	}
+	
+	private OperationController generateSigle(ProcessController parent, String appOriginCode, Connection conn) {
 		if (isDatabasePreparationOperation()) {
-			this.relatedController = new DatabasePreparationController(parent, this);
+			return new DatabasePreparationController(parent, this);
 		}
 		else			
-		if (isPojoGeneration()) {
-			this.relatedController  = new PojoGenerationController(parent, this);
+		if ( isPojoGeneration()) {
+			return new PojoGenerationController(parent, this);
 		}
 		else	
 		if (isExportOperation()) {
-			this.relatedController  = new SyncExportController(parent, this);
+			return new SyncExportController(parent, this);
 		}
 		else
 		if (isTransportOperation()) {
-			this.relatedController  = new SyncTransportController(parent, this);
-		}
-		else
-		if (isLoadOperation()) {
-			this.relatedController  = new SyncDataLoadController(parent, this);
-		}
-		else
-		if (isSynchronizationOperation()) {
-			this.relatedController  = new SyncController(parent, this);
-		}
-		else
-		if (isConsolidationOperation()) {
-			this.relatedController  = new DatabaseIntegrityConsolidationController(parent, this);
+			return new SyncTransportController(parent, this);
 		}
 		else
 		if (isInconsistenceSolver()) {
-			this.relatedController  = new InconsistenceSolverController(parent, this);
+			return new InconsistenceSolverController(parent, this);
 		}
+		else
+		if (isLoadOperation()) {
+			return new SyncDataLoadController(parent, this, appOriginCode);
+		}
+		else
+		if (isSynchronizationOperation()) {
+			return new SyncController(parent, this, appOriginCode);
+		}
+		else
+		if (isConsolidationOperation()) {
+			return new DatabaseIntegrityConsolidationController(parent, this, appOriginCode);
+		}
+			
 		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");
-	
-		if (this.getChild() != null) {
-			this.relatedController .setChild(this.getChild().generateRelatedController(this.relatedController .getProcessController(), conn));
-			this.relatedController .getChild().setParent(this.relatedController );
-		}
 		
-		return this.relatedController ;
 	}
 	
 	public void validate () {

@@ -83,6 +83,7 @@ public class OperationProgressInfo {
 		this.status = status;
 	}
 	
+	@JsonIgnore
 	public OperationController getController() {
 		return controller;
 	}
@@ -95,16 +96,16 @@ public class OperationProgressInfo {
 		this.itemsProgressInfo = itemsProgressInfo;
 	}
 
-	public void updateProgressInfo(EngineMonitor engineMonitor) {
+	/*public void updateProgressInfo(EngineMonitor engineMonitor) {
 		TableOperationProgressInfo info = findTableOperationStatus(engineMonitor.getSyncTableInfo());
 		info.tryToReloadProgressMeter(engineMonitor.getMainEngine());
 	
 		info.save();
-	}
+	}*/
 	
 	private TableOperationProgressInfo findTableOperationStatus(SyncTableConfiguration tableConfiguration) {
 		for (TableOperationProgressInfo info : this.itemsProgressInfo) {
-			if (info.getSyncTableName().equals(tableConfiguration.getTableName())) {
+			if (info.getOperationTable().equals(tableConfiguration.getTableName())) {
 				return info;
 			}
 		}	
@@ -143,6 +144,7 @@ public class OperationProgressInfo {
 		}
 	}
 	
+	@JsonIgnore
 	private SyncConfiguration getConfiguration() {
 		return this.controller.getConfiguration();
 	}
@@ -155,7 +157,7 @@ public class OperationProgressInfo {
 	
 	public TableOperationProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
 		for (TableOperationProgressInfo progressInfo : this.itemsProgressInfo) {
-			if (progressInfo.getSyncTableName().equals(tableConfiguration.getTableName())) {
+			if (progressInfo.getOperationTable().equals(tableConfiguration.getTableName())) {
 				return progressInfo;
 			}
 		}
@@ -216,6 +218,7 @@ public class OperationProgressInfo {
 		save();
 	}
 	
+	@JsonIgnore
 	private String determineStatus() {
 		return "";
 	}
@@ -258,7 +261,7 @@ public class OperationProgressInfo {
 	}	
 	
 	public void save() {
-		String fileName = this.controller.generateProcessStatusFile().getAbsolutePath();
+ 		String fileName = this.controller.generateProcessStatusFile().getAbsolutePath();
 		
 		if (new File(fileName).exists()) {
 			FileUtilities.removeFile(fileName);
@@ -266,10 +269,17 @@ public class OperationProgressInfo {
 		
 		this.elapsedTime = this.elapsedTime + DateAndTimeUtilities.dateDiff(DateAndTimeUtilities.getCurrentDate(), this.startTime, DateAndTimeUtilities.MINUTE_FORMAT);
 		
+		List<TableOperationProgressInfo> bkpItems = this.itemsProgressInfo;
+		
+		//To avoid the items yt
+		this.itemsProgressInfo = null;
+		
 		String desc = this.parseToJSON();
 		
 		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
 		
 		FileUtilities.write(fileName, desc);
+		
+		this.itemsProgressInfo = bkpItems;
 	}
 }

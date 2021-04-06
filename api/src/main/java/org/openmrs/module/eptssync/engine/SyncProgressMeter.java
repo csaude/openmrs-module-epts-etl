@@ -16,7 +16,7 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	/**
 	 * Utilitarios do sistema
 	 */
-	public CommonUtilities utilities = CommonUtilities.getInstance();
+	private CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	/**
 	 * Constante usada para indicar o estado de erro
@@ -73,8 +73,9 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	 * Indica o intervalo de tempo durante o qual este {@link SyncProgressMeter} sera considerado updated
 	 */
 	private int refreshInterval;
+	private Date startTime;
 	private Date finishTime;
-
+	private double elapsedTime;
 	private TimeController timer;
 	
 	public SyncProgressMeter() {
@@ -111,9 +112,13 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	public void setFinishTime(Date finishTime) {
 		this.finishTime = finishTime;
 	}
+	
+	public void setElapsedTime(double elapsedTime) {
+		this.elapsedTime = elapsedTime;
+	}
 
 	public double getElapsedTime() {
-		return getTimer() != null ? getTimer().getDuration(TimeController.DURACAO_IN_MINUTES) : 0;
+		return getTimer() != null ? getTimer().getDuration(TimeController.DURACAO_IN_MINUTES) : this.elapsedTime;
 	}
 
 	public String getStatus() {
@@ -176,11 +181,10 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	 * 
 	 * @return a hora de inicio da migracao
 	 */
-	@JsonIgnore
 	public Date getStartTime(){
-		return getTimer() != null ? getTimer().getStartTime() : null;
+		return this.startTime;
 	}
-
+	
 	/**
 	 * 
 	 * @return a hora de inicio da migracao formatada
@@ -268,10 +272,13 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 
 	public void changeStatusToSleeping() {
 		this.status = SyncProgressMeter.STATUS_SLEEPING;
+		this.statusMsg = SyncProgressMeter.STATUS_SLEEPING;
+		
 	}
 	
 	public void changeStatusToRunning() {
 		this.status = SyncProgressMeter.STATUS_RUNNING;
+		this.statusMsg = SyncProgressMeter.STATUS_RUNNING;
 		
 		tryToInitializeTimer();
 		
@@ -280,6 +287,7 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	
 	public void changeStatusToStopped() {
 		this.status = SyncProgressMeter.STATUS_STOPPED;	
+		this.statusMsg = SyncProgressMeter.STATUS_STOPPED;
 		
 		tryToInitializeTimer();
 		
@@ -288,6 +296,8 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	
 	public void changeStatusToFinished() {
 		this.status = SyncProgressMeter.STATUS_FINISHED;	
+		this.statusMsg = SyncProgressMeter.STATUS_FINISHED;
+		
 		this.finishTime = DateAndTimeUtilities.getCurrentDate();
 		
 		tryToInitializeTimer();
@@ -298,6 +308,7 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	private void tryToInitializeTimer() {
 		if (this.getTimer() == null) {
 			this.timer = new TimeController();
+			this.startTime = this.timer.getStartTime();
 		}
 	}
 	
@@ -369,6 +380,7 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	
 
 	@Override
+	@JsonIgnore
 	public String getThreadNamingPattern() {
 		String pathern = "["+this.getClass().getCanonicalName() + "]" + "[%d]";
 		
@@ -376,7 +388,6 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 		
 		return pathern;
 	}
-
 	
 	/**
 	 * Indica se este meter esta actualizado ou nao.
@@ -396,6 +407,8 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	}
 
 	public void retrieveTimer() {
-		this.timer = TimeController.retrieveTimer(getStartTime(), elapsedTime);
+		if (getStartTime() != null) {
+			this.timer = TimeController.retrieveTimer(getStartTime(), getElapsedTime());
+		}
 	}
 }
