@@ -15,7 +15,6 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.model.ProcessProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
-import org.openmrs.module.eptssync.utilities.ClassPathUtilities;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
@@ -85,7 +84,26 @@ public class ProcessController implements Controller{
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
-		ClassPathUtilities.tryToCopyPOJOToClassPath(this.configuration);
+		//ClassPathUtilities.tryToCopyPOJOToClassPath(this.configuration);
+		
+		this.operationsControllers = new ArrayList<OperationController>();
+		
+		OpenConnection conn = openConnection();
+		
+		try {
+			for (SyncOperationConfig operation : configuration.getOperations()) {
+				List<OperationController> controller = operation.generateRelatedController(this, null, conn);
+				
+				this.operationsControllers.addAll(controller);
+			}
+			
+			this.progressInfoLoaded = true;
+			
+			conn.markAsSuccessifullyTerminected();
+		} 
+		finally {
+			conn.finalizeConnection();
+		}
 	}
 	
 	@JsonIgnore
@@ -144,14 +162,26 @@ public class ProcessController implements Controller{
 					return false;
 				}
 				else {
-					OperationController child = controller.getChild() ;
-					
-					while(child != null) {
-						if (!child.isStopped()) {
-							return false;
+					List<OperationController> children = controller.getChildren();
+						
+					while(children != null) {
+						List<OperationController> grandChildren = null;
+						
+						for (OperationController child : children) {
+							if (!child.isStopped()) {
+								return false;
+							}
+							
+							if (child.getChildren() != null) {
+								if (grandChildren == null) grandChildren = new ArrayList<OperationController>();
+								
+								for (OperationController childOfChild : child.getChildren()) {
+									grandChildren.add(childOfChild);
+								}
+							}
 						}
 						
-						child = child.getChild();
+						children = grandChildren;
 					}
 				}
 			}
@@ -162,6 +192,8 @@ public class ProcessController implements Controller{
 		
 		return this.operationStatus == MonitoredOperation.STATUS_STOPPED;
 	}
+		
+
 	
 	@Override
 	public boolean isFinished() {
@@ -175,14 +207,27 @@ public class ProcessController implements Controller{
 					return false;
 				}
 				else {
-					OperationController child = controller.getChild() ;
+					List<OperationController> children = controller.getChildren();
 					
-					while(child != null) {
-						if (!child.isFinished() && !child.getOperationConfig().isDisabled()) {
-							return false;
+					while(children != null) {
+						List<OperationController> grandChildren = null;
+						
+						for(OperationController child : children) {
+							
+							if (!child.isFinished() && !child.getOperationConfig().isDisabled()) {
+								return false;
+							}
+							
+							if (child.getChildren() != null) {
+								if (grandChildren == null) grandChildren = new ArrayList<OperationController>();
+								
+								for (OperationController childOfChild : child.getChildren()) {
+									grandChildren.add(childOfChild);
+								}
+							}
 						}
 						
-						child = child.getChild();
+						children = grandChildren;
 					}
 				}
 			}
@@ -286,10 +331,61 @@ public class ProcessController implements Controller{
 			}
 			
 			changeStatusToRunning();
-			this.progressInfoLoaded = true;
+			
+			//monitor();
+			
 		}
 	}
 	
+	/*private void monitor() {
+		while(true) {
+			OperationController active = retrieveActiveOperationController ();
+			
+			if (active != null) {
+				active.getProgressInfo().refreshProgressInfo();
+				
+				try {Thread.sleep(5000);} catch (InterruptedException e) {}
+			}
+		}
+	}*/
+	
+	private List<OperationController> retrieveActiveOperationController() {
+		
+		List<OperationController> runningControllers = new ArrayList<OperationController>();
+		
+		for (OperationController controller : this.operationsControllers) {
+			if (controller.isRunning()) {
+				runningControllers.add(controller);
+				
+				return runningControllers;
+			}
+			
+			List<OperationController> children = controller.getChildren();
+			
+			while(children != null) {
+				List<OperationController> grandChildren = null;
+				
+				for(OperationController child : children) {
+					if (child.isRunning()) return children;
+					
+					if (child.getChildren() != null) {
+						if (grandChildren == null) grandChildren = new ArrayList<OperationController>();
+						
+						for (OperationController childOfChild : child.getChildren()) {
+							grandChildren.add(childOfChild);
+						}
+					}
+					
+				}
+				
+				children = grandChildren;
+			}
+		}
+		
+		return null;
+	}
+	
+
 	private void tryToRemoveOldStopRequested() {
 		File file = new File (getConfiguration().getSyncRootDirectory()+"/process_status/stop_requested.info");
 		
@@ -297,19 +393,6 @@ public class ProcessController implements Controller{
 	}
 
 	public void initOperationsControllers(Connection conn){
-		this.operationsControllers = new ArrayList<OperationController>();
-		
-		for (SyncOperationConfig operation : configuration.getOperations()) {
-			OperationController controller = operation.generateRelatedController(this, conn);
-			
-			if (controller instanceof DestinationOperationController) {
-				for (String appOriginCode : controller.getOperationConfig().getSourceFolders()) {
-					this.operationsControllers.add(((DestinationOperationController)controller).cloneForOrigin(appOriginCode));
-				}
-			}
-			else this.operationsControllers.add(controller);
-		}
-		
 		for (OperationController controller : this.operationsControllers) {
 			if (!controller.getOperationConfig().isDisabled()) {
 				ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId());
@@ -359,7 +442,7 @@ public class ProcessController implements Controller{
 	}
 	
 	@JsonIgnore
-	private File generateProcessStatusFile() {
+	public File generateProcessStatusFile() {
 		String operationId = this.getControllerId();
 		
 		String subFolder = "";

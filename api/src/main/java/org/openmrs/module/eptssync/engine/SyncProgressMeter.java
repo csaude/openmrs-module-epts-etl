@@ -5,7 +5,6 @@ import java.util.Date;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
-import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDownInitializer;
@@ -17,17 +16,32 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	/**
 	 * Utilitarios do sistema
 	 */
-	public CommonUtilities utilities = CommonUtilities.getInstance();
+	private CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	/**
 	 * Constante usada para indicar o estado de erro
 	 */
 	public static final int STATUS_ERROR = -1;
 	
+	public static final String STATUS_NOT_INITIALIZED="NOT INITIALIZED";
+	public static final String STATUS_RUNNING="RUNNING";
+	public static final String STATUS_PAUSED = "PAUSED";
+	public static final String STATUS_STOPPED="STOPPED";
+	public static final String STATUS_SLEEPING="SLEEPING";
+	public static final String STATUS_FINISHED="FINISHED";
+	
+	private String id;
+	
+	private String designation;
 	/**
 	 * Total de registos
 	 */
 	private int total;
+	
+	/**
+	 * Estado corrente
+	 */
+	private String status;
 	
 	/**
 	 * Registos processados
@@ -35,35 +49,16 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	private int processed;
 	
 	/**
-	 * Progresso da migracao
-	 */
-	private double progress;
-	
-	/**
 	 * Mensagem do estado corrente da migracao
 	 */
 	private String statusMsg;
-	
-	/**
-	 * Tempo decorrido
-	 */
-	private String time;
 	
 	/**
 	 * Indica se existe um erro
 	 */
 	private boolean statusError;
 	
-	/**
-	 * Monitor corrente da migracao
-	 */
-	private MonitoredOperation monitor;
-	
-	private String id;
-	
-	private String designation;
-	
-	private boolean _default;
+	//private boolean _default;
 	
 	private TimeCountDown updateControl;
 	
@@ -78,9 +73,17 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	 * Indica o intervalo de tempo durante o qual este {@link SyncProgressMeter} sera considerado updated
 	 */
 	private int refreshInterval;
+	private Date startTime;
+	private Date finishTime;
+	private double elapsedTime;
+	private TimeController timer;
 	
-	public SyncProgressMeter(MonitoredOperation monitor, String statusMsg, int total, int processed){
-		this.monitor = monitor;
+	public SyncProgressMeter() {
+		this.status = STATUS_NOT_INITIALIZED;
+	}
+	
+	public SyncProgressMeter(String statusMsg, int total, int processed){
+		this();
 		
 		refresh(statusMsg, total, processed);
 		
@@ -92,7 +95,9 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	}
 	
 	private SyncProgressMeter (String id){
-		this._default = true;
+		this();
+		
+		//this._default = true;
 		this.id = id;
 	}
 	
@@ -100,6 +105,30 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 		return new SyncProgressMeter(id);
 	}
 	
+	public Date getFinishTime() {
+		return finishTime;
+	}
+
+	public void setFinishTime(Date finishTime) {
+		this.finishTime = finishTime;
+	}
+	
+	public void setElapsedTime(double elapsedTime) {
+		this.elapsedTime = elapsedTime;
+	}
+
+	public double getElapsedTime() {
+		return getTimer() != null ? getTimer().getDuration(TimeController.DURACAO_IN_MINUTES) : this.elapsedTime;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setProcessed(int processed) {
+		this.processed = processed;
+	}
+
 	/**
 	 * Refrsca a informacao do estado actual da migracao, recalcunlando a percentagem de progresso
 	 * 
@@ -114,20 +143,7 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 		this.total = total;
 		this.processed = processed;
 		
-		if (this.total > 0) {
-			
-			double processedAsDouble = this.processed;
-			double totalAsDouble = this.total;
-			
-			this.progress = Double.parseDouble(utilities.getNumberInXPrecision((processedAsDouble / totalAsDouble)*100, 2));
-		}else {
-			this.progress = 0;
-		}
-		
 		this.statusMsg = statusMsg;
-		
-		this.time = getTimer() != null ? getTimer().toString() : "00:00:00";
-		
 		
 		if (refreshInterval > 0 && this.updateControl == null){
 			this.updateControl = TimeCountDown.wait(this, 60*this.refreshInterval, ""); 
@@ -141,9 +157,13 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 		}
 	}
 
+	public String getHumanReadbleTime() {
+		return getTimer() != null ? getTimer().toString() : "00:00:00";
+	}
+	
 	@JsonIgnore
 	public TimeController getTimer() {
-		return this.monitor != null ? this.monitor.getTimer() : null;
+		return this.timer;
 	}
 	
 	public void changeRefreshInterval(int refreshInterval){
@@ -161,9 +181,8 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	 * 
 	 * @return a hora de inicio da migracao
 	 */
-	@JsonIgnore
 	public Date getStartTime(){
-		return getTimer() != null ? getTimer().getStartTime() : null;
+		return this.startTime;
 	}
 	
 	/**
@@ -190,19 +209,11 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	}
 
 	/**
-	 * @return the time
-	 */
-	public String getTime() {
-		return time;
-	}
-
-	/**
 	 * @return the statusMsg
 	 */
 	public String getStatusMsg() {
 		return statusMsg;
 	}
-
 
 	/**
 	 * @return the total
@@ -226,20 +237,79 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	 * @return a percentagem de progresso da migracao
 	 */
 	public double getProgress() {
+		double progress = 0;
+		
+		if (this.total > 0) {
+			
+			double processedAsDouble = this.processed;
+			double totalAsDouble = this.total;
+			
+			progress = Double.parseDouble(utilities.getNumberInXPrecision((processedAsDouble / totalAsDouble)*100, 2));
+		}
+		
 		return progress;
 	}
 	
-	/**
-	 * Verifica se a migracao esta em curso
-	 * 
-	 * @return {@code true} se a migracao esta em curso, ou {@code false} caso contrario
-	 */
-	public boolean isRunning(){
-		return this.monitor != null ? this.monitor.isRunning() : false;
+	public boolean isRunning() {
+		return this.status.equals(SyncProgressMeter.STATUS_RUNNING);
 	}
 	
-	public boolean isSleeping(){
-		return this.monitor != null ? this.monitor.isSleeping() : false;
+	public boolean isPaused() {
+		return this.status.equals(SyncProgressMeter.STATUS_PAUSED);
+	}
+	
+	public boolean isStopped() {
+		return this.status.equals(SyncProgressMeter.STATUS_STOPPED);
+	}
+	
+	public boolean isSleeping() {
+		return this.status.equals(SyncProgressMeter.STATUS_SLEEPING);
+	}
+	
+	public boolean isFinished() {
+		return this.status.equals(SyncProgressMeter.STATUS_FINISHED);
+	}
+
+	public void changeStatusToSleeping() {
+		this.status = SyncProgressMeter.STATUS_SLEEPING;
+		this.statusMsg = SyncProgressMeter.STATUS_SLEEPING;
+		
+	}
+	
+	public void changeStatusToRunning() {
+		this.status = SyncProgressMeter.STATUS_RUNNING;
+		this.statusMsg = SyncProgressMeter.STATUS_RUNNING;
+		
+		tryToInitializeTimer();
+		
+		this.getTimer().start();
+	}
+	
+	public void changeStatusToStopped() {
+		this.status = SyncProgressMeter.STATUS_STOPPED;	
+		this.statusMsg = SyncProgressMeter.STATUS_STOPPED;
+		
+		tryToInitializeTimer();
+		
+		this.getTimer().stop();
+	}
+	
+	public void changeStatusToFinished() {
+		this.status = SyncProgressMeter.STATUS_FINISHED;	
+		this.statusMsg = SyncProgressMeter.STATUS_FINISHED;
+		
+		this.finishTime = DateAndTimeUtilities.getCurrentDate();
+		
+		tryToInitializeTimer();
+		
+		this.getTimer().stop();
+	}
+	
+	private void tryToInitializeTimer() {
+		if (this.getTimer() == null) {
+			this.timer = new TimeController();
+			this.startTime = this.timer.getStartTime();
+		}
 	}
 	
 	@JsonIgnore
@@ -249,11 +319,6 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 		} catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		}
-	}
-	
-	@JsonIgnore
-	public MonitoredOperation getMonitor() {
-		return monitor;
 	}
 	
 	/**
@@ -287,21 +352,14 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 		return false;
 	}
 	
-	/**
-	 * @return o valor do atributo {@link #utilities}
-	 */
-	public CommonUtilities getUtilities() {
-		return utilities;
-	}
-	
 	public String getDetailedRemaining(){
 		int remaining = total - processed;
 		
-		return remaining + "(" + (100 - this.progress) + "%)";
+		return remaining + "(" + (100 - this.getProgress()) + "%)";
 	}
 	
 	public String getDetailedProgress(){
-		return this.processed + "(" + this.progress + "%)";
+		return this.processed + "(" + this.getProgress() + "%)";
 	}
 	
 	/**
@@ -322,17 +380,14 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	
 
 	@Override
+	@JsonIgnore
 	public String getThreadNamingPattern() {
 		String pathern = "["+this.getClass().getCanonicalName() + "]" + "[%d]";
 		
-		if (getMonitor() != null){
-			pathern =  "[" + getMonitor().getClass().getCanonicalName() +"]" + pathern; 
-		}
-		else pathern = "[Aknown Monitor]" + pathern;
+		pathern = "[ProgressMeter]" + pathern;
 		
 		return pathern;
 	}
-
 	
 	/**
 	 * Indica se este meter esta actualizado ou nao.
@@ -349,5 +404,11 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	@Override
 	public void onFinish() {
 		this.updated = false;
+	}
+
+	public void retrieveTimer() {
+		if (getStartTime() != null) {
+			this.timer = TimeController.retrieveTimer(getStartTime(), getElapsedTime());
+		}
 	}
 }

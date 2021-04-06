@@ -11,7 +11,6 @@ import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
  * This interface represent any openMRS class subject of synchronization records. Ex. "Patient", "Enconter", "Obs"
@@ -25,8 +24,13 @@ public interface OpenMRSObject extends SyncRecord{
 	public static final int CONSISTENCE_STATUS = 1;
 	public static final int INCONSISTENCE_STATUS = -1;
 	
-	public abstract void refreshLastSyncDate(OpenConnection conn);
+	public abstract void refreshLastSyncDateOnOrigin(SyncTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn);
+	public abstract void refreshLastSyncDateOnDestination(SyncTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn);
+	
 	public abstract String generateDBPrimaryKeyAtt();
+	
+	public abstract int getObjectId();	
+	public abstract void setObjectId(int objectId);
 	
 	//public abstract void setOriginRecordId(int originRecordId);
 	//public abstract int getOriginRecordId();	
@@ -86,7 +90,8 @@ public interface OpenMRSObject extends SyncRecord{
 	/**
 	 * Consolidate data for database consistency
 	 * <p> The consolidation consist on re-arranging foreign keys between records from different tables
-	 * <p> Because the consolidation process would be in cascade mode, each consolidation is imediatily commited to the dadabase
+	 * <p> Because the consolidation process would be in cascade mode, each consolidation is imediatily commited to t@Override
+	he dadabase
 	 * 
 	 * @param tableInfo
 	 * @param conn
@@ -107,7 +112,7 @@ public interface OpenMRSObject extends SyncRecord{
 	 */
 	public abstract void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
 
-	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, Connection conn) throws DBException;
+	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn) throws DBException;
 	
 	public abstract SyncImportInfoVO getRelatedSyncInfo();
 	public abstract void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo);
@@ -127,5 +132,7 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException;
 	public abstract void changeParentForAllChildren(OpenMRSObject newParent, SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	public abstract Date getDateChanged();
-
+	
+	//public abstract void updateDestinationRecordId(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException;
+	
 }

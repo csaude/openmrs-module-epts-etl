@@ -548,4 +548,9 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public File getClassPath() {
 		return new File(relatedSyncTableInfoSource.getClassPath());
 	}
+	
+	@JsonIgnore
+	public boolean isDestinationInstallationType() {
+		return getRelatedSynconfiguration().isDestinationInstallationType();
+	}
 }

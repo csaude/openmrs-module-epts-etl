@@ -1,6 +1,6 @@
 {
   "syncRootDirectory" : "/home/jpboane/working/prg/jee/workspace/data/sync",
-  "originAppLocationCode" : "molocue",
+  "originAppLocationCode" : "cs_mopeia",
   "tablesConfigurations" : [ {
     "tableName" : "concept",
     "parents" : [ {
@@ -590,12 +590,12 @@
       "sourceFolders" : null
     },
     "disabled" : false,
-    "processingMode" : "parallel",
+    "processingMode" : "sequencial",
     "sourceFolders" : null
   } ],
   "automaticStart" : true,
   "childConfigFilePath" : null,
   "disabled" : false,
   "classPath" : "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/eptssync-api-1.0-SNAPSHOT.jar",
-  "syncStageSchema" : "molocue_sync_stage_area"
+  "syncStageSchema" : "cs_mopeia_sync_stage_area"
 }

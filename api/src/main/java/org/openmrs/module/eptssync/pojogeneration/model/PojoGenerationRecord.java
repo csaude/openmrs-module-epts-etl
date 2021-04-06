@@ -35,13 +35,4 @@ public class PojoGenerationRecord implements SyncRecord{
 	@Override
 	public void setExcluded(boolean excluded) {
 	}
-
-	@Override
-	public int getObjectId() {
-		return 0;
-	}
-
-	@Override
-	public void setObjectId(int objectId) {
-	}
 }

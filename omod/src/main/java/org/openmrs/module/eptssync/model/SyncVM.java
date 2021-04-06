@@ -99,18 +99,22 @@ public class SyncVM {
 		return this.activeTab.equals(operation.getOperationType());
 	}
 	
-	public ItemProgressInfo retrieveProgressInfo(SyncOperationConfig operation, SyncTableConfiguration item) {
-		OperationController controller = operation.getRelatedController();
+	public TableOperationProgressInfo retrieveProgressInfo(SyncOperationConfig operation, SyncTableConfiguration item, String appOriginCode) {
+		OperationController controller = operation.getRelatedController(appOriginCode);
 		
 		if (controller == null) return null;
 		
 		return controller.retrieveProgressInfo(item);
 	}
 	
+	public TableOperationProgressInfo retrieveProgressInfo(SyncOperationConfig operation, SyncTableConfiguration item) {
+		return retrieveProgressInfo(operation, item, null);
+	}
+	
 	public OperationController getActiveOperationController() {
 		for (SyncOperationConfig syncConfig: this.getOperations()) {
 			if (syncConfig.getOperationType().equals(this.activeTab)) {
-				return syncConfig.getRelatedController();
+				return syncConfig.getRelatedController(null);
 			}
 		}
 		

@@ -12,12 +12,10 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.model.ItemProgressInfo;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
+import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.status.SyncOperationStatus;
-import org.openmrs.module.eptssync.status.TableOperationStatus;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
@@ -45,7 +43,7 @@ public abstract class OperationController implements Controller{
 	
 	protected ControllerMonitor activititieMonitor;
 	
-	protected OperationController child;
+	protected List<OperationController> children;
 	
 	protected String controllerId;
 	
@@ -62,7 +60,6 @@ public abstract class OperationController implements Controller{
 	protected Exception lastException;
 	
 	protected OperationProgressInfo progressInfo;
-	protected SyncOperationStatus syncOperationStatus;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = LogFactory.getLog(this.getClass());
@@ -75,15 +72,6 @@ public abstract class OperationController implements Controller{
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 		
 		this.progressInfo = this.processController.initOperationProgressMeter(this);
-		
-		if (generateProcessStatusFile().exists()) {
-			this.syncOperationStatus = SyncOperationStatus.loadFromFile(generateProcessStatusFile());
-			this.syncOperationStatus.setController(this);
-		}
-	}
-	
-	public SyncOperationStatus getSyncOperationStatus() {
-		return syncOperationStatus;
 	}
 	
 	public OperationProgressInfo getProgressInfo() {
@@ -103,7 +91,7 @@ public abstract class OperationController implements Controller{
 	}
 	
 	public boolean hasChild() {
-		return this.child != null;
+		return this.children != null;
 	}
 	
 	public boolean hasNestedController() {
@@ -118,12 +106,12 @@ public abstract class OperationController implements Controller{
 		return operationConfig;
 	}
 	
-	public OperationController getChild() {
-		return child;
+	public List<OperationController> getChildren() {
+		return children;
 	}
 	
-	public void setChild(OperationController child) {
-		this.child = child;
+	public void setChildren(List<OperationController> children) {
+		this.children = children;
 	}
 	
 	public ProcessController getProcessController() {
@@ -159,10 +147,12 @@ public abstract class OperationController implements Controller{
 			else {
 				logInfo(("Starting operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'").toUpperCase());
 				
-				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo);
-				engineMonitor.run();
+				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				
-				this.progressInfo.updateProgressInfo(engineMonitor);
+				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo.getProgressMeter());
+				progressInfo.save();
+				
+				engineMonitor.run();
 				
 				if (stopRequested() && engineMonitor.isStopped()) {
 					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());
@@ -207,10 +197,11 @@ public abstract class OperationController implements Controller{
 			else{
 				logInfo("INITIALIZING '" + getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
 					
-				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo);
+				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				
-				this.progressInfo.updateProgressInfo(engineMonitor);
+				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo.getProgressMeter());
 				
+				progressInfo.save();
 				
 				startAndAddToEnginesActivititieMonitor(engineMonitor);
 			}
@@ -219,12 +210,12 @@ public abstract class OperationController implements Controller{
 		changeStatusToRunning();
 	}
 	
-	public boolean operationTableIsAlreadyFinished(SyncTableConfiguration conf) {
-		return generateTableProcessStatusFile(conf).exists();
+	public boolean operationTableIsAlreadyFinished(SyncTableConfiguration tableConfiguration) {
+		return retrieveProgressInfo(tableConfiguration).getProgressMeter().isFinished();
 	}
 
 	private boolean operationIsAlreadyFinished() {
-		return this.syncOperationStatus.isFinished();
+		return this.progressInfo.isFinished();
 	}
 
 	public String getControllerId() {
@@ -276,14 +267,6 @@ public abstract class OperationController implements Controller{
 		
 		onStart();
 		
-		if (this.syncOperationStatus == null) {
-			this.syncOperationStatus = new SyncOperationStatus(this);
-			
-			this.syncOperationStatus.setStartTime(DateAndTimeUtilities.getCurrentDate());
-			
-			this.syncOperationStatus.changeStatusToRunning();
-		}
-		
 		this.activititieMonitor = new ControllerMonitor(this);
 		
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.activititieMonitor.getMonitorId());
@@ -294,8 +277,10 @@ public abstract class OperationController implements Controller{
 			
 			changeStatusToStopped();
 			
-			if (getChild() != null) {
-				getChild().requestStop();
+			if (hasChild()) {
+				for (OperationController child : getChildren()) {
+					child.requestStop();
+				}
 			}
 		}
 		else
@@ -379,13 +364,15 @@ public abstract class OperationController implements Controller{
 		
 		logInfo("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
 		
-		TableOperationStatus status = new TableOperationStatus(this, conf, engine, timer);
-			
+		TableOperationProgressInfo progressInfo = this.retrieveProgressInfo(conf);
+				
 		String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
 			
 		logInfo("WRITING OPERATION STATUS ON "+ fileName);
 		
-		status.save();
+		progressInfo.getProgressMeter().changeStatusToFinished();
+		
+		progressInfo.save();
 		
 		logInfo("FILE WROTE");
 	}
@@ -430,7 +417,7 @@ public abstract class OperationController implements Controller{
 		
 		logInfo("WRITING OPERATION STATUS ON FILE ["+ generateProcessStatusFile().getAbsolutePath() + "]");
 		
-		if (!this.syncOperationStatus.isFinished()) this.syncOperationStatus.changeStatusToFinished();
+		if (!this.progressInfo.isFinished()) this.progressInfo.changeStatusToFinished();
 		
 		changeStatusToFinished();
 		
@@ -474,6 +461,10 @@ public abstract class OperationController implements Controller{
 
 	@Override
 	public void onStart() {
+		if (!generateProcessStatusFile().exists()) {
+			this.progressInfo.setStartTime(DateAndTimeUtilities.getCurrentDate());
+			this.progressInfo.changeStatusToRunning();
+		}
 	}
 
 	@Override
@@ -504,39 +495,34 @@ public abstract class OperationController implements Controller{
 		getTimer().stop();
 		
 		logInfo("FINISHING OPERATION " + getControllerId());
-		OperationController nextOperation = getChild();
+		List<OperationController> nextOperation = getChildren();
 		
 		logInfo("TRY TO INIT NEXT OPERATION");
 		
-		while (nextOperation != null && nextOperation.getOperationConfig().isDisabled()) {
-			nextOperation = nextOperation.getChild();
+		
+		//Remember, if one of multiple child is disabled, then all other children are disabled
+		while (nextOperation != null && !nextOperation.isEmpty() && nextOperation.get(0).getOperationConfig().isDisabled()) {
+			nextOperation = nextOperation.get(0).getChildren();
 		}
 		
 		if (nextOperation != null) {
 			if (!stopRequested()) {
-				if (nextOperation instanceof DestinationOperationController && utilities().arrayHasElement(nextOperation.getOperationConfig().getSourceFolders())) {
-					for (String appOriginCode : nextOperation.getOperationConfig().getSourceFolders()) {
-						logInfo("STARTING DESTINATION OPERATION " + nextOperation.getControllerId() + " ON ORIGIN " + appOriginCode);
-						
-						OperationController clonedOperation = ((DestinationOperationController)nextOperation).cloneForOrigin(appOriginCode);
-						
-						ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(clonedOperation.getControllerId());
-						executor.execute(clonedOperation);
-					}
-				}
-				else {
-					logInfo("STARTING NEXT OPERATION " + nextOperation.getControllerId());
+				for (OperationController controller : nextOperation) {
+					logInfo("STARTING NEXT OPERATION " + controller.getControllerId());
 					
-					if (this instanceof DestinationOperationController) {
-						nextOperation = ((DestinationOperationController)nextOperation).cloneForOrigin( ((DestinationOperationController)this).getAppOriginLocationCode());
-					}
-					
-					ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(nextOperation.getControllerId());
-					executor.execute(nextOperation);
+					ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId());
+					executor.execute(controller);
 				}
 			}
 			else {
-				logInfo("THE OPERATION " + nextOperation.getControllerId().toUpperCase() + " COULD NOT BE INITIALIZED BECAUSE THERE WAS A STOP REQUEST!!!");
+				String nextOperations = "[";
+				for (OperationController controller : nextOperation) {
+					nextOperations += controller.getControllerId() + ";";
+				}
+				
+				nextOperations += "]";
+				
+				logInfo("THE OPERATION " + nextOperations.toUpperCase() + "NESTED COULD NOT BE INITIALIZED BECAUSE THERE WAS A STOP REQUEST!!!");
 			}
 		}
 		else {
@@ -579,7 +565,11 @@ public abstract class OperationController implements Controller{
 			this.stopRequested = true;
 		}
 		
-		if (getChild() != null) getChild().requestStop();
+		if (getChildren() != null) {
+			for (OperationController child : getChildren()) {
+				child.requestStop();
+			}
+		}
 	}
 	
 	@Override
@@ -624,13 +614,16 @@ public abstract class OperationController implements Controller{
 			}
 		}
 		
-		if (getChild() != null) getChild().requestStop();
+		for (OperationController child : getChildren()) {
+			child.requestStop();
+		}
 	}
 
-	public ItemProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
-		
-		for (ItemProgressInfo item : progressInfo.getItemsProgressInfo()) {
-			if (item.getTableConfiguration().equals(tableConfiguration)) return item;
+	public TableOperationProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
+		if (progressInfo != null) {
+			for (TableOperationProgressInfo item : progressInfo.getItemsProgressInfo()) {
+				if (item.getTableConfiguration().equals(tableConfiguration)) return item;
+			}
 		}
 		
 		return null;

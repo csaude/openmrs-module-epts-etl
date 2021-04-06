@@ -27,25 +27,26 @@ public class SyncController extends OperationController implements DestinationOp
 	
 	private String appOriginLocationCode;
 	
-	public SyncController(ProcessController processController, SyncOperationConfig operationConfig) {
+	/*public SyncController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
-	}
+	}*/
 
-	private SyncController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+	public SyncController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig);
 		
 		this.appOriginLocationCode = appOriginLocationCode;
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_from_" + appOriginLocationCode;	
+		this.progressInfo = this.processController.initOperationProgressMeter(this);
 	}
 	
 	public String getAppOriginLocationCode() {
 		return appOriginLocationCode;
 	}
 
-	@Override
+	/*@Override
 	public OperationController cloneForOrigin(String appOriginLocationCode) {
 		OperationController controller = new SyncController(getProcessController(), getOperationConfig(), appOriginLocationCode);
 		
@@ -53,7 +54,7 @@ public class SyncController extends OperationController implements DestinationOp
 		controller.setParent(this.getParent());
 		
 		return controller;
-	}
+	}*/
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
@@ -83,7 +84,7 @@ public class SyncController extends OperationController implements DestinationOp
 		
 		try {
 			SynchronizationSearchParams searchParams = new SynchronizationSearchParams(tableInfo, null, this.appOriginLocationCode);
-			searchParams.setSyncStartDate(this.syncOperationStatus.getStartTime());
+			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
 		
@@ -106,7 +107,7 @@ public class SyncController extends OperationController implements DestinationOp
 		
 		try {
 			SynchronizationSearchParams searchParams = new SynchronizationSearchParams(tableInfo, null, this.appOriginLocationCode);
-			searchParams.setSyncStartDate(this.syncOperationStatus.getStartTime());
+			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getLastRecord(searchParams, conn);
 		

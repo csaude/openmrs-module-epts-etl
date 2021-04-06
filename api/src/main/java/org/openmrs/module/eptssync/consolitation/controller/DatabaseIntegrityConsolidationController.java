@@ -24,25 +24,27 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 public class DatabaseIntegrityConsolidationController extends OperationController implements DestinationOperationController{
 	private String appOriginLocationCode;
 
-	public DatabaseIntegrityConsolidationController(ProcessController processController, SyncOperationConfig operationConfig) {
+	/*public DatabaseIntegrityConsolidationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
-	}
+	}*/
 
-	private DatabaseIntegrityConsolidationController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+	public DatabaseIntegrityConsolidationController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig);
 		
 		this.appOriginLocationCode = appOriginLocationCode;
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_from_" + appOriginLocationCode;	
+		
+		this.progressInfo = this.processController.initOperationProgressMeter(this);
 	}
 	
 	public String getAppOriginLocationCode() {
 		return appOriginLocationCode;
 	}
 	
-	@Override
+	/*@Override
 	public OperationController cloneForOrigin(String appOriginLocationCode) {
 		OperationController controller = new DatabaseIntegrityConsolidationController(getProcessController(), getOperationConfig(), appOriginLocationCode);
 		
@@ -50,7 +52,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		controller.setParent(this.getParent());
 		
 		return controller;
-	}
+	}*/
 			
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
@@ -62,7 +64,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecordOnDestination(tableInfo, getAppOriginLocationCode(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getFirstRecordOnDestination(tableInfo, getAppOriginLocationCode(), getProgressInfo().getStartTime(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -82,7 +84,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecordOnDestination(tableInfo, getAppOriginLocationCode(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecordOnDestination(tableInfo, getAppOriginLocationCode(), getProgressInfo().getStartTime(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			

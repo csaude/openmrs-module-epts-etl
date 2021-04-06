@@ -19,7 +19,15 @@ public class ProcessProgressInfo {
 	}
 	
 	public OperationProgressInfo initAndAddProgressMeterToList(OperationController operationController) {
-		OperationProgressInfo progressInfo = new OperationProgressInfo(operationController);
+		OperationProgressInfo progressInfo;
+		
+		if (operationController.generateProcessStatusFile().exists()) {
+			progressInfo = OperationProgressInfo.loadFromFile(operationController.generateProcessStatusFile());
+			progressInfo.setController(operationController);
+		}
+		else {
+			progressInfo = new OperationProgressInfo(operationController);
+		}
 		
 		progressInfo.initProgressMeter();
 		

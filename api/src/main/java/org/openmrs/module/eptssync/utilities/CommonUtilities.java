@@ -161,7 +161,7 @@ public class  CommonUtilities implements Serializable{
 	 * @param p
 	 * @return Insere um novo objecto num array de Objectos e retorna este ultimo
 	 */
-	public  Object[] setParam(int qtdObjects, Object[] paramsCorrentes, Object paramAAdicionar){
+	public  Object[] addToParams(int qtdObjects, Object[] paramsCorrentes, Object paramAAdicionar){
 		return FuncoesGenericas.setParam(qtdObjects, paramsCorrentes, paramAAdicionar);
 	}
 	

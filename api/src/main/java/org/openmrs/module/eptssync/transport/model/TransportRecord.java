@@ -31,15 +31,6 @@ public class TransportRecord extends BaseVO implements SyncRecord {
 		return file;
 	}
 
-	@Override
-	public int getObjectId() {
-		return 0;
-	}
-
-	@Override
-	public void setObjectId(int selfId) {
-	}
-
 	public File generateRelatedMinimalInfoFile() {
 		if (this.relatedMinimalInfoFile == null) {
 			String[] parts = this.file.getAbsolutePath().split(".json");
@@ -128,9 +119,8 @@ public class TransportRecord extends BaseVO implements SyncRecord {
 	        os.close();
 	    }
 	}
-
 	
-	
+	@SuppressWarnings("unused")
 	private void copy_old(File source, File dest) throws IOException {
 		try {
 			FileUtilities.copyFile(source, dest);

@@ -34,7 +34,7 @@
 </style>
 
 <script type="text/javascript">
-  	window.setInterval(refreshStatus, 1000);
+  	window.setInterval(refreshStatus, 15000);
 
 	function refreshStatus(){
 		var data = new FormData();
@@ -49,18 +49,85 @@
 
 			    	data.itemsProgressInfo.forEach(function(progressInfo) {
 			    		var progressMeter = progressInfo.progressMeter;
-			    		var _progress = progressMeter != null  ? ('' + progressMeter.progress + '%') : 'Not Started';
-						console.log('_progress ' + _progress);
-			    		
-						var _value = 'width: ' + (progressMeter != null ? progressMeter.progress : 0) + '%';
-						console.log('_value ' + _value);
-			    		
-						var _summary = progressMeter != null ? ('' + progressMeter.processed + '/' + progressMeter.total) : '-';
-						console.log('_summary ' + _summary);
-			    			
-			    		$('#'+progressInfo.syncTableName+'_progress').attr('data-label', _progress);
-			    		$('#'+progressInfo.syncTableName+'_value').attr('style', _value);
-			    		$('#'+progressInfo.syncTableName+'_summary').html(_summary);
+
+			    		var _progress = 'Not Started';
+			    		var _value = '0';
+			    		var _summary = '-';
+			    		var _id = progressMeter != null ? progressMeter.id : 'Uknown';
+			    		 
+						if (progressMeter != null && progressMeter.status != 'NOT INITIALIZED'){
+							_progress 	= '' + progressMeter.progress + '%';
+							_value 		= 'width: ' + progressMeter.progress + '%';
+							_summary	 =  progressMeter.processed + '/' + progressMeter.total;
+						}
+					
+						if (progressMeter != null && progressMeter.finished && progressMeter.progress == 0) {
+							_progress 	= '100%';
+							_value 		= 'width: 100%';
+							_summary	=  progressMeter.processed + '/' + progressMeter.total;
+						}
+
+						var show = '';
+
+							show = 'id: ' + _id;
+
+							show = show + ' [';
+
+							show = show + '_summary:' + _summary;
+							show = show + ',_value:' + _value;
+							show = show + ',_progress: ' + _progress;
+
+							show = show + ']';
+
+
+						/*	
+						var attrs = 'Before Update:\n';
+						var node = $('#'+progressInfo.operationTable+'_progress');
+
+						alert(JSON.stringify(node));
+
+						
+					    $.each(node.attributes, function ( index, attribute ) {
+					        attrs += attribute.name + ' = ' + attribute.value;
+					    } );
+
+					    node = $('#'+progressInfo.operationTable+'_value');
+					    alert(node);
+						
+					    $.each( node.attributes, function ( index, attribute ) {
+					        attrs += '\n' + attribute.name + ' = ' + attribute.value;
+					    } );
+
+					    node = $('#'+progressInfo.operationTable+'_summary');
+					    alert(node);
+						
+					    $.each( node.attributes, function ( index, attribute ) {
+					        attrs += '\n' + attribute.name + ' = ' + attribute.value;
+					    } );
+							
+						alert(attrs);
+						*/
+						
+			    		$('#'+progressInfo.operationTable+'_progress').attr('data-label', _progress);
+			    		$('#'+progressInfo.operationTable+'_value').attr('style', _value);
+			    		$('#'+progressInfo.operationTable+'_summary').html(_summary);
+
+			    		/*attrs = 'After Update:\n';
+
+					    $.each( $('#'+progressInfo.operationTable+'_progress').attributes, function ( index, attribute ) {
+					        attrs += attribute.name + ' = ' + attribute.value;
+					    } );
+
+					    $.each( $('#'+progressInfo.operationTable+'_value').attributes, function ( index, attribute ) {
+					        attrs += '\n' + attribute.name + ' = ' + attribute.value;
+					    } );
+
+					    $.each( $('#'+progressInfo.operationTable+'_summary').attributes, function ( index, attribute ) {
+					        attrs += '\n' + attribute.name + ' = ' + attribute.value;
+					    } );
+							
+						alert(attrs);*/
+			    	
 			    	});
 		 	    	  
 		    	return true;
@@ -109,17 +176,36 @@
 		
 					<tbody>
 						<c:forEach items="${operation.relatedSyncConfig.tablesConfigurations}" var="item" varStatus="itemsRow">
+							<c:set var="progressInfo" value="${syncVm.retrieveProgressInfo(operation, item)}"/>
+							<c:set var="progressMeter" value="${progressInfo.progressMeter}"/>
+							
 							<tr>
 								<td>${item.tableName}</td>
 								<td>
-									<c:set var="progressInfo" value="${syncVm.retrieveProgressInfo(operation, item)}"/>
-									<c:set var="progressMeter" value="${progressInfo.progressMeter}"/>
-								
-									<div id="${item.tableName}_progress" class="progress" data-label="${not empty progressMeter  ? progressMeter.progress : 'Not Started'}${not empty progressMeter ? '%' : ''}">
-									  <span id="${item.tableName}_value" class="value" style="width:${not empty progressMeter ? progressMeter.progress : 0}%;"></span>
+									<c:set var="_progress" value="Not Started"/>
+									<c:set var="_value" value="0"/>
+									<c:set var="_summary" value="-"/>
+									<c:set var="_id" value="${progressMeter != null ? progressMeter.id : 'Uknown'}"/>
+									
+									<c:choose>
+									<c:when test="${progressMeter != null && progressMeter.finished && progressMeter.progress == 0}">
+										<c:set var="_progress" value="100%"/>
+										<c:set var="_value" value="width: 100%"/>
+										<c:set var="_summary" value="${progressMeter.processed}/${progressMeter.total}"/>
+									</c:when>
+									<c:when test="${progressMeter != null && progressMeter.status != 'NOT INITIALIZED'}">
+										<c:set var="_progress" value="${progressMeter.progress}%"/>
+										<c:set var="_value" value="width: ${progressMeter.progress}%"/>
+										<c:set var="_summary" value="${progressMeter.processed}/${progressMeter.total}"/>
+									</c:when>
+									
+									</c:choose>				
+									
+									<div id="${item.tableName}_progress" class="progress" data-label="${_progress}">
+									  <span id="${item.tableName}_value" class="value" style="${_value}"></span>
 									</div>
 								</td>
-								<td><label id="${item.tableName}_summary">${progressMeter.processed}/${progressMeter.total}</label></td>
+								<td><label id="${item.tableName}_summary">${_summary}</label></td>
 							</tr>
 						</c:forEach>
 					</tbody>
