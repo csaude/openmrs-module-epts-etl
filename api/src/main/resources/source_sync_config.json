@@ -538,7 +538,7 @@
   "connInfo" : {
     "dataBaseUserName" : "root",
     "dataBaseUserPassword" : "root",
-    "connectionURI" : "jdbc:mysql://localhost:3307/openmrs_molocue?autoReconnect=true&amp;sessionVariables=storage_engine=InnoDB&amp;useUnicode=true&amp;characterEncoding=UTF-8",
+    "connectionURI" : "jdbc:mysql://197.242.174.114:33070/openmrs_molocue?autoReconnect=true&amp;sessionVariables=storage_engine=InnoDB&amp;useUnicode=true&amp;characterEncoding=UTF-8",
     "driveClassName" : "com.mysql.jdbc.Driver"
   },
   "installationType" : "source",
