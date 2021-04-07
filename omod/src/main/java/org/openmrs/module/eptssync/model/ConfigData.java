@@ -311,7 +311,20 @@ public class ConfigData {
 									"tableName: \"patient_identifier_type\",\n"+
 									"parents: [{tableName: \"users\", defaultValueDueInconsistency: 1}],\n"+
 									"metadata: true\n"+
+								"},\n"+		
+								"\n"+
+								"{\n"+
+									"tableName: \"cohort\",\n"+
+									"parents: [{tableName: \"users\", defaultValueDueInconsistency: 1}],\n"+
+									"metadata: true\n"+
+								"},\n"+							
+								"\n"+
+								"{\n"+
+									"tableName: \"cohort_member\",\n"+
+									"parents: [{tableName: \"users\", defaultValueDueInconsistency: 1},{tableName: \"cohort\"}, {tableName: \"patient\", refColumnName: \"patient_id\", refColumnType: \"int\"} ],\n"+
+									"metadata: true\n"+
 								"}\n"+		
+									
 						"]\n";
 	}
 }

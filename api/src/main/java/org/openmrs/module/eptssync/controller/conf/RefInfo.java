@@ -99,7 +99,6 @@ public class RefInfo {
 		return AttDefinedElements.isNumeric(getRefColumnType());
 	}
 	
-	@JsonIgnore
 	public String getRefColumnName() {
 		return refColumnName;
 	}
@@ -113,7 +112,6 @@ public class RefInfo {
 		return utilities.convertTableAttNameToClassAttName(this.getRefColumnName());
 	}
 	
-	@JsonIgnore
 	public String getRefColumnType() {
 		return refColumnType;
 	}
