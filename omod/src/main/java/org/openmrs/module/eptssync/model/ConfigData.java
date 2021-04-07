@@ -313,6 +313,7 @@ public class ConfigData {
 									"metadata: true\n"+
 								"},\n"+		
 								"\n"+
+								
 								"{\n"+
 									"tableName: \"cohort\",\n"+
 									"parents: [{tableName: \"users\", defaultValueDueInconsistency: 1}],\n"+
