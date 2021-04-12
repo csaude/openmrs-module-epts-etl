@@ -21,6 +21,7 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
 	private int obsGroupId;
 	private String accessionNumber;
 	private int valueGroupId;
+	private byte valueBoolean;
 	private int valueCoded;
 	private int valueCodedNameId;
 	private int valueDrug;
@@ -120,6 +121,14 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	public int getValueGroupId(){ 
 		return this.valueGroupId;
+	}
+ 
+	public void setValueBoolean(byte valueBoolean){ 
+	 	this.valueBoolean = valueBoolean;
+	}
+ 
+	public byte getValueBoolean(){ 
+		return this.valueBoolean;
 	}
  
 	public void setValueCoded(int valueCoded){ 
@@ -271,6 +280,7 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		this.obsGroupId = rs.getInt("obs_group_id");
 		this.accessionNumber = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("accession_number") != null ? rs.getString("accession_number").trim() : null);
 		this.valueGroupId = rs.getInt("value_group_id");
+		this.valueBoolean = rs.getByte("value_boolean");
 		this.valueCoded = rs.getInt("value_coded");
 		this.valueCodedNameId = rs.getInt("value_coded_name_id");
 		this.valueDrug = rs.getInt("value_drug");
@@ -298,37 +308,37 @@ public class ObsVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO obs(person_id, concept_id, encounter_id, order_id, obs_datetime, location_id, obs_group_id, accession_number, value_group_id, value_coded, value_coded_name_id, value_drug, value_datetime, value_numeric, value_modifier, value_text, comments, creator, date_created, voided, voided_by, date_voided, void_reason, value_complex, uuid, previous_version, form_namespace_and_path) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO obs(person_id, concept_id, encounter_id, order_id, obs_datetime, location_id, obs_group_id, accession_number, value_group_id, value_boolean, value_coded, value_coded_name_id, value_drug, value_datetime, value_numeric, value_modifier, value_text, comments, creator, date_created, voided, voided_by, date_voided, void_reason, value_complex, uuid, previous_version, form_namespace_and_path) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO obs(obs_id, person_id, concept_id, encounter_id, order_id, obs_datetime, location_id, obs_group_id, accession_number, value_group_id, value_coded, value_coded_name_id, value_drug, value_datetime, value_numeric, value_modifier, value_text, comments, creator, date_created, voided, voided_by, date_voided, void_reason, value_complex, uuid, previous_version, form_namespace_and_path) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO obs(obs_id, person_id, concept_id, encounter_id, order_id, obs_datetime, location_id, obs_group_id, accession_number, value_group_id, value_boolean, value_coded, value_coded_name_id, value_drug, value_datetime, value_numeric, value_modifier, value_text, comments, creator, date_created, voided, voided_by, date_voided, void_reason, value_complex, uuid, previous_version, form_namespace_and_path) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.obsId, this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath};		return params; 
+ 		Object[] params = {this.obsId, this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath, this.obsId};		return params; 
+ 		Object[] params = {this.personId == 0 ? null : this.personId, this.conceptId == 0 ? null : this.conceptId, this.encounterId == 0 ? null : this.encounterId, this.orderId == 0 ? null : this.orderId, this.obsDatetime, this.locationId == 0 ? null : this.locationId, this.obsGroupId == 0 ? null : this.obsGroupId, this.accessionNumber, this.valueGroupId, this.valueBoolean, this.valueCoded == 0 ? null : this.valueCoded, this.valueCodedNameId == 0 ? null : this.valueCodedNameId, this.valueDrug == 0 ? null : this.valueDrug, this.valueDatetime, this.valueNumeric, this.valueModifier, this.valueText, this.comments, this.creator == 0 ? null : this.creator, this.dateCreated, this.voided, this.voidedBy == 0 ? null : this.voidedBy, this.dateVoided, this.voidReason, this.valueComplex, this.uuid, this.previousVersion == 0 ? null : this.previousVersion, this.formNamespaceAndPath, this.obsId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE obs SET person_id = ?, concept_id = ?, encounter_id = ?, order_id = ?, obs_datetime = ?, location_id = ?, obs_group_id = ?, accession_number = ?, value_group_id = ?, value_coded = ?, value_coded_name_id = ?, value_drug = ?, value_datetime = ?, value_numeric = ?, value_modifier = ?, value_text = ?, comments = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, value_complex = ?, uuid = ?, previous_version = ?, form_namespace_and_path = ? WHERE obs_id = ?;"; 
+ 		return "UPDATE obs SET person_id = ?, concept_id = ?, encounter_id = ?, order_id = ?, obs_datetime = ?, location_id = ?, obs_group_id = ?, accession_number = ?, value_group_id = ?, value_boolean = ?, value_coded = ?, value_coded_name_id = ?, value_drug = ?, value_datetime = ?, value_numeric = ?, value_modifier = ?, value_text = ?, comments = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, value_complex = ?, uuid = ?, previous_version = ?, form_namespace_and_path = ? WHERE obs_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.personId == 0 ? null : this.personId) + "," + (this.conceptId == 0 ? null : this.conceptId) + "," + (this.encounterId == 0 ? null : this.encounterId) + "," + (this.orderId == 0 ? null : this.orderId) + "," + (this.obsDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(obsDatetime)  +"\"" : null) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.obsGroupId == 0 ? null : this.obsGroupId) + "," + (this.accessionNumber != null ? "\""+ utilities.scapeQuotationMarks(accessionNumber)  +"\"" : null) + "," + (this.valueGroupId) + "," + (this.valueCoded == 0 ? null : this.valueCoded) + "," + (this.valueCodedNameId == 0 ? null : this.valueCodedNameId) + "," + (this.valueDrug == 0 ? null : this.valueDrug) + "," + (this.valueDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime)  +"\"" : null) + "," + (this.valueNumeric) + "," + (this.valueModifier != null ? "\""+ utilities.scapeQuotationMarks(valueModifier)  +"\"" : null) + "," + (this.valueText != null ? "\""+ utilities.scapeQuotationMarks(valueText)  +"\"" : null) + "," + (this.comments != null ? "\""+ utilities.scapeQuotationMarks(comments)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.valueComplex != null ? "\""+ utilities.scapeQuotationMarks(valueComplex)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.previousVersion == 0 ? null : this.previousVersion) + "," + (this.formNamespaceAndPath != null ? "\""+ utilities.scapeQuotationMarks(formNamespaceAndPath)  +"\"" : null); 
+ 		return ""+(this.personId == 0 ? null : this.personId) + "," + (this.conceptId == 0 ? null : this.conceptId) + "," + (this.encounterId == 0 ? null : this.encounterId) + "," + (this.orderId == 0 ? null : this.orderId) + "," + (this.obsDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(obsDatetime)  +"\"" : null) + "," + (this.locationId == 0 ? null : this.locationId) + "," + (this.obsGroupId == 0 ? null : this.obsGroupId) + "," + (this.accessionNumber != null ? "\""+ utilities.scapeQuotationMarks(accessionNumber)  +"\"" : null) + "," + (this.valueGroupId) + "," + (this.valueBoolean) + "," + (this.valueCoded == 0 ? null : this.valueCoded) + "," + (this.valueCodedNameId == 0 ? null : this.valueCodedNameId) + "," + (this.valueDrug == 0 ? null : this.valueDrug) + "," + (this.valueDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime)  +"\"" : null) + "," + (this.valueNumeric) + "," + (this.valueModifier != null ? "\""+ utilities.scapeQuotationMarks(valueModifier)  +"\"" : null) + "," + (this.valueText != null ? "\""+ utilities.scapeQuotationMarks(valueText)  +"\"" : null) + "," + (this.comments != null ? "\""+ utilities.scapeQuotationMarks(comments)  +"\"" : null) + "," + (this.creator == 0 ? null : this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy == 0 ? null : this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.valueComplex != null ? "\""+ utilities.scapeQuotationMarks(valueComplex)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.previousVersion == 0 ? null : this.previousVersion) + "," + (this.formNamespaceAndPath != null ? "\""+ utilities.scapeQuotationMarks(formNamespaceAndPath)  +"\"" : null); 
 	} 
  
 	@Override

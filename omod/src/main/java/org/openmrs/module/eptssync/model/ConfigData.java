@@ -255,7 +255,7 @@ public class ConfigData {
 								"\n"+
 								"{\n"+
 									"tableName: \"concept\",\n"+
-									"parents: [{tableName: \"concept_datatype\"}, {tableName: \"visit\"}, {tableName: \"users\", defaultValueDueInconsistency: 1}],\n"+
+									"parents: [{tableName: \"concept_datatype\"}, {tableName: \"users\", defaultValueDueInconsistency: 1}],\n"+
 									"metadata: true\n"+
 								"},\n"+
 								"\n"+

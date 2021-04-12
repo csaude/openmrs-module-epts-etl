@@ -1,5 +1,5 @@
 {
-  "syncRootDirectory" : "D://JEE//Workspace//FGH//data//sync",
+  "syncRootDirectory" : "D:\\JEE\\Workspace\\FGH\\data\\sync",
   "originAppLocationCode" : "cs_mopeia",
   "tablesConfigurations" : [  {
     "tableName" : "cohort",
@@ -60,7 +60,7 @@
       "child" : {
         "operationType" : "inconsistency_solver",
         "maxRecordPerProcessing" : 1000,
-        "maxSupportedEngines" : 15,
+        "maxSupportedEngines" : 1,
         "minRecordsPerEngine" : 1000,
         "doIntegrityCheckInTheEnd" : true,
         "child" : {

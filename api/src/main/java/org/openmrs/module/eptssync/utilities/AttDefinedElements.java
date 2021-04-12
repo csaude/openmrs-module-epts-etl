@@ -198,14 +198,6 @@ public class AttDefinedElements {
 		return sqlInsertValues;
 	}
 	
-	public static void main(String[] args) {
-		String a = "2020-20-20 10:11";
-		
-		String s = "\"" + a + "\"";
-		
-		System.out.println(s);
-	}
-	
 	private String defineResultSetLOadDefinition() {
 		
 		

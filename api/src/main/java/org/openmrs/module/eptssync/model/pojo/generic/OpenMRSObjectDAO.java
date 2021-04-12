@@ -192,8 +192,16 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		String recordTableName	= tableInfo.getTableName().equalsIgnoreCase("patient") ? "person" : tableInfo.getTableName();
 		String pk = tableInfo.getTableName().equalsIgnoreCase("patient") ? "person_id" : obj.generateDBPrimaryKeyAtt();
 		
+		
 		String clause = "1 = 1";
 
+		if (tableInfo.isUuidColumnNotExists()) {
+			clause = utilities.concatCondition(clause, "record_origin_id = " + recordTableName + "." + pk);
+		}
+		else {
+			clause = utilities.concatCondition(clause, "record_uuid = " + recordTableName + ".uuid");
+		}
+		
 		if (syncStartDate != null) {
 			clause = utilities.concatCondition(clause, "last_sync_date >= ?");
 			
@@ -206,18 +214,31 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 			params = utilities.addToParams(params.length, params, originAppLocationCode);
 		}
-
+		
+		
 		sql += " SELECT * \n";
 		sql += " FROM  	" + obj.generateTableName() + "\n";
 		sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + "	= (	SELECT " + function + "(" + pk + ")\n";
 		sql += "													FROM   " + recordTableName + " \n";
 		sql += "													WHERE  NOT EXISTS ( SELECT * \n";
 		sql += "																		FROM " + tableInfo.generateFullStageTableName() + "\n";
-		sql += "																		WHERE record_uuid = " + recordTableName + ".uuid\n";
-		sql += "																			  AND " + clause + ")";
+		
+		sql += "																		WHERE " + clause + "\n)";
 		sql += "												   )";
 		
-		return find(tableInfo.getSyncRecordClass(), sql, params, conn);
+		try {
+			return find(tableInfo.getSyncRecordClass(), sql, params, conn);
+		} catch (DBException e) {
+			
+			//For old version of cohort_member, there is no uuid. This specific situation will be observerd on not upgraded source database
+			if (e.getLocalizedMessage().contains("Unknown column") && e.getLocalizedMessage().contains("cohort_member.uuid")){
+				tableInfo.setUuidColumnNotExists(true);
+				
+				return getGenericSpecificRecord(tableInfo, originAppLocationCode, function, syncStartDate, conn);
+			}
+			else throw e;
+		}
+		
 	}
 	
 	public static OpenMRSObject getFirstSyncRecordOnOrigin(SyncTableConfiguration tableInfo, String originAppLocationCode, Date syncStartDate, Connection conn) throws DBException {

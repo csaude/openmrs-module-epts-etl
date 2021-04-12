@@ -1,5 +1,5 @@
 {
-  "syncRootDirectory" : "/home/jpboane/working/prg/jee/workspace/data/sync",
+  "syncRootDirectory" : "D:\\JEE\\Workspace\\FGH\\data\\sync",
   "originAppLocationCode" : "cs_mopeia",
   "tablesConfigurations" : [ {
     "tableName" : "concept",
@@ -631,6 +631,6 @@
   "automaticStart" : true,
   "childConfigFilePath" : null,
   "disabled" : false,
-  "classPath" : "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/eptssync-api-1.0-SNAPSHOT.jar",
+  "classPath" : "D://JEE//Workspace//FGH//openmrs-module-eptssync//api//target//eptssync-api-1.0-SNAPSHOT.jar",
   "syncStageSchema" : "cs_mopeia_sync_stage_area"
 }
