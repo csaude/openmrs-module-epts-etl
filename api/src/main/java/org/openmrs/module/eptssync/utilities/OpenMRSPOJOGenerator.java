@@ -36,11 +36,11 @@ public class OpenMRSPOJOGenerator {
 	public static Class<OpenMRSObject> generate(SyncTableConfiguration syncTableInfo, Connection conn) throws IOException, SQLException, ClassNotFoundException {
 		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad();
 
-		String pojoRootPackage = syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath();
+		String pojoRootFolder = syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath();
 		
-		pojoRootPackage += syncTableInfo.isDestinationInstallationType() ? "/org/openmrs/module/eptssync/model/pojo/" : "/org/openmrs/module/eptssync/model/pojo/source/";
+		pojoRootFolder += syncTableInfo.isDestinationInstallationType() ? "/org/openmrs/module/eptssync/model/pojo/" : "/org/openmrs/module/eptssync/model/pojo/source/";
 		
-		File sourceFile = new File(pojoRootPackage + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
+		File sourceFile = new File(pojoRootFolder + syncTableInfo.getClasspackage() + "/" + syncTableInfo.generateClassName() + ".java");
 		
 		String fullClassName = syncTableInfo.generateFullClassName();
 		
@@ -276,9 +276,9 @@ public class OpenMRSPOJOGenerator {
 	
 		
 			
-		String classDefinition ="package org.openmrs.module.eptssync.model.pojo";
+		String classDefinition ="package org.openmrs.module.eptssync.model.pojo.";
 		
-		classDefinition += syncTableInfo.isDestinationInstallationType() ? "." : "source.";
+		classDefinition += syncTableInfo.isDestinationInstallationType() ? "" : "source.";
 		
 		classDefinition += syncTableInfo.getClasspackage() + "; \n \n";
 		
@@ -347,9 +347,9 @@ public class OpenMRSPOJOGenerator {
 			
 		if (existingCLass != null) return existingCLass;
 	
-		String classDefinition ="package org.openmrs.module.eptssync.model.pojo";
+		String classDefinition ="package org.openmrs.module.eptssync.model.pojo.";
 		
-		classDefinition += syncTableInfo.isDestinationInstallationType() ? "." : "source.";
+		classDefinition += syncTableInfo.isDestinationInstallationType() ? "" : "source.";
 		
 		
 		classDefinition += syncTableInfo.getClasspackage() + "; \n \n";

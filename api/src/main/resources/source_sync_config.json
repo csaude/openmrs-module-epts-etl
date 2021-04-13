@@ -1,6 +1,6 @@
 {
   "syncRootDirectory" : "/home/jpboane/working/prg/jee/workspace/data/sync",
-  "originAppLocationCode" : "cs_mopeia",
+  "originAppLocationCode" : "molocue",
   "tablesConfigurations" : [ {
     "tableName" : "concept",
     "parents" : [ {
@@ -538,7 +538,7 @@
   "connInfo" : {
     "dataBaseUserName" : "root",
     "dataBaseUserPassword" : "root",
-    "connectionURI" : "jdbc:mysql://197.242.174.114:33070/openmrs_molocue?autoReconnect=true&amp;sessionVariables=storage_engine=InnoDB&amp;useUnicode=true&amp;characterEncoding=UTF-8",
+    "connectionURI" : "jdbc:mysql://localhost:3307/openmrs?autoReconnect=true&amp;sessionVariables=storage_engine=InnoDB&amp;useUnicode=true&amp;characterEncoding=UTF-8",
     "driveClassName" : "com.mysql.jdbc.Driver"
   },
   "installationType" : "source",
@@ -573,11 +573,11 @@
             "minRecordsPerEngine" : 50,
             "doIntegrityCheckInTheEnd" : false,
             "child" : null,
-            "disabled" : false,
+            "disabled" : true,
             "processingMode" : "sequencial",
             "sourceFolders" : null
           },
-          "disabled" : false,
+          "disabled" : true,
           "processingMode" : "sequencial",
           "sourceFolders" : null
         },

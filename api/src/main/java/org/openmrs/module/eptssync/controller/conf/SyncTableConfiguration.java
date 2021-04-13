@@ -375,6 +375,17 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return syncRecordClass;
 	}
 	
+	private static String[] REMOVABLE_METADATA = {};
+
+	/**
+	 * By default an metadata cannot be removed, but there are situations where is needed to remove a metadata
+	 * @return
+	 */
+	@JsonIgnore
+	public boolean isRemovableMetadata() {
+		return utilities.existOnArray(utilities.parseArrayToList(SyncTableConfiguration.REMOVABLE_METADATA), this.tableName);
+	}
+	
 	@JsonIgnore
 	public boolean existsSyncRecordClass() {
 		try {
@@ -391,7 +402,11 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 
 	@JsonIgnore
 	public String generateFullClassName() {
-		return "org.openmrs.module.eptssync.model.pojo." + getClasspackage() + "." + generateClassName();
+		String packagename = "org.openmrs.module.eptssync.model.pojo.";
+		
+		packagename += isDestinationInstallationType() ? "" : "source.";
+		
+		return packagename  + getClasspackage() + "." + generateClassName();
 	}
 	
 	@JsonIgnore

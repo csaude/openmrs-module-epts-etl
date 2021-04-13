@@ -35,6 +35,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	protected String uuid;
 	
 	protected SyncImportInfoVO relatedSyncInfo;
+	
 	/**
 	 * Retrieve a specific parent of this record. The parent is loaded using the origin (source) identification key
 	 * 
@@ -350,7 +351,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	public void resolveChildrenInconsistences(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
 		if (!syncTableInfo.getRelatedSynconfiguration().isSourceInstallationType())  throw new SyncExeption("You cannot move record to stage area in a installation different to source") {private static final long serialVersionUID = 1L;};
 		
-		if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) throw new SyncExeption("This metadata metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId() + ". is missing its some parents [" + generateMissingInfo(missingParents) +"] You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
+		if ( (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) && !syncTableInfo.isRemovableMetadata() ) throw new SyncExeption("This metadata metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId() + ". is missing its some parents [" + generateMissingInfo(missingParents) +"] You must resolve this inconsistence manual") {private static final long serialVersionUID = 1L;};
 		
 		
 		for (RefInfo refInfo: syncTableInfo.getChildred()) {
@@ -373,7 +374,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			}
 		}
 	}
-
+	
 	@Override
 	public void consolidateData(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
 		if (!tableConfiguration.isFullLoaded()) tableConfiguration.fullLoad();
