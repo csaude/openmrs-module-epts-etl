@@ -122,7 +122,6 @@ public class DatabasePreparationEngine extends Engine {
 			BaseDAO.executeBatch(conn, batch);
 			logInfo("CREATING CONF COLUMNS FOR TABLE [" + this.getTableName() + "]");
 		}
-		*/
 		
 		
 		if (!getSyncTableConfiguration().isDestinationInstallationType()) {
@@ -134,6 +133,8 @@ public class DatabasePreparationEngine extends Engine {
 				logInfo("RELATED TRIGGERS FOR [" + this.getTableName() + "] CREATED");
 			}
 		}
+		
+		*/
 		
 		logInfo("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
 	}
@@ -148,7 +149,7 @@ public class DatabasePreparationEngine extends Engine {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "date_changed", conn);
 	}
 	
-	private void createLastUpdateDateMonitorTrigger(Connection conn) throws SQLException {
+	protected void createLastUpdateDateMonitorTrigger(Connection conn) throws SQLException {
 		Statement st = conn.createStatement();
 	
 		st.addBatch(generateTriggerCode(this.generateLastUpdateDateInsertTriggerMonitor(), "INSERT"));
@@ -174,7 +175,7 @@ public class DatabasePreparationEngine extends Engine {
 		return sql;
 	}
 	
-	private boolean isExistRelatedTriggers(Connection conn) throws SQLException {
+	protected boolean isExistRelatedTriggers(Connection conn) throws SQLException {
 		return DBUtilities.isResourceExist(conn.getCatalog(), DBUtilities.RESOURCE_TYPE_TRIGGER,
 				generateLastUpdateDateInsertTriggerMonitor(), conn);
 	}
