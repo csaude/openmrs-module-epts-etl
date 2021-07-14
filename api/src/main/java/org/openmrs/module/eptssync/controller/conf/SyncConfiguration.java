@@ -40,7 +40,7 @@ public class SyncConfiguration {
 	
 	private List<SyncTableConfiguration> tablesConfigurations;
 	
-	private boolean firstExport;
+	//private boolean firstExport;
 	private DBConnectionInfo connInfo;
 
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
@@ -191,13 +191,13 @@ public class SyncConfiguration {
 		return op.isDoIntegrityCheckInTheEnd();
 	}
 	
-	public boolean isFirstExport() {
+	/*public boolean isFirstExport() {
 		return firstExport;
 	}
 
 	public void setFirstExport(boolean firstExport) {
 		this.firstExport = firstExport;
-	}
+	}*/
 	
 	public List<SyncTableConfiguration> getTablesConfigurations() {
 		return tablesConfigurations;
@@ -505,12 +505,18 @@ public class SyncConfiguration {
 
 	@JsonIgnore
 	public File getPOJOCompiledFilesDirectory() {
-		return new File(getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() + "bin");
+		String packageDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() ;
+		
+		//packageDir += isDestinationInstallationType() ? "" : "source" + FileUtilities.getPathSeparator();
+		
+		return new File(packageDir+ "bin");
 	}
 
 	@JsonIgnore
 	public File getPOJOSourceFilesDirectory() {
-		return new File(getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() + "src");
+		String packageDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() ;
+		
+		return new File(packageDir + FileUtilities.getPathSeparator() + "src");
 	}
 
 	public void refreshTables() {
@@ -557,6 +563,10 @@ public class SyncConfiguration {
 		}
 	}
 	
+	public String generateControllerId() {
+		return this.getDesignation() + "_controller";
+	}
+	
 	@JsonIgnore
 	public File getModuleRootDirectory() {
 		return moduleRootDirectory;
@@ -585,6 +595,9 @@ public class SyncConfiguration {
 		pojoPackageDir += "eptssync" + FileUtilities.getPathSeparator();
 		pojoPackageDir += "model" + FileUtilities.getPathSeparator();
 		pojoPackageDir += "pojo" + FileUtilities.getPathSeparator();
+		
+		pojoPackageDir += isDestinationInstallationType() ? "" : "source" +  FileUtilities.getPathSeparator();
+		
 		pojoPackageDir += this.getPojoPackage() + FileUtilities.getPathSeparator();
 		
 		return pojoPackageDir;

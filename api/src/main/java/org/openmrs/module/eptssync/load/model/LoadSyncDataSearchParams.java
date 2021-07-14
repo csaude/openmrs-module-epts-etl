@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.sql.Connection;
 
@@ -106,9 +107,12 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 			if (files == null) return 0;
 			
 			for (File file : files) {
-				String json = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
-				
-				notYetProcessed += SyncJSONInfo.loadFromJSON(json).getQtyRecords();
+				try {
+					String json = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
+					
+					notYetProcessed += SyncJSONInfo.loadFromJSON(json).getQtyRecords();
+				} catch (NoSuchFileException e) {
+				}
 			}
 			
 			return notYetProcessed;

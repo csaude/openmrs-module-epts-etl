@@ -1110,6 +1110,22 @@ public class DateAndTimeUtilities {
 	}
 	
 	/**
+	 * Adiciona uma um perido de tempo (em segundos) a uma data passada pelo parametro
+	 * @param dataInicial
+	 * @param qtdSeconds
+	 * @return Retorna a dataInicial adicionada ao tempo passado pelo parametro qtdMinutes
+	 */
+	public static Date addSecondsToDate(Date dataInicial, int qtdSeconds){     
+	    Calendar calendar = Calendar.getInstance();
+	    
+	    calendar.setTime(dataInicial);
+	       	   
+	    calendar.add(Calendar.SECOND, qtdSeconds);
+	    
+		return calendar.getTime();
+	}
+	
+	/**
 	 * Adiciona uma um perido de tempo (em dias) a uma data passada pelo parametro
 	 * @param dataInicial
 	 * @param qtdDias
@@ -1151,25 +1167,6 @@ public class DateAndTimeUtilities {
 		return calendar.getTime();
 		*/
 	}	
-	
-	public static void main(String[] args) {
-		//Connection conn = BaseDAO.openConnection("oracle.jdbc.OracleDriver", "jdbc:oracle:thin:@192.1:1521:lims", "lims", "exi2k12");
-		
-		
-		System.out.println(determineDateFormat("14-03-2019"));
-		
-		
-		/*List<Date> holidays = generatePublicHolidays(2019, 2019, "mz");
-		
-		Date oldDate = createDate("26-04-2019 12:44:35", DATE_TIME_FORMAT);
-		
-		Date datePlus = addDaysDate(oldDate, 40);
-		
-		System.out.println(datePlus);
-		System.out.println(getNextBusinessDate(addDaysDate(datePlus, -1), holidays));*/
-		
-	}
-	
 	
 	/**
 	 * @author Jorge Boane

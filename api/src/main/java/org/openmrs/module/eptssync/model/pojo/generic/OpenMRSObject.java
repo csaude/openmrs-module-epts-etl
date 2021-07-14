@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.model.pojo.generic;
 
 import java.sql.Connection;
+import java.util.Date;
 import java.util.Map;
 
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
@@ -10,7 +11,6 @@ import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
  * This interface represent any openMRS class subject of synchronization records. Ex. "Patient", "Enconter", "Obs"
@@ -24,11 +24,16 @@ public interface OpenMRSObject extends SyncRecord{
 	public static final int CONSISTENCE_STATUS = 1;
 	public static final int INCONSISTENCE_STATUS = -1;
 	
-	public abstract void refreshLastSyncDate(OpenConnection conn);
+	public abstract void refreshLastSyncDateOnOrigin(SyncTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn);
+	public abstract void refreshLastSyncDateOnDestination(SyncTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn);
+	
 	public abstract String generateDBPrimaryKeyAtt();
 	
-	public abstract void setOriginRecordId(int originRecordId);
-	public abstract int getOriginRecordId();	
+	public abstract int getObjectId();	
+	public abstract void setObjectId(int objectId);
+	
+	//public abstract void setOriginRecordId(int originRecordId);
+	//public abstract int getOriginRecordId();	
 	
 	/**
 	 * Load the destination parents id to this object
@@ -36,7 +41,7 @@ public interface OpenMRSObject extends SyncRecord{
 	 * @param conn
 	 * @throws DBException
 	 */
-	public abstract void loadDestParentInfo(SyncTableConfiguration tableConfiguration, Connection conn) throws ParentNotYetMigratedException, DBException;
+	public void loadDestParentInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn) throws ParentNotYetMigratedException, DBException;
 	public abstract Object[] getInsertParamsWithoutObjectId();
 	public abstract String getInsertSQLWithoutObjectId();
 
@@ -48,8 +53,8 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract String generateInsertValues();
 	
-	public abstract String getOriginAppLocationCode();
-	public abstract void setOriginAppLocationCode(String originAppLocationCode);
+	//public abstract String getOriginAppLocationCode();
+	//public abstract void setOriginAppLocationCode(String originAppLocationCode);
 	
 	public abstract boolean hasIgnoredParent();
 	public abstract void save(SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
@@ -66,13 +71,13 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract String getUuid();
 	public abstract void setUuid(String uuid);
-	public abstract void markAsInconsistent();
-	public abstract void markAsConsistent();
-	public abstract void setConsistent(int consistent);
-	public abstract boolean isConsistent();
-	public abstract int getConsistent();
+	//public abstract void markAsInconsistent();
+	//public abstract void markAsConsistent();
+	//public abstract void setConsistent(int consistent);
+	//public abstract boolean isConsistent();
+	//public abstract int getConsistent();
 	public abstract boolean hasParents();
-	public abstract int retrieveSharedPKKey(Connection conn)  throws ParentNotYetMigratedException, DBException;
+	//public abstract int retrieveSharedPKKey(Connection conn)  throws ParentNotYetMigratedException, DBException;
 	
 	public abstract int getParentValue(String parentAttName);
 	
@@ -85,7 +90,8 @@ public interface OpenMRSObject extends SyncRecord{
 	/**
 	 * Consolidate data for database consistency
 	 * <p> The consolidation consist on re-arranging foreign keys between records from different tables
-	 * <p> Because the consolidation process would be in cascade mode, each consolidation is imediatily commited to the dadabase
+	 * <p> Because the consolidation process would be in cascade mode, each consolidation is imediatily commited to t@Override
+	he dadabase
 	 * 
 	 * @param tableInfo
 	 * @param conn
@@ -106,7 +112,11 @@ public interface OpenMRSObject extends SyncRecord{
 	 */
 	public abstract void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
 
-	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, Connection conn) throws DBException;
+	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn) throws DBException;
+	
+	public abstract SyncImportInfoVO getRelatedSyncInfo();
+	public abstract void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo);
+	
 	public abstract String generateMissingInfo(Map<RefInfo, Integer> missingParents);
 	
 	public abstract void  remove(Connection conn) throws DBException;
@@ -115,11 +125,14 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException;
 	
-	public abstract void markAsConsistent(Connection conn) throws DBException;
+	//public abstract void markAsConsistent(Connection conn) throws DBException;
 		
 	public abstract void changeParentValue(String parentAttName, OpenMRSObject newParent);
 	
 	public abstract void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException;
 	public abstract void changeParentForAllChildren(OpenMRSObject newParent, SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
-
+	public abstract Date getDateChanged();
+	
+	//public abstract void updateDestinationRecordId(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException;
+	
 }

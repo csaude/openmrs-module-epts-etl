@@ -1,6 +1,6 @@
 {
-  "syncRootDirectory" : "/home/jpboane/working/prg/jee/workspace/data/sync",
-  "originAppLocationCode" : null,
+  "syncRootDirectory" : "D:\\JEE\\Workspace\\FGH\\data\\sync",
+  "originAppLocationCode" : "cs_gurue",
   "tablesConfigurations" : [ {
     "tableName" : "concept",
     "parents" : [ {
@@ -533,14 +533,50 @@
     "metadata" : true,
     "removeForbidden" : false,
     "disabled" : false
+  }, {
+    "tableName" : "cohort",
+    "parents" : [ {
+      "defaultValueDueInconsistency" : 1,
+      "tableName" : "users",
+      "ignorable" : false
+    } ],
+    "sharePkWith" : null,
+    "extraConditionForExport" : null,
+    "metadata" : false,
+    "removeForbidden" : false,
+    "disabled" : false
+  }, {
+    "tableName" : "cohort_member",
+    "parents" : [ {
+      "defaultValueDueInconsistency" : 1,
+      "tableName" : "users",
+      "ignorable" : false
+    }, {
+      "defaultValueDueInconsistency" : 0,
+      "tableName" : "cohort",
+      "ignorable" : false
+    },
+    {
+      "defaultValueDueInconsistency" : 0,
+      "tableName" : "patient",
+      "refColumnName": "patient_id",
+      "refColumnType": "int",
+      "ignorable" : false
+    }  ],
+    "sharePkWith" : null,
+    "extraConditionForExport" : null,
+    "metadata" : false,
+    "removeForbidden" : false,
+    "disabled" : false
   } ],
+  "firstExport" : true,
   "connInfo" : {
     "dataBaseUserName" : "root",
     "dataBaseUserPassword" : "root",
-    "connectionURI" : "jdbc:mysql://localhost:3307/openmrs_metadata?autoReconnect=true&amp;amp;amp;amp;amp;amp;amp;amp;sessionVariables=storage_engine=InnoDB&amp;amp;amp;amp;amp;amp;amp;amp;useUnicode=true&amp;amp;amp;amp;amp;amp;amp;amp;characterEncoding=UTF-8",
+    "connectionURI" : "jdbc:mysql://197.242.174.114:33070/openmrs_gurue?autoReconnect=true&amp;sessionVariables=storage_engine=InnoDB&amp;useUnicode=true&amp;characterEncoding=UTF-8",
     "driveClassName" : "com.mysql.jdbc.Driver"
   },
-  "installationType" : "destination",
+  "installationType" : "source",
   "operations" : [ {
     "operationType" : "database_preparation",
     "maxRecordPerProcessing" : 1,
@@ -554,21 +590,21 @@
       "minRecordsPerEngine" : 1,
       "doIntegrityCheckInTheEnd" : false,
       "child" : {
-        "operationType" : "load",
+        "operationType" : "inconsistency_solver",
         "maxRecordPerProcessing" : 1000,
-        "maxSupportedEngines" : 1,
+        "maxSupportedEngines" : 15,
         "minRecordsPerEngine" : 1000,
-        "doIntegrityCheckInTheEnd" : false,
+        "doIntegrityCheckInTheEnd" : true,
         "child" : {
-          "operationType" : "synchronization",
+          "operationType" : "export",
           "maxRecordPerProcessing" : 1000,
-          "maxSupportedEngines" : 1,
+          "maxSupportedEngines" : 15,
           "minRecordsPerEngine" : 100,
-          "doIntegrityCheckInTheEnd" : true,
+          "doIntegrityCheckInTheEnd" : false,
           "child" : {
-            "operationType" : "consolidation",
+            "operationType" : "transport",
             "maxRecordPerProcessing" : 1000,
-            "maxSupportedEngines" : 1,
+            "maxSupportedEngines" : 15,
             "minRecordsPerEngine" : 50,
             "doIntegrityCheckInTheEnd" : false,
             "child" : null,
@@ -582,19 +618,19 @@
         },
         "disabled" : false,
         "processingMode" : "sequencial",
-        "sourceFolders" : [ "cs_mopeia"]
+        "sourceFolders" : null
       },
       "disabled" : false,
       "processingMode" : "sequencial",
       "sourceFolders" : null
     },
     "disabled" : false,
-    "processingMode" : "parallel",
+    "processingMode" : "sequencial",
     "sourceFolders" : null
   } ],
   "automaticStart" : true,
   "childConfigFilePath" : null,
   "disabled" : false,
-  "classPath" : "/home/jpboane/working/prg/jee/workspace/w02/openmrs-module-eptssync/api/target/eptssync-api-1.0-SNAPSHOT.jar",
-  "syncStageSchema" : "sync_stage_area"
+  "classPath" : "D://JEE//Workspace//FGH//openmrs-module-eptssync//api//target//eptssync-api-1.0-SNAPSHOT.jar",
+  "syncStageSchema" : "cs_gurue_sync_stage_area"
 }

@@ -12,13 +12,13 @@
 <br />
 <br />
 
-<springform:form modelAttribute="vm" method="GET" action="syncStatus.form">
+<springform:form modelAttribute="syncVm" method="GET" action="syncStatus.form">
 	<table>
 		<tr>
 			<td>
 				<select name="selectedConfiguration" id="selectedConfiguration">
-					<c:forEach items="${vm.avaliableConfigurations}" var="item" varStatus="itemsRow">
-						<option value="${item.designation}" ${vm.activeConfiguration == item ? 'selected' : ''}>${item.designation}</option>
+					<c:forEach items="${syncVm.avaliableConfigurations}" var="item" varStatus="itemsRow">
+						<option value="${item.designation}" ${syncVm.activeConfiguration == item ? 'selected' : ''}>${item.designation}</option>
 					</c:forEach>
 				</select>
 				

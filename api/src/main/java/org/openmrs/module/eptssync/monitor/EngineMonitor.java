@@ -28,15 +28,14 @@ public class EngineMonitor implements MonitoredOperation{
 	
 	private List<Engine> ownEngines;
 	
-	private TimeController timer;
-	
 	private String engineMonitorId;
 	private String engineId;
 	
 	private int operationStatus;
 	private boolean stopRequested;
+	private SyncProgressMeter progressMeter;
 	
-	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo) {
+	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo, SyncProgressMeter progressMeter) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<Engine>();
 		this.syncTableInfo = syncTableInfo;
@@ -45,6 +44,7 @@ public class EngineMonitor implements MonitoredOperation{
 		this.engineId = getController().getControllerId() + "_" + syncTableInfo.getTableName();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
+		this.progressMeter = progressMeter;
 	}
 	
 	public String getEngineId() {
@@ -89,6 +89,8 @@ public class EngineMonitor implements MonitoredOperation{
 			
 			initEngine();
 			
+			//this.controller.getProgressInfo().updateProgressInfo(this);
+			
 			if (!utilities.arrayHasElement(ownEngines)) {
 				logInfo("NO ENGINE FOR '" + getController().getOperationType().toUpperCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
 				
@@ -103,7 +105,7 @@ public class EngineMonitor implements MonitoredOperation{
 					TimeCountDown.sleep(15);
 					
 					if (getMainEngine().isFinished()) {
-						getMainEngine().markAsFinished();
+						//getMainEngine().markAsFinished();
 						getMainEngine().onFinish();
 						
 						onFinish();
@@ -144,10 +146,7 @@ public class EngineMonitor implements MonitoredOperation{
 	}
 	
 	private void initEngine() {
-		if (timer == null) {
-			this.timer = new TimeController();
-			this.timer.start();
-		}
+		logInfo("INITIALIZING ENGINE");
 		
 		SyncTableConfiguration syncInfo = getSyncTableInfo();
 		
@@ -177,7 +176,7 @@ public class EngineMonitor implements MonitoredOperation{
 			else {
 				msg += " FINISHING....";
 				
-				getController().markTableOperationAsFinished(syncInfo, null, this.timer);
+				//getController().markTableOperationAsFinished(syncInfo, null, this.progressMeter.getTimer());
 				
 				//this.changeStatusToFinished();
 			}
@@ -208,6 +207,7 @@ public class EngineMonitor implements MonitoredOperation{
 			mainEngine.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(0, 2));
 			
 			mainEngine.resetLimits(limits);
+			mainEngine.setProgressMeter(this.progressMeter);
 			
 			logInfo("ALOCATED RECORDS [" + mainEngine.getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
 			
@@ -365,8 +365,12 @@ public class EngineMonitor implements MonitoredOperation{
 		}
 	}
 
-	public static EngineMonitor init(OperationController controller, SyncTableConfiguration syncTableInfo) {
-		EngineMonitor monitor = new EngineMonitor(controller, syncTableInfo);
+	public static EngineMonitor init(OperationController controller, SyncTableConfiguration syncTableInfo, SyncProgressMeter progressMeter) {
+		if (syncTableInfo.getTableName().equalsIgnoreCase("encounter_type")) {
+			System.out.println("Stop");
+		}
+		
+		EngineMonitor monitor = new EngineMonitor(controller, syncTableInfo, progressMeter);
 		
 		return monitor;
 	}
@@ -433,7 +437,7 @@ public class EngineMonitor implements MonitoredOperation{
 	
 	@Override
 	public TimeController getTimer() {
-		return this.timer;
+		return this.progressMeter.getTimer();
 	}
 	
 	@Override

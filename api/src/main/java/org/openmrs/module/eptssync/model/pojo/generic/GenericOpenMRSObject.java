@@ -4,13 +4,11 @@ import java.sql.Connection;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
+import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 
 public class GenericOpenMRSObject extends AbstractOpenMRSObject {
-	private int originRecordId;
-	private String originAppLocationCode;
 	private int objectId;
 	private String uuid;
 	
@@ -27,17 +25,7 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	public String generateDBPrimaryKeyAtt() {
 		return this.syncTableConfiguration.getPrimaryKey();
 	}
-
-	@Override
-	public void setOriginRecordId(int originRecordId) {
-		this.originRecordId = originRecordId;
-	}
-
-	@Override
-	public int getOriginRecordId() {
-		return this.originRecordId;
-	}
-
+	
 	@Override
 	public Object[] getInsertParamsWithoutObjectId() {
 		throw new ForbiddenOperationException("Forbidden Method");
@@ -75,16 +63,6 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	}
 
 	@Override
-	public String getOriginAppLocationCode() {
-		return originAppLocationCode;
-	}
-
-	@Override
-	public void setOriginAppLocationCode(String originAppLocationCode) {
-		this.originAppLocationCode = originAppLocationCode;
-	}
-
-	@Override
 	public String getUuid() {
 		return this.uuid;
 	}
@@ -93,24 +71,9 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}
-	
-	@Override
-	public void setConsistent(int consistent) {
-		throw new ForbiddenOperationException("Forbidden Method");
-	}
-
-	@Override
-	public int getConsistent() {
-		throw new ForbiddenOperationException("Forbidden Method");
-	}
 
 	@Override
 	public boolean hasParents() {
-		throw new ForbiddenOperationException("Forbidden Method");
-	}
-
-	@Override
-	public int retrieveSharedPKKey(Connection conn) throws ParentNotYetMigratedException, DBException {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
@@ -144,9 +107,10 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 	
-	public static GenericOpenMRSObject fastCreate(int objectId, SyncTableConfiguration syncTableConfiguration) {
+	public static GenericOpenMRSObject fastCreate(SyncImportInfoVO syncImportInfo, SyncTableConfiguration syncTableConfiguration) {
 		GenericOpenMRSObject obj = new GenericOpenMRSObject(syncTableConfiguration);
-		obj.setObjectId(objectId);
+		obj.setObjectId(syncImportInfo.getRecordOriginId());
+		obj.setUuid(syncImportInfo.getRecordUuid());
 		
 		return obj;
 	}

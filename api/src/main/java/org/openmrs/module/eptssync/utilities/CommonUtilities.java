@@ -161,7 +161,7 @@ public class  CommonUtilities implements Serializable{
 	 * @param p
 	 * @return Insere um novo objecto num array de Objectos e retorna este ultimo
 	 */
-	public  Object[] setParam(int qtdObjects, Object[] paramsCorrentes, Object paramAAdicionar){
+	public  Object[] addToParams(int qtdObjects, Object[] paramsCorrentes, Object paramAAdicionar){
 		return FuncoesGenericas.setParam(qtdObjects, paramsCorrentes, paramAAdicionar);
 	}
 	
@@ -606,6 +606,19 @@ public class  CommonUtilities implements Serializable{
 		
 		for (T t : list){
 			parsedList.add((S) t);
+		}
+		
+		return parsedList;
+	}
+	
+	public <T extends Object> T[] parseListToArray(List<T> list){
+		if (!arrayHasElement(list)) return null;
+		
+		@SuppressWarnings("unchecked")
+		T[] parsedList = (T[]) Array.newInstance(list.get(0).getClass(), list.size());
+		
+		for (int i = 0; i < list.size(); i++){
+			parsedList[i] = list.get(i);
 		}
 		
 		return parsedList;

@@ -26,14 +26,19 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
 		
-		searchClauses.addColumnToSelect("*");
+		searchClauses.addColumnToSelect(tableInfo.getTableName() +".*");
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
-	
-		//Consolidate only records from sync
-		searchClauses.addToClauses("origin_app_location_code is not null");
+		
+		if (getTableInfo().getTableName().equalsIgnoreCase("patient")) {
+			searchClauses.addToClauseFrom("INNER JOIN person ON person.person_id = patient.patient_id");
+		}
+
+		searchClauses.addToClauseFrom("INNER JOIN " + getTableInfo().generateFullStageTableName() + " ON record_uuid = uuid");
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("consistent = -1");
+			searchClauses.addToClauses("last_sync_date is null or last_sync_date < ?");
+			searchClauses.addToParameters(this.getSyncStartDate());
 		
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
@@ -46,7 +51,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 			}
 		}
 		
-		searchClauses.addToClauses("origin_app_location_code = ?");
+		searchClauses.addToClauses("record_origin_location_code = ?");
 		searchClauses.addToParameters(this.appOriginLocationCode);
 	
 		return searchClauses;

@@ -33,10 +33,17 @@
 	</modules>
 	
 	<properties>
+		<openMRSVersion>1.11.5</openMRSVersion>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	
+	<!-- 
+	<properties>
 		<openMRSVersion>2.3.2</openMRSVersion>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-
+ -->
+ 
 	<dependencyManagement>
 		<dependencies>
 		

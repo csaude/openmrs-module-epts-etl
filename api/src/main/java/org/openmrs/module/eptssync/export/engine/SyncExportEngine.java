@@ -46,16 +46,11 @@ public class SyncExportEngine extends Engine {
 		try {
 			List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
 			
-			for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
-				obj.setOriginAppLocationCode(getSyncTableConfiguration().getOriginAppLocationCode());
-			}
-			
 			this.getMonitor().logInfo("GENERATING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE");
 			
-			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(syncRecordsAsOpenMRSObjects);
-			jsonInfo.setOriginAppLocationCode(getSyncTableConfiguration().getOriginAppLocationCode());
-
-			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecords.get(0).getObjectId(), syncRecords.get(syncRecords.size() - 1).getObjectId());
+			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getSyncTableConfiguration(), syncRecordsAsOpenMRSObjects, getSyncTableConfiguration().getOriginAppLocationCode(), conn);
+		
+			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(), syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
 			
 			this.getMonitor().logInfo("WRITING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE [" + jsonFIle.getAbsolutePath() + ".json]");
 			
@@ -99,6 +94,11 @@ public class SyncExportEngine extends Engine {
 			
 			throw new RuntimeException(e);
 		}
+		catch (DBException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
 	}
 
 	private String generateTmpMinimalJSONInfoFileName(File mainTempJSONInfoFile) {
@@ -109,7 +109,7 @@ public class SyncExportEngine extends Engine {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObjectDAO.refreshLastSyncDate(syncRecords, conn);
+			OpenMRSObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSyncTableConfiguration(), getSyncTableConfiguration().getOriginAppLocationCode(), conn);
 			
 			conn.markAsSuccessifullyTerminected();
 		} 
@@ -135,6 +135,7 @@ public class SyncExportEngine extends Engine {
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new SyncExportSearchParams(this.getSyncTableConfiguration(), limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
 		
 		return searchParams;
 	}

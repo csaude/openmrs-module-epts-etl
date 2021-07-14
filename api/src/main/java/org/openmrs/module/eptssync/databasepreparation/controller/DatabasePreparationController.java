@@ -32,6 +32,10 @@ public class DatabasePreparationController extends OperationController {
 		if (!this.isImportStageSchemaExists()) {
 			this.createStageSchema();
 		}
+		
+		if (!existInconsistenceInfoTable()) {
+			generateInconsistenceInfoTable();
+		}
 			
 		super.run();
 	}
@@ -78,6 +82,26 @@ public class DatabasePreparationController extends OperationController {
 		}
 	}
 	
+	public boolean existInconsistenceInfoTable() {
+		OpenConnection conn = openConnection();
+		
+		String schema = getSyncConfiguration().getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = "inconsistence_info";
+
+		try {
+			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}
+	}
+	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new DatabasePreparationEngine(monitor, limits);
@@ -102,4 +126,38 @@ public class DatabasePreparationController extends OperationController {
 	public String getOperationType() {
 		return SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION;
 	}	
+	
+	private void generateInconsistenceInfoTable() {
+		OpenConnection conn = openConnection();
+		
+		String sql = "";
+		
+		sql += "CREATE TABLE " + getSyncConfiguration().getSyncStageSchema() + ".inconsistence_info (\n";
+		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
+		sql += "table_name varchar(100) NOT NULL,\n";
+		sql += "record_id int(11) NOT NULL,\n";
+		sql += "parent_table_name varchar(100) NOT NULL,\n";
+		sql += "parent_id int(11) NOT NULL,\n";
+		sql += "default_parent_id int(11) DEFAULT NULL,\n";
+		sql += "record_origin_location_code VARCHAR(100) NOT NULL,\n";
+		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
+		sql += "PRIMARY KEY (id)\n";
+		sql += ") ENGINE=InnoDB;\n";
+				
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+
+			st.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} 
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}
+	}
 }

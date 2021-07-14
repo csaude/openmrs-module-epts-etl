@@ -128,6 +128,7 @@ public class ConfigData {
 											"minRecordsPerEngine: 100,\n"+
 											"disabled: false,\n"+
 											"processingMode: \"sequencial\",\n"+
+											"doIntegrityCheckInTheEnd: \"true\",\n"+
 													
 											"child:{\n"+
 												"operationType: \"consolidation\",\n"+
@@ -254,7 +255,7 @@ public class ConfigData {
 								"\n"+
 								"{\n"+
 									"tableName: \"concept\",\n"+
-									"parents: [{tableName: \"concept_datatype\"}, {tableName: \"visit\"}, {tableName: \"users\", defaultValueDueInconsistency: 1}],\n"+
+									"parents: [{tableName: \"concept_datatype\"}, {tableName: \"users\", defaultValueDueInconsistency: 1}],\n"+
 									"metadata: true\n"+
 								"},\n"+
 								"\n"+
@@ -310,7 +311,21 @@ public class ConfigData {
 									"tableName: \"patient_identifier_type\",\n"+
 									"parents: [{tableName: \"users\", defaultValueDueInconsistency: 1}],\n"+
 									"metadata: true\n"+
+								"},\n"+		
+								"\n"+
+								
+								"{\n"+
+									"tableName: \"cohort\",\n"+
+									"parents: [{tableName: \"users\", defaultValueDueInconsistency: 1}],\n"+
+									"metadata: true\n"+
+								"},\n"+							
+								"\n"+
+								"{\n"+
+									"tableName: \"cohort_member\",\n"+
+									"parents: [{tableName: \"users\", defaultValueDueInconsistency: 1},{tableName: \"cohort\"}, {tableName: \"patient\", refColumnName: \"patient_id\", refColumnType: \"int\"} ],\n"+
+									"metadata: true\n"+
 								"}\n"+		
+									
 						"]\n";
 	}
 }
