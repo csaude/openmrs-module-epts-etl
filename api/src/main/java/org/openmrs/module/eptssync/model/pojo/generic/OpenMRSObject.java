@@ -132,6 +132,8 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException;
 	public abstract void changeParentForAllChildren(OpenMRSObject newParent, SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	public abstract Date getDateChanged();
+	public abstract Date getDateVoided();
+	public abstract Date getDateCreated() ;
 	
 	//public abstract void updateDestinationRecordId(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException;
 	

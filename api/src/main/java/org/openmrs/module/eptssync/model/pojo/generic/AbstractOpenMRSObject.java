@@ -363,9 +363,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				continue;
 			}
 			
-			if (qtyChildren > 999) {
+			/*if (qtyChildren > 999) {
 				throw new ForbiddenOperationException("The operation is trying to remove this record [" + syncTableInfo.getTableName() + " = " + this.getUuid() + ", from " + this.getRelatedSyncInfo().getRecordOriginLocationCode() + " but it has " + qtyChildren + " " + refInfo.getTableName() + " related to. Please check this inconsistence before continue");
-			}
+			}*/
 			
 			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getObjectId(), conn);
 			
@@ -494,10 +494,10 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			if (qtyChildren == 0) {
 				continue;
 			}
-			else
+			/*else
 			if (qtyChildren > 999) {
 				throw new ForbiddenOperationException("The operation is trying to remove this record [" + syncTableInfo.getTableName() + " = " + this.getRelatedSyncInfo().getRecordOriginId() + ", from " + getRelatedSyncInfo().getRecordOriginLocationCode() + " but it has " + qtyChildren + " " + refInfo.getTableName() + " related to. Please check this inconsistence before continue");
-			}
+			}*/
 			else {
 				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.getRefColumnName(), getRelatedSyncInfo().getRecordOriginId(), getRelatedSyncInfo().getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(), conn);
 						

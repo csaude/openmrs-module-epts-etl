@@ -77,7 +77,7 @@ public class ClassPathUtilities {
 	        zin.close();
 	        tmpZip.delete();
 	    }catch(Exception e){
-	        e.printStackTrace();
+	       // e.printStackTrace();
 	    }
 	}
 	
@@ -111,9 +111,9 @@ public class ClassPathUtilities {
 		try {
 			modulesDirectory = ModuleUtil.getModuleRepository();
 		} catch (NoClassDefFoundError e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		} catch (Error e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 		
 		if (modulesDirectory != null) {
@@ -142,9 +142,9 @@ public class ClassPathUtilities {
 
 			return new File(moduleFilesDirectory.getAbsolutePath() + FileUtilities.getPathSeparator() + "eptssync.jar");
 		} catch (NoClassDefFoundError e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		} catch (Error e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 		
 		return null;
@@ -218,10 +218,10 @@ public class ClassPathUtilities {
 			
 		} catch (ZipException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 	}
 

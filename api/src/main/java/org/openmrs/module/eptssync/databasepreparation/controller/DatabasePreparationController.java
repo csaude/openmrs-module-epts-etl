@@ -82,26 +82,7 @@ public class DatabasePreparationController extends OperationController {
 		}
 	}
 	
-	public boolean existInconsistenceInfoTable() {
-		OpenConnection conn = openConnection();
-		
-		String schema = getSyncConfiguration().getSyncStageSchema();
-		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = "inconsistence_info";
 
-		try {
-			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.markAsSuccessifullyTerminected();
-			conn.finalizeConnection();
-		}
-	}
-	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new DatabasePreparationEngine(monitor, limits);
@@ -126,6 +107,26 @@ public class DatabasePreparationController extends OperationController {
 	public String getOperationType() {
 		return SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION;
 	}	
+	
+	public boolean existInconsistenceInfoTable() {
+		OpenConnection conn = openConnection();
+		
+		String schema = getSyncConfiguration().getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = "inconsistence_info";
+
+		try {
+			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}
+	}
 	
 	private void generateInconsistenceInfoTable() {
 		OpenConnection conn = openConnection();

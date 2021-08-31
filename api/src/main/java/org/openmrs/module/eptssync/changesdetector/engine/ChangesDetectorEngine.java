@@ -1,8 +1,9 @@
-package org.openmrs.module.eptssync.inconsistenceresolver.engine;
+package org.openmrs.module.eptssync.changesdetector.engine;
 
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.eptssync.changesdetector.model.DetectedRecordInfo;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
@@ -14,10 +15,16 @@ import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class InconsistenceSolverEngine extends Engine {
+import fgh.spi.changedrecordsdetector.DetectedRecordService;
+
+public class ChangesDetectorEngine extends Engine {
 	
-	public InconsistenceSolverEngine(EngineMonitor monitor, RecordLimits limits) {
+	private String appCode;
+	
+	public ChangesDetectorEngine(EngineMonitor monitor, RecordLimits limits, String appCode) {
 		super(monitor, limits);
+		
+		this.appCode = appCode;
 	}
 
 	@Override	
@@ -38,16 +45,17 @@ public class InconsistenceSolverEngine extends Engine {
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
 		List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
 		
-		this.getMonitor().logInfo("DOING INCONSISTENCE SOLVER FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		this.getMonitor().logInfo("PERFORMING CHANGE DETECTED ACTION '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
 				
-				if (obj.getObjectId()== 591430) {
-					System.out.println("Stop");
-				}
+				DetectedRecordInfo rec = DetectedRecordInfo.generate(obj, this.appCode, getMonitor().getSyncTableInfo().getOriginAppLocationCode());
 				
-				obj.resolveInconsistence(getSyncTableConfiguration(), conn);
+				rec.save(getMonitor().getSyncTableInfo(), conn);
+				
+				DetectedRecordService.getInstance().performeAction(appCode, rec);
+				
 			} catch (Exception e) {
 				logInfo("Any error occurred processing record [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");
 				
@@ -55,7 +63,7 @@ public class InconsistenceSolverEngine extends Engine {
 			}
 		}
 		
-		this.getMonitor().logInfo("INCONSISTENCE SOLVED FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
+		this.getMonitor().logInfo("ACTION PERFORMED FOR CHANGED RECORDS '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
 	}
 	
 	@Override

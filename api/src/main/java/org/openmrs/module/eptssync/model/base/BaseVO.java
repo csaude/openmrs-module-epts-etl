@@ -27,6 +27,8 @@ public abstract class BaseVO  implements VO{
 	
 	protected Date dateChanged;
 	
+	protected Date dateVoided;
+	
 	protected boolean excluded;
 	/**
 	 * Cria uma instancia de {@link BaseVO} com os atributos iniciados com
@@ -51,6 +53,8 @@ public abstract class BaseVO  implements VO{
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+		
+		try {this.setDateVoided(resultSet.getDate("date_retired"));} catch (SQLException e) {}
 	}
 	
 	public Date getDateChanged() {
@@ -67,6 +71,14 @@ public abstract class BaseVO  implements VO{
 	
 	public void setDateCreated(Date dateCreated) {
 		this.dateCreated = dateCreated;
+	}
+
+	public Date getDateVoided() {
+		return dateVoided;
+	}
+
+	public void setDateVoided(Date dateVoided) {
+		this.dateVoided = dateVoided;
 	}
 
 	/**

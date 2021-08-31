@@ -29,6 +29,7 @@ public class SyncOperationConfig {
 	public static final String SYNC_OPERATION_LOAD = "load";
 	public static final String SYNC_OPERATION_TRANSPORT = "transport";
 	public static final String SYNC_OPERATION_CONSOLIDATION= "consolidation";
+	public static final String SYNC_OPERATION_CHANGES_DETECTOR = "changes_detector";
 	
 	public static final String[] SUPPORTED_OPERATIONS = {	SYNC_OPERATION_CONSOLIDATION, 
 			SYNC_OPERATION_EXPORT, 
@@ -389,8 +390,8 @@ public class SyncOperationConfig {
 							  SyncOperationConfig.SYNC_OPERATION_TRANSPORT,
 							  SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER,
 							  SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION,
-							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION};
-		
+							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION,
+							  SyncOperationConfig.SYNC_OPERATION_CHANGES_DETECTOR};
 		
 		return utilities.parseArrayToList(supported);
 	}
