@@ -7,9 +7,9 @@ public class OperationInfo {
 	private Date operationDate;
 	
 	
-	public static final char OPERATION_TYPE_INSERT = 'I';
-	public static final char OPERATION_TYPE_UPDATE = 'U';
-	public static final char OPERATION_TYPE_DELETE = 'D';
+	public static final char OPERATION_TYPE_INSERT = 'c';
+	public static final char OPERATION_TYPE_UPDATE = 'u';
+	public static final char OPERATION_TYPE_DELETE = 'd';
 	
 	public OperationInfo(char operationType, Date operationDate) {
 		this.operationType = operationType;

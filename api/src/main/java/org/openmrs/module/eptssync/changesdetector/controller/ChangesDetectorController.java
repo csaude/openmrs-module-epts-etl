@@ -3,15 +3,14 @@ package org.openmrs.module.eptssync.changesdetector.controller;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.openmrs.module.eptssync.changesdetector.engine.ChangesDetectorEngine;
+import org.openmrs.module.eptssync.changesdetector.model.DetectedRecordInfoDAO;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.inconsistenceresolver.engine.InconsistenceSolverEngine;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
@@ -41,7 +40,7 @@ public class ChangesDetectorController extends OperationController {
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new InconsistenceSolverEngine(monitor, limits);
+		return new ChangesDetectorEngine(monitor, limits);
 	}
 
 	@Override
@@ -49,11 +48,7 @@ public class ChangesDetectorController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstSyncRecordOnOrigin(tableInfo, null, null, conn);
-		
-			if (obj != null) return obj.getObjectId();
-			
-			return 0;
+			return DetectedRecordInfoDAO.getFirstChangedRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -69,11 +64,7 @@ public class ChangesDetectorController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecordOnOrigin(tableInfo, null, null, conn);
-		
-			if (obj != null) return obj.getObjectId();
-			
-			return 0;
+			return DetectedRecordInfoDAO.getLastChangedRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -115,7 +106,7 @@ public class ChangesDetectorController extends OperationController {
 		OpenConnection conn = openConnection();
 
 		try {
-			String schema = conn.getSchema();
+			String schema = conn.getCatalog();
 			String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 			String tabName = "detected_record_info";
 			
@@ -141,7 +132,6 @@ public class ChangesDetectorController extends OperationController {
 		sql += "table_name varchar(100) NOT NULL,\n";
 		sql += "record_id int(11) NOT NULL,\n";
 		sql += "record_uuid varchar(38) NOT NULL,\n";
-		sql += "parent_id int(11) NOT NULL,\n";
 		sql += "operation_date datetime NOT NULL,\n";
 		sql += "operation_type VARCHAR(1) NOT NULL,\n";
 		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";

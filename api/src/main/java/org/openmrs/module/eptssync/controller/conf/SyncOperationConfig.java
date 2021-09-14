@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.eptssync.changesdetector.controller.ChangesDetectorController;
 import org.openmrs.module.eptssync.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
@@ -38,7 +39,8 @@ public class SyncOperationConfig {
 			SYNC_OPERATION_TRANSPORT,
 			SYNC_OPERATION_DATABASE_PREPARATION,
 			SYNC_OPERATION_POJO_GENERATION,
-			SYNC_OPERATION_INCONSISTENCY_SOLVER};
+			SYNC_OPERATION_INCONSISTENCY_SOLVER,
+			SYNC_OPERATION_CHANGES_DETECTOR};
 
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -285,6 +287,11 @@ public class SyncOperationConfig {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER);
 	}
 	
+	@JsonIgnore
+	public boolean isChangesDetector() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_CHANGES_DETECTOR);
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) return false;
@@ -352,6 +359,10 @@ public class SyncOperationConfig {
 		if (isConsolidationOperation()) {
 			return new DatabaseIntegrityConsolidationController(parent, this, appOriginCode);
 		}
+		else
+		if (isChangesDetector()) {
+			return new ChangesDetectorController(parent, this);
+		}
 			
 		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");
 		
@@ -366,9 +377,16 @@ public class SyncOperationConfig {
 		
 			if (this.isLoadOperation() && (this.getSourceFolders() == null || this.getSourceFolders().size() == 0))  errorMsg += ++errNum + ". There is no source folder defined";
 		}
-		else {
+		else
+		if (this.getRelatedSyncConfig().isSourceInstallationType()) {
 			if (!this.canBeRunInSourceInstallation()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in source installation\n";
 		}
+		else
+		if (this.getRelatedSyncConfig().isNeutralInstallationType()) {
+			if (!this.canBeRunInNeutralInstallation()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in neutral installation\n";
+		}
+		
+		
 		
 		if (utilities.stringHasValue(errorMsg)) {
 			errorMsg = "There are errors on config operation configuration " + this.getOperationType() +  "[File:  " + this.getRelatedSyncConfig().getRelatedConfFile().getAbsolutePath() + "]\n" + errorMsg;
@@ -390,8 +408,19 @@ public class SyncOperationConfig {
 							  SyncOperationConfig.SYNC_OPERATION_TRANSPORT,
 							  SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER,
 							  SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION,
-							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION,
-							  SyncOperationConfig.SYNC_OPERATION_CHANGES_DETECTOR};
+							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION};
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
+	@JsonIgnore
+	public boolean canBeRunInNeutralInstallation() {
+		return utilities.existOnArray(getSupportedOperationsInNeutralInstallation(), this.operationType);
+	}
+	
+	public static List<String> getSupportedOperationsInNeutralInstallation() {
+		String[] supported = {SyncOperationConfig.SYNC_OPERATION_CHANGES_DETECTOR,
+							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION};
 		
 		return utilities.parseArrayToList(supported);
 	}

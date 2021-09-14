@@ -395,10 +395,15 @@ public abstract class OperationController implements Controller{
 		if (getConfiguration().isSourceInstallationType()) {
 			subFolder = "source" + FileUtilities.getPathSeparator() + getOperationType() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
 		}
-		else {
+		else
+		if (getConfiguration().isDestinationInstallationType()) {
 			String appOrigin =  this instanceof DestinationOperationController ?  FileUtilities.getPathSeparator() + ((DestinationOperationController)this).getAppOriginLocationCode() : "";
 					
 			subFolder = "destination" + FileUtilities.getPathSeparator() + getOperationType() + appOrigin; 
+		}
+		else
+		if (getConfiguration().isNeutralInstallationType()) {
+			subFolder = "neutral" + FileUtilities.getPathSeparator() + getOperationType() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
 		}
 		
 		return getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder;

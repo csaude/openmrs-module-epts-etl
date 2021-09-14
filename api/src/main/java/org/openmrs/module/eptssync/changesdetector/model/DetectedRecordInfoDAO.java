@@ -1,9 +1,13 @@
 package org.openmrs.module.eptssync.changesdetector.model;
 
 import java.sql.Connection;
+import java.util.Date;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
+import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class DetectedRecordInfoDAO extends BaseDAO{
@@ -43,4 +47,36 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 		}
 	}
 	
+	public static long getFirstChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+		return getChangedRecord(tableConf, appCode, observationDate, "min", conn);
+	}
+	
+	public static long getLastChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+		return getChangedRecord(tableConf, appCode, observationDate, "max", conn);
+	}
+	
+	public static long getChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, String function, Connection conn) throws DBException, ForbiddenOperationException {
+		String voided_condition = !tableConf.isMetadata() ? " or date_voided >= ? " : "";
+		
+		String 	sql =  " SELECT " + function + "("+ tableConf.getPrimaryKey() +") value \n";
+				sql += " FROM " + tableConf.getTableName();
+				sql += " WHERE NOT EXISTS (	SELECT * \n";
+				sql += "					FROM detected_record_info \n";
+				sql += "					WHERE table_name = ? \n";
+				sql += "							AND app_code = ? \n";
+				sql += "							AND record_origin_location_code = ? \n";
+				sql += "							AND record_id = " + tableConf.getPrimaryKey() + ")";
+				sql += " 		AND (date_created >= ? or date_changed > ? " + voided_condition + ")";
+				
+		Object[] params = {	tableConf.getTableName(),
+							appCode,
+							tableConf.getOriginAppLocationCode(),
+							observationDate, observationDate};
+		
+		if (!tableConf.isMetadata()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
+		
+		SimpleValue v = find(SimpleValue.class, sql, params, conn);
+		
+		return v != null && v.hasValue() ? v.longValue() : 0;
+	}	
 }

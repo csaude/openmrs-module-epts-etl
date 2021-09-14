@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,11 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	protected String uuid;
 	
 	protected SyncImportInfoVO relatedSyncInfo;
+	
+	
+	public void load(ResultSet rs) throws SQLException{ 
+		this.uuid = rs.getString("uuid");
+	}
 	
 	/**
 	 * Retrieve a specific parent of this record. The parent is loaded using the origin (source) identification key

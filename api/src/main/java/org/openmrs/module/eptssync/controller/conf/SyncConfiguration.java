@@ -7,6 +7,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,8 @@ public class SyncConfiguration {
 	private String syncRootDirectory;
 	
 	private String originAppLocationCode;
-	
+	private String applicationCode;
+	private Date observationDate;
 	private Map<String, SyncTableConfiguration> syncTableConfigurationPull;
 	
 	private List<SyncTableConfiguration> tablesConfigurations;
@@ -61,7 +63,7 @@ public class SyncConfiguration {
 	public static String PROCESSING_MODE_SEQUENCIAL="sequencial";
 	public static String PROCESSING_MODE_PARALLEL="parallel";
 	
-	private static final String[] supportedInstallationTypes = {"source", "destination"};
+	private static final String[] supportedInstallationTypes = {"source", "destination", "neutral"};
 	
 	private String classPath;
 	private File moduleRootDirectory;
@@ -125,6 +127,14 @@ public class SyncConfiguration {
 		this.disabled = disabled;
 	}
 	
+	public Date getObservationDate() {
+		return observationDate;
+	}
+
+	public void setObservationDate(Date observationDate) {
+		this.observationDate = observationDate;
+	}
+
 	@JsonIgnore
 	public SyncConfiguration getChildConfig() {
 		return childConfig;
@@ -169,6 +179,11 @@ public class SyncConfiguration {
 	@JsonIgnore
 	public boolean isSourceInstallationType() {
 		return this.installationType.equals(supportedInstallationTypes[0]);
+	}
+	
+	@JsonIgnore
+	public boolean isNeutralInstallationType() {
+		return this.installationType.equals(supportedInstallationTypes[2]);
 	}
 	
 	@JsonIgnore
@@ -444,18 +459,30 @@ public class SyncConfiguration {
 			operation.validate(); 
 		}
 		
-		for (SyncTableConfiguration tableConf : this.tablesConfigurations) {
+		/*for (SyncTableConfiguration tableConf : this.tablesConfigurations) {
 			if (tableConf.getParents() != null) {
 				for (RefInfo parent : tableConf.getParents()) {
 					//if (findSyncTableConfiguration(parent.getTableName()) == null) errorMsg += ++errNum + ". The parent '" + parent + " of table " + tableConf.getTableName() + " is not configured\n";
 				}
 			}
+		}*/
+		
+		
+		List<String> supportedOperations = null;
+		
+		if (isSourceInstallationType() ) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInSourceInstallation();
+		}
+		else
+		if (isDestinationInstallationType()) {
+			SyncOperationConfig.getSupportedOperationsInDestinationInstallation();
 		}
 		
-		List<String> supportedOperations = isSourceInstallationType() ? SyncOperationConfig.getSupportedOperationsInSourceInstallation() : SyncOperationConfig.getSupportedOperationsInDestinationInstallation();
 		
-		for (String operationType : supportedOperations) {
-			if (!isOperationConfigured(operationType)) errorMsg += ++errNum + ". The operation '" + operationType + " is not configured\n";
+		if (supportedOperations != null) {
+			for (String operationType : supportedOperations) {
+				if (!isOperationConfigured(operationType)) errorMsg += ++errNum + ". The operation '" + operationType + " is not configured\n";
+			}
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
@@ -601,5 +628,13 @@ public class SyncConfiguration {
 		pojoPackageDir += this.getPojoPackage() + FileUtilities.getPathSeparator();
 		
 		return pojoPackageDir;
+	}
+
+	public String getApplicationCode() {
+		return this.applicationCode;
+	}
+	
+	public void setApplicationCode(String applicationCode) {
+		this.applicationCode = applicationCode;
 	}
 }

@@ -22,6 +22,17 @@ public class Main implements Runnable{
 	
 	public static void main(String[] synConfigFiles) throws IOException {
 		BasicConfigurator.configure();
+
+		int i = -5;
+		
+		while(i <= 5) {
+			i++;
+			
+			System.out.println(i);
+		
+			TimeCountDown.sleep(1);
+		}
+		
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);
 
 		if (countQtyDestination(syncConfigs) > 1) throw new ForbiddenOperationException("You must define only one destination file");

@@ -26,29 +26,40 @@ public class ChangesDetectorSearchParams extends SyncSearchParams<OpenMRSObject>
 	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
 		
-		searchClauses.addColumnToSelect("*");
-		searchClauses.addToClauseFrom(tableInfo.getTableName());
 		
+		searchClauses.addToClauseFrom(tableInfo.getTableName());
+	
+		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+			searchClauses.addColumnToSelect("patient.*, person.uuid");
+			searchClauses.addToClauseFrom("inner join person on person.person_id = patient_id");
+		}
+		else {
+			searchClauses.addColumnToSelect("*");
+		}
+		
+			
 		if (!this.selectAllRecords) {
 			
-			if (tableInfo.isMetadata()) {
-				searchClauses.addToClauses("date_created >= ? or  date_changed > ? or date_voided > ?");
+			if (!tableInfo.isMetadata() && !tableInfo.getTableName().equalsIgnoreCase("users")) {
+				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ? or  " + tableInfo.getTableName() + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_voided >= ?");
 			}
 			else {
-				searchClauses.addToClauses("date_created >= ? or  date_changed > ? or date_retired > ?");
+				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ? or  " + tableInfo.getTableName() + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_retired >= ?");
 			}
 			
 			searchClauses.addToParameters(this.getSyncStartDate());
 			searchClauses.addToParameters(this.getSyncStartDate());
 			searchClauses.addToParameters(this.getSyncStartDate());
 			
-			searchClauses.addToClauses("NOT EXISTS (SELECT 	id " +
-									   "			FROM    detected_record_info " + 
-									   "			WHERE   record_id = " + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey() + 
-									   "					AND app_cod = ? " +
+			searchClauses.addToClauses("NOT EXISTS (SELECT 	id \n" +
+									   "			FROM    detected_record_info \n" + 
+									   "			WHERE   record_id = " + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey() + "\n" + 
+									   "					AND table_name = ? \n"+
+									   "					AND app_code = ? \n" +
 									   "				    AND record_origin_location_code = ? )");
 			
 			
+			searchClauses.addToParameters(tableInfo.getTableName());
 			searchClauses.addToParameters(this.appCode);
 			searchClauses.addToParameters(tableInfo.getOriginAppLocationCode());
 			

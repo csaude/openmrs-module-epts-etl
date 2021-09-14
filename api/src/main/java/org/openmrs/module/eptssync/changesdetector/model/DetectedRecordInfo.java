@@ -8,7 +8,9 @@ import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class DetectedRecordInfo extends BaseVO{
+import fgh.spi.changedrecordsdetector.ChangedRecord;
+
+public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 	private int id;
 	private String tableName;
 	private int recordId;
@@ -103,8 +105,6 @@ public class DetectedRecordInfo extends BaseVO{
 	}
 
 	public static DetectedRecordInfo generate(OpenMRSObject record,  String appCode, String recordOriginLocationCode) {
-		//DetectedRecordInfo info = new DetectedRecordInfo(record.generateTableName(), record.getObjectId(), record.getUuid(), appCode, recordOriginLocationCode);
-		
 		DetectedRecordInfo info = new DetectedRecordInfo();
 		
 		info.setTableName(record.generateTableName());
@@ -113,8 +113,12 @@ public class DetectedRecordInfo extends BaseVO{
 		info.setAppCode(appCode);
 		info.setRecordOriginLocationCode(recordOriginLocationCode);
 		
+		OperationInfo operationInfo = determineOperationType(record);
 		
-		
+		info.setOperationType(operationInfo.getOperationType());
+		info.setOperationDate(operationInfo.getOperationDate());
+		info.setDateCreated(record.getDateCreated());
+		info.setDateChanged(record.getDateChanged());
 		
 		return info;
 	}
@@ -136,5 +140,10 @@ public class DetectedRecordInfo extends BaseVO{
 
 	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		DetectedRecordInfoDAO.insert(this, tableConfiguration, conn);
+	}
+
+	@Override
+	public String getOriginLocation() {
+		return this.recordOriginLocationCode;
 	}
 }

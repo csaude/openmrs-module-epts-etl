@@ -4,7 +4,6 @@ package org.openmrs.module.eptssync.utilities;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Connection;
@@ -26,7 +25,6 @@ import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class OpenMRSPOJOGenerator {
@@ -44,13 +42,13 @@ public class OpenMRSPOJOGenerator {
 		
 		String fullClassName = syncTableInfo.generateFullClassName();
 		
-		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
+		/*Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 			
 		if (existingCLass != null) {
 			if (!Modifier.isAbstract(existingCLass.getModifiers())) {
 				return existingCLass;
 			}
-		}
+		}*/
 	
 		String attsDefinition = "";
 		String getttersAndSetterDefinition = "";
@@ -144,9 +142,9 @@ public class OpenMRSPOJOGenerator {
 		insertValuesDefinition += attElements.getSqlInsertValues();
 		
 		//GENERATE INFO FOR UNAVALIABLE COLUMNS
-		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "uuid", conn)) {
-			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("uuid", "String");
-		}
+		//if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "uuid", conn)) {
+		//	getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("uuid", "String");
+		//}
 		
 		/*
 		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "origin_record_id", conn)) {
@@ -175,6 +173,7 @@ public class OpenMRSPOJOGenerator {
 		methodFromSuperClass += "	} \n \n";
 	
 		methodFromSuperClass += "	public void load(ResultSet rs) throws SQLException{ \n";
+		methodFromSuperClass += "		super.load(rs);\n";
 		methodFromSuperClass +=   		resultSetLoadDefinition;
 		methodFromSuperClass += "	} \n \n";
 		

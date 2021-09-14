@@ -3,12 +3,12 @@ package org.openmrs.module.eptssync.changesdetector.engine;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.eptssync.changesdetector.controller.ChangesDetectorController;
+import org.openmrs.module.eptssync.changesdetector.model.ChangesDetectorSearchParams;
 import org.openmrs.module.eptssync.changesdetector.model.DetectedRecordInfo;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.inconsistenceresolver.controller.InconsistenceSolverController;
-import org.openmrs.module.eptssync.inconsistenceresolver.model.InconsistenceSolverSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
@@ -19,12 +19,8 @@ import fgh.spi.changedrecordsdetector.DetectedRecordService;
 
 public class ChangesDetectorEngine extends Engine {
 	
-	private String appCode;
-	
-	public ChangesDetectorEngine(EngineMonitor monitor, RecordLimits limits, String appCode) {
+	public ChangesDetectorEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
-		
-		this.appCode = appCode;
 	}
 
 	@Override	
@@ -33,8 +29,8 @@ public class ChangesDetectorEngine extends Engine {
 	}
 	
 	@Override
-	public InconsistenceSolverController getRelatedOperationController() {
-		return (InconsistenceSolverController) super.getRelatedOperationController();
+	public ChangesDetectorController getRelatedOperationController() {
+		return (ChangesDetectorController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -50,13 +46,15 @@ public class ChangesDetectorEngine extends Engine {
 		for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
 				
-				DetectedRecordInfo rec = DetectedRecordInfo.generate(obj, this.appCode, getMonitor().getSyncTableInfo().getOriginAppLocationCode());
+				DetectedRecordInfo rec = DetectedRecordInfo.generate(obj, getRelatedOperationController().getConfiguration().getApplicationCode(), getMonitor().getSyncTableInfo().getOriginAppLocationCode());
 				
 				rec.save(getMonitor().getSyncTableInfo(), conn);
 				
-				DetectedRecordService.getInstance().performeAction(appCode, rec);
+				DetectedRecordService.getInstance().performeAction( getRelatedOperationController().getConfiguration().getApplicationCode(), rec);
 				
 			} catch (Exception e) {
+				e.printStackTrace();
+				
 				logInfo("Any error occurred processing record [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");
 				
 				throw new RuntimeException(e);
@@ -72,9 +70,9 @@ public class ChangesDetectorEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new InconsistenceSolverSearchParams(this.getSyncTableConfiguration(), limits, conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new ChangesDetectorSearchParams(this.getSyncTableConfiguration(),  getRelatedOperationController().getConfiguration().getApplicationCode(), limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
 		
 		return searchParams;
 	}
