@@ -60,18 +60,22 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 		
 		String 	sql =  " SELECT " + function + "("+ tableConf.getPrimaryKey() +") value \n";
 				sql += " FROM " + tableConf.getTableName();
-				sql += " WHERE NOT EXISTS (	SELECT * \n";
-				sql += "					FROM detected_record_info \n";
-				sql += "					WHERE table_name = ? \n";
-				sql += "							AND app_code = ? \n";
-				sql += "							AND record_origin_location_code = ? \n";
-				sql += "							AND record_id = " + tableConf.getPrimaryKey() + ")";
-				sql += " 		AND (date_created >= ? or date_changed > ? " + voided_condition + ")";
-				
+				sql += " WHERE 1 = 1 \n";
+				//sql += " WHERE NOT EXISTS (	SELECT * \n";
+				//sql += "					FROM detected_record_info \n";
+				//sql += "					WHERE table_name = ? \n";
+				//sql += "							AND app_code = ? \n";
+				//sql += "							AND record_origin_location_code = ? \n";
+				//sql += "							AND record_id = " + tableConf.getPrimaryKey() + ")";
+				sql += " 		AND (date_created >= ? or date_changed >= ? " + voided_condition + ")";
+			
+		/*
 		Object[] params = {	tableConf.getTableName(),
 							appCode,
 							tableConf.getOriginAppLocationCode(),
-							observationDate, observationDate};
+							observationDate, observationDate};*/
+				
+		Object[] params = {observationDate, observationDate};
 		
 		if (!tableConf.isMetadata()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
 		
