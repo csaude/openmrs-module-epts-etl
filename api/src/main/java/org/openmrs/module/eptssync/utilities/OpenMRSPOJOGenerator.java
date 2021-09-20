@@ -4,6 +4,7 @@ package org.openmrs.module.eptssync.utilities;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Connection;
@@ -42,13 +43,13 @@ public class OpenMRSPOJOGenerator {
 		
 		String fullClassName = syncTableInfo.generateFullClassName();
 		
-		/*Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
+		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 			
 		if (existingCLass != null) {
 			if (!Modifier.isAbstract(existingCLass.getModifiers())) {
 				return existingCLass;
 			}
-		}*/
+		}
 	
 		String attsDefinition = "";
 		String getttersAndSetterDefinition = "";
