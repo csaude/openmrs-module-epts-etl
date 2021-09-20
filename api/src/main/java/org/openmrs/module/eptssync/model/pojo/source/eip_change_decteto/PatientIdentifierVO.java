@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.source.eip_change_dectetor; 
+package org.openmrs.module.eptssync.model.pojo.source.eip_change_decteto; 
  
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  
