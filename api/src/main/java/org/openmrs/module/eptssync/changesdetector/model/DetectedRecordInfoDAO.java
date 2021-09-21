@@ -56,8 +56,9 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 	}
 	
 	public static long getChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, String function, Connection conn) throws DBException, ForbiddenOperationException {
-		String voided_condition = !tableConf.isMetadata() ? " or date_voided >= ? " : "";
-		
+		String dateChangedCondition = !tableConf.getTableName().equalsIgnoreCase("obs") ? " or date_changed >= ? " : "";
+		String dateVoidedCondition  = !tableConf.isMetadata() ? " or date_voided >= ? " : "";
+			
 		String 	sql =  " SELECT " + function + "("+ tableConf.getPrimaryKey() +") value \n";
 				sql += " FROM " + tableConf.getTableName();
 				sql += " WHERE 1 = 1 \n";
@@ -67,7 +68,8 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 				//sql += "							AND app_code = ? \n";
 				//sql += "							AND record_origin_location_code = ? \n";
 				//sql += "							AND record_id = " + tableConf.getPrimaryKey() + ")";
-				sql += " 		AND (date_created >= ? or date_changed >= ? " + voided_condition + ")";
+				
+				sql += " 		AND (date_created >= ? " + dateChangedCondition + " "+ dateVoidedCondition + ")";
 			
 		/*
 		Object[] params = {	tableConf.getTableName(),
@@ -75,9 +77,10 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 							tableConf.getOriginAppLocationCode(),
 							observationDate, observationDate};*/
 				
-		Object[] params = {observationDate, observationDate};
+		Object[] params = {observationDate};
 		
-		if (!tableConf.isMetadata()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
+		if (!dateVoidedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
+		if (!dateChangedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
 		
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
 		
