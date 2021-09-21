@@ -44,7 +44,7 @@ public class ChangesDetectorSearchParams extends SyncSearchParams<OpenMRSObject>
 				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ? or  " + tableInfo.getTableName() + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_voided >= ?");
 			}
 			if(tableInfo.getTableName().equalsIgnoreCase("obs")) {
-				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ?  or " + tableInfo.getTableName() + ".date_voided >= ?");
+				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ? or " + tableInfo.getTableName() +".date_created >= ?  or " + tableInfo.getTableName() + ".date_voided >= ?");
 			}
 			else {
 				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ? or  " + tableInfo.getTableName() + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_retired >= ?");
