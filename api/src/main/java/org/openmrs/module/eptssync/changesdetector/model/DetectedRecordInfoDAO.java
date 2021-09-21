@@ -57,7 +57,7 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 	
 	public static long getChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, String function, Connection conn) throws DBException, ForbiddenOperationException {
 		String dateChangedCondition = !tableConf.getTableName().equalsIgnoreCase("obs") ? " or date_changed >= ? " : "";
-		String dateVoidedCondition  = !tableConf.isMetadata() ? " or date_voided >= ? " : "";
+		String dateVoidedCondition  = !tableConf.isMetadata() && tableConf.getTableName().equalsIgnoreCase("users") ? " or date_voided >= ? " : "";
 			
 		String 	sql =  " SELECT " + function + "("+ tableConf.getPrimaryKey() +") value \n";
 				sql += " FROM " + tableConf.getTableName();
