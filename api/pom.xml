@@ -135,12 +135,6 @@
 		    <version>7.0.35</version>
 		</dependency>
 		
-		<dependency>
-		    <groupId>fgh.spi</groupId>
-		    <artifactId>spi-changedrecordsdetector</artifactId>
-		    <version>0.0.1-SNAPSHOT</version>
-		</dependency>
-		 
 	</dependencies>
 	
 	

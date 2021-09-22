@@ -30,7 +30,7 @@ public abstract class GenericOperationsService<T extends GenericOperation> imple
 		
 		Iterator<T> operations = operationsLookup.iterator();
 		
-		this.operations = new ArrayList<>();
+		this.operations = new ArrayList<T>();
 		
 		while(operations.hasNext()){
 			this.operations.add(operations.next());

@@ -1,8 +1,8 @@
 package fgh.sp.eip.changedrecordsdetector;
 
+
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
-import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import fgh.sp.eip.changedrecordsdetector.model.Event;
@@ -21,14 +21,19 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 	
 	public EipChangedRecordDetectedAction() {
 		DBConnectionInfo dbConnInfo = new DBConnectionInfo();
-		dbConnInfo.setConnectionURI("jdbc:h2:tcp://localhost/./sender/openmrs_eip_mgt");
+		/*dbConnInfo.setConnectionURI("jdbc:h2:tcp://localhost/./sender/openmrs_eip_mgt");
 		dbConnInfo.setDataBaseUserName("admin");
 		dbConnInfo.setDataBaseUserPassword("admin123");
-		dbConnInfo.setDriveClassName("org.h2.Driver");
+		dbConnInfo.setDriveClassName("org.h2.Driver");*/
+		
+		dbConnInfo.setConnectionURI("jdbc:mysql://localhost:3306/openmrs_eip_sender_mgt");
+		dbConnInfo.setDataBaseUserName("root");
+		dbConnInfo.setDataBaseUserPassword("root");
+		dbConnInfo.setDriveClassName("com.mysql.jdbc.Driver");
 		
 		this.dbService = DBConnectionService.init(dbConnInfo );
 	}
-	
+
 	public OpenConnection openConnection() {
 		return dbService.openConnection();
 	}
@@ -58,7 +63,7 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 		try {
 			SenderRetryQueueItemDAO.insert(item, conn);
 			conn.markAsSuccessifullyTerminected();
-		} catch (DBException e) {
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} 
 		finally {
