@@ -55,18 +55,18 @@ public class ChangesDetectorSearchParams extends SyncSearchParams<OpenMRSObject>
 			searchClauses.addToParameters(this.getSyncStartDate());
 			searchClauses.addToParameters(this.getSyncStartDate());
 			
-			/*
+		
 			searchClauses.addToClauses("NOT EXISTS (SELECT 	id \n" +
 									   "			FROM    detected_record_info \n" + 
 									   "			WHERE   record_id = " + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey() + "\n" + 
 									   "					AND table_name = ? \n"+
 									   "					AND app_code = ? \n" +
-									   "				    AND record_origin_location_code = ? )");*/
+									   "				    AND record_origin_location_code = ? )");
 			
 			
-			/*searchClauses.addToParameters(tableInfo.getTableName());
+			searchClauses.addToParameters(tableInfo.getTableName());
 			searchClauses.addToParameters(this.appCode);
-			searchClauses.addToParameters(tableInfo.getOriginAppLocationCode());*/
+			searchClauses.addToParameters(tableInfo.getOriginAppLocationCode());
 			
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
