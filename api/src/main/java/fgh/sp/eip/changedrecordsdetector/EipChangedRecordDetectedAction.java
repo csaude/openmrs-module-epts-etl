@@ -26,7 +26,7 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 		dbConnInfo.setDataBaseUserPassword("admin123");
 		dbConnInfo.setDriveClassName("org.h2.Driver");*/
 		
-		dbConnInfo.setConnectionURI("jdbc:mysql://localhost:3306/openmrs_eip_sender_mgt");
+		dbConnInfo.setConnectionURI("jdbc:mysql://localhost:3307/openmrs_eip_sender_mgt");
 		dbConnInfo.setDataBaseUserName("root");
 		dbConnInfo.setDataBaseUserPassword("root");
 		dbConnInfo.setDriveClassName("com.mysql.jdbc.Driver");
