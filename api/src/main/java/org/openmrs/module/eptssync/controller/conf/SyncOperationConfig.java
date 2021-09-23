@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.eptssync.changesdetector.controller.ChangesDetectorController;
+import org.openmrs.module.eptssync.changedrecordsdetector.controller.ChangedRecordsDetectorController;
 import org.openmrs.module.eptssync.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
@@ -30,17 +30,19 @@ public class SyncOperationConfig {
 	public static final String SYNC_OPERATION_LOAD = "load";
 	public static final String SYNC_OPERATION_TRANSPORT = "transport";
 	public static final String SYNC_OPERATION_CONSOLIDATION= "consolidation";
-	public static final String SYNC_OPERATION_CHANGES_DETECTOR = "changes_detector";
+	public static final String SYNC_OPERATION_CHANGED_RECORDS_DETECTOR = "changed_records_detector";
+	public static final String SYNC_OPERATION_NEW_RECORDS_DETECTOR = "new_records_detector";
 	
 	public static final String[] SUPPORTED_OPERATIONS = {	SYNC_OPERATION_CONSOLIDATION, 
-			SYNC_OPERATION_EXPORT, 
-			SYNC_OPERATION_LOAD, 
-			SYNC_OPERATION_SYNCHRONIZATION, 
-			SYNC_OPERATION_TRANSPORT,
-			SYNC_OPERATION_DATABASE_PREPARATION,
-			SYNC_OPERATION_POJO_GENERATION,
-			SYNC_OPERATION_INCONSISTENCY_SOLVER,
-			SYNC_OPERATION_CHANGES_DETECTOR};
+															SYNC_OPERATION_EXPORT, 
+															SYNC_OPERATION_LOAD, 
+															SYNC_OPERATION_SYNCHRONIZATION, 
+															SYNC_OPERATION_TRANSPORT,
+															SYNC_OPERATION_DATABASE_PREPARATION,
+															SYNC_OPERATION_POJO_GENERATION,
+															SYNC_OPERATION_INCONSISTENCY_SOLVER,
+															SYNC_OPERATION_CHANGED_RECORDS_DETECTOR,
+															SYNC_OPERATION_NEW_RECORDS_DETECTOR};
 
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -288,8 +290,13 @@ public class SyncOperationConfig {
 	}
 	
 	@JsonIgnore
-	public boolean isChangesDetector() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_CHANGES_DETECTOR);
+	public boolean isChangedRecordsDetector() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR);
+	}
+	
+	@JsonIgnore
+	public boolean isNewRecordsDetector() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR);
 	}
 	
 	@Override
@@ -360,10 +367,14 @@ public class SyncOperationConfig {
 			return new DatabaseIntegrityConsolidationController(parent, this, appOriginCode);
 		}
 		else
-		if (isChangesDetector()) {
-			return new ChangesDetectorController(parent, this);
+		if (isChangedRecordsDetector()) {
+			return new ChangedRecordsDetectorController(parent, this);
 		}
-			
+		else
+		if (isNewRecordsDetector()) {
+			return new ChangedRecordsDetectorController(parent, this);
+		}		
+		
 		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");
 		
 	}
@@ -385,8 +396,6 @@ public class SyncOperationConfig {
 		if (this.getRelatedSyncConfig().isNeutralInstallationType()) {
 			if (!this.canBeRunInNeutralInstallation()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in neutral installation\n";
 		}
-		
-		
 		
 		if (utilities.stringHasValue(errorMsg)) {
 			errorMsg = "There are errors on config operation configuration " + this.getOperationType() +  "[File:  " + this.getRelatedSyncConfig().getRelatedConfFile().getAbsolutePath() + "]\n" + errorMsg;
@@ -419,8 +428,9 @@ public class SyncOperationConfig {
 	}
 	
 	public static List<String> getSupportedOperationsInNeutralInstallation() {
-		String[] supported = {SyncOperationConfig.SYNC_OPERATION_CHANGES_DETECTOR,
-							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION};
+		String[] supported = {SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR,
+							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION,
+							  SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR};
 		
 		return utilities.parseArrayToList(supported);
 	}

@@ -1,7 +1,8 @@
-package org.openmrs.module.eptssync.changesdetector.model;
+package org.openmrs.module.eptssync.changedrecordsdetector.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
@@ -10,16 +11,19 @@ import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class ChangesDetectorSearchParams extends SyncSearchParams<OpenMRSObject>{
+public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRSObject>{
 	private boolean selectAllRecords;
 	private String appCode;
+	private String type;
 	
-	public ChangesDetectorSearchParams(SyncTableConfiguration tableInfo, String appCode, RecordLimits limits, Connection conn) {
+	public ChangedRecordsDetectorSearchParams(SyncTableConfiguration tableInfo, String appCode, RecordLimits limits, String type, Connection conn) {
 		super(tableInfo, limits);
 		
 		this.appCode = appCode;
 		
 		setOrderByFields(tableInfo.getPrimaryKey());
+		
+		this.type = type;
 	}
 	
 	@Override
@@ -39,23 +43,31 @@ public class ChangesDetectorSearchParams extends SyncSearchParams<OpenMRSObject>
 		
 			
 		if (!this.selectAllRecords) {
-			
+			if (this.type.equals(SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR)) {
+				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ?");
+				
+				searchClauses.addToParameters(this.getSyncStartDate());
+			}
+			else
 			if (!tableInfo.isMetadata() && !tableInfo.getTableName().equalsIgnoreCase("users") && !tableInfo.getTableName().equalsIgnoreCase("obs")) {
-				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ? or  " + tableInfo.getTableName() + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_voided >= ?");
+				searchClauses.addToClauses(tableInfo.getTableName() + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_voided >= ?");
+				
+				searchClauses.addToParameters(this.getSyncStartDate());
+				searchClauses.addToParameters(this.getSyncStartDate());
 			}
 			else
 			if(tableInfo.getTableName().equalsIgnoreCase("obs")) {
-				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ? or " + tableInfo.getTableName() +".date_created >= ?  or " + tableInfo.getTableName() + ".date_voided >= ?");
+				searchClauses.addToClauses(tableInfo.getTableName() + ".date_voided >= ?");
+				
+				searchClauses.addToParameters(this.getSyncStartDate());
 			}
 			else {
-				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ? or  " + tableInfo.getTableName() + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_retired >= ?");
+				searchClauses.addToClauses(tableInfo.getTableName() + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_retired >= ?");
+
+				searchClauses.addToParameters(this.getSyncStartDate());
+				searchClauses.addToParameters(this.getSyncStartDate());
 			}
 			
-			searchClauses.addToParameters(this.getSyncStartDate());
-			searchClauses.addToParameters(this.getSyncStartDate());
-			searchClauses.addToParameters(this.getSyncStartDate());
-			
-		
 			searchClauses.addToClauses("NOT EXISTS (SELECT 	id \n" +
 									   "			FROM    detected_record_info \n" + 
 									   "			WHERE   record_id = " + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey() + "\n" + 
@@ -89,7 +101,7 @@ public class ChangesDetectorSearchParams extends SyncSearchParams<OpenMRSObject>
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		ChangesDetectorSearchParams auxSearchParams = new ChangesDetectorSearchParams(this.tableInfo, this.appCode, this.limits, conn);
+		ChangedRecordsDetectorSearchParams auxSearchParams = new ChangedRecordsDetectorSearchParams(this.tableInfo, this.appCode, this.limits, this.type, conn);
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);

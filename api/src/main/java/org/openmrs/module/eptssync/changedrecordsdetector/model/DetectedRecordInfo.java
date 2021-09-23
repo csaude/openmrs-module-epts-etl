@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.changesdetector.model;
+package org.openmrs.module.eptssync.changedrecordsdetector.model;
 
 import java.sql.Connection;
 import java.util.Date;

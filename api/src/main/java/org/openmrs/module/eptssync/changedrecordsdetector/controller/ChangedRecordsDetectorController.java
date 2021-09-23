@@ -1,16 +1,17 @@
-package org.openmrs.module.eptssync.changesdetector.controller;
+package org.openmrs.module.eptssync.changedrecordsdetector.controller;
 
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.openmrs.module.eptssync.changesdetector.engine.ChangesDetectorEngine;
-import org.openmrs.module.eptssync.changesdetector.model.DetectedRecordInfoDAO;
+import org.openmrs.module.eptssync.changedrecordsdetector.engine.ChangesDetectorEngine;
+import org.openmrs.module.eptssync.changedrecordsdetector.model.DetectedRecordInfoDAO;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
@@ -22,8 +23,8 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  *
  */
-public class ChangesDetectorController extends OperationController {
-	public ChangesDetectorController(ProcessController processController, SyncOperationConfig operationConfig) {
+public class ChangedRecordsDetectorController extends OperationController {
+	public ChangedRecordsDetectorController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
@@ -48,7 +49,15 @@ public class ChangesDetectorController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DetectedRecordInfoDAO.getFirstChangedRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+			
+			if (operationConfig.isChangedRecordsDetector()) {
+				return DetectedRecordInfoDAO.getFirstChangedRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+			}
+			else 
+			if (operationConfig.isNewRecordsDetector()) {
+				return DetectedRecordInfoDAO.getFirstNewRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+			}
+			else throw new ForbiddenOperationException("The operation '" + getOperationType() + "' is not supported in this controller!");
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -64,7 +73,14 @@ public class ChangesDetectorController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DetectedRecordInfoDAO.getLastChangedRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+			if (operationConfig.isChangedRecordsDetector()) {
+				return DetectedRecordInfoDAO.getLastChangedRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+			}
+			else 
+			if (operationConfig.isNewRecordsDetector()) {
+				return DetectedRecordInfoDAO.getLastNewRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+			}
+			else throw new ForbiddenOperationException("The operation '" + getOperationType() + "' is not supported in this controller!");
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -82,7 +98,7 @@ public class ChangesDetectorController extends OperationController {
 
 	@Override
 	public String getOperationType() {
-		return SyncOperationConfig.SYNC_OPERATION_CHANGES_DETECTOR;
+		return  this.operationConfig.getOperationType();
 	}
 	
 	@Override

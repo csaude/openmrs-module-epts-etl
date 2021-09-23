@@ -366,10 +366,6 @@ public class EngineMonitor implements MonitoredOperation{
 	}
 
 	public static EngineMonitor init(OperationController controller, SyncTableConfiguration syncTableInfo, SyncProgressMeter progressMeter) {
-		if (syncTableInfo.getTableName().equalsIgnoreCase("encounter_type")) {
-			System.out.println("Stop");
-		}
-		
 		EngineMonitor monitor = new EngineMonitor(controller, syncTableInfo, progressMeter);
 		
 		return monitor;

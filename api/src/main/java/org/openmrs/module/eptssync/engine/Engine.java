@@ -244,7 +244,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	private int performe(Connection conn) throws DBException {
 		List<SyncRecord> records = searchNextRecords(conn);
 		
-		this.monitor.logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "' FINISHED.");
+		this.monitor.logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "' FINISHED. FOUND: '"+ utilities.arraySize(records) + "' RECORDS.");
 		
 		if (utilities.arrayHasElement(records)) {
 			this.monitor.logInfo("INITIALIZING " +  getRelatedOperationController().getOperationType() + " OF '" + records.size() + "' RECORDS OF TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");

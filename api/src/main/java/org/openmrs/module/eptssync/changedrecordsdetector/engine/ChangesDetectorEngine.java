@@ -1,11 +1,11 @@
-package org.openmrs.module.eptssync.changesdetector.engine;
+package org.openmrs.module.eptssync.changedrecordsdetector.engine;
 
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.eptssync.changesdetector.controller.ChangesDetectorController;
-import org.openmrs.module.eptssync.changesdetector.model.ChangesDetectorSearchParams;
-import org.openmrs.module.eptssync.changesdetector.model.DetectedRecordInfo;
+import org.openmrs.module.eptssync.changedrecordsdetector.controller.ChangedRecordsDetectorController;
+import org.openmrs.module.eptssync.changedrecordsdetector.model.ChangedRecordsDetectorSearchParams;
+import org.openmrs.module.eptssync.changedrecordsdetector.model.DetectedRecordInfo;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
@@ -29,8 +29,8 @@ public class ChangesDetectorEngine extends Engine {
 	}
 	
 	@Override
-	public ChangesDetectorController getRelatedOperationController() {
-		return (ChangesDetectorController) super.getRelatedOperationController();
+	public ChangedRecordsDetectorController getRelatedOperationController() {
+		return (ChangedRecordsDetectorController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -70,7 +70,7 @@ public class ChangesDetectorEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ChangesDetectorSearchParams(this.getSyncTableConfiguration(),  getRelatedOperationController().getConfiguration().getApplicationCode(), limits, conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new ChangedRecordsDetectorSearchParams(this.getSyncTableConfiguration(),  getRelatedOperationController().getConfiguration().getApplicationCode(), limits, getRelatedOperationController().getOperationType(), conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
 		
