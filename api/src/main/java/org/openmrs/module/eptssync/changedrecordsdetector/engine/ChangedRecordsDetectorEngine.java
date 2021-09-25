@@ -1,9 +1,11 @@
 package org.openmrs.module.eptssync.changedrecordsdetector.engine;
 
+import java.io.File;
 import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.eptssync.changedrecordsdetector.controller.ChangedRecordsDetectorController;
+import org.openmrs.module.eptssync.changedrecordsdetector.model.ChangedRecordSearchLimits;
 import org.openmrs.module.eptssync.changedrecordsdetector.model.ChangedRecordsDetectorSearchParams;
 import org.openmrs.module.eptssync.changedrecordsdetector.model.DetectedRecordInfo;
 import org.openmrs.module.eptssync.engine.Engine;
@@ -17,17 +19,40 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 import fgh.spi.changedrecordsdetector.DetectedRecordService;
 
-public class ChangesDetectorEngine extends Engine {
+public class ChangedRecordsDetectorEngine extends Engine {
 	
-	public ChangesDetectorEngine(EngineMonitor monitor, RecordLimits limits) {
+	public ChangedRecordsDetectorEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
+		
+		this.limits = new ChangedRecordSearchLimits(limits.getFirstRecordId(), limits.getLastRecordId(), this);
+		
+		getLimits().setThreadMaxRecord(limits.getLastRecordId());
+		getLimits().setThreadMinRecord(limits.getFirstRecordId());
 	}
 
+	@Override
+	public ChangedRecordSearchLimits getLimits() {
+		return (ChangedRecordSearchLimits) super.getLimits();
+	}
+	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
+		
+		if (!getLimits().isLoadedFromFile()) {
+			ChangedRecordSearchLimits saveLimits = retriveSavedLimits();
+			
+			if (saveLimits != null) {
+				this.limits = saveLimits;
+			}
+		}
+	
 		return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
+	private ChangedRecordSearchLimits retriveSavedLimits() {
+		return ChangedRecordSearchLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
+	}
+
 	@Override
 	public ChangedRecordsDetectorController getRelatedOperationController() {
 		return (ChangedRecordsDetectorController) super.getRelatedOperationController();
@@ -62,6 +87,15 @@ public class ChangesDetectorEngine extends Engine {
 		}
 		
 		this.getMonitor().logInfo("ACTION PERFORMED FOR CHANGED RECORDS '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
+	
+		getLimits().setFirstRecordId(getLimits().getFirstRecordId() + syncRecords.size());
+		
+		saveCurrentLimits();
+	}
+	
+	
+	private void saveCurrentLimits() {
+		getLimits().save();
 	}
 	
 	@Override

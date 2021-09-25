@@ -3,7 +3,7 @@ package org.openmrs.module.eptssync.changedrecordsdetector.controller;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.openmrs.module.eptssync.changedrecordsdetector.engine.ChangesDetectorEngine;
+import org.openmrs.module.eptssync.changedrecordsdetector.engine.ChangedRecordsDetectorEngine;
 import org.openmrs.module.eptssync.changedrecordsdetector.model.DetectedRecordInfoDAO;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
@@ -41,7 +41,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new ChangesDetectorEngine(monitor, limits);
+		return new ChangedRecordsDetectorEngine(monitor, limits);
 	}
 
 	@Override

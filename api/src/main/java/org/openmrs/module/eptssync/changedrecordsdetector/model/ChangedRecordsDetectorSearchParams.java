@@ -30,7 +30,6 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRS
 	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
 		
-		
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
 	
 		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
@@ -40,7 +39,6 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRS
 		else {
 			searchClauses.addColumnToSelect("*");
 		}
-		
 			
 		if (!this.selectAllRecords) {
 			if (this.type.equals(SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR)) {
@@ -67,6 +65,7 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRS
 				searchClauses.addToParameters(this.getSyncStartDate());
 				searchClauses.addToParameters(this.getSyncStartDate());
 			}
+			/*
 			
 			searchClauses.addToClauses("NOT EXISTS (SELECT 	id \n" +
 									   "			FROM    detected_record_info \n" + 
@@ -78,7 +77,7 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRS
 			
 			searchClauses.addToParameters(tableInfo.getTableName());
 			searchClauses.addToParameters(this.appCode);
-			searchClauses.addToParameters(tableInfo.getOriginAppLocationCode());
+			searchClauses.addToParameters(tableInfo.getOriginAppLocationCode());*/
 			
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
