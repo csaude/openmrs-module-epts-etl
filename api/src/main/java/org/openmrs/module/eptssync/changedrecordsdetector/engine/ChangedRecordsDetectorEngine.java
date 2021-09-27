@@ -98,7 +98,7 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		
 		this.getMonitor().logInfo("ACTION PERFORMED FOR CHANGED RECORDS '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
 	
-		getLimits().moveNext(syncRecords.size());
+		getLimits().moveNext(getQtyRecordsPerProcessing());
 		
 		saveCurrentLimits();
 	}
