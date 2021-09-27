@@ -203,9 +203,11 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 									
 									finalCheckDone = true;
 									
-									this.resetLimits(null);
-									
-									run();
+									if (mustDoFinalCheck()) {
+										this.resetLimits(null);
+										
+										run();
+									}
 								}
 								else {
 									getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType() + "! FINISHING..." );
@@ -227,6 +229,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		}
 	}
 	
+	protected boolean mustDoFinalCheck() {
+		return true;
+	}
+
 	private void reportError(Exception e) {
 		this.lastException = e;
 		

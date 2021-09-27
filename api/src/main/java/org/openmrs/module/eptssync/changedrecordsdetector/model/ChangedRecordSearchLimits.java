@@ -26,6 +26,8 @@ public class ChangedRecordSearchLimits extends RecordLimits {
 	private ChangedRecordsDetectorEngine engine;
 	private boolean loadedFromFile;
 	
+	private String lastSavedOn;
+	
 	public ChangedRecordSearchLimits() {
 		super(0, 0);
 	}
@@ -72,12 +74,22 @@ public class ChangedRecordSearchLimits extends RecordLimits {
 		this.threadMaxRecord = threadMaxRecord;
 	}
 
+	public String getLastSavedOn() {
+		return lastSavedOn;
+	}
+
+	public void setLastSavedOn(String lastSavedOn) {
+		this.lastSavedOn = lastSavedOn;
+	}
+
 	public void save() {
 		String fileName =  generateFilePath();
 		
 		if (new File(fileName).exists()) {
 			FileUtilities.removeFile(fileName);
 		}	
+		
+		setLastSavedOn(Engine.utilities.formatDateToDDMMYYYY_HHMISS(Engine.utilities.getCurrentDate()));
 		
 		String desc = this.parseToJSON();
 		

@@ -59,6 +59,11 @@ public class ChangedRecordsDetectorEngine extends Engine {
 	}
 
 	@Override
+	protected boolean mustDoFinalCheck() {
+		return false;
+	}
+	
+	@Override
 	public ChangedRecordsDetectorController getRelatedOperationController() {
 		return (ChangedRecordsDetectorController) super.getRelatedOperationController();
 	}
