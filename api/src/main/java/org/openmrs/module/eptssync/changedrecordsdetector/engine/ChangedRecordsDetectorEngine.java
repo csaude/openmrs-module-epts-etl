@@ -46,10 +46,15 @@ public class ChangedRecordsDetectorEngine extends Engine {
 			}
 		}
 	
-		return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		if (getLimits().canGoNext()) {
+			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		}
+		else return null;	
 	}
 	
 	private ChangedRecordSearchLimits retriveSavedLimits() {
+		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
+		
 		return ChangedRecordSearchLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
 	}
 
@@ -88,7 +93,7 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		
 		this.getMonitor().logInfo("ACTION PERFORMED FOR CHANGED RECORDS '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
 	
-		getLimits().setFirstRecordId(getLimits().getFirstRecordId() + syncRecords.size());
+		getLimits().moveNext(syncRecords.size());
 		
 		saveCurrentLimits();
 	}

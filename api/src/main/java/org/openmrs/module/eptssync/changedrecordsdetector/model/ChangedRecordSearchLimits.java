@@ -7,6 +7,7 @@ import java.nio.file.NoSuchFileException;
 
 import org.openmrs.module.eptssync.changedrecordsdetector.engine.ChangedRecordsDetectorEngine;
 import org.openmrs.module.eptssync.controller.DestinationOperationController;
+import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -94,6 +95,7 @@ public class ChangedRecordSearchLimits extends RecordLimits {
 			if (limits != null  && limits.hasSameEngineInfo(engine.getLimits())) {
 				limits.loadedFromFile = true;
 				limits.engine = engine;
+				limits.threadCode = engine.getEngineId();
 				return limits;
 			}
 			else return null;
@@ -146,7 +148,7 @@ public class ChangedRecordSearchLimits extends RecordLimits {
 		
 		subFolder += FileUtilities.getPathSeparator() + "threads";
 		
-		return this.engine.getRelatedOperationController().getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder;
+		return this.engine.getRelatedOperationController().getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder + FileUtilities.getPathSeparator() + this.threadCode;
 	
 	}
 	
@@ -160,7 +162,35 @@ public class ChangedRecordSearchLimits extends RecordLimits {
 	}
 
 	public boolean hasSameEngineInfo(ChangedRecordSearchLimits limits) {
-		return this.getThreadMaxRecord() == limits.getThreadMaxRecord() && this.getThreadMinRecord() == limits.getThreadMinRecord();
+		return this.equals(limits)  && this.getThreadMaxRecord() == limits.getThreadMaxRecord() && this.getThreadMinRecord() == limits.getThreadMinRecord();
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof ChangedRecordsDetectorEngine) || obj == null) return false;
+		
+		ChangedRecordSearchLimits cr = (ChangedRecordSearchLimits)obj;
+		
+		return this.getThreadCode().equals(cr.getThreadCode());
+	}
+
+	/**
+	 * Verifica se os limites ainda permitem pesquisa.
+	 * Os limites deixam de permitir pesquisa quando o valor de {@link #getFirstRecordId()} for inferior ou igual ao valor de {@link #getLastRecordId()}
+	 * 
+	 * @return
+	 */
+	public boolean canGoNext() {
+		return this.getFirstRecordId() <= this.getLastRecordId();
+	}
+	
+	
+	public void moveNext(int qtyRecords) {
+		this.setFirstRecordId(this.getFirstRecordId() + qtyRecords);
+	}
+
+	public boolean hasThreadCode() {
+		return Engine.utilities.stringHasValue(this.getThreadCode());
 	}
 	
 }
