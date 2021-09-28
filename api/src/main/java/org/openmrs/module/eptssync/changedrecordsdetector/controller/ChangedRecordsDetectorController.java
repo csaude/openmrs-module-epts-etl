@@ -153,16 +153,23 @@ public class ChangedRecordsDetectorController extends OperationController {
 		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
 		sql += "app_code VARCHAR(100) NOT NULL,\n";
 		sql += "record_origin_location_code VARCHAR(100) NOT NULL,\n";
-		sql += "PRIMARY KEY (id)\n";
+		sql += "PRIMARY KEY (id),\n";
+		sql += " UNIQUE KEY detected_record_info_unq (table_name,app_code,record_origin_location_code,record_id,operation_type)\n";
 		sql += ") ENGINE=InnoDB;\n";
 		
-				
 		try {
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
+			st.addBatch("CREATE INDEX d_rec_info_app_idx ON detected_record_info (app_code);");
+			st.addBatch("CREATE INDEX d_rec_info_origin_idx ON detected_record_info (record_origin_location_code);");
+			st.addBatch("CREATE INDEX d_rec_info_table_app_origin_idx ON detected_record_info (table_name, app_code, record_origin_location_code);");
+			st.addBatch("CREATE INDEX d_rec_info_table_idx ON detected_record_info (table_name);");
+			
 			st.executeBatch();
 
 			st.close();
+			
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 
