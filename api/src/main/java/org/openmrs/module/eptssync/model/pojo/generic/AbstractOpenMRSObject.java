@@ -40,7 +40,10 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	
 	
 	public void load(ResultSet rs) throws SQLException{ 
-		this.uuid = rs.getString("uuid");
+		try {
+			this.uuid = rs.getString("uuid");
+			
+		} catch (SQLException e) {}
 	}
 	
 	/**
