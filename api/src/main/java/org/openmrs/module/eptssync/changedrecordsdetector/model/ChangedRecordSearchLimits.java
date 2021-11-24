@@ -18,10 +18,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class ChangedRecordSearchLimits extends RecordLimits {
-
-	private String threadCode;
-	private long threadMinRecord;
-	private long threadMaxRecord;
 	
 	private ChangedRecordsDetectorEngine engine;
 	private boolean loadedFromFile;
@@ -198,7 +194,7 @@ public class ChangedRecordSearchLimits extends RecordLimits {
 	
 	
 	public void moveNext(int qtyRecords) {
-		this.setFirstRecordId(this.getFirstRecordId() + qtyRecords);
+		this.setFirstRecordId(this.getFirstRecordId() + qtyRecords - 1);
 	}
 
 	public boolean hasThreadCode() {

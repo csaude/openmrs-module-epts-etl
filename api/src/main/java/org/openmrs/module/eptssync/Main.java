@@ -23,7 +23,7 @@ public class Main implements Runnable{
 	public static void main(String[] synConfigFiles) throws IOException {
 		BasicConfigurator.configure();
 
-		int i = -3;
+		/*int i = -3;
 		
 		while(i <= 3) {
 			i++;
@@ -31,7 +31,7 @@ public class Main implements Runnable{
 			System.out.println(i);
 		
 			TimeCountDown.sleep(1);
-		}
+		}*/
 		
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);
 

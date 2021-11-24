@@ -166,9 +166,9 @@ public class ConfVM {
 			
 			properties.load(FileUtilities.createStreamFromFile(openMrsRuntimePropertyFile));
 			
-			reloadedSyncConfiguration.getConnInfo().setConnectionURI(properties.getProperty("connection.url"));
-			reloadedSyncConfiguration.getConnInfo().setDataBaseUserName(properties.getProperty("connection.username"));
-			reloadedSyncConfiguration.getConnInfo().setDataBaseUserPassword(properties.getProperty("connection.password"));
+			reloadedSyncConfiguration.getMainDBConnInfo().setConnectionURI(properties.getProperty("connection.url"));
+			reloadedSyncConfiguration.getMainDBConnInfo().setDataBaseUserName(properties.getProperty("connection.username"));
+			reloadedSyncConfiguration.getMainDBConnInfo().setDataBaseUserPassword(properties.getProperty("connection.password"));
 		}
 		
 		reloadedSyncConfiguration.setRelatedController(this.syncConfiguration.getRelatedController() == null ? new ProcessController(reloadedSyncConfiguration) : this.syncConfiguration.getRelatedController());

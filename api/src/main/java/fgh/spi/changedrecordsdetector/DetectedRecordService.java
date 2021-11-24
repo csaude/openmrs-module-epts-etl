@@ -1,5 +1,7 @@
 package fgh.spi.changedrecordsdetector;
 
+import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
+
 import fgh.sp.eip.changedrecordsdetector.EipChangedRecordDetectedAction;
 
 /**
@@ -23,12 +25,23 @@ public class DetectedRecordService extends GenericOperationsService<DetectedReco
         return service;
     }
 
-    public void performeAction(String appCode, ChangedRecord record) {
-    	detectAction(appCode).performeAction(record);
-    }
+    public boolean isDBServiceConfigured(String appCode) {
+    			
+    	DetectedRecordAction action = detectAction(appCode);
+    	
+    	return action.isDBServiceConfigured();
+   }
     
-    
-  static DetectedRecordAction[] staticServices = {new EipChangedRecordDetectedAction()}; 
+	public void configureDBService(String appCode, DBConnectionInfo dbConnectionInfo) {
+		DetectedRecordAction action = detectAction(appCode);
+		action.configureDBService(dbConnectionInfo);
+	}
+	
+	public void performeAction(String appCode, ChangedRecord record) {
+		detectAction(appCode).performeAction(record);
+	}
+      
+    static DetectedRecordAction[] staticServices = {new EipChangedRecordDetectedAction()}; 
     
     @SuppressWarnings("unused")
 	private DetectedRecordAction detectAction(String appCode) {

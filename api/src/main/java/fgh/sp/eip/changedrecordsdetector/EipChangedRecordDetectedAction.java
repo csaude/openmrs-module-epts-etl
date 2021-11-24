@@ -20,20 +20,8 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 	private DBConnectionService dbService;
 	
 	public EipChangedRecordDetectedAction() {
-		DBConnectionInfo dbConnInfo = new DBConnectionInfo();
-		/*dbConnInfo.setConnectionURI("jdbc:h2:tcp://localhost/./sender/openmrs_eip_mgt");
-		dbConnInfo.setDataBaseUserName("admin");
-		dbConnInfo.setDataBaseUserPassword("admin123");
-		dbConnInfo.setDriveClassName("org.h2.Driver");*/
-		
-		dbConnInfo.setConnectionURI("jdbc:mysql://localhost:3307/openmrs_eip_sender_mgt");
-		dbConnInfo.setDataBaseUserName("root");
-		dbConnInfo.setDataBaseUserPassword("root");
-		dbConnInfo.setDriveClassName("com.mysql.jdbc.Driver");
-		
-		this.dbService = DBConnectionService.init(dbConnInfo );
 	}
-
+	
 	public OpenConnection openConnection() {
 		return dbService.openConnection();
 	}
@@ -74,5 +62,16 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 	@Override
 	public String getAppCode() {
 		return "eip";
+	}
+
+
+	@Override
+	public boolean isDBServiceConfigured() {
+		return this.dbService != null;
+	}
+
+	@Override
+	public void configureDBService(DBConnectionInfo dbConnectionInfo) {
+		this.dbService = DBConnectionService.init(dbConnectionInfo );
 	}	
 }

@@ -1,13 +1,5 @@
 package org.openmrs.module.eptssync.engine;
 
-import java.io.File;
-
-import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
-import org.openmrs.module.eptssync.utilities.io.FileUtilities;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 /**
  * Indicate the min and max record id to be processed by certain SyncEngine
  * 
@@ -15,12 +7,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  *
  */
 public class RecordLimits {
-	private long firstRecordId;
-	private long lastRecordId;
+	protected long firstRecordId;
+	protected long lastRecordId;
 	
-	private String threadCode;
-	private long threadMinRecord;
-	private long threadMaxRecord;
+	protected String threadCode;
+	protected long threadMinRecord;
+	protected long threadMaxRecord;
 	
 	public RecordLimits(long firstRecordId, long lastRecordId) {
 		this.firstRecordId = firstRecordId;
@@ -43,6 +35,30 @@ public class RecordLimits {
 		return lastRecordId;
 	}
 	
+
+	public String getThreadCode() {
+		return threadCode;
+	}
+
+	public void setThreadCode(String threadCode) {
+		this.threadCode = threadCode;
+	}
+
+	public long getThreadMinRecord() {
+		return threadMinRecord;
+	}
+
+	public void setThreadMinRecord(long threadMinRecord) {
+		this.threadMinRecord = threadMinRecord;
+	}
+
+	public long getThreadMaxRecord() {
+		return threadMaxRecord;
+	}
+
+	public void setThreadMaxRecord(long threadMaxRecord) {
+		this.threadMaxRecord = threadMaxRecord;
+	}
 
 	@Override
 	public String toString() {

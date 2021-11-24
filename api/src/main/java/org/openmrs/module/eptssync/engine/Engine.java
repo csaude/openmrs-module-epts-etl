@@ -34,7 +34,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	protected SyncProgressMeter progressMeter;
 	protected SyncSearchParams<? extends SyncRecord> searchParams;
-	protected RecordLimits limits;
+	//protected RecordLimits limits;
 	
 	private int operationStatus;
 	private boolean stopRequested;
@@ -47,7 +47,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	public Engine(EngineMonitor monitr, RecordLimits limits) {
 		this.monitor = monitr;
 		
-		this.limits = limits;
+		//this.limits = limits;
 		
 		OpenConnection conn = openConnection();
 		
@@ -81,10 +81,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	public OperationController getRelatedOperationController() {
 		return this.monitor.getController();
-	}
-	
-	public RecordLimits getLimits() {
-		return limits;
 	}
 	
 	public List<Engine> getChildren() {
@@ -475,7 +471,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	@Override
 	public String toString() {
-		return getEngineId() + " Limits [" + getLimits() + "]";
+		return getEngineId() + " Limits [" + getSearchParams().getLimits() + "]";
 	}
 	
 	@Override
@@ -604,6 +600,8 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	protected abstract void restart();
 
 	protected abstract SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn);
+
+	//protected abstract SyncSearchParams<? extends SyncRecord> initSearchParams(Connection conn);
 
 	public abstract void performeSync(List<SyncRecord> searchNextRecords, Connection conn) throws DBException;
 	

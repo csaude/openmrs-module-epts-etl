@@ -430,7 +430,8 @@ public class SyncOperationConfig {
 	public static List<String> getSupportedOperationsInNeutralInstallation() {
 		String[] supported = {SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR,
 							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION,
-							  SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR};
+							  SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR,
+							  SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION};
 		
 		return utilities.parseArrayToList(supported);
 	}

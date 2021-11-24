@@ -36,15 +36,13 @@ public class SyncConfiguration {
 	private String syncRootDirectory;
 	
 	private String originAppLocationCode;
-	private String applicationCode;
 	private Date observationDate;
 	private Map<String, SyncTableConfiguration> syncTableConfigurationPull;
 	
 	private List<SyncTableConfiguration> tablesConfigurations;
 	
-	//private boolean firstExport;
-	private DBConnectionInfo connInfo;
-
+	private List<AppInfo> appsInfo;
+	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String installationType;
@@ -101,9 +99,16 @@ public class SyncConfiguration {
 	
 	@JsonIgnore
 	public OpenConnection openConnetion() {
-		if (connService == null) connService = DBConnectionService.init(this.getConnInfo());
+		if (connService == null) {
+			connService = DBConnectionService.init(getMainDBConnInfo());
+		}
 		
 		return connService.openConnection();
+	}
+	
+	@JsonIgnore
+	public DBConnectionInfo getMainDBConnInfo() {
+		return find(AppInfo.init(AppInfo.MAIN_APP_CODE)).getConnInfo();
 	}
 	
 	public String getClassPath() {
@@ -191,28 +196,20 @@ public class SyncConfiguration {
 		return isDestinationInstallationType() ? this.installationType : this.originAppLocationCode;
 	}
 	
-	public DBConnectionInfo getConnInfo() {
-		return connInfo;
+	public List<AppInfo> getAppsInfo() {
+		return appsInfo;
 	}
-	
-	public void setConnInfo(DBConnectionInfo connInfo) {
-		this.connInfo = connInfo;
+
+	public void setAppsInfo(List<AppInfo> appsInfo) {
+		this.appsInfo = appsInfo;
 	}
-	
+
 	@JsonIgnore
 	public boolean isDoIntegrityCheckInTheEnd(String operationType) {
 		SyncOperationConfig op = findOperation(operationType);
 		
 		return op.isDoIntegrityCheckInTheEnd();
 	}
-	
-	/*public boolean isFirstExport() {
-		return firstExport;
-	}
-
-	public void setFirstExport(boolean firstExport) {
-		this.firstExport = firstExport;
-	}*/
 	
 	public List<SyncTableConfiguration> getTablesConfigurations() {
 		return tablesConfigurations;
@@ -276,8 +273,6 @@ public class SyncConfiguration {
 		SyncConfiguration conf = SyncConfiguration.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 		
 		conf.setRelatedConfFile(file);
-		
-		//addToClasspath(conf.getPOJOCompiledFilesDirectory());
 		
 		return conf;
 	}
@@ -372,6 +367,10 @@ public class SyncConfiguration {
 		return utilities.findOnList(this.allTables, tableConfiguration);
 	}
 	
+	public AppInfo find(AppInfo connInfo) {
+		return utilities.findOnArray(this.appsInfo, connInfo);
+	}
+	
 	public SyncTableConfiguration find(SyncTableConfiguration tableConfiguration) {
 		return utilities.findOnList(this.tablesConfigurations, tableConfiguration);
 	}
@@ -458,16 +457,7 @@ public class SyncConfiguration {
 		for (SyncOperationConfig operation : this.operations) {
 			operation.validate(); 
 		}
-		
-		/*for (SyncTableConfiguration tableConf : this.tablesConfigurations) {
-			if (tableConf.getParents() != null) {
-				for (RefInfo parent : tableConf.getParents()) {
-					//if (findSyncTableConfiguration(parent.getTableName()) == null) errorMsg += ++errNum + ". The parent '" + parent + " of table " + tableConf.getTableName() + " is not configured\n";
-				}
-			}
-		}*/
-		
-		
+			
 		List<String> supportedOperations = null;
 		
 		if (isSourceInstallationType() ) {
@@ -533,8 +523,6 @@ public class SyncConfiguration {
 	@JsonIgnore
 	public File getPOJOCompiledFilesDirectory() {
 		String packageDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() ;
-		
-		//packageDir += isDestinationInstallationType() ? "" : "source" + FileUtilities.getPathSeparator();
 		
 		return new File(packageDir+ "bin");
 	}
@@ -629,12 +617,18 @@ public class SyncConfiguration {
 		
 		return pojoPackageDir;
 	}
-
-	public String getApplicationCode() {
-		return this.applicationCode;
-	}
 	
-	public void setApplicationCode(String applicationCode) {
-		this.applicationCode = applicationCode;
+	public List<AppInfo> exposeAllAppsNotMain(){
+		List<AppInfo> apps = new ArrayList<AppInfo>();
+		
+		AppInfo mainApp = AppInfo.init(AppInfo.MAIN_APP_CODE);
+		
+		for (AppInfo app : this.appsInfo) {
+			if (!app.equals(mainApp)) {
+				apps.add(app);
+			}
+		}
+		
+		return apps;
 	}
 }

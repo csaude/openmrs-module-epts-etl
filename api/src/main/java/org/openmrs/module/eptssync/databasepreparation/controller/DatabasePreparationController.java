@@ -36,7 +36,11 @@ public class DatabasePreparationController extends OperationController {
 		if (!existInconsistenceInfoTable()) {
 			generateInconsistenceInfoTable();
 		}
-			
+
+		if (!existOperationProgressInfoTable()) {
+			generateTableOperationProgressInfo();
+		}
+
 		super.run();
 	}
 	
@@ -122,6 +126,64 @@ public class DatabasePreparationController extends OperationController {
 
 			throw new RuntimeException(e);
 		}
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}
+	}
+	
+	public boolean existOperationProgressInfoTable() {
+		OpenConnection conn = openConnection();
+		
+		String schema = getSyncConfiguration().getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = "table_operation_progress_info";
+
+		try {
+			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void generateTableOperationProgressInfo() {
+		OpenConnection conn = openConnection();
+		
+		String sql = "";
+		
+		sql += "CREATE TABLE " + getSyncConfiguration().getSyncStageSchema() + ".table_operation_progress_info (\n";
+		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
+		sql += "operation_id varchar(100) NOT NULL,\n";
+		sql += "operation_name varchar(100) NOT NULL,\n";
+		sql += "table_name varchar(100) NOT NULL,\n";
+		sql += "record_origin_location_code VARCHAR(100) NOT NULL,\n";
+		sql += "started_at datetime NOT NULL,\n";
+		sql += "last_refresh_at datetime NOT NULL,\n";
+		sql += "total_records int(11) NOT NULL,\n";
+		sql += "total_processed_records int(11) NOT NULL,\n";
+		sql += "status varchar(50) NOT NULL,\n";
+		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
+		sql += "UNIQUE KEY " + getSyncConfiguration().getSyncStageSchema() + "UNQ_OPERATION_ID(operation_id),\n";
+		sql += "PRIMARY KEY (id)\n";
+		sql += ") ENGINE=InnoDB;\n";
+				
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+
+			st.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} 
 		finally {
 			conn.markAsSuccessifullyTerminected();
 			conn.finalizeConnection();

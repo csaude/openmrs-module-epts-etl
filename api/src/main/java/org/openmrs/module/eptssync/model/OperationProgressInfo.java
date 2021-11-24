@@ -11,7 +11,6 @@ import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.SyncProgressMeter;
-import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -94,23 +93,6 @@ public class OperationProgressInfo {
 
 	public void setItemsProgressInfo(List<TableOperationProgressInfo> itemsProgressInfo) {
 		this.itemsProgressInfo = itemsProgressInfo;
-	}
-
-	/*public void updateProgressInfo(EngineMonitor engineMonitor) {
-		TableOperationProgressInfo info = findTableOperationStatus(engineMonitor.getSyncTableInfo());
-		info.tryToReloadProgressMeter(engineMonitor.getMainEngine());
-	
-		info.save();
-	}*/
-	
-	private TableOperationProgressInfo findTableOperationStatus(SyncTableConfiguration tableConfiguration) {
-		for (TableOperationProgressInfo info : this.itemsProgressInfo) {
-			if (info.getOperationTable().equals(tableConfiguration.getTableName())) {
-				return info;
-			}
-		}	
-		
-		return null;
 	}
 	
 	public void initProgressMeter() {

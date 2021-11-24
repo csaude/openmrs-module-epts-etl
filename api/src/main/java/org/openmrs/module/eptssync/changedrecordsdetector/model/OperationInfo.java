@@ -10,6 +10,7 @@ public class OperationInfo {
 	public static final char OPERATION_TYPE_INSERT = 'c';
 	public static final char OPERATION_TYPE_UPDATE = 'u';
 	public static final char OPERATION_TYPE_DELETE = 'd';
+	public static final char OPERATION_TYPE_VOID= 'u';
 	
 	public OperationInfo(char operationType, Date operationDate) {
 		this.operationType = operationType;
@@ -25,7 +26,7 @@ public class OperationInfo {
 	}
 
 	public static OperationInfo fastCreateVoidOperation(Date operationDate) {
-		return new OperationInfo(OperationInfo.OPERATION_TYPE_DELETE, operationDate);
+		return new OperationInfo(OperationInfo.OPERATION_TYPE_VOID, operationDate);
 	}
 
 	public static OperationInfo fastCreateChangeOperation(Date operationDate) {

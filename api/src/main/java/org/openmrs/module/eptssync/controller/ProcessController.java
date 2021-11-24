@@ -348,7 +348,7 @@ public class ProcessController implements Controller{
 			}
 		}
 	}*/
-	
+	/*
 	private List<OperationController> retrieveActiveOperationController() {
 		
 		List<OperationController> runningControllers = new ArrayList<OperationController>();
@@ -384,7 +384,7 @@ public class ProcessController implements Controller{
 		
 		return null;
 	}
-	
+	*/
 
 	private void tryToRemoveOldStopRequested() {
 		File file = new File (getConfiguration().getSyncRootDirectory()+"/process_status/stop_requested.info");
@@ -524,7 +524,7 @@ public class ProcessController implements Controller{
 	public static ProcessController retrieveRunningThread(SyncConfiguration configuration) {
 		String controllerId = configuration.generateControllerId();
 		
-		Thread runningThread = null;
+		//Thread runningThread = null;
 		
 	    for (Thread t : Thread.getAllStackTraces().keySet()) {
 	        if (t.getName().equals(controllerId)) {

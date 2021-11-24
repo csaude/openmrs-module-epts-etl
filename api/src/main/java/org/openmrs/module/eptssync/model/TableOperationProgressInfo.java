@@ -3,12 +3,15 @@ package org.openmrs.module.eptssync.model;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.Connection;
 
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.SyncProgressMeter;
+import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -16,7 +19,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-public class TableOperationProgressInfo {
+public class TableOperationProgressInfo extends BaseVO{
 	private Engine engine;
 	
 	private SyncTableConfiguration tableConfiguration;
@@ -46,7 +49,7 @@ public class TableOperationProgressInfo {
 		this.tableConfiguration = tableConfiguration;
 	}
 
-	private String getOperationId() {
+	public String getOperationId() {
 		return this.controller.getControllerId() + "_" + this.tableConfiguration.getTableName();
 	}
 	
@@ -91,7 +94,7 @@ public class TableOperationProgressInfo {
 		
 	}
 
-	public void save() {
+	public void save(Connection conn) throws DBException {
 		String fileName = this.controller.generateTableProcessStatusFile(this.tableConfiguration).getAbsolutePath();
 		
 		if (new File(fileName).exists()) {
@@ -103,6 +106,8 @@ public class TableOperationProgressInfo {
 		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
 		
 		FileUtilities.write(fileName, desc);
+		
+		refreshOnDB(conn);
 	}
 
 	@JsonIgnore
@@ -148,6 +153,17 @@ public class TableOperationProgressInfo {
 
 	public void refreshProgressMeter() {
 		
+	}
+
+	public void refreshOnDB(Connection conn) throws DBException {
+		TableOperationProgressInfo recordOnDB = TableOperationProgressInfoDAO.find(getOperationId(), getTableConfiguration(), conn);
+		
+		if (recordOnDB != null) {
+			TableOperationProgressInfoDAO.update(this, getTableConfiguration(), conn);
+		}
+		else {
+			TableOperationProgressInfoDAO.insert(this, getTableConfiguration(), conn);
+		}
 	}
 	
 }

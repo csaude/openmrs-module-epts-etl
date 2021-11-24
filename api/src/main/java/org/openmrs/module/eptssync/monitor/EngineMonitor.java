@@ -209,7 +209,7 @@ public class EngineMonitor implements MonitoredOperation{
 			mainEngine.resetLimits(limits);
 			mainEngine.setProgressMeter(this.progressMeter);
 			
-			logInfo("ALOCATED RECORDS [" + mainEngine.getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
+			logInfo("ALOCATED RECORDS [" + mainEngine.getSearchParams().getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
 			
 			if (mainEngine.getChildren() == null) {
 				mainEngine.setChildren(new ArrayList<Engine>());
@@ -220,13 +220,13 @@ public class EngineMonitor implements MonitoredOperation{
 			for (i = 1; i < qtyEngines; i++) {
 				 limits  = generateLimits(limits.getLastRecordId() + 1, limits.getLastRecordId() + qtyRecordsPerEngine);
 				 
-				 if (i == qtyEngines) limits.setLastRecordId(maxRecId);
+				 if (i == qtyEngines - 1) limits.setLastRecordId(maxRecId);
 				 
 				 Engine engine = retrieveAndRemoveSleepingEngin();
 				 
 				 if (engine == null) {
 					 engine = getController().initRelatedEngine(this, limits);
-					 
+					 engine.resetLimits(limits);
 					 mainEngine.getChildren().add(engine);
 					 engine.setEngineId(getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
 					 engine.setParent(mainEngine);
@@ -235,7 +235,7 @@ public class EngineMonitor implements MonitoredOperation{
 					 engine.resetLimits(limits);
 				 }
 				 
-				 logInfo("REALOCATED NEW RECORDS [" + engine.getLimits() + "] FOR ENGINE [" + engine.getEngineId()  + "]");
+				 logInfo("REALOCATED NEW RECORDS [" + engine.getSearchParams().getLimits() + "] FOR ENGINE [" + engine.getEngineId()  + "]");
 			}
 		
 			//If this engine is new must be not initialized, otherwise must be on STOPPED STATE

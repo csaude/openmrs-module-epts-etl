@@ -24,10 +24,19 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  *
  */
 public class ChangedRecordsDetectorController extends OperationController {
+	public String actionApp;
+	
 	public ChangedRecordsDetectorController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
+	
+		//We assume that there is only one application listed in appConf
+		this.actionApp = getConfiguration().exposeAllAppsNotMain().get(0).getApplicationCode(); 
+	}
+	
+	public String getActionApp() {
+		return actionApp;
 	}
 	
 	@Override
@@ -51,11 +60,11 @@ public class ChangedRecordsDetectorController extends OperationController {
 		try {
 			
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstChangedRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+				return DetectedRecordInfoDAO.getFirstChangedRecord(tableInfo, this.actionApp, getConfiguration().getObservationDate(), conn);
 			}
 			else 
 			if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstNewRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+				return DetectedRecordInfoDAO.getFirstNewRecord(tableInfo, this.actionApp, getConfiguration().getObservationDate(), conn);
 			}
 			else throw new ForbiddenOperationException("The operation '" + getOperationType() + "' is not supported in this controller!");
 		} catch (DBException e) {
@@ -74,11 +83,11 @@ public class ChangedRecordsDetectorController extends OperationController {
 		
 		try {
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastChangedRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+				return DetectedRecordInfoDAO.getLastChangedRecord(tableInfo, this.actionApp, getConfiguration().getObservationDate(), conn);
 			}
 			else 
 			if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastNewRecord(tableInfo, getConfiguration().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+				return DetectedRecordInfoDAO.getLastNewRecord(tableInfo, this.actionApp, getConfiguration().getObservationDate(), conn);
 			}
 			else throw new ForbiddenOperationException("The operation '" + getOperationType() + "' is not supported in this controller!");
 		} catch (DBException e) {

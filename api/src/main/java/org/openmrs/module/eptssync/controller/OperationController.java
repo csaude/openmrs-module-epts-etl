@@ -22,6 +22,7 @@ import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -150,7 +151,18 @@ public abstract class OperationController implements Controller{
 				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				
 				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo.getProgressMeter());
-				progressInfo.save();
+				
+				OpenConnection conn = openConnection();
+				
+				try {
+					progressInfo.save(conn);
+					conn.markAsSuccessifullyTerminected();
+				} catch (DBException e) {
+					throw new RuntimeException(e);
+				}
+				finally {
+					conn.finalizeConnection();
+				}
 				
 				engineMonitor.run();
 				
@@ -200,8 +212,18 @@ public abstract class OperationController implements Controller{
 				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				
 				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo.getProgressMeter());
+
+				OpenConnection conn = openConnection();
 				
-				progressInfo.save();
+				try {
+					progressInfo.save(conn);
+					conn.markAsSuccessifullyTerminected();
+				} catch (DBException e) {
+					throw new RuntimeException(e);
+				}
+				finally {
+					conn.finalizeConnection();
+				}
 				
 				startAndAddToEnginesActivititieMonitor(engineMonitor);
 			}
@@ -372,7 +394,17 @@ public abstract class OperationController implements Controller{
 		
 		progressInfo.getProgressMeter().changeStatusToFinished();
 		
-		progressInfo.save();
+		OpenConnection conn = openConnection();
+		
+		try {
+			progressInfo.save(conn);
+			conn.markAsSuccessifullyTerminected();
+		} catch (DBException e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
 		
 		logInfo("FILE WROTE");
 	}
