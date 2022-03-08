@@ -339,7 +339,7 @@ public class AttDefinedElements {
 
 		if (utilities.isStringIn(mySQLTypeName, "INT", "MEDIUMINT"))
 			return "int";
-		if (utilities.isStringIn(mySQLTypeName, "TINYINT"))
+		if (utilities.isStringIn(mySQLTypeName, "TINYINT", "BIT"))
 			return "byte";
 		if (utilities.isStringIn(mySQLTypeName, "YEAR", "SMALLINT"))
 			return "short";
