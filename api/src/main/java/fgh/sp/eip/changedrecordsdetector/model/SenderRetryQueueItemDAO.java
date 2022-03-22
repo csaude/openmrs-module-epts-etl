@@ -54,4 +54,17 @@ public class SenderRetryQueueItemDAO extends BaseDAO{
 			}
 		}
 	}
+	
+	
+	public static SenderRetryQueueItem getByUUID(String recordUuid, Connection conn) throws DBException {
+		Object[] params = {recordUuid};
+		
+		String sql = "";
+		
+		sql += " SELECT * ";
+		sql += " FROM sender_retry_queue";
+		sql += " WHERE identifier = ? ";
+		
+		return find(SenderRetryQueueItem.class, sql, params, conn);
+	}
 }
