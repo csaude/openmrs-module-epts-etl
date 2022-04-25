@@ -23,8 +23,15 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObj
 	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
 		
-		searchClauses.addColumnToSelect("*");
-		searchClauses.addToClauseFrom(tableInfo.getTableName());
+		
+		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+			searchClauses.addColumnToSelect("patient.*, person.uuid");
+			searchClauses.addToClauseFrom("patient inner join person on patient_id = person_id");
+		}
+		else {
+			searchClauses.addColumnToSelect("*");
+			searchClauses.addToClauseFrom(tableInfo.getTableName());
+		}
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("NOT EXISTS (SELECT 	id " +

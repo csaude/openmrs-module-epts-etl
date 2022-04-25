@@ -18,8 +18,6 @@ import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
  * @author jpboane
  *
  */
-
-//@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "className")
 public interface OpenMRSObject extends SyncRecord{
 	public static final int CONSISTENCE_STATUS = 1;
 	public static final int INCONSISTENCE_STATUS = -1;
@@ -29,11 +27,8 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract String generateDBPrimaryKeyAtt();
 	
-	public abstract int getObjectId();	
-	public abstract void setObjectId(int objectId);
-	
-	//public abstract void setOriginRecordId(int originRecordId);
-	//public abstract int getOriginRecordId();	
+	public abstract Integer getObjectId();	
+	public abstract void setObjectId(Integer objectId);
 	
 	/**
 	 * Load the destination parents id to this object
@@ -71,15 +66,8 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract String getUuid();
 	public abstract void setUuid(String uuid);
-	//public abstract void markAsInconsistent();
-	//public abstract void markAsConsistent();
-	//public abstract void setConsistent(int consistent);
-	//public abstract boolean isConsistent();
-	//public abstract int getConsistent();
 	public abstract boolean hasParents();
-	//public abstract int retrieveSharedPKKey(Connection conn)  throws ParentNotYetMigratedException, DBException;
-	
-	public abstract int getParentValue(String parentAttName);
+	public abstract Integer getParentValue(String parentAttName);
 	
 	/**
 	 * Indicate if this object was generated or not using an eskeleton class

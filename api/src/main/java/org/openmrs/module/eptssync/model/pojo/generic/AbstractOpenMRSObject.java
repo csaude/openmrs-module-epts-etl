@@ -58,8 +58,8 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	 * @throws ParentNotYetMigratedException if the parent is not ignorable and is not found on database
 	 * @throws DBException
 	 */
-	public OpenMRSObject retrieveParentInDestination(int parentId, SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException {
-		if (parentId == 0) return null;
+	public OpenMRSObject retrieveParentInDestination(Integer parentId, SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException {
+		if (parentId == null) return null;
 		
 		OpenMRSObject parentOnDestination;
 		
@@ -242,7 +242,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		GenericOpenMRSObject oldRecod = GenericOpenMRSObject.fastCreate(getRelatedSyncInfo(), syncTableInfo);
 		
 		//2. Retrieve any avaliable id for old record
-		int avaliableId = OpenMRSObjectDAO.getAvaliableObjectId(syncTableInfo, 999999999, conn);
+		Integer avaliableId = OpenMRSObjectDAO.getAvaliableObjectId(syncTableInfo, 999999999, conn);
 		
 		this.setObjectId(avaliableId);
 		this.setUuid("tmp" + avaliableId);
@@ -350,7 +350,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	}
 	
 	private void saveInconsistence(SyncTableConfiguration tableConfiguration, Entry<RefInfo, Integer> inconsistenceInfoSource, boolean inconsistenceResoloved,  String recordOriginLocationCode, Connection conn) throws DBException {
-		int defaultParent = inconsistenceInfoSource.getKey().getDefaultValueDueInconsistency();
+		Integer defaultParent = inconsistenceInfoSource.getKey().getDefaultValueDueInconsistency();
 		
 		if (!inconsistenceResoloved) defaultParent = 0;
 		
@@ -440,9 +440,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				continue;
 			}
 			
-			int parentId = getParentValue(refInfo.getRefColumnAsClassAttName());
+			Integer parentId = getParentValue(refInfo.getRefColumnAsClassAttName());
 				 
-			if (parentId != 0) {
+			if (parentId != null) {
 				OpenMRSObject parent;
 				
 				if (refInfo.getRefTableConfiguration().isMetadata()) {
@@ -533,7 +533,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				continue;
 			}
 			
-			int parentId = 0;
+			Integer parentId = null;
 			
 			try {
 				parentId = getParentValue(refInfo.getRefColumnAsClassAttName());
@@ -542,7 +542,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			}
 				 
 			try {
-				if (parentId != 0) {
+				if (parentId != null) {
 					OpenMRSObject parent;
 					
 					if (refInfo.getRefTableConfiguration().isMetadata()) {

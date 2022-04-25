@@ -24,7 +24,7 @@ public class RefInfo {
 	private SyncTableConfiguration refTableConfiguration;
 	private SyncTableConfiguration relatedSyncTableConfiguration;
 	
-	private int defaultValueDueInconsistency;
+	private Integer defaultValueDueInconsistency;
 	private String tableName;
 	
 	private String refColumnName;
@@ -67,7 +67,7 @@ public class RefInfo {
 		this.refType = refType;
 	}
 	
-	public int getDefaultValueDueInconsistency() {
+	public Integer getDefaultValueDueInconsistency() {
 		return defaultValueDueInconsistency;
 	}
 	
@@ -90,7 +90,7 @@ public class RefInfo {
 		this.tableName = tableName;
 	}
 
-	public void setDefaultValueDueInconsistency(int defaultValueDueInconsistency) {
+	public void setDefaultValueDueInconsistency(Integer defaultValueDueInconsistency) {
 		this.defaultValueDueInconsistency = defaultValueDueInconsistency;
 	}
 

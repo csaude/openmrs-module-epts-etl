@@ -159,17 +159,17 @@ public class OpenMRSPOJOGenerator {
 		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "consistent", conn)) {
 			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("consistent", "int");
 		}*/
-
+	
 		String methodFromSuperClass = "";
 
 		String primaryKeyAtt = syncTableInfo.hasPK() ? syncTableInfo.getPrimaryKeyAsClassAtt() : null;
 		
-		methodFromSuperClass += "	public int getObjectId() { \n ";
+		methodFromSuperClass += "	public Integer getObjectId() { \n ";
 		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK()) methodFromSuperClass += "		return this."+ primaryKeyAtt + "; \n";
 		else methodFromSuperClass += "		return 0; \n";
 		methodFromSuperClass += "	} \n \n";
 
-		methodFromSuperClass += "	public void setObjectId(int selfId){ \n";
+		methodFromSuperClass += "	public void setObjectId(Integer selfId){ \n";
 		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK()) methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
 		methodFromSuperClass += "	} \n \n";
 	
@@ -238,7 +238,7 @@ public class OpenMRSPOJOGenerator {
 		methodFromSuperClass += "	}\n\n";
 		
 		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public int getParentValue(String parentAttName) {";
+		methodFromSuperClass += "	public Integer getParentValue(String parentAttName) {";
 		
 		for(RefInfo refInfo : syncTableInfo.getParents()) {
 			if (refInfo.isNumericRefColumn()) {

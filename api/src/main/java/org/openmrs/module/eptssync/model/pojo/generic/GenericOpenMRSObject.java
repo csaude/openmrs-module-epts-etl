@@ -9,7 +9,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 
 public class GenericOpenMRSObject extends AbstractOpenMRSObject {
-	private int objectId;
+	private Integer objectId;
 	private String uuid;
 	
 	private SyncTableConfiguration syncTableConfiguration;
@@ -78,17 +78,17 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	}
 
 	@Override
-	public int getParentValue(String parentAttName) {
+	public Integer getParentValue(String parentAttName) {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
 	@Override
-	public int getObjectId() {
+	public Integer getObjectId() {
 		return this.objectId;
 	}
 
 	@Override
-	public void setObjectId(int objectId) {
+	public void setObjectId(Integer objectId) {
 		this.objectId = objectId;
 	}
 	

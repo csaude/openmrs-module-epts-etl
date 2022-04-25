@@ -51,7 +51,8 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 		try {
 			SenderRetryQueueItem existing = SenderRetryQueueItemDAO.getByUUID(event.getIdentifier(), conn);
 			
-			if (existing != null) SenderRetryQueueItemDAO.insert(item, conn);
+			if (existing == null) SenderRetryQueueItemDAO.insert(item, conn);
+			
 			conn.markAsSuccessifullyTerminected();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
