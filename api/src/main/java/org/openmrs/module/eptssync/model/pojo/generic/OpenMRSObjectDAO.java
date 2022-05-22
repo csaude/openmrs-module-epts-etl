@@ -189,9 +189,8 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		OpenMRSObject obj = utilities.createInstance(tableInfo.getSyncRecordClass());
 	
-		String recordTableName	= tableInfo.getTableName().equalsIgnoreCase("patient") ? "person" : tableInfo.getTableName();
-		String pk = tableInfo.getTableName().equalsIgnoreCase("patient") ? "person_id" : obj.generateDBPrimaryKeyAtt();
-		
+		String recordTableName	= tableInfo.getTableName();
+		String pk = obj.generateDBPrimaryKeyAtt();
 		
 		String clause = "1 = 1";
 

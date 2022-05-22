@@ -90,7 +90,9 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	@JsonIgnore
 	public boolean isUuidColumnNotExists() {
-		return uuidColumnNotExists;
+		return this.tableName.equals("patient") ? true : false;
+		
+		//return uuidColumnNotExists;
 	}
 	
 	public void setUuidColumnNotExists(boolean uuidColumnNotExists) {

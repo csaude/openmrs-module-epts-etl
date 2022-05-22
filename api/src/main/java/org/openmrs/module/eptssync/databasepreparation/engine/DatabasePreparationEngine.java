@@ -271,7 +271,7 @@ public class DatabasePreparationEngine extends Engine {
 		sql += "CREATE TABLE " + getSyncTableConfiguration().generateFullStageTableName() + "(\n";
 		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
 		sql += "	record_origin_id int(11) NOT NULL,\n";
-		sql += "	record_uuid varchar(38) NOT NULL,\n";
+		sql += "	record_uuid varchar(38)  NULL,\n";
 		sql += "	record_origin_location_code VARCHAR(100) NOT NULL,\n";
 		
 		sql += "	json text NOT NULL,\n";

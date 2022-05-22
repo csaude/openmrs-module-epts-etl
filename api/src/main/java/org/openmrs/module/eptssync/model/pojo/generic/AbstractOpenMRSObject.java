@@ -529,9 +529,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		Map<RefInfo, Integer> missingParents = new HashMap<RefInfo, Integer>();
 		
 		for (RefInfo refInfo: tableInfo.getParents()) {
-			if (tableInfo.getSharePkWith() != null && tableInfo.getSharePkWith().equals(refInfo.getRefTableConfiguration().getTableName())) {
+			/*if (tableInfo.getSharePkWith() != null && tableInfo.getSharePkWith().equals(refInfo.getRefTableConfiguration().getTableName())) {
 				continue;
-			}
+			}*/
 			
 			Integer parentId = null;
 			

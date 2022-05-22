@@ -26,7 +26,7 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObj
 		
 		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addColumnToSelect("patient.*, person.uuid");
-			searchClauses.addToClauseFrom("patient inner join person on patient_id = person_id");
+			searchClauses.addToClauseFrom("patient left join person on patient_id = person_id");
 		}
 		else {
 			searchClauses.addColumnToSelect("*");
