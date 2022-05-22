@@ -316,7 +316,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			
 			for (Entry<RefInfo, Integer> entry : missingParents.entrySet()) {
 				//try to load the default parent
-				 if (entry.getKey().getDefaultValueDueInconsistency() > 0) {
+				 if (entry.getKey().getDefaultValueDueInconsistency() != null) {
 					 OpenMRSObject parent = OpenMRSObjectDAO.getById(entry.getKey().getRefObjectClass(), entry.getKey().getDefaultValueDueInconsistency(), conn);
 					 
 					 if (parent == null) {
@@ -398,7 +398,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				boolean solvedCurrentInconsistency = true;
 				
 				//try to load the default parent
-				 if (entry.getKey().getDefaultValueDueInconsistency() > 0) {
+				 if (entry.getKey().getDefaultValueDueInconsistency() != null) {
 					 OpenMRSObject parent = OpenMRSObjectDAO.getById(entry.getKey().getRefObjectClass(), entry.getKey().getDefaultValueDueInconsistency(), conn);
 					 
 					 if (parent == null) {
