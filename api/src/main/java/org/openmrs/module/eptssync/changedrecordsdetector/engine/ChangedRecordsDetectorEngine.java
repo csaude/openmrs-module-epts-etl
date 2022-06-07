@@ -2,13 +2,13 @@ package org.openmrs.module.eptssync.changedrecordsdetector.engine;
 
 import java.io.File;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.changedrecordsdetector.controller.ChangedRecordsDetectorController;
 import org.openmrs.module.eptssync.changedrecordsdetector.model.ChangedRecordSearchLimits;
 import org.openmrs.module.eptssync.changedrecordsdetector.model.ChangedRecordsDetectorSearchParams;
 import org.openmrs.module.eptssync.changedrecordsdetector.model.DetectedRecordInfo;
-import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
@@ -20,13 +20,19 @@ import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
+import fgh.spi.changedrecordsdetector.ChangedRecord;
 import fgh.spi.changedrecordsdetector.DetectedRecordService;
 
 public class ChangedRecordsDetectorEngine extends Engine {
-	
+		
 	public ChangedRecordsDetectorEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
+		DetectedRecordService action = DetectedRecordService.getInstance();
+		
+		DBConnectionInfo connInfo = getRelatedOperationController().getActionPerformeApp().getConnInfo();
+			
+		action.configureDBService(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), connInfo);
 	}
 	
 	@Override
@@ -34,10 +40,6 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		getSearchParams().setLimits(new ChangedRecordSearchLimits(limits.getFirstRecordId(), limits.getLastRecordId(), this));
 		getLimits().setThreadMaxRecord(limits.getLastRecordId());
 		getLimits().setThreadMinRecord(limits.getFirstRecordId());
-	}
-
-	public String getActionApp(){
-		return getRelatedOperationController().getActionApp();
 	}
 	
 	public ChangedRecordSearchLimits getLimits() {
@@ -85,28 +87,17 @@ public class ChangedRecordsDetectorEngine extends Engine {
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
 		List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
+		List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(syncRecords.size());
 		
 		this.getMonitor().logInfo("PERFORMING CHANGE DETECTED ACTION '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
-		
+
 		for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
+				processedRecords.add(DetectedRecordInfo.generate(obj, getRelatedOperationController().getActionPerformeApp().getApplicationCode(), getMonitor().getSyncTableInfo().getOriginAppLocationCode()));
 				
-				String actionApp = getActionApp();
-				
-				DetectedRecordInfo rec = DetectedRecordInfo.generate(obj, actionApp, getMonitor().getSyncTableInfo().getOriginAppLocationCode());
-				
-				rec.save(getMonitor().getSyncTableInfo(), conn);
-				
-				DetectedRecordService action = DetectedRecordService.getInstance();
-				
-				if (!action.isDBServiceConfigured(actionApp)) {
-					
-					DBConnectionInfo connInfo = getSyncTableConfiguration().getRelatedSynconfiguration().find(AppInfo.init(actionApp)).getConnInfo();
-					
-					action.configureDBService(actionApp, connInfo);
+				if (getRelatedOperationController().getActionPerformeApp().isSinglePerformingMode()) {
+					DetectedRecordService.getInstance().performeAction(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords.get(processedRecords.size() - 1));
 				}
-				
-				DetectedRecordService.getInstance().performeAction(actionApp, rec);
 				
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -115,6 +106,11 @@ public class ChangedRecordsDetectorEngine extends Engine {
 				
 				throw new RuntimeException(e);
 			}
+		}
+		
+		
+		if (getRelatedOperationController().getActionPerformeApp().isBatchPerformingMode()) {
+			DetectedRecordService.getInstance().performeAction(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords);
 		}
 		
 		this.getMonitor().logInfo("ACTION PERFORMED FOR CHANGED RECORDS '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
@@ -132,7 +128,6 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		}
 	}
 	
-	
 	private void saveCurrentLimits() {
 		getLimits().save();
 	}
@@ -143,7 +138,7 @@ public class ChangedRecordsDetectorEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ChangedRecordsDetectorSearchParams(this.getSyncTableConfiguration(),  getActionApp(), limits, getRelatedOperationController().getOperationType(), conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new ChangedRecordsDetectorSearchParams(this.getSyncTableConfiguration(),  getRelatedOperationController().getActionPerformeApp().getApplicationCode(), limits, getRelatedOperationController().getOperationType(), conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
 		

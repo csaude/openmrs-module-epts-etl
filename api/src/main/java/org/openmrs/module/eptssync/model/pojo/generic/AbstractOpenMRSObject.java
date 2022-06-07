@@ -107,16 +107,6 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		return this.uuid;
 	}
 	
-	/*
-	@Override
-	public boolean isMetadata() {
-		return metadata;
-	}
-
-	public void setMetadata(boolean metadata) {
-		this.metadata = metadata;
-	}*/
-
 	@JsonIgnore
 	public boolean hasIgnoredParent() {
 		return hasIgnoredParent;
@@ -125,12 +115,6 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	public void setHasIgnoredParent(boolean hasIgnoredParent) {
 		this.hasIgnoredParent = hasIgnoredParent;
 	}
-	
-	/*
-	@Override
-	public void updateDestinationRecordId(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
-		OpenMRSObjectDAO.updateDestinationRecordId(this, tableConfiguration, conn);
-	}*/
 	
 	@Override
 	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{ 
@@ -142,31 +126,18 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				OpenMRSObject recOnDBById = OpenMRSObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
 				
 				if (recOnDBById == null) {
-					//this.setOriginRecordId(this.getObjectId());
-					
 					OpenMRSObjectDAO.insert(this, conn);
 				}
 				else {
 					this.resolveMetadataCollision(recOnDBById, tableConfiguration, conn);
-					
-					//String msg = "This record " + this.generateTableName() + " [object_id  = " + this.getObjectId() + ", uuid= " + this.getUuid() +"] share the same ID with record [uuid= " + recOnDBById.getUuid() + "] on the central database. Please ajust data if is needed!";
-
-					//throw new MetadataInconsistentException(msg);
 				}
 			}
 			else {
 				if (recordOnDBByUuid.getObjectId() != this.getObjectId()) {
 					resolveMetadataCollision(recordOnDBByUuid, tableConfiguration, conn);
-					
-					//String msg = "This record " + this.generateTableName() + " [object_id  = " + this.getObjectId() + "] share the same UUID [" + this.getUuid() + "] with record [" + recordOnDB.getObjectId() + "] on the central database. Please ajust data if is needed!";
-					
-					//throw new MetadataInconsistentException(msg);
 				}
 				else {
 					getRelatedSyncInfo().markAsConcistent(tableConfiguration, conn);
-					
-					//this.setOriginRecordId(getObjectId());
-					//OpenMRSObjectDAO.update(this, conn);
 				}
 			}
 		}
@@ -188,8 +159,6 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				OpenMRSObjectDAO.insert(this, conn);
 			}
 		}
-		
-		//updateDestinationRecordId(tableConfiguration, conn);
 	} 
 	
 	/**
@@ -316,7 +285,15 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			
 			for (Entry<RefInfo, Integer> entry : missingParents.entrySet()) {
 				//try to load the default parent
-				 if (entry.getKey().getDefaultValueDueInconsistency() != null) {
+				
+				if (entry.getKey().isSetNullDueInconsistency()) {
+					 this.setParentToNull(entry.getKey().getRefColumnAsClassAttName());
+					 this.save(tableConfiguration, conn);
+					 
+					 qtyInconsistence--;	
+				}
+				else
+				if (entry.getKey().getDefaultValueDueInconsistency() != null) {
 					 OpenMRSObject parent = OpenMRSObjectDAO.getById(entry.getKey().getRefObjectClass(), entry.getKey().getDefaultValueDueInconsistency(), conn);
 					 
 					 if (parent == null) {
@@ -352,10 +329,8 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	private void saveInconsistence(SyncTableConfiguration tableConfiguration, Entry<RefInfo, Integer> inconsistenceInfoSource, boolean inconsistenceResoloved,  String recordOriginLocationCode, Connection conn) throws DBException {
 		Integer defaultParent = inconsistenceInfoSource.getKey().getDefaultValueDueInconsistency();
 		
-		if (!inconsistenceResoloved) defaultParent = 0;
-		
-		 InconsistenceInfo info = InconsistenceInfo.generate(tableConfiguration.getTableName(), this.getObjectId(), inconsistenceInfoSource.getKey().getTableName(), inconsistenceInfoSource.getValue(), defaultParent, recordOriginLocationCode);
-		 info.save(tableConfiguration, conn);
+		InconsistenceInfo info = InconsistenceInfo.generate(tableConfiguration.getTableName(), this.getObjectId(), inconsistenceInfoSource.getKey().getTableName(), inconsistenceInfoSource.getValue(), defaultParent, recordOriginLocationCode);
+		info.save(tableConfiguration, conn);
 	}
 
 	public void resolveChildrenInconsistences(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException{
@@ -504,10 +479,6 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			if (qtyChildren == 0) {
 				continue;
 			}
-			/*else
-			if (qtyChildren > 999) {
-				throw new ForbiddenOperationException("The operation is trying to remove this record [" + syncTableInfo.getTableName() + " = " + this.getRelatedSyncInfo().getRecordOriginId() + ", from " + getRelatedSyncInfo().getRecordOriginLocationCode() + " but it has " + qtyChildren + " " + refInfo.getTableName() + " related to. Please check this inconsistence before continue");
-			}*/
 			else {
 				List<OpenMRSObject> children =  OpenMRSObjectDAO.getByOriginParentId(refInfo.getRefColumnName(), getRelatedSyncInfo().getRecordOriginId(), getRelatedSyncInfo().getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(), conn);
 						
@@ -529,10 +500,6 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		Map<RefInfo, Integer> missingParents = new HashMap<RefInfo, Integer>();
 		
 		for (RefInfo refInfo: tableInfo.getParents()) {
-			/*if (tableInfo.getSharePkWith() != null && tableInfo.getSharePkWith().equals(refInfo.getRefTableConfiguration().getTableName())) {
-				continue;
-			}*/
-			
 			Integer parentId = null;
 			
 			try {
@@ -584,12 +551,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					}
 				
 					 if (parent == null) {
-						// if (refInfo.getRefTableConfiguration().isMetadata()) {
-							 //throw new ForbiddenOperationException("There is missing a metadata [" + refInfo.getRefTableConfiguration().getTableName() + " = " + parentId + "!!! You must resolve this inconsistence manual!!!");
-						 //}
-						 //else {
-							 missingParents.put(refInfo, parentId);
-						 //}
+							missingParents.put(refInfo, parentId);
 					 }
 				}
 				 

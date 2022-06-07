@@ -1,8 +1,11 @@
 package fgh.spi.changedrecordsdetector;
 
+import java.util.List;
+
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 
-import fgh.sp.eip.changedrecordsdetector.EipChangedRecordDetectedAction;
+import fgh.sp.openmrs_changed_records_action.eip.EipChangedRecordDetectedAction;
+import fgh.sp.openmrs_changed_records_action.export.ExportChangedRecordDetectedAction;
 
 /**
  * @author jpboane
@@ -40,8 +43,13 @@ public class DetectedRecordService extends GenericOperationsService<DetectedReco
 	public void performeAction(String appCode, ChangedRecord record) {
 		detectAction(appCode).performeAction(record);
 	}
+	
+	public void performeAction(String appCode, List<ChangedRecord> records) {
+		detectAction(appCode).performeAction(records);
+	}
       
-    static DetectedRecordAction[] staticServices = {new EipChangedRecordDetectedAction()}; 
+      
+    static DetectedRecordAction[] staticServices = {new EipChangedRecordDetectedAction(), new ExportChangedRecordDetectedAction()}; 
     
     @SuppressWarnings("unused")
 	private DetectedRecordAction detectAction(String appCode) {

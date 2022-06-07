@@ -16,8 +16,8 @@ public class InconsistenceInfoDAO extends BaseDAO{
 							   record.getParentTableName(),
 							   record.getParentId(),
 							   record.getRecordOriginLocationCode(),
-							   record.getDefaultParentId() == 0 ? null : record.getDefaultParentId(),
-								};
+							   record.getDefaultParentId(),
+							  };
 			
 			String sql = "";
 			

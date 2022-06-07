@@ -23,10 +23,7 @@ public class SearchParamsDAO extends BaseDAO{
 		searchClauses.setColumnsToSelect("  count(" + (searchClauses.isDistinctSelect() ? ("DISTINCT " + searchClauses.getDefaultColumnToSelect()) : "*")  + ") value");
 		
 		String sql = searchClauses.generateSQL(conn);
-		
-		//logger.error(sql);
-		//logger.error(searchClauses.getParameters());
-		
+			
 		SimpleValue simpleValue = find(SimpleValue.class, sql, searchClauses.getParameters(), conn);
 		
 		searchClauses.setColumnsToSelect(originalColumnsToSelect);
@@ -64,15 +61,7 @@ public class SearchParamsDAO extends BaseDAO{
 		
 		String sql = searchClauses.generateSQL(conn);
 		
-		//String sqlToLog = SQLUtilitie.transformPreparedStatmentToFullSQLStatment(sql, searchClauses.getParameters(), conn);
-		
 		List<T> records = (List<T>) search(engine.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(), conn);
-		
-		/*if (!utilities.arrayHasElement(records) && utilities.createInstance(engine.getSearchParams().getRecordClass()).generateTableName().equals("obs")) {
-			engine.getRelatedOperationController().logInfo(sqlToLog);
-			
-			records = (List<T>) search(engine.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(), conn);
-		}*/
 		
 		return records;	
 	}

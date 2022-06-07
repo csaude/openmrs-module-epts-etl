@@ -1,4 +1,4 @@
-package fgh.sp.eip.changedrecordsdetector.model;
+package fgh.sp.openmrs_changed_records_action.eip.model;
 
 import java.io.Serializable;
 import java.util.Date;

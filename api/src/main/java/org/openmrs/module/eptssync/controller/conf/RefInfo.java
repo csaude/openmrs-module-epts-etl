@@ -24,6 +24,8 @@ public class RefInfo {
 	private SyncTableConfiguration refTableConfiguration;
 	private SyncTableConfiguration relatedSyncTableConfiguration;
 	
+	private boolean setNullDueInconsistency;
+	
 	private Integer defaultValueDueInconsistency;
 	private String tableName;
 	
@@ -38,6 +40,14 @@ public class RefInfo {
 	
 	public RefInfo() {
 		this.refType = PARENT_REF_TYPE;
+	}
+	
+	public boolean isSetNullDueInconsistency() {
+		return setNullDueInconsistency;
+	}
+	
+	public void setSetNullDueInconsistency(boolean setNullDueInconsistency) {
+		this.setNullDueInconsistency = setNullDueInconsistency;
 	}
 
 	public void setRelatedSyncTableConfiguration(SyncTableConfiguration relatedSyncTableConfiguration) {

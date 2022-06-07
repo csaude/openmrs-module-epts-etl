@@ -275,6 +275,19 @@ public class OpenMRSPOJOGenerator {
 		methodFromSuperClass += "	}\n\n";
 	
 		
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public void setParentToNull(String parentAttName) {";
+		
+		for(RefInfo refInfo : syncTableInfo.getParents()) {
+			methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."+refInfo.getRefColumnAsClassAttName() + " = null;\n			return;\n		}";
+		}
+		
+		methodFromSuperClass += "\n\n";
+		
+		methodFromSuperClass += "		throw new RuntimeException(\"No found parent for: \" + parentAttName);\n";
+		
+		methodFromSuperClass += "	}\n\n";
+		
 			
 		String classDefinition ="package org.openmrs.module.eptssync.model.pojo.";
 		

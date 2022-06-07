@@ -1,12 +1,9 @@
 package org.openmrs.module.eptssync.changedrecordsdetector.model;
 
-import java.sql.Connection;
 import java.util.Date;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 import fgh.spi.changedrecordsdetector.ChangedRecord;
 
@@ -138,10 +135,13 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 	}
 
 
+	/*
 	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		DetectedRecordInfoDAO.insert(this, tableConfiguration, conn);
 	}
-
+	*/
+	
+	
 	@Override
 	public String getOriginLocation() {
 		return this.recordOriginLocationCode;

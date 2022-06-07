@@ -301,6 +301,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			
 			if (configuredParent != null) {
 				ref.setDefaultValueDueInconsistency(configuredParent.getDefaultValueDueInconsistency());
+				ref.setSetNullDueInconsistency(configuredParent.isSetNullDueInconsistency());
 			}
 			
 			logInfo("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");

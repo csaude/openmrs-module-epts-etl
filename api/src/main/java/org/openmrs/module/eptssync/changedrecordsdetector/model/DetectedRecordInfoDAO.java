@@ -12,7 +12,7 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class DetectedRecordInfoDAO extends BaseDAO{
-	public static void insert(DetectedRecordInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
+	/*public static void insert(DetectedRecordInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
 		try {
 			Object[] params = {record.getTableName(),
 							   record.getRecordId(),
@@ -46,7 +46,7 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 				throw e;
 			}
 		}
-	}
+	}*/
 	
 	public static long getFirstNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
 		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR, conn);
@@ -80,21 +80,8 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 		String 	sql =  " SELECT " + function + "("+ tableConf.getPrimaryKey() +") value \n";
 				sql += " FROM " + tableConf.getTableName();
 				sql += " WHERE 1 = 1 \n";
-				//sql += " WHERE NOT EXISTS (	SELECT * \n";
-				//sql += "					FROM detected_record_info \n";
-				//sql += "					WHERE table_name = ? \n";
-				//sql += "							AND app_code = ? \n";
-				//sql += "							AND record_origin_location_code = ? \n";
-				//sql += "							AND record_id = " + tableConf.getPrimaryKey() + ")";
-				
 				sql += " 		AND (" + extraCondition + ")";
-			
-		/*
-		Object[] params = {	tableConf.getTableName(),
-							appCode,
-							tableConf.getOriginAppLocationCode(),
-							observationDate, observationDate};*/
-				
+						
 		Object[] params = {};
 		
 		if (type.equals(SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR)) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);

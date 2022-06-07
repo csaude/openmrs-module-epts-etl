@@ -1,13 +1,16 @@
-package fgh.sp.eip.changedrecordsdetector;
+package fgh.sp.openmrs_changed_records_action.eip;
 
 
+import java.util.List;
+
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
-import fgh.sp.eip.changedrecordsdetector.model.Event;
-import fgh.sp.eip.changedrecordsdetector.model.SenderRetryQueueItem;
-import fgh.sp.eip.changedrecordsdetector.model.SenderRetryQueueItemDAO;
+import fgh.sp.openmrs_changed_records_action.eip.model.Event;
+import fgh.sp.openmrs_changed_records_action.eip.model.SenderRetryQueueItem;
+import fgh.sp.openmrs_changed_records_action.eip.model.SenderRetryQueueItemDAO;
 import fgh.spi.changedrecordsdetector.ChangedRecord;
 import fgh.spi.changedrecordsdetector.DetectedRecordAction;
 
@@ -74,5 +77,10 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 	@Override
 	public void configureDBService(DBConnectionInfo dbConnectionInfo) {
 		this.dbService = DBConnectionService.init(dbConnectionInfo );
+	}
+
+	@Override
+	public void performeAction(List<ChangedRecord> record) {
+		throw new ForbiddenOperationException("Not supported batch performing");
 	}	
 }

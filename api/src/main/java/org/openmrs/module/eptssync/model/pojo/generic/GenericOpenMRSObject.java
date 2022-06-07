@@ -10,7 +10,6 @@ import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 
 public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	private Integer objectId;
-	private String uuid;
 	
 	private SyncTableConfiguration syncTableConfiguration;
 	
@@ -113,6 +112,11 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 		obj.setUuid(syncImportInfo.getRecordUuid());
 		
 		return obj;
+	}
+
+	@Override
+	public void setParentToNull(String parentAttName) {
+		throw new ForbiddenOperationException("Forbidden Method");
 	}
 	
 }

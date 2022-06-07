@@ -42,11 +42,6 @@ public class InconsistenceSolverEngine extends Engine {
 		
 		for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
-				
-				if (obj.getObjectId()== 591430) {
-					System.out.println("Stop");
-				}
-				
 				obj.resolveInconsistence(getSyncTableConfiguration(), conn);
 			} catch (Exception e) {
 				logInfo("Any error occurred processing record [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");

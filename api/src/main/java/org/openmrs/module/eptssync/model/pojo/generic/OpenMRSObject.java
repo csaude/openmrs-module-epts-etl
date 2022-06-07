@@ -117,6 +117,8 @@ public interface OpenMRSObject extends SyncRecord{
 		
 	public abstract void changeParentValue(String parentAttName, OpenMRSObject newParent);
 	
+	public abstract void setParentToNull(String parentAttName);
+	
 	public abstract void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException;
 	public abstract void changeParentForAllChildren(OpenMRSObject newParent, SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	public abstract Date getDateChanged();
