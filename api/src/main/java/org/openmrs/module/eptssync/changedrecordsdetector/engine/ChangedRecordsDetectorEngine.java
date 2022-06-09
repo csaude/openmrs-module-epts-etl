@@ -96,7 +96,7 @@ public class ChangedRecordsDetectorEngine extends Engine {
 				processedRecords.add(DetectedRecordInfo.generate(obj, getRelatedOperationController().getActionPerformeApp().getApplicationCode(), getMonitor().getSyncTableInfo().getOriginAppLocationCode()));
 				
 				if (getRelatedOperationController().getActionPerformeApp().isSinglePerformingMode()) {
-					DetectedRecordService.getInstance().performeAction(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords.get(processedRecords.size() - 1));
+					DetectedRecordService.getInstance().performeAction(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords.get(processedRecords.size() - 1), getSyncTableConfiguration());
 				}
 				
 			} catch (Exception e) {
@@ -108,9 +108,8 @@ public class ChangedRecordsDetectorEngine extends Engine {
 			}
 		}
 		
-		
 		if (getRelatedOperationController().getActionPerformeApp().isBatchPerformingMode()) {
-			DetectedRecordService.getInstance().performeAction(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords);
+			DetectedRecordService.getInstance().performeAction(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords, getSyncTableConfiguration());
 		}
 		
 		this.getMonitor().logInfo("ACTION PERFORMED FOR CHANGED RECORDS '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");

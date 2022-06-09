@@ -77,7 +77,6 @@ public class SyncExportController extends OperationController {
 	
 	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, int startRecord, int lastRecord) throws IOException {
 		String fileName = "";
-		//String fileSufix = "00";
 		
 		fileName += tableInfo.getRelatedSynconfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
@@ -101,34 +100,6 @@ public class SyncExportController extends OperationController {
 			logInfo("The file '" + fileName  + ".json' is already exists!!! Removing it...");
 			new File(fileName+".json").delete();
 		}
-		
-		/*
-		String fileNameWithoutExtension = fileName; //+ fileSufix;
-		
-		String fileNameWithExtension = fileNameWithoutExtension + ".json";
-		
-		if(new File(fileNameWithExtension).exists() || new File(fileNameWithoutExtension).exists()) {
-			int count = 1;
-			
-			fileSufix = utilities().garantirXCaracterOnNumber(count, 2) ;
-			
-			fileNameWithoutExtension = fileName + fileSufix;
-			fileNameWithExtension = fileNameWithoutExtension + ".json";
-			
-			while(new File(fileNameWithoutExtension).exists() || new File(fileNameWithExtension).exists()) {
-				count++;
-				
-				fileSufix = utilities().garantirXCaracterOnNumber(count, 2) ;
-				
-				fileNameWithoutExtension = fileName + fileSufix;
-				fileNameWithExtension = fileNameWithoutExtension + ".json";
-			}
-			
-			fileSufix = utilities().garantirXCaracterOnNumber(count, 2) ;
-		}
-		
-		fileName += fileSufix;
-		*/
 		
 		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
 		

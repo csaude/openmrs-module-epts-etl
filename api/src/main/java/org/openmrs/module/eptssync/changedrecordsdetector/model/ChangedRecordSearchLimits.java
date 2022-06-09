@@ -7,6 +7,7 @@ import java.nio.file.NoSuchFileException;
 
 import org.openmrs.module.eptssync.changedrecordsdetector.engine.ChangedRecordsDetectorEngine;
 import org.openmrs.module.eptssync.controller.DestinationOperationController;
+import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
@@ -140,23 +141,21 @@ public class ChangedRecordSearchLimits extends RecordLimits {
 	public String generateFilePath() {
 		String subFolder = "";
 		
-		if (this.engine.getRelatedOperationController().getConfiguration().isSourceInstallationType()) {
-			subFolder = "source" + FileUtilities.getPathSeparator() + this.engine.getRelatedOperationController().getOperationType() + FileUtilities.getPathSeparator() + this.engine.getRelatedOperationController().getConfiguration().getOriginAppLocationCode(); 
+		SyncConfiguration config = this.engine.getRelatedOperationController().getConfiguration();
+		
+		if (config.isSourceSyncProcess() || config.isDBReSyncProcess() || config.isDBQuickExportProcess()) {
+			subFolder = "source" + FileUtilities.getPathSeparator() + this.engine.getRelatedOperationController().getOperationType() + FileUtilities.getPathSeparator() +config.getOriginAppLocationCode(); 
 		}
 		else
-		if (this.engine.getRelatedOperationController().getConfiguration().isDestinationInstallationType()) {
+		if (config.isDestinationSyncProcess()) {
 			String appOrigin =  this instanceof DestinationOperationController ?  FileUtilities.getPathSeparator() + ((DestinationOperationController)this).getAppOriginLocationCode() : "";
 					
 			subFolder = "destination" + FileUtilities.getPathSeparator() + this.engine.getRelatedOperationController().getOperationType() + appOrigin; 
 		}
-		else
-		if (this.engine.getRelatedOperationController().getConfiguration().isNeutralInstallationType()) {
-			subFolder = "neutral" + FileUtilities.getPathSeparator() + this.engine.getRelatedOperationController().getOperationType() + FileUtilities.getPathSeparator() + this.engine.getRelatedOperationController().getConfiguration().getOriginAppLocationCode(); 
-		}
 		
 		subFolder += FileUtilities.getPathSeparator() + "threads";
 		
-		return this.engine.getRelatedOperationController().getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder + FileUtilities.getPathSeparator() + this.threadCode;
+		return config.getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder + FileUtilities.getPathSeparator() + this.threadCode;
 	
 	}
 	

@@ -3,6 +3,7 @@ package fgh.sp.openmrs_changed_records_action.eip;
 
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
@@ -30,14 +31,14 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 	}
 	
 	@Override
-	public void performeAction(ChangedRecord record) {
+	public void performeAction(ChangedRecord record, SyncTableConfiguration syncTableConfiguration) {
 		SenderRetryQueueItem item = new SenderRetryQueueItem();
 		
 		Event event = new Event();
 		
 		event.setTableName(record.getTableName());
-		event.setPrimaryKeyId(""+record.getRecordId());
-		event.setIdentifier(record.getRecordUuid());
+		event.setPrimaryKeyId(""+record.getObjectId());
+		event.setIdentifier(record.getUuid());
 		event.setOperation(""+record.getOperationType());
 		event.setSnapshot(Boolean.FALSE);
 		
@@ -80,7 +81,7 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 	}
 
 	@Override
-	public void performeAction(List<ChangedRecord> record) {
+	public void performeAction(List<ChangedRecord> record, SyncTableConfiguration syncTableConfiguration) {
 		throw new ForbiddenOperationException("Not supported batch performing");
 	}	
 }

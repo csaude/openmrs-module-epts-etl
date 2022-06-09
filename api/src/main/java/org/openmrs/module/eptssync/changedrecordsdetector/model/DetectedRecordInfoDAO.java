@@ -12,11 +12,11 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class DetectedRecordInfoDAO extends BaseDAO{
-	/*public static void insert(DetectedRecordInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
+	public static void insert(DetectedRecordInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
 		try {
 			Object[] params = {record.getTableName(),
-							   record.getRecordId(),
-							   record.getRecordUuid(),
+							   record.getObjectId(),
+							   record.getUuid(),
 							   record.getOperationType(),
 							   record.getOperationDate(),
 							   record.getAppCode(),
@@ -46,7 +46,7 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 				throw e;
 			}
 		}
-	}*/
+	}
 	
 	public static long getFirstNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
 		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR, conn);

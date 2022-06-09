@@ -45,7 +45,7 @@ public class SyncConfiguration {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private String installationType;
+	private String processType;
 	private File relatedConfFile;
 	
 	private List<SyncOperationConfig> operations;
@@ -60,8 +60,6 @@ public class SyncConfiguration {
 	
 	public static String PROCESSING_MODE_SEQUENCIAL="sequencial";
 	public static String PROCESSING_MODE_PARALLEL="parallel";
-	
-	private static final String[] supportedInstallationTypes = {"source", "destination", "neutral"};
 	
 	private String classPath;
 	private File moduleRootDirectory;
@@ -165,35 +163,51 @@ public class SyncConfiguration {
 		this.automaticStart = automaticStart;
 	}
 	
-	public String getInstallationType() {
-		return installationType;
+	public String getProcessType() {
+		return processType;
 	}
 	
-	public void setInstallationType(String installationType) {
-		if (!utilities.isStringIn(installationType, supportedInstallationTypes)) {
-			throw new ForbiddenException("The 'installationType' of syncConf file must be in "+supportedInstallationTypes);
+	public void setProcessType(String processType) {
+		if (!SyncProcessType.isSupportedProcessType(processType) ) {
+			throw new ForbiddenException("The 'processType' of syncConf file must be in "+SyncProcessType.values());
 		}
-		this.installationType = installationType;
+		
+		this.processType = processType;
 	}
 	
 	@JsonIgnore
-	public boolean isDestinationInstallationType() {
-		return this.installationType.equals(supportedInstallationTypes[1]);
+	public boolean isDestinationSyncProcess() {
+		return SyncProcessType.isDestinationSync(processType);
 	}
 	
 	@JsonIgnore
-	public boolean isSourceInstallationType() {
-		return this.installationType.equals(supportedInstallationTypes[0]);
+	public boolean isSourceSyncProcess() {
+		return SyncProcessType.isSourceSync(processType);
 	}
 	
 	@JsonIgnore
-	public boolean isNeutralInstallationType() {
-		return this.installationType.equals(supportedInstallationTypes[2]);
+	public boolean isDBReSyncProcess() {
+		return SyncProcessType.isDBResync(processType);
 	}
 	
+	@JsonIgnore
+	public boolean isDBQuickExportProcess() {
+		return SyncProcessType.isDBQuickExport(processType);
+	}
+	
+	@JsonIgnore
+	public boolean isDBQuickLoadProcess() {
+		return SyncProcessType.isDBQuickLoad(processType);
+	}
+	
+	
+	@JsonIgnore
+	public boolean isDataReconciliation() {
+		return SyncProcessType.isDataReconciliation(processType);
+	}
 	@JsonIgnore
 	public String getPojoPackage() {
-		return isDestinationInstallationType() ? this.installationType : this.originAppLocationCode;
+		return isDestinationSyncProcess() ? this.processType : this.originAppLocationCode;
 	}
 	
 	public List<AppInfo> getAppsInfo() {
@@ -244,8 +258,11 @@ public class SyncConfiguration {
 	}
 	
 	public String getSyncStageSchema() {
-		if (isSourceInstallationType()) {
+		if (isSourceSyncProcess()) {
 			return this.originAppLocationCode + "_sync_stage_area";
+		}
+		if (isDBQuickLoadProcess() || isDataReconciliation()) {
+			return "minimal_db_info";
 		}
 		else {
 			return "sync_stage_area";
@@ -377,7 +394,7 @@ public class SyncConfiguration {
 
 	@JsonIgnore
 	public String getDesignation() {
-		return this.installationType + (utilities.stringHasValue(this.originAppLocationCode) ?  "_" + this.originAppLocationCode : "");
+		return this.processType + (utilities.stringHasValue(this.originAppLocationCode) ?  "_" + this.originAppLocationCode : "");
 	}
 	
 	public List<SyncOperationConfig> getOperations() {
@@ -445,12 +462,12 @@ public class SyncConfiguration {
 		String errorMsg = "";
 		int errNum = 0;
 		
-		if (this.isSourceInstallationType()) {
+		if (this.isSourceSyncProcess()) {
 			if (!utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You must specify value for 'originAppLocationCode' parameter \n" ;
 			if (!utilities.stringHasValue(getSyncRootDirectory())) errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter\n";
 		}
 		
-		if (this.isDestinationInstallationType()) {
+		if (this.isDestinationSyncProcess()) {
 			if (utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You cannot configure for 'originAppLocationCode' parameter in destination configuration\n" ;
 		}
 		
@@ -460,12 +477,12 @@ public class SyncConfiguration {
 			
 		List<String> supportedOperations = null;
 		
-		if (isSourceInstallationType() ) {
-			supportedOperations = SyncOperationConfig.getSupportedOperationsInSourceInstallation();
+		if (isSourceSyncProcess() ) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInSourceSyncProcess();
 		}
 		else
-		if (isDestinationInstallationType()) {
-			SyncOperationConfig.getSupportedOperationsInDestinationInstallation();
+		if (isDestinationSyncProcess()) {
+			SyncOperationConfig.getSupportedOperationsInDestinationSyncProcess();
 		}
 		
 		
@@ -611,7 +628,7 @@ public class SyncConfiguration {
 		pojoPackageDir += "model" + FileUtilities.getPathSeparator();
 		pojoPackageDir += "pojo" + FileUtilities.getPathSeparator();
 		
-		pojoPackageDir += isDestinationInstallationType() ? "" : "source" +  FileUtilities.getPathSeparator();
+		pojoPackageDir += isDestinationSyncProcess() ? "" : "source" +  FileUtilities.getPathSeparator();
 		
 		pojoPackageDir += this.getPojoPackage() + FileUtilities.getPathSeparator();
 		
@@ -631,4 +648,9 @@ public class SyncConfiguration {
 		
 		return apps;
 	}
+	
+	public boolean isSupposedToHaveOriginAppCode() {
+		return this.isDBQuickExportProcess() ||  this.isSourceSyncProcess() ||  this.isDBReSyncProcess();
+	}
+	
 }

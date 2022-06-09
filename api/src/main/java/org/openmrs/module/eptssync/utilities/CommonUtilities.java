@@ -899,6 +899,8 @@ public class  CommonUtilities implements Serializable{
 	}
 
 	public String scapeQuotationMarks(String str) {
+		if (str == null) return null;
+		
 		str = new String(str.replaceAll("\"", "\\\\\""));
 		
 		str = str.replaceAll("\\\\\\\\", "\\\\\\\\\\\\");
@@ -967,11 +969,15 @@ public class  CommonUtilities implements Serializable{
 	}
 
 	public static void main(String[] args) {
-		String strWithStrangeCharacters = "\\a\\\"";
+		String strWithStrangeCharacters = "aaaaa";
 		
-		System.out.println(strWithStrangeCharacters);
-	
 		
 		System.out.println(getInstance().resolveScapeCharacter(strWithStrangeCharacters));
+	}
+
+	public  String quote(String strToQuote) {
+		if (strToQuote == null) return strToQuote;
+		
+		return "\""  + strToQuote +"\"";
 	}
 }

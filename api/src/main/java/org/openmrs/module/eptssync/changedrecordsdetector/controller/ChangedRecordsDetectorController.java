@@ -1,5 +1,7 @@
 package org.openmrs.module.eptssync.changedrecordsdetector.controller;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -13,10 +15,12 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
+import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 /**
  * This class is responsible for control record changes process
@@ -190,5 +194,39 @@ public class ChangedRecordsDetectorController extends OperationController {
 			conn.markAsSuccessifullyTerminected();
 			conn.finalizeConnection();
 		}
+	}
+
+	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, int startRecord, int lastRecord) throws IOException {
+		String fileName = "";
+		
+		fileName += tableInfo.getRelatedSynconfiguration().getSyncRootDirectory();
+		fileName += FileUtilities.getPathSeparator();
+		fileName += tableInfo.getRelatedSynconfiguration().getOriginAppLocationCode().toLowerCase();
+		fileName += FileUtilities.getPathSeparator();
+		fileName += "export";
+		fileName += FileUtilities.getPathSeparator();
+		fileName += tableInfo.getTableName();
+		fileName += FileUtilities.getPathSeparator();
+		fileName += tableInfo.getTableName();
+		
+		fileName += "_" + utilities().garantirXCaracterOnNumber(startRecord, 10);
+		fileName += "_" + utilities().garantirXCaracterOnNumber(lastRecord, 10);
+	
+		if(new File(fileName).exists() ) {
+			logInfo("The file '" + fileName + "' is already exists!!! Removing it...");
+			new File(fileName).delete();
+		}
+		
+		if(new File(fileName+".json").exists() ) {
+			logInfo("The file '" + fileName  + ".json' is already exists!!! Removing it...");
+			new File(fileName+".json").delete();
+		}
+		
+		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
+		
+		File file = new File(fileName);
+		file.createNewFile();
+		
+		return file;
 	}
 }

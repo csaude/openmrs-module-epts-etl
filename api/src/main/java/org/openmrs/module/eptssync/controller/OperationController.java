@@ -424,18 +424,21 @@ public abstract class OperationController implements Controller{
 	protected String generateProcessStatusFolder() {
 		String subFolder = "";
 		
-		if (getConfiguration().isSourceInstallationType()) {
+		if (getConfiguration().isSourceSyncProcess() || getConfiguration().isDBReSyncProcess() || getConfiguration().isDBQuickExportProcess()) {
 			subFolder = "source" + FileUtilities.getPathSeparator() + getOperationType() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
 		}
 		else
-		if (getConfiguration().isDestinationInstallationType()) {
-			String appOrigin =  this instanceof DestinationOperationController ?  FileUtilities.getPathSeparator() + ((DestinationOperationController)this).getAppOriginLocationCode() : "";
-					
-			subFolder = "destination" + FileUtilities.getPathSeparator() + getOperationType() + appOrigin; 
-		}
-		else
-		if (getConfiguration().isNeutralInstallationType()) {
-			subFolder = "neutral" + FileUtilities.getPathSeparator() + getOperationType() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
+		if (getConfiguration().isDestinationSyncProcess() || getConfiguration().isDBQuickLoadProcess()) {
+			String extraPath =  "";
+			
+			if (getOperationConfig().isDatabasePreparationOperation()) {
+				extraPath =  FileUtilities.getPathSeparator() + getConfiguration().getSyncStageSchema();
+			}
+			else {
+				extraPath = this instanceof DestinationOperationController ?  FileUtilities.getPathSeparator() + ((DestinationOperationController)this).getAppOriginLocationCode() : "";
+			}
+			
+			subFolder = "destination" + FileUtilities.getPathSeparator() + getOperationType() + extraPath; 
 		}
 		
 		return getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder;

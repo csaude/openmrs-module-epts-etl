@@ -15,6 +15,8 @@ import java.util.List;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Base class for all value objects. Provides utility function load(...) to fill
  * fields.
@@ -145,6 +147,7 @@ public abstract class BaseVO  implements VO{
 		return getFields(this);
 	}
 	
+	@JsonIgnore
 	public boolean isExcluded() {
 		return excluded;
 	}

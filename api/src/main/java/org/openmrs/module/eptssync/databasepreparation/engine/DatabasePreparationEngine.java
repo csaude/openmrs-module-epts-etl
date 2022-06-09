@@ -274,7 +274,7 @@ public class DatabasePreparationEngine extends Engine {
 		sql += "	record_uuid varchar(38)  NULL,\n";
 		sql += "	record_origin_location_code VARCHAR(100) NOT NULL,\n";
 		
-		sql += "	json text NOT NULL,\n";
+		sql += "	json text NULL,\n";
 		
 		sql += "	last_sync_date DATETIME DEFAULT NULL,\n";
 		sql += "	last_sync_try_err varchar(250) DEFAULT NULL,\n";
@@ -284,6 +284,10 @@ public class DatabasePreparationEngine extends Engine {
 		
 		sql += "	migration_status int(1) DEFAULT 1,\n";
 		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
+		sql += "	record_date_created DATETIME NULL,\n";
+		sql += "	record_date_changed DATETIME NULL,\n";
+		sql += "	record_date_voided DATETIME NULL,\n";
+		
 		sql += "	CONSTRAINT CHK_" + getSyncTableConfiguration().generateRelatedStageTableName() + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
 		
 		if (getSyncTableConfiguration().isDestinationInstallationType()) {

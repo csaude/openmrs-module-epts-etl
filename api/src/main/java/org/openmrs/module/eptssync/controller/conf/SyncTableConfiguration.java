@@ -613,6 +613,6 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	@JsonIgnore
 	public boolean isDestinationInstallationType() {
-		return getRelatedSynconfiguration().isDestinationInstallationType();
+		return getRelatedSynconfiguration().isDestinationSyncProcess();
 	}
 }

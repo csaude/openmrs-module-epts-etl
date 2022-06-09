@@ -2,6 +2,7 @@ package fgh.spi.changedrecordsdetector;
 
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 
 /**
@@ -9,8 +10,8 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
  *
  */
 public interface DetectedRecordAction extends GenericOperation{
-	public abstract void performeAction(ChangedRecord record);
-	public abstract void performeAction(List<ChangedRecord> record);
+	public abstract void performeAction(ChangedRecord record, SyncTableConfiguration tableConfiguration);
+	public abstract void performeAction(List<ChangedRecord> record, SyncTableConfiguration tableConfiguration);
 
 	public abstract String getAppCode();
 	public abstract boolean isDBServiceConfigured();

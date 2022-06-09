@@ -8,6 +8,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.GenericOpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
@@ -83,9 +84,10 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRS
 		return searchClauses;
 	}	
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass();
+		return (Class<OpenMRSObject>) (new GenericOpenMRSObject()).getClass();
 	}
 
 	@Override

@@ -447,7 +447,7 @@ public class ProcessController implements Controller{
 		
 		String subFolder = "";
 		
-		if (getConfiguration().isSourceInstallationType()) {
+		if (getConfiguration().isSourceSyncProcess()) {
 			subFolder = "source"; 
 		}
 		else {
@@ -462,7 +462,7 @@ public class ProcessController implements Controller{
 	public void markAsFinished() {
 		logInfo("FINISHING PROCESS...");
 		
-		if (getConfiguration().isSourceInstallationType()) {
+		if (getConfiguration().isSourceSyncProcess()) {
 			if (!generateProcessStatusFile().exists()) {
 				logInfo("FINISHING PROCESS... WRITING PROCESS STATUS ON FILE ["+ generateProcessStatusFile().getAbsolutePath() + "]") ;
 				
@@ -499,7 +499,7 @@ public class ProcessController implements Controller{
 
 	@JsonIgnore
 	private boolean processIsAlreadyFinished() {
-		return  getConfiguration().isSourceInstallationType() ? generateProcessStatusFile().exists() : false; 
+		return  getConfiguration().isSourceSyncProcess() ? generateProcessStatusFile().exists() : false; 
 	}
 	
 	@Override

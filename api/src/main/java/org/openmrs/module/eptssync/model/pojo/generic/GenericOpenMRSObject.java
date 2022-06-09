@@ -1,12 +1,16 @@
 package org.openmrs.module.eptssync.model.pojo.generic;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	private Integer objectId;
@@ -16,47 +20,64 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	public GenericOpenMRSObject() {
 	}
 	
+	public void load(ResultSet rs) throws SQLException{ 
+		try {
+			super.load(rs);
+			
+			this.objectId = rs.getInt(1);
+			
+		} catch (SQLException e) {}
+	}
+	
 	public GenericOpenMRSObject(SyncTableConfiguration syncTableConfiguration) {
 		this.syncTableConfiguration = syncTableConfiguration;
 	}
 	
 	@Override
+	@JsonIgnore
 	public String generateDBPrimaryKeyAtt() {
 		return this.syncTableConfiguration.getPrimaryKey();
 	}
 	
 	@Override
+	@JsonIgnore
 	public Object[] getInsertParamsWithoutObjectId() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
 	@Override
+	@JsonIgnore
 	public String getInsertSQLWithoutObjectId() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 	
 	@Override
+	@JsonIgnore
 	public Object[] getInsertParamsWithObjectId() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
 	@Override
+	@JsonIgnore
 	public String getInsertSQLWithObjectId() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
 
 	@Override
+	@JsonIgnore
 	public String getUpdateSQL() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
 	@Override
+	@JsonIgnore
 	public Object[] getUpdateParams() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
 	@Override
+	@JsonIgnore
 	public String generateInsertValues() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
@@ -72,6 +93,7 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	}
 
 	@Override
+	@JsonIgnore
 	public boolean hasParents() {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}

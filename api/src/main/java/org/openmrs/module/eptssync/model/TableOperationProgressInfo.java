@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.sql.Connection;
 
+import javax.ws.rs.ForbiddenException;
+
+import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
@@ -26,14 +29,35 @@ public class TableOperationProgressInfo extends BaseVO{
 	private SyncProgressMeter progressMeter;
 	private OperationController controller;
 	
+	
+	/*
+	 * Since in destination site the tableConfiguration is aplayed to all sites, then it is needed to fix it to allow manual specification
+	 */
+	private String originAppLocationCode;
+	
 	public TableOperationProgressInfo() {
 	}
 	
 	public TableOperationProgressInfo(OperationController controller, SyncTableConfiguration tableConfiguration) {
 		this.controller = controller;
 		this.tableConfiguration = tableConfiguration;
-		
+		this.originAppLocationCode = determineAppLocationCode(controller);
 		this.progressMeter = SyncProgressMeter.defaultProgressMeter(getOperationId());
+	}
+	
+	private String determineAppLocationCode(OperationController controller) {
+		
+		if (controller.getOperationConfig().isSupposedToHaveOriginAppCode()) {
+			return controller.getConfiguration().getOriginAppLocationCode();
+		}
+		
+		if (controller instanceof DestinationOperationController) {
+			return ((DestinationOperationController)controller).getAppOriginLocationCode();
+		}
+		 
+		if (controller.getOperationConfig().isDatabasePreparationOperation() || controller.getOperationConfig().isPojoGeneration()) return "central_site"; 
+		
+		throw new ForbiddenException("The originAppCode cannot be determined for "+controller.getOperationType() + " operation!");
 	}
 	
 	public void setController(OperationController controller) {
@@ -63,6 +87,14 @@ public class TableOperationProgressInfo extends BaseVO{
 
 	public SyncProgressMeter getProgressMeter() {
 		return progressMeter;
+	}
+	
+	public String getOriginAppLocationCode() {
+		return originAppLocationCode;
+	}
+	
+	public void setOriginAppLocationCode(String originAppLocationCode) {
+		this.originAppLocationCode = originAppLocationCode;
 	}
 	
 	/*public void init(OperationController controller, Engine engine) {

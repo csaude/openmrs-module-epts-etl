@@ -10,6 +10,8 @@ import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.databasepreparation.controller.DatabasePreparationController;
+import org.openmrs.module.eptssync.dbquickexport.controller.SyncDBQuickExportController;
+import org.openmrs.module.eptssync.dbquickload.controller.SyncDBQuickLoadController;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.export.controller.SyncExportController;
 import org.openmrs.module.eptssync.inconsistenceresolver.controller.InconsistenceSolverController;
@@ -32,6 +34,16 @@ public class SyncOperationConfig {
 	public static final String SYNC_OPERATION_CONSOLIDATION= "consolidation";
 	public static final String SYNC_OPERATION_CHANGED_RECORDS_DETECTOR = "changed_records_detector";
 	public static final String SYNC_OPERATION_NEW_RECORDS_DETECTOR = "new_records_detector";
+	public static final String SYNC_OPERATION_QUICK_EXPORT_DB = "db_quick_export";
+	public static final String SYNC_OPERATION_DB_QUICK_LOAD = "db_quick_load";
+	
+	public static final String SYNC_OPERATION_RESOLVE_CONFLICTS_IN_STAGE_AREA= "resolve_conflicts";
+	public static final String SYNC_OPERATION_MISSING_RECORDS_DETECTOR = "missing_records_detector";
+	public static final String SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR = "outdated_records_detector";
+	public static final String SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR = "phantom_records_detector";
+	
+	
+	
 	
 	public static final String[] SUPPORTED_OPERATIONS = {	SYNC_OPERATION_CONSOLIDATION, 
 															SYNC_OPERATION_EXPORT, 
@@ -42,7 +54,14 @@ public class SyncOperationConfig {
 															SYNC_OPERATION_POJO_GENERATION,
 															SYNC_OPERATION_INCONSISTENCY_SOLVER,
 															SYNC_OPERATION_CHANGED_RECORDS_DETECTOR,
-															SYNC_OPERATION_NEW_RECORDS_DETECTOR};
+															SYNC_OPERATION_NEW_RECORDS_DETECTOR,
+															SYNC_OPERATION_QUICK_EXPORT_DB,
+															SYNC_OPERATION_DB_QUICK_LOAD,
+															SYNC_OPERATION_MISSING_RECORDS_DETECTOR,
+															SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR,
+															SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR,
+															SYNC_OPERATION_RESOLVE_CONFLICTS_IN_STAGE_AREA
+														};
 
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -294,10 +313,40 @@ public class SyncOperationConfig {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR);
 	}
 	
+	public boolean isDBQuickExport() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_QUICK_EXPORT_DB);
+	}
+	
 	@JsonIgnore
 	public boolean isNewRecordsDetector() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR);
 	}
+	
+	@JsonIgnore
+	public boolean isDBQuickLoad() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_DB_QUICK_LOAD);
+	}
+	
+	@JsonIgnore
+	public boolean isMissungRecordsDetector() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_MISSING_RECORDS_DETECTOR);
+	}
+	
+	@JsonIgnore
+	public boolean isOutdateRecordsDetector() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR);
+	}
+	
+	@JsonIgnore
+	public boolean isPhantomRecordsDetector() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR);
+	}
+	
+	@JsonIgnore
+	public boolean isResolveConflictsInStageArea() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_RESOLVE_CONFLICTS_IN_STAGE_AREA);
+	}
+	
 	
 	@Override
 	public boolean equals(Object obj) {
@@ -374,6 +423,14 @@ public class SyncOperationConfig {
 		if (isNewRecordsDetector()) {
 			return new ChangedRecordsDetectorController(parent, this);
 		}		
+		else
+		if (isDBQuickLoad()) {
+			return new SyncDBQuickLoadController(parent, this, appOriginCode);
+		}
+		else
+		if (isDBQuickExport()) {
+			return new SyncDBQuickExportController(parent, this);
+		}
 		
 		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");
 		
@@ -383,18 +440,30 @@ public class SyncOperationConfig {
 		String errorMsg = "";
 		int errNum = 0;
 		
-		if (this.getRelatedSyncConfig().isDestinationInstallationType()) {
-			if (!this.canBeRunInDestinationInstallation()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in destination installation\n";
+		if (this.getRelatedSyncConfig().isDestinationSyncProcess()) {
+			if (!this.canBeRunInDestinationSyncProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in destination sync process\n";
 		
 			if (this.isLoadOperation() && (this.getSourceFolders() == null || this.getSourceFolders().size() == 0))  errorMsg += ++errNum + ". There is no source folder defined";
 		}
 		else
-		if (this.getRelatedSyncConfig().isSourceInstallationType()) {
-			if (!this.canBeRunInSourceInstallation()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in source installation\n";
+		if (this.getRelatedSyncConfig().isSourceSyncProcess()) {
+			if (!this.canBeRunInSourceSyncProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in source sync process\n";
 		}
 		else
-		if (this.getRelatedSyncConfig().isNeutralInstallationType()) {
-			if (!this.canBeRunInNeutralInstallation()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in neutral installation\n";
+		if (this.getRelatedSyncConfig().isDBReSyncProcess()) {
+			if (!this.canBeRunInReSyncProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in re-sync process\n";
+		}
+		else
+		if (this.getRelatedSyncConfig().isDBQuickExportProcess()) {
+			if (!this.canBeRunInDBQuickExportProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in db quick export process\n";
+		}
+		else
+		if (this.getRelatedSyncConfig().isDBQuickLoadProcess()) {
+			if (!this.canBeRunInDBQuickLoadProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in db quick load process\n";
+		}
+		else
+		if (this.getRelatedSyncConfig().isDataReconciliation()) {
+			if (!this.canBeRunInDataReconciliationProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in data reconciliation process\n";
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
@@ -408,11 +477,11 @@ public class SyncOperationConfig {
 	}
 	
 	@JsonIgnore
-	public boolean canBeRunInSourceInstallation() {
-		return utilities.existOnArray(getSupportedOperationsInSourceInstallation(), this.operationType);
+	public boolean canBeRunInSourceSyncProcess() {
+		return utilities.existOnArray(getSupportedOperationsInSourceSyncProcess(), this.operationType);
 	}
 	
-	public static List<String> getSupportedOperationsInSourceInstallation() {
+	public static List<String> getSupportedOperationsInSourceSyncProcess() {
 		String[] supported = {SyncOperationConfig.SYNC_OPERATION_EXPORT,
 							  SyncOperationConfig.SYNC_OPERATION_TRANSPORT,
 							  SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER,
@@ -423,26 +492,68 @@ public class SyncOperationConfig {
 	}
 	
 	@JsonIgnore
-	public boolean canBeRunInNeutralInstallation() {
-		return utilities.existOnArray(getSupportedOperationsInNeutralInstallation(), this.operationType);
+	public boolean canBeRunInReSyncProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDBReSyncProcess(), this.operationType);
 	}
 	
-	public static List<String> getSupportedOperationsInNeutralInstallation() {
-		String[] supported = {SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR,
-							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION,
-							  SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR,
+	public static List<String> getSupportedOperationsInDBReSyncProcess() {
+		String[] supported = {SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR,
+							  SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR,
 							  SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION};
 		
 		return utilities.parseArrayToList(supported);
 	}
 	
+	
+	
 	@JsonIgnore
-	public boolean canBeRunInDestinationInstallation() {
-		return utilities.existOnArray(getSupportedOperationsInDestinationInstallation(), this.operationType);
+	public boolean canBeRunInDBQuickLoadProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDBQuickLoadProcess(), this.operationType);
+	}
+		
+	public static List<String> getSupportedOperationsInDBQuickLoadProcess() {
+		String[] supported = {SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION,
+							  SyncOperationConfig.SYNC_OPERATION_DB_QUICK_LOAD};
+		
+		return utilities.parseArrayToList(supported);
 	}
 	
 	
-	public static List<String> getSupportedOperationsInDestinationInstallation() {
+	@JsonIgnore
+	public boolean canBeRunInDBQuickExportProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDBQuickExportProcess(), this.operationType);
+	}
+		
+	public static List<String> getSupportedOperationsInDBQuickExportProcess() {
+		String[] supported = {SyncOperationConfig.SYNC_OPERATION_QUICK_EXPORT_DB,
+							  SyncOperationConfig.SYNC_OPERATION_TRANSPORT};
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
+	
+	@JsonIgnore
+	public boolean canBeRunInDataReconciliationProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDBQuickExportProcess(), this.operationType);
+	}
+		
+	public static List<String> getSupportedOperationsInDataReconciliationProcess() {
+		String[] supported = {SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION,
+							  SyncOperationConfig.SYNC_OPERATION_RESOLVE_CONFLICTS_IN_STAGE_AREA,
+							  SyncOperationConfig.SYNC_OPERATION_MISSING_RECORDS_DETECTOR,
+							  SyncOperationConfig.SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR,
+							  SyncOperationConfig.SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR};
+		
+		return utilities.parseArrayToList(supported);
+	}
+		
+	@JsonIgnore
+	public boolean canBeRunInDestinationSyncProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDestinationSyncProcess(), this.operationType);
+	}
+	
+	
+	public static List<String> getSupportedOperationsInDestinationSyncProcess() {
 		String[] supported = {SyncOperationConfig.SYNC_OPERATION_CONSOLIDATION,
 							  SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION,
 							  SyncOperationConfig.SYNC_OPERATION_LOAD,
@@ -461,5 +572,9 @@ public class SyncOperationConfig {
 
 	public String generateControllerId() {
 		return relatedSyncConfig.generateControllerId() + "_" + getOperationType();
+	}
+
+	public boolean isSupposedToHaveOriginAppCode() {
+		return this.getRelatedSyncConfig().isSupposedToHaveOriginAppCode();
 	}
 }

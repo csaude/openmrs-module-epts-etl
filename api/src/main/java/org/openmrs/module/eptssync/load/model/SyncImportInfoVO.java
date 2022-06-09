@@ -14,8 +14,11 @@ import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Represent the information to be imported from the source to destination data base.
@@ -51,6 +54,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.migrationStatus = MIGRATION_STATUS_PENDING;
 	}
 	
+	@JsonIgnore
 	public int getConsistent() {
 		return consistent;
 	}
@@ -62,16 +66,6 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	public void setRecordOriginId(int recordOriginId) {
 		this.recordOriginId = recordOriginId;
 	}
-	
-	/*
-	public int getRecordDestinationId() {
-		return recordDestinationId;
-	}
-
-	public void setRecordDestinationId(int recordDestinationId) {
-		this.recordDestinationId = recordDestinationId;
-	}
-	*/
 	
 	public String getRecordUuid() {
 		return recordUuid;
@@ -89,6 +83,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.recordOriginLocationCode = recordOriginLocationCode;
 	}
 
+	@JsonIgnore
 	public int isConsistent() {
 		return consistent;
 	}
@@ -97,6 +92,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.consistent = consistent;
 	}
 
+	@JsonIgnore
 	public Date getLastUpdateDate() {
 		return lastUpdateDate;
 	}
@@ -105,6 +101,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.lastUpdateDate = lastUpdateDate;
 	}
 
+	@JsonIgnore
 	public int getId() {
 		return id;
 	}
@@ -121,6 +118,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.json = json;
 	}
 
+	@JsonIgnore
 	public Date getLastSyncDate() {
 		return lastSyncDate;
 	}
@@ -129,6 +127,8 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.lastSyncDate = lastSyncDate;
 	}
 
+	
+	@JsonIgnore
 	public String getLastSyncTryErr() {
 		return lastSyncTryErr;
 	}
@@ -140,24 +140,17 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	public void setMigrationStatus(int migrationStatus) {
 		this.migrationStatus = migrationStatus;
 	}
-
-	/*
-	@Override
-	public int getObjectId() {
-		return this.recordOriginId;
-	}
-
-	@Override
-	public void setObjectId(int id) {
-		this.recordOriginId = id;
-	}*/
 	
 	public void markAsPartialMigrated() {
 		this.migrationStatus = MIGRATION_STATUS_INCOMPLETE;
 	}
 
-	public void markAsConcistent(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+	public void markAsConsistent(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		SyncImportInfoDAO.markAsConsistent(tableInfo, this, conn);
+	}
+	
+	public void markAsInconsistent(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+		SyncImportInfoDAO.markAsInconsistent(tableInfo, this, conn);
 	}
 	
 	public void markAsPartialMigrated(SyncTableConfiguration tableInfo, String errMsg, Connection conn) throws DBException {
@@ -178,38 +171,32 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		this.migrationStatus = MIGRATION_STATUS_FAILED;
 	}
 
+	@JsonIgnore
 	public int getMigrationStatus() {
 		return migrationStatus;
 	}
 	
-	public static List<SyncImportInfoVO> generateFromSyncRecord(SyncTableConfiguration tableConfiguration, List<OpenMRSObject> syncRecords, String recordOriginLocationCode, Connection conn) throws DBException {
+	public static List<SyncImportInfoVO> generateFromSyncRecord(List<OpenMRSObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
 		List<SyncImportInfoVO> importInfo = new ArrayList<SyncImportInfoVO>();
 	
 		for (OpenMRSObject syncRecord : syncRecords) {
-			importInfo.add(generateFromSyncRecord(tableConfiguration, syncRecord, recordOriginLocationCode, conn));
+			importInfo.add(generateFromSyncRecord(syncRecord, recordOriginLocationCode, generateRecordJSON));
 		}
 		
 		return importInfo;
 	}
 	
-	public static SyncImportInfoVO generateFromSyncRecord(SyncTableConfiguration tableConfiguration, OpenMRSObject syncRecord, String recordOriginLocationCode, Connection conn) throws DBException {
+	public static SyncImportInfoVO generateFromSyncRecord(OpenMRSObject syncRecord, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
 		SyncImportInfoVO syncInfo = new SyncImportInfoVO();
-		
-		if (tableConfiguration.useSharedPKKey()) {
-			OpenMRSObject parent = OpenMRSObjectDAO.getById(tableConfiguration.getSharedKeyRefInfo(conn).getRefObjectClass(), syncRecord.getObjectId(), conn);
-		
-			if (parent != null) {
-				syncInfo.setRecordUuid(parent.getUuid());
-			}
-		}
-		else {
-			syncInfo.setRecordUuid(syncRecord.getUuid());
-		}
-		
+			
+		syncInfo.setRecordUuid(syncRecord.getUuid());
 		syncInfo.setRecordOriginId(syncRecord.getObjectId());
 		syncInfo.setRecordOriginLocationCode (recordOriginLocationCode);
 		
-		syncInfo.setJson(utilities.parseToJSON(syncRecord));
+		syncInfo.setDateChanged(syncRecord.getDateChanged());
+		syncInfo.setDateCreated(syncRecord.getDateCreated());
+		syncInfo.setDateVoided(syncRecord.getDateVoided());
+		syncInfo.setJson(generateRecordJSON ? utilities.parseToJSON(syncRecord) : null);
 		syncInfo.setLastUpdateDate(syncRecord.getDateChanged());
 		
 		return syncInfo;
@@ -229,7 +216,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 				
 			if (tableInfo.isDoIntegrityCheckInTheEnd(SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION)) {
 				if (source.hasParents()) {
-					this.markAsConcistent(tableInfo, conn);
+					this.markAsConsistent(tableInfo, conn);
 				}
 				
 				if (tableInfo.useSharedPKKey()) {
@@ -387,4 +374,30 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		}
 	}
 
+	
+	public static SyncImportInfoVO chooseMostRecent(List<SyncImportInfoVO> records) {
+		SyncImportInfoVO mostRecent = records.get(0);
+		
+		for (SyncImportInfoVO rec : records) {
+			if (rec.getDateChanged() != null) {
+				if (mostRecent.getDateChanged() == null) {
+					mostRecent = rec;
+				}
+				else if (DateAndTimeUtilities.compareTo(mostRecent.getDateChanged(), rec.getDateChanged()) > 0) {
+					mostRecent = rec;
+				}
+			}
+			
+			if (rec.getDateVoided() != null) {
+				if (mostRecent.getDateVoided() == null) {
+					mostRecent = rec;
+				}
+				else if (DateAndTimeUtilities.compareTo(mostRecent.getDateVoided(), rec.getDateVoided()) > 0) {
+					mostRecent = rec;
+				}
+			}
+		}
+		
+		return mostRecent;
+	}
 }

@@ -23,8 +23,15 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
 		
-		searchClauses.addColumnToSelect("*");
-		searchClauses.addToClauseFrom(tableInfo.getTableName());
+		
+		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+			searchClauses.addColumnToSelect("patient.*, person.uuid");
+			searchClauses.addToClauseFrom("left join person on person.person_id = patient_id");
+		}
+		else {
+			searchClauses.addColumnToSelect("*");
+		}
+		
 		searchClauses.addToClauseFrom("LEFT JOIN " + tableInfo.generateFullStageTableName() + " ON record_origin_id  = " + tableInfo.getPrimaryKey());
 		
 		if (!this.selectAllRecords) {

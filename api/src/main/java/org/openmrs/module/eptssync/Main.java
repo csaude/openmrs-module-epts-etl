@@ -150,7 +150,7 @@ public class Main implements Runnable{
 		int i = 0;
 	
 		for (SyncConfiguration conf : confs) {
-			if (conf.isDestinationInstallationType()) {
+			if (conf.isDestinationSyncProcess()) {
 				i++;
 			}
 		}

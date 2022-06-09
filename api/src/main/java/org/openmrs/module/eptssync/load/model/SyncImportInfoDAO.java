@@ -36,11 +36,15 @@ public class SyncImportInfoDAO extends BaseDAO {
 	
 	public static void insertAllBatch(List<SyncImportInfoVO> records, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 			String sql = "";
-					
+
 			sql += "INSERT INTO \n"; 
 			sql += "	" + tableInfo.generateFullStageTableName() + "(	record_origin_id,\n";
 			sql += "											 		record_uuid,\n";
 			sql += "											 		json,\n";
+			sql += "											 		record_date_created,\n";
+			sql += "											 		record_date_changed,\n";
+			sql += "											 		record_date_voided,\n";
+			sql += "											 		consistent,\n";
 			sql += "													record_origin_location_code)\n";
 			sql += "VALUES\n";
 			
@@ -51,7 +55,16 @@ public class SyncImportInfoDAO extends BaseDAO {
 				
 				if (record.isExcluded()) continue;
 					
-				values += "(" + record.getRecordOriginId() + ",\""  + record.getRecordUuid() +"\",\"" + utilities.scapeQuotationMarks(record.getJson()) + "\",\"" + record.getRecordOriginLocationCode() +"\"),";
+				String recordUuuid = utilities.quote(record.getRecordUuid());
+				String recordOriginCode  = utilities.quote(record.getRecordOriginLocationCode());
+				String recordDateCreated= record.getDateCreated() != null ? utilities.quote(DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(record.getDateCreated())) : null;
+				String recordDateChanged= record.getDateChanged() != null ? utilities.quote(DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(record.getDateChanged())) : null;
+				String recordDateVoide= record.getDateVoided() != null ? utilities.quote(DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(record.getDateVoided())) : null;
+				
+				String json = record.getJson() != null ? utilities.quote( utilities.scapeQuotationMarks(record.getJson())) : null;
+				
+				
+				values += "(" + record.getRecordOriginId() + ","  + recordUuuid + "," + json + "," + recordDateCreated + "," + recordDateChanged + "," + recordDateVoide + "," + record.isConsistent() + "," + recordOriginCode  + "),";
 			}
 			
 			if (utilities.stringHasValue(values)) {
@@ -115,6 +128,9 @@ public class SyncImportInfoDAO extends BaseDAO {
 							   record.getLastSyncTryErr(),
 							   record.getRecordOriginLocationCode(),
 							   record.getLastUpdateDate(),
+							   record.getDateCreated(),
+							   record.getDateChanged(),
+							   record.getDateVoided(),
 							   record.getConsistent()};
 			
 			String sql = "";
@@ -127,8 +143,14 @@ public class SyncImportInfoDAO extends BaseDAO {
 			sql += "											 		last_sync_try_err,\n";
 			sql += "													record_origin_location_code,";
 			sql += "													last_update_date,";
+			sql += "											 		record_date_created,\n";
+			sql += "											 		record_date_changed,\n";
+			sql += "											 		record_date_voided,\n";
 			sql += "													consistent)";
 			sql += "	VALUES(?,\n";
+			sql += "		   ?,\n";
+			sql += "		   ?,\n";
+			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
@@ -187,6 +209,20 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		return find(SyncImportInfoVO.class, sql, params, conn);
 	}
+	
+
+	public static List<SyncImportInfoVO> getAllByUuid(SyncTableConfiguration tableConfiguration, String originRecordUuid, Connection conn) throws DBException {
+		Object[] params = {originRecordUuid};
+		
+		String sql = "";
+		
+		sql += " SELECT * \n";
+		sql += " FROM  	" + tableConfiguration.generateFullStageTableName() + "\n";
+		sql += " WHERE 	record_uuid = ? \n";
+		
+		return search(SyncImportInfoVO.class, sql, params, conn);
+	}
+	
 	
 	private static SyncImportInfoVO getGenericSpecificRecord(SynchronizationSearchParams searchParams, String function, Connection conn) throws DBException {
 		Object[] params = {};
@@ -327,7 +363,16 @@ public class SyncImportInfoDAO extends BaseDAO {
 	}
 	
 	public static void markAsConsistent(SyncTableConfiguration tableInfo, SyncImportInfoVO syncRecord, Connection conn) throws DBException {
-		Object[] params = {OpenMRSObject.CONSISTENCE_STATUS, syncRecord.getId()};
+		changeConsistenceStatus(tableInfo, syncRecord, true, conn);
+	}
+	
+	
+	public static void markAsInconsistent(SyncTableConfiguration tableInfo, SyncImportInfoVO syncRecord, Connection conn) throws DBException {
+		changeConsistenceStatus(tableInfo, syncRecord, false, conn);
+	}
+	
+	public static void changeConsistenceStatus(SyncTableConfiguration tableInfo, SyncImportInfoVO syncRecord, boolean consistent, Connection conn) throws DBException {
+		Object[] params = {consistent, syncRecord.getId()};
 		
 		String sql = " UPDATE " + tableInfo.generateFullStageTableName() + 
 					 " SET    consistent = ? " +
