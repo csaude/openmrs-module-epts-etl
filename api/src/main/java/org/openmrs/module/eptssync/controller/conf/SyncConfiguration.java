@@ -202,12 +202,12 @@ public class SyncConfiguration {
 	
 	
 	@JsonIgnore
-	public boolean isDataReconciliation() {
+	public boolean isDataReconciliationProcess() {
 		return SyncProcessType.isDataReconciliation(processType);
 	}
 	@JsonIgnore
 	public String getPojoPackage() {
-		return isDestinationSyncProcess() ? this.processType : this.originAppLocationCode;
+		return isDestinationSyncProcess() || isDataReconciliationProcess() ? this.processType : this.originAppLocationCode;
 	}
 	
 	public List<AppInfo> getAppsInfo() {
@@ -261,7 +261,7 @@ public class SyncConfiguration {
 		if (isSourceSyncProcess()) {
 			return this.originAppLocationCode + "_sync_stage_area";
 		}
-		if (isDBQuickLoadProcess() || isDataReconciliation()) {
+		if (isDBQuickLoadProcess() || isDataReconciliationProcess()) {
 			return "minimal_db_info";
 		}
 		else {

@@ -253,17 +253,20 @@ public class SearchClauses<T extends VO> {
 	}
 
 	public String generateSQL(Connection conn) throws DBException{
-		String sql =   " SELECT " + (isDistinctSelect() ? " DISTINCT " : "") + columnsToSelect  + 
-					   " \n FROM   " + clauseFrom + 
-					   " \n WHERE  1 = 1 \n" + (FuncoesGenericas.stringHasValue(clauses) ? " AND " + clauses : "") +
-					   "			  	 \n" + (FuncoesGenericas.stringHasValue(groupingFields) ? "GROUP BY " + groupingFields : "") +
-					   "			  	 \n" + (FuncoesGenericas.stringHasValue(orderByFields) ? "ORDER BY " + orderByFields + " " + this.orderByType : "") +
-					   "			  	 \n" + (FuncoesGenericas.stringHasValue(havingClauses) ? "HAVING " + havingClauses : "");
+		String sql =  " SELECT " + (isDistinctSelect() ? " DISTINCT " : "") + columnsToSelect + " \n"; 
+			   sql += " FROM   " + clauseFrom + " \n";
+			   sql += " WHERE  1 = 1 \n";
+			   sql += (FuncoesGenericas.stringHasValue(clauses) ? " AND " + clauses : "") ;
 	
-		if (this.searchParameters.isPhaseSelected()) {
-			sql = SQLUtilitie.createPhasedSelect(sql, this.searchParameters.getStartAt(), this.searchParameters.getQtdRecordPerSelected(), conn);
-		}
+			   sql +=  "			  	 \n" + (FuncoesGenericas.stringHasValue(groupingFields) ? "GROUP BY " + groupingFields : "") ;
+			   sql +=  "			  	 \n" + (FuncoesGenericas.stringHasValue(orderByFields) ? "ORDER BY " + orderByFields + " " + this.orderByType : "");
+			   sql +=		   "			  	 \n" + (FuncoesGenericas.stringHasValue(havingClauses) ? "HAVING " + havingClauses : "");
 	
+
+				if (this.searchParameters.isPhaseSelected()) {
+					sql = SQLUtilitie.createPhasedSelect(sql, this.searchParameters.getStartAt(), this.searchParameters.getQtdRecordPerSelected(), conn);
+				}
+				
 		return sql;
 	}
 	

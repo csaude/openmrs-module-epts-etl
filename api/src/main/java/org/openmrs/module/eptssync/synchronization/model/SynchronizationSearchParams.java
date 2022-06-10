@@ -2,27 +2,23 @@ package org.openmrs.module.eptssync.synchronization.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.eptssync.common.model.SyncImportInfoSearchParams;
+import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfoVO>{
+public class SynchronizationSearchParams extends SyncImportInfoSearchParams{
 	private boolean forProgressMeter;
 	
-	private String appOriginLocationCode;
-	
 	public SynchronizationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String appOriginLocationCode) {
-		super(tableInfo, limits);
+		super(tableInfo, limits, appOriginLocationCode);
 		
 		setOrderByFields("id");
-		
-		this.appOriginLocationCode = appOriginLocationCode;
 	}
 	
 	@Override
@@ -52,7 +48,7 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 		}
 		
 		searchClauses.addToClauses("record_origin_location_code = ?");
-		searchClauses.addToParameters(this.appOriginLocationCode);
+		searchClauses.addToParameters(this.getAppOriginLocationCode());
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());
@@ -71,7 +67,7 @@ public class SynchronizationSearchParams extends SyncSearchParams<SyncImportInfo
 		Class<OpenMRSObject> clazz = tableInfo.getSyncRecordClass();
 		
 		OpenMRSObjectSearchParams<OpenMRSObject> migratedRecordSearchParams = new OpenMRSObjectSearchParams<OpenMRSObject>(getTableInfo(), clazz);
-		migratedRecordSearchParams.setOriginAppLocationCode(this.appOriginLocationCode);
+		migratedRecordSearchParams.setOriginAppLocationCode(this.getAppOriginLocationCode());
 		
 		int migrated = SearchParamsDAO.countAll(migratedRecordSearchParams, conn);
 		int notMigrated = countNotProcessedRecords(conn);

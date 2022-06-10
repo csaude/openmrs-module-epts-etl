@@ -17,6 +17,8 @@ import org.openmrs.module.eptssync.export.controller.SyncExportController;
 import org.openmrs.module.eptssync.inconsistenceresolver.controller.InconsistenceSolverController;
 import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
 import org.openmrs.module.eptssync.pojogeneration.controller.PojoGenerationController;
+import org.openmrs.module.eptssync.reconciliation.controller.SyncCentralAndRemoteDataReconciliationController;
+import org.openmrs.module.eptssync.resolveconflictsinstagearea.controller.SyncResolveConflictsInStageAreaController;
 import org.openmrs.module.eptssync.synchronization.controller.SyncController;
 import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -328,7 +330,7 @@ public class SyncOperationConfig {
 	}
 	
 	@JsonIgnore
-	public boolean isMissungRecordsDetector() {
+	public boolean isMissingRecordsDetector() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_MISSING_RECORDS_DETECTOR);
 	}
 	
@@ -431,9 +433,15 @@ public class SyncOperationConfig {
 		if (isDBQuickExport()) {
 			return new SyncDBQuickExportController(parent, this);
 		}
-		
-		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");
-		
+		else
+		if (isMissingRecordsDetector() || isOutdateRecordsDetector() || isPhantomRecordsDetector())	{
+			return new SyncCentralAndRemoteDataReconciliationController(parent, this);
+		}
+		else
+		if (isResolveConflictsInStageArea()) {
+			return new SyncResolveConflictsInStageAreaController(parent, this);
+		}
+		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");		
 	}
 	
 	public void validate () {
@@ -462,7 +470,7 @@ public class SyncOperationConfig {
 			if (!this.canBeRunInDBQuickLoadProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in db quick load process\n";
 		}
 		else
-		if (this.getRelatedSyncConfig().isDataReconciliation()) {
+		if (this.getRelatedSyncConfig().isDataReconciliationProcess()) {
 			if (!this.canBeRunInDataReconciliationProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in data reconciliation process\n";
 		}
 		
@@ -534,7 +542,7 @@ public class SyncOperationConfig {
 	
 	@JsonIgnore
 	public boolean canBeRunInDataReconciliationProcess() {
-		return utilities.existOnArray(getSupportedOperationsInDBQuickExportProcess(), this.operationType);
+		return utilities.existOnArray(getSupportedOperationsInDataReconciliationProcess(), this.operationType);
 	}
 		
 	public static List<String> getSupportedOperationsInDataReconciliationProcess() {

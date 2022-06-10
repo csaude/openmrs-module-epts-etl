@@ -55,7 +55,12 @@ public class TableOperationProgressInfo extends BaseVO{
 			return ((DestinationOperationController)controller).getAppOriginLocationCode();
 		}
 		 
-		if (controller.getOperationConfig().isDatabasePreparationOperation() || controller.getOperationConfig().isPojoGeneration()) return "central_site"; 
+		if (controller.getOperationConfig().isDatabasePreparationOperation() || 
+				controller.getOperationConfig().isPojoGeneration() || 
+						controller.getOperationConfig().isResolveConflictsInStageArea() ||
+							controller.getOperationConfig().isMissingRecordsDetector() ||
+								controller.getOperationConfig().isOutdateRecordsDetector() ||
+									controller.getOperationConfig().isPhantomRecordsDetector()) return "central_site"; 
 		
 		throw new ForbiddenException("The originAppCode cannot be determined for "+controller.getOperationType() + " operation!");
 	}

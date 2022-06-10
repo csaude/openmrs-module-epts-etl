@@ -7,13 +7,13 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
+import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
 import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
-import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
-import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;

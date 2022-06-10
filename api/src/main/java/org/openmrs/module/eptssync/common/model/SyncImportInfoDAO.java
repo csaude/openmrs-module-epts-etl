@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.load.model;
+package org.openmrs.module.eptssync.common.model;
 
 import java.sql.Connection;
 import java.util.List;
@@ -7,7 +7,6 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
@@ -224,15 +223,18 @@ public class SyncImportInfoDAO extends BaseDAO {
 	}
 	
 	
-	private static SyncImportInfoVO getGenericSpecificRecord(SynchronizationSearchParams searchParams, String function, Connection conn) throws DBException {
+	private static SyncImportInfoVO getGenericSpecificRecord(SyncImportInfoSearchParams searchParams, String function, Connection conn) throws DBException {
 		Object[] params = {};
 		
 		String extraCondition;
 		
-		extraCondition = "last_sync_date IS NULL OR last_sync_date < ?";
-			
-		params = utilities.addToParams(params.length, params, searchParams.getSyncStartDate());
-	
+		extraCondition = "";
+		
+		if (searchParams.getSyncStartDate() != null) {
+			extraCondition = "last_sync_date IS NULL OR last_sync_date < ?";
+			params = utilities.addToParams(params.length, params, searchParams.getSyncStartDate());
+		}
+		
 		String sql = "";
 		
 		sql += " SELECT * \n";
@@ -245,11 +247,11 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return find(SyncImportInfoVO.class, sql, params, conn);		
 	}
 	
-	public static SyncImportInfoVO getFirstRecord(SynchronizationSearchParams searchParams, Connection conn) throws DBException {
+	public static SyncImportInfoVO getFirstRecord(SyncImportInfoSearchParams searchParams, Connection conn) throws DBException {
 		return getGenericSpecificRecord(searchParams, "min", conn);
 	}
 	
-	public static SyncImportInfoVO getLastRecord(SynchronizationSearchParams searchParams, Connection conn) throws DBException {
+	public static SyncImportInfoVO getLastRecord(SyncImportInfoSearchParams searchParams, Connection conn) throws DBException {
 		return getGenericSpecificRecord(searchParams, "max", conn);
 	}
 	

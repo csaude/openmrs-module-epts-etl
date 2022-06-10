@@ -8,10 +8,10 @@ import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickexport.engine.SyncDBQuickExportEngine;
-import org.openmrs.module.eptssync.dbquickexport.model.ExportInfoDAO;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
@@ -41,7 +41,7 @@ public class SyncDBQuickExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return ExportInfoDAO.getFirstRecord(tableInfo, conn);
+			return OpenMRSObjectDAO.getFirstRecord(tableInfo, conn);
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -57,7 +57,7 @@ public class SyncDBQuickExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return ExportInfoDAO.getLastRecord(tableInfo, conn);
+			return OpenMRSObjectDAO.getLastRecord(tableInfo, conn);
 		} catch (DBException e) {
 			e.printStackTrace();
 			

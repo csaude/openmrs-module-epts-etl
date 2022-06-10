@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.resolveduplications.model;
+package org.openmrs.module.eptssync.resolveconflictsinstagearea.model;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,7 +10,7 @@ import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.resolveduplications.engine.SyncResolveConflictsInStageAreaEngine;
+import org.openmrs.module.eptssync.resolveconflictsinstagearea.engine.SyncResolveConflictsInStageAreaEngine;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 

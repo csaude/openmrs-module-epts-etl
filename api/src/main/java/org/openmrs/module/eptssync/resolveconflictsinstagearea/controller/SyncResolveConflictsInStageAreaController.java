@@ -1,14 +1,16 @@
-package org.openmrs.module.eptssync.reconciliation.controller;
+package org.openmrs.module.eptssync.resolveconflictsinstagearea.controller;
 
+import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
+import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
-import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.reconciliation.engine.SyncCentralAndRemoteDataReconciliationEngine;
+import org.openmrs.module.eptssync.resolveconflictsinstagearea.engine.SyncResolveConflictsInStageAreaEngine;
+import org.openmrs.module.eptssync.resolveconflictsinstagearea.model.ResolveConflictsInStageAreaSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -19,41 +21,30 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  *
  */
-public class SyncCentralAndRemoteDataReconciliationController extends OperationController {
-	private AppInfo actionPerformeApp;
-
+public class SyncResolveConflictsInStageAreaController extends OperationController {
 	
-	public SyncCentralAndRemoteDataReconciliationController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public SyncResolveConflictsInStageAreaController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	}
 	
-	public AppInfo getActionPerformeApp() {
-		return actionPerformeApp;
-	}
-	
-	@Override
-	public void onStart() {
-		super.onStart();
-		
-		if (!existDetectedRecordInfoTable()) {
-			generateDetectedRecordInfoTable();
-		}
-	}
-	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new SyncCentralAndRemoteDataReconciliationEngine(monitor, limits);
+		return new SyncResolveConflictsInStageAreaEngine(monitor, limits);
 	}
 
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
-		try {
-			
+		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(tableInfo, null, conn);
 		
+		try {
+			SyncImportInfoVO rec = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
+			
+			return rec != null ? rec.getId() :  0;
+			
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -68,7 +59,12 @@ public class SyncCentralAndRemoteDataReconciliationController extends OperationC
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
+		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(tableInfo, null, conn);
+		
 		try {
+			SyncImportInfoVO rec = SyncImportInfoDAO.getLastRecord(searchParams, conn);
+			
+			return rec != null ? rec.getId() :  0;
 			
 		} catch (DBException e) {
 			e.printStackTrace();

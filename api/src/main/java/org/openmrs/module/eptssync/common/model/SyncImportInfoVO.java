@@ -1,6 +1,8 @@
-package org.openmrs.module.eptssync.load.model;
+package org.openmrs.module.eptssync.common.model;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -52,6 +54,15 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	
 	public SyncImportInfoVO(){
 		this.migrationStatus = MIGRATION_STATUS_PENDING;
+	}
+	
+	@Override
+	public void load(ResultSet resultSet) throws SQLException {
+		super.load(resultSet);
+		
+		try {this.dateCreated = resultSet.getDate("record_date_created");} catch (SQLException e) {}
+		try {this.dateChanged = resultSet.getDate("record_date_changed");} catch (SQLException e) {}
+		try {this.dateVoided = resultSet.getDate("record_date_voided");} catch (SQLException e) {}
 	}
 	
 	@JsonIgnore
@@ -383,7 +394,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 				if (mostRecent.getDateChanged() == null) {
 					mostRecent = rec;
 				}
-				else if (DateAndTimeUtilities.compareTo(mostRecent.getDateChanged(), rec.getDateChanged()) > 0) {
+				else if (DateAndTimeUtilities.compareTo(rec.getDateChanged(), mostRecent.getDateChanged()) > 0) {
 					mostRecent = rec;
 				}
 			}
@@ -392,7 +403,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 				if (mostRecent.getDateVoided() == null) {
 					mostRecent = rec;
 				}
-				else if (DateAndTimeUtilities.compareTo(mostRecent.getDateVoided(), rec.getDateVoided()) > 0) {
+				else if (DateAndTimeUtilities.compareTo(rec.getDateVoided(), mostRecent.getDateVoided()) > 0) {
 					mostRecent = rec;
 				}
 			}

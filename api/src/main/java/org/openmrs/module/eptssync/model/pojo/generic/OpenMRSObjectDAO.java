@@ -5,9 +5,9 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -231,7 +231,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			
 			//For old version of cohort_member, there is no uuid. This specific situation will be observerd on not upgraded source database
 			if (e.getLocalizedMessage().contains("Unknown column") && e.getLocalizedMessage().contains("cohort_member.uuid")){
-				tableInfo.setUuidColumnNotExists(true);
+				//tableInfo.setUuidColumnNotExists(true);
 				
 				return getGenericSpecificRecord(tableInfo, originAppLocationCode, function, syncStartDate, conn);
 			}
@@ -460,5 +460,25 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			return maxAcceptableId;
 		}
 	}
+
+	public static long getFirstRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
+		return getSpecificRecord(tableConf, "min", conn);
+	}
 	
+	public static long getLastRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
+		return getSpecificRecord(tableConf, "max",  conn);
+	}
+	
+	public static long getSpecificRecord(SyncTableConfiguration tableConf, String function, Connection conn) throws DBException, ForbiddenOperationException {
+			
+		String 	sql =  " SELECT " + function + "("+ tableConf.getPrimaryKey() +") value\n";
+				sql += " FROM " + tableConf.getTableName() + "\n";
+				sql += " WHERE 1 = 1;";
+						
+		Object[] params = {};
+		
+		SimpleValue v = find(SimpleValue.class, sql, params, conn);
+		
+		return v != null && v.hasValue() ? v.longValue() : 0;
+	}	
 }

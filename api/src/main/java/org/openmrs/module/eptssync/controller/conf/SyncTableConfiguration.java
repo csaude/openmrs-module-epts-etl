@@ -44,8 +44,6 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	private boolean disabled;
 	
-	private boolean uuidColumnNotExists;
-	
 	public SyncTableConfiguration() {
 	}
 	
@@ -94,15 +92,6 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		//return uuidColumnNotExists;
 	}
-	
-	public void setUuidColumnNotExists(boolean uuidColumnNotExists) {
-		this.uuidColumnNotExists = uuidColumnNotExists;
-	}
-	
-	/*@JsonIgnore
-	public boolean isFirstExport() {
-		return this.relatedSyncTableInfoSource.isFirstExport();
-	}*/
 	
 	@JsonIgnore
 	public String getParentsAsString() {
@@ -615,4 +604,15 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public boolean isDestinationInstallationType() {
 		return getRelatedSynconfiguration().isDestinationSyncProcess();
 	}
+	
+	@JsonIgnore
+	public boolean isDataReconciliation() {
+		return getRelatedSynconfiguration().isDataReconciliationProcess();
+	}
+	
+	@JsonIgnore
+	public boolean isDBQuickLoad() {
+		return getRelatedSynconfiguration().isDBQuickLoadProcess();
+	}
+	
 }

@@ -1,5 +1,7 @@
 package org.openmrs.module.eptssync.synchronization.controller;
 
+import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
+import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
@@ -7,8 +9,6 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.load.model.SyncImportInfoDAO;
-import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.synchronization.engine.SyncEngine;
 import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
