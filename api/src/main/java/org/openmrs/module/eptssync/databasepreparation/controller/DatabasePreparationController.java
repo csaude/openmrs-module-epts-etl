@@ -152,6 +152,7 @@ public class DatabasePreparationController extends OperationController {
 		}
 	}
 	
+
 	private void generateTableOperationProgressInfo() {
 		OpenConnection conn = openConnection();
 		

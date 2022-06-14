@@ -60,6 +60,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	 * @throws ParentNotYetMigratedException if the parent is not ignorable and is not found on database
 	 * @throws DBException
 	 */
+	@Override
 	public OpenMRSObject retrieveParentInDestination(Integer parentId, SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException {
 		if (parentId == null) return null;
 		
@@ -121,7 +122,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	@Override
 	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{ 
 		if (tableConfiguration.isMetadata()) {
-			OpenMRSObject recordOnDBByUuid = OpenMRSObjectDAO.thinGetByUuid(this.getClass(), this.getUuid(), conn);
+			OpenMRSObject recordOnDBByUuid = OpenMRSObjectDAO.getByUuid(this.getClass(), this.getUuid(), conn);
 			
 			if (recordOnDBByUuid == null) {
 				//Check if ID is free 
@@ -146,8 +147,8 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		else {
 			OpenMRSObject recordOnDB = null;
 			
-			if (tableConfiguration.getRelatedSynconfiguration().isDestinationSyncProcess()) {
-				recordOnDB = OpenMRSObjectDAO.thinGetByUuid(this.getClass(), this.getRelatedSyncInfo().getRecordUuid(), conn);
+			if (tableConfiguration.getRelatedSynconfiguration().isDestinationSyncProcess() || tableConfiguration.getRelatedSynconfiguration().isDataReconciliationProcess()) {
+				recordOnDB = OpenMRSObjectDAO.getByUuid(this.getClass(), this.getRelatedSyncInfo().getRecordUuid(), conn);
 			}
 			else {
 				recordOnDB = OpenMRSObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
@@ -410,7 +411,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	
 	@Override
 	public void loadDestParentInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn) throws ParentNotYetMigratedException, DBException {
-		if (!tableInfo.getRelatedSynconfiguration().isDestinationSyncProcess()) throw new ForbiddenOperationException("You can only load destination parent in a destination installation");
+		if (!tableInfo.getRelatedSynconfiguration().isDestinationSyncProcess() && !tableInfo.getRelatedSynconfiguration().isDataReconciliationProcess()) throw new ForbiddenOperationException("You can only load destination parent in a destination installation");
 		
 		for (RefInfo refInfo: tableInfo.getParents()) {
 			if (tableInfo.getSharePkWith() != null && tableInfo.getSharePkWith().equals(refInfo.getRefTableConfiguration().getTableName())) {

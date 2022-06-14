@@ -141,4 +141,8 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 	
+	@Override
+	public String toString() {
+		return this.uuid;
+	}
 }

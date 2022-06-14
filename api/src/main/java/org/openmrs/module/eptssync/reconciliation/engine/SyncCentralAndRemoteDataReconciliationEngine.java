@@ -2,12 +2,8 @@ package org.openmrs.module.eptssync.reconciliation.engine;
 
 import java.io.File;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.eptssync.changedrecordsdetector.controller.ChangedRecordsDetectorController;
-import org.openmrs.module.eptssync.changedrecordsdetector.model.ChangedRecordsDetectorSearchParams;
-import org.openmrs.module.eptssync.changedrecordsdetector.model.DetectedRecordInfo;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
@@ -16,23 +12,17 @@ import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
+import org.openmrs.module.eptssync.reconciliation.controller.SyncCentralAndRemoteDataReconciliationController;
+import org.openmrs.module.eptssync.reconciliation.model.CentralAndRemoteDataReconciliationSearchParams;
+import org.openmrs.module.eptssync.reconciliation.model.ConciliationReasonType;
+import org.openmrs.module.eptssync.reconciliation.model.DataReconciliationRecord;
 import org.openmrs.module.eptssync.reconciliation.model.DataReconciliationSearchLimits;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-
-import fgh.spi.changedrecordsdetector.ChangedRecord;
-import fgh.spi.changedrecordsdetector.DetectedRecordService;
 
 public class SyncCentralAndRemoteDataReconciliationEngine extends Engine {
 		
 	public SyncCentralAndRemoteDataReconciliationEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
-		
-		DetectedRecordService action = DetectedRecordService.getInstance();
-		
-		DBConnectionInfo connInfo = getRelatedOperationController().getActionPerformeApp().getConnInfo();
-			
-		action.configureDBService(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), connInfo);
 	}
 	
 	@Override
@@ -76,8 +66,8 @@ public class SyncCentralAndRemoteDataReconciliationEngine extends Engine {
 	}
 	
 	@Override
-	public ChangedRecordsDetectorController getRelatedOperationController() {
-		return (ChangedRecordsDetectorController) super.getRelatedOperationController();
+	public SyncCentralAndRemoteDataReconciliationController getRelatedOperationController() {
+		return (SyncCentralAndRemoteDataReconciliationController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -86,34 +76,26 @@ public class SyncCentralAndRemoteDataReconciliationEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
-		List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(syncRecords.size());
+		//List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
+		//List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(syncRecords.size());
 		
-		this.getMonitor().logInfo("PERFORMING CHANGE DETECTED ACTION '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		this.getMonitor().logInfo("PERFORMING DATA RECONCILIATION ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 
-		for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
-			try {
-				processedRecords.add(DetectedRecordInfo.generate(obj, getRelatedOperationController().getActionPerformeApp().getApplicationCode(), getMonitor().getSyncTableInfo().getOriginAppLocationCode()));
-				
-				if (getRelatedOperationController().getActionPerformeApp().isSinglePerformingMode()) {
-					DetectedRecordService.getInstance().performeAction(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords.get(processedRecords.size() - 1), getSyncTableConfiguration());
-				}
-				
-			} catch (Exception e) {
-				e.printStackTrace();
-				
-				logInfo("Any error occurred processing record [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");
-				
-				throw new RuntimeException(e);
-			}
-		}
-		
-		if (getRelatedOperationController().getActionPerformeApp().isBatchPerformingMode()) {
-			DetectedRecordService.getInstance().performeAction(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords, getSyncTableConfiguration());
-		}
-		
-		this.getMonitor().logInfo("ACTION PERFORMED FOR CHANGED RECORDS '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
+		this.getMonitor().logInfo("RECONCILIATION DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
 	
+		
+		if (getRelatedOperationController().isMissingRecordsDetector()) {
+			performeMissingRecordsCreation(syncRecords, conn);
+		}
+		else
+		if (getRelatedOperationController().isOutdateRecordsDetector()) {
+			performeOutdatedRecordsUpdate(syncRecords, conn);
+		}
+		else
+		if (getRelatedOperationController().isPhantomRecordsDetector()) {
+			performePhantomRecordsRemotion(syncRecords, conn);
+		}
+		
 		getLimits().moveNext(getQtyRecordsPerProcessing());
 		
 		saveCurrentLimits();
@@ -127,6 +109,39 @@ public class SyncCentralAndRemoteDataReconciliationEngine extends Engine {
 		}
 	}
 	
+	private void performeMissingRecordsCreation(List<SyncRecord> syncRecords, Connection conn) throws DBException{
+		for (SyncRecord record: syncRecords) {
+			DataReconciliationRecord data = new DataReconciliationRecord(((OpenMRSObject)record).getUuid() , getSyncTableConfiguration(), ConciliationReasonType.MISSING);
+			
+			data.reloadRelatedRecordDataFromRemote(conn);
+			
+			data.consolidateAndSaveData(conn);
+			
+			data.save(conn);
+		}
+	}
+	
+	private void performeOutdatedRecordsUpdate(List<SyncRecord> syncRecords, Connection conn) throws DBException{
+		for (SyncRecord record: syncRecords) {
+			DataReconciliationRecord data = new DataReconciliationRecord(((OpenMRSObject)record).getUuid() , getSyncTableConfiguration(), ConciliationReasonType.OUTDATED);
+			
+			data.reloadRelatedRecordDataFromRemote(conn);
+			
+			data.consolidateAndSaveData(conn);
+			
+			data.save(conn);
+		}	
+	}
+	
+	private void performePhantomRecordsRemotion(List<SyncRecord> syncRecords, Connection conn) throws DBException{
+		for (SyncRecord record: syncRecords) {
+			DataReconciliationRecord data = new DataReconciliationRecord(((OpenMRSObject)record).getUuid() , getSyncTableConfiguration(), ConciliationReasonType.PHANTOM);
+			
+			data.removeRelatedRecord(conn);
+			data.save(conn);
+		}	
+	}
+	
 	private void saveCurrentLimits() {
 		getLimits().save();
 	}
@@ -137,7 +152,7 @@ public class SyncCentralAndRemoteDataReconciliationEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ChangedRecordsDetectorSearchParams(this.getSyncTableConfiguration(),  getRelatedOperationController().getActionPerformeApp().getApplicationCode(), limits, getRelatedOperationController().getOperationType(), conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new CentralAndRemoteDataReconciliationSearchParams(this.getSyncTableConfiguration(), limits, getRelatedOperationController().getOperationType(), conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
 		

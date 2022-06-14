@@ -15,15 +15,12 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchParams<OpenMRSObject>{
 	private boolean selectAllRecords;
-	private String appCode;
 	private String type;
 	
-	public CentralAndRemoteDataReconciliationSearchParams(SyncTableConfiguration tableInfo, String appCode, RecordLimits limits, String type, Connection conn) {
+	public CentralAndRemoteDataReconciliationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String type, Connection conn) {
 		super(tableInfo, limits);
-		
-		this.appCode = appCode;
-		
-		setOrderByFields(tableInfo.getPrimaryKey());
+			
+		//setOrderByFields(tableInfo.getPrimaryKey());
 		
 		this.type = type;
 	}
@@ -41,7 +38,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 				searchClauses.addToClauses("not exists (select * from person dest_ inner join patient on patient_id = person_id where dest_.uuid = src_.record_uuid)");
 			}
 			else {
-				searchClauses.addToClauses("not exists (select * from " + getTableInfo().getTableName() + " where dest_.uuid = src_.record_uuid)");
+				searchClauses.addToClauses("not exists (select * from " + getTableInfo().getTableName() + " dest_ where dest_.uuid = src_.record_uuid)");
 			}
 		}
 		else
@@ -56,14 +53,15 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 				searchClauses.addToClauseFrom("person dest_ inner patient on patient_id = person_id");
 			}
 				
-			searchClauses.addToClauseFrom("inner join " + getTableInfo().generateFullStageTableName() + " on dest_.uuid = src_.record_uuid");
+			searchClauses.addToClauseFrom("inner join " + getTableInfo().generateFullStageTableName() + " src_ on dest_.uuid = src_.record_uuid");
 			
 			searchClauses.addToClauses("src_.consistent = 1");
-			searchClauses.addToClauses("(dest_.date_created < src_.record_date_created " + 
-												"or (dest_.date_changed is null and src_.record_date_changed is not null) " + 
+			searchClauses.addToClauses("(	(dest_.date_changed is null and src_.record_date_changed is not null) " + 
+												" or (dest_.date_changed is not null and src_.record_date_changed is null) " + 
 													"or (dest_.date_voided is null and src_.record_date_voided is not null) " +
-														"or (dest_.date_changed < src_.record_date_changed)" +
-															"or (dest_.date_voided < src_.record_date_voided))");
+														"or (dest_.date_voided is not null and src_.record_date_voided is null) " +
+															"or (dest_.date_changed < src_.record_date_changed)" +
+																"or (dest_.date_voided < src_.record_date_voided))");
 		}
 		else
 		if (this.type.equals(SyncOperationConfig.SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR)) {
@@ -77,7 +75,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 				searchClauses.addToClauseFrom("person dest_ inner patient on patient_id = person_id");
 			}
 				
-			searchClauses.addToClauses("not exists (select * from " + getTableInfo().generateFullStageTableName() + " where dest_.uuid = src_.record_uuid)");
+			searchClauses.addToClauses("not exists (select * from " + getTableInfo().generateFullStageTableName() + " src_ where dest_.uuid = src_.record_uuid)");
 		}
 		else {
 			throw new ForbiddenOperationException("Operation " + this.type + " not supported!");
@@ -90,7 +88,8 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 				if (utilities.isStringIn(type, SyncOperationConfig.SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR, SyncOperationConfig.SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR)) {
 					searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
 				}
-				else {
+				else 
+				if (utilities.isStringIn(type, SyncOperationConfig.SYNC_OPERATION_MISSING_RECORDS_DETECTOR)){
 					searchClauses.addToClauses("id between ? and ?");
 				}
 				
@@ -114,7 +113,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		CentralAndRemoteDataReconciliationSearchParams auxSearchParams = new CentralAndRemoteDataReconciliationSearchParams(this.tableInfo, this.appCode, this.limits, this.type, conn);
+		CentralAndRemoteDataReconciliationSearchParams auxSearchParams = new CentralAndRemoteDataReconciliationSearchParams(this.tableInfo, this.limits, this.type, conn);
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);

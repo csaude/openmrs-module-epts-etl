@@ -209,6 +209,19 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return find(SyncImportInfoVO.class, sql, params, conn);
 	}
 	
+	public static SyncImportInfoVO getWinRecord(SyncTableConfiguration tableConfiguration, String originRecordUuid, Connection conn) throws DBException {
+		Object[] params = {originRecordUuid, 1};
+		
+		String sql = "";
+		
+		sql += " SELECT * \n";
+		sql += " FROM  	" + tableConfiguration.generateFullStageTableName() + "\n";
+		sql += " WHERE 	record_uuid = ? \n";
+		sql += " 		AND consistent = ? \n";
+		
+		return find(SyncImportInfoVO.class, sql, params, conn);
+	}
+	
 
 	public static List<SyncImportInfoVO> getAllByUuid(SyncTableConfiguration tableConfiguration, String originRecordUuid, Connection conn) throws DBException {
 		Object[] params = {originRecordUuid};
@@ -255,6 +268,39 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return getGenericSpecificRecord(searchParams, "max", conn);
 	}
 	
+	
+	public static SyncImportInfoVO getFirstMissingRecordInDestination(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		return getMissingRecordInDestination(tableConfiguration, "min", conn);
+	}
+	
+	public static SyncImportInfoVO getLastMissingRecordInDestination(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		return getMissingRecordInDestination(tableConfiguration, "max", conn);
+	}
+	
+	private static SyncImportInfoVO getMissingRecordInDestination(SyncTableConfiguration tableConfiguration, String function, Connection conn) throws DBException {
+		Object[] params = {};
+		
+		String sql = "";
+		
+		String table = tableConfiguration.getTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
+		
+		String tablesToSelect = stageTable + " src_ LEFT JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
+		
+		if (table.equalsIgnoreCase("patient")) {
+			tablesToSelect = stageTable + " src_ LET JOIN person dest_ on dest_.uuid = src_.record_uuid LEFT JOIN patient ON patient_id = person_id ";
+		}
+		
+		sql += " SELECT * \n";
+		sql += " FROM  	" + stageTable + "\n";
+		sql += " WHERE 	1 = 1 \n";
+		sql += "		AND id = ";
+		sql += " 			 (	SELECT " + function+ "(id)\n";
+		sql += "				FROM   " + tablesToSelect + "\n";
+		sql += "				WHERE " +  tableConfiguration.getPrimaryKey() + " IS NULL\n)";
+		
+		return find(SyncImportInfoVO.class, sql, params, conn);		
+	}
 	
 	/**
 	 * For each originAppLocationId retrieve on record from the diven tableName

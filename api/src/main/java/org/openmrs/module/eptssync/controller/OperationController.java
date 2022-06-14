@@ -428,7 +428,7 @@ public abstract class OperationController implements Controller{
 			subFolder = "source" + FileUtilities.getPathSeparator() + getOperationType() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
 		}
 		else
-		if (getConfiguration().isDestinationSyncProcess() || getConfiguration().isDBQuickLoadProcess()) {
+		if (getConfiguration().isDestinationSyncProcess() || getConfiguration().isDBQuickLoadProcess() || getConfiguration().isDataReconciliationProcess()) {
 			String extraPath =  "";
 			
 			if (getOperationConfig().isDatabasePreparationOperation()) {

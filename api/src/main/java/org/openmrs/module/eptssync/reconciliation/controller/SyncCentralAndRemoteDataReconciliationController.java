@@ -1,12 +1,18 @@
 package org.openmrs.module.eptssync.reconciliation.controller;
 
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
+import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
-import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.reconciliation.engine.SyncCentralAndRemoteDataReconciliationEngine;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -20,26 +26,21 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  *
  */
 public class SyncCentralAndRemoteDataReconciliationController extends OperationController {
-	private AppInfo actionPerformeApp;
-
-	
+		
 	public SyncCentralAndRemoteDataReconciliationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	}
 	
-	public AppInfo getActionPerformeApp() {
-		return actionPerformeApp;
-	}
-	
 	@Override
 	public void onStart() {
-		super.onStart();
-		
-		if (!existDetectedRecordInfoTable()) {
-			generateDetectedRecordInfoTable();
+			
+		if (!existDataReconciliationInfoTable()) {
+			generateDataReconciliationInfoTable();
 		}
+		
+		super.onStart();
 	}
 	
 	@Override
@@ -47,13 +48,44 @@ public class SyncCentralAndRemoteDataReconciliationController extends OperationC
 		return new SyncCentralAndRemoteDataReconciliationEngine(monitor, limits);
 	}
 
+	public boolean isMissingRecordsDetector() {
+		return this.getOperationType().equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_MISSING_RECORDS_DETECTOR);
+	}
+	
+	public boolean isOutdateRecordsDetector() {
+		return this.getOperationType().equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR);
+	}
+
+	public boolean isPhantomRecordsDetector() {
+		return this.getOperationType().equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR);
+	}
+	
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
-		try {
+		int id = 0;
 			
+		try {
+			if (isMissingRecordsDetector()) {
+				SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(tableInfo, conn);
+				
+				id = record != null ? record.getId() : 0;
+			}
+			else
+			if (isOutdateRecordsDetector()) {
+				OpenMRSObject record = OpenMRSObjectDAO.getFirstOutDatedRecordInDestination(tableInfo, conn);
+				
+				id = record != null ? record.getObjectId() : 0;
+			}
+			else
+			if (isPhantomRecordsDetector()){
+				OpenMRSObject record = OpenMRSObjectDAO.getFirstPhantomRecordInDestination(tableInfo, conn);
+				
+				id = record != null ? record.getObjectId() : 0;
+			}
 		
+			return id;
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -68,8 +100,28 @@ public class SyncCentralAndRemoteDataReconciliationController extends OperationC
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
+		int id = 0;
+		
 		try {
-			
+			if (isMissingRecordsDetector()) {
+				SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(tableInfo, conn);
+				
+				id = record != null ? record.getId() : 0;
+			}
+			else
+			if (isOutdateRecordsDetector()) {
+				OpenMRSObject record = OpenMRSObjectDAO.getLastOutDatedRecordInDestination(tableInfo, conn);
+				
+				id = record != null ? record.getObjectId() : 0;
+			}
+			else
+			if (isPhantomRecordsDetector()){
+				OpenMRSObject record = OpenMRSObjectDAO.getLastPhantomRecordInDestination(tableInfo, conn);
+				
+				id = record != null ? record.getObjectId() : 0;
+			}
+		
+			return id;
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -106,4 +158,58 @@ public class SyncCentralAndRemoteDataReconciliationController extends OperationC
 		
 		return conn;
 	}
+	
+	
+	public boolean existDataReconciliationInfoTable() {
+		OpenConnection conn = openConnection();
+		
+		String schema = getConfiguration().getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = "data_conciliation_info";
+
+		try {
+			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void generateDataReconciliationInfoTable() {
+		OpenConnection conn = openConnection();
+		
+		String sql = "";
+		
+		sql += "CREATE TABLE " + getConfiguration().getSyncStageSchema() + ".data_conciliation_info (\n";
+		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
+		sql += "record_uuid varchar(100) NOT NULL,\n";
+		sql += "record_origin_location_code varchar(100) NOT NULL,\n";
+		sql += "reasonType varchar(100) NOT NULL,\n";
+		sql += "table_name VARCHAR(100) NOT NULL,\n";
+		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
+		sql += "PRIMARY KEY (id)\n";
+		sql += ") ENGINE=InnoDB;\n";
+				
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+
+			st.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} 
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}	
+	}
+	
 }

@@ -276,7 +276,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	 */
 	private void refrieveSharedPKKey(SyncTableConfiguration tableConfiguration, OpenMRSObject source, int qtyTry, Connection conn) throws ParentNotYetMigratedException, DBException {
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.thinGetByUuid(tableConfiguration.getSharedKeyRefInfo(conn).getRefObjectClass(), this.getRecordUuid(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getByUuid(tableConfiguration.getSharedKeyRefInfo(conn).getRefObjectClass(), this.getRecordUuid(), conn);
 			
 			if (obj != null) {
 				source.setObjectId(obj.getObjectId());

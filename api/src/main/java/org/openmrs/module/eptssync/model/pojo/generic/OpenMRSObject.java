@@ -101,7 +101,8 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
 
 	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn) throws DBException;
-	
+	public abstract OpenMRSObject retrieveParentInDestination(Integer parentId, SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException;
+		
 	public abstract SyncImportInfoVO getRelatedSyncInfo();
 	public abstract void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo);
 	
