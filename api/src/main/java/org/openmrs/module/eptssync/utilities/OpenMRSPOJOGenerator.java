@@ -79,7 +79,7 @@ public class OpenMRSPOJOGenerator {
 			attElements = AttDefinedElements.define(rsMetaData.getColumnName(i), rsMetaData.getColumnTypeName(i), false, syncTableInfo);
 			
 			if (!isIgnorableField(rsMetaData.getColumnName(i))) {
-				attsDefinition = utilities.concatStrings(attsDefinition, attElements.getAttDefinition(), "\n");
+				attsDefinition = utilities.concatStringsWithSeparator(attsDefinition, attElements.getAttDefinition(), "\n");
 				getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, attElements.getSetterDefinition());
 				
 				getttersAndSetterDefinition += "\n \n";
@@ -106,7 +106,7 @@ public class OpenMRSPOJOGenerator {
 		attElements = AttDefinedElements.define(rsMetaData.getColumnName(qtyAttrs), rsMetaData.getColumnTypeName(qtyAttrs), true, syncTableInfo);
 		
 		if (!isIgnorableField(rsMetaData.getColumnName(qtyAttrs))) {
-			attsDefinition = utilities.concatStrings(attsDefinition, attElements.getAttDefinition(), "\n");
+			attsDefinition = utilities.concatStringsWithSeparator(attsDefinition, attElements.getAttDefinition(), "\n");
 			getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, attElements.getSetterDefinition());
 				
 			getttersAndSetterDefinition += "\n\n";
@@ -287,21 +287,12 @@ public class OpenMRSPOJOGenerator {
 		methodFromSuperClass += "		throw new RuntimeException(\"No found parent for: \" + parentAttName);\n";
 		
 		methodFromSuperClass += "	}\n\n";
-		
 			
-		String classDefinition ="package org.openmrs.module.eptssync.model.pojo.";
-		
-		classDefinition += syncTableInfo.isDestinationInstallationType() ? "" : "source.";
-		
-		classDefinition += syncTableInfo.getClasspackage() + "; \n \n";
+		String classDefinition ="package " + syncTableInfo.generateFullPackageName() + ";\n\n";
 		
 		classDefinition += "import org.openmrs.module.eptssync.model.pojo.generic.*; \n \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; \n \n";
-		//classDefinition += "import org.openmrs.module.eptssync.utilities.db.conn.DBException; \n";
 		classDefinition += "import org.openmrs.module.eptssync.utilities.AttDefinedElements; \n";
-		//classDefinition += "import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException; \n \n";
-		
-		//classDefinition += "import java.sql.Connection; \n";
 		classDefinition += "import java.sql.SQLException; \n";
 		classDefinition += "import java.sql.ResultSet; \n \n";
 		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";

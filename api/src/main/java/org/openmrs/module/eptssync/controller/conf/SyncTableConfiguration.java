@@ -286,6 +286,11 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			
 			RefInfo ref = generateRefInfo(refColumName, RefInfo.PARENT_REF_TYPE, refTableConfiguration, conn);
 			
+			if (utilities.existOnArray(auxRefInfo, ref)) {
+				logInfo("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' WAS ALREDY CONFIGURED! SKIPPING...");
+				continue;	
+			}
+			
 			RefInfo configuredParent = findParent(ref);
 			
 			if (configuredParent != null) {
@@ -396,11 +401,32 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 
 	@JsonIgnore
 	public String generateFullClassName() {
-		String packagename = "org.openmrs.module.eptssync.model.pojo.";
+		String basePackageName = "org.openmrs.module.eptssync.model.pojo";
 		
-		packagename += isDestinationInstallationType() ? "" : "source.";
+		String rootPackageName = isDestinationInstallationType() || isDataReconciliationProcess() ? "" : "source";
 		
-		return packagename  + getClasspackage() + "." + generateClassName();
+		String packageName = getClasspackage();
+		
+		String fullPackageName = utilities.concatStringsWithSeparator(basePackageName, rootPackageName, ".");
+		
+		fullPackageName = utilities.concatStringsWithSeparator(fullPackageName, packageName, ".");
+		
+		return  utilities.concatStringsWithSeparator(fullPackageName,  generateClassName(),  ".");
+	}
+	
+	@JsonIgnore
+	public String generateFullPackageName() {
+		String basePackageName = "org.openmrs.module.eptssync.model.pojo";
+		
+		String rootPackageName = isDestinationInstallationType() || isDataReconciliationProcess() ? "" : "source";
+		
+		String packageName = getClasspackage();
+		
+		String fullPackageName = utilities.concatStringsWithSeparator(basePackageName, rootPackageName, ".");
+		
+		fullPackageName = utilities.concatStringsWithSeparator(fullPackageName, packageName, ".");
+		
+		return fullPackageName;
 	}
 	
 	@JsonIgnore
@@ -585,7 +611,13 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	public RefInfo findParent(RefInfo parent) {
-		return utilities.findOnList(this.parents, parent);
+		if (!utilities.arrayHasElement(this.parents)) return null;
+		
+		for (RefInfo info : this.parents) {
+			if (info.getTableName().equals(parent.getTableName())) return info;
+		}
+		
+		return null;
 	}
 
 	@Override
@@ -606,7 +638,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	@JsonIgnore
-	public boolean isDataReconciliation() {
+	public boolean isDataReconciliationProcess() {
 		return getRelatedSynconfiguration().isDataReconciliationProcess();
 	}
 	

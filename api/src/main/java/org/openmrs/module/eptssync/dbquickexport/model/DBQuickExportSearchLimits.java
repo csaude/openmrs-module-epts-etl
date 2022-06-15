@@ -194,7 +194,7 @@ public class DBQuickExportSearchLimits extends RecordLimits {
 	
 	
 	public void moveNext(int qtyRecords) {
-		this.setFirstRecordId(this.getFirstRecordId() + qtyRecords - 1);
+		this.setFirstRecordId(this.getFirstRecordId() + qtyRecords);
 	}
 
 	public boolean hasThreadCode() {

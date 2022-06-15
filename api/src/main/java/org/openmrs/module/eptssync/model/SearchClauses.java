@@ -88,12 +88,12 @@ public class SearchClauses<T extends VO> {
 	 */
 	public void addColumnToSelect(String columnToSelect){
 		this.columnsToSelect +=  FuncoesGenericas.stringHasValue(this.columnsToSelect) ? "\n" : "";
-		this.columnsToSelect = FuncoesGenericas.concatStrings(this.columnsToSelect, columnToSelect, ",");
+		this.columnsToSelect = FuncoesGenericas.concatStringsWithSeparator(this.columnsToSelect, columnToSelect, ",");
 	}
 		
 	public void addToGroupingFields(String field){
 		this.groupingFields += FuncoesGenericas.stringHasValue(this.groupingFields) ? "\n" : "";
-		this.groupingFields = FuncoesGenericas.concatStrings(this.groupingFields, field, ",");
+		this.groupingFields = FuncoesGenericas.concatStringsWithSeparator(this.groupingFields, field, ",");
 	}
 
 	/**
@@ -128,7 +128,7 @@ public class SearchClauses<T extends VO> {
 		}
 		
 		this.orderByFields  += FuncoesGenericas.stringHasValue(this.orderByFields) ? "\n" : "";
-		this.orderByFields = FuncoesGenericas.concatStrings(this.orderByFields, field, ",");
+		this.orderByFields = FuncoesGenericas.concatStringsWithSeparator(this.orderByFields, field, ",");
 	}
 	
 

@@ -62,6 +62,8 @@ public class SyncCentralAndRemoteDataReconciliationController extends OperationC
 	
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+		if (tableInfo.getTableName().equalsIgnoreCase("users")) return 0;
+		
 		OpenConnection conn = openConnection();
 		
 		int id = 0;
@@ -98,6 +100,8 @@ public class SyncCentralAndRemoteDataReconciliationController extends OperationC
 
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+		if (tableInfo.getTableName().equalsIgnoreCase("users")) return 0;
+		
 		OpenConnection conn = openConnection();
 		
 		int id = 0;
@@ -189,7 +193,7 @@ public class SyncCentralAndRemoteDataReconciliationController extends OperationC
 		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
 		sql += "record_uuid varchar(100) NOT NULL,\n";
 		sql += "record_origin_location_code varchar(100) NOT NULL,\n";
-		sql += "reasonType varchar(100) NOT NULL,\n";
+		sql += "reason_type varchar(100) NOT NULL,\n";
 		sql += "table_name VARCHAR(100) NOT NULL,\n";
 		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
 		sql += "PRIMARY KEY (id)\n";

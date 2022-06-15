@@ -73,8 +73,8 @@ public class  CommonUtilities implements Serializable{
 	 * @scapeStr Caracteres de escape, por exemplo "\n" "," "<br>" 
 	 * @return
 	 */
-	public  String concatStrings(String currentString, String toConcant, String scapeStr){
-		return FuncoesGenericas.concatStrings(currentString, toConcant, scapeStr);
+	public  String concatStringsWithSeparator(String currentString, String toConcant, String scapeStr){
+		return FuncoesGenericas.concatStringsWithSeparator(currentString, toConcant, scapeStr);
 	}
 	
 	public boolean isStringStartWithAlphabeticalChar(String str){

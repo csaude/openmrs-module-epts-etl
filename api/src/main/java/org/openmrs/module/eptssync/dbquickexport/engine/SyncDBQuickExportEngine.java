@@ -48,9 +48,9 @@ public class SyncDBQuickExportEngine extends Engine {
 			}
 		}
 	
-		logInfo("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
-		
 		if (getLimits().canGoNext()) {
+			logInfo("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
+			
 			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 		}
 		else return null;	

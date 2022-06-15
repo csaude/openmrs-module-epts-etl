@@ -164,21 +164,13 @@ public class EngineMonitor implements MonitoredOperation{
 		if (maxRecId == 0 && minRecId == 0) {
 			String msg = "NO RECORD TO PROCESS FOR TABLE '"+ getSyncTableInfo().getTableName().toUpperCase() + "' NO ENGINE WILL BE CRIETED BY NOW!";
 			
-			//if (maxRecId < 10) throw new ForbiddenOperationException(msg);
-			
 			logInfo(msg);
 			
 			if (mustRestartInTheEnd()) {
 				msg += " GOING SLEEP....";
-				
-				//this.changeStatusToSleeping();
 			}
 			else {
 				msg += " FINISHING....";
-				
-				//getController().markTableOperationAsFinished(syncInfo, null, this.progressMeter.getTimer());
-				
-				//this.changeStatusToFinished();
 			}
 			
 			logInfo(msg);

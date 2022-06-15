@@ -35,7 +35,7 @@ public class InconsistentStateException extends SyncExeption {
 		String missingInfo = "";
 		
 		for (Entry<RefInfo, Integer> missing : missingParents.entrySet()) {
-			missingInfo = utilities.concatStrings(missingInfo, "[" +missing.getKey().getRefTableConfiguration().getTableName() + ": " + missing.getValue() + "]", ";");
+			missingInfo = utilities.concatStringsWithSeparator(missingInfo, "[" +missing.getKey().getRefTableConfiguration().getTableName() + ": " + missing.getValue() + "]", ";");
 		}
 		
 		return "The record [" + obj.generateTableName() + " = " + obj.getObjectId() + "] is in inconsistent state. There are missing these parents: " + missingInfo;

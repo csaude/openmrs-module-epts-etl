@@ -95,12 +95,19 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		try {
 			Object[] params = {recordOriginId};
 			
-			String tableName = parentTableConfiguration.getTableName().equalsIgnoreCase("patient") ? "person" : parentTableConfiguration.getTableName();
+			String tableName = parentTableConfiguration.getTableName();
+			
+			String clauseFromStarting = tableName;
+			
+			if (tableName.equals("patient")) {
+				clauseFromStarting += " INNER JOIN person on person_id = patient_id \n";
+			}
 			
 			String sql = "";
 			
-			sql += " SELECT " + tableName + ".* \n";
-			sql += " FROM  	" + tableName + " INNER JOIN " + parentTableConfiguration.generateFullStageTableName() + " ON record_uuid = uuid\n";
+			
+			sql += " SELECT " + tableName + ".*" + (tableName.equals("patient") ? ", uuid" : "") + "\n";
+			sql += " FROM  	" + clauseFromStarting + " INNER JOIN " + parentTableConfiguration.generateFullStageTableName() + " ON record_uuid = uuid\n";
 			sql += " WHERE 	record_origin_id = ?";
 			
 			return find(parentTableConfiguration.getSyncRecordClass(), sql, params, conn);
@@ -118,10 +125,12 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		try {
 			Object[] params = {uuid};
 			
+			T obj = openMRSClass.newInstance();
+			
 			String sql = "";
 			
-			sql += " SELECT * \n";
-			sql += " FROM  	" + openMRSClass.newInstance().generateTableName() + "\n";
+			sql += " SELECT " + obj.generateTableName() + ".*" + (obj.generateTableName().equals("patient") ? ", uuid" : "") + "\n";
+			sql += " FROM     " + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id " : "") + "\n";
 			sql += " WHERE 	uuid = ?;";
 			
 			return find(openMRSClass, sql, params, conn);
@@ -166,10 +175,13 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			
 			Object[] params = {objectId};
 			
+			
+			String tableName = obj.generateTableName();
+			
 			String sql = "";
 			
-			sql += " SELECT * \n";
-			sql += " FROM  	" + schema + "." + obj.generateTableName() + "\n";
+			sql += " SELECT " + tableName + ".*" + (tableName.equals("patient") ? ", uuid" : "") + "\n";
+			sql += " FROM  	" + schema + "." + tableName +  (tableName.equals("patient") ? " left join person on person_id = patient_id" : "") + "\n";
 			sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + " = ?;";
 			
 			return find(openMRSClass, sql, params, conn);
@@ -334,12 +346,12 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	}
 	
 	public static List<OpenMRSObject> getByParentId(Class<OpenMRSObject> clazz, String parentField, int parentId, Connection conn) throws DBException {
-		Object[] params = {parentField};
+		Object[] params = {parentId};
 		
 		OpenMRSObject obj = utilities.createInstance(clazz);
 		
-		String sql = " SELECT * " +
-					 " FROM     " + obj.generateTableName() +
+		String sql = " SELECT " + obj.generateTableName() + ".*" + (obj.generateTableName().equals("patient") ? ", uuid" : "") +
+					 " FROM     " + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id " : "") +
 					 " WHERE 	" + parentField + " = ?";
 		
 		return search(clazz, sql, params, conn);

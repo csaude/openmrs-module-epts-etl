@@ -15,11 +15,10 @@ public class DataReconciliationRecordDAO extends BaseDAO{
 			
 			String sql = "";
 			
-			sql += "INSERT INTO \n"; 
-			sql += "	" + record.getConfig().generateFullStageTableName() + "(record_uuid,\n";
-			sql += "															record_origin_location_code,\n";
-			sql += "											 				reasonType,\n";
-			sql += "											 				table_name)\n";
+			sql += "INSERT INTO " + record.getConfig().getSyncStageSchema() +".data_conciliation_info (record_uuid,\n";
+			sql += "									record_origin_location_code,\n";
+			sql += "									reason_type,\n";
+			sql += "									table_name)\n";
 			sql += "	VALUES(?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";

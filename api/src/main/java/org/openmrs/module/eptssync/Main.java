@@ -61,6 +61,7 @@ public class Main implements Runnable{
 			logger.info("ALL JOBS ARE STOPPED");
 		}
 		
+		System.exit(0);
 	}
 	
 	public static void runSync(SyncConfiguration configuration) {

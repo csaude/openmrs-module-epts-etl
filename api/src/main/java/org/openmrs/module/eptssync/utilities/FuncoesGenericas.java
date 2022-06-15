@@ -48,7 +48,7 @@ public class FuncoesGenericas {
 	 * @scapeStr Caracteres de escape, por exemplo "\n" "," "<br>" 
 	 * @return
 	 */
-	public static String concatStrings(String currentString, String toConcant, String scapeStr){
+	public static String concatStringsWithSeparator(String currentString, String toConcant, String scapeStr){
 		if (!stringHasValue(toConcant)) return currentString;
 		
 		if (!stringHasValue(currentString)) return toConcant;
@@ -60,7 +60,7 @@ public class FuncoesGenericas {
 		if (inValues == null) return value;
 		
 		for (String str : inValues){
-			value = concatStrings(value, str, "");
+			value = concatStringsWithSeparator(value, str, "");
 		}
 		
 		return value;

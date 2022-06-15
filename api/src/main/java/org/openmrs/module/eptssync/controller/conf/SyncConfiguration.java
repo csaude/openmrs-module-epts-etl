@@ -207,7 +207,7 @@ public class SyncConfiguration {
 	}
 	@JsonIgnore
 	public String getPojoPackage() {
-		return isDestinationSyncProcess() || isDataReconciliationProcess() ? this.processType : this.originAppLocationCode;
+		return isDestinationSyncProcess() || isDataReconciliationProcess() ? "destination" : this.originAppLocationCode;
 	}
 	
 	public List<AppInfo> getAppsInfo() {

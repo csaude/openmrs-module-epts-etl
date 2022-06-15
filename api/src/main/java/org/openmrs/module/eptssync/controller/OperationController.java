@@ -584,7 +584,7 @@ public abstract class OperationController implements Controller{
 			}
 		}
 		
-		ThreadPoolService.getInstance().terminateTread(logger, this.activititieMonitor.getMonitorId());
+		if (this.activititieMonitor != null) ThreadPoolService.getInstance().terminateTread(logger, this.activititieMonitor.getMonitorId());
 		
 		selfTreadKilled = true;
 	}

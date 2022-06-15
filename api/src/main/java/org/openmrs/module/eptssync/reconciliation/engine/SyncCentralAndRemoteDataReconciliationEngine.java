@@ -76,8 +76,7 @@ public class SyncCentralAndRemoteDataReconciliationEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		//List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
-		//List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(syncRecords.size());
+		if (getSyncTableConfiguration().getTableName().equalsIgnoreCase("users")) return;
 		
 		this.getMonitor().logInfo("PERFORMING DATA RECONCILIATION ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 
@@ -136,7 +135,7 @@ public class SyncCentralAndRemoteDataReconciliationEngine extends Engine {
 	private void performePhantomRecordsRemotion(List<SyncRecord> syncRecords, Connection conn) throws DBException{
 		for (SyncRecord record: syncRecords) {
 			DataReconciliationRecord data = new DataReconciliationRecord(((OpenMRSObject)record).getUuid() , getSyncTableConfiguration(), ConciliationReasonType.PHANTOM);
-			
+			data.reloadRelatedRecordDataFromDestination(conn);
 			data.removeRelatedRecord(conn);
 			data.save(conn);
 		}	

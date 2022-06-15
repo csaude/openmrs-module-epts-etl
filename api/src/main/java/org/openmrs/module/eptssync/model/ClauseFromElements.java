@@ -83,7 +83,7 @@ public class ClauseFromElements {
 		
 		String[] nextElements = newClausulaFromString.split("[\\s*]+");
 			
-		nextClause = utilities.concatStrings(nextClause, nextElements[0], " ");
+		nextClause = utilities.concatStringsWithSeparator(nextClause, nextElements[0], " ");
 		
 		
 		for (i=1; i<nextElements.length; i++){
@@ -91,12 +91,12 @@ public class ClauseFromElements {
 			boolean isAtTheEnd =  i+1 == nextElements.length;//Indica se esta no fim da clausula
 			
 			if (!isToCut && !isAtTheEnd) {
-				nextClause = utilities.concatStrings(nextClause, nextElements[i], " ");
+				nextClause = utilities.concatStringsWithSeparator(nextClause, nextElements[i], " ");
 			}
 			else{
 				
 				if (isAtTheEnd) {
-					nextClause = utilities.concatStrings(nextClause, nextElements[i], " ");
+					nextClause = utilities.concatStringsWithSeparator(nextClause, nextElements[i], " ");
 					i++;
 				}
 				
@@ -112,7 +112,7 @@ public class ClauseFromElements {
 		nextClause = "";
 		
 		for (int j=i; j<nextElements.length; j++){
-			nextClause = utilities.concatStrings(nextClause, nextElements[j], " ");
+			nextClause = utilities.concatStringsWithSeparator(nextClause, nextElements[j], " ");
 		}
 		
 		generateAllFromClauseFromString(nextClause, allreadyGeneratedClause);
@@ -177,7 +177,7 @@ public class ClauseFromElements {
 			c.joinCondition = "";
 			
 			for (int i=c.onClausePosition+1; i < elements.length; i++){
-				c.joinCondition = utilities.concatStrings(c.joinCondition, elements[i], " ");
+				c.joinCondition = utilities.concatStringsWithSeparator(c.joinCondition, elements[i], " ");
 			}
 		}
 		return c;

@@ -28,7 +28,17 @@ public class DataReconciliationRecord {
 	
 	public void reloadRelatedRecordDataFromRemote(Connection conn) throws DBException, ForbiddenOperationException {
 		this.stageInfo = SyncImportInfoDAO.getWinRecord(this.config, this.recordUuid, conn);
-		this.record= OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(), stageInfo.getRecordOriginId(), stageInfo.getRecordOriginLocationCode(), conn);
+		
+		if (this.stageInfo != null) {
+			this.record= OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(), stageInfo.getRecordOriginId(), stageInfo.getRecordOriginLocationCode(), conn);
+		}
+		else {
+			this.record = null;
+		}
+		
+		if (this.record != null) {
+			this.record.setRelatedSyncInfo(this.stageInfo);
+		}
 	}
 	
 	public void reloadRelatedRecordDataFromDestination(Connection conn) throws DBException, ForbiddenOperationException {
@@ -56,11 +66,29 @@ public class DataReconciliationRecord {
 	}
 	
 	public void consolidateAndSaveData(Connection conn) throws DBException{
-		if (!config.isFullLoaded()) config.fullLoad();
+		if (!config.isFullLoaded()) config.fullLoad(); 
 		
 		this.loadDestParentInfo(conn);
-			
+		
 		record.save(config, conn);
+
+		
+		if (getTableName().equals("person")) {
+			//Try to Restore the related patient
+			
+			for (RefInfo refInfo: config.getChildred()) {
+				if (refInfo.getTableName().equals("patient")) {
+					DataReconciliationRecord childData = new DataReconciliationRecord(this.recordUuid, refInfo.getRefTableConfiguration(), ConciliationReasonType.MISSING);
+						
+					childData.reloadRelatedRecordDataFromRemote(conn);
+					childData.consolidateAndSaveData(conn);
+					childData.save(conn);
+					
+					break;
+				}
+			}
+		}
+		
 	}
 
 	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
@@ -85,6 +113,7 @@ public class DataReconciliationRecord {
 							DataReconciliationRecord parentData = new DataReconciliationRecord(parentStageInfo.getRecordUuid(), refInfo.getRefTableConfiguration(), ConciliationReasonType.MISSING);
 							
 							parentData.reloadRelatedRecordDataFromRemote(conn);
+							parentData.consolidateAndSaveData(conn);
 							
 							parentData.save(conn);
 							
@@ -104,9 +133,12 @@ public class DataReconciliationRecord {
 	}
 
 	public void removeRelatedRecord(Connection conn) throws DBException{
+		if (!config.isFullLoaded()) config.fullLoad();
+		
 		for (RefInfo refInfo: config.getChildred()) {
 			if (!refInfo.getRefTableConfiguration().isConfigured()) continue;
 		
+			
 			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.record.getObjectId(), conn);
 					
 			for (OpenMRSObject child : children) {
@@ -118,6 +150,7 @@ public class DataReconciliationRecord {
 					childDataInfo.consolidateAndSaveData(conn);
 				}
 				else {
+					
 					childDataInfo.reloadRelatedRecordDataFromDestination(conn);
 					childDataInfo.reasonType = ConciliationReasonType.PHANTOM;
 					childDataInfo.removeRelatedRecord(conn);

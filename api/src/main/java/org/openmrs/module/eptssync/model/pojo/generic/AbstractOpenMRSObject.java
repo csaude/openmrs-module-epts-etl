@@ -598,7 +598,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		String missingInfo = "";
 		
 		for (Entry<RefInfo, Integer> missing : missingParents.entrySet()) {
-			missingInfo = utilities.concatStrings(missingInfo, "[" +missing.getKey().getRefTableConfiguration().getTableName() + ": " + missing.getValue() + "]", ";");
+			missingInfo = utilities.concatStringsWithSeparator(missingInfo, "[" +missing.getKey().getRefTableConfiguration().getTableName() + ": " + missing.getValue() + "]", ";");
 		}
 		
 		return "The record [" + this.generateTableName() + " = " + this.getObjectId() + "] is in inconsistent state. There are missing these parents: " + missingInfo;
@@ -608,7 +608,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		String missingInfo = "";
 		
 		for (Entry<RefInfo, Integer> missing : missingParents.entrySet()) {
-			missingInfo = utilities.concatStrings(missingInfo, "[" +missing.getKey().getRefTableConfiguration().getTableName() + ": " + missing.getValue() + "]", ";");
+			missingInfo = utilities.concatStringsWithSeparator(missingInfo, "[" +missing.getKey().getRefTableConfiguration().getTableName() + ": " + missing.getValue() + "]", ";");
 		}
 		
 		return "The record [" + this.generateTableName() + " = " + this.getObjectId() + "] is was in inconsistent state solved using some default parents.  These are missing parents: " + missingInfo;
@@ -632,6 +632,16 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			
 			return null;
 		}
+	}
+	
+	@Override
+	public String toString() {
+		String  objectId = "objectId = " + (this.getObjectId() != null ?  this.getObjectId() : "");
+		
+		String  uuid  = "uuid = " + (this.getUuid() != null ?  this.getUuid() : "");
+			
+		
+		return "[" + utilities.concatStringsWithSeparator(objectId, uuid, ",")  + "]";
 	}
 
 }

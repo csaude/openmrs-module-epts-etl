@@ -194,6 +194,10 @@ public class RefInfo {
 		if (obj == null) return false;
 		if (!(obj instanceof RefInfo)) return false;
 		
-		return this.tableName.equalsIgnoreCase(((RefInfo)obj).getTableName());
+		RefInfo other = (RefInfo)obj;
+		
+		String thisRefCol = this.getRefColumnName() != null ? this.getRefColumnName() : "";
+		
+		return thisRefCol.equals(other.getRefColumnName()) && this.tableName.equalsIgnoreCase(other.getTableName());
 	}
 }
