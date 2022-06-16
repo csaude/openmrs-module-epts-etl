@@ -200,6 +200,10 @@ public class SyncConfiguration {
 		return SyncProcessType.isDBQuickLoad(processType);
 	}
 	
+	@JsonIgnore
+	public boolean isDBQuickCopyProcess() {
+		return SyncProcessType.isDBQuickCopy(processType);
+	}
 	
 	@JsonIgnore
 	public boolean isDataReconciliationProcess() {
@@ -261,7 +265,7 @@ public class SyncConfiguration {
 		if (isSourceSyncProcess()) {
 			return this.originAppLocationCode + "_sync_stage_area";
 		}
-		if (isDBQuickLoadProcess() || isDataReconciliationProcess()) {
+		if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDBQuickCopyProcess()) {
 			return "minimal_db_info";
 		}
 		else {
@@ -650,7 +654,7 @@ public class SyncConfiguration {
 	}
 	
 	public boolean isSupposedToHaveOriginAppCode() {
-		return this.isDBQuickExportProcess() ||  this.isSourceSyncProcess() ||  this.isDBReSyncProcess();
+		return this.isDBQuickExportProcess() ||  this.isSourceSyncProcess() ||  this.isDBReSyncProcess() || this.isDBQuickCopyProcess();
 	}
 	
 }

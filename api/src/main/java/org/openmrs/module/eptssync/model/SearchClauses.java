@@ -301,7 +301,7 @@ public class SearchClauses<T extends VO> {
 		String auxStr[] = this.clauseFrom.split(clauseFromLine);
 		
 		
-		if (auxStr.length < 0) return;
+		if (auxStr.length <= 0) return;
 		
 		if (auxStr.length == 1) {
 			clauseFrom = auxStr[0];

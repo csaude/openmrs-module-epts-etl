@@ -8,7 +8,7 @@ import java.nio.file.NoSuchFileException;
 import org.openmrs.module.eptssync.changedrecordsdetector.engine.ChangedRecordsDetectorEngine;
 import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
-import org.openmrs.module.eptssync.dbquickexport.engine.SyncDBQuickExportEngine;
+import org.openmrs.module.eptssync.dbquickexport.engine.DBQuickExportEngine;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class DBQuickExportSearchLimits extends RecordLimits {
 	
-	private SyncDBQuickExportEngine engine;
+	private DBQuickExportEngine engine;
 	private boolean loadedFromFile;
 	
 	private String lastSavedOn;
@@ -30,7 +30,7 @@ public class DBQuickExportSearchLimits extends RecordLimits {
 		super(0, 0);
 	}
 	
-	public DBQuickExportSearchLimits(long firstRecordId, long lastRecordId, SyncDBQuickExportEngine engine) {
+	public DBQuickExportSearchLimits(long firstRecordId, long lastRecordId, DBQuickExportEngine engine) {
 		super(firstRecordId, lastRecordId);
 		
 		this.engine = engine;
@@ -44,7 +44,7 @@ public class DBQuickExportSearchLimits extends RecordLimits {
 
 
 	@JsonIgnore
-	public SyncDBQuickExportEngine getEngine() {
+	public DBQuickExportEngine getEngine() {
 		return engine;
 	}
 	
@@ -98,7 +98,7 @@ public class DBQuickExportSearchLimits extends RecordLimits {
 		this.loadedFromFile = true;
 	}
 	
-	public static DBQuickExportSearchLimits loadFromFile(File file, SyncDBQuickExportEngine engine) {
+	public static DBQuickExportSearchLimits loadFromFile(File file, DBQuickExportEngine engine) {
 		try {
 			DBQuickExportSearchLimits limits = DBQuickExportSearchLimits.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 		

@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.load.engine;
+package org.openmrs.module.eptssync.dbquickload.engine;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,11 +9,11 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
+import org.openmrs.module.eptssync.dbquickload.controller.DBQuickLoadController;
+import org.openmrs.module.eptssync.dbquickload.model.DBQuickLoadSearchParams;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
-import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
@@ -21,7 +21,7 @@ import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
-public class SyncDataLoadEngine extends Engine{
+public class DBQuickLoadEngine extends Engine{
 	private File currJSONSourceFile;
 	
 	/*
@@ -30,7 +30,7 @@ public class SyncDataLoadEngine extends Engine{
 	private SyncJSONInfo currJSONInfo;
 	
 	
-	public SyncDataLoadEngine(EngineMonitor monitor, RecordLimits limits) {
+	public DBQuickLoadEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
@@ -41,6 +41,8 @@ public class SyncDataLoadEngine extends Engine{
 	@Override
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
 		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
+		
+		for (SyncImportInfoVO rec : migrationRecordAsSyncInfo) rec.setConsistent(1);
 		
 		this.getMonitor().logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO STAGING TABLE");
 		
@@ -88,10 +90,6 @@ public class SyncDataLoadEngine extends Engine{
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) {
-		/*if (tmpPrintFiles()) {
-			return null;
-		}*/
-		
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
 		if (this.currJSONSourceFile == null) return null;
@@ -115,22 +113,6 @@ public class SyncDataLoadEngine extends Engine{
 		}
 	}
 	
-	boolean printed; 
-	boolean tmpPrintFiles() {
-		if (printed) return printed;
-		
-		File[] files = getSyncDirectory().listFiles(this.getSearchParams());
-	    
-		System.out.println("---------------------------------------------------------------------------------------------------------------------");
-		
-		for (File f :files) {
-			System.out.println(this.hashCode()+ ">" + f.getName());
-		}
-		this.printed = true;
-		
-		return this.printed;
-	}
-	
     private File getNextJSONFileToLoad(){
     	File[] files = getSyncDirectory().listFiles(this.getSearchParams());
     	
@@ -142,15 +124,14 @@ public class SyncDataLoadEngine extends Engine{
     }
     
 	@Override
-	public LoadSyncDataSearchParams getSearchParams() {
-		return (LoadSyncDataSearchParams) super.getSearchParams();
+	public DBQuickLoadSearchParams getSearchParams() {
+		return (DBQuickLoadSearchParams) super.getSearchParams();
 	}
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new LoadSyncDataSearchParams(getRelatedOperationController(), this.getSyncTableConfiguration(), limits);
+		SyncSearchParams<? extends SyncRecord> searchParams = new  DBQuickLoadSearchParams(getRelatedOperationController(), this.getSyncTableConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
-		//searchParams.setExtraCondition("obs_2020093011233502.json");
 		
 		return searchParams;
 	}
@@ -162,8 +143,8 @@ public class SyncDataLoadEngine extends Engine{
     }
     
     @Override
-    public SyncDataLoadController getRelatedOperationController() {
-    	return (SyncDataLoadController) super.getRelatedOperationController();
+    public DBQuickLoadController getRelatedOperationController() {
+    	return (DBQuickLoadController) super.getRelatedOperationController();
     }
     
     private File getSyncDirectory() {
@@ -174,7 +155,5 @@ public class SyncDataLoadEngine extends Engine{
 
 	@Override
 	public void requestStop() {
-		// TODO Auto-generated method stub
-		
 	}
 }

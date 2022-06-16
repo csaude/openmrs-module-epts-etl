@@ -7,7 +7,7 @@ import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.dbquickexport.engine.SyncDBQuickExportEngine;
+import org.openmrs.module.eptssync.dbquickexport.engine.DBQuickExportEngine;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
@@ -24,8 +24,8 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  *
  */
-public class SyncDBQuickExportController extends OperationController {
-	public SyncDBQuickExportController(ProcessController processController, SyncOperationConfig operationConfig) {
+public class DBQuickExportController extends OperationController {
+	public DBQuickExportController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
@@ -33,7 +33,7 @@ public class SyncDBQuickExportController extends OperationController {
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new SyncDBQuickExportEngine(monitor, limits);
+		return new DBQuickExportEngine(monitor, limits);
 	}
 
 	@Override

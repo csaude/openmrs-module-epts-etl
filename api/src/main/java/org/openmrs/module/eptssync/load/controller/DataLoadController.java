@@ -11,7 +11,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.load.engine.SyncDataLoadEngine;
+import org.openmrs.module.eptssync.load.engine.DataLoadEngine;
 import org.openmrs.module.eptssync.load.model.LoadSyncDataSearchParams;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -24,10 +24,10 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  *
  */
-public class SyncDataLoadController extends OperationController implements DestinationOperationController{
+public class DataLoadController extends OperationController implements DestinationOperationController{
 	private String appOriginLocationCode;
 
-	public SyncDataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+	public DataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig);
 		
 		this.appOriginLocationCode = appOriginLocationCode;
@@ -44,7 +44,7 @@ public class SyncDataLoadController extends OperationController implements Desti
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new SyncDataLoadEngine(monitor, limits);
+		return new DataLoadEngine(monitor, limits);
 	}
 
 	@Override

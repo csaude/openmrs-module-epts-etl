@@ -1,40 +1,57 @@
-package org.openmrs.module.eptssync.transport.controller;
+package org.openmrs.module.eptssync.dbquickload.controller;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.dbquickload.engine.DBQuickLoadEngine;
+import org.openmrs.module.eptssync.dbquickload.model.DBQuickLoadSearchParams;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.transport.engine.SyncTransportEngine;
-import org.openmrs.module.eptssync.transport.model.TransportSyncSearchParams;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 /**
- * This class is responsible for control the transpor of sync files from origin to destination site
+ * This class is responsible for control the loading of sync data to stage area.
+ * <p>
+ * This load consist on readding the JSON content from the sync directory and load them to temp tables on sync stage.
  * 
  * @author jpboane
  *
  */
-public class SyncTransportController extends OperationController {
-	
-	public SyncTransportController(ProcessController processController, SyncOperationConfig operationConfig) {
-		super(processController, operationConfig);
-	}
+public class DBQuickLoadController extends OperationController implements DestinationOperationController{
+	private String appOriginLocationCode;
 
+	public DBQuickLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+		super(processController, operationConfig);
+		
+		this.appOriginLocationCode = appOriginLocationCode;
+		
+		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_from_" + appOriginLocationCode;	
+		
+		this.progressInfo = this.processController.initOperationProgressMeter(this);
+	}
+	
+	@Override
+	public String getAppOriginLocationCode() {
+		return appOriginLocationCode;
+	}
+	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new SyncTransportEngine(monitor, limits);
+		return new DBQuickLoadEngine(monitor, limits);
 	}
 
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
-		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncSearchParams(this, tableInfo, null));
+		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, tableInfo, null);
+		
+		File[] files = getSyncDirectory(tableInfo).listFiles(searchParams);
 	    
 		if (files == null || files.length == 0) return 0;
 		
@@ -42,16 +59,18 @@ public class SyncTransportController extends OperationController {
 		
 		File firstFile = files[0];
 		
-		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_MINRECORD_MAXRECORD.JSON
+		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_FIRSTRECORDID_LASTRECORDID.JSON
 		
 		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(firstFile.getName()).split("_");
 		
-		return Long.parseLong(pats[pats.length-2]);
+		return Long.parseLong(pats[pats.length - 2]);
 	}
 
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
-		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncSearchParams(this, tableInfo, null));
+		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, tableInfo, null);
+		
+		File[] files = getSyncDirectory(tableInfo).listFiles(searchParams);
 	    
 		if (files == null || files.length == 0) return 0;
 		
@@ -59,11 +78,11 @@ public class SyncTransportController extends OperationController {
 		
 		File lastFile = files[files.length -1];
 		
-		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_MINRECORD_MAXRECORD.JSON
+		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_FIRSTRECORDID_LASTRECORDID.JSON
 		
 		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(lastFile.getName()).split("_");
 		
-		return Long.parseLong(pats[pats.length -1]);
+		return Long.parseLong(pats[pats.length - 1]);
 	}
 	
     public File getSyncDirectory(SyncTableConfiguration syncInfo) {
@@ -71,10 +90,13 @@ public class SyncTransportController extends OperationController {
 
 		fileName += syncInfo.getRelatedSynconfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		fileName += syncInfo.getRelatedSynconfiguration().getOriginAppLocationCode().toLowerCase();
+		
+		fileName += "import";
 		fileName += FileUtilities.getPathSeparator();
-		fileName += "export";
+		
+		fileName += this.appOriginLocationCode;
 		fileName += FileUtilities.getPathSeparator();
+		
 		fileName += syncInfo.getTableName();
  
 		return new File(fileName);
@@ -85,43 +107,24 @@ public class SyncTransportController extends OperationController {
 
 		fileName += syncInfo.getRelatedSynconfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		fileName += syncInfo.getRelatedSynconfiguration().getOriginAppLocationCode().toLowerCase();
+		
+		fileName += "import_bkp";
 		fileName += FileUtilities.getPathSeparator();
-		fileName += "export_bkp";
+		
+		fileName += this.appOriginLocationCode;
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += syncInfo.getTableName();
  
 		File bkpDirectory = new File(fileName);
     	
-		
 		if (!bkpDirectory.exists()) {
 			FileUtilities.tryToCreateDirectoryStructure(bkpDirectory.getAbsolutePath());
 		}
 		
 		return bkpDirectory;
     }
-    
-    public File getSyncDestinationDirectory(SyncTableConfiguration syncInfo) throws IOException {
-     	String fileName = "";
 
-		fileName += syncInfo.getRelatedSynconfiguration().getSyncRootDirectory();
-		fileName += FileUtilities.getPathSeparator();
-		fileName += "import";
-		fileName += FileUtilities.getPathSeparator();
-		fileName += syncInfo.getRelatedSynconfiguration().getOriginAppLocationCode().toLowerCase();
-		fileName += FileUtilities.getPathSeparator();
-		fileName += syncInfo.getTableName();
- 
-		File bkpDirectory = new File(fileName);
-    	
-		if (!bkpDirectory.exists()) {
-			FileUtilities.tryToCreateDirectoryStructure(bkpDirectory.getAbsolutePath());
-		}
-		
-		return bkpDirectory;
-    }
-    
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return hasNestedController() ? false : true;
@@ -129,6 +132,6 @@ public class SyncTransportController extends OperationController {
 
 	@Override
 	public String getOperationType() {
-		return SyncOperationConfig.SYNC_OPERATION_TRANSPORT;
-	}	
+		return SyncOperationConfig.SYNC_OPERATION_LOAD;
+	}
 }

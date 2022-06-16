@@ -290,7 +290,7 @@ public class DatabasePreparationEngine extends Engine {
 		
 		sql += "	CONSTRAINT CHK_" + getSyncTableConfiguration().generateRelatedStageTableName() + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
 		
-		if (getSyncTableConfiguration().isDestinationInstallationType() || getSyncTableConfiguration().isDBQuickLoad()) {
+		if (getSyncTableConfiguration().isDestinationInstallationType() || getSyncTableConfiguration().isDBQuickLoad() || getSyncTableConfiguration().isDBQuickCopy()) {
 			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_UUID(record_uuid, record_origin_location_code),\n";
 			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_ID(record_origin_id, record_origin_location_code),\n";
 		}

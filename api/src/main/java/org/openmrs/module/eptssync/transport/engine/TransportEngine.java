@@ -12,7 +12,7 @@ import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
+import org.openmrs.module.eptssync.transport.controller.TransportController;
 import org.openmrs.module.eptssync.transport.model.TransportRecord;
 import org.openmrs.module.eptssync.transport.model.TransportSyncSearchParams;
 
@@ -28,9 +28,9 @@ import org.openmrs.module.eptssync.transport.model.TransportSyncSearchParams;
  * 
  * @author jpboane
  */
-public class SyncTransportEngine extends Engine {
+public class TransportEngine extends Engine {
 
-	public SyncTransportEngine(EngineMonitor monitor, RecordLimits limits) {
+	public TransportEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 
@@ -102,8 +102,8 @@ public class SyncTransportEngine extends Engine {
 	}
 
 	@Override
-	public SyncTransportController getRelatedOperationController() {
-		return (SyncTransportController) super.getRelatedOperationController();
+	public TransportController getRelatedOperationController() {
+		return (TransportController) super.getRelatedOperationController();
 	}
 
 	private File getSyncDirectory() {

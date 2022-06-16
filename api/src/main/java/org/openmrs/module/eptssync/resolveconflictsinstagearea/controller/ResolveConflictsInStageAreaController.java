@@ -9,7 +9,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.resolveconflictsinstagearea.engine.SyncResolveConflictsInStageAreaEngine;
+import org.openmrs.module.eptssync.resolveconflictsinstagearea.engine.ResolveConflictsInStageAreaEngine;
 import org.openmrs.module.eptssync.resolveconflictsinstagearea.model.ResolveConflictsInStageAreaSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
@@ -21,9 +21,9 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  *
  */
-public class SyncResolveConflictsInStageAreaController extends OperationController {
+public class ResolveConflictsInStageAreaController extends OperationController {
 	
-	public SyncResolveConflictsInStageAreaController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public ResolveConflictsInStageAreaController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
@@ -31,7 +31,7 @@ public class SyncResolveConflictsInStageAreaController extends OperationControll
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new SyncResolveConflictsInStageAreaEngine(monitor, limits);
+		return new ResolveConflictsInStageAreaEngine(monitor, limits);
 	}
 
 	@Override

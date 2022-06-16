@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.resolveconflictsinstagearea.model;
+package org.openmrs.module.eptssync.dbquickcopy.model;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,9 +8,9 @@ import java.nio.file.NoSuchFileException;
 import org.openmrs.module.eptssync.changedrecordsdetector.engine.ChangedRecordsDetectorEngine;
 import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
+import org.openmrs.module.eptssync.dbquickcopy.engine.DBQuickCopyEngine;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.resolveconflictsinstagearea.engine.ResolveConflictsInStageAreaEngine;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -19,18 +19,18 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-public class ResolveConflictsInStageAreaSearchLimits extends RecordLimits {
+public class DBQuickCopySearchLimits extends RecordLimits {
 	
-	private ResolveConflictsInStageAreaEngine engine;
+	private DBQuickCopyEngine engine;
 	private boolean loadedFromFile;
 	
 	private String lastSavedOn;
 	
-	public ResolveConflictsInStageAreaSearchLimits() {
+	public DBQuickCopySearchLimits() {
 		super(0, 0);
 	}
 	
-	public ResolveConflictsInStageAreaSearchLimits(long firstRecordId, long lastRecordId, ResolveConflictsInStageAreaEngine engine) {
+	public DBQuickCopySearchLimits(long firstRecordId, long lastRecordId, DBQuickCopyEngine engine) {
 		super(firstRecordId, lastRecordId);
 		
 		this.engine = engine;
@@ -44,7 +44,7 @@ public class ResolveConflictsInStageAreaSearchLimits extends RecordLimits {
 
 
 	@JsonIgnore
-	public ResolveConflictsInStageAreaEngine getEngine() {
+	public DBQuickCopyEngine getEngine() {
 		return engine;
 	}
 	
@@ -98,9 +98,9 @@ public class ResolveConflictsInStageAreaSearchLimits extends RecordLimits {
 		this.loadedFromFile = true;
 	}
 	
-	public static ResolveConflictsInStageAreaSearchLimits loadFromFile(File file, ResolveConflictsInStageAreaEngine engine) {
+	public static DBQuickCopySearchLimits loadFromFile(File file, DBQuickCopyEngine engine) {
 		try {
-			ResolveConflictsInStageAreaSearchLimits limits = ResolveConflictsInStageAreaSearchLimits.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
+			DBQuickCopySearchLimits limits = DBQuickCopySearchLimits.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 		
 			if (limits != null  && limits.hasSameEngineInfo(engine.getLimits())) {
 				limits.loadedFromFile = true;
@@ -118,9 +118,9 @@ public class ResolveConflictsInStageAreaSearchLimits extends RecordLimits {
 		}
 	}
 	
-	public static ResolveConflictsInStageAreaSearchLimits loadFromJSON (String json) {
+	public static DBQuickCopySearchLimits loadFromJSON (String json) {
 		try {
-			ResolveConflictsInStageAreaSearchLimits limits = new ObjectMapperProvider().getContext(ResolveConflictsInStageAreaSearchLimits.class).readValue(json, ResolveConflictsInStageAreaSearchLimits.class);
+			DBQuickCopySearchLimits limits = new ObjectMapperProvider().getContext(DBQuickCopySearchLimits.class).readValue(json, DBQuickCopySearchLimits.class);
 		
 			return limits;
 		} catch (JsonParseException e) {
@@ -169,7 +169,7 @@ public class ResolveConflictsInStageAreaSearchLimits extends RecordLimits {
 		}
 	}
 
-	public boolean hasSameEngineInfo(ResolveConflictsInStageAreaSearchLimits limits) {
+	public boolean hasSameEngineInfo(DBQuickCopySearchLimits limits) {
 		return this.equals(limits)  && this.getThreadMaxRecord() == limits.getThreadMaxRecord() && this.getThreadMinRecord() == limits.getThreadMinRecord();
 	}
 	
@@ -177,7 +177,7 @@ public class ResolveConflictsInStageAreaSearchLimits extends RecordLimits {
 	public boolean equals(Object obj) {
 		if (!(obj instanceof ChangedRecordsDetectorEngine) || obj == null) return false;
 		
-		ResolveConflictsInStageAreaSearchLimits cr = (ResolveConflictsInStageAreaSearchLimits)obj;
+		DBQuickCopySearchLimits cr = (DBQuickCopySearchLimits)obj;
 		
 		return this.getThreadCode().equals(cr.getThreadCode());
 	}
@@ -194,7 +194,7 @@ public class ResolveConflictsInStageAreaSearchLimits extends RecordLimits {
 	
 	
 	public void moveNext(int qtyRecords) {
-		this.setFirstRecordId(this.getFirstRecordId() + qtyRecords - 1);
+		this.setFirstRecordId(this.getFirstRecordId() + qtyRecords);
 	}
 
 	public boolean hasThreadCode() {

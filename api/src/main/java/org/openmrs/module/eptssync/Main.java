@@ -128,18 +128,14 @@ public class Main implements Runnable{
 				SyncConfiguration conf = SyncConfiguration.loadFromFile(file);
 
 				conf.validate();
-
-				//if (conf.isAutomaticStart()) {
-					if (!conf.existsOnArray(syncConfigs)) {
-						logger.info("FOUND CONFIGURATION FILE " + conf.getRelatedConfFile().getAbsolutePath() + " AND ADDED AS " + conf.getDesignation());
-						syncConfigs.add(conf);
-					} else
+					
+				if (!conf.existsOnArray(syncConfigs)) {
+					logger.info("FOUND CONFIGURATION FILE " + conf.getRelatedConfFile().getAbsolutePath() + " AND ADDED AS " + conf.getDesignation());
+					syncConfigs.add(conf);
+				} else
 						throw new ForbiddenOperationException(
 								"The configuration [" + conf.getDesignation() + "] exists in more than one files");
-				//}
-				//else {
-					logger.info("FOUND CONFIGURATION FILE " + conf.getRelatedConfFile().getAbsolutePath() + " AS " + conf.getDesignation() + " BUT WON'T START");
-				//}
+
 			}
 		}
 

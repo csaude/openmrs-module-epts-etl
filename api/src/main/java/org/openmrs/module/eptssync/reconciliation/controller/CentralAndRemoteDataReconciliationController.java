@@ -14,7 +14,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.reconciliation.engine.SyncCentralAndRemoteDataReconciliationEngine;
+import org.openmrs.module.eptssync.reconciliation.engine.CentralAndRemoteDataReconciliationEngine;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -25,9 +25,9 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  *
  */
-public class SyncCentralAndRemoteDataReconciliationController extends OperationController {
+public class CentralAndRemoteDataReconciliationController extends OperationController {
 		
-	public SyncCentralAndRemoteDataReconciliationController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public CentralAndRemoteDataReconciliationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
@@ -45,7 +45,7 @@ public class SyncCentralAndRemoteDataReconciliationController extends OperationC
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new SyncCentralAndRemoteDataReconciliationEngine(monitor, limits);
+		return new CentralAndRemoteDataReconciliationEngine(monitor, limits);
 	}
 
 	public boolean isMissingRecordsDetector() {

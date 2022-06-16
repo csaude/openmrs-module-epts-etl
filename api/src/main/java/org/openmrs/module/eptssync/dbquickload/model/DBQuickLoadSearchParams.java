@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.dbquickload.controller.SyncDBQuickLoadController;
+import org.openmrs.module.eptssync.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
@@ -24,9 +24,9 @@ public class DBQuickLoadSearchParams extends SyncSearchParams<OpenMRSObject> imp
 	
 	private String fileNamePathern;
 	
-	private SyncDBQuickLoadController controller;
+	private DBQuickLoadController controller;
 	
-	public DBQuickLoadSearchParams(SyncDBQuickLoadController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
+	public DBQuickLoadSearchParams(DBQuickLoadController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
 		super(tableInfo, limits);
 		
 		this.controller = controller;

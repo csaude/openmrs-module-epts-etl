@@ -11,7 +11,7 @@ import java.sql.Connection;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
+import org.openmrs.module.eptssync.load.controller.DataLoadController;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
@@ -25,9 +25,9 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 	
 	private String fileNamePathern;
 	
-	private SyncDataLoadController controller;
+	private DataLoadController controller;
 	
-	public LoadSyncDataSearchParams(SyncDataLoadController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
+	public LoadSyncDataSearchParams(DataLoadController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
 		super(tableInfo, limits);
 		
 		this.controller = controller;

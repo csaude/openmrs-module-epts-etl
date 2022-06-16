@@ -12,16 +12,16 @@ import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.reconciliation.controller.SyncCentralAndRemoteDataReconciliationController;
+import org.openmrs.module.eptssync.reconciliation.controller.CentralAndRemoteDataReconciliationController;
 import org.openmrs.module.eptssync.reconciliation.model.CentralAndRemoteDataReconciliationSearchParams;
 import org.openmrs.module.eptssync.reconciliation.model.ConciliationReasonType;
 import org.openmrs.module.eptssync.reconciliation.model.DataReconciliationRecord;
 import org.openmrs.module.eptssync.reconciliation.model.DataReconciliationSearchLimits;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class SyncCentralAndRemoteDataReconciliationEngine extends Engine {
+public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		
-	public SyncCentralAndRemoteDataReconciliationEngine(EngineMonitor monitor, RecordLimits limits) {
+	public CentralAndRemoteDataReconciliationEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
@@ -66,8 +66,8 @@ public class SyncCentralAndRemoteDataReconciliationEngine extends Engine {
 	}
 	
 	@Override
-	public SyncCentralAndRemoteDataReconciliationController getRelatedOperationController() {
-		return (SyncCentralAndRemoteDataReconciliationController) super.getRelatedOperationController();
+	public CentralAndRemoteDataReconciliationController getRelatedOperationController() {
+		return (CentralAndRemoteDataReconciliationController) super.getRelatedOperationController();
 	}
 	
 	@Override

@@ -647,4 +647,8 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return getRelatedSynconfiguration().isDBQuickLoadProcess();
 	}
 	
+	@JsonIgnore
+	public boolean isDBQuickCopy() {
+		return getRelatedSynconfiguration().isDBQuickCopyProcess();
+	}
 }

@@ -10,17 +10,18 @@ import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.databasepreparation.controller.DatabasePreparationController;
-import org.openmrs.module.eptssync.dbquickexport.controller.SyncDBQuickExportController;
-import org.openmrs.module.eptssync.dbquickload.controller.SyncDBQuickLoadController;
+import org.openmrs.module.eptssync.dbquickcopy.controller.DBQuickCopyController;
+import org.openmrs.module.eptssync.dbquickexport.controller.DBQuickExportController;
+import org.openmrs.module.eptssync.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.export.controller.SyncExportController;
+import org.openmrs.module.eptssync.export.controller.DBExportController;
 import org.openmrs.module.eptssync.inconsistenceresolver.controller.InconsistenceSolverController;
-import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
+import org.openmrs.module.eptssync.load.controller.DataLoadController;
 import org.openmrs.module.eptssync.pojogeneration.controller.PojoGenerationController;
-import org.openmrs.module.eptssync.reconciliation.controller.SyncCentralAndRemoteDataReconciliationController;
-import org.openmrs.module.eptssync.resolveconflictsinstagearea.controller.SyncResolveConflictsInStageAreaController;
+import org.openmrs.module.eptssync.reconciliation.controller.CentralAndRemoteDataReconciliationController;
+import org.openmrs.module.eptssync.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
 import org.openmrs.module.eptssync.synchronization.controller.SyncController;
-import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
+import org.openmrs.module.eptssync.transport.controller.TransportController;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -44,8 +45,7 @@ public class SyncOperationConfig {
 	public static final String SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR = "outdated_records_detector";
 	public static final String SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR = "phantom_records_detector";
 	
-	
-	
+	public static final String SYNC_OPERATION_DB_QUICK_COPY = "db_quick_copy";
 	
 	public static final String[] SUPPORTED_OPERATIONS = {	SYNC_OPERATION_CONSOLIDATION, 
 															SYNC_OPERATION_EXPORT, 
@@ -62,7 +62,8 @@ public class SyncOperationConfig {
 															SYNC_OPERATION_MISSING_RECORDS_DETECTOR,
 															SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR,
 															SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR,
-															SYNC_OPERATION_RESOLVE_CONFLICTS_IN_STAGE_AREA
+															SYNC_OPERATION_RESOLVE_CONFLICTS_IN_STAGE_AREA,
+															SYNC_OPERATION_DB_QUICK_COPY
 														};
 
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
@@ -319,6 +320,10 @@ public class SyncOperationConfig {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_QUICK_EXPORT_DB);
 	}
 	
+	public boolean isDBQuickCopy() {
+		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_DB_QUICK_COPY);
+	}
+	
 	@JsonIgnore
 	public boolean isNewRecordsDetector() {
 		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR);
@@ -363,11 +368,11 @@ public class SyncOperationConfig {
 		this.relatedControllers = new ArrayList<OperationController>();
 		
 		if (getSourceFolders() == null) {
-			this.relatedControllers.add(generateSigle(parent, appOriginCode_, conn));
+			this.relatedControllers.add(generateSingle(parent, appOriginCode_, conn));
 		}
 		else
 		for (String appOriginCode : getSourceFolders()) {
-			this.relatedControllers.add(generateSigle(parent, appOriginCode, conn));
+			this.relatedControllers.add(generateSingle(parent, appOriginCode, conn));
 		}
 		
 		if (this.getChild() != null) {
@@ -385,7 +390,12 @@ public class SyncOperationConfig {
 		return this.relatedControllers;
 	}
 	
-	private OperationController generateSigle(ProcessController parent, String appOriginCode, Connection conn) {
+	private OperationController generateSingle(ProcessController parent, String appOriginCode, Connection conn) {
+		
+		/*if (isDatabasePreparationOperation() && this.getRelatedSyncConfig().isDBQuickCopyProcess()) {
+			return new OnlineQuickExportAndLoadDatabasePreparationController(parent, this);
+		}
+		else*/
 		if (isDatabasePreparationOperation()) {
 			return new DatabasePreparationController(parent, this);
 		}
@@ -395,11 +405,11 @@ public class SyncOperationConfig {
 		}
 		else	
 		if (isExportOperation()) {
-			return new SyncExportController(parent, this);
+			return new DBExportController(parent, this);
 		}
 		else
 		if (isTransportOperation()) {
-			return new SyncTransportController(parent, this);
+			return new TransportController(parent, this);
 		}
 		else
 		if (isInconsistenceSolver()) {
@@ -407,7 +417,7 @@ public class SyncOperationConfig {
 		}
 		else
 		if (isLoadOperation()) {
-			return new SyncDataLoadController(parent, this, appOriginCode);
+			return new DataLoadController(parent, this, appOriginCode);
 		}
 		else
 		if (isSynchronizationOperation()) {
@@ -427,19 +437,23 @@ public class SyncOperationConfig {
 		}		
 		else
 		if (isDBQuickLoad()) {
-			return new SyncDBQuickLoadController(parent, this, appOriginCode);
+			return new DBQuickLoadController(parent, this, appOriginCode);
 		}
 		else
 		if (isDBQuickExport()) {
-			return new SyncDBQuickExportController(parent, this);
+			return new DBQuickExportController(parent, this);
 		}
 		else
 		if (isMissingRecordsDetector() || isOutdateRecordsDetector() || isPhantomRecordsDetector())	{
-			return new SyncCentralAndRemoteDataReconciliationController(parent, this);
+			return new CentralAndRemoteDataReconciliationController(parent, this);
 		}
 		else
 		if (isResolveConflictsInStageArea()) {
-			return new SyncResolveConflictsInStageAreaController(parent, this);
+			return new ResolveConflictsInStageAreaController(parent, this);
+		}
+		else
+		if (isDBQuickCopy()) {
+			return new DBQuickCopyController(parent, this, appOriginCode);
 		}
 		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");		
 	}
@@ -472,6 +486,10 @@ public class SyncOperationConfig {
 		else
 		if (this.getRelatedSyncConfig().isDataReconciliationProcess()) {
 			if (!this.canBeRunInDataReconciliationProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in data reconciliation process\n";
+		}
+		else
+		if (this.getRelatedSyncConfig().isDBQuickCopyProcess()) {
+			if (!this.canBeRunInDBQuickCopyProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in data reconciliation process\n";
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
@@ -535,6 +553,19 @@ public class SyncOperationConfig {
 	public static List<String> getSupportedOperationsInDBQuickExportProcess() {
 		String[] supported = {SyncOperationConfig.SYNC_OPERATION_QUICK_EXPORT_DB,
 							  SyncOperationConfig.SYNC_OPERATION_TRANSPORT};
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
+	
+	@JsonIgnore
+	public boolean canBeRunInDBQuickCopyProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDBQuickCopyProcess(), this.operationType);
+	}
+		
+	public static List<String> getSupportedOperationsInDBQuickCopyProcess() {
+		String[] supported = {SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION,
+							  SyncOperationConfig.SYNC_OPERATION_DB_QUICK_COPY};
 		
 		return utilities.parseArrayToList(supported);
 	}

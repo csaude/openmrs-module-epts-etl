@@ -10,7 +10,7 @@ import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.reconciliation.engine.SyncCentralAndRemoteDataReconciliationEngine;
+import org.openmrs.module.eptssync.reconciliation.engine.CentralAndRemoteDataReconciliationEngine;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class DataReconciliationSearchLimits extends RecordLimits {
 	
-	private SyncCentralAndRemoteDataReconciliationEngine engine;
+	private CentralAndRemoteDataReconciliationEngine engine;
 	private boolean loadedFromFile;
 	
 	private String lastSavedOn;
@@ -30,7 +30,7 @@ public class DataReconciliationSearchLimits extends RecordLimits {
 		super(0, 0);
 	}
 	
-	public DataReconciliationSearchLimits(long firstRecordId, long lastRecordId, SyncCentralAndRemoteDataReconciliationEngine engine) {
+	public DataReconciliationSearchLimits(long firstRecordId, long lastRecordId, CentralAndRemoteDataReconciliationEngine engine) {
 		super(firstRecordId, lastRecordId);
 		
 		this.engine = engine;
@@ -44,7 +44,7 @@ public class DataReconciliationSearchLimits extends RecordLimits {
 
 
 	@JsonIgnore
-	public SyncCentralAndRemoteDataReconciliationEngine getEngine() {
+	public CentralAndRemoteDataReconciliationEngine getEngine() {
 		return engine;
 	}
 	
@@ -98,7 +98,7 @@ public class DataReconciliationSearchLimits extends RecordLimits {
 		this.loadedFromFile = true;
 	}
 	
-	public static DataReconciliationSearchLimits loadFromFile(File file, SyncCentralAndRemoteDataReconciliationEngine engine) {
+	public static DataReconciliationSearchLimits loadFromFile(File file, CentralAndRemoteDataReconciliationEngine engine) {
 		try {
 			DataReconciliationSearchLimits limits = DataReconciliationSearchLimits.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 		

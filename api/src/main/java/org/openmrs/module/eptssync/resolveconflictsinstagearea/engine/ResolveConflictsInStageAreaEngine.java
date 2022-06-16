@@ -13,14 +13,14 @@ import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.resolveconflictsinstagearea.controller.SyncResolveConflictsInStageAreaController;
+import org.openmrs.module.eptssync.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
 import org.openmrs.module.eptssync.resolveconflictsinstagearea.model.ResolveConflictsInStageAreaSearchLimits;
 import org.openmrs.module.eptssync.resolveconflictsinstagearea.model.ResolveConflictsInStageAreaSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class SyncResolveConflictsInStageAreaEngine extends Engine {
+public class ResolveConflictsInStageAreaEngine extends Engine {
 		
-	public SyncResolveConflictsInStageAreaEngine(EngineMonitor monitor, RecordLimits limits) {
+	public ResolveConflictsInStageAreaEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
@@ -65,8 +65,8 @@ public class SyncResolveConflictsInStageAreaEngine extends Engine {
 	}
 	
 	@Override
-	public SyncResolveConflictsInStageAreaController getRelatedOperationController() {
-		return (SyncResolveConflictsInStageAreaController) super.getRelatedOperationController();
+	public ResolveConflictsInStageAreaController getRelatedOperationController() {
+		return (ResolveConflictsInStageAreaController) super.getRelatedOperationController();
 	}
 	
 	@Override

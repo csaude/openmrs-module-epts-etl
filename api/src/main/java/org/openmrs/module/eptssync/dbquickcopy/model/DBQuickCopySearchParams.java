@@ -1,8 +1,10 @@
-package org.openmrs.module.eptssync.dbquickexport.model;
+package org.openmrs.module.eptssync.dbquickcopy.model;
 
 import java.sql.Connection;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.dbquickcopy.controller.DBQuickCopyController;
+import org.openmrs.module.eptssync.dbquickload.model.LoadedRecordsSearchParams;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
@@ -10,13 +12,15 @@ import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.GenericOpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
-public class DBQuickExportSearchParams extends SyncSearchParams<OpenMRSObject>{
-	private boolean selectAllRecords;
-		
-	public DBQuickExportSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits) {
+public class DBQuickCopySearchParams extends SyncSearchParams<OpenMRSObject>{
+	private DBQuickCopyController relatedController;
+	
+	public DBQuickCopySearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, DBQuickCopyController relatedController) {
 		super(tableInfo, limits);
-		
+
+		this.relatedController = relatedController;
 		setOrderByFields(tableInfo.getPrimaryKey());
 	}
 	
@@ -34,20 +38,18 @@ public class DBQuickExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 			searchClauses.addColumnToSelect("*");
 		}
 			
-		if (!this.selectAllRecords) {
-			if (limits != null) {
-				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-				searchClauses.addToParameters(this.limits.getFirstRecordId());
-				searchClauses.addToParameters(this.limits.getLastRecordId());
-			}
-			
-			if (this.tableInfo.getExtraConditionForExport() != null) {
-				searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
-			}
+		if (limits != null) {
+			searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
+			searchClauses.addToParameters(this.limits.getFirstRecordId());
+			searchClauses.addToParameters(this.limits.getLastRecordId());
+		}
+		
+		if (this.tableInfo.getExtraConditionForExport() != null) {
+			searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
 		}
 		
 		return searchClauses;
-	}	
+	}
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -57,22 +59,29 @@ public class DBQuickExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		DBQuickExportSearchParams auxSearchParams = new DBQuickExportSearchParams(this.tableInfo, this.limits);
-		auxSearchParams.selectAllRecords = true;
+		OpenConnection srcConn = this.relatedController.openSrcConnection();
 		
-		return SearchParamsDAO.countAll(auxSearchParams, conn);
-	}
-
-	@Override
-	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
 		RecordLimits bkpLimits = this.limits;
 		
 		this.limits = null;
 		
-		int count = SearchParamsDAO.countAll(this, conn);
+		int count = SearchParamsDAO.countAll(this, srcConn);
 		
 		this.limits = bkpLimits;
 		
+		srcConn.finalizeConnection();
+		
 		return count;
+	}
+
+	@Override
+	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
+		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(tableInfo, null, relatedController.getAppOriginLocationCode());
+		
+		int processed = syncSearchParams.countAllRecords(conn);
+		
+		int allRecords = countAllRecords(conn);
+		
+		return allRecords - processed;
 	}
 }

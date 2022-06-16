@@ -1,40 +1,75 @@
-package org.openmrs.module.eptssync.export.engine;
+package org.openmrs.module.eptssync.dbquickexport.engine;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.eptssync.dbquickexport.controller.DBQuickExportController;
+import org.openmrs.module.eptssync.dbquickexport.model.DBQuickExportSearchLimits;
+import org.openmrs.module.eptssync.dbquickexport.model.DBQuickExportSearchParams;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.export.controller.SyncExportController;
-import org.openmrs.module.eptssync.export.model.SyncExportSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
+import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
-public class SyncExportEngine extends Engine {
-	
-	public SyncExportEngine(EngineMonitor monitor, RecordLimits limits) {
+public class DBQuickExportEngine extends Engine {
+		
+	public DBQuickExportEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
-	}
-
-	@Override	
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
-		return utilities.parseList(SearchParamsDAO.search(this, conn), SyncRecord.class);
 	}
 	
 	@Override
-	public SyncExportController getRelatedOperationController() {
-		return (SyncExportController) super.getRelatedOperationController();
+	public void resetLimits(RecordLimits limits) {
+		getSearchParams().setLimits(new DBQuickExportSearchLimits(limits.getFirstRecordId(), limits.getLastRecordId(), this));
+		getLimits().setThreadMaxRecord(limits.getLastRecordId());
+		getLimits().setThreadMinRecord(limits.getFirstRecordId());
+	}
+	
+	public DBQuickExportSearchLimits getLimits() {
+		return (DBQuickExportSearchLimits) getSearchParams().getLimits();
+	}
+	
+	@Override	
+	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
+		if (!getLimits().isLoadedFromFile()) {
+			DBQuickExportSearchLimits saveLimits = retriveSavedLimits();
+			
+			if (saveLimits != null) {
+				this.searchParams.setLimits(saveLimits);
+			}
+		}
+	
+		if (getLimits().canGoNext()) {
+			logInfo("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
+			
+			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		}
+		else return null;	
+	}
+	
+	private DBQuickExportSearchLimits retriveSavedLimits() {
+		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
+		
+		return DBQuickExportSearchLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
+	}
+
+	@Override
+	protected boolean mustDoFinalCheck() {
+		return false;
+	}
+	
+	@Override
+	public DBQuickExportController getRelatedOperationController() {
+		return (DBQuickExportController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -42,13 +77,13 @@ public class SyncExportEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) {
+	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
 		try {
 			List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
 			
 			this.getMonitor().logInfo("GENERATING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE");
 			
-			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(syncRecordsAsOpenMRSObjects, getSyncTableConfiguration().getOriginAppLocationCode(), true);
+			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(syncRecordsAsOpenMRSObjects, getSyncTableConfiguration().getOriginAppLocationCode(), false);
 		
 			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(), syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
 			
@@ -87,8 +122,6 @@ public class SyncExportEngine extends Engine {
 				
 				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
 			}
-			
-			markAllAsSynchronized(utilities.parseList(syncRecords, OpenMRSObject.class));		
 		} catch (IOException e) {
 			e.printStackTrace();
 			
@@ -98,33 +131,23 @@ public class SyncExportEngine extends Engine {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
-		}
-	}
-
-	private String generateTmpMinimalJSONInfoFileName(File mainTempJSONInfoFile) {
-		return mainTempJSONInfoFile.getAbsolutePath() + "_minimal";
-	}
-
-	private void markAllAsSynchronized(List<OpenMRSObject> syncRecords) {
-		OpenConnection conn = openConnection();
+		}	
 		
-		try {
-			OpenMRSObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSyncTableConfiguration(), getSyncTableConfiguration().getOriginAppLocationCode(), conn);
+		getLimits().moveNext(getQtyRecordsPerProcessing());
+		
+		saveCurrentLimits();
+		
+		if (isMainEngine()) {
+			TableOperationProgressInfo progressInfo = this.getRelatedOperationController().getProgressInfo().retrieveProgressInfo(getSyncTableConfiguration());
 			
-			conn.markAsSuccessifullyTerminected();
-		} 
-		catch (DBException e) {
-			e.printStackTrace();
+			progressInfo.refreshProgressMeter();
 			
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
+			progressInfo.refreshOnDB(conn);
 		}
 	}
-
-	private File generateJSONTempFile(SyncJSONInfo jsonInfo, int startRecord, int lastRecord) throws IOException {
-		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSyncTableConfiguration(), startRecord, lastRecord);
+	
+	private void saveCurrentLimits() {
+		getLimits().save();
 	}
 	
 	@Override
@@ -133,10 +156,18 @@ public class SyncExportEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new SyncExportSearchParams(this.getSyncTableConfiguration(), limits, conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickExportSearchParams(this.getSyncTableConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
 		
 		return searchParams;
+	}
+	
+	private String generateTmpMinimalJSONInfoFileName(File mainTempJSONInfoFile) {
+		return mainTempJSONInfoFile.getAbsolutePath() + "_minimal";
+	}
+
+	private File generateJSONTempFile(SyncJSONInfo jsonInfo, int startRecord, int lastRecord) throws IOException {
+		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSyncTableConfiguration(), startRecord, lastRecord);
 	}
 }

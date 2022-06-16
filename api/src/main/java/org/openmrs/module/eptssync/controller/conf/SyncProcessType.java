@@ -7,7 +7,8 @@ public enum SyncProcessType {
 	DB_RE_SYNC,
 	DB_QUICK_EXPORT,
 	DB_QUICK_LOAD,
-	DATA_RECONCILIATION;
+	DATA_RECONCILIATION,
+	DB_QUICK_COPY;
 	
 	public static SyncProcessType find(String processType) {
 		for (SyncProcessType type : values()) {
@@ -17,6 +18,10 @@ public enum SyncProcessType {
 	    }
 	    
 	    return null;
+	}
+	
+	public static boolean isDBQuickCopy(String processType){
+		return find(processType).equals(DB_QUICK_COPY);
 	}
 	
 	public static boolean isDBQuickLoad(String processType){
@@ -39,8 +44,6 @@ public enum SyncProcessType {
 	public static boolean isDBQuickExport(String processType){
 		return find(processType).equals(DB_QUICK_EXPORT);
 	}
-	
-	
 	
 	public static boolean isDataReconciliation(String processType){
 		return find(processType).equals(DATA_RECONCILIATION);

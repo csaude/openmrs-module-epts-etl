@@ -9,7 +9,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
+import org.openmrs.module.eptssync.transport.controller.TransportController;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class TransportSyncSearchParams extends SyncSearchParams<OpenMRSObject> implements FilenameFilter{
@@ -17,9 +17,9 @@ public class TransportSyncSearchParams extends SyncSearchParams<OpenMRSObject> i
 	private String lastFileName;
 	
 	private String fileNamePathern;
-	private SyncTransportController controller;
+	private TransportController controller;
 	
-	public TransportSyncSearchParams(SyncTransportController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
+	public TransportSyncSearchParams(TransportController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
 		super(tableInfo, limits);
 		
 		this.controller = controller;
