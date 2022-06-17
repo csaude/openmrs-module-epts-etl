@@ -421,7 +421,7 @@ public abstract class OperationController implements Controller{
 		return new File(fileName);
 	}
 	
-	protected String generateProcessStatusFolder() {
+	public String generateProcessStatusFolder() {
 		String subFolder = "";
 		
 		if (getConfiguration().isSourceSyncProcess() || getConfiguration().isDBReSyncProcess() || getConfiguration().isDBQuickExportProcess()) {

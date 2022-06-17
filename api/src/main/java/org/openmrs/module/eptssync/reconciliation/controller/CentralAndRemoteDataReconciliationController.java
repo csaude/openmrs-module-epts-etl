@@ -64,6 +64,10 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		if (tableInfo.getTableName().equalsIgnoreCase("users")) return 0;
 		
+		if (tableInfo.getTableName().equalsIgnoreCase("person")) {
+			System.out.println("STOP");
+		}
+		
 		OpenConnection conn = openConnection();
 		
 		int id = 0;

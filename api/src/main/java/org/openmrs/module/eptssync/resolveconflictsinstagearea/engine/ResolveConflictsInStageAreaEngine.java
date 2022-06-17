@@ -1,6 +1,5 @@
 package org.openmrs.module.eptssync.resolveconflictsinstagearea.engine;
 
-import java.io.File;
 import java.sql.Connection;
 import java.util.List;
 
@@ -14,7 +13,6 @@ import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
-import org.openmrs.module.eptssync.resolveconflictsinstagearea.model.ResolveConflictsInStageAreaSearchLimits;
 import org.openmrs.module.eptssync.resolveconflictsinstagearea.model.ResolveConflictsInStageAreaSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
@@ -24,21 +22,10 @@ public class ResolveConflictsInStageAreaEngine extends Engine {
 		super(monitor, limits);
 	}
 	
-	@Override
-	public void resetLimits(RecordLimits limits) {
-		getSearchParams().setLimits(new ResolveConflictsInStageAreaSearchLimits(limits.getFirstRecordId(), limits.getLastRecordId(), this));
-		getLimits().setThreadMaxRecord(limits.getLastRecordId());
-		getLimits().setThreadMinRecord(limits.getFirstRecordId());
-	}
-	
-	public ResolveConflictsInStageAreaSearchLimits getLimits() {
-		return (ResolveConflictsInStageAreaSearchLimits) getSearchParams().getLimits();
-	}
-	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
 		if (!getLimits().isLoadedFromFile()) {
-			ResolveConflictsInStageAreaSearchLimits saveLimits = retriveSavedLimits();
+			RecordLimits saveLimits = retriveSavedLimits();
 			
 			if (saveLimits != null) {
 				this.searchParams.setLimits(saveLimits);
@@ -53,11 +40,6 @@ public class ResolveConflictsInStageAreaEngine extends Engine {
 		else return null;	
 	}
 	
-	private ResolveConflictsInStageAreaSearchLimits retriveSavedLimits() {
-		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
-		
-		return ResolveConflictsInStageAreaSearchLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
-	}
 
 	@Override
 	protected boolean mustDoFinalCheck() {

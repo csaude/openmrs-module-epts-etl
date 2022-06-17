@@ -539,8 +539,28 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		String tablesToSelect = stageTable + " src_ INNER JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
 		
 		if (table.equalsIgnoreCase("patient")) {
-			tablesToSelect = stageTable + " src_ INNER JOIN person dest_ on dest_.uuid = src_.record_uuid LEFT JOIN patient ON patient_id = person_id ";
+			tablesToSelect = stageTable + " src_ INNER JOIN person on person.uuid = src_.record_uuid INNER JOIN patient dest_ ON patient_id = person_id ";
 		}
+		
+		
+		
+		String startingClause = "1 != 1 ";
+		String dateVoidedClause = "";
+		String dateChangedClause = "";
+		
+		if (!tableConfiguration.hasNoDateVoidedField()) {
+			dateVoidedClause += " or (dest_.date_voided is null and src_.record_date_voided is not null) ";
+			dateVoidedClause += " or (dest_.date_voided is not null and src_.record_date_voided is null) ";
+			dateVoidedClause += " or (dest_.date_voided < src_.record_date_voided)";
+		}
+		
+		
+		if (!tableConfiguration.hasNotDateChangedField()) {
+			dateChangedClause +=  " or (dest_.date_changed is null and src_.record_date_changed is not null) ";
+			dateChangedClause +=  " or (dest_.date_changed is not null and src_.record_date_changed is null) "; 
+			dateChangedClause +=  " or (dest_.date_changed < src_.record_date_changed)";
+		}
+		
 		
 		sql += " SELECT " + tableConfiguration.getPrimaryKey() + " object_id \n";
 		sql += " FROM  	" + table + "\n";
@@ -549,12 +569,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		sql += " 			 (	SELECT " + function+ "(" + tableConfiguration.getPrimaryKey()   + ")\n";
 		sql += "				FROM   " + tablesToSelect + "\n";
 		sql += "				WHERE 1= 1\n";
-		sql += "					  AND ( (dest_.date_changed is null and src_.record_date_changed is not null) \n"; 
-		sql += "					  		or (dest_.date_changed is not null and src_.record_date_changed is null) \n"; 
-		sql += "								or (dest_.date_voided is null and src_.record_date_voided is not null) \n";
-		sql += "									or (dest_.date_voided is not null and src_.record_date_voided is null) \n";
-		sql += "										or (dest_.date_changed < src_.record_date_changed)\n";
-		sql += "											or (dest_.date_voided < src_.record_date_voided)))\n";
+		sql += "					AND (" + startingClause + dateVoidedClause + dateChangedClause + "))";
 		
 		return find(GenericOpenMRSObject.class, sql, params, conn);		
 	}
@@ -578,7 +593,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		String tablesToSelect = stageTable + " src_ RIGHT JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
 		
 		if (table.equalsIgnoreCase("patient")) {
-			tablesToSelect = stageTable + " src_ LET RIGHT person dest_ on dest_.uuid = src_.record_uuid LEFT JOIN patient ON patient_id = person_id ";
+			tablesToSelect = stageTable + " src_ RIGHT JOIN person dest_ on dest_.uuid = src_.record_uuid RIGHT JOIN patient ON patient_id = person_id ";
 		}
 		
 		sql += " SELECT " + tableConfiguration.getPrimaryKey() + " object_id \n";

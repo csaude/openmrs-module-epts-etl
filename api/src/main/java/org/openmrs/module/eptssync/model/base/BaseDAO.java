@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.log4j.Logger;
+import org.openmrs.api.db.DAOException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBOperation;
@@ -130,7 +131,7 @@ public abstract class BaseDAO{
 			}			
 		}
 		catch(Exception e){
-			e.printStackTrace();
+			throw new DAOException(e);
 		}
 		finally{
 			releaseDBResources(st, rs, conn);

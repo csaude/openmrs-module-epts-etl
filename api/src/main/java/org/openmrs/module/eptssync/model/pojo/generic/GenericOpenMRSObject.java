@@ -140,9 +140,4 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	public void setParentToNull(String parentAttName) {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
-	
-	@Override
-	public String toString() {
-		return this.uuid;
-	}
 }

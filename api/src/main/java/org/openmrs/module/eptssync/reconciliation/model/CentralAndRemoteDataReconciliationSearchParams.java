@@ -43,39 +43,54 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 		}
 		else
 		if (this.type.equals(SyncOperationConfig.SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR)) {
-			searchClauses.addColumnToSelect("dest_.uuid");
-			
-			searchClauses.addToClauseFrom(tableInfo.getTableName() + " dest_");
 			
 			if (getTableInfo().getTableName().equalsIgnoreCase("patient")) {
-				searchClauses.removeFromClauseFrom(tableInfo.getTableName() + " dest_");
-				
-				searchClauses.addToClauseFrom("person dest_ inner patient on patient_id = person_id");
+				searchClauses.addToClauseFrom("person inner join patient dest_ on patient_id = person_id");
+				searchClauses.addColumnToSelect("person.uuid");
+			}
+			else {
+				searchClauses.addToClauseFrom(tableInfo.getTableName() + " dest_");
+				searchClauses.addColumnToSelect("dest_.uuid");
 			}
 				
 			searchClauses.addToClauseFrom("inner join " + getTableInfo().generateFullStageTableName() + " src_ on dest_.uuid = src_.record_uuid");
 			
+			
 			searchClauses.addToClauses("src_.consistent = 1");
-			searchClauses.addToClauses("(	(dest_.date_changed is null and src_.record_date_changed is not null) " + 
-												" or (dest_.date_changed is not null and src_.record_date_changed is null) " + 
-													"or (dest_.date_voided is null and src_.record_date_voided is not null) " +
-														"or (dest_.date_voided is not null and src_.record_date_voided is null) " +
-															"or (dest_.date_changed < src_.record_date_changed)" +
-																"or (dest_.date_voided < src_.record_date_voided))");
+			
+			String startingClause = "1 != 1 ";
+			String dateVoidedClause = "";
+			String dateChangedClause = "";
+			
+			if (!getTableInfo().hasNoDateVoidedField()) {
+				dateVoidedClause += " or (dest_.date_voided is null and src_.record_date_voided is not null) ";
+				dateVoidedClause += " or (dest_.date_voided is not null and src_.record_date_voided is null) ";
+				dateVoidedClause += " or (dest_.date_voided < src_.record_date_voided)";
+			}
+			
+			
+			if (!getTableInfo().hasNotDateChangedField()) {
+				dateChangedClause +=  " or (dest_.date_changed is null and src_.record_date_changed is not null) ";
+				dateChangedClause +=  " or (dest_.date_changed is not null and src_.record_date_changed is null) "; 
+				dateChangedClause +=  " or (dest_.date_changed < src_.record_date_changed)";
+			}
+			
+			searchClauses.addToClauses(startingClause + dateVoidedClause + dateChangedClause);
 		}
 		else
 		if (this.type.equals(SyncOperationConfig.SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR)) {
-			searchClauses.addColumnToSelect("dest_.uuid");
-			
-			searchClauses.addToClauseFrom(tableInfo.getTableName() + " dest_");
-			
 			if (getTableInfo().getTableName().equalsIgnoreCase("patient")) {
-				searchClauses.removeFromClauseFrom(tableInfo.getTableName() + " dest_");
-				
-				searchClauses.addToClauseFrom("person dest_ inner patient on patient_id = person_id");
+				searchClauses.addToClauseFrom("person dest_ inner join patient on patient_id = person_id");
+			}
+			else {
+				searchClauses.addToClauseFrom(tableInfo.getTableName() + " dest_");
 			}
 				
-			searchClauses.addToClauses("not exists (select * from " + getTableInfo().generateFullStageTableName() + " src_ where dest_.uuid = src_.record_uuid)");
+			searchClauses.addToClauseFrom("left join " + getTableInfo().generateFullStageTableName() + " src_ on dest_.uuid = src_.record_uuid");
+			
+			searchClauses.addColumnToSelect("dest_.uuid");
+			
+			searchClauses.addToClauses("id is null");
 		}
 		else {
 			throw new ForbiddenOperationException("Operation " + this.type + " not supported!");

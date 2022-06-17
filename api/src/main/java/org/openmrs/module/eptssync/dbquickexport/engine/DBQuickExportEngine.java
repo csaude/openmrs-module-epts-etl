@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.eptssync.dbquickexport.controller.DBQuickExportController;
-import org.openmrs.module.eptssync.dbquickexport.model.DBQuickExportSearchLimits;
 import org.openmrs.module.eptssync.dbquickexport.model.DBQuickExportSearchParams;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
@@ -27,21 +26,10 @@ public class DBQuickExportEngine extends Engine {
 		super(monitor, limits);
 	}
 	
-	@Override
-	public void resetLimits(RecordLimits limits) {
-		getSearchParams().setLimits(new DBQuickExportSearchLimits(limits.getFirstRecordId(), limits.getLastRecordId(), this));
-		getLimits().setThreadMaxRecord(limits.getLastRecordId());
-		getLimits().setThreadMinRecord(limits.getFirstRecordId());
-	}
-	
-	public DBQuickExportSearchLimits getLimits() {
-		return (DBQuickExportSearchLimits) getSearchParams().getLimits();
-	}
-	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
 		if (!getLimits().isLoadedFromFile()) {
-			DBQuickExportSearchLimits saveLimits = retriveSavedLimits();
+			RecordLimits saveLimits = retriveSavedLimits();
 			
 			if (saveLimits != null) {
 				this.searchParams.setLimits(saveLimits);
@@ -54,12 +42,6 @@ public class DBQuickExportEngine extends Engine {
 			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 		}
 		else return null;	
-	}
-	
-	private DBQuickExportSearchLimits retriveSavedLimits() {
-		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
-		
-		return DBQuickExportSearchLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
 	}
 
 	@Override

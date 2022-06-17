@@ -1,6 +1,5 @@
 package org.openmrs.module.eptssync.reconciliation.engine;
 
-import java.io.File;
 import java.sql.Connection;
 import java.util.List;
 
@@ -16,7 +15,6 @@ import org.openmrs.module.eptssync.reconciliation.controller.CentralAndRemoteDat
 import org.openmrs.module.eptssync.reconciliation.model.CentralAndRemoteDataReconciliationSearchParams;
 import org.openmrs.module.eptssync.reconciliation.model.ConciliationReasonType;
 import org.openmrs.module.eptssync.reconciliation.model.DataReconciliationRecord;
-import org.openmrs.module.eptssync.reconciliation.model.DataReconciliationSearchLimits;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class CentralAndRemoteDataReconciliationEngine extends Engine {
@@ -25,21 +23,10 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		super(monitor, limits);
 	}
 	
-	@Override
-	public void resetLimits(RecordLimits limits) {
-		getSearchParams().setLimits(new DataReconciliationSearchLimits(limits.getFirstRecordId(), limits.getLastRecordId(), this));
-		getLimits().setThreadMaxRecord(limits.getLastRecordId());
-		getLimits().setThreadMinRecord(limits.getFirstRecordId());
-	}
-	
-	public DataReconciliationSearchLimits getLimits() {
-		return (DataReconciliationSearchLimits) getSearchParams().getLimits();
-	}
-	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
 		if (!getLimits().isLoadedFromFile()) {
-			DataReconciliationSearchLimits saveLimits = retriveSavedLimits();
+			RecordLimits saveLimits = retriveSavedLimits();
 			
 			if (saveLimits != null) {
 				this.searchParams.setLimits(saveLimits);
@@ -52,12 +39,6 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 		}
 		else return null;	
-	}
-	
-	private DataReconciliationSearchLimits retriveSavedLimits() {
-		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
-		
-		return DataReconciliationSearchLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
 	}
 
 	@Override

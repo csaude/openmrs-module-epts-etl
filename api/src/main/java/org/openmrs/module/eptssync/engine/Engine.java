@@ -1,5 +1,6 @@
 package org.openmrs.module.eptssync.engine;
 
+import java.io.File;
 import java.sql.Connection;
 import java.util.List;
 
@@ -57,6 +58,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		conn.finalizeConnection();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
+	}
+	
+	public RecordLimits getLimits() {
+		return getSearchParams().getLimits();
 	}
 	
 	public int getQtyRecordsPerProcessing() {
@@ -460,6 +465,8 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 	
 	public void resetLimits(RecordLimits limits) {
+		limits.setEngine(this);
+		
 		getSearchParams().setLimits(limits);
 	}
 	
@@ -596,6 +603,13 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	public void logInfo(String msg) {
 		getRelatedOperationController().logInfo(msg);
 	}
+	
+	protected RecordLimits retriveSavedLimits() {
+		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
+		
+		return RecordLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
+	}
+
 	
 	protected abstract void restart();
 

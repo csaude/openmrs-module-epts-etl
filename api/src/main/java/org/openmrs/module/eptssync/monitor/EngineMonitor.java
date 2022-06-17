@@ -188,7 +188,7 @@ public class EngineMonitor implements MonitoredOperation{
 			
 			if (qtyEngines == 1) currMax = maxRecId;
 			
-			RecordLimits limits = generateLimits(minRecId, currMax); 
+			RecordLimits limits = generateLimits(minRecId, currMax, null); 
 			
 			Engine mainEngine = retrieveAndRemoveMainSleepingEngine();
 			
@@ -210,7 +210,7 @@ public class EngineMonitor implements MonitoredOperation{
 			int i = 1;
 			
 			for (i = 1; i < qtyEngines; i++) {
-				 limits  = generateLimits(limits.getLastRecordId() + 1, limits.getLastRecordId() + qtyRecordsPerEngine);
+				 limits  = generateLimits(limits.getLastRecordId() + 1, limits.getLastRecordId() + qtyRecordsPerEngine, null);
 				 
 				 if (i == qtyEngines - 1) limits.setLastRecordId(maxRecId);
 				 
@@ -258,8 +258,8 @@ public class EngineMonitor implements MonitoredOperation{
 		}
 	}
 	
-	protected RecordLimits generateLimits(long minRecId, long currMax) {
-		return new RecordLimits(minRecId, currMax);
+	protected RecordLimits generateLimits(long minRecId, long currMax, Engine engine) {
+		return new RecordLimits(minRecId, currMax, engine);
 	}
 
 	private long determineQtyRecordsPerEngine(long qtyEngines, long qtyRecords) {

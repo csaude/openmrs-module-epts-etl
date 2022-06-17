@@ -1,12 +1,10 @@
 package org.openmrs.module.eptssync.dbquickcopy.engine;
 
-import java.io.File;
 import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.dbquickcopy.controller.DBQuickCopyController;
-import org.openmrs.module.eptssync.dbquickcopy.model.DBQuickCopySearchLimits;
 import org.openmrs.module.eptssync.dbquickcopy.model.DBQuickCopySearchParams;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
@@ -25,21 +23,10 @@ public class DBQuickCopyEngine extends Engine {
 		super(monitor, limits);
 	}
 	
-	@Override
-	public void resetLimits(RecordLimits limits) {
-		getSearchParams().setLimits(new DBQuickCopySearchLimits(limits.getFirstRecordId(), limits.getLastRecordId(), this));
-		getLimits().setThreadMaxRecord(limits.getLastRecordId());
-		getLimits().setThreadMinRecord(limits.getFirstRecordId());
-	}
-	
-	public DBQuickCopySearchLimits getLimits() {
-		return (DBQuickCopySearchLimits) getSearchParams().getLimits();
-	}
-	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
 		if (!getLimits().isLoadedFromFile()) {
-			DBQuickCopySearchLimits saveLimits = retriveSavedLimits();
+			RecordLimits saveLimits = retriveSavedLimits();
 			
 			if (saveLimits != null) {
 				this.searchParams.setLimits(saveLimits);
@@ -61,11 +48,6 @@ public class DBQuickCopyEngine extends Engine {
 		else return null;	
 	}
 	
-	private DBQuickCopySearchLimits retriveSavedLimits() {
-		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
-		
-		return DBQuickCopySearchLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
-	}
 
 	@Override
 	protected boolean mustDoFinalCheck() {

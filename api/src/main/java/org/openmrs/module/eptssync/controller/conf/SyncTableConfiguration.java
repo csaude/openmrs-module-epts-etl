@@ -651,4 +651,12 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public boolean isDBQuickCopy() {
 		return getRelatedSynconfiguration().isDBQuickCopyProcess();
 	}
+	
+	public boolean hasNoDateVoidedField() {
+		return utilities.isStringIn(getTableName(), "note");
+	}
+	
+	public boolean hasNotDateChangedField() {
+		return utilities.isStringIn(getTableName(), "obs");
+	}
 }

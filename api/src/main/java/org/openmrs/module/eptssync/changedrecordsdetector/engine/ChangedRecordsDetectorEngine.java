@@ -1,12 +1,10 @@
 package org.openmrs.module.eptssync.changedrecordsdetector.engine;
 
-import java.io.File;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.changedrecordsdetector.controller.ChangedRecordsDetectorController;
-import org.openmrs.module.eptssync.changedrecordsdetector.model.ChangedRecordSearchLimits;
 import org.openmrs.module.eptssync.changedrecordsdetector.model.ChangedRecordsDetectorSearchParams;
 import org.openmrs.module.eptssync.changedrecordsdetector.model.DetectedRecordInfo;
 import org.openmrs.module.eptssync.engine.Engine;
@@ -35,21 +33,10 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		action.configureDBService(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), connInfo);
 	}
 	
-	@Override
-	public void resetLimits(RecordLimits limits) {
-		getSearchParams().setLimits(new ChangedRecordSearchLimits(limits.getFirstRecordId(), limits.getLastRecordId(), this));
-		getLimits().setThreadMaxRecord(limits.getLastRecordId());
-		getLimits().setThreadMinRecord(limits.getFirstRecordId());
-	}
-	
-	public ChangedRecordSearchLimits getLimits() {
-		return (ChangedRecordSearchLimits) getSearchParams().getLimits();
-	}
-	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
 		if (!getLimits().isLoadedFromFile()) {
-			ChangedRecordSearchLimits saveLimits = retriveSavedLimits();
+			RecordLimits saveLimits = retriveSavedLimits();
 			
 			if (saveLimits != null) {
 				this.searchParams.setLimits(saveLimits);
@@ -62,12 +49,6 @@ public class ChangedRecordsDetectorEngine extends Engine {
 			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 		}
 		else return null;	
-	}
-	
-	private ChangedRecordSearchLimits retriveSavedLimits() {
-		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
-		
-		return ChangedRecordSearchLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
 	}
 
 	@Override
