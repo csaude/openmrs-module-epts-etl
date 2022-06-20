@@ -10,10 +10,10 @@ import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
+public class ExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 	private boolean selectAllRecords;
 	
-	public SyncExportSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
+	public ExportSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
 		super(tableInfo, limits);
 		
 		setOrderByFields(tableInfo.getPrimaryKey());
@@ -26,17 +26,15 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 		
 		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addColumnToSelect("patient.*, person.uuid");
-			searchClauses.addToClauseFrom("left join person on person.person_id = patient_id");
+			searchClauses.addToClauseFrom("inner join person on person.person_id = patient_id");
 		}
 		else {
 			searchClauses.addColumnToSelect("*");
 		}
 		
-		searchClauses.addToClauseFrom("LEFT JOIN " + tableInfo.generateFullStageTableName() + " ON record_origin_id  = " + tableInfo.getPrimaryKey());
+		searchClauses.addToClauseFrom("inner join " + tableInfo.generateFullStageTableName() + " on record_origin_id  = " + tableInfo.getPrimaryKey());
 		
 		if (!this.selectAllRecords) {
-			searchClauses.addToClauses("last_sync_date IS NULL OR last_update_date > last_sync_date ");
-			
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
 				searchClauses.addToParameters(this.limits.getFirstRecordId());
@@ -60,7 +58,7 @@ public class SyncExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		SyncExportSearchParams auxSearchParams = new SyncExportSearchParams(this.tableInfo, this.limits, conn);
+		ExportSearchParams auxSearchParams = new ExportSearchParams(this.tableInfo, this.limits, conn);
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);

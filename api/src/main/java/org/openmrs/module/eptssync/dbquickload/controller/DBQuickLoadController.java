@@ -129,9 +129,4 @@ public class DBQuickLoadController extends OperationController implements Destin
 	public boolean mustRestartInTheEnd() {
 		return hasNestedController() ? false : true;
 	}
-
-	@Override
-	public String getOperationType() {
-		return SyncOperationConfig.SYNC_OPERATION_LOAD;
-	}
 }

@@ -130,8 +130,4 @@ public class DataLoadController extends OperationController implements Destinati
 		return hasNestedController() ? false : true;
 	}
 
-	@Override
-	public String getOperationType() {
-		return SyncOperationConfig.SYNC_OPERATION_LOAD;
-	}
 }

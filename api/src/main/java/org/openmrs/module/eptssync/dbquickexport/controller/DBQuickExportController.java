@@ -72,11 +72,6 @@ public class DBQuickExportController extends OperationController {
 	public boolean mustRestartInTheEnd() {
 		return false;
 	}
-
-	@Override
-	public String getOperationType() {
-		return  this.operationConfig.getOperationType();
-	}
 	
 	@Override
 	public OpenConnection openConnection() {

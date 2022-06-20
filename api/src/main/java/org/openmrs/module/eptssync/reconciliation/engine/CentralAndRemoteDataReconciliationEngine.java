@@ -103,13 +103,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	
 	private void performeOutdatedRecordsUpdate(List<SyncRecord> syncRecords, Connection conn) throws DBException{
 		for (SyncRecord record: syncRecords) {
-			DataReconciliationRecord data = new DataReconciliationRecord(((OpenMRSObject)record).getUuid() , getSyncTableConfiguration(), ConciliationReasonType.OUTDATED);
-			
-			data.reloadRelatedRecordDataFromRemote(conn);
-			
-			data.consolidateAndSaveData(conn);
-			
-			data.save(conn);
+			DataReconciliationRecord.tryToReconciliate((OpenMRSObject) record, getSyncTableConfiguration(), conn);
 		}	
 	}
 	

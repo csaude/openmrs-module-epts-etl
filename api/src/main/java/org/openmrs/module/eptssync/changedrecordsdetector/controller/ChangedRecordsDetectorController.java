@@ -112,11 +112,6 @@ public class ChangedRecordsDetectorController extends OperationController {
 	}
 
 	@Override
-	public String getOperationType() {
-		return  this.operationConfig.getOperationType();
-	}
-	
-	@Override
 	public OpenConnection openConnection() {
 		OpenConnection conn = super.openConnection();
 	

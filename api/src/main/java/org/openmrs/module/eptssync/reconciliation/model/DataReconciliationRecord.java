@@ -26,6 +26,27 @@ public class DataReconciliationRecord {
 		this.reasonType = reasonType;
 	}
 	
+	
+	public static void tryToReconciliate(OpenMRSObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
+		DataReconciliationRecord dataReciliationRecord = new DataReconciliationRecord(record.getUuid(), config, ConciliationReasonType.OUTDATED);
+		
+		dataReciliationRecord.record = record; 
+		dataReciliationRecord.config = config;
+		dataReciliationRecord.stageInfo = record.getRelatedSyncInfo();
+		
+		OpenMRSObject srcObj = OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(), dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginId(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
+		
+		DataReconciliationRecord.loadDestParentInfo(srcObj, dataReciliationRecord.getConfig(),  conn);
+		
+		srcObj.setRelatedSyncInfo(dataReciliationRecord.stageInfo);
+		
+		if (!dataReciliationRecord.record.hasExactilyTheSameDataWith(srcObj)) {
+			srcObj.save(config, conn);
+		
+			dataReciliationRecord.save(conn);
+		}
+	}
+	
 	public void reloadRelatedRecordDataFromRemote(Connection conn) throws DBException, ForbiddenOperationException {
 		this.stageInfo = SyncImportInfoDAO.getWinRecord(this.config, this.recordUuid, conn);
 		
@@ -68,7 +89,7 @@ public class DataReconciliationRecord {
 	public void consolidateAndSaveData(Connection conn) throws DBException{
 		if (!config.isFullLoaded()) config.fullLoad(); 
 		
-		this.loadDestParentInfo(conn);
+		DataReconciliationRecord.loadDestParentInfo(this.record, this.config, conn);
 		
 		record.save(config, conn);
 
@@ -91,7 +112,9 @@ public class DataReconciliationRecord {
 		
 	}
 
-	public void loadDestParentInfo(Connection conn) throws ParentNotYetMigratedException, DBException {
+	private static void loadDestParentInfo(OpenMRSObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
+		SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
+		
 		
 		for (RefInfo refInfo: config.getParents()) {
 			if (refInfo.getRefTableConfiguration().isMetadata()) continue;

@@ -143,7 +143,7 @@ public abstract class BaseVO  implements VO{
 	 * @return todos os atributos de inst�ncia desta classe independentemento do
 	 *         modificador de acesso
 	 */
-	private Object[] getFields() {
+	protected Object[] getFields() {
 		return getFields(this);
 	}
 	

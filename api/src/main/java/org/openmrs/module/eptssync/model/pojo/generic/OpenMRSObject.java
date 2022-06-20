@@ -113,8 +113,6 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract Map<RefInfo, Integer>  loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException;
 	
 	public abstract void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException;
-	
-	//public abstract void markAsConsistent(Connection conn) throws DBException;
 		
 	public abstract void changeParentValue(String parentAttName, OpenMRSObject newParent);
 	
@@ -126,6 +124,11 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract Date getDateVoided();
 	public abstract Date getDateCreated() ;
 	
-	//public abstract void updateDestinationRecordId(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException;
-	
+	/**
+	 * Check if this record has exactily the same values in all fields with a given object
+	 * 
+	 * @param srcObj
+	 * @return true if this record has exactily the same values in all fields with the given object
+	 */
+	public abstract boolean hasExactilyTheSameDataWith(OpenMRSObject srcObj);
 }

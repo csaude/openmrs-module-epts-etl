@@ -40,7 +40,7 @@ public class DBExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstSyncRecordOnOrigin(tableInfo, null, getProgressInfo().getStartTime(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getFirstConsistentRecordInOrigin(tableInfo, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -60,7 +60,7 @@ public class DBExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecordOnOrigin(tableInfo, null, getProgressInfo().getStartTime(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getLastConsistentRecordOnOrigin(tableInfo, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -112,11 +112,6 @@ public class DBExportController extends OperationController {
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return false;
-	}
-
-	@Override
-	public String getOperationType() {
-		return SyncOperationConfig.SYNC_OPERATION_EXPORT;
 	}
 
 }

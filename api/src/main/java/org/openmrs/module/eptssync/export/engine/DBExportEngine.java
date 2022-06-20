@@ -10,7 +10,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.export.controller.DBExportController;
-import org.openmrs.module.eptssync.export.model.SyncExportSearchParams;
+import org.openmrs.module.eptssync.export.model.ExportSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
@@ -133,7 +133,7 @@ public class DBExportEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new SyncExportSearchParams(this.getSyncTableConfiguration(), limits, conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new ExportSearchParams(this.getSyncTableConfiguration(), limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
 		

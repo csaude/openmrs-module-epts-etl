@@ -82,11 +82,6 @@ public class DBQuickCopyController extends OperationController {
 		return false;
 	}
 
-	@Override
-	public String getOperationType() {
-		return  this.operationConfig.getOperationType();
-	}
-	
 	public OpenConnection openSrcConnection() {
 		return srcDBService.openConnection();
 	}	

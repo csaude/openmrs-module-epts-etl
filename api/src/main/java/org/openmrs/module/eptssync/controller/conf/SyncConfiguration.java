@@ -223,7 +223,7 @@ public class SyncConfiguration {
 	}
 
 	@JsonIgnore
-	public boolean isDoIntegrityCheckInTheEnd(String operationType) {
+	public boolean isDoIntegrityCheckInTheEnd(SyncOperationType operationType) {
 		SyncOperationConfig op = findOperation(operationType);
 		
 		return op.isDoIntegrityCheckInTheEnd();
@@ -423,7 +423,7 @@ public class SyncConfiguration {
 		this.operations = operations;
 	}
 	
-	public SyncOperationConfig findOperation(String operationType) {
+	public SyncOperationConfig findOperation(SyncOperationType operationType) {
 		SyncOperationConfig toFind = SyncOperationConfig.fastCreate(operationType);
 		
 		for (SyncOperationConfig op : this.operations) {
@@ -440,7 +440,7 @@ public class SyncConfiguration {
 			}
 		}
 		
-		throw new ForbiddenOperationException("THE OPERATION '" + operationType.toUpperCase() + "' WAS NOT FOUND!!!!");
+		throw new ForbiddenOperationException("THE OPERATION '" + operationType + "' WAS NOT FOUND!!!!");
 	}
 	
 	@JsonIgnore
@@ -479,7 +479,7 @@ public class SyncConfiguration {
 			operation.validate(); 
 		}
 			
-		List<String> supportedOperations = null;
+		List<SyncOperationType> supportedOperations = null;
 		
 		if (isSourceSyncProcess() ) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInSourceSyncProcess();
@@ -491,7 +491,7 @@ public class SyncConfiguration {
 		
 		
 		if (supportedOperations != null) {
-			for (String operationType : supportedOperations) {
+			for (SyncOperationType operationType : supportedOperations) {
 				if (!isOperationConfigured(operationType)) errorMsg += ++errNum + ". The operation '" + operationType + " is not configured\n";
 			}
 		}
@@ -506,7 +506,7 @@ public class SyncConfiguration {
 		}
 	}
 	
-	private boolean isOperationConfigured(String operationType) {
+	private boolean isOperationConfigured(SyncOperationType operationType) {
 		SyncOperationConfig operation = new SyncOperationConfig();
 		operation.setOperationType(operationType);
 		

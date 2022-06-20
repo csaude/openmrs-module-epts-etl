@@ -37,7 +37,7 @@ public class InconsistenceSolverController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstSyncRecordOnOrigin(tableInfo, null, null, conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getFirstNeverProcessedRecordOnOrigin(tableInfo, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -57,7 +57,7 @@ public class InconsistenceSolverController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastRecordOnOrigin(tableInfo, null, null, conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getLastNeverProcessedRecordOnOrigin(tableInfo, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -75,11 +75,6 @@ public class InconsistenceSolverController extends OperationController {
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return false;
-	}
-
-	@Override
-	public String getOperationType() {
-		return SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER;
 	}
 	
 	@Override

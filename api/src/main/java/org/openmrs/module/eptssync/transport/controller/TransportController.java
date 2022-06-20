@@ -126,9 +126,4 @@ public class TransportController extends OperationController {
 	public boolean mustRestartInTheEnd() {
 		return hasNestedController() ? false : true;
 	}
-
-	@Override
-	public String getOperationType() {
-		return SyncOperationConfig.SYNC_OPERATION_TRANSPORT;
-	}	
 }

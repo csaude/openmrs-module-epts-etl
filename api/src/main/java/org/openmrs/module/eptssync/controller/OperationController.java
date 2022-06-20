@@ -9,6 +9,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
@@ -207,7 +208,7 @@ public abstract class OperationController implements Controller{
 				break;
 			}
 			else{
-				logInfo("INITIALIZING '" + getOperationType().toUpperCase() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
+				logInfo("INITIALIZING '" + getOperationType() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
 					
 				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				
@@ -621,7 +622,9 @@ public abstract class OperationController implements Controller{
 	public abstract boolean mustRestartInTheEnd();
 	
 	@JsonIgnore
-	public abstract String getOperationType();
+	public SyncOperationType getOperationType() {
+		return  this.operationConfig.getOperationType();
+	}
 	
 	public abstract Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) ;
 

@@ -1,5 +1,6 @@
 package org.openmrs.module.eptssync.controller.conf;
 
+import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 public enum SyncProcessType {
 	SOURCE_SYNC,
@@ -10,46 +11,35 @@ public enum SyncProcessType {
 	DATA_RECONCILIATION,
 	DB_QUICK_COPY;
 	
-	public static SyncProcessType find(String processType) {
-		for (SyncProcessType type : values()) {
-	        if (type.name().equalsIgnoreCase(processType)) {
-	           return type;
-	        }
-	    }
-	    
-	    return null;
-	}
-	
 	public static boolean isDBQuickCopy(String processType){
-		return find(processType).equals(DB_QUICK_COPY);
+		return  SyncProcessType.valueOf(processType).equals(DB_QUICK_COPY);
 	}
 	
 	public static boolean isDBQuickLoad(String processType){
-		return find(processType).equals(DB_QUICK_LOAD);
+		return  SyncProcessType.valueOf(processType).equals(DB_QUICK_LOAD); 
 	}
 	
 	public static boolean isSourceSync(String processType){
-		return find(processType).equals(SOURCE_SYNC);
+		return  SyncProcessType.valueOf(processType).equals(SOURCE_SYNC);
 	}
 	
 	public static boolean isDestinationSync(String processType){
-		return find(processType).equals(DESTINATION_SYNC);
+		return  SyncProcessType.valueOf(processType).equals(DESTINATION_SYNC);
 	}
 	
 	public static boolean isDBResync(String processType){
-		return find(processType).equals(DB_RE_SYNC);
+		return  SyncProcessType.valueOf(processType).equals(DB_RE_SYNC);
 	}
 	
-	
 	public static boolean isDBQuickExport(String processType){
-		return find(processType).equals(DB_QUICK_EXPORT);
+		return  SyncProcessType.valueOf(processType).equals(DB_QUICK_EXPORT);
 	}
 	
 	public static boolean isDataReconciliation(String processType){
-		return find(processType).equals(DATA_RECONCILIATION);
+		return  SyncProcessType.valueOf(processType).equals(DATA_RECONCILIATION);
 	}
 	
 	public static boolean isSupportedProcessType(String processType) {
-		return find(processType) != null;
+		return CommonUtilities.getInstance().getPosOnArray(SyncProcessType.values(), SyncProcessType.valueOf(processType)) >= 0;
 	}
 }

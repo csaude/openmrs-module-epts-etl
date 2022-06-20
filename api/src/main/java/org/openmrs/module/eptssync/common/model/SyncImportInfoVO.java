@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
@@ -38,7 +38,6 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	
 	private int id;
 	private int recordOriginId;
-	//private int recordDestinationId;
 	private String recordUuid;
 	private String recordOriginLocationCode;
 	
@@ -225,7 +224,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		source.setRelatedSyncInfo(this);
 		try {
 				
-			if (tableInfo.isDoIntegrityCheckInTheEnd(SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION)) {
+			if (tableInfo.isDoIntegrityCheckInTheEnd(SyncOperationType.SYNCHRONIZATION)) {
 				if (source.hasParents()) {
 					this.markAsConsistent(tableInfo, conn);
 				}

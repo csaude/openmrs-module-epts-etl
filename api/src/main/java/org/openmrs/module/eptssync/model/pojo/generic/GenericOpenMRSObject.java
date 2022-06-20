@@ -20,6 +20,10 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	public GenericOpenMRSObject() {
 	}
 	
+	public GenericOpenMRSObject(Integer objectId) {
+		this.objectId = objectId;
+	}
+	
 	public void load(ResultSet rs) throws SQLException{ 
 		try {
 			super.load(rs);

@@ -302,6 +302,39 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return find(SyncImportInfoVO.class, sql, params, conn);		
 	}
 	
+	
+	public static SyncImportInfoVO getFirstRecordInDestination(SyncTableConfiguration tableConfiguration, String appOriginCode, Connection conn) throws DBException {
+		return getRecordInDestination(tableConfiguration, "min", appOriginCode, conn);
+	}
+	
+	public static SyncImportInfoVO getLastRecordInDestination(SyncTableConfiguration tableConfiguration, String appOriginCode, Connection conn) throws DBException {
+		return getRecordInDestination(tableConfiguration, "max", appOriginCode, conn);
+	}
+	
+	private static SyncImportInfoVO getRecordInDestination(SyncTableConfiguration tableConfiguration, String function, String appOriginCode, Connection conn) throws DBException {
+		Object[] params = {};
+		
+		String sql = "";
+		
+		String table = tableConfiguration.getTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
+		
+		String tablesToSelect = stageTable + " src_ INNER JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
+		
+		if (table.equalsIgnoreCase("patient")) {
+			tablesToSelect = stageTable + " src_ INNER JOIN person dest_ on dest_.uuid = src_.record_uuid LEFT JOIN patient ON patient_id = person_id ";
+		}
+		
+		sql += " SELECT * \n";
+		sql += " FROM  	" + stageTable + "\n";
+		sql += " WHERE 	1 = 1 \n";
+		sql += "		AND id = ";
+		sql += " 			 (	SELECT " + function+ "(id)\n";
+		sql += "				FROM   " + tablesToSelect + "\n";
+		sql += "				WHERE " +  tableConfiguration.getPrimaryKey() + " IS NULL\n)";
+		
+		return find(SyncImportInfoVO.class, sql, params, conn);		
+	}
 	/**
 	 * For each originAppLocationId retrieve on record from the diven tableName
 	 * 

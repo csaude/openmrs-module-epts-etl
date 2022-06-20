@@ -27,45 +27,6 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class SyncOperationConfig {
-	public static final String SYNC_OPERATION_DATABASE_PREPARATION = "database_preparation";
-	public static final String SYNC_OPERATION_POJO_GENERATION = "pojo_generation";
-	public static final String SYNC_OPERATION_INCONSISTENCY_SOLVER= "inconsistency_solver";
-	public static final String SYNC_OPERATION_EXPORT = "export";
-	public static final String SYNC_OPERATION_SYNCHRONIZATION = "synchronization";
-	public static final String SYNC_OPERATION_LOAD = "load";
-	public static final String SYNC_OPERATION_TRANSPORT = "transport";
-	public static final String SYNC_OPERATION_CONSOLIDATION= "consolidation";
-	public static final String SYNC_OPERATION_CHANGED_RECORDS_DETECTOR = "changed_records_detector";
-	public static final String SYNC_OPERATION_NEW_RECORDS_DETECTOR = "new_records_detector";
-	public static final String SYNC_OPERATION_QUICK_EXPORT_DB = "db_quick_export";
-	public static final String SYNC_OPERATION_DB_QUICK_LOAD = "db_quick_load";
-	
-	public static final String SYNC_OPERATION_RESOLVE_CONFLICTS_IN_STAGE_AREA= "resolve_conflicts";
-	public static final String SYNC_OPERATION_MISSING_RECORDS_DETECTOR = "missing_records_detector";
-	public static final String SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR = "outdated_records_detector";
-	public static final String SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR = "phantom_records_detector";
-	
-	public static final String SYNC_OPERATION_DB_QUICK_COPY = "db_quick_copy";
-	
-	public static final String[] SUPPORTED_OPERATIONS = {	SYNC_OPERATION_CONSOLIDATION, 
-															SYNC_OPERATION_EXPORT, 
-															SYNC_OPERATION_LOAD, 
-															SYNC_OPERATION_SYNCHRONIZATION, 
-															SYNC_OPERATION_TRANSPORT,
-															SYNC_OPERATION_DATABASE_PREPARATION,
-															SYNC_OPERATION_POJO_GENERATION,
-															SYNC_OPERATION_INCONSISTENCY_SOLVER,
-															SYNC_OPERATION_CHANGED_RECORDS_DETECTOR,
-															SYNC_OPERATION_NEW_RECORDS_DETECTOR,
-															SYNC_OPERATION_QUICK_EXPORT_DB,
-															SYNC_OPERATION_DB_QUICK_LOAD,
-															SYNC_OPERATION_MISSING_RECORDS_DETECTOR,
-															SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR,
-															SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR,
-															SYNC_OPERATION_RESOLVE_CONFLICTS_IN_STAGE_AREA,
-															SYNC_OPERATION_DB_QUICK_COPY
-														};
-
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public static String PROCESSING_MODE_SEQUENCIAL="sequencial";
@@ -73,7 +34,7 @@ public class SyncOperationConfig {
 	
 	private static final String[] supportedProcessingModes = {PROCESSING_MODE_SEQUENCIAL, PROCESSING_MODE_PARALLEL};
 
-	private String operationType;
+	private SyncOperationType operationType;
 
 	private int maxRecordPerProcessing;
 	private int maxSupportedEngines;
@@ -221,12 +182,12 @@ public class SyncOperationConfig {
 		this.relatedSyncConfig = relatedSyncConfig;
 	}
 	
-	public String getOperationType() {
+	public SyncOperationType getOperationType() {
 		return operationType;
 	}
 
-	public void setOperationType(String operationType) {
-		if (!utilities.isStringIn(operationType.toLowerCase(), SUPPORTED_OPERATIONS)) throw new ForbiddenOperationException("Operation '" + operationType + "' nor supported!");
+	public void setOperationType(SyncOperationType operationType) {
+		if (this.operationType.isSupportedOperation()) throw new ForbiddenOperationException("Operation '" + operationType + "' nor supported!");
 		
 		this.operationType = operationType;
 	}
@@ -264,7 +225,7 @@ public class SyncOperationConfig {
 		return doIntegrityCheckInTheEnd;
 	}
 	
-	public static SyncOperationConfig fastCreate(String operationType) {
+	public static SyncOperationConfig fastCreate(SyncOperationType operationType) {
 		SyncOperationConfig op = new SyncOperationConfig();
 		op.setOperationType(operationType);
 	
@@ -273,87 +234,86 @@ public class SyncOperationConfig {
 	
 	@JsonIgnore
 	public boolean isExportOperation() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_EXPORT);
+		return this.operationType.isExport(); 
 	}
 	
 	@JsonIgnore
 	public boolean isSynchronizationOperation() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION);
+		return this.operationType.isSynchronization();
 	}
 	
 	@JsonIgnore
 	public boolean isLoadOperation() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_LOAD);
+		return this.operationType.isLoad();
 	}
 	
 	@JsonIgnore
 	public boolean isTransportOperation() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_TRANSPORT);
+		return this.operationType.isTransport();
 	}
 	
 	@JsonIgnore
 	public boolean isConsolidationOperation() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_CONSOLIDATION);
+		return this.operationType.isConsolidation();
 	}
 	
 	@JsonIgnore
 	public boolean isDatabasePreparationOperation() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION);
+		return this.operationType.isDatabasePreparation();
 	}
 	
 	@JsonIgnore
 	public boolean isPojoGeneration() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION);
+		return this.operationType.isPojoGeneration();
 	}
 	
 	@JsonIgnore
 	public boolean isInconsistenceSolver() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER);
+		return this.operationType.isInconsistencySolver();
 	}
 	
 	@JsonIgnore
 	public boolean isChangedRecordsDetector() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR);
+		return this.operationType.isChangedRecordsDetector();
 	}
 	
 	public boolean isDBQuickExport() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_QUICK_EXPORT_DB);
+		return this.operationType.isDbQuickExport();
 	}
 	
 	public boolean isDBQuickCopy() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_DB_QUICK_COPY);
+		return this.operationType.isDbQuickCopy();
 	}
 	
 	@JsonIgnore
 	public boolean isNewRecordsDetector() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR);
+		return this.operationType.isNewRecordsDetector();
 	}
 	
 	@JsonIgnore
 	public boolean isDBQuickLoad() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_DB_QUICK_LOAD);
+		return this.operationType.isDbQuickLoad();
 	}
 	
 	@JsonIgnore
 	public boolean isMissingRecordsDetector() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_MISSING_RECORDS_DETECTOR);
+		return this.operationType.isMissingRecordsDetector();
 	}
 	
 	@JsonIgnore
 	public boolean isOutdateRecordsDetector() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR);
+		return this.operationType.isOutdatedRecordsDetector();
 	}
 	
 	@JsonIgnore
 	public boolean isPhantomRecordsDetector() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR);
+		return this.operationType.isPhantomRecordsDetector();
 	}
 	
 	@JsonIgnore
 	public boolean isResolveConflictsInStageArea() {
-		return this.operationType.equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_RESOLVE_CONFLICTS_IN_STAGE_AREA);
+		return this.operationType.isResolveConflicts();
 	}
-	
 	
 	@Override
 	public boolean equals(Object obj) {
@@ -361,7 +321,7 @@ public class SyncOperationConfig {
 		
 		if (!(obj instanceof SyncOperationConfig)) return false;
 		
-		return this.operationType.equalsIgnoreCase(((SyncOperationConfig)obj).operationType);
+		return this.operationType.equals(((SyncOperationConfig)obj).operationType);
 	}
 	
 	public List<OperationController> generateRelatedController(ProcessController parent, String appOriginCode_, Connection conn) {
@@ -507,12 +467,12 @@ public class SyncOperationConfig {
 		return utilities.existOnArray(getSupportedOperationsInSourceSyncProcess(), this.operationType);
 	}
 	
-	public static List<String> getSupportedOperationsInSourceSyncProcess() {
-		String[] supported = {SyncOperationConfig.SYNC_OPERATION_EXPORT,
-							  SyncOperationConfig.SYNC_OPERATION_TRANSPORT,
-							  SyncOperationConfig.SYNC_OPERATION_INCONSISTENCY_SOLVER,
-							  SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION,
-							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION};
+	public static List<SyncOperationType> getSupportedOperationsInSourceSyncProcess() {
+		SyncOperationType[] supported = {	SyncOperationType.EXPORT,
+											SyncOperationType.TRANSPORT,
+											SyncOperationType.INCONSISTENCY_SOLVER,
+											SyncOperationType.DATABASE_PREPARATION,
+											SyncOperationType.POJO_GENERATION};
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -522,10 +482,10 @@ public class SyncOperationConfig {
 		return utilities.existOnArray(getSupportedOperationsInDBReSyncProcess(), this.operationType);
 	}
 	
-	public static List<String> getSupportedOperationsInDBReSyncProcess() {
-		String[] supported = {SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR,
-							  SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR,
-							  SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION};
+	public static List<SyncOperationType>  getSupportedOperationsInDBReSyncProcess() {
+		SyncOperationType[] supported = {SyncOperationType.NEW_RECORDS_DETECTOR,
+							  SyncOperationType.CHANGED_RECORDS_DETECTOR,
+							  SyncOperationType.DATABASE_PREPARATION};
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -537,9 +497,9 @@ public class SyncOperationConfig {
 		return utilities.existOnArray(getSupportedOperationsInDBQuickLoadProcess(), this.operationType);
 	}
 		
-	public static List<String> getSupportedOperationsInDBQuickLoadProcess() {
-		String[] supported = {SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION,
-							  SyncOperationConfig.SYNC_OPERATION_DB_QUICK_LOAD};
+	public static List<SyncOperationType>  getSupportedOperationsInDBQuickLoadProcess() {
+		SyncOperationType[] supported = {SyncOperationType.DATABASE_PREPARATION,
+							  SyncOperationType.DB_QUICK_LOAD};
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -550,9 +510,9 @@ public class SyncOperationConfig {
 		return utilities.existOnArray(getSupportedOperationsInDBQuickExportProcess(), this.operationType);
 	}
 		
-	public static List<String> getSupportedOperationsInDBQuickExportProcess() {
-		String[] supported = {SyncOperationConfig.SYNC_OPERATION_QUICK_EXPORT_DB,
-							  SyncOperationConfig.SYNC_OPERATION_TRANSPORT};
+	public static List<SyncOperationType> getSupportedOperationsInDBQuickExportProcess() {
+		SyncOperationType[] supported = {SyncOperationType.DB_QUICK_EXPORT,
+							  			 SyncOperationType.TRANSPORT};
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -563,9 +523,9 @@ public class SyncOperationConfig {
 		return utilities.existOnArray(getSupportedOperationsInDBQuickCopyProcess(), this.operationType);
 	}
 		
-	public static List<String> getSupportedOperationsInDBQuickCopyProcess() {
-		String[] supported = {SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION,
-							  SyncOperationConfig.SYNC_OPERATION_DB_QUICK_COPY};
+	public static List<SyncOperationType>  getSupportedOperationsInDBQuickCopyProcess() {
+		SyncOperationType[] supported = {SyncOperationType.DATABASE_PREPARATION,
+							  			 SyncOperationType.DB_QUICK_COPY};
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -576,12 +536,12 @@ public class SyncOperationConfig {
 		return utilities.existOnArray(getSupportedOperationsInDataReconciliationProcess(), this.operationType);
 	}
 		
-	public static List<String> getSupportedOperationsInDataReconciliationProcess() {
-		String[] supported = {SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION,
-							  SyncOperationConfig.SYNC_OPERATION_RESOLVE_CONFLICTS_IN_STAGE_AREA,
-							  SyncOperationConfig.SYNC_OPERATION_MISSING_RECORDS_DETECTOR,
-							  SyncOperationConfig.SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR,
-							  SyncOperationConfig.SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR};
+	public static List<SyncOperationType>  getSupportedOperationsInDataReconciliationProcess() {
+		SyncOperationType[] supported = { SyncOperationType.POJO_GENERATION,
+										  SyncOperationType.RESOLVE_CONFLICTS,
+										  SyncOperationType.MISSING_RECORDS_DETECTOR,
+										  SyncOperationType.OUTDATED_RECORDS_DETECTOR,
+										  SyncOperationType.PHANTOM_RECORDS_DETECTOR};
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -592,12 +552,12 @@ public class SyncOperationConfig {
 	}
 	
 	
-	public static List<String> getSupportedOperationsInDestinationSyncProcess() {
-		String[] supported = {SyncOperationConfig.SYNC_OPERATION_CONSOLIDATION,
-							  SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION,
-							  SyncOperationConfig.SYNC_OPERATION_LOAD,
-							  SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION,
-							  SyncOperationConfig.SYNC_OPERATION_POJO_GENERATION};
+	public static List<SyncOperationType>  getSupportedOperationsInDestinationSyncProcess() {
+		SyncOperationType[] supported = {SyncOperationType.CONSOLIDATION,
+							  SyncOperationType.SYNCHRONIZATION,
+							  SyncOperationType.LOAD,
+							  SyncOperationType.DATABASE_PREPARATION,
+							  SyncOperationType.POJO_GENERATION};
 		
 		
 		return utilities.parseArrayToList(supported);

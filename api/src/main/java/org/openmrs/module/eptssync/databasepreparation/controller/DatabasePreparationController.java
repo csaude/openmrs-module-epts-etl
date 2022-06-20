@@ -107,11 +107,6 @@ public class DatabasePreparationController extends OperationController {
 		return false;
 	}
 
-	@Override
-	public String getOperationType() {
-		return SyncOperationConfig.SYNC_OPERATION_DATABASE_PREPARATION;
-	}	
-	
 	public boolean existInconsistenceInfoTable() {
 		OpenConnection conn = openConnection();
 		

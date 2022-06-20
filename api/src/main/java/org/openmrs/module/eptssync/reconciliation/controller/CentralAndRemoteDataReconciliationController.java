@@ -8,6 +8,7 @@ import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
@@ -49,24 +50,21 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 
 	public boolean isMissingRecordsDetector() {
-		return this.getOperationType().equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_MISSING_RECORDS_DETECTOR);
+		return this.getOperationType().isMissingRecordsDetector();
 	}
 	
 	public boolean isOutdateRecordsDetector() {
-		return this.getOperationType().equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_OUTDATED_RECORDS_DETECTOR);
+		return this.getOperationType().isOutdatedRecordsDetector();
 	}
 
 	public boolean isPhantomRecordsDetector() {
-		return this.getOperationType().equalsIgnoreCase(SyncOperationConfig.SYNC_OPERATION_PHANTOM_RECORDS_DETECTOR);
+		return this.getOperationType().isPhantomRecordsDetector();
 	}
 	
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		if (tableInfo.getTableName().equalsIgnoreCase("users")) return 0;
-		
-		if (tableInfo.getTableName().equalsIgnoreCase("person")) {
-			System.out.println("STOP");
-		}
+		if (!tableInfo.getTableName().equalsIgnoreCase("person")) return 0;
 		
 		OpenConnection conn = openConnection();
 		
@@ -80,15 +78,11 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			}
 			else
 			if (isOutdateRecordsDetector()) {
-				OpenMRSObject record = OpenMRSObjectDAO.getFirstOutDatedRecordInDestination(tableInfo, conn);
-				
-				id = record != null ? record.getObjectId() : 0;
+				return OpenMRSObjectDAO.getFirstRecord(tableInfo, conn);
 			}
 			else
 			if (isPhantomRecordsDetector()){
-				OpenMRSObject record = OpenMRSObjectDAO.getFirstPhantomRecordInDestination(tableInfo, conn);
-				
-				id = record != null ? record.getObjectId() : 0;
+				return OpenMRSObjectDAO.getLastRecord(tableInfo, conn);
 			}
 		
 			return id;
@@ -105,6 +99,8 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		if (tableInfo.getTableName().equalsIgnoreCase("users")) return 0;
+		if (!tableInfo.getTableName().equalsIgnoreCase("person")) return 0;
+		
 		
 		OpenConnection conn = openConnection();
 		
@@ -146,7 +142,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 
 	@Override
-	public String getOperationType() {
+	public SyncOperationType getOperationType() {
 		return  this.operationConfig.getOperationType();
 	}
 	

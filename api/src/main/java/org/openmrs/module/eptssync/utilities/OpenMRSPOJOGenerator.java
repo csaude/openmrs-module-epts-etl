@@ -380,19 +380,6 @@ public class OpenMRSPOJOGenerator {
 	
 	static Logger logger = Logger.getLogger(OpenMRSPOJOGenerator.class);
 	
-	private static String generateDefaultGetterAndSetterDefinition(String attName, String attType) {
-		String getttersAndSetterDefinition = "";
-		
-		getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, AttDefinedElements.defineDefaultGetterMethod(attName, attType));
-		
-		getttersAndSetterDefinition += "\n \n";
-		getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition, AttDefinedElements.defineDefaultSetterMethod(attName, attType));
-
-		getttersAndSetterDefinition += "\n \n";
-		
-		return getttersAndSetterDefinition;
-	}
-	
 	public static Class<OpenMRSObject> tryToGetExistingCLass(String fullClassName, SyncConfiguration syncConfiguration) {
 		Class<OpenMRSObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
 		
@@ -406,6 +393,11 @@ public class OpenMRSPOJOGenerator {
 		
 		return clazz;
 	}
+	
+	public static Class<OpenMRSObject> tryToGetExistingCLass(String fullClassName) {
+		return tryToLoadFromOpenMRSClassLoader(fullClassName);
+	}
+	
 	
 	@SuppressWarnings({ "unchecked" })
 	private static Class<OpenMRSObject> tryToLoadFromOpenMRSClassLoader(String fullClassName) {

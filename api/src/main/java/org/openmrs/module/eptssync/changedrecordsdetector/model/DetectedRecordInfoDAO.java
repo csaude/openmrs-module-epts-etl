@@ -3,7 +3,7 @@ package org.openmrs.module.eptssync.changedrecordsdetector.model;
 import java.sql.Connection;
 import java.util.Date;
 
-import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SimpleValue;
@@ -49,26 +49,26 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 	}
 	
 	public static long getFirstNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR, conn);
+		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationType.NEW_RECORDS_DETECTOR, conn);
 	}
 	
 	public static long getLastNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "max",  SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR, conn);
+		return getChangedRecord(tableConf, appCode, observationDate, "max",  SyncOperationType.NEW_RECORDS_DETECTOR, conn);
 	}
 	
 	public static long getFirstChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR, conn);
+		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationType.CHANGED_RECORDS_DETECTOR, conn);
 	}
 	
 	public static long getLastChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "max",  SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR, conn);
+		return getChangedRecord(tableConf, appCode, observationDate, "max",  SyncOperationType.CHANGED_RECORDS_DETECTOR, conn);
 	}
 	
-	public static long getChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, String function, String type, Connection conn) throws DBException, ForbiddenOperationException {
+	public static long getChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, String function, SyncOperationType type, Connection conn) throws DBException, ForbiddenOperationException {
 		
-		String dateCreatedCondition = type.equals(SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR) ? "date_created >= ?" : ""; 
-		String dateChangedCondition = type.equals(SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR) && !tableConf.getTableName().equalsIgnoreCase("obs") ? "date_changed >= ?" : "";
-		String dateVoidedCondition  = type.equals(SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR) && !tableConf.isMetadata() && !tableConf.getTableName().equalsIgnoreCase("users") ? "date_voided >= ?" : "";
+		String dateCreatedCondition = type.equals(SyncOperationType.NEW_RECORDS_DETECTOR) ? "date_created >= ?" : ""; 
+		String dateChangedCondition = type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !tableConf.getTableName().equalsIgnoreCase("obs") ? "date_changed >= ?" : "";
+		String dateVoidedCondition  = type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !tableConf.isMetadata() && !tableConf.getTableName().equalsIgnoreCase("users") ? "date_voided >= ?" : "";
 		
 		String extraCondition = "";
 			
@@ -84,9 +84,9 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 						
 		Object[] params = {};
 		
-		if (type.equals(SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR)) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
-		if (type.equals(SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR) && !dateVoidedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
-		if (type.equals(SyncOperationConfig.SYNC_OPERATION_CHANGED_RECORDS_DETECTOR) && !dateChangedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
+		if (type.equals(SyncOperationType.NEW_RECORDS_DETECTOR)) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
+		if (type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !dateVoidedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
+		if (type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !dateChangedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
 		
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
 		

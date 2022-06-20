@@ -2,7 +2,7 @@ package org.openmrs.module.eptssync.changedrecordsdetector.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
@@ -15,9 +15,9 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRSObject>{
 	private boolean selectAllRecords;
 	private String appCode;
-	private String type;
+	private SyncOperationType type;
 	
-	public ChangedRecordsDetectorSearchParams(SyncTableConfiguration tableInfo, String appCode, RecordLimits limits, String type, Connection conn) {
+	public ChangedRecordsDetectorSearchParams(SyncTableConfiguration tableInfo, String appCode, RecordLimits limits, SyncOperationType type, Connection conn) {
 		super(tableInfo, limits);
 		
 		this.appCode = appCode;
@@ -42,7 +42,7 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRS
 		}
 			
 		if (!this.selectAllRecords) {
-			if (this.type.equals(SyncOperationConfig.SYNC_OPERATION_NEW_RECORDS_DETECTOR)) {
+			if (this.type.isNewRecordsDetector()){
 				searchClauses.addToClauses(tableInfo.getTableName() +".date_created >= ?");
 				
 				searchClauses.addToParameters(this.getSyncStartDate());

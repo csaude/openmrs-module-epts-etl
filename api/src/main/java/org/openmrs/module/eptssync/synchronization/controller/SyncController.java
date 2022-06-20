@@ -26,12 +26,6 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 public class SyncController extends OperationController implements DestinationOperationController{	
 	
 	private String appOriginLocationCode;
-	
-	/*public SyncController(ProcessController processController, SyncOperationConfig operationConfig) {
-		super(processController, operationConfig);
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
-	}*/
 
 	public SyncController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig);
@@ -46,16 +40,6 @@ public class SyncController extends OperationController implements DestinationOp
 		return appOriginLocationCode;
 	}
 
-	/*@Override
-	public OperationController cloneForOrigin(String appOriginLocationCode) {
-		OperationController controller = new SyncController(getProcessController(), getOperationConfig(), appOriginLocationCode);
-		
-		controller.setChild(this.getChild());
-		controller.setParent(this.getParent());
-		
-		return controller;
-	}*/
-	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new SyncEngine(monitor, limits);
@@ -128,9 +112,4 @@ public class SyncController extends OperationController implements DestinationOp
 	public boolean mustRestartInTheEnd() {
 		return hasNestedController() ? false : true;
 	}
-	
-	@Override
-	public String getOperationType() {
-		return SyncOperationConfig.SYNC_OPERATION_SYNCHRONIZATION;
-	}	
 }

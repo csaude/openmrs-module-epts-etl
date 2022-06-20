@@ -335,4 +335,10 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public boolean hasExactilyTheSameDataWith(OpenMRSObject srcObj) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

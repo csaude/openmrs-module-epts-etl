@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.model.pojo.generic;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Connection;
@@ -38,12 +39,14 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	
 	protected SyncImportInfoVO relatedSyncInfo;
 	
-	
 	public void load(ResultSet rs) throws SQLException{ 
+		super.load(rs);
+		
+		try {this.uuid = rs.getString("uuid");} catch (SQLException e) {}
+		
 		try {
-			super.load(rs);
-			
-			this.uuid = rs.getString("uuid");
+			this.relatedSyncInfo = new SyncImportInfoVO();
+			this.relatedSyncInfo.load(rs);
 			
 		} catch (SQLException e) {}
 	}
@@ -88,6 +91,36 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		}
 			
 		throw new ParentNotYetMigratedException(parentId, parentTableConfiguration.getTableName(), this.relatedSyncInfo.getRecordOriginLocationCode());
+	}
+	
+	@Override
+	public boolean hasExactilyTheSameDataWith(OpenMRSObject srcObj) {
+		Object[] fields = getFields();
+		
+		for (int i = 0; i < fields.length; i++) {
+			Field field = (Field) fields[i];
+			
+			try {
+				Object thisValue = field.get(this);
+				Object otherValue = field.get(srcObj);
+				
+				if (thisValue == null && otherValue != null || otherValue == null && thisValue != null) {
+					return false;
+				}
+				
+				if (thisValue != null && !thisValue.equals(otherValue)) {
+					return false;
+				}
+			}
+			catch (IllegalArgumentException e) {
+				throw new RuntimeException(e);
+			}
+			catch (IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+		}	
+		
+		return true;
 	}
 	
 	@Override
