@@ -45,7 +45,7 @@ public class SyncConfiguration {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private String processType;
+	private SyncProcessType processType;
 	private File relatedConfFile;
 	
 	private List<SyncOperationConfig> operations;
@@ -163,12 +163,13 @@ public class SyncConfiguration {
 		this.automaticStart = automaticStart;
 	}
 	
-	public String getProcessType() {
+	public SyncProcessType getProcessType() {
 		return processType;
 	}
 	
-	public void setProcessType(String processType) {
-		if (!SyncProcessType.isSupportedProcessType(processType) ) {
+	public void setProcessType(SyncProcessType processType) {
+		
+		if (processType != null && !processType.isSupportedProcessType()) {
 			throw new ForbiddenException("The 'processType' of syncConf file must be in "+SyncProcessType.values());
 		}
 		
@@ -177,38 +178,39 @@ public class SyncConfiguration {
 	
 	@JsonIgnore
 	public boolean isDestinationSyncProcess() {
-		return SyncProcessType.isDestinationSync(processType);
+		return processType.isDestinationSync();
 	}
 	
 	@JsonIgnore
 	public boolean isSourceSyncProcess() {
-		return SyncProcessType.isSourceSync(processType);
+		return processType.isSourceSync();
 	}
 	
 	@JsonIgnore
 	public boolean isDBReSyncProcess() {
-		return SyncProcessType.isDBResync(processType);
+		return processType.isDBResync();
 	}
 	
 	@JsonIgnore
 	public boolean isDBQuickExportProcess() {
-		return SyncProcessType.isDBQuickExport(processType);
+		return processType.isDBQuickExport();
 	}
 	
 	@JsonIgnore
 	public boolean isDBQuickLoadProcess() {
-		return SyncProcessType.isDBQuickLoad(processType);
+		return processType.isDBQuickLoad();
 	}
 	
 	@JsonIgnore
 	public boolean isDBQuickCopyProcess() {
-		return SyncProcessType.isDBQuickCopy(processType);
+		return processType.isDBQuickCopy();
 	}
 	
 	@JsonIgnore
 	public boolean isDataReconciliationProcess() {
-		return SyncProcessType.isDataReconciliation(processType);
+		return processType.isDataReconciliation();
 	}
+	
 	@JsonIgnore
 	public String getPojoPackage() {
 		return isDestinationSyncProcess() || isDataReconciliationProcess() ? "destination" : this.originAppLocationCode;

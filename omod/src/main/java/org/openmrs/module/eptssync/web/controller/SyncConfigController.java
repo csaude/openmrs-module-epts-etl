@@ -8,6 +8,7 @@ import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.ConfVM;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -58,7 +59,7 @@ public class SyncConfigController {
 	public ModelAndView loadOperation(Model model, HttpServletRequest request, @RequestParam String operationType) throws IOException {
 		ConfVM vm = (ConfVM) request.getSession().getAttribute("vm");
 		
-		vm.selectOperation(operationType);
+		vm.selectOperation(SyncOperationType.valueOf(operationType));
 		
 		return new ModelAndView("redirect:config.form?installationType=");
 	}

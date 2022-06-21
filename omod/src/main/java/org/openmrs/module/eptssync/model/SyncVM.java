@@ -9,7 +9,6 @@ import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.controller.conf.SyncProcessType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -50,11 +49,11 @@ public class SyncVM {
 			}
 		}
 		
-		String configFileName = SyncProcessType.isSourceSync(this.activeConfiguration.getProcessType()) ? "source_sync_config.json" : "dest_sync_config.json";
+		String configFileName = this.activeConfiguration.getProcessType().isSourceSync() ? "source_sync_config.json" : "dest_sync_config.json";
 
 		this.configFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "conf" + FileUtilities.getPathSeparator() + configFileName);
 	
-		this.activeTab = this.activeConfiguration.getOperationsAsList().get(0).getOperationType();
+		this.activeTab = this.activeConfiguration.getOperationsAsList().get(0).getOperationType().toString();
 
 		//ZipUtilities.copyModuleTagsToOpenMRS();	
 	}
