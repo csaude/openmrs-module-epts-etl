@@ -187,7 +187,7 @@ public class SyncOperationConfig {
 	}
 
 	public void setOperationType(SyncOperationType operationType) {
-		if (this.operationType.isSupportedOperation()) throw new ForbiddenOperationException("Operation '" + operationType + "' nor supported!");
+		if (operationType != null && !operationType.isSupportedOperation()) throw new ForbiddenOperationException("Operation '" + operationType + "' nor supported!");
 		
 		this.operationType = operationType;
 	}
