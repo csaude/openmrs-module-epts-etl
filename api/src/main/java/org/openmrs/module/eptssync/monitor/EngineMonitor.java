@@ -201,7 +201,7 @@ public class EngineMonitor implements MonitoredOperation{
 			mainEngine.resetLimits(limits);
 			mainEngine.setProgressMeter(this.progressMeter);
 			
-			logInfo("ALOCATED RECORDS [" + mainEngine.getSearchParams().getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
+			logInfo("ALLOCATED RECORDS [" + mainEngine.getSearchParams().getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
 			
 			if (mainEngine.getChildren() == null) {
 				mainEngine.setChildren(new ArrayList<Engine>());

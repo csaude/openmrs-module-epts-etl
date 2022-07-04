@@ -607,9 +607,19 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	protected RecordLimits retriveSavedLimits() {
 		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
 		
-		return RecordLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
+		logInfo("Retrieving saved limits for " + getLimits());
+		
+		RecordLimits savedLimits = RecordLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
+	
+		if (savedLimits != null) {
+			logInfo("Saved limits found [" + savedLimits + "]");
+		}
+		else {
+			logInfo("No saved limits found for [" + getLimits() + "]");
+		}
+	
+		return savedLimits;
 	}
-
 	
 	protected abstract void restart();
 

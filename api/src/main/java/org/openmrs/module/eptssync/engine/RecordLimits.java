@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 
-import org.openmrs.module.eptssync.changedrecordsdetector.engine.ChangedRecordsDetectorEngine;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -40,6 +39,9 @@ public class RecordLimits {
 	public RecordLimits(long firstRecordId, long lastRecordId, Engine engine) {
 		this.firstRecordId = firstRecordId;
 		this.lastRecordId = lastRecordId;
+		
+		this.threadMinRecord = firstRecordId;
+		this.threadMaxRecord = lastRecordId;
 		
 		this.engine = engine;
 		
@@ -167,7 +169,7 @@ public class RecordLimits {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof ChangedRecordsDetectorEngine) || obj == null) return false;
+		if (!(obj instanceof RecordLimits) || obj == null) return false;
 		
 		RecordLimits cr = (RecordLimits)obj;
 		
@@ -215,7 +217,6 @@ public class RecordLimits {
 	}
 	@Override
 	public String toString() {
-		return this.firstRecordId + " - " + this.lastRecordId;
+		return getThreadCode() + " : Thread ["  + this.threadMinRecord + " - " + this.threadMaxRecord + "] Curr [" + this.firstRecordId + " - " + this.lastRecordId + "]";
 	}
-
 }

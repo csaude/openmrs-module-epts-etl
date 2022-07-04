@@ -27,7 +27,7 @@ public class DBQuickCopyEngine extends Engine {
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
 		if (!getLimits().isLoadedFromFile()) {
 			RecordLimits saveLimits = retriveSavedLimits();
-			
+		
 			if (saveLimits != null) {
 				this.searchParams.setLimits(saveLimits);
 			}
@@ -48,7 +48,6 @@ public class DBQuickCopyEngine extends Engine {
 		else return null;	
 	}
 	
-
 	@Override
 	protected boolean mustDoFinalCheck() {
 		return false;
@@ -68,13 +67,26 @@ public class DBQuickCopyEngine extends Engine {
 		try {
 			List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
 			
-			this.getMonitor().logInfo("LOADING  '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO DESTINATION DB");
+			logInfo("LOADING  '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO DESTINATION DB");
+			
+			int i = 1;
 			
 			for (OpenMRSObject syncRecord : syncRecordsAsOpenMRSObjects) {
+				String startingStrLog = getEngineId().split("_")[getEngineId().split("_").length - 1] + "_" + utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length());
+				
+				logInfo(startingStrLog + " : Generating import info for record [" + syncRecord + "]");
+				
 				SyncImportInfoVO rec = SyncImportInfoVO.generateFromSyncRecord(syncRecord, getRelatedOperationController().getAppOriginLocationCode(), false);
 				
 				rec.setConsistent(1);
+				
+				logInfo(startingStrLog + " : Saving import info of record [" + syncRecord + "]");
+				
 				rec.save(getSyncTableConfiguration(), conn);
+				
+				logInfo(startingStrLog + " : Saved import info of record [" + syncRecord + "]!");
+				
+				i++;
 			}
 		} catch (DBException e) {
 			e.printStackTrace();

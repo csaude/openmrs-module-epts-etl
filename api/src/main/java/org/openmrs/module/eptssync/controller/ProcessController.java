@@ -297,9 +297,6 @@ public class ProcessController implements Controller{
 	
 		this.monitor = new ControllerMonitor(this);
 		
-		//OpenMRSPOJOGenerator.addToClasspath(getConfiguration().getPOJOCompiledFilesDirectory());
-		//OpenMRSPOJOGenerator.tryToAddAllPOJOToClassPath(getConfiguration());
-		
 		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.monitor.getMonitorId());
 		executor.execute(this.monitor);
 		
@@ -331,61 +328,9 @@ public class ProcessController implements Controller{
 			}
 			
 			changeStatusToRunning();
-			
-			//monitor();
-			
 		}
 	}
 	
-	/*private void monitor() {
-		while(true) {
-			OperationController active = retrieveActiveOperationController ();
-			
-			if (active != null) {
-				active.getProgressInfo().refreshProgressInfo();
-				
-				try {Thread.sleep(5000);} catch (InterruptedException e) {}
-			}
-		}
-	}*/
-	/*
-	private List<OperationController> retrieveActiveOperationController() {
-		
-		List<OperationController> runningControllers = new ArrayList<OperationController>();
-		
-		for (OperationController controller : this.operationsControllers) {
-			if (controller.isRunning()) {
-				runningControllers.add(controller);
-				
-				return runningControllers;
-			}
-			
-			List<OperationController> children = controller.getChildren();
-			
-			while(children != null) {
-				List<OperationController> grandChildren = null;
-				
-				for(OperationController child : children) {
-					if (child.isRunning()) return children;
-					
-					if (child.getChildren() != null) {
-						if (grandChildren == null) grandChildren = new ArrayList<OperationController>();
-						
-						for (OperationController childOfChild : child.getChildren()) {
-							grandChildren.add(childOfChild);
-						}
-					}
-					
-				}
-				
-				children = grandChildren;
-			}
-		}
-		
-		return null;
-	}
-	*/
-
 	private void tryToRemoveOldStopRequested() {
 		File file = new File (getConfiguration().getSyncRootDirectory()+"/process_status/stop_requested.info");
 		
@@ -416,6 +361,7 @@ public class ProcessController implements Controller{
 
 	@Override
 	public void onFinish() {
+		
 		if (this.childController != null) {
 			ProcessController child = this.childController;
 			
