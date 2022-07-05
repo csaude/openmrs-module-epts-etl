@@ -293,7 +293,7 @@ public class SyncConfiguration {
 	}
 	
 	public static SyncConfiguration loadFromFile(File file) throws IOException {
-		SyncConfiguration conf = SyncConfiguration.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
+		SyncConfiguration conf = SyncConfiguration.loadFromJSON(file, new String(Files.readAllBytes(file.toPath())));
 		
 		conf.setRelatedConfFile(file);
 		
@@ -352,11 +352,13 @@ public class SyncConfiguration {
 		utilities.logInfo(msg, logger);
 	}
 	
-	public static SyncConfiguration loadFromJSON (String json) {
+	public static SyncConfiguration loadFromJSON (File file, String json) {
 		try {
 			SyncConfiguration config = new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json, SyncConfiguration.class);
 			
 			if (config.getChildConfigFilePath() != null) {
+				config.logInfo("FOUND THE CHILD [" + config.getChildConfigFilePath()   + "] FOR [" + file.getAbsolutePath() + "]");
+							
 				config.setChildConfig(loadFromFile(new File(config.getChildConfigFilePath())));
 			}
 			
@@ -602,7 +604,7 @@ public class SyncConfiguration {
 	}
 	
 	public String generateControllerId() {
-		return this.getDesignation() + "_controller";
+		return (this.getDesignation() + "_controller").toLowerCase();
 	}
 	
 	@JsonIgnore

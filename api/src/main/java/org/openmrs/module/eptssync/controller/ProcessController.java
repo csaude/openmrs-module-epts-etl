@@ -402,6 +402,8 @@ public class ProcessController implements Controller{
 		
 		String fileName = getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator() + subFolder + FileUtilities.getPathSeparator() +  operationId;
 		
+		fileName = fileName.toLowerCase();
+		
 		return new File(fileName);
 	}
 	

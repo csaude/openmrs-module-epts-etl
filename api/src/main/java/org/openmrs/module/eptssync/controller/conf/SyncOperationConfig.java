@@ -570,7 +570,9 @@ public class SyncOperationConfig {
 	}
 
 	public String generateControllerId() {
-		return relatedSyncConfig.generateControllerId() + "_" + getOperationType();
+		String controllerId = relatedSyncConfig.generateControllerId() + "_" + getOperationType();
+		
+		return controllerId.toLowerCase();
 	}
 
 	public boolean isSupposedToHaveOriginAppCode() {

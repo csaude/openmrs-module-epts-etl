@@ -40,8 +40,8 @@ public class EngineMonitor implements MonitoredOperation{
 		this.ownEngines = new ArrayList<Engine>();
 		this.syncTableInfo = syncTableInfo;
 		
-		this.engineMonitorId = controller.getControllerId() + "_" + syncTableInfo.getTableName() + "_monitor";
-		this.engineId = getController().getControllerId() + "_" + syncTableInfo.getTableName();
+		this.engineMonitorId = (controller.getControllerId() + "_" + syncTableInfo.getTableName() + "_monitor").toLowerCase();
+		this.engineId = (getController().getControllerId() + "_" + syncTableInfo.getTableName()).toLowerCase();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		this.progressMeter = progressMeter;

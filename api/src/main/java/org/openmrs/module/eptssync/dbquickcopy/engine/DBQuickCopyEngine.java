@@ -3,6 +3,7 @@ package org.openmrs.module.eptssync.dbquickcopy.engine;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.eptssync.dbquickcopy.model.DBQuickCopySearchParams;
@@ -69,24 +70,30 @@ public class DBQuickCopyEngine extends Engine {
 			
 			logInfo("LOADING  '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO DESTINATION DB");
 			
-			int i = 1;
+			
+			List<SyncImportInfoVO> records = SyncImportInfoVO.generateFromSyncRecord(syncRecordsAsOpenMRSObjects, getRelatedOperationController().getAppOriginLocationCode(), false);
+		
+			SyncImportInfoDAO.insertAllBatch(records, getSyncTableConfiguration(), conn);
+			
+			
+			//int i = 1;
 			
 			for (OpenMRSObject syncRecord : syncRecordsAsOpenMRSObjects) {
-				String startingStrLog = getEngineId().split("_")[getEngineId().split("_").length - 1] + "_" + utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length());
+				//String startingStrLog = getEngineId().split("_")[getEngineId().split("_").length - 1] + "_" + utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length());
 				
-				logInfo(startingStrLog + " : Generating import info for record [" + syncRecord + "]");
+				//logInfo(startingStrLog + " : Generating import info for record [" + syncRecord + "]");
 				
 				SyncImportInfoVO rec = SyncImportInfoVO.generateFromSyncRecord(syncRecord, getRelatedOperationController().getAppOriginLocationCode(), false);
 				
 				rec.setConsistent(1);
 				
-				logInfo(startingStrLog + " : Saving import info of record [" + syncRecord + "]");
+				//logInfo(startingStrLog + " : Saving import info of record [" + syncRecord + "]");
 				
 				rec.save(getSyncTableConfiguration(), conn);
 				
-				logInfo(startingStrLog + " : Saved import info of record [" + syncRecord + "]!");
+				//logInfo(startingStrLog + " : Saved import info of record [" + syncRecord + "]!");
 				
-				i++;
+				//i++;
 			}
 		} catch (DBException e) {
 			e.printStackTrace();

@@ -47,9 +47,18 @@ public class Main implements Runnable{
 			ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId()).execute(controller);
 			
 			allController.add(controller);
+			
+			ProcessController childController = controller.getChildController();
+			
+			while (childController != null) {
+				allController.add(childController);
+			
+				childController = childController.getChildController();
+			}
+			
 		}
 		
-		while (!isAllFinished(allController) && !isAllStoppedFinished(allController)){
+		while (!isAllFinished(allController) && !isAllStopped(allController)){
 			TimeCountDown.sleep(120);
 		}
 		
@@ -57,7 +66,7 @@ public class Main implements Runnable{
 			logger.info("ALL JOBS ARE FINISHED");
 		}
 		else
-		if (isAllStoppedFinished(allController)) {
+		if (isAllStopped(allController)) {
 			logger.info("ALL JOBS ARE STOPPED");
 		}
 		
@@ -165,7 +174,7 @@ public class Main implements Runnable{
 		return true;
 	}
 	
-	public static boolean isAllStoppedFinished(List<ProcessController> controllers) {
+	public static boolean isAllStopped(List<ProcessController> controllers) {
 		for (ProcessController c : controllers) {
 			if (!c.isStopped() || c.getChildController() != null && !c.getChildController().isStopped()) {
 					return false;
@@ -178,24 +187,4 @@ public class Main implements Runnable{
 	@Override
 	public void run() {
 	}
-	
-	/*
-	public static File getProjectRoot() {
-		return new File(Main.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-	}
-	*/
-	
-	/*
-	public static File getPOJOSourceFilesDirectory() {
-		Path root = Paths.get(".").normalize().toAbsolutePath();
-
-		return new File(root.toFile().getAbsoluteFile() + "/src/main/java");
-	}
-	
-	public static File getPOJOCompiledFilesDirectory() {
-		Path root = Paths.get(".").normalize().toAbsolutePath();
-
-		return new File(root.toFile().getAbsoluteFile() + "/target/classes");
-	}*/
-	
 }

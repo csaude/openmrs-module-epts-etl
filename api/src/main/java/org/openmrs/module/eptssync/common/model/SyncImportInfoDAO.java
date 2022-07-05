@@ -36,7 +36,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 	public static void insertAllBatch(List<SyncImportInfoVO> records, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 			String sql = "";
 
-			sql += "INSERT INTO \n"; 
+			sql += "INSERT IGNORE INTO \n"; 
 			sql += "	" + tableInfo.generateFullStageTableName() + "(	record_origin_id,\n";
 			sql += "											 		record_uuid,\n";
 			sql += "											 		json,\n";
