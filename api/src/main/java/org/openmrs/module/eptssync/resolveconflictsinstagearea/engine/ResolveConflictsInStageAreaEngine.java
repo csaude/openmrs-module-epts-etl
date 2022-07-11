@@ -65,13 +65,20 @@ public class ResolveConflictsInStageAreaEngine extends Engine {
 			try {
 				List<SyncImportInfoVO> recordsInConflict = SyncImportInfoDAO.getAllByUuid(getSyncTableConfiguration(), obj.getRecordUuid(), conn);
 				
-				recordsInConflict.remove(SyncImportInfoVO.chooseMostRecent(recordsInConflict));
+				SyncImportInfoVO mostRecent = SyncImportInfoVO.chooseMostRecent(recordsInConflict);
+				
+				recordsInConflict.remove(mostRecent);
+				
+				String loosers = "";
 				
 				for (SyncImportInfoVO recInConflict : recordsInConflict) {
+					
+					loosers += (!loosers.isEmpty() ? "," : "") + "{" + generateRecInfo(recInConflict) + "}";
+					
 					recInConflict.markAsInconsistent(getSyncTableConfiguration(), conn);
 				}
 				
-				conn.commit();
+				this.getMonitor().logInfo("Done Processing record: " + obj.getRecordUuid() + "! Win: {" + generateRecInfo(mostRecent) + "} loosers: [" + loosers + "]");
 			} catch (Exception e) {
 				e.printStackTrace();
 				
@@ -94,6 +101,17 @@ public class ResolveConflictsInStageAreaEngine extends Engine {
 			
 			progressInfo.refreshOnDB(conn);
 		}
+	}
+	
+	
+	private String generateRecInfo(SyncImportInfoVO rec) {
+		String msg = "from: " + rec.getRecordOriginLocationCode();
+		
+		msg += ", created: " + utilities.formatDateToDDMMYYYY_HHMISS(rec.getDateCreated());
+		msg += ", changed: " + utilities.formatDateToDDMMYYYY_HHMISS(rec.getDateChanged());
+		msg += ", voided: " + utilities.formatDateToDDMMYYYY_HHMISS(rec.getDateVoided());
+		
+		return msg;
 	}
 	
 	private void saveCurrentLimits() {

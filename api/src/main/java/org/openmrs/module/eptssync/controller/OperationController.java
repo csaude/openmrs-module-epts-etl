@@ -74,6 +74,8 @@ public abstract class OperationController implements Controller{
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 		
 		this.progressInfo = this.processController.initOperationProgressMeter(this);
+		
+		this.controllerId = processController.getControllerId() + "_" + getOperationType().name().toLowerCase();	
 	}
 	
 	public OperationProgressInfo getProgressInfo() {
@@ -139,7 +141,7 @@ public abstract class OperationController implements Controller{
 		
 		for (SyncTableConfiguration syncInfo: allSync) {
 			if (operationTableIsAlreadyFinished(syncInfo)) {
-				logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
+				logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
 			}
 			else 
 			if (stopRequested()) {
@@ -147,7 +149,7 @@ public abstract class OperationController implements Controller{
 				break;		
 			}
 			else {
-				logInfo(("Starting operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'").toUpperCase());
+				logInfo(("Starting operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "'").toUpperCase());
 				
 				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				
@@ -168,7 +170,7 @@ public abstract class OperationController implements Controller{
 				engineMonitor.run();
 				
 				if (stopRequested() && engineMonitor.isStopped()) {
-					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());
+					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());
 					break;
 				}
 				else {
@@ -179,7 +181,7 @@ public abstract class OperationController implements Controller{
 						markTableOperationAsFinished(syncInfo, null, null);
 					}
 					
-					logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' is finished!").toUpperCase());
+					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "' is finished!").toUpperCase());
 				}
 			}
 		}
@@ -199,7 +201,7 @@ public abstract class OperationController implements Controller{
 		
 		for (SyncTableConfiguration syncInfo: allSync) {
 			if (operationTableIsAlreadyFinished(syncInfo)) {
-				logInfo(("The operation '" + getOperationType() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
+				logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
 			}
 			else 
 			if (stopRequested()) {
@@ -208,7 +210,7 @@ public abstract class OperationController implements Controller{
 				break;
 			}
 			else{
-				logInfo("INITIALIZING '" + getOperationType() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
+				logInfo("INITIALIZING '" + getOperationType().name().toLowerCase() + "' ENGINE FOR TABLE '" + syncInfo.getTableName().toUpperCase() + "'");
 					
 				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				
@@ -426,7 +428,7 @@ public abstract class OperationController implements Controller{
 		String subFolder = "";
 		
 		if (getConfiguration().isSourceSyncProcess() || getConfiguration().isDBReSyncProcess() || getConfiguration().isDBQuickExportProcess()) {
-			subFolder = "source" + FileUtilities.getPathSeparator() + getOperationType() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
+			subFolder = "source" + FileUtilities.getPathSeparator() + getOperationType().name().toLowerCase() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
 		}
 		else
 		if (getConfiguration().isDestinationSyncProcess() || getConfiguration().isDBQuickLoadProcess() || getConfiguration().isDataReconciliationProcess() || getConfiguration().isDBQuickCopyProcess()) {
@@ -439,7 +441,7 @@ public abstract class OperationController implements Controller{
 				extraPath = this instanceof DestinationOperationController ?  FileUtilities.getPathSeparator() + ((DestinationOperationController)this).getAppOriginLocationCode() : "";
 			}
 			
-			subFolder = "destination" + FileUtilities.getPathSeparator() + getOperationType() + extraPath; 
+			subFolder = "destination" + FileUtilities.getPathSeparator() + getOperationType().name().toLowerCase() + extraPath; 
 		}
 		
 		return getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder;

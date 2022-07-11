@@ -14,20 +14,14 @@ public class SearchParamsDAO extends BaseDAO{
 	public static <T extends VO> int countAll(AbstractSearchParams<T> parametros, Connection conn) throws DBException {
 		SearchClauses<T> searchClauses = parametros.generateSearchClauses(conn);
 		
-		//String originalColumnsToSelect = searchClauses.getColumnsToSelect();
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		searchClauses.getSearchParameters().setQtdRecordPerSelected(0);
 		
-		//if (searchClauses.isDistinctSelect() && !FuncoesGenericas.stringHasValue(searchClauses.getDefaultColumnToSelect())) throw new ForbiddenOperationException("O campo 'defaultColumnToSelect' deve ser preenchido para 'SELECT DISTINCT'");
-		
-		//searchClauses.setColumnsToSelect("  count(" + (searchClauses.isDistinctSelect() ? ("DISTINCT " + searchClauses.getDefaultColumnToSelect()) : "*")  + ") value");
 		String sql = "select count(*) value from (" + searchClauses.generateSQL(conn) + ") inner_result;";
 			
 		SimpleValue simpleValue = find(SimpleValue.class, sql, searchClauses.getParameters(), conn);
 		
-		//searchClauses.setColumnsToSelect(originalColumnsToSelect);
 		searchClauses.getSearchParameters().setQtdRecordPerSelected(bkpQtyRecsPerSelect);
-		
 		
 		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())){
 			return simpleValue.intValue();

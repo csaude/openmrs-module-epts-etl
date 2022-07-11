@@ -27,8 +27,6 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 public class DBQuickExportController extends OperationController {
 	public DBQuickExportController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	}
 	
 	@Override

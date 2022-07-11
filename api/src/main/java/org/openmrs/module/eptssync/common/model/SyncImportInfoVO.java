@@ -368,7 +368,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		
 		SyncImportInfoVO otherObj = (SyncImportInfoVO)obj;
 		
-		return this.getRecordOriginLocationCode().equalsIgnoreCase(otherObj.getRecordOriginLocationCode()) && this.getRecordUuid() == otherObj.getRecordUuid();
+		return this.getRecordOriginLocationCode().equalsIgnoreCase(otherObj.getRecordOriginLocationCode()) && this.getRecordUuid().equalsIgnoreCase(otherObj.getRecordUuid());
 	}
 
 	public void delete(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
@@ -384,6 +384,10 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		}
 	}
 
+	@Override
+	public String toString() {
+		return "recordUuid: " + recordUuid + ", recordOriginId: " + recordOriginId + ", recordOriginLocationCode: " + recordOriginLocationCode;
+	}
 	
 	public static SyncImportInfoVO chooseMostRecent(List<SyncImportInfoVO> records) {
 		SyncImportInfoVO mostRecent = records.get(0);

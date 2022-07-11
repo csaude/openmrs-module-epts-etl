@@ -8,7 +8,6 @@ import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
@@ -30,8 +29,6 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		
 	public CentralAndRemoteDataReconciliationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	}
 	
 	@Override
@@ -64,7 +61,6 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		if (tableInfo.getTableName().equalsIgnoreCase("users")) return 0;
-		if (!tableInfo.getTableName().equalsIgnoreCase("person")) return 0;
 		
 		OpenConnection conn = openConnection();
 		
@@ -99,8 +95,6 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		if (tableInfo.getTableName().equalsIgnoreCase("users")) return 0;
-		if (!tableInfo.getTableName().equalsIgnoreCase("person")) return 0;
-		
 		
 		OpenConnection conn = openConnection();
 		
@@ -141,11 +135,6 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		return false;
 	}
 
-	@Override
-	public SyncOperationType getOperationType() {
-		return  this.operationConfig.getOperationType();
-	}
-	
 	@Override
 	public OpenConnection openConnection() {
 		OpenConnection conn = super.openConnection();

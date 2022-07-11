@@ -34,8 +34,6 @@ public class ChangedRecordsDetectorController extends OperationController {
 	
 	public ChangedRecordsDetectorController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	
 		//We assume that there is only one application listed in appConf
 		this.actionPerformeApp = getConfiguration().exposeAllAppsNotMain().get(0); 

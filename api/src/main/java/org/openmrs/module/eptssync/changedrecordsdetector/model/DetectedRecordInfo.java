@@ -330,7 +330,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 	}
 
 	@Override
-	public OpenMRSObject retrieveParentInDestination(Integer parentId, SyncTableConfiguration parentTableConfiguration,
+	public OpenMRSObject retrieveParentInDestination(Integer parentId, String a, SyncTableConfiguration parentTableConfiguration,
 	        boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException {
 		// TODO Auto-generated method stub
 		return null;

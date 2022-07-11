@@ -23,8 +23,6 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 public class InconsistenceSolverController extends OperationController {
 	public InconsistenceSolverController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	}
 	
 	@Override

@@ -28,8 +28,8 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
 		
 		if (this.type.isMissingRecordsDetector()) {
-			searchClauses.addColumnToSelect("src_.record_uuid uuid");
-			
+			searchClauses.addColumnToSelect("src_.record_origin_id, src_.record_uuid uuid, src_.record_uuid,  src_.record_origin_location_code");
+		
 			searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName() + " src_ ");
 			
 			if (getTableInfo().getTableName().equalsIgnoreCase("patient")) {
@@ -38,6 +38,8 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 			else {
 				searchClauses.addToClauses("not exists (select * from " + getTableInfo().getTableName() + " dest_ where dest_.uuid = src_.record_uuid)");
 			}
+			
+			searchClauses.addToClauses("src_.consistent = 1");
 		}
 		else
 		if (this.type.isOutdatedRecordsDetector()) {

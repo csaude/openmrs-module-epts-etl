@@ -92,14 +92,14 @@ public class EngineMonitor implements MonitoredOperation{
 			//this.controller.getProgressInfo().updateProgressInfo(this);
 			
 			if (!utilities.arrayHasElement(ownEngines)) {
-				logInfo("NO ENGINE FOR '" + getController().getOperationType() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
+				logInfo("NO ENGINE FOR '" + getController().getOperationType().name().toLowerCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
 				
 				this.operationStatus = MonitoredOperation.STATUS_FINISHED;
 			}
 			else {
 				onStart();
 				
-				logInfo("INITIALIZED '" + getController().getOperationType() + "' ENGINE FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "'");
+				logInfo("INITIALIZED '" + getController().getOperationType().name().toLowerCase() + "' ENGINE FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "'");
 				
 				while(isRunning()) {
 					TimeCountDown.sleep(15);

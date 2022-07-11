@@ -89,10 +89,10 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	
 	static Logger logger = Logger.getLogger(OpenMRSObjectDAO.class);
 	
-	public static OpenMRSObject thinGetByRecordOrigin(int recordOriginId, SyncTableConfiguration parentTableConfiguration, Connection conn) throws DBException{
+	public static OpenMRSObject thinGetByRecordOrigin(int recordOriginId, String recordOriginLocationCode, SyncTableConfiguration parentTableConfiguration, Connection conn) throws DBException{
 		
 		try {
-			Object[] params = {recordOriginId};
+			Object[] params = {recordOriginId, recordOriginLocationCode};
 			
 			String tableName = parentTableConfiguration.getTableName();
 			
@@ -107,7 +107,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			
 			sql += " SELECT " + tableName + ".*" + (tableName.equals("patient") ? ", uuid" : "") + "\n";
 			sql += " FROM  	" + clauseFromStarting + " INNER JOIN " + parentTableConfiguration.generateFullStageTableName() + " ON record_uuid = uuid\n";
-			sql += " WHERE 	record_origin_id = ?";
+			sql += " WHERE 	record_origin_id = ? and record_origin_location_code = ? ";
 			
 			return find(parentTableConfiguration.getSyncRecordClass(), sql, params, conn);
 		} catch (Exception e) {

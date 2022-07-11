@@ -31,7 +31,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		
 		this.appOriginLocationCode = appOriginLocationCode;
 		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType() + "_from_" + appOriginLocationCode;	
+		this.controllerId = processController.getControllerId() + "_" + getOperationType().name().toLowerCase() + "_from_" + appOriginLocationCode;	
 		
 		this.progressInfo = this.processController.initOperationProgressMeter(this);
 	}

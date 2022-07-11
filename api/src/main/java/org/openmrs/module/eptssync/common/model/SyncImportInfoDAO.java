@@ -241,7 +241,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String extraCondition;
 		
-		extraCondition = "";
+		extraCondition = "1=1";
 		
 		if (searchParams.getSyncStartDate() != null) {
 			extraCondition = "last_sync_date IS NULL OR last_sync_date < ?";
@@ -288,7 +288,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String tablesToSelect = stageTable + " src_ LEFT JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
 		
 		if (table.equalsIgnoreCase("patient")) {
-			tablesToSelect = stageTable + " src_ LET JOIN person dest_ on dest_.uuid = src_.record_uuid LEFT JOIN patient ON patient_id = person_id ";
+			tablesToSelect = stageTable + " src_ LEFT JOIN person dest_ on dest_.uuid = src_.record_uuid LEFT JOIN patient ON patient_id = person_id ";
 		}
 		
 		sql += " SELECT * \n";

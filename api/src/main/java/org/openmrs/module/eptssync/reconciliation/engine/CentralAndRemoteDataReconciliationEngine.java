@@ -60,9 +60,6 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		if (getSyncTableConfiguration().getTableName().equalsIgnoreCase("users")) return;
 		
 		this.getMonitor().logInfo("PERFORMING DATA RECONCILIATION ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
-
-		this.getMonitor().logInfo("RECONCILIATION DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
-	
 		
 		if (getRelatedOperationController().isMissingRecordsDetector()) {
 			performeMissingRecordsCreation(syncRecords, conn);
@@ -76,6 +73,8 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			performePhantomRecordsRemotion(syncRecords, conn);
 		}
 		
+		this.getMonitor().logInfo("RECONCILIATION DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+
 		getLimits().moveNext(getQtyRecordsPerProcessing());
 		
 		saveCurrentLimits();
@@ -90,29 +89,53 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	}
 	
 	private void performeMissingRecordsCreation(List<SyncRecord> syncRecords, Connection conn) throws DBException{
+		int i = 1;
+		
 		for (SyncRecord record: syncRecords) {
-			DataReconciliationRecord data = new DataReconciliationRecord(((OpenMRSObject)record).getUuid() , getSyncTableConfiguration(), ConciliationReasonType.MISSING);
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+		
+			logInfo(startingStrLog  +": Restouring record: [" + record + "]");
+			
+			DataReconciliationRecord data = new DataReconciliationRecord((OpenMRSObject) record , getSyncTableConfiguration(), ConciliationReasonType.MISSING);
 			
 			data.reloadRelatedRecordDataFromRemote(conn);
 			
 			data.consolidateAndSaveData(conn);
 			
 			data.save(conn);
+			
+			i++;
 		}
 	}
 	
 	private void performeOutdatedRecordsUpdate(List<SyncRecord> syncRecords, Connection conn) throws DBException{
+		int i = 1;
+		
 		for (SyncRecord record: syncRecords) {
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+			
+			logInfo(startingStrLog + ": Updating record: [" + record + "]");
+			
 			DataReconciliationRecord.tryToReconciliate((OpenMRSObject) record, getSyncTableConfiguration(), conn);
+			
+			i++;
 		}	
 	}
 	
 	private void performePhantomRecordsRemotion(List<SyncRecord> syncRecords, Connection conn) throws DBException{
+		int i = 1;
+		
 		for (SyncRecord record: syncRecords) {
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+			
+			logInfo(startingStrLog + ": Removing record: [" + record + "]");
+			
 			DataReconciliationRecord data = new DataReconciliationRecord(((OpenMRSObject)record).getUuid() , getSyncTableConfiguration(), ConciliationReasonType.PHANTOM);
 			data.reloadRelatedRecordDataFromDestination(conn);
 			data.removeRelatedRecord(conn);
 			data.save(conn);
+			
+			i++;
 		}	
 	}
 	

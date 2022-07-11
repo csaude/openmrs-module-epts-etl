@@ -62,7 +62,7 @@ public class TableOperationProgressInfo extends BaseVO{
 								controller.getOperationConfig().isOutdateRecordsDetector() ||
 									controller.getOperationConfig().isPhantomRecordsDetector()) return "central_site"; 
 		
-		throw new ForbiddenException("The originAppCode cannot be determined for "+controller.getOperationType() + " operation!");
+		throw new ForbiddenException("The originAppCode cannot be determined for "+controller.getOperationType().name().toLowerCase() + " operation!");
 	}
 	
 	public void setController(OperationController controller) {

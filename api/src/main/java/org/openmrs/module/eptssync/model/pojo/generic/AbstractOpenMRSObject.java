@@ -64,13 +64,13 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	 * @throws DBException
 	 */
 	@Override
-	public OpenMRSObject retrieveParentInDestination(Integer parentId, SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException {
+	public OpenMRSObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode, SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException {
 		if (parentId == null) return null;
 		
 		OpenMRSObject parentOnDestination;
 		
 		try {
-			parentOnDestination = OpenMRSObjectDAO.thinGetByRecordOrigin(parentId, parentTableConfiguration, conn);
+			parentOnDestination = OpenMRSObjectDAO.thinGetByRecordOrigin(parentId, recordOriginLocationCode, parentTableConfiguration, conn);
 		} catch (DBException e) {
 			logger.info("NEW ERROR PERFORMING LOAD OF " + parentTableConfiguration.getSyncRecordClass().getName());
 			
@@ -460,7 +460,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					parent = OpenMRSObjectDAO.getById(refInfo.getRefTableConfiguration().getTableName(), refInfo.getRefTableConfiguration().getPrimaryKey(), parentId , conn);
 				}
 				else {
-					parent = retrieveParentInDestination(parentId, refInfo.getRefTableConfiguration(),  refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
+					parent = retrieveParentInDestination(parentId, recordOriginLocationCode, refInfo.getRefTableConfiguration(),  refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
 				}
 				
 				if (parent == null) {
@@ -554,7 +554,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					else {
 						
 						if (tableInfo.getRelatedSynconfiguration().isDestinationSyncProcess()) {
-							parent = retrieveParentInDestination(parentId, refInfo.getRefTableConfiguration(),  refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
+							parent = retrieveParentInDestination(parentId, this.getRelatedSyncInfo().getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
 							
 							if (parent == null) {
 								//Try to recover the parent from stage_area and check if this record doesnt exist on destination with same uuid

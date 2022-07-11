@@ -25,8 +25,6 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 	
 	public ResolveConflictsInStageAreaController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
 	}
 	
 	@Override

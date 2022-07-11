@@ -27,9 +27,9 @@ public class DBQuickCopyController extends OperationController {
 	public DBQuickCopyController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig);
 		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType();	
-		
 		this.appOriginLocationCode = operationConfig.getRelatedSyncConfig().getOriginAppLocationCode();
+		
+		this.controllerId = processController.getControllerId() + "_" + getOperationType().name().toLowerCase() + "_from_" + appOriginLocationCode;	
 		
 		AppInfo srcInfo = getConfiguration().exposeAllAppsNotMain().get(0); 
 		
