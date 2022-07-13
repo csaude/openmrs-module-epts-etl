@@ -74,11 +74,13 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			}
 			else
 			if (isOutdateRecordsDetector()) {
-				return OpenMRSObjectDAO.getFirstRecord(tableInfo, conn);
+				id = OpenMRSObjectDAO.getFirstRecord(tableInfo, conn);
 			}
 			else
 			if (isPhantomRecordsDetector()){
-				return OpenMRSObjectDAO.getLastRecord(tableInfo, conn);
+				OpenMRSObject record = OpenMRSObjectDAO.getFirstPhantomRecordInDestination(tableInfo, conn);
+				
+				id = record != null ? record.getObjectId() : 0;
 			}
 		
 			return id;
@@ -108,9 +110,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			}
 			else
 			if (isOutdateRecordsDetector()) {
-				OpenMRSObject record = OpenMRSObjectDAO.getLastOutDatedRecordInDestination(tableInfo, conn);
-				
-				id = record != null ? record.getObjectId() : 0;
+				id = OpenMRSObjectDAO.getLastRecord(tableInfo, conn);
 			}
 			else
 			if (isPhantomRecordsDetector()){

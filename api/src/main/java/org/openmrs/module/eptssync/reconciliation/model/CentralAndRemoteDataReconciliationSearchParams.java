@@ -43,34 +43,38 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 		}
 		else
 		if (this.type.isOutdatedRecordsDetector()) {
+			searchClauses.addColumnToSelect("dest_.*");
+			
+			searchClauses.addColumnToSelect("src_.record_origin_id, src_.record_uuid, src_.record_origin_location_code");
 			
 			if (getTableInfo().getTableName().equalsIgnoreCase("patient")) {
 				searchClauses.addToClauseFrom("person inner join patient dest_ on patient_id = person_id");
-				searchClauses.addColumnToSelect("dest_.*, person.uuid");
+				searchClauses.addColumnToSelect("person.uuid");
+				searchClauses.addToClauseFrom("inner join " + getTableInfo().generateFullStageTableName() + " src_ on person.uuid = src_.record_uuid");
 			}
 			else {
 				searchClauses.addToClauseFrom(tableInfo.getTableName() + " dest_");
-				searchClauses.addColumnToSelect("dest_.*");
+				searchClauses.addToClauseFrom("inner join " + getTableInfo().generateFullStageTableName() + " src_ on dest_.uuid = src_.record_uuid");
 			}
-				
-			searchClauses.addColumnToSelect("src_.*");
 			
-			searchClauses.addToClauseFrom("inner join " + getTableInfo().generateFullStageTableName() + " src_ on dest_.uuid = src_.record_uuid");
 			
 			searchClauses.addToClauses("src_.consistent = 1");
 		}
 		else
 		if (this.type.isPhantomRecordsDetector() ) {
+			searchClauses.addColumnToSelect("dest_.*");
+			
 			if (getTableInfo().getTableName().equalsIgnoreCase("patient")) {
-				searchClauses.addToClauseFrom("person dest_ inner join patient on patient_id = person_id");
+				searchClauses.addToClauseFrom("person inner join patient dest_ on patient_id = person_id");
+				searchClauses.addToClauseFrom("left join " + getTableInfo().generateFullStageTableName() + " src_ on person.uuid = src_.record_uuid");
+				
+				searchClauses.addColumnToSelect("person.uuid");
 			}
 			else {
 				searchClauses.addToClauseFrom(tableInfo.getTableName() + " dest_");
+				searchClauses.addToClauseFrom("left join " + getTableInfo().generateFullStageTableName() + " src_ on dest_.uuid = src_.record_uuid");
 			}
 				
-			searchClauses.addToClauseFrom("left join " + getTableInfo().generateFullStageTableName() + " src_ on dest_.uuid = src_.record_uuid");
-			
-			searchClauses.addColumnToSelect("dest_.uuid");
 			
 			searchClauses.addToClauses("id is null");
 		}

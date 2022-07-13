@@ -461,15 +461,15 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		}
 	}
 
-	public static long getFirstRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getFirstRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
 		return getSpecificRecord(tableConf, "min", conn);
 	}
 	
-	public static long getLastRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getLastRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
 		return getSpecificRecord(tableConf, "max",  conn);
 	}
 	
-	public static long getSpecificRecord(SyncTableConfiguration tableConf, String function, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getSpecificRecord(SyncTableConfiguration tableConf, String function, Connection conn) throws DBException, ForbiddenOperationException {
 			
 		String 	sql =  " SELECT " + function + "("+ tableConf.getPrimaryKey() +") value\n";
 				sql += " FROM " + tableConf.getTableName() + "\n";
@@ -479,7 +479,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
 		
-		return v != null && v.hasValue() ? v.longValue() : 0;
+		return v != null && v.hasValue() ? v.intValue() : 0;
 	}	
 	
 

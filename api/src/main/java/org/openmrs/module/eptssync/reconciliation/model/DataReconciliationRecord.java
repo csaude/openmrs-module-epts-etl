@@ -43,6 +43,8 @@ public class DataReconciliationRecord {
 		
 		OpenMRSObject srcObj = OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(), dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginId(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
 		
+		srcObj.setRelatedSyncInfo(record.getRelatedSyncInfo());
+		
 		DataReconciliationRecord.loadDestParentInfo(srcObj, dataReciliationRecord.getConfig(),  conn);
 		
 		srcObj.setRelatedSyncInfo(dataReciliationRecord.stageInfo);
@@ -133,18 +135,11 @@ public class DataReconciliationRecord {
 				 
 			if (parentIdInOrigin != null) {
 				OpenMRSObject parent;
-				
-				if (record.getUuid().equals("a37a5fe3-90a3-4c51-a057-fa02a4f45675")) {
-					System.out.println("Stop");
-				}
-				
+			
 				parent = record.retrieveParentInDestination(parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  true, conn);
 			
 		
 				if (parent == null) {
-					
-					System.out.println("Stop");
-					
 					SyncImportInfoVO parentStageInfo = SyncImportInfoDAO.getByOriginIdAndLocation(refInfo.getRefTableConfiguration(), parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), conn);
 					
 					if (parentStageInfo != null) {
@@ -160,6 +155,8 @@ public class DataReconciliationRecord {
 						parentData.save(conn);
 						
 						parent = parentData.record;
+						
+						parent = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(), parentStageInfo.getRecordUuid(), conn);
 					}
 				}
 				
@@ -190,7 +187,6 @@ public class DataReconciliationRecord {
 					childDataInfo.consolidateAndSaveData(conn);
 				}
 				else {
-					
 					childDataInfo.reloadRelatedRecordDataFromDestination(conn);
 					childDataInfo.reasonType = ConciliationReasonType.PHANTOM;
 					childDataInfo.removeRelatedRecord(conn);

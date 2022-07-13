@@ -94,7 +94,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		for (SyncRecord record: syncRecords) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 		
-			logInfo(startingStrLog  +": Restouring record: [" + record + "]");
+			logInfo(startingStrLog  +": Restoring record: [" + record + "]");
 			
 			DataReconciliationRecord data = new DataReconciliationRecord((OpenMRSObject) record , getSyncTableConfiguration(), ConciliationReasonType.MISSING);
 			
