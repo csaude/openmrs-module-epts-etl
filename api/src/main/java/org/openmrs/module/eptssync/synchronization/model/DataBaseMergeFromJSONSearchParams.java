@@ -8,16 +8,20 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class SynchronizationSearchParams extends SyncImportInfoSearchParams{
+public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParams{
 	private boolean forProgressMeter;
 	
-	public SynchronizationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String appOriginLocationCode) {
-		super(tableInfo, limits, appOriginLocationCode);
+	public DataBaseMergeFromJSONSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits) {
+		super(tableInfo, limits);
 		
+		setOrderByFields("id");
+	}
+	
+	public DataBaseMergeFromJSONSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String appOriginLocationCode) {
+		super(tableInfo, limits, appOriginLocationCode);
 		setOrderByFields("id");
 	}
 	
@@ -64,10 +68,7 @@ public class SynchronizationSearchParams extends SyncImportInfoSearchParams{
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		Class<OpenMRSObject> clazz = tableInfo.getSyncRecordClass();
-		
-		OpenMRSObjectSearchParams<OpenMRSObject> migratedRecordSearchParams = new OpenMRSObjectSearchParams<OpenMRSObject>(getTableInfo(), clazz);
-		migratedRecordSearchParams.setOriginAppLocationCode(this.getAppOriginLocationCode());
+		OpenMRSObjectSearchParams migratedRecordSearchParams = new OpenMRSObjectSearchParams(getTableInfo(), null);
 		
 		int migrated = SearchParamsDAO.countAll(migratedRecordSearchParams, conn);
 		int notMigrated = countNotProcessedRecords(conn);

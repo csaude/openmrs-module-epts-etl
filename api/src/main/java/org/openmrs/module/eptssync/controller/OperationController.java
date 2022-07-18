@@ -73,9 +73,9 @@ public abstract class OperationController implements Controller{
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 		
+		this.controllerId = processController.getControllerId() + "_" + getOperationType().name().toLowerCase();
+	
 		this.progressInfo = this.processController.initOperationProgressMeter(this);
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType().name().toLowerCase();	
 	}
 	
 	public OperationProgressInfo getProgressInfo() {
@@ -419,46 +419,48 @@ public abstract class OperationController implements Controller{
 	public File generateTableProcessStatusFile(SyncTableConfiguration conf) {
 		String operationId = this.getControllerId() + "_" + conf.getTableName();
 		
-		String fileName = generateProcessStatusFolder() + FileUtilities.getPathSeparator() +  operationId;
+		String fileName = generateOperationStatusFolder() + FileUtilities.getPathSeparator() +  operationId;
 		
 		return new File(fileName);
 	}
 	
-	public String generateProcessStatusFolder() {
+	public File generateOperationStatusFile() {
+		return  new File(generateOperationStatusFolder() + FileUtilities.getPathSeparator() + getControllerId());
+	}
+	
+	public String generateOperationStatusFolder() {
+		String rootFolder = getProcessController().generateProcessStatusFolder();
+		
 		String subFolder = "";
 		
 		if (getConfiguration().isSourceSyncProcess() || getConfiguration().isDBReSyncProcess() || getConfiguration().isDBQuickExportProcess()) {
-			subFolder = "source" + FileUtilities.getPathSeparator() + getOperationType().name().toLowerCase() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
+			subFolder = getOperationType().name().toLowerCase() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
 		}
 		else
-		if (getConfiguration().isDestinationSyncProcess() || getConfiguration().isDBQuickLoadProcess() || getConfiguration().isDataReconciliationProcess() || getConfiguration().isDBQuickCopyProcess()) {
+		if (getConfiguration().isDBQuickLoadProcess() || getConfiguration().isDBQuickCopyProcess()) {
 			String extraPath =  "";
 			
 			if (getOperationConfig().isDatabasePreparationOperation()) {
 				extraPath =  FileUtilities.getPathSeparator() + getConfiguration().getSyncStageSchema();
 			}
 			else {
-				extraPath = this instanceof DestinationOperationController ?  FileUtilities.getPathSeparator() + ((DestinationOperationController)this).getAppOriginLocationCode() : "";
+				extraPath = FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode();
 			}
-			
-			subFolder = "destination" + FileUtilities.getPathSeparator() + getOperationType().name().toLowerCase() + extraPath; 
+				
+			subFolder = getOperationType().name().toLowerCase() + extraPath; 
+		}
+		else
+		if (getConfiguration().isDataReconciliationProcess() || getConfiguration().isDataBaseMergeFromSourceDBProcess() || getConfiguration().isDataBaseMergeFromJSONProcess()) {
+			subFolder = getOperationType().name().toLowerCase();
 		}
 		
-		return getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder;
-	}
-	
-	public File generateProcessStatusFile() {
-		String operationId = this.getControllerId();
-		
-		String fileName = generateProcessStatusFolder() + FileUtilities.getPathSeparator() +  operationId;
-		
-		return new File(fileName);
+		return rootFolder + FileUtilities.getPathSeparator()  + subFolder;
 	}
 	
 	public void markAsFinished() {
 		logInfo("FINISHING OPERATION "+ getControllerId());
 		
-		logInfo("WRITING OPERATION STATUS ON FILE ["+ generateProcessStatusFile().getAbsolutePath() + "]");
+		logInfo("WRITING OPERATION STATUS ON FILE ["+ generateOperationStatusFile().getAbsolutePath() + "]");
 		
 		if (!this.progressInfo.isFinished()) this.progressInfo.changeStatusToFinished();
 		
@@ -504,9 +506,16 @@ public abstract class OperationController implements Controller{
 
 	@Override
 	public void onStart() {
-		if (!generateProcessStatusFile().exists()) {
-			this.progressInfo.setStartTime(DateAndTimeUtilities.getCurrentDate());
+		if (!generateOperationStatusFile().exists()) {
+			if (this.progressInfo.getStartTime() == null) {
+				this.progressInfo.setStartTime(DateAndTimeUtilities.getCurrentDate());
+			}
+			
 			this.progressInfo.changeStatusToRunning();
+		}
+		
+		if (this.progressInfo.getStartTime() == null) {
+			this.progressInfo.setStartTime(DateAndTimeUtilities.getCurrentDate());
 		}
 	}
 
@@ -659,8 +668,10 @@ public abstract class OperationController implements Controller{
 			}
 		}
 		
-		for (OperationController child : getChildren()) {
-			child.requestStop();
+		if (getChildren() != null) {
+			for (OperationController child : getChildren()) {
+				child.requestStop();
+			}
 		}
 	}
 

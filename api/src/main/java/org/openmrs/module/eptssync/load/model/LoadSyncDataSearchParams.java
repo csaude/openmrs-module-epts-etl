@@ -15,7 +15,7 @@ import org.openmrs.module.eptssync.load.controller.DataLoadController;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
+import org.openmrs.module.eptssync.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> implements FilenameFilter{
@@ -81,7 +81,7 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		SynchronizationSearchParams syncSearchParams = new SynchronizationSearchParams(tableInfo, null, controller.getAppOriginLocationCode());
+		DataBaseMergeFromJSONSearchParams syncSearchParams = new DataBaseMergeFromJSONSearchParams(tableInfo, null, controller.getAppOriginLocationCode());
 		
 		int processed = syncSearchParams.countAllRecords(conn);
 		int notProcessed = countNotProcessedRecords(conn);

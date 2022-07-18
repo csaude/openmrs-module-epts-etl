@@ -4,9 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.openmrs.module.eptssync.controller.DestinationOperationController;
-import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
+import org.openmrs.module.eptssync.controller.SiteOperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
@@ -24,24 +23,11 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  *
  */
-public class DataLoadController extends OperationController implements DestinationOperationController{
-	private String appOriginLocationCode;
-
+public class DataLoadController extends SiteOperationController{
 	public DataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
-		super(processController, operationConfig);
-		
-		this.appOriginLocationCode = appOriginLocationCode;
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType().name().toLowerCase() + "_from_" + appOriginLocationCode;	
-		
-		this.progressInfo = this.processController.initOperationProgressMeter(this);
+		super(processController, operationConfig, appOriginLocationCode);
 	}
-	
-	@Override
-	public String getAppOriginLocationCode() {
-		return appOriginLocationCode;
-	}
-	
+
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new DataLoadEngine(monitor, limits);

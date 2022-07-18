@@ -243,7 +243,7 @@ public class OperationProgressInfo {
 	}	
 	
 	public void save() {
- 		String fileName = this.controller.generateProcessStatusFile().getAbsolutePath();
+ 		String fileName = this.controller.generateOperationStatusFile().getAbsolutePath();
 		
 		if (new File(fileName).exists()) {
 			FileUtilities.removeFile(fileName);

@@ -177,8 +177,8 @@ public class SyncConfiguration {
 	}
 	
 	@JsonIgnore
-	public boolean isDestinationSyncProcess() {
-		return processType.isDestinationSync();
+	public boolean isDataBaseMergeFromJSONProcess() {
+		return processType.isDataBaseMergeFromJSON();
 	}
 	
 	@JsonIgnore
@@ -195,7 +195,17 @@ public class SyncConfiguration {
 	public boolean isDBQuickExportProcess() {
 		return processType.isDBQuickExport();
 	}
+
+	@JsonIgnore
+	public boolean isDBQuickMergeProcess() {
+		return processType.isDBQuickMerge();
+	}
 	
+	@JsonIgnore
+	public boolean isDataBaseMergeFromSourceDBProcess() {
+		return processType.isDataBaseMergeFromSourceDB();
+	}
+
 	@JsonIgnore
 	public boolean isDBQuickLoadProcess() {
 		return processType.isDBQuickLoad();
@@ -213,7 +223,7 @@ public class SyncConfiguration {
 	
 	@JsonIgnore
 	public String getPojoPackage() {
-		return isDestinationSyncProcess() || isDataReconciliationProcess() ? "destination" : this.originAppLocationCode;
+		return isDataBaseMergeFromJSONProcess() || isDataBaseMergeFromSourceDBProcess() || isDataReconciliationProcess() ? "destination" : this.originAppLocationCode;
 	}
 	
 	public List<AppInfo> getAppsInfo() {
@@ -267,7 +277,7 @@ public class SyncConfiguration {
 		if (isSourceSyncProcess()) {
 			return this.originAppLocationCode + "_sync_stage_area";
 		}
-		if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDBQuickCopyProcess()) {
+		if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDBQuickCopyProcess() || isDataBaseMergeFromSourceDBProcess()) {
 			return "minimal_db_info";
 		}
 		else {
@@ -402,7 +412,8 @@ public class SyncConfiguration {
 
 	@JsonIgnore
 	public String getDesignation() {
-		return this.processType + (utilities.stringHasValue(this.originAppLocationCode) ?  "_" + this.originAppLocationCode : "");
+		return this.processType.name().toLowerCase();
+		//+ (utilities.stringHasValue(this.originAppLocationCode) ?  "_" + this.originAppLocationCode : "");
 	}
 	
 	public List<SyncOperationConfig> getOperations() {
@@ -475,7 +486,7 @@ public class SyncConfiguration {
 			if (!utilities.stringHasValue(getSyncRootDirectory())) errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter\n";
 		}
 		
-		if (this.isDestinationSyncProcess()) {
+		if (this.isDataBaseMergeFromJSONProcess()) {
 			if (utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You cannot configure for 'originAppLocationCode' parameter in destination configuration\n" ;
 		}
 		
@@ -489,7 +500,7 @@ public class SyncConfiguration {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInSourceSyncProcess();
 		}
 		else
-		if (isDestinationSyncProcess()) {
+		if (isDataBaseMergeFromJSONProcess()) {
 			SyncOperationConfig.getSupportedOperationsInDestinationSyncProcess();
 		}
 		
@@ -604,7 +615,7 @@ public class SyncConfiguration {
 	}
 	
 	public String generateControllerId() {
-		return (this.getDesignation() + "_controller").toLowerCase();
+		return (this.processType + (utilities.stringHasValue(this.originAppLocationCode) ?  "_" + this.originAppLocationCode : "")).toLowerCase();
 	}
 	
 	@JsonIgnore
@@ -636,7 +647,7 @@ public class SyncConfiguration {
 		pojoPackageDir += "model" + FileUtilities.getPathSeparator();
 		pojoPackageDir += "pojo" + FileUtilities.getPathSeparator();
 		
-		pojoPackageDir += isDestinationSyncProcess() ? "" : "source" +  FileUtilities.getPathSeparator();
+		pojoPackageDir += isDataBaseMergeFromJSONProcess() ? "" : "source" +  FileUtilities.getPathSeparator();
 		
 		pojoPackageDir += this.getPojoPackage() + FileUtilities.getPathSeparator();
 		

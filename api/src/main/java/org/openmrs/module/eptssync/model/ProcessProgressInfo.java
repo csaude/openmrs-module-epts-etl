@@ -21,8 +21,8 @@ public class ProcessProgressInfo {
 	public OperationProgressInfo initAndAddProgressMeterToList(OperationController operationController) {
 		OperationProgressInfo progressInfo;
 		
-		if (operationController.generateProcessStatusFile().exists()) {
-			progressInfo = OperationProgressInfo.loadFromFile(operationController.generateProcessStatusFile());
+		if (operationController.generateOperationStatusFile().exists()) {
+			progressInfo = OperationProgressInfo.loadFromFile(operationController.generateOperationStatusFile());
 			progressInfo.setController(operationController);
 		}
 		else {

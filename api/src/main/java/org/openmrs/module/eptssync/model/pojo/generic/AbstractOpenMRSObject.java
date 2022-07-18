@@ -23,6 +23,7 @@ import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.eptssync.model.base.BaseVO;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
@@ -180,22 +181,71 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		else {
 			OpenMRSObject recordOnDB = null;
 			
-			if (tableConfiguration.getRelatedSynconfiguration().isDestinationSyncProcess() || tableConfiguration.getRelatedSynconfiguration().isDataReconciliationProcess()) {
-				recordOnDB = OpenMRSObjectDAO.getByUuid(this.getClass(), this.getRelatedSyncInfo().getRecordUuid(), conn);
-			}
-			else {
+			boolean isDestOperation = tableConfiguration.getRelatedSynconfiguration().isDataBaseMergeFromJSONProcess() || 
+										tableConfiguration.getRelatedSynconfiguration().isDataReconciliationProcess() || 
+											tableConfiguration.getRelatedSynconfiguration().isDataBaseMergeFromSourceDBProcess();
+			
+			if (!isDestOperation) {
+				//Update record if it is an origin location
 				recordOnDB = OpenMRSObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
 			}
 				
 			if (recordOnDB != null) {
 				this.setObjectId(recordOnDB.getObjectId());
+				
 				OpenMRSObjectDAO.update(this, conn);
 			}
 			else {
-				OpenMRSObjectDAO.insert(this, conn);
+				
+				try {
+					OpenMRSObjectDAO.insert(this, conn);
+				}
+				catch (DBException e) {
+					if (e.isDuplicatePrimaryKeyException() && isDestOperation){
+						//Try to resolve conflict if it is destination operation
+						recordOnDB = OpenMRSObjectDAO.getByUuid(this.getClass(), this.getRelatedSyncInfo().getRecordUuid(), conn);
+						
+						if (recordOnDB != null) {
+							resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
+						}
+						else throw e;
+					}
+					else throw e;
+				}
 			}
 		}
 	} 
+	
+	private void resolveConflictWithExistingRecord(OpenMRSObject recordOnDB, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException, ForbiddenOperationException {
+		boolean existingRecordIsOutdated = false;
+		
+		if (recordOnDB.getDateChanged() != null) {
+			 if (recordOnDB.getDateChanged() == null) {
+				 existingRecordIsOutdated = true;
+			 }
+			 else
+			 if (DateAndTimeUtilities.dateDiff(this.getDateChanged(), recordOnDB.getDateChanged()) > 0){
+				 existingRecordIsOutdated = true;
+			 }
+		}
+		
+		if (!existingRecordIsOutdated && this.getDateVoided() != null) {
+			 if (recordOnDB.getDateVoided() == null) {
+				 existingRecordIsOutdated = true;
+			 }
+			 else
+			 if (DateAndTimeUtilities.dateDiff(this.getDateVoided(), recordOnDB.getDateVoided()) > 0){
+				 existingRecordIsOutdated = true;
+			 }
+		}
+		
+		if (existingRecordIsOutdated) {
+			this.setObjectId(recordOnDB.getObjectId());
+			OpenMRSObjectDAO.update(this, conn);
+		}
+		
+	}
+	
 	
 	/**
 	 * Resolve collision between existing metadata (in destination) and newly coming metadata (from any source).
@@ -444,7 +494,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 	
 	@Override
 	public void loadDestParentInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn) throws ParentNotYetMigratedException, DBException {
-		if (!tableInfo.getRelatedSynconfiguration().isDestinationSyncProcess() && !tableInfo.getRelatedSynconfiguration().isDataReconciliationProcess()) throw new ForbiddenOperationException("You can only load destination parent in a destination installation");
+		if (!tableInfo.getRelatedSynconfiguration().isDataBaseMergeFromJSONProcess() && !tableInfo.getRelatedSynconfiguration().isDataReconciliationProcess()) throw new ForbiddenOperationException("You can only load destination parent in a destination installation");
 		
 		for (RefInfo refInfo: tableInfo.getParents()) {
 			if (tableInfo.getSharePkWith() != null && tableInfo.getSharePkWith().equals(refInfo.getRefTableConfiguration().getTableName())) {
@@ -553,7 +603,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					}
 					else {
 						
-						if (tableInfo.getRelatedSynconfiguration().isDestinationSyncProcess()) {
+						if (tableInfo.getRelatedSynconfiguration().isDataBaseMergeFromJSONProcess()) {
 							parent = retrieveParentInDestination(parentId, this.getRelatedSyncInfo().getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
 							
 							if (parent == null) {

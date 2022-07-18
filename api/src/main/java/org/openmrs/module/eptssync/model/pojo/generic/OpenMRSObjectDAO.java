@@ -206,6 +206,19 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		return utilities.parseList(search(GenericOpenMRSObject.class, sql, params, conn), OpenMRSObject.class);
 	}
 	
+	public static OpenMRSObject getDefaultRecord(SyncTableConfiguration tableConfiguration,  Connection conn) throws DBException{
+		Object[] params = {};
+		
+		String sql = "";
+		
+		sql += " SELECT *\n";
+		sql += " FROM  	" +  tableConfiguration.getTableName() + "\n";
+		sql += " LIMIT 0, 1";
+		
+		return find(tableConfiguration.getSyncRecordClass(), sql, params, conn);		
+	}
+	
+	
 	public static GenericOpenMRSObject getById(String tableName, String pkColumnName, int id, Connection conn) throws DBException{
 		Object[] params = {id};
 		

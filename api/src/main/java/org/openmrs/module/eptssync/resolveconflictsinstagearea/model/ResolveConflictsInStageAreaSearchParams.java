@@ -29,13 +29,13 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 			searchClauses.addToClauses("exists ( 	 select * " + 
 												   " from " + tableInfo.generateFullStageTableName() + " inner_ " + 
 												   " where inner_.record_uuid = src_.record_uuid " + 
-												   " 	   and inner_.record_origin_location_code != src_.record_origin_location_code) ");			
+												   " 	   and inner_.record_origin_id != src_.record_origin_id) ");			
 		}
 		else {
 			searchClauses.addToClauses("exists ( 	 select * " + 
 												   " from " + tableInfo.generateFullStageTableName() + " inner_ " + 
 												   " where inner_.record_uuid = src_.record_uuid " + 
-												   " 	   and inner_.record_origin_location_code != src_.record_origin_location_code " + 
+												   " 	   and inner_.record_origin_id != src_.record_origin_id " + 
 												   "       and consistent = 1) ");
 
 			if (limits != null) {

@@ -4,9 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.openmrs.module.eptssync.controller.DestinationOperationController;
-import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
+import org.openmrs.module.eptssync.controller.SiteOperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickload.engine.DBQuickLoadEngine;
@@ -24,22 +23,12 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  *
  */
-public class DBQuickLoadController extends OperationController implements DestinationOperationController{
-	private String appOriginLocationCode;
+public class DBQuickLoadController extends SiteOperationController{
 
 	public DBQuickLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
-		super(processController, operationConfig);
-		
-		this.appOriginLocationCode = appOriginLocationCode;
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType().name().toLowerCase() + "_from_" + appOriginLocationCode;	
+		super(processController, operationConfig, appOriginLocationCode);
 		
 		this.progressInfo = this.processController.initOperationProgressMeter(this);
-	}
-	
-	@Override
-	public String getAppOriginLocationCode() {
-		return appOriginLocationCode;
 	}
 	
 	@Override
@@ -94,7 +83,7 @@ public class DBQuickLoadController extends OperationController implements Destin
 		fileName += "import";
 		fileName += FileUtilities.getPathSeparator();
 		
-		fileName += this.appOriginLocationCode;
+		fileName += this.getAppOriginLocationCode();
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += syncInfo.getTableName();
@@ -111,7 +100,7 @@ public class DBQuickLoadController extends OperationController implements Destin
 		fileName += "import_bkp";
 		fileName += FileUtilities.getPathSeparator();
 		
-		fileName += this.appOriginLocationCode;
+		fileName += this.getAppOriginLocationCode();
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += syncInfo.getTableName();

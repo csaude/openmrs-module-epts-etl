@@ -2,7 +2,6 @@ package org.openmrs.module.eptssync.synchronization.controller;
 
 import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
-import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
@@ -10,8 +9,8 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.synchronization.engine.SyncEngine;
-import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
+import org.openmrs.module.eptssync.synchronization.engine.DataBaseMergeFromJSONEngine;
+import org.openmrs.module.eptssync.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -23,26 +22,16 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  *
  */
-public class SyncController extends OperationController implements DestinationOperationController{	
+public class DatabaseMergeFromJSONController extends OperationController{	
 	
-	private String appOriginLocationCode;
-
-	public SyncController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+	public DatabaseMergeFromJSONController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
-		
-		this.appOriginLocationCode = appOriginLocationCode;
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType().name().toLowerCase() + "_from_" + appOriginLocationCode;	
-		this.progressInfo = this.processController.initOperationProgressMeter(this);
 	}
 	
-	public String getAppOriginLocationCode() {
-		return appOriginLocationCode;
-	}
 
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new SyncEngine(monitor, limits);
+		return new DataBaseMergeFromJSONEngine(monitor, limits);
 	}
 
 	@Override
@@ -67,7 +56,7 @@ public class SyncController extends OperationController implements DestinationOp
 		OpenConnection conn = openConnection();
 		
 		try {
-			SynchronizationSearchParams searchParams = new SynchronizationSearchParams(tableInfo, null, this.appOriginLocationCode);
+			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(tableInfo, null);
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
@@ -90,7 +79,7 @@ public class SyncController extends OperationController implements DestinationOp
 		OpenConnection conn = openConnection();
 		
 		try {
-			SynchronizationSearchParams searchParams = new SynchronizationSearchParams(tableInfo, null, this.appOriginLocationCode);
+			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(tableInfo, null);
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getLastRecord(searchParams, conn);

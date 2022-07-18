@@ -4,12 +4,18 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 public enum SyncProcessType {
 	SOURCE_SYNC,
-	DESTINATION_SYNC,
+	DATABASE_MERGE_FROM_JSON,
 	DB_RE_SYNC,
 	DB_QUICK_EXPORT,
 	DB_QUICK_LOAD,
 	DATA_RECONCILIATION,
-	DB_QUICK_COPY;
+	DB_QUICK_COPY,
+	DATABASE_MERGE_FROM_SOURCE_DB,
+	DB_QUICK_MERGE;
+	
+	public boolean isDBQuickMerge(){
+		return  this.equals(DB_QUICK_MERGE);
+	}
 	
 	public boolean isDBQuickCopy(){
 		return  this.equals(DB_QUICK_COPY);
@@ -23,8 +29,8 @@ public enum SyncProcessType {
 		return  this.equals(SOURCE_SYNC);
 	}
 	
-	public boolean isDestinationSync(){
-		return  this.equals(DESTINATION_SYNC);
+	public boolean isDataBaseMergeFromJSON(){
+		return  this.equals(DATABASE_MERGE_FROM_JSON);
 	}
 	
 	public boolean isDBResync(){
@@ -37,6 +43,11 @@ public enum SyncProcessType {
 	
 	public boolean isDataReconciliation(){
 		return  this.equals(DATA_RECONCILIATION);
+	}
+	
+	
+	public boolean isDataBaseMergeFromSourceDB(){
+		return  this.equals(DATABASE_MERGE_FROM_SOURCE_DB);
 	}
 	
 	public boolean isSupportedProcessType() {
@@ -55,8 +66,8 @@ public enum SyncProcessType {
 		return  SyncProcessType.valueOf(processType).isSourceSync();
 	}
 	
-	public static boolean isDestinationSync(String processType){
-		return  SyncProcessType.valueOf(processType).isDestinationSync();
+	public static boolean isDataBaseMergeFromJSON(String processType){
+		return  SyncProcessType.valueOf(processType).isDataBaseMergeFromJSON();
 	}
 	
 	public static boolean isDBResync(String processType){
@@ -69,6 +80,14 @@ public enum SyncProcessType {
 	
 	public static boolean isDataReconciliation(String processType){
 		return  SyncProcessType.valueOf(processType).isDataReconciliation();
+	}
+	
+	public static boolean isDataBasesMergeFromSourceDB(String processType){
+		return  SyncProcessType.valueOf(processType).isDataBaseMergeFromSourceDB();
+	}
+	
+	public static boolean isDBQuickMerge(String processType){
+		return  SyncProcessType.valueOf(processType).isDBQuickMerge();
 	}
 	
 	public static boolean isSupportedProcessType(String processType) {

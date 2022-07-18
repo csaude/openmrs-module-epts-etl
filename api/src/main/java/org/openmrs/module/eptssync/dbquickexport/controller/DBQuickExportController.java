@@ -24,7 +24,7 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  *
  */
-public class DBQuickExportController extends OperationController {
+public class DBQuickExportController extends  OperationController {
 	public DBQuickExportController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}

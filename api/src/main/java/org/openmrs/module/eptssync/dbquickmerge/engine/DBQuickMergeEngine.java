@@ -1,15 +1,15 @@
-package org.openmrs.module.eptssync.dbquickcopy.engine;
+package org.openmrs.module.eptssync.dbquickmerge.engine;
 
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
-import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
-import org.openmrs.module.eptssync.dbquickcopy.controller.DBQuickCopyController;
-import org.openmrs.module.eptssync.dbquickcopy.model.DBQuickCopySearchParams;
+import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
+import org.openmrs.module.eptssync.dbquickmerge.model.DBQuickMergeSearchParams;
+import org.openmrs.module.eptssync.dbquickmerge.model.MergingRecord;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.exceptions.MissingParentException;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
@@ -18,9 +18,15 @@ import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
-public class DBQuickCopyEngine extends Engine {
+/**
+ * 
+ * @author jpboane
+ *
+ * @see DBQuickMergeController
+ */
+public class DBQuickMergeEngine extends Engine {
 		
-	public DBQuickCopyEngine(EngineMonitor monitor, RecordLimits limits) {
+	public DBQuickMergeEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
@@ -55,8 +61,8 @@ public class DBQuickCopyEngine extends Engine {
 	}
 	
 	@Override
-	public DBQuickCopyController getRelatedOperationController() {
-		return (DBQuickCopyController) super.getRelatedOperationController();
+	public DBQuickMergeController getRelatedOperationController() {
+		return (DBQuickMergeController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -65,24 +71,40 @@ public class DBQuickCopyEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		try {
-			List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
+		this.getMonitor().logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		
+		int i = 1;
+		
+		for (SyncRecord record: syncRecords) {
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+		
+			logInfo(startingStrLog  +": Merging Record: [" + record + "]");
 			
-			logInfo("LOADING  '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO DESTINATION DB");
+			MergingRecord data = new MergingRecord((OpenMRSObject)record , getSyncTableConfiguration());
 			
-			List<SyncImportInfoVO> records = SyncImportInfoVO.generateFromSyncRecord(syncRecordsAsOpenMRSObjects, getRelatedOperationController().getAppOriginLocationCode(), false);
-			
-			for (SyncImportInfoVO rec : records) {
-				rec.setConsistent(1);
+			try {
+				data.merge(getRelatedOperationController().openSrcConnection(), conn);
 			}
-				
-			SyncImportInfoDAO.insertAllBatch(records, getSyncTableConfiguration(), conn);
+			catch (MissingParentException e) {
+				logInfo(record + " - " + e.getMessage() + " The record will be skipped");
+			}
 			
-		} catch (DBException e) {
-			e.printStackTrace();
+			i++;
+		}
+		
+		this.getMonitor().logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+
+		getLimits().moveNext(getQtyRecordsPerProcessing());
+		
+		saveCurrentLimits();
+		
+		if (isMainEngine()) {
+			TableOperationProgressInfo progressInfo = this.getRelatedOperationController().getProgressInfo().retrieveProgressInfo(getSyncTableConfiguration());
 			
-			throw new RuntimeException(e);
-		}	
+			progressInfo.refreshProgressMeter();
+			
+			progressInfo.refreshOnDB(conn);
+		}
 		
 		getLimits().moveNext(getQtyRecordsPerProcessing());
 		
@@ -107,7 +129,7 @@ public class DBQuickCopyEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickCopySearchParams(this.getSyncTableConfiguration(), limits, getRelatedOperationController());
+		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickMergeSearchParams(this.getSyncTableConfiguration(), limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
 		

@@ -147,7 +147,7 @@ public class RecordLimits {
 	}	
 	
 	public String generateFilePath() {
-		String subFolder = this.engine.getRelatedOperationController().generateProcessStatusFolder();
+		String subFolder = this.engine.getRelatedOperationController().generateOperationStatusFolder();
 		
 		subFolder += FileUtilities.getPathSeparator() + "threads";
 		

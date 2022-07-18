@@ -20,7 +20,7 @@ public abstract class AbstractSearchParams<T extends VO> {
 	
 	protected SearchResult<T> searchResult;
 	
-	static CommonUtilities utilities = CommonUtilities.getInstance();
+	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	/**
 	 * Indica o inicio da seleccao de registos na BD no caso de pesquisa faseada.

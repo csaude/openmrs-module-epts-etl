@@ -7,7 +7,7 @@ public enum SyncOperationType {
 		EXPORT,
 		DATABASE_PREPARATION, 
 		LOAD, 
-		SYNCHRONIZATION, 
+		DB_MERGE_FROM_JSON, 
 		TRANSPORT,
 		PREPARATION,
 		POJO_GENERATION,
@@ -20,7 +20,18 @@ public enum SyncOperationType {
 		OUTDATED_RECORDS_DETECTOR,
 		PHANTOM_RECORDS_DETECTOR,
 		RESOLVE_CONFLICTS,
-		DB_QUICK_COPY;
+		DB_QUICK_COPY,
+		DB_MERGE_FROM_SOURCE_DB,
+		DB_QUICK_MERGE;
+	
+	
+	public static boolean isDBQuickMerge(String operationType){
+		return  SyncOperationType.valueOf(operationType).equals(DB_QUICK_MERGE);
+	}
+	
+	public static boolean isDBMerge(String operationType){
+		return  SyncOperationType.valueOf(operationType).equals(DB_MERGE_FROM_SOURCE_DB);
+	}
 	
 	public static boolean isDatabasePreparation(String operationType){
 		return  SyncOperationType.valueOf(operationType).equals(DATABASE_PREPARATION);
@@ -39,7 +50,7 @@ public enum SyncOperationType {
 	}
 
 	public static boolean isSynchronization(String operationType){
-		return  SyncOperationType.valueOf(operationType).equals(SYNCHRONIZATION);
+		return  SyncOperationType.valueOf(operationType).equals(DB_MERGE_FROM_JSON);
 	}
 	public static boolean isLoad(String operationType){
 		return  SyncOperationType.valueOf(operationType).equals(LOAD);
@@ -111,7 +122,7 @@ public enum SyncOperationType {
 	}
 
 	public boolean isSynchronization(){
-		return  this.equals(SYNCHRONIZATION);
+		return  this.equals(DB_MERGE_FROM_JSON);
 	}
 	public boolean isLoad(){
 		return  this.equals(LOAD);
@@ -159,6 +170,14 @@ public enum SyncOperationType {
 	
 	public boolean isDbQuickCopy(){
 		return  this.equals(DB_QUICK_COPY);
+	}	
+	
+	public boolean isDbMergeFromSourceDB(){
+		return  this.equals(DB_MERGE_FROM_SOURCE_DB);
+	}	
+	
+	public boolean isDbQuickMerge(){
+		return  this.equals(DB_QUICK_MERGE);
 	}	
 	
 	public boolean isSupportedOperation() {

@@ -26,14 +26,6 @@ public class PojoGenerationController extends OperationController {
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new PojoGenerationEngine(monitor, limits);
 	}
-	
-	@Override
-	public void markAsFinished() {
-		//The POJO generation must be executed every time the application is restarted so no super onFinish must be executed
-	
-		super.markAsFinished();
-	}
-	
 
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {

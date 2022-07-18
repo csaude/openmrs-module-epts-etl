@@ -224,7 +224,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		source.setRelatedSyncInfo(this);
 		try {
 				
-			if (tableInfo.isDoIntegrityCheckInTheEnd(SyncOperationType.SYNCHRONIZATION)) {
+			if (tableInfo.isDoIntegrityCheckInTheEnd(SyncOperationType.DB_MERGE_FROM_JSON)) {
 				if (source.hasParents()) {
 					this.markAsConsistent(tableInfo, conn);
 				}

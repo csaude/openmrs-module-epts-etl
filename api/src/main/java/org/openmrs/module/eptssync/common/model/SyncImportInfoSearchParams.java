@@ -11,6 +11,10 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 public abstract class SyncImportInfoSearchParams extends SyncSearchParams<SyncImportInfoVO>{
 	private String appOriginLocationCode;
 	
+	public SyncImportInfoSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits) {
+		super(tableInfo, limits);
+	}
+	
 	public SyncImportInfoSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String appOriginLocationCode) {
 		super(tableInfo, limits);
 	

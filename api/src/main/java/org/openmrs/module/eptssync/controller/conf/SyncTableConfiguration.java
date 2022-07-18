@@ -397,7 +397,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public String generateFullClassName() {
 		String basePackageName = "org.openmrs.module.eptssync.model.pojo";
 		
-		String rootPackageName = isDestinationInstallationType() || isDataReconciliationProcess() ? "" : "source";
+		String rootPackageName = isDestinationInstallationType() || isDataReconciliationProcess() || isDataBasesMergeFromSourceDBProcess() ? "" : "source";
 		
 		String packageName = getClasspackage();
 		
@@ -412,7 +412,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public String generateFullPackageName() {
 		String basePackageName = "org.openmrs.module.eptssync.model.pojo";
 		
-		String rootPackageName = isDestinationInstallationType() || isDataReconciliationProcess() ? "" : "source";
+		String rootPackageName = isDestinationInstallationType() || isDataReconciliationProcess() || isDataBasesMergeFromSourceDBProcess() ? "" : "source";
 		
 		String packageName = getClasspackage();
 		
@@ -628,7 +628,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	@JsonIgnore
 	public boolean isDestinationInstallationType() {
-		return getRelatedSynconfiguration().isDestinationSyncProcess();
+		return getRelatedSynconfiguration().isDataBaseMergeFromJSONProcess();
 	}
 	
 	@JsonIgnore
@@ -644,6 +644,11 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	@JsonIgnore
 	public boolean isDBQuickCopy() {
 		return getRelatedSynconfiguration().isDBQuickCopyProcess();
+	}
+	
+	@JsonIgnore
+	public boolean isDataBasesMergeFromSourceDBProcess() {
+		return getRelatedSynconfiguration().isDataBaseMergeFromSourceDBProcess();
 	}
 	
 	public boolean hasNoDateVoidedField() {

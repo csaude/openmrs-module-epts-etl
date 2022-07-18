@@ -12,12 +12,9 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams<OpenMRSObject>{
 	private boolean selectAllRecords;
-	private String appOriginLocationCode;
 	
-	public DatabaseIntegrityConsolidationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String appOriginLocationCode, Connection conn) {
+	public DatabaseIntegrityConsolidationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
 		super(tableInfo, limits);
-		
-		this.appOriginLocationCode = appOriginLocationCode;
 		
 		setOrderByFields(tableInfo.getPrimaryKey());
 	}
@@ -51,9 +48,6 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 			}
 		}
 		
-		searchClauses.addToClauses("record_origin_location_code = ?");
-		searchClauses.addToParameters(this.appOriginLocationCode);
-	
 		return searchClauses;
 	}	
 	
@@ -64,7 +58,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		DatabaseIntegrityConsolidationSearchParams auxSearchParams = new DatabaseIntegrityConsolidationSearchParams(this.tableInfo, this.limits, this.appOriginLocationCode, conn);
+		DatabaseIntegrityConsolidationSearchParams auxSearchParams = new DatabaseIntegrityConsolidationSearchParams(this.tableInfo, this.limits, conn);
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);

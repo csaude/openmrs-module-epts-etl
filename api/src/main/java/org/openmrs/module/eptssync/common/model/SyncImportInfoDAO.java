@@ -140,12 +140,12 @@ public class SyncImportInfoDAO extends BaseDAO {
 			sql += "											 		json,\n";
 			sql += "											 		migration_status,\n";
 			sql += "											 		last_sync_try_err,\n";
-			sql += "													record_origin_location_code,";
-			sql += "													last_update_date,";
+			sql += "													record_origin_location_code,\n";
+			sql += "													last_update_date,\n";
 			sql += "											 		record_date_created,\n";
 			sql += "											 		record_date_changed,\n";
 			sql += "											 		record_date_voided,\n";
-			sql += "													consistent)";
+			sql += "													consistent)\n";
 			sql += "	VALUES(?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";

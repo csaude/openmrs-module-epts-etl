@@ -11,7 +11,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.model.ProcessProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
@@ -84,15 +83,13 @@ public class ProcessController implements Controller{
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
-		//ClassPathUtilities.tryToCopyPOJOToClassPath(this.configuration);
-		
 		this.operationsControllers = new ArrayList<OperationController>();
 		
 		OpenConnection conn = openConnection();
 		
 		try {
 			for (SyncOperationConfig operation : configuration.getOperations()) {
-				List<OperationController> controller = operation.generateRelatedController(this, null, conn);
+				List<OperationController> controller = operation.generateRelatedController(this, operation.getRelatedSyncConfig().getOriginAppLocationCode(), conn);
 				
 				this.operationsControllers.addAll(controller);
 			}
@@ -387,24 +384,27 @@ public class ProcessController implements Controller{
 		ThreadPoolService.getInstance().terminateTread(logger, this.getControllerId());
 	}
 	
-	@JsonIgnore
+	
 	public File generateProcessStatusFile() {
 		String operationId = this.getControllerId();
 		
-		String subFolder = "";
-		
-		if (getConfiguration().isSourceSyncProcess()) {
-			subFolder = "source"; 
-		}
-		else {
-			throw new ForbiddenOperationException("There is no status folder for destination operation");
-		}
-		
-		String fileName = getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator() + subFolder + FileUtilities.getPathSeparator() +  operationId;
-		
-		fileName = fileName.toLowerCase();
+		String fileName = generateProcessStatusFolder() + FileUtilities.getPathSeparator() +  operationId;
 		
 		return new File(fileName);
+	}
+	
+	public String generateProcessStatusFolder() {
+		String subFolder = "";
+		
+		if (getConfiguration().isSourceSyncProcess() || getConfiguration().isDBReSyncProcess() || getConfiguration().isDBQuickExportProcess()) {
+			subFolder = "source";
+		}
+		else
+		if (getConfiguration().isDBQuickLoadProcess() || getConfiguration().isDBQuickCopyProcess() || getConfiguration().isDataReconciliationProcess() || getConfiguration().isDataBaseMergeFromSourceDBProcess() || getConfiguration().isDataBaseMergeFromJSONProcess()) {
+			subFolder = "destination"; 
+		}
+		
+		return getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() +  "process_status" + FileUtilities.getPathSeparator()  + subFolder  + FileUtilities.getPathSeparator() + getConfiguration().getDesignation();
 	}
 	
 	public void markAsFinished() {

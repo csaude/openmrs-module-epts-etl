@@ -7,8 +7,8 @@ import java.sql.Connection;
 
 import javax.ws.rs.ForbiddenException;
 
-import org.openmrs.module.eptssync.controller.DestinationOperationController;
 import org.openmrs.module.eptssync.controller.OperationController;
+import org.openmrs.module.eptssync.controller.SiteOperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.SyncProgressMeter;
@@ -51,8 +51,8 @@ public class TableOperationProgressInfo extends BaseVO{
 			return controller.getConfiguration().getOriginAppLocationCode();
 		}
 		
-		if (controller instanceof DestinationOperationController) {
-			return ((DestinationOperationController)controller).getAppOriginLocationCode();
+		if (controller instanceof SiteOperationController) {
+			return ((SiteOperationController)controller).getAppOriginLocationCode();
 		}
 		 
 		if (controller.getOperationConfig().isDatabasePreparationOperation() || 
@@ -60,7 +60,9 @@ public class TableOperationProgressInfo extends BaseVO{
 						controller.getOperationConfig().isResolveConflictsInStageArea() ||
 							controller.getOperationConfig().isMissingRecordsDetector() ||
 								controller.getOperationConfig().isOutdateRecordsDetector() ||
-									controller.getOperationConfig().isPhantomRecordsDetector()) return "central_site"; 
+									controller.getOperationConfig().isPhantomRecordsDetector() ||
+										controller.getOperationConfig().isDBMergeFromSourceDB() ||
+											controller.getOperationConfig().isDataBaseMergeFromJSONOperation()) return "central_site"; 
 		
 		throw new ForbiddenException("The originAppCode cannot be determined for "+controller.getOperationType().name().toLowerCase() + " operation!");
 	}

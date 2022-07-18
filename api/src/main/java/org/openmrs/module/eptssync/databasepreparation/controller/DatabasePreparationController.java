@@ -155,8 +155,8 @@ public class DatabasePreparationController extends OperationController {
 		
 		sql += "CREATE TABLE " + getSyncConfiguration().getSyncStageSchema() + ".table_operation_progress_info (\n";
 		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
-		sql += "operation_id varchar(100) NOT NULL,\n";
-		sql += "operation_name varchar(100) NOT NULL,\n";
+		sql += "operation_id varchar(250) NOT NULL,\n";
+		sql += "operation_name varchar(250) NOT NULL,\n";
 		sql += "table_name varchar(100) NOT NULL,\n";
 		sql += "record_origin_location_code VARCHAR(100) NOT NULL,\n";
 		sql += "started_at datetime NOT NULL,\n";

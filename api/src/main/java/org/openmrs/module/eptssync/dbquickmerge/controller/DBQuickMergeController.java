@@ -1,11 +1,11 @@
-package org.openmrs.module.eptssync.dbquickcopy.controller;
+package org.openmrs.module.eptssync.dbquickmerge.controller;
 
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.SiteOperationController;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.dbquickcopy.engine.DBQuickCopyEngine;
+import org.openmrs.module.eptssync.dbquickmerge.engine.DBQuickMergeEngine;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
@@ -15,15 +15,16 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
- * This class is responsible for control record changes process
+ * This class is responsible for control the quick merge process. The quick merge process imediatly merge records from the source to the destination db
+ * This process assume that the source and destination are located in the same network
  * 
  * @author jpboane
  *
  */
-public class DBQuickCopyController extends SiteOperationController {
+public class DBQuickMergeController extends SiteOperationController {
 	private DBConnectionService srcDBService;
 	
-	public DBQuickCopyController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+	public DBQuickMergeController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
 		
 		AppInfo srcInfo = getConfiguration().exposeAllAppsNotMain().get(0); 
@@ -33,7 +34,7 @@ public class DBQuickCopyController extends SiteOperationController {
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new DBQuickCopyEngine(monitor, limits);
+		return new DBQuickMergeEngine(monitor, limits);
 	}
 
 	@Override

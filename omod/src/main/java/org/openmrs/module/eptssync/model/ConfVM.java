@@ -40,7 +40,7 @@ public class ConfVM {
 	private ConfVM(String installationType) throws IOException, DBException {
 		this.syncConfiguration = new SyncConfiguration();
 		
-		SyncProcessType processType = installationType.equals("source") ? SyncProcessType.SOURCE_SYNC : SyncProcessType.DESTINATION_SYNC;
+		SyncProcessType processType = installationType.equals("source") ? SyncProcessType.SOURCE_SYNC : SyncProcessType.DATABASE_MERGE_FROM_JSON;
 		
 		this.syncConfiguration.setProcessType(processType);
 		
@@ -138,7 +138,7 @@ public class ConfVM {
 		
 		if (otherConfigFile.exists()) {
 			try {
-				this.otherSyncConfiguration = ConfVM.getInstance(this.syncConfiguration.getProcessType().isDestinationSync() ? "destination" : "source").getSyncConfiguration();
+				this.otherSyncConfiguration = ConfVM.getInstance(this.syncConfiguration.getProcessType().isDataBaseMergeFromJSON() ? "destination" : "source").getSyncConfiguration();
 			} catch (IOException e) {
 				throw new ForbiddenException(e);
 			}
