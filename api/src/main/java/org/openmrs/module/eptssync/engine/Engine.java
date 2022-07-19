@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.OperationController;
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
@@ -58,6 +59,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		conn.finalizeConnection();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
+	}
+	
+	public AppInfo getDefaultApp() {
+		return getRelatedOperationController().getDefaultApp();
 	}
 	
 	public RecordLimits getLimits() {

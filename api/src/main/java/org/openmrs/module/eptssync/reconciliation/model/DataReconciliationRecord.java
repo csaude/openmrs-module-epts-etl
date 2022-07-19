@@ -41,7 +41,7 @@ public class DataReconciliationRecord {
 		dataReciliationRecord.config = config;
 		dataReciliationRecord.stageInfo = record.getRelatedSyncInfo();
 		
-		OpenMRSObject srcObj = OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(), dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginId(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
+		OpenMRSObject srcObj = OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginId(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
 		
 		srcObj.setRelatedSyncInfo(record.getRelatedSyncInfo());
 		
@@ -60,7 +60,7 @@ public class DataReconciliationRecord {
 		if (this.stageInfo == null) this.stageInfo = SyncImportInfoDAO.getWinRecord(this.config, this.recordUuid, conn);
 		
 		if (this.stageInfo != null) {
-			this.record= OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(), stageInfo.getRecordOriginId(), stageInfo.getRecordOriginLocationCode(), conn);
+			this.record= OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), stageInfo.getRecordOriginId(), stageInfo.getRecordOriginLocationCode(), conn);
 		}
 		else {
 			this.record = null;
@@ -72,7 +72,7 @@ public class DataReconciliationRecord {
 	}
 	
 	public void reloadRelatedRecordDataFromDestination(Connection conn) throws DBException, ForbiddenOperationException {
-		this.record= OpenMRSObjectDAO.getByUuid(this.config.getSyncRecordClass(), this.recordUuid, conn);
+		this.record= OpenMRSObjectDAO.getByUuid(this.config.getSyncRecordClass(config.getMainApp()), this.recordUuid, conn);
 	}
 	
 	public ConciliationReasonType getReasonType() {
@@ -156,7 +156,7 @@ public class DataReconciliationRecord {
 						
 						parent = parentData.record;
 						
-						parent = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(), parentStageInfo.getRecordUuid(), conn);
+						parent = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), parentStageInfo.getRecordUuid(), conn);
 					}
 				}
 				
@@ -176,7 +176,7 @@ public class DataReconciliationRecord {
 			if (!refInfo.getRefTableConfiguration().isConfigured()) continue;
 		
 			
-			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.record.getObjectId(), conn);
+			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), refInfo.getRefColumnName(), this.record.getObjectId(), conn);
 					
 			for (OpenMRSObject child : children) {
 				DataReconciliationRecord childDataInfo = new DataReconciliationRecord(child.getUuid(), refInfo.getRefTableConfiguration(), ConciliationReasonType.WRONG_RELATIONSHIPS);

@@ -53,7 +53,7 @@ public class ExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass();
+		return this.tableInfo.getSyncRecordClass(tableInfo.getRelatedSynconfiguration().getMainApp());
 	}
 
 	@Override

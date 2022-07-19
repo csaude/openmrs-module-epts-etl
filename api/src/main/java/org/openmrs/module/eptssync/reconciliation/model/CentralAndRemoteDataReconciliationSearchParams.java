@@ -113,12 +113,12 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 		 }
 		 else
 		 if (type.isOutdatedRecordsDetector()) {
-			 return tableInfo.getSyncRecordClass();
+			 return tableInfo.getSyncRecordClass(tableInfo.getMainApp());
 
 		 }
 		 else
 		 if (type.isPhantomRecordsDetector()) {
-			 return tableInfo.getSyncRecordClass();
+			 return tableInfo.getSyncRecordClass(tableInfo.getMainApp());
 		 }
 		 
 		 throw new ForbiddenOperationException("Unsupported operation type '" + type + "'");

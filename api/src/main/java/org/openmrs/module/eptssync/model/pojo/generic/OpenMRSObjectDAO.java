@@ -109,7 +109,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			sql += " FROM  	" + clauseFromStarting + " INNER JOIN " + parentTableConfiguration.generateFullStageTableName() + " ON record_uuid = uuid\n";
 			sql += " WHERE 	record_origin_id = ? and record_origin_location_code = ? ";
 			
-			return find(parentTableConfiguration.getSyncRecordClass(), sql, params, conn);
+			return find(parentTableConfiguration.getSyncRecordClass(parentTableConfiguration.getMainApp()), sql, params, conn);
 		} catch (Exception e) {
 			logger.info("Error trying do retrieve record on table " + parentTableConfiguration.getTableName()  + "["+e.getMessage() + "]");
 			
@@ -215,7 +215,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		sql += " FROM  	" +  tableConfiguration.getTableName() + "\n";
 		sql += " LIMIT 0, 1";
 		
-		return find(tableConfiguration.getSyncRecordClass(), sql, params, conn);		
+		return find(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);		
 	}
 	
 	
@@ -287,7 +287,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		sql += "																		WHERE record_origin_id = " + tableInfo.getPrimaryKey() + "\n)";
 		sql += "												   )";
 		
-		return find(tableInfo.getSyncRecordClass(), sql, params, conn);
+		return find(tableInfo.getSyncRecordClass(tableInfo.getMainApp()), sql, params, conn);
 	}	
 	
 
@@ -341,7 +341,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
   				sql +=	" WHERE 	" + parentField + " = ? ";
 				sql +=	"			AND record_origin_location_code = ? ";
 		
-		return search(tableConfiguration.getSyncRecordClass(), sql, params, conn);
+		return search(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
 	}
 	
 	public static List<OpenMRSObject> getByParentId(Class<OpenMRSObject> clazz, String parentField, int parentId, Connection conn) throws DBException {
@@ -432,7 +432,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		//Check if is uuid duplication
 		if (utilities.isValidUUID(s)) {
-			return getByUuid(tableConfiguration.getSyncRecordClass(), s, conn);
+			return getByUuid(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), s, conn);
 		}	
 		/*else {
 		 	//ORIGIN duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
@@ -463,7 +463,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 				return maxAcceptableId;
 			}
 			else {
-				if (getById(syncTableInfo.getSyncRecordClass(), maxAcceptableId - 1, conn) == null) {
+				if (getById(syncTableInfo.getSyncRecordClass(syncTableInfo.getMainApp()), maxAcceptableId - 1, conn) == null) {
 					return maxAcceptableId - 1;
 				}
 				else return getAvaliableObjectId(syncTableInfo, maxAcceptableId - 1, conn);

@@ -3,6 +3,7 @@ package org.openmrs.module.eptssync.dbquickmerge.engine;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.eptssync.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.eptssync.dbquickmerge.model.MergingRecord;
@@ -25,9 +26,14 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @see DBQuickMergeController
  */
 public class DBQuickMergeEngine extends Engine {
-		
+	private AppInfo mainApp;
+	private AppInfo remoteApp;
+	
 	public DBQuickMergeEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
+	
+		this.mainApp = getRelatedOperationController().getConfiguration().find(AppInfo.init("main"));
+		this.remoteApp = getRelatedOperationController().getConfiguration().find(AppInfo.init("remote"));
 	}
 	
 	@Override	
@@ -80,7 +86,7 @@ public class DBQuickMergeEngine extends Engine {
 		
 			logInfo(startingStrLog  +": Merging Record: [" + record + "]");
 			
-			MergingRecord data = new MergingRecord((OpenMRSObject)record , getSyncTableConfiguration());
+			MergingRecord data = new MergingRecord((OpenMRSObject)record , getSyncTableConfiguration(), this.remoteApp, this.mainApp);
 			
 			try {
 				data.merge(getRelatedOperationController().openSrcConnection(), conn);

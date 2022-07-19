@@ -25,7 +25,7 @@ public class DatabasePreparationSearchParams extends SyncSearchParams<OpenMRSObj
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass();
+		return this.tableInfo.getSyncRecordClass(engine.getDefaultApp());
 	}
 
 	@Override

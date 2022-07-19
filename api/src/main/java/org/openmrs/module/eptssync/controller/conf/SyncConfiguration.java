@@ -109,6 +109,16 @@ public class SyncConfiguration {
 		return find(AppInfo.init(AppInfo.MAIN_APP_CODE)).getConnInfo();
 	}
 	
+	@JsonIgnore
+	public AppInfo getMainApp() throws ForbiddenOperationException{
+		AppInfo mainApp = find(AppInfo.init(AppInfo.MAIN_APP_CODE));
+		
+		if (mainApp == null) throw new ForbiddenOperationException("No main app found on configurations!");
+	
+		return mainApp;
+	}
+	
+	
 	public String getClassPath() {
 		return classPath;
 	}
@@ -223,7 +233,7 @@ public class SyncConfiguration {
 	
 	@JsonIgnore
 	public String getPojoPackage() {
-		return isDataBaseMergeFromJSONProcess() || isDataBaseMergeFromSourceDBProcess() || isDataReconciliationProcess() ? "destination" : this.originAppLocationCode;
+		return isDataBaseMergeFromJSONProcess() || isDataBaseMergeFromSourceDBProcess() || isDataReconciliationProcess()  ? "destination" : this.originAppLocationCode;
 	}
 	
 	public List<AppInfo> getAppsInfo() {
@@ -402,8 +412,12 @@ public class SyncConfiguration {
 		return utilities.findOnList(this.allTables, tableConfiguration);
 	}
 	
-	public AppInfo find(AppInfo connInfo) {
-		return utilities.findOnArray(this.appsInfo, connInfo);
+	public AppInfo find(AppInfo appToFind) {
+		AppInfo app = utilities.findOnArray(this.appsInfo, appToFind);
+		
+		if (app == null) throw new ForbiddenOperationException("No configured app found with code [" +appToFind.getApplicationCode() + "]");
+		
+		return app;
 	}
 	
 	public SyncTableConfiguration find(SyncTableConfiguration tableConfiguration) {
@@ -481,13 +495,14 @@ public class SyncConfiguration {
 		String errorMsg = "";
 		int errNum = 0;
 		
-		if (this.isSourceSyncProcess()) {
+		if (this.isSupposedToHaveOriginAppCode()) {
 			if (!utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You must specify value for 'originAppLocationCode' parameter \n" ;
-			if (!utilities.stringHasValue(getSyncRootDirectory())) errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter\n";
 		}
 		
-		if (this.isDataBaseMergeFromJSONProcess()) {
-			if (utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You cannot configure for 'originAppLocationCode' parameter in destination configuration\n" ;
+		if (!utilities.stringHasValue(getSyncRootDirectory())) errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter\n";
+			
+		if (!this.isSupposedToHaveOriginAppCode()) {
+			if (utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You cannot configure for 'originAppLocationCode' parameter in [" + getProcessType() + " configuration\n" ;
 		}
 		
 		for (SyncOperationConfig operation : this.operations) {
@@ -501,14 +516,48 @@ public class SyncConfiguration {
 		}
 		else
 		if (isDataBaseMergeFromJSONProcess()) {
-			SyncOperationConfig.getSupportedOperationsInDestinationSyncProcess();
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDestinationSyncProcess();
 		}
-		
+		else
+		if (isDBReSyncProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBReSyncProcess();
+		}
+		else
+		if (isDBQuickExportProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickExportProcess();
+		}				
+		else
+		if (isDBQuickLoadProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickLoadProcess();
+		}		
+		else
+		if (isDataReconciliationProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDataReconciliationProcess();
+		}		
+		else
+		if (isDBQuickCopyProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickCopyProcess();
+		}
+		else
+		if (isDataBaseMergeFromSourceDBProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDataBasesMergeFromSourceDBProcess();
+		}
+		else
+		if (isDBQuickMergeProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickMergeProcess();
+		}
 		
 		if (supportedOperations != null) {
 			for (SyncOperationType operationType : supportedOperations) {
 				if (!isOperationConfigured(operationType)) errorMsg += ++errNum + ". The operation '" + operationType + " is not configured\n";
 			}
+		}
+		
+		try {
+			getMainApp();
+		}
+		catch (ForbiddenOperationException e) {
+			errorMsg += ++errNum + ". No main app were configured!";	
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
@@ -519,6 +568,7 @@ public class SyncConfiguration {
 		if (this.childConfig != null){
 			this.childConfig.validate();
 		}
+		
 	}
 	
 	private boolean isOperationConfigured(SyncOperationType operationType) {
@@ -615,7 +665,7 @@ public class SyncConfiguration {
 	}
 	
 	public String generateControllerId() {
-		return (this.processType + (utilities.stringHasValue(this.originAppLocationCode) ?  "_" + this.originAppLocationCode : "")).toLowerCase();
+		return this.processType.name().toLowerCase();
 	}
 	
 	@JsonIgnore
@@ -669,7 +719,22 @@ public class SyncConfiguration {
 	}
 	
 	public boolean isSupposedToHaveOriginAppCode() {
-		return this.isDBQuickExportProcess() ||  this.isSourceSyncProcess() ||  this.isDBReSyncProcess() || this.isDBQuickCopyProcess();
+		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isDBQuickMergeProcess();
+	}
+	
+	public boolean isSupposedToRunInDestination() {
+		return this.isDataBaseMergeFromJSONProcess() || 
+					this.isDBQuickLoadProcess() || 
+						this.isDataReconciliationProcess() ||
+							this.isDBQuickCopyProcess() ||
+							this.isDataBaseMergeFromSourceDBProcess() ||
+								this.isDBQuickMergeProcess();
+	}
+	
+	public boolean isSupposedToRunInOrigin() {
+		return this.isSourceSyncProcess() || 
+					this.isDBReSyncProcess() || 
+						this.isDBQuickExportProcess();
 	}
 	
 }

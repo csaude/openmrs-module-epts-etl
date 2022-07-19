@@ -46,7 +46,7 @@ public class OpenMRSObjectSearchParams extends SyncSearchParams<OpenMRSObject>{
 
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.getTableInfo().getSyncRecordClass();
+		return this.getTableInfo().getSyncRecordClass(tableInfo.getMainApp());
 	}
 
 	@Override

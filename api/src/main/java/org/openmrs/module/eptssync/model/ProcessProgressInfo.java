@@ -1,5 +1,6 @@
 package org.openmrs.module.eptssync.model;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +22,9 @@ public class ProcessProgressInfo {
 	public OperationProgressInfo initAndAddProgressMeterToList(OperationController operationController) {
 		OperationProgressInfo progressInfo;
 		
-		if (operationController.generateOperationStatusFile().exists()) {
+		File operationStatusFile = operationController.generateOperationStatusFile();
+		
+		if (operationStatusFile.exists()) {
 			progressInfo = OperationProgressInfo.loadFromFile(operationController.generateOperationStatusFile());
 			progressInfo.setController(operationController);
 		}

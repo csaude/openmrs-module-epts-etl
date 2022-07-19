@@ -73,7 +73,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		try {
 			parentOnDestination = OpenMRSObjectDAO.thinGetByRecordOrigin(parentId, recordOriginLocationCode, parentTableConfiguration, conn);
 		} catch (DBException e) {
-			logger.info("NEW ERROR PERFORMING LOAD OF " + parentTableConfiguration.getSyncRecordClass().getName());
+			logger.info("NEW ERROR PERFORMING LOAD OF " + parentTableConfiguration.getSyncRecordClass(parentTableConfiguration.getMainApp()).getName());
 			
 			e.printStackTrace();
 
@@ -380,7 +380,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				}
 				else
 				if (entry.getKey().getDefaultValueDueInconsistency() != null) {
-					 OpenMRSObject parent = OpenMRSObjectDAO.getById(entry.getKey().getRefObjectClass(), entry.getKey().getDefaultValueDueInconsistency(), conn);
+					 OpenMRSObject parent = OpenMRSObjectDAO.getById(entry.getKey().getRefObjectClass(tableConfiguration.getMainApp()), entry.getKey().getDefaultValueDueInconsistency(), conn);
 					 
 					 if (parent == null) {
 						 solvedCurrentInconsistency = false;
@@ -428,7 +428,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		for (RefInfo refInfo: syncTableInfo.getChildred()) {
 			if (!refInfo.getRefTableConfiguration().isConfigured()) continue;
 			
-			int qtyChildren = OpenMRSObjectDAO.countAllOfParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getObjectId(), conn);
+			int qtyChildren = OpenMRSObjectDAO.countAllOfParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(syncTableInfo.getMainApp()), refInfo.getRefColumnName(), this.getObjectId(), conn);
 			
 			if (qtyChildren == 0) {
 				continue;
@@ -438,7 +438,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				throw new ForbiddenOperationException("The operation is trying to remove this record [" + syncTableInfo.getTableName() + " = " + this.getUuid() + ", from " + this.getRelatedSyncInfo().getRecordOriginLocationCode() + " but it has " + qtyChildren + " " + refInfo.getTableName() + " related to. Please check this inconsistence before continue");
 			}*/
 			
-			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(), refInfo.getRefColumnName(), this.getObjectId(), conn);
+			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(syncTableInfo.getMainApp()), refInfo.getRefColumnName(), this.getObjectId(), conn);
 			
 			for (OpenMRSObject child : children) {
 				child.resolveInconsistence(refInfo.getRefTableConfiguration(), conn);
@@ -460,7 +460,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				
 				//try to load the default parent
 				 if (entry.getKey().getDefaultValueDueInconsistency() != null) {
-					 OpenMRSObject parent = OpenMRSObjectDAO.getById(entry.getKey().getRefObjectClass(), entry.getKey().getDefaultValueDueInconsistency(), conn);
+					 OpenMRSObject parent = OpenMRSObjectDAO.getById(entry.getKey().getRefObjectClass(tableConfiguration.getMainApp()), entry.getKey().getDefaultValueDueInconsistency(), conn);
 					 
 					 if (parent == null) {
 						 solvedCurrentInconsistency = false;
@@ -525,7 +525,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 					
 					parentFromSource = sourceInfo.convertToOpenMRSObject(refInfo.getRefTableConfiguration(), conn);
 					
-					OpenMRSObject parentFromDestionationSharingSameObjectId = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(), parentId, conn);
+					OpenMRSObject parentFromDestionationSharingSameObjectId = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(tableInfo.getMainApp()), parentId, conn);
 					
 					boolean sameUuid = true;
 					
@@ -539,7 +539,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				}
 				
 				 if (parent == null && refInfo.getDefaultValueDueInconsistency() > 0) {
-					 parent = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(), refInfo.getDefaultValueDueInconsistency(), conn);
+					 parent = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(tableInfo.getMainApp()), refInfo.getDefaultValueDueInconsistency(), conn);
 				 }
 				
 				changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);
@@ -618,7 +618,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 								
 								parentFromSource = sourceInfo.convertToOpenMRSObject(refInfo.getRefTableConfiguration(), conn);
 								
-								OpenMRSObject parentFromDestionationSharingSameObjectId = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(), parentId, conn);
+								OpenMRSObject parentFromDestionationSharingSameObjectId = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(tableInfo.getMainApp()), parentId, conn);
 								
 								boolean sameUuid = true;
 								
@@ -632,7 +632,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 							}
 						}
 						else {
-							parent = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(), parentId, conn);
+							parent = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(tableInfo.getMainApp()), parentId, conn);
 						}
 					}
 				
@@ -642,7 +642,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				}
 				 
 			} catch (ParentNotYetMigratedException e) {
-				OpenMRSObject parent = utilities.createInstance(refInfo.getRefObjectClass());
+				OpenMRSObject parent = utilities.createInstance(refInfo.getRefObjectClass(tableInfo.getMainApp()));
 				parent.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(parent, getRelatedSyncInfo().getRecordOriginLocationCode(), true));
 				
 				try {

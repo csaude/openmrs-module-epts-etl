@@ -72,9 +72,13 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		this.childred = childred;
 	}
 	
+	public AppInfo getMainApp() {
+		return getRelatedSynconfiguration().getMainApp();
+	}
+	
 	@JsonIgnore
-	public String getClasspackage() {
-		return getRelatedSynconfiguration().getPojoPackage();
+	public String getClasspackage(AppInfo application) {
+		return application.getPojoPackageName();
 	}
 	
 	public boolean isDoIntegrityCheckInTheEnd(SyncOperationType operationType) {
@@ -360,8 +364,8 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	@JsonIgnore
-	public Class<OpenMRSObject> getSyncRecordClass() throws ForbiddenOperationException{
-		if (syncRecordClass == null) this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(generateFullClassName(), getRelatedSynconfiguration());
+	public Class<OpenMRSObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException{
+		if (syncRecordClass == null) this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application), getRelatedSynconfiguration());
 		
 		if (syncRecordClass == null) throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");
 		
@@ -380,9 +384,9 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	@JsonIgnore
-	public boolean existsSyncRecordClass() {
+	public boolean existsSyncRecordClass(AppInfo application) {
 		try {
-			return getSyncRecordClass() != null;
+			return getSyncRecordClass(application) != null;
 		} catch (ForbiddenOperationException e) {
 			
 			return false;
@@ -394,31 +398,23 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 
 	@JsonIgnore
-	public String generateFullClassName() {
-		String basePackageName = "org.openmrs.module.eptssync.model.pojo";
+	public String generateFullClassName(AppInfo application) {
+		String rootPackageName = "org.openmrs.module.eptssync.model.pojo";
 		
-		String rootPackageName = isDestinationInstallationType() || isDataReconciliationProcess() || isDataBasesMergeFromSourceDBProcess() ? "" : "source";
+		String packageName = getClasspackage(application);
 		
-		String packageName = getClasspackage();
-		
-		String fullPackageName = utilities.concatStringsWithSeparator(basePackageName, rootPackageName, ".");
-		
-		fullPackageName = utilities.concatStringsWithSeparator(fullPackageName, packageName, ".");
+		String fullPackageName = utilities.concatStringsWithSeparator(rootPackageName, packageName, ".");
 		
 		return  utilities.concatStringsWithSeparator(fullPackageName,  generateClassName(),  ".");
 	}
 	
 	@JsonIgnore
-	public String generateFullPackageName() {
-		String basePackageName = "org.openmrs.module.eptssync.model.pojo";
+	public String generateFullPackageName(AppInfo application) {
+		String rootPackageName = "org.openmrs.module.eptssync.model.pojo";
 		
-		String rootPackageName = isDestinationInstallationType() || isDataReconciliationProcess() || isDataBasesMergeFromSourceDBProcess() ? "" : "source";
+		String packageName = getClasspackage(application);
 		
-		String packageName = getClasspackage();
-		
-		String fullPackageName = utilities.concatStringsWithSeparator(basePackageName, rootPackageName, ".");
-		
-		fullPackageName = utilities.concatStringsWithSeparator(fullPackageName, packageName, ".");
+		String fullPackageName = utilities.concatStringsWithSeparator(rootPackageName, packageName, ".");
 		
 		return fullPackageName;
 	}
@@ -428,13 +424,13 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return getRelatedSynconfiguration().getOriginAppLocationCode();
 	}
 	
-	public void generateRecordClass(boolean fullClass, Connection conn) {
+	public void generateRecordClass(AppInfo application, boolean fullClass,  Connection conn) {
 		try {
 			if (fullClass) {
-				this.syncRecordClass = OpenMRSPOJOGenerator.generate(this, conn);
+				this.syncRecordClass = OpenMRSPOJOGenerator.generate(this, application, conn);
 			}
 			else {
-				this.syncRecordClass = OpenMRSPOJOGenerator.generateSkeleton(this, conn);
+				this.syncRecordClass = OpenMRSPOJOGenerator.generateSkeleton(this, application, conn);
 			}
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
@@ -451,9 +447,9 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		}
 	}
 
-	public void generateSkeletonRecordClass(Connection conn) {
+	public void generateSkeletonRecordClass(AppInfo application, Connection conn) {
 		try {
-			this.syncRecordClass = OpenMRSPOJOGenerator.generateSkeleton(this, conn);
+			this.syncRecordClass = OpenMRSPOJOGenerator.generateSkeleton(this, application, conn);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 

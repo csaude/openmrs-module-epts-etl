@@ -4,6 +4,7 @@ import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
@@ -23,8 +24,22 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  */
 public class DataBaseMergeFromSourceDBController extends OperationController {
 		
+	private AppInfo mainApp;
+	private AppInfo remoteApp;
+	
 	public DataBaseMergeFromSourceDBController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
+		
+		this.mainApp = getConfiguration().find(AppInfo.init("main"));
+		this.remoteApp = getConfiguration().find(AppInfo.init("remote"));
+	}
+	
+	public AppInfo getMainApp() {
+		return mainApp;
+	}
+	
+	public AppInfo getRemoteApp() {
+		return remoteApp;
 	}
 	
 	@Override

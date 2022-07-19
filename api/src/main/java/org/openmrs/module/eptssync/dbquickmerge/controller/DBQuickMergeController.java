@@ -10,7 +10,6 @@ import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -22,14 +21,22 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  *
  */
 public class DBQuickMergeController extends SiteOperationController {
-	private DBConnectionService srcDBService;
+	private AppInfo mainApp;
+	private AppInfo remoteApp;
 	
 	public DBQuickMergeController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
 		
-		AppInfo srcInfo = getConfiguration().exposeAllAppsNotMain().get(0); 
-		
-		this.srcDBService = DBConnectionService.init(srcInfo.getConnInfo());
+		this.mainApp = getConfiguration().find(AppInfo.init("main"));
+		this.remoteApp = getConfiguration().find(AppInfo.init("remote"));
+	}
+	
+	public AppInfo getMainApp() {
+		return mainApp;
+	}
+	
+	public AppInfo getRemoteApp() {
+		return remoteApp;
 	}
 	
 	@Override
@@ -75,6 +82,6 @@ public class DBQuickMergeController extends SiteOperationController {
 	}
 
 	public OpenConnection openSrcConnection() {
-		return srcDBService.openConnection();
+		return remoteApp.openConnection();
 	}	
 }

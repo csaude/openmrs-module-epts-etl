@@ -13,6 +13,7 @@ import org.openmrs.module.eptssync.databasepreparation.controller.DatabasePrepar
 import org.openmrs.module.eptssync.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.eptssync.dbquickexport.controller.DBQuickExportController;
 import org.openmrs.module.eptssync.dbquickload.controller.DBQuickLoadController;
+import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.export.controller.DBExportController;
 import org.openmrs.module.eptssync.inconsistenceresolver.controller.InconsistenceSolverController;
@@ -53,7 +54,18 @@ public class SyncOperationConfig {
 	
 	private List<OperationController> relatedControllers;
 	
+	private boolean mustRunToAllApps;
+	
 	public SyncOperationConfig() {
+	}
+	
+	
+	public boolean isMustRunToAllApps() {
+		return mustRunToAllApps;
+	}
+	
+	public void setMustRunToAllApps(boolean mustRunToAllApps) {
+		this.mustRunToAllApps = mustRunToAllApps;
 	}
 	
 	@JsonIgnore
@@ -322,6 +334,10 @@ public class SyncOperationConfig {
 		return this.operationType.isDbMergeFromSourceDB();
 	}
 	
+	@JsonIgnore
+	public boolean isDBQuickMerge() {
+		return this.operationType.isDbQuickMerge();
+	}
 	
 	@Override
 	public boolean equals(Object obj) {
@@ -357,7 +373,6 @@ public class SyncOperationConfig {
 	}
 	
 	private OperationController generateSingle(ProcessController parent, String appOriginCode, Connection conn) {
-		
 
 		if (isDatabasePreparationOperation()) {
 			return new DatabasePreparationController(parent, this);
@@ -421,6 +436,10 @@ public class SyncOperationConfig {
 		else
 		if (isDBMergeFromSourceDB()) {
 			return new DataBaseMergeFromSourceDBController(parent, this);
+		}
+		else
+		if (isDBQuickMerge()) {
+			return new DBQuickMergeController(parent, this, appOriginCode);
 		}
 		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");		
 	}
@@ -566,11 +585,12 @@ public class SyncOperationConfig {
 	
 	@JsonIgnore
 	public boolean canBeRunInDBQuickMergeProcess() {
-		return utilities.existOnArray(getSupportedOperationsInDataDBQuickMergeProcess(), this.operationType);
+		return utilities.existOnArray(getSupportedOperationsInDBQuickMergeProcess(), this.operationType);
 	}
 		
-	public static List<SyncOperationType>  getSupportedOperationsInDataDBQuickMergeProcess() {
-		SyncOperationType[] supported = { SyncOperationType.POJO_GENERATION,
+	public static List<SyncOperationType>  getSupportedOperationsInDBQuickMergeProcess() {
+		SyncOperationType[] supported = { SyncOperationType.DATABASE_PREPARATION,
+										  SyncOperationType.POJO_GENERATION,
 										  SyncOperationType.DB_QUICK_MERGE};
 		
 		return utilities.parseArrayToList(supported);
@@ -610,7 +630,7 @@ public class SyncOperationConfig {
 	@Override
 	@JsonIgnore
 	public String toString() {
-		return getRelatedSyncConfig().getDesignation().toLowerCase() + "_" + this.operationType;
+		return (getRelatedSyncConfig().getDesignation() + "_" + this.operationType).toLowerCase();
 	}
 
 	public String generateControllerId() {
@@ -622,4 +642,5 @@ public class SyncOperationConfig {
 	public boolean isSupposedToHaveOriginAppCode() {
 		return this.getRelatedSyncConfig().isSupposedToHaveOriginAppCode();
 	}
+
 }

@@ -53,7 +53,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass();
+		return this.tableInfo.getSyncRecordClass(tableInfo.getMainApp());
 	}
 
 	@Override

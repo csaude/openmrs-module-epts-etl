@@ -396,11 +396,11 @@ public class ProcessController implements Controller{
 	public String generateProcessStatusFolder() {
 		String subFolder = "";
 		
-		if (getConfiguration().isSourceSyncProcess() || getConfiguration().isDBReSyncProcess() || getConfiguration().isDBQuickExportProcess()) {
+		if (getConfiguration().isSupposedToRunInOrigin()) {
 			subFolder = "source";
 		}
 		else
-		if (getConfiguration().isDBQuickLoadProcess() || getConfiguration().isDBQuickCopyProcess() || getConfiguration().isDataReconciliationProcess() || getConfiguration().isDataBaseMergeFromSourceDBProcess() || getConfiguration().isDataBaseMergeFromJSONProcess()) {
+		if (getConfiguration().isSupposedToRunInDestination()) {
 			subFolder = "destination"; 
 		}
 		

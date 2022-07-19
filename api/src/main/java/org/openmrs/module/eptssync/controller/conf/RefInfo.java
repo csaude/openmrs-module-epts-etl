@@ -65,8 +65,8 @@ public class RefInfo {
 	}
 	
 	@JsonIgnore
-	public Class<OpenMRSObject> getRefObjectClass() {
-		return this.refTableConfiguration.getSyncRecordClass();
+	public Class<OpenMRSObject> getRefObjectClass(AppInfo application) {
+		return this.refTableConfiguration.getSyncRecordClass(application);
 	}
 	
 	public void setRefType(String refType) {

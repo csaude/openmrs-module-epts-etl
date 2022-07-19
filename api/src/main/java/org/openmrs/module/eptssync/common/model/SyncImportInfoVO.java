@@ -219,8 +219,8 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		return syncInfo;
 	}
 	
-	public void sync(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
-		OpenMRSObject source = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), this.json);
+	public void sync(SyncTableConfiguration tableInfo, Class<OpenMRSObject> objectClass, Connection conn) throws DBException {
+		OpenMRSObject source = utilities.loadObjectFormJSON(objectClass, this.json);
 		source.setRelatedSyncInfo(this);
 		try {
 				
@@ -275,7 +275,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	 */
 	private void refrieveSharedPKKey(SyncTableConfiguration tableConfiguration, OpenMRSObject source, int qtyTry, Connection conn) throws ParentNotYetMigratedException, DBException {
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getByUuid(tableConfiguration.getSharedKeyRefInfo(conn).getRefObjectClass(), this.getRecordUuid(), conn);
+			OpenMRSObject obj = OpenMRSObjectDAO.getByUuid(tableConfiguration.getSharedKeyRefInfo(conn).getRefObjectClass(tableConfiguration.getMainApp()), this.getRecordUuid(), conn);
 			
 			if (obj != null) {
 				source.setObjectId(obj.getObjectId());
@@ -305,7 +305,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		SyncImportInfoDAO.remove(this, tableInfo, conn);
 	}
 	
-	public static List<OpenMRSObject> convertAllToOpenMRSObject(SyncTableConfiguration tableInfo, List<SyncImportInfoVO> toParse, Connection conn) {
+	public static List<OpenMRSObject> convertAllToOpenMRSObject(SyncTableConfiguration tableInfo, Class<OpenMRSObject> objectClass, List<SyncImportInfoVO> toParse, Connection conn) {
 		List<OpenMRSObject> records = new ArrayList<OpenMRSObject>();
 		
 		for (SyncImportInfoVO imp : toParse) {
@@ -316,12 +316,12 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 			OpenMRSObject rec = null;
 			
 			try {
-				rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), modifiedJSON );
+				rec = utilities.loadObjectFormJSON(objectClass, modifiedJSON );
 			} catch (Exception e) {
 				
 				//try to resolve pathern problems
 				modifiedJSON = utilities.resolveScapeCharacter(modifiedJSON);
-				rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), modifiedJSON);
+				rec = utilities.loadObjectFormJSON(objectClass, modifiedJSON);
 			}
 			
 			if (!tableInfo.isMetadata()) {
@@ -337,18 +337,18 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		return records;
 	}
 	
-	public OpenMRSObject convertToOpenMRSObject(SyncTableConfiguration tableInfo, Connection conn) {
+	public OpenMRSObject convertToOpenMRSObject(SyncTableConfiguration tableInfo,  Connection conn) {
 		String modifiedJSON = this.getJson();
 			
 		OpenMRSObject rec = null;
 			
 		try {
-			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), modifiedJSON );
+			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(tableInfo.getMainApp()), modifiedJSON );
 		} catch (Exception e) {
 			
 			//try to resolve pathern problems
 			modifiedJSON = utilities.resolveScapeCharacter(modifiedJSON);
-			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(), modifiedJSON);
+			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(tableInfo.getMainApp()), modifiedJSON);
 		}
 		
 		if (!tableInfo.isMetadata()) {

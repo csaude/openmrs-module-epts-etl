@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.MissingParentException;
@@ -18,10 +19,15 @@ public class MergingRecord {
 	private OpenMRSObject record;
 	private SyncTableConfiguration config;
 	private List<ParentInfo>  parentsWithDefaultValues;
+	private AppInfo srcApp;
+	private AppInfo destApp;
 	
-	public MergingRecord(OpenMRSObject record, SyncTableConfiguration config) {
+	public MergingRecord(OpenMRSObject record, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp) {
 		this.record = record;
 		this.config = config;	
+		this.srcApp = srcApp;
+		this.destApp = destApp;
+		
 		this.parentsWithDefaultValues = new ArrayList<ParentInfo>();
 	}
 	
@@ -53,10 +59,10 @@ public class MergingRecord {
 			
 			OpenMRSObject parent= parentInfo.getParent();
 			
-			MergingRecord parentData = new MergingRecord(parent, refInfo.getRefTableConfiguration());
+			MergingRecord parentData = new MergingRecord(parent, refInfo.getRefTableConfiguration(), this.srcApp, this.destApp);
 			parentData.merge(srcConn, destConn);
 				
-			parent = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(), parent.getUuid(), destConn);
+			parent = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(this.destApp), parent.getUuid(), destConn);
 			
 			record.changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);
 		}		
@@ -76,7 +82,7 @@ public class MergingRecord {
 				OpenMRSObject parent = record.retrieveParentInDestination(parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  true, destConn);
 		
 				if (parent == null) {
-					OpenMRSObject parentInSrc = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(), parentIdInOrigin, srcConn);
+					OpenMRSObject parentInSrc = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
 					
 					if (parentInSrc != null) {
 						mergingRecord.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInSrc));

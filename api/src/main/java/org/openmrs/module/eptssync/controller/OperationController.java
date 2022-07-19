@@ -7,12 +7,14 @@ import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
@@ -63,6 +65,8 @@ public abstract class OperationController implements Controller{
 	
 	protected OperationProgressInfo progressInfo;
 	
+	protected List<AppInfo> appsInfo; 
+	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = LogFactory.getLog(this.getClass());
 		
@@ -73,9 +77,28 @@ public abstract class OperationController implements Controller{
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType().name().toLowerCase();
-	
+		this.controllerId = processController.getControllerId();
+		
+		if (operationConfig.getRelatedSyncConfig().isSupposedToRunInOrigin()) {
+			this.controllerId += "_" + getOperationType().name().toLowerCase() + "_from_" + operationConfig.getRelatedSyncConfig().getOriginAppLocationCode();
+		}
+		else
+		if (operationConfig.getRelatedSyncConfig().isSupposedToHaveOriginAppCode() && !operationConfig.isDatabasePreparationOperation()) {
+			this.controllerId += "_" + getOperationType().name().toLowerCase() + "_from_" + operationConfig.getRelatedSyncConfig().getOriginAppLocationCode();
+		}
+		else {
+			this.controllerId += "_" + getOperationType().name().toLowerCase();
+		}
+			
+		this.controllerId = this.controllerId.toLowerCase();
+			
 		this.progressInfo = this.processController.initOperationProgressMeter(this);
+		
+		this.appsInfo = operationConfig.getRelatedSyncConfig().getAppsInfo();
+	}
+	
+	public List<AppInfo> getAppsInfo() {
+		return appsInfo;
 	}
 	
 	public OperationProgressInfo getProgressInfo() {
@@ -433,24 +456,14 @@ public abstract class OperationController implements Controller{
 		
 		String subFolder = "";
 		
-		if (getConfiguration().isSourceSyncProcess() || getConfiguration().isDBReSyncProcess() || getConfiguration().isDBQuickExportProcess()) {
+		if (operationConfig.getRelatedSyncConfig().isSupposedToRunInOrigin()) {
 			subFolder = getOperationType().name().toLowerCase() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
 		}
 		else
-		if (getConfiguration().isDBQuickLoadProcess() || getConfiguration().isDBQuickCopyProcess()) {
-			String extraPath =  "";
-			
-			if (getOperationConfig().isDatabasePreparationOperation()) {
-				extraPath =  FileUtilities.getPathSeparator() + getConfiguration().getSyncStageSchema();
-			}
-			else {
-				extraPath = FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode();
-			}
-				
-			subFolder = getOperationType().name().toLowerCase() + extraPath; 
+		if (operationConfig.getRelatedSyncConfig().isSupposedToHaveOriginAppCode() && !operationConfig.isDatabasePreparationOperation()) {
+			subFolder = getOperationType().name().toLowerCase() + FileUtilities.getPathSeparator() + getConfiguration().getOriginAppLocationCode(); 
 		}
-		else
-		if (getConfiguration().isDataReconciliationProcess() || getConfiguration().isDataBaseMergeFromSourceDBProcess() || getConfiguration().isDataBaseMergeFromJSONProcess()) {
+		else {
 			subFolder = getOperationType().name().toLowerCase();
 		}
 		
@@ -683,6 +696,15 @@ public abstract class OperationController implements Controller{
 		}
 		
 		return null;
+	}
+
+	public AppInfo getDefaultApp() {
+		if (this.getAppsInfo().size() > 1) {
+			throw new ForbiddenOperationException("There are more that 1 apps defined!!!");
+		}
+		
+		return  getConfiguration().getMainApp();
+		
 	}
 
 } 

@@ -6,10 +6,10 @@ public class DBConnectionInfo {
 	private String connectionURI;
 	private String driveClassName;
 	
+	
 	public DBConnectionInfo(){
-		
 	}
-
+	
 	public String getDataBaseUserName() {
 		return dataBaseUserName;
 	}
