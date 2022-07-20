@@ -6,10 +6,10 @@ import java.sql.SQLException;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectSearchParams;
-import org.openmrs.module.eptssync.utilities.OpenMRSPOJOGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -22,50 +22,96 @@ public class DBQuickMergeSearchParams extends OpenMRSObjectSearchParams{
 		this.relatedController = relatedController;
 		setOrderByFields(tableInfo.getPrimaryKey());
 	}
+
+	public boolean isForMergeMissingRecords() {
+		return this.relatedController.getMergeType().isMissing();
+	}
+	
+	public boolean isForMergeExistingRecords() {
+		return this.relatedController.getMergeType().isExisting();
+	}
 	
 	@Override
-	public Class<OpenMRSObject> getRecordClass() {
-		 return OpenMRSPOJOGenerator.tryToGetExistingCLass("org.openmrs.module.eptssync.model.pojo.generic.GenericOpenMRSObject");
-	}
-
-	@Override
-	public int countAllRecords(Connection conn) throws DBException {
-		  OpenConnection srcConn = this.relatedController.openSrcConnection();
+	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
+		OpenConnection srcConn = this.relatedController.openSrcConnection();
+			
+		String srcSchema;
 		
-		  int count = super.countAllRecords(srcConn);
-		
-		  srcConn.finalizeConnection();
-		
-		  return count;
-	}
-
-	@Override
-	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		OpenMRSObjectSearchParams syncSearchParams = new OpenMRSObjectSearchParams(tableInfo, null);
-		
-		String normalFromClause;
-		String patientFromClause;
 		try {
-			normalFromClause = conn.getSchema() + "." +  tableInfo.getTableName() + " dest_";
-			patientFromClause = conn.getSchema() + "." + "patient inner join " + conn.getSchema()  + ".person dest_ on person_id = patient_id ";
+			srcSchema = srcConn.getCatalog();
+			 
+			SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
+			
+			if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+				searchClauses.addToClauseFrom(srcSchema + ".patient inner join " + srcSchema + ".person src_ on person_id = patient_id");
+				searchClauses.addColumnToSelect("patient.*, src_.uuid");
+			}
+			else {
+				searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_");
+				
+				searchClauses.addColumnToSelect("src_.*");
+			}
+		
+			String normalFromClause;
+			String patientFromClause;
+			
+			normalFromClause = tableInfo.getTableName() + " dest_";
+			patientFromClause = "patient inner join person dest_ on person_id = patient_id ";
+		
+			this.extraCondition = "";
+			
+			this.extraCondition += "  (SELECT * ";
+			this.extraCondition += "   FROM    " + (tableInfo.getTableName().equals("patient") ? patientFromClause : normalFromClause); 		
+			this.extraCondition += "   WHERE   dest_.uuid = src_.uuid)";	
+					
+			
+			if (isForMergeExistingRecords()) {
+				this.extraCondition = "EXISTS " + extraCondition;
+			}
+			else
+			if (isForMergeMissingRecords()) {
+				this.extraCondition = "NOT EXISTS " + extraCondition;
+			}			
+			
+			if (limits != null) {
+				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
+				searchClauses.addToParameters(this.limits.getFirstRecordId());
+				searchClauses.addToParameters(this.limits.getLastRecordId());
+			}
+			
+			if (this.tableInfo.getExtraConditionForExport() != null) {
+				searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
+			}
+			
+			if (utilities.stringHasValue(getExtraCondition())) {
+				searchClauses.addToClauses(getExtraCondition());
+			}
+			
+			return searchClauses;
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
 		}
+		finally {
+			srcConn.finalizeConnection();
+		}
+	}
+	
+	@Override
+	public int countAllRecords(Connection conn) throws DBException {
+		RecordLimits bkpLimits = this.limits;
 		
-		String extraCondition = "";
+		this.limits = null;
 		
-		extraCondition += "NOT EXISTS (SELECT * ";
-		extraCondition += "			   FROM    " + (tableInfo.getTableName().equals("patient") ? patientFromClause : normalFromClause); 		
-		extraCondition += "			   WHERE   dest_.uuid = src_.uuid";	
+		int count = SearchParamsDAO.countAll(this, conn);
 		
-		syncSearchParams.setExtraCondition(extraCondition);
+		this.limits = bkpLimits;
 		
-		
-		int processed = SearchParamsDAO.countAll(syncSearchParams, conn);
-		
-		int allRecords = countAllRecords(conn);
-		
-		return allRecords - processed;
+		return count;	
+	}
+
+	@Override
+	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
+		return countAllRecords(conn);
 	}
 }

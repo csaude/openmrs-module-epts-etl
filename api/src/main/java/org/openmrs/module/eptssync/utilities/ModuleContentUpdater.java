@@ -15,6 +15,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -22,7 +23,7 @@ import org.openmrs.util.OpenmrsUtil;
 
 public class ModuleContentUpdater {
 	
-	public static void copyPOJOContentToModule(SyncConfiguration syncConfiguration) throws IOException {
+	public static void copyPOJOContentToModule(SyncConfiguration syncConfiguration, AppInfo app) throws IOException {
 		File jarTmpFolder = new File (syncConfiguration.getSyncRootDirectory() + FileUtilities.getPathSeparator() + "temp");
 	
 		FileUtilities.tryToCreateDirectoryStructure(jarTmpFolder.getAbsolutePath());
@@ -36,7 +37,7 @@ public class ModuleContentUpdater {
 		
 		FileUtilities.tryToCreateDirectoryStructure(classPathContentTempDir.getAbsolutePath());
 		
-		copyClassPathContentToFolder(syncConfiguration.getPojoPackageAsDirectory(), new File(classPathContentTempDir.getAbsoluteFile() + FileUtilities.getPathSeparator() + syncConfiguration.getPojoPackageRelativePath()));
+		copyClassPathContentToFolder(syncConfiguration.getPojoPackageAsDirectory(app), new File(classPathContentTempDir.getAbsoluteFile() + FileUtilities.getPathSeparator() + syncConfiguration.getPojoPackageRelativePath(app)));
 	
 		for(File f : classPathContentTempDir.listFiles()) {
 			copyEntryToJar(f, newJar, classPathContentTempDir);
@@ -161,23 +162,12 @@ public class ModuleContentUpdater {
 		jar.close();
 	}
 	
-	public static void addToClasspath(File file, SyncConfiguration syncConfiguration) throws IOException {
-		FileUtilities.copyFile(file, new File(retrievePojoFolderOnModuleDirectory(syncConfiguration) + FileUtilities.getPathSeparator() + file.getName()));
-			
-		/*try {
-			URL url = file.toURI().toURL();
-
-			URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-			Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-			method.setAccessible(true);
-			method.invoke(classLoader, url);
-		} catch (Exception e) {
-			throw new RuntimeException("Unexpected exception", e);
-		}*/
+	public static void addToClasspath(File file, SyncConfiguration syncConfiguration, AppInfo app) throws IOException {
+		FileUtilities.copyFile(file, new File(retrievePojoFolderOnModuleDirectory(syncConfiguration, app) + FileUtilities.getPathSeparator() + file.getName()));
 	}	
 	
-	public static void tryToAddAllPOJOToClassPath(SyncConfiguration syncConfiguration) {
-		File pojoPackageDir = new File(syncConfiguration.getPOJOCompiledFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/pojo/" + syncConfiguration.getPojoPackage());
+	public static void tryToAddAllPOJOToClassPath(SyncConfiguration syncConfiguration, AppInfo app) {
+		File pojoPackageDir = new File(syncConfiguration.getPOJOCompiledFilesDirectory().getAbsolutePath() + "/org/openmrs/module/eptssync/model/pojo/" + syncConfiguration.getPojoPackage(app));
 		
 		File[] existingClasses = pojoPackageDir.listFiles();
 		
@@ -221,12 +211,12 @@ public class ModuleContentUpdater {
 		return allFiles[0];
 	}
 	
-	protected static File retrievePojoFolderOnModuleDirectory(SyncConfiguration syncConfiguration) {
+	protected static File retrievePojoFolderOnModuleDirectory(SyncConfiguration syncConfiguration, AppInfo app) {
 		String pojoFolderOnModule = "";
 		
 		pojoFolderOnModule += syncConfiguration.getModuleRootDirectory().getAbsoluteFile() + FileUtilities.getPathSeparator();
 		pojoFolderOnModule += "eptssync" + FileUtilities.getPathSeparator();
-		pojoFolderOnModule += syncConfiguration.getPojoPackageRelativePath();
+		pojoFolderOnModule += syncConfiguration.getPojoPackageRelativePath(app);
 		
 		return new File( pojoFolderOnModule);
 	}

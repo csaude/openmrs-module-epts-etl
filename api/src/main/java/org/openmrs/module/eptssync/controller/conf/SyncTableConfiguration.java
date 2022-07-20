@@ -164,15 +164,10 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	@JsonIgnore
-	public OpenConnection openConnection() {
-		return relatedSyncTableInfoSource.openConnetion();
-	}
-	
-	@JsonIgnore
 	public String getPrimaryKey() {
 		if (primaryKey == null) {
 			
-			OpenConnection conn = openConnection();
+			OpenConnection conn = relatedSyncTableInfoSource.getMainApp().openConnection();
 			
 			try {
 				ResultSet rs = conn.getMetaData().getPrimaryKeys(null, null, tableName);
@@ -552,7 +547,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	public synchronized void fullLoad() {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = getRelatedSynconfiguration().getMainApp().openConnection();
 		
 		try {
 			fullLoad(conn);

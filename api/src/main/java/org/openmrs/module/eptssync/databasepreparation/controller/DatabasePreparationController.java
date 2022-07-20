@@ -45,7 +45,7 @@ public class DatabasePreparationController extends OperationController {
 	}
 	
 	private void createStageSchema() {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = getDefaultApp().openConnection();
 		
 		try {
 			Statement st = conn.createStatement();

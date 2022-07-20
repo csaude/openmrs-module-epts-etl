@@ -317,7 +317,7 @@ public class OpenMRSPOJOGenerator {
 
 		writer.close();
 		
-		compile(sourceFile, syncTableInfo);
+		compile(sourceFile, syncTableInfo, application);
 		
 		st.close();
 		rs.close();
@@ -379,7 +379,7 @@ public class OpenMRSPOJOGenerator {
 
 		writer.close();
 
-		compile(sourceFile, syncTableInfo);
+		compile(sourceFile, syncTableInfo, application);
 		
 		return tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 	}
@@ -450,7 +450,7 @@ public class OpenMRSPOJOGenerator {
 		}
 	}
 	
-	public static void compile(File sourceFile, SyncTableConfiguration tableConfiguration) throws IOException {
+	public static void compile(File sourceFile, SyncTableConfiguration tableConfiguration, AppInfo app) throws IOException {
 		File destinationFile = tableConfiguration.getPOJOCopiledFilesDirectory();
 		
 		if (!destinationFile.exists()) FileUtilities.tryToCreateDirectoryStructure(destinationFile.getAbsolutePath());
@@ -472,7 +472,7 @@ public class OpenMRSPOJOGenerator {
 		
 		fileManager.close();
 	
-		ClassPathUtilities.addClassToClassPath(tableConfiguration);
+		ClassPathUtilities.addClassToClassPath(tableConfiguration, app);
 	}
 	
 	

@@ -181,9 +181,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		else {
 			OpenMRSObject recordOnDB = null;
 			
-			boolean isDestOperation = tableConfiguration.getRelatedSynconfiguration().isDataBaseMergeFromJSONProcess() || 
-										tableConfiguration.getRelatedSynconfiguration().isDataReconciliationProcess() || 
-											tableConfiguration.getRelatedSynconfiguration().isDataBaseMergeFromSourceDBProcess();
+			boolean isDestOperation = tableConfiguration.getRelatedSynconfiguration().isSupposedToRunInDestination();
 			
 			if (!isDestOperation) {
 				//Update record if it is an origin location
@@ -203,7 +201,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				catch (DBException e) {
 					if (e.isDuplicatePrimaryKeyException() && isDestOperation){
 						//Try to resolve conflict if it is destination operation
-						recordOnDB = OpenMRSObjectDAO.getByUuid(this.getClass(), this.getRelatedSyncInfo().getRecordUuid(), conn);
+						recordOnDB = OpenMRSObjectDAO.getByUuid(this.getClass(), this.getUuid(), conn);
 						
 						if (recordOnDB != null) {
 							resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
@@ -216,10 +214,10 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		}
 	} 
 	
-	private void resolveConflictWithExistingRecord(OpenMRSObject recordOnDB, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException, ForbiddenOperationException {
+	public void resolveConflictWithExistingRecord(OpenMRSObject recordOnDB, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException, ForbiddenOperationException {
 		boolean existingRecordIsOutdated = false;
 		
-		if (recordOnDB.getDateChanged() != null) {
+		if (this.getDateChanged() != null) {
 			 if (recordOnDB.getDateChanged() == null) {
 				 existingRecordIsOutdated = true;
 			 }
@@ -243,6 +241,7 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 			this.setObjectId(recordOnDB.getObjectId());
 			OpenMRSObjectDAO.update(this, conn);
 		}
+		else this.setObjectId(recordOnDB.getObjectId());
 		
 	}
 	

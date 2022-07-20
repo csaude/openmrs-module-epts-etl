@@ -109,9 +109,8 @@ public class ChangedRecordsDetectorController extends OperationController {
 		return false;
 	}
 
-	@Override
 	public OpenConnection openConnection() {
-		OpenConnection conn = super.openConnection();
+		OpenConnection conn = getDefaultApp().openConnection();
 	
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
 			try {

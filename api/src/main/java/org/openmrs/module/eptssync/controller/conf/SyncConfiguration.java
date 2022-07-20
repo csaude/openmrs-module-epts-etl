@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 
 import javax.ws.rs.ForbiddenException;
 
@@ -23,7 +24,6 @@ import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
@@ -68,7 +68,6 @@ public class SyncConfiguration {
 	private ProcessController relatedController;
 	
 	private List<SyncTableConfiguration> allTables;
-	private DBConnectionService connService;
 
 	private static Log logger = LogFactory.getLog(SyncConfiguration.class);
 	
@@ -94,16 +93,7 @@ public class SyncConfiguration {
 	public ProcessController getRelatedController() {
 		return relatedController;
 	}
-	
-	@JsonIgnore
-	public OpenConnection openConnetion() {
-		if (connService == null) {
-			connService = DBConnectionService.init(getMainDBConnInfo());
-		}
-		
-		return connService.openConnection();
-	}
-	
+
 	@JsonIgnore
 	public DBConnectionInfo getMainDBConnInfo() {
 		return find(AppInfo.init(AppInfo.MAIN_APP_CODE)).getConnInfo();
@@ -232,8 +222,8 @@ public class SyncConfiguration {
 	}
 	
 	@JsonIgnore
-	public String getPojoPackage() {
-		return isDataBaseMergeFromJSONProcess() || isDataBaseMergeFromSourceDBProcess() || isDataReconciliationProcess()  ? "destination" : this.originAppLocationCode;
+	public String getPojoPackage(AppInfo app) {
+		return app.getPojoPackageName();
 	}
 	
 	public List<AppInfo> getAppsInfo() {
@@ -340,7 +330,7 @@ public class SyncConfiguration {
 	}
 
 	public void loadAllTables() {
-		OpenConnection conn = openConnetion();
+		OpenConnection conn = getMainApp().openConnection();
 		
         try {
 			DatabaseMetaData dbmd = conn.getMetaData();
@@ -642,8 +632,8 @@ public class SyncConfiguration {
 		return utilities.parseToJSON(this);
 	}
 
-	public void tryToDetermineOriginAppLocationCode() throws DBException {
-		OpenConnection conn = openConnetion();
+	public void tryToDetermineOriginAppL_ocationCode() throws DBException {
+		OpenConnection conn = getMainApp().openConnection();
 		
 		String sql = " SELECT location.name as designacao, count(*) as value " +
 					 " FROM visit INNER JOIN location on location.location_id = visit.location_id " +
@@ -678,28 +668,29 @@ public class SyncConfiguration {
 	}
 	
 	@JsonIgnore
-	public File getPojoPackageAsDirectory() {
+	public File getPojoPackageAsDirectory(AppInfo app) {
 		String pojoPackageDir = "";
 		pojoPackageDir += getPOJOCompiledFilesDirectory().getAbsolutePath() + FileUtilities.getPathSeparator();
-		pojoPackageDir += getPojoPackageRelativePath();
+		
+		pojoPackageDir +=  getPojoPackageRelativePath(app).replaceAll("/", Matcher.quoteReplacement(FileUtilities.getPathSeparator()) );
 		
 		return new File(pojoPackageDir);
 	}
 	
 	@JsonIgnore
-	public String getPojoPackageRelativePath() {
+	public String getPojoPackageRelativePath(AppInfo app) {
+		String relativePathSeparator = "/";
+		
 		String pojoPackageDir = "";
 		
-		pojoPackageDir += "org" + FileUtilities.getPathSeparator();
-		pojoPackageDir += "openmrs" + FileUtilities.getPathSeparator();
-		pojoPackageDir += "module" + FileUtilities.getPathSeparator();
-		pojoPackageDir += "eptssync" + FileUtilities.getPathSeparator();
-		pojoPackageDir += "model" + FileUtilities.getPathSeparator();
-		pojoPackageDir += "pojo" + FileUtilities.getPathSeparator();
-		
-		pojoPackageDir += isDataBaseMergeFromJSONProcess() ? "" : "source" +  FileUtilities.getPathSeparator();
-		
-		pojoPackageDir += this.getPojoPackage() + FileUtilities.getPathSeparator();
+		pojoPackageDir += "org" + relativePathSeparator;
+		pojoPackageDir += "openmrs" + relativePathSeparator;
+		pojoPackageDir += "module" + relativePathSeparator;
+		pojoPackageDir += "eptssync" + relativePathSeparator;
+		pojoPackageDir += "model" + relativePathSeparator;
+		pojoPackageDir += "pojo" + relativePathSeparator;
+	
+		pojoPackageDir += this.getPojoPackage(app) + relativePathSeparator;
 		
 		return pojoPackageDir;
 	}

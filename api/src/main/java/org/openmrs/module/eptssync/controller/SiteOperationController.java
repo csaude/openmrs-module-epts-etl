@@ -10,8 +10,6 @@ public abstract class SiteOperationController extends OperationController{
 		super(processController, operationConfig);
 		
 		this.appOriginLocationCode = appOriginLocationCode;
-		
-		this.controllerId = processController.getControllerId() + "_" + getOperationType().name().toLowerCase();// + "_from_" + appOriginLocationCode;	
 	}
 	
 	

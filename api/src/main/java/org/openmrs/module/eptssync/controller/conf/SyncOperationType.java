@@ -22,12 +22,18 @@ public enum SyncOperationType {
 		RESOLVE_CONFLICTS,
 		DB_QUICK_COPY,
 		DB_MERGE_FROM_SOURCE_DB,
-		DB_QUICK_MERGE;
+		DB_QUICK_MERGE_EXISTING_RECORDS,
+		DB_QUICK_MERGE_MISSING_RECORDS;
 	
 	
-	public static boolean isDBQuickMerge(String operationType){
-		return  SyncOperationType.valueOf(operationType).equals(DB_QUICK_MERGE);
+	public static boolean isDBQuickMergeMissingRecords(String operationType){
+		return  SyncOperationType.valueOf(operationType).equals(DB_QUICK_MERGE_MISSING_RECORDS);
 	}
+	
+	public static boolean isDBQuickMergeExistingRecords(String operationType){
+		return  SyncOperationType.valueOf(operationType).equals(DB_QUICK_MERGE_EXISTING_RECORDS);
+	}
+	
 	
 	public static boolean isDBMerge(String operationType){
 		return  SyncOperationType.valueOf(operationType).equals(DB_MERGE_FROM_SOURCE_DB);
@@ -176,8 +182,12 @@ public enum SyncOperationType {
 		return  this.equals(DB_MERGE_FROM_SOURCE_DB);
 	}	
 	
-	public boolean isDbQuickMerge(){
-		return  this.equals(DB_QUICK_MERGE);
+	public boolean isDBQuickMergeMissingRecords(){
+		return  this.equals(DB_QUICK_MERGE_MISSING_RECORDS);
+	}	
+	
+	public boolean isDBQuickMergeExistingRecords(){
+		return  this.equals(DB_QUICK_MERGE_EXISTING_RECORDS);
 	}	
 	
 	public boolean isSupportedOperation() {

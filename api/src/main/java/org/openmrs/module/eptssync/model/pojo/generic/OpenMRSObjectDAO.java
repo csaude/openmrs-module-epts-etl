@@ -152,8 +152,8 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			
 			String sql = "";
 			
-			sql += " SELECT * \n";
-			sql += " FROM  	" + obj.generateTableName() + "\n";
+			sql += " SELECT " + obj.generateTableName() + ".* " + (obj.generateTableName().equals("patient") ? ", person.uuid" : "") +  "\n";
+			sql += " FROM  	" + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id" : "") + "\n";
 			sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + " = ?;";
 			
 			return find(openMRSClass, sql, params, conn);

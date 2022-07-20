@@ -4,11 +4,11 @@ public class MissingParentException extends SyncExeption {
 	private static final long serialVersionUID = 1L;
 
 	public MissingParentException() {
-		super("On or more parents not yet migrated");
+		super("On or more parents are missing");
 	}
 	
 	public MissingParentException(int parentId, String parentTable, String originAppLocationConde) {
-		super("Parent not yet migrated! Parent: [table: " + parentTable +", id: " + parentId + ", from:" +originAppLocationConde +  "]");
+		super("Missing parent! Parent: [table: " + parentTable +", id: " + parentId + ", from:" +originAppLocationConde +  "]");
 	}
 	
 	public MissingParentException(String msg) {

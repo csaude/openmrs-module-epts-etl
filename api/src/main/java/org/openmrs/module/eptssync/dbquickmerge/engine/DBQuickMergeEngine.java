@@ -49,14 +49,7 @@ public class DBQuickMergeEngine extends Engine {
 		if (getLimits().canGoNext()) {
 			logInfo("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
 		
-			OpenConnection srcConn = getRelatedOperationController().openSrcConnection();
-			
-			try {
-				return  utilities.parseList(SearchParamsDAO.search(this.searchParams, srcConn), SyncRecord.class);
-			}
-			finally {
-				srcConn.finalizeConnection();
-			}
+			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 		}
 		else return null;	
 	}
@@ -81,47 +74,51 @@ public class DBQuickMergeEngine extends Engine {
 		
 		int i = 1;
 		
-		for (SyncRecord record: syncRecords) {
-			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+		OpenConnection srcConn = getRelatedOperationController().openSrcConnection();
 		
-			logInfo(startingStrLog  +": Merging Record: [" + record + "]");
+		try {
+			for (SyncRecord record: syncRecords) {
+				String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 			
-			MergingRecord data = new MergingRecord((OpenMRSObject)record , getSyncTableConfiguration(), this.remoteApp, this.mainApp);
-			
-			try {
-				data.merge(getRelatedOperationController().openSrcConnection(), conn);
+				logInfo(startingStrLog  +": Merging Record: [" + record + "]");
+				
+				MergingRecord data = new MergingRecord((OpenMRSObject)record , getSyncTableConfiguration(), this.remoteApp, this.mainApp);
+				
+				try {
+					
+					if (getRelatedOperationController().getMergeType().isMissing()) {
+						data.merge(srcConn, conn);
+					}
+					else {
+						data.resolveConflict(srcConn, conn);
+					}
+				}
+				catch (MissingParentException e) {
+					logInfo(record + " - " + e.getMessage() + " The record will be skipped");
+				}
+				
+				i++;
 			}
-			catch (MissingParentException e) {
-				logInfo(record + " - " + e.getMessage() + " The record will be skipped");
-			}
 			
-			i++;
-		}
-		
-		this.getMonitor().logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+			this.getMonitor().logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
 
-		getLimits().moveNext(getQtyRecordsPerProcessing());
-		
-		saveCurrentLimits();
-		
-		if (isMainEngine()) {
-			TableOperationProgressInfo progressInfo = this.getRelatedOperationController().getProgressInfo().retrieveProgressInfo(getSyncTableConfiguration());
+			getLimits().moveNext(getQtyRecordsPerProcessing());
 			
-			progressInfo.refreshProgressMeter();
+			saveCurrentLimits();
 			
-			progressInfo.refreshOnDB(conn);
+			if (isMainEngine()) {
+				TableOperationProgressInfo progressInfo = this.getRelatedOperationController().getProgressInfo().retrieveProgressInfo(getSyncTableConfiguration());
+				
+				progressInfo.refreshProgressMeter();
+				
+				progressInfo.refreshOnDB(conn);
+			}
+			
+			
+			srcConn.markAsSuccessifullyTerminected();
 		}
-		
-		getLimits().moveNext(getQtyRecordsPerProcessing());
-		
-		saveCurrentLimits();
-		
-		if (isMainEngine()) {
-			TableOperationProgressInfo progressInfo = this.getRelatedOperationController().getProgressInfo().retrieveProgressInfo(getSyncTableConfiguration());
-			
-			progressInfo.refreshProgressMeter();
-			
-			progressInfo.refreshOnDB(conn);
+		finally {
+			srcConn.finalizeConnection();
 		}
 	}
 	

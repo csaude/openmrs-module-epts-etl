@@ -44,7 +44,7 @@ public class PojoGenerationEngine extends Engine {
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
 		this.pojoGenerated = true;
 		
-		for (AppInfo app : getRelatedOperationController().getAppsInfo()) {
+		for (AppInfo app : getRelatedOperationController().getProcessController().getAppsInfo()) {
 			if (utilities.stringHasValue(app.getPojoPackageName())) {
 				OpenConnection appConn = app.openConnection();
 				

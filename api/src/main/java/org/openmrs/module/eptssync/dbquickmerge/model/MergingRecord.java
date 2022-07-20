@@ -5,12 +5,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.MissingParentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
+import org.openmrs.module.eptssync.model.pojo.generic.AbstractOpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -45,7 +45,30 @@ public class MergingRecord {
 			throw new DBException(e);
 		}
 		
+		if (this.record.getObjectId() == 19420) {
+			System.out.println("Stop");
+		}
+		
 		record.save(config, destConn);
+		
+		if (!this.parentsWithDefaultValues.isEmpty()) {
+			reloadParentsWithDefaultValues(srcConn, destConn);
+		}
+	}
+	
+	public void resolveConflict(Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException{
+		if (!config.isFullLoaded()) config.fullLoad(); 
+		
+		try {
+			MergingRecord.loadDestParentInfo(this,  srcConn, destConn);
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+		
+		OpenMRSObject recordOnDB = OpenMRSObjectDAO.getByUuid(this.config.getSyncRecordClass(this.destApp), this.record.getUuid(), destConn);
+		
+		((AbstractOpenMRSObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 		
 		if (!this.parentsWithDefaultValues.isEmpty()) {
 			reloadParentsWithDefaultValues(srcConn, destConn);
@@ -70,7 +93,6 @@ public class MergingRecord {
 	
 	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, SQLException {
 		OpenMRSObject record = mergingRecord.record;
-		SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
 		SyncTableConfiguration config = mergingRecord.config;
 		
 		for (RefInfo refInfo: config.getParents()) {
@@ -79,20 +101,19 @@ public class MergingRecord {
 			Integer parentIdInOrigin = record.getParentValue(refInfo.getRefColumnAsClassAttName());
 				 
 			if (parentIdInOrigin != null) {
-				OpenMRSObject parent = record.retrieveParentInDestination(parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  true, destConn);
+				OpenMRSObject parentInOrigin = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
+				
+				if (parentInOrigin == null) throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), mergingRecord.srcApp.getPojoPackageName());
+				
+				OpenMRSObject parentInDest = OpenMRSObjectDAO.getByUuid(refInfo.getRefObjectClass(mergingRecord.destApp), parentInOrigin.getUuid(), destConn);
 		
-				if (parent == null) {
-					OpenMRSObject parentInSrc = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
+				if (parentInDest == null) {
+					mergingRecord.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInOrigin));
 					
-					if (parentInSrc != null) {
-						mergingRecord.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInSrc));
-					}
-					else throw new MissingParentException("Missing parent "+ refInfo + " with value [" + parentIdInOrigin + "] from [" + srcConn.getSchema() + "]");
-					
-					parent = OpenMRSObjectDAO.getDefaultRecord(refInfo.getRefTableConfiguration(), destConn);
+					parentInDest = OpenMRSObjectDAO.getDefaultRecord(refInfo.getRefTableConfiguration(), destConn);
 				}
 				
-				record.changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);
+				record.changeParentValue(refInfo.getRefColumnAsClassAttName(), parentInDest);
 			}
 		}
 	}

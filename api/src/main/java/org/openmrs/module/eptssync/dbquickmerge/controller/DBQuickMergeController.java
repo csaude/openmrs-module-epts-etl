@@ -6,8 +6,10 @@ import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickmerge.engine.DBQuickMergeEngine;
+import org.openmrs.module.eptssync.dbquickmerge.model.MergeType;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -29,6 +31,13 @@ public class DBQuickMergeController extends SiteOperationController {
 		
 		this.mainApp = getConfiguration().find(AppInfo.init("main"));
 		this.remoteApp = getConfiguration().find(AppInfo.init("remote"));
+	}
+	
+	public MergeType getMergeType() {
+		if (getOperationConfig().isDBQuickMergeExistingRecords()) return MergeType.EXISTING;
+		if (getOperationConfig().isDBQuickMergeMissingRecords()) return MergeType.MISSING;
+		
+		throw new ForbiddenOperationException("Not supported operation '" + getOperationConfig().getDesignation() + "'");
 	}
 	
 	public AppInfo getMainApp() {

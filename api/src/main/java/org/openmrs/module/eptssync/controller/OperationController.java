@@ -14,7 +14,6 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
@@ -64,16 +63,12 @@ public abstract class OperationController implements Controller{
 	protected Exception lastException;
 	
 	protected OperationProgressInfo progressInfo;
-	
-	protected List<AppInfo> appsInfo; 
-	
+
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		this.logger = LogFactory.getLog(this.getClass());
 		
 		this.processController = processController;
 		this.operationConfig = operationConfig;
-		
-		this.controllerId = operationConfig.generateControllerId();	
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 		
@@ -94,13 +89,8 @@ public abstract class OperationController implements Controller{
 			
 		this.progressInfo = this.processController.initOperationProgressMeter(this);
 		
-		this.appsInfo = operationConfig.getRelatedSyncConfig().getAppsInfo();
 	}
-	
-	public List<AppInfo> getAppsInfo() {
-		return appsInfo;
-	}
-	
+		
 	public OperationProgressInfo getProgressInfo() {
 		return progressInfo;
 	}
@@ -178,7 +168,7 @@ public abstract class OperationController implements Controller{
 				
 				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo.getProgressMeter());
 				
-				OpenConnection conn = openConnection();
+				OpenConnection conn = getDefaultApp().openConnection();
 				
 				try {
 					progressInfo.save(conn);
@@ -239,7 +229,7 @@ public abstract class OperationController implements Controller{
 				
 				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo.getProgressMeter());
 
-				OpenConnection conn = openConnection();
+				OpenConnection conn = getDefaultApp().openConnection();
 				
 				try {
 					progressInfo.save(conn);
@@ -272,12 +262,6 @@ public abstract class OperationController implements Controller{
 	
 	public List<EngineMonitor> getEnginesActivititieMonitor() {
 		return enginesActivititieMonitor;
-	}
-	
-
-	@JsonIgnore
-	public OpenConnection openConnection() {
-		return processController.openConnection();
 	}
 	
 	@JsonIgnore
@@ -420,7 +404,7 @@ public abstract class OperationController implements Controller{
 		
 		progressInfo.getProgressMeter().changeStatusToFinished();
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = getDefaultApp().openConnection();
 		
 		try {
 			progressInfo.save(conn);
@@ -698,13 +682,13 @@ public abstract class OperationController implements Controller{
 		return null;
 	}
 
+	@JsonIgnore
 	public AppInfo getDefaultApp() {
-		if (this.getAppsInfo().size() > 1) {
-			throw new ForbiddenOperationException("There are more that 1 apps defined!!!");
-		}
-		
-		return  getConfiguration().getMainApp();
-		
+		return getProcessController().getDefaultApp();
+	}
+	
+	public OpenConnection openConnection() {
+		return getProcessController().openConnection();
 	}
 
 } 

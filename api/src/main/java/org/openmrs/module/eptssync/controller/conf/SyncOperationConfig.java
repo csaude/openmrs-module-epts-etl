@@ -335,9 +335,15 @@ public class SyncOperationConfig {
 	}
 	
 	@JsonIgnore
-	public boolean isDBQuickMerge() {
-		return this.operationType.isDbQuickMerge();
+	public boolean isDBQuickMergeMissingRecords() {
+		return this.operationType.isDBQuickMergeMissingRecords();
 	}
+	
+	@JsonIgnore
+	public boolean isDBQuickMergeExistingRecords() {
+		return this.operationType.isDBQuickMergeExistingRecords();
+	}
+	
 	
 	@Override
 	public boolean equals(Object obj) {
@@ -438,7 +444,7 @@ public class SyncOperationConfig {
 			return new DataBaseMergeFromSourceDBController(parent, this);
 		}
 		else
-		if (isDBQuickMerge()) {
+		if (isDBQuickMergeMissingRecords() || isDBQuickMergeExistingRecords()) {
 			return new DBQuickMergeController(parent, this, appOriginCode);
 		}
 		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");		
@@ -485,7 +491,6 @@ public class SyncOperationConfig {
 		if (this.getRelatedSyncConfig().isDBQuickMergeProcess()) {
 			if (!this.canBeRunInDBQuickMergeProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in db quick merge process\n";
 		}
-		
 		
 		if (utilities.stringHasValue(errorMsg)) {
 			errorMsg = "There are errors on config operation configuration " + this.getOperationType() +  "[File:  " + this.getRelatedSyncConfig().getRelatedConfFile().getAbsolutePath() + "]\n" + errorMsg;
@@ -591,7 +596,8 @@ public class SyncOperationConfig {
 	public static List<SyncOperationType>  getSupportedOperationsInDBQuickMergeProcess() {
 		SyncOperationType[] supported = { SyncOperationType.DATABASE_PREPARATION,
 										  SyncOperationType.POJO_GENERATION,
-										  SyncOperationType.DB_QUICK_MERGE};
+										  SyncOperationType.DB_QUICK_MERGE_EXISTING_RECORDS,
+										  SyncOperationType.DB_QUICK_MERGE_MISSING_RECORDS};
 		
 		return utilities.parseArrayToList(supported);
 	}	

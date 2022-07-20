@@ -41,6 +41,10 @@ public class OpenMRSObjectSearchParams extends SyncSearchParams<OpenMRSObject>{
 			searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
 		}
 		
+		if (utilities.stringHasValue(getExtraCondition())) {
+			searchClauses.addToClauses(getExtraCondition());
+		}
+		
 		return searchClauses;
 	}
 

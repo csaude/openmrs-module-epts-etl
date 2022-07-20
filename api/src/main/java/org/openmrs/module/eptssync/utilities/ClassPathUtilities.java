@@ -16,6 +16,7 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.openmrs.module.ModuleUtil;
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -225,13 +226,13 @@ public class ClassPathUtilities {
 		}
 	}
 
-	public static void addClassToClassPath(SyncTableConfiguration tableConfiguration){
-		String pojoPackageDir = tableConfiguration.getRelatedSynconfiguration().getPojoPackageAsDirectory().getAbsolutePath();
+	public static void addClassToClassPath(SyncTableConfiguration tableConfiguration, AppInfo app){
+		String pojoPackageDir = tableConfiguration.getRelatedSynconfiguration().getPojoPackageAsDirectory(app).getAbsolutePath();
 		
 		File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class");
 		
 		if (clazzFile.exists()) {
-			addClassToClassPath(utilities.parseObjectToArray(clazzFile), tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath(), tableConfiguration.getRelatedSynconfiguration());
+			addClassToClassPath(utilities.parseObjectToArray(clazzFile), tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath(app), tableConfiguration.getRelatedSynconfiguration());
 		}
 	}
 	
@@ -261,10 +262,9 @@ public class ClassPathUtilities {
 	}
 	
 
-	public static void tryToCopyPOJOToClassPath(SyncConfiguration syncConfiguration) {
-		if (syncConfiguration.getPojoPackageAsDirectory().exists()) {
-			//File[] clazzFiless = new File[syncConfiguration.getTablesConfigurations().size()];
-			String pojoPackageDir = syncConfiguration.getPojoPackageAsDirectory().getAbsolutePath();
+	public static void tryToCopyPOJOToClassPath(SyncConfiguration syncConfiguration, AppInfo app) {
+		if (syncConfiguration.getPojoPackageAsDirectory(app).exists()) {
+			String pojoPackageDir = syncConfiguration.getPojoPackageAsDirectory(app).getAbsolutePath();
 			
 			List<File> clazzListFiless = new  ArrayList<File>();
 			
@@ -277,7 +277,7 @@ public class ClassPathUtilities {
 				}
 			}
 			
-			addClassToClassPath(utilities.parseListToArray(clazzListFiless), syncConfiguration.getPojoPackageRelativePath(), syncConfiguration);
+			addClassToClassPath(utilities.parseListToArray(clazzListFiless), syncConfiguration.getPojoPackageRelativePath(app), syncConfiguration);
 		}
 	}
 }

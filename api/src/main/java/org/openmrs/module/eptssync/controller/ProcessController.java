@@ -9,8 +9,10 @@ import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.model.ProcessProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
@@ -46,12 +48,16 @@ public class ProcessController implements Controller{
 	private TimeController timer;
 	private boolean progressInfoLoaded;
 	
+	protected List<AppInfo> appsInfo; 
+	
 	public ProcessController(){
 		this.progressInfo = new ProcessProgressInfo(this);
 	}	
 	
 	public ProcessController(SyncConfiguration configuration){
 		this();
+		
+		
 		init(configuration);
 	}
 	
@@ -74,6 +80,7 @@ public class ProcessController implements Controller{
 	public void init(SyncConfiguration configuration) {
 		this.configuration = configuration;
 		this.configuration.setRelatedController(this);
+		this.appsInfo = configuration.getAppsInfo();
 		
 		if (configuration.getChildConfig() != null) {
 			this.childController = new ProcessController(configuration.getChildConfig());
@@ -85,7 +92,7 @@ public class ProcessController implements Controller{
 		
 		this.operationsControllers = new ArrayList<OperationController>();
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = getDefaultApp().openConnection();
 		
 		try {
 			for (SyncOperationConfig operation : configuration.getOperations()) {
@@ -104,6 +111,12 @@ public class ProcessController implements Controller{
 	}
 	
 	@JsonIgnore
+	public List<AppInfo> getAppsInfo() {
+		return appsInfo;
+	}
+	
+	
+	@JsonIgnore
 	public SyncConfiguration getConfiguration() {
 		return configuration;
 	}
@@ -118,8 +131,13 @@ public class ProcessController implements Controller{
 	}
 
 	@JsonIgnore
-	public OpenConnection openConnection() {
-		return this.getConfiguration().openConnetion();
+	public AppInfo getDefaultApp() {
+		/*if (this.getAppsInfo().size() > 1) {
+			throw new ForbiddenOperationException("There are more that 1 apps defined!!!");
+		}*/
+		
+		return  getConfiguration().getMainApp();
+		
 	}
 	
 	@Override
@@ -314,7 +332,7 @@ public class ProcessController implements Controller{
 			changeStatusToFinished();
 		}
 		else {
-			OpenConnection conn = openConnection();
+			OpenConnection conn = getDefaultApp().openConnection();
 		
 			try {
 				initOperationsControllers(conn);
@@ -486,4 +504,9 @@ public class ProcessController implements Controller{
 	    
 	    return null;
 	}
+
+	public OpenConnection openConnection() {
+		return getDefaultApp().openConnection();
+	}
+
 }

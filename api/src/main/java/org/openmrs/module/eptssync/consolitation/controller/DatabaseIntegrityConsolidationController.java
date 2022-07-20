@@ -67,11 +67,8 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		return false;
 	}
 
-	@Override
 	public OpenConnection openConnection() {
-		OpenConnection conn = super.openConnection();
-	
-		//if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
+		OpenConnection conn = getDefaultApp().openConnection();
 		
 		try {
 			DBUtilities.disableForegnKeyChecks(conn);
