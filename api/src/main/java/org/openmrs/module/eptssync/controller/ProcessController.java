@@ -12,7 +12,6 @@ import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.model.ProcessProgressInfo;
 import org.openmrs.module.eptssync.monitor.ControllerMonitor;
@@ -21,6 +20,7 @@ import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -65,8 +65,8 @@ public class ProcessController implements Controller{
 		return progressInfo;
 	}
 	
-	public OperationProgressInfo initOperationProgressMeter(OperationController operationController) {
-		return this.progressInfo.initAndAddProgressMeterToList(operationController);
+	public OperationProgressInfo initOperationProgressMeter(OperationController operationController, Connection conn) throws DBException {
+		return this.progressInfo.initAndAddProgressMeterToList(operationController, conn);
 	}
 	
 	public void init(File syncCongigurationFile) {

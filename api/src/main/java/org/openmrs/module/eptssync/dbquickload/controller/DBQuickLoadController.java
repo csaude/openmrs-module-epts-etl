@@ -27,8 +27,6 @@ public class DBQuickLoadController extends SiteOperationController{
 
 	public DBQuickLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
-		
-		this.progressInfo = this.processController.initOperationProgressMeter(this);
 	}
 	
 	@Override

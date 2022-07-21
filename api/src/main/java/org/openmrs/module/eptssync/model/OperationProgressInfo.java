@@ -3,6 +3,7 @@ package org.openmrs.module.eptssync.model;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.SyncProgressMeter;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -95,28 +97,13 @@ public class OperationProgressInfo {
 		this.itemsProgressInfo = itemsProgressInfo;
 	}
 	
-	public void initProgressMeter() {
+	public void initProgressMeter(Connection conn) throws DBException{
 		this.itemsProgressInfo = new ArrayList<TableOperationProgressInfo>();
 		
 		for (SyncTableConfiguration tabConf: this.getConfiguration().getTablesConfigurations()) {
-			File syncStatus = this.controller.generateTableProcessStatusFile(tabConf);
-			
 			TableOperationProgressInfo pm = null;
 			
-			try {
-				
-				if (syncStatus.exists()) {
-					pm = TableOperationProgressInfo.loadFromFile(syncStatus);
-					
-					pm.setController(this.controller);
-					pm.setTableConfiguration(tabConf);
-				}
-				
-			} catch (Exception e) {
-				e.printStackTrace();
-				
-				FileUtilities.removeFile(syncStatus.getAbsolutePath());
-			}
+			pm = TableOperationProgressInfoDAO.find(getController(), tabConf, conn);
 			
 			if (pm == null) {
 				pm = new TableOperationProgressInfo(this.controller, tabConf);

@@ -12,7 +12,6 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.MissingParentException;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
@@ -38,20 +37,7 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
-		if (!getLimits().isLoadedFromFile()) {
-			RecordLimits saveLimits = retriveSavedLimits();
-		
-			if (saveLimits != null) {
-				this.searchParams.setLimits(saveLimits);
-			}
-		}
-	
-		if (getLimits().canGoNext()) {
-			logInfo("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
-		
-			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
-		}
-		else return null;	
+		return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override
@@ -82,9 +68,12 @@ public class DBQuickMergeEngine extends Engine {
 			
 				logInfo(startingStrLog  +": Merging Record: [" + record + "]");
 				
-				MergingRecord data = new MergingRecord((OpenMRSObject)record , getSyncTableConfiguration(), this.remoteApp, this.mainApp);
+				OpenMRSObject rec = (OpenMRSObject)record;
+				
+				MergingRecord data = new MergingRecord(rec , getSyncTableConfiguration(), this.remoteApp, this.mainApp);
 				
 				try {
+					
 					
 					if (getRelatedOperationController().getMergeType().isMissing()) {
 						data.merge(srcConn, conn);
@@ -101,29 +90,12 @@ public class DBQuickMergeEngine extends Engine {
 			}
 			
 			this.getMonitor().logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
-
-			getLimits().moveNext(getQtyRecordsPerProcessing());
-			
-			saveCurrentLimits();
-			
-			if (isMainEngine()) {
-				TableOperationProgressInfo progressInfo = this.getRelatedOperationController().getProgressInfo().retrieveProgressInfo(getSyncTableConfiguration());
-				
-				progressInfo.refreshProgressMeter();
-				
-				progressInfo.refreshOnDB(conn);
-			}
-			
 			
 			srcConn.markAsSuccessifullyTerminected();
 		}
 		finally {
 			srcConn.finalizeConnection();
 		}
-	}
-	
-	private void saveCurrentLimits() {
-		getLimits().save();
 	}
 	
 	@Override

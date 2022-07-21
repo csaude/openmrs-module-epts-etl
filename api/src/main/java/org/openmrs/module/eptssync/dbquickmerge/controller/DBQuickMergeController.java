@@ -1,17 +1,24 @@
 package org.openmrs.module.eptssync.dbquickmerge.controller;
 
+import java.sql.Connection;
+
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.SiteOperationController;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickmerge.engine.DBQuickMergeEngine;
+import org.openmrs.module.eptssync.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.eptssync.dbquickmerge.model.MergeType;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.SearchClauses;
+import org.openmrs.module.eptssync.model.SimpleValue;
+import org.openmrs.module.eptssync.model.base.BaseDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
+import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -55,10 +62,10 @@ public class DBQuickMergeController extends SiteOperationController {
 
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
-		OpenConnection conn = openSrcConnection();
+		OpenConnection conn = openConnection();
 		
 		try {
-			return OpenMRSObjectDAO.getFirstRecord(tableInfo, conn);
+			return getExtremeRecord(tableInfo, "min", conn);
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -71,10 +78,10 @@ public class DBQuickMergeController extends SiteOperationController {
 
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
-		OpenConnection conn = openSrcConnection();
+		OpenConnection conn = openConnection();
 		
 		try {
-			return OpenMRSObjectDAO.getLastRecord(tableInfo, conn);
+			return getExtremeRecord(tableInfo, "max", conn);
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -83,6 +90,29 @@ public class DBQuickMergeController extends SiteOperationController {
 		finally {
 			conn.finalizeConnection();
 		}
+	}
+	
+	
+	private long getExtremeRecord(SyncTableConfiguration tableInfo, String function, Connection conn) throws DBException {
+		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(tableInfo, null, this);
+		
+		SearchClauses<OpenMRSObject> searchClauses = searchParams.generateSearchClauses(conn);
+		
+		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
+		
+		searchClauses.setColumnsToSelect(function + "(" + tableInfo.getPrimaryKey() + ") as value");
+		
+		String sql =  searchClauses.generateSQL(conn);
+				
+		SimpleValue simpleValue =   BaseDAO.find(SimpleValue.class, sql, searchClauses.getParameters(), conn);
+		
+		searchClauses.getSearchParameters().setQtdRecordPerSelected(bkpQtyRecsPerSelect);
+		
+		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())){
+			return simpleValue.intValue();
+		}
+		
+		return 0;
 	}
 	
 	@Override

@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.engine;
 
 import java.io.File;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.OperationController;
@@ -34,9 +35,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	protected EngineMonitor monitor;
 	
-	protected SyncProgressMeter progressMeter;
 	protected SyncSearchParams<? extends SyncRecord> searchParams;
-	//protected RecordLimits limits;
 	
 	private int operationStatus;
 	private boolean stopRequested;
@@ -48,8 +47,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	public Engine(EngineMonitor monitr, RecordLimits limits) {
 		this.monitor = monitr;
-		
-		//this.limits = limits;
 		
 		OpenConnection conn = openConnection();
 		
@@ -70,7 +67,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 	
 	public int getQtyRecordsPerProcessing() {
-		return monitor.getController().getOperationConfig().getMaxRecordPerProcessing();
+		return monitor.getQtyRecordsPerProcessing();
 	}
 
 	public EngineMonitor getMonitor() {
@@ -109,12 +106,8 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		return monitor.getSyncTableInfo();
 	}
 	
-	public SyncProgressMeter getProgressMeter() {
-		return progressMeter;
-	}
-	
-	public void setProgressMeter(SyncProgressMeter progressMeter) {
-		this.progressMeter = progressMeter;
+	public SyncProgressMeter getProgressMeter_() {
+		return  monitor.getProgressMeter();
 	}
 	
 	public OpenConnection openConnection() {
@@ -151,8 +144,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			try {
 				
 				if (!this.hasParent()) {
-					doInitProgressMeterRefresh(conn);
-					this.progressMeter.changeStatusToRunning();
+					monitor.doInitProgressMeterRefresh(this, conn);
 				}
 				
 				conn.markAsSuccessifullyTerminected();
@@ -165,6 +157,14 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			}
 			finally {
 				conn.finalizeConnection();
+			}
+			
+			if (!getLimits().isLoadedFromFile()) {
+				RecordLimits saveLimits = retriveSavedLimits();
+				
+				if (saveLimits != null) {
+					this.searchParams.setLimits(saveLimits);
+				}
 			}
 			
 			while(isRunning()) {
@@ -187,14 +187,22 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 					
 					conn = openConnection();
 					
+					boolean finished = false;
+					
 					try {
-						int processedRecords = performe(conn);
-						conn.markAsSuccessifullyTerminected();
+						int processedRecords_ = performe(conn);
 						
-						refreshProgressMeter(processedRecords, conn);
+						refreshProgressMeter(processedRecords_, conn);
 						reportProgress();
 						
-						if (processedRecords == 0) {
+						conn.markAsSuccessifullyTerminected();
+						
+						
+						if (getLimits().canGoNext()) {
+							getLimits().moveNext(getQtyRecordsPerProcessing());
+							getLimits().save();
+						}
+						else {
 							if (getRelatedOperationController().mustRestartInTheEnd()) {
 								this.requestANewJob();
 							}
@@ -203,7 +211,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 									//Do the final check before finishing
 									
 									while(this.hasChild() && !isAllChildFinished()) {
-										logInfo("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK!");
+										List<Engine> runningChild = getRunningChild();
+										
+										logInfo("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK! RUNNING CHILD " + runningChild);
+										
 										TimeCountDown.sleep(5);
 									}
 									
@@ -213,12 +224,18 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 										this.resetLimits(null);
 										
 										run();
+									} else {
+										finished  = true;
 									}
 								}
 								else {
-									getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + "! FINISHING..." );
+									getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + " ON LIMITS [" + getLimits() + "]! FINISHING..." );
 									
-									markAsFinished();
+									if (isMainEngine()) {
+										finished  = true;
+									}
+									else this.markAsFinished();
+									
 								}
 							}
 						}
@@ -230,11 +247,27 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 					finally {
 						conn.finalizeConnection();
 					}
+					
+					if (finished) markAsFinished();
 				}
 			}
 		}
 	}
 	
+	private List<Engine> getRunningChild() {
+		if (!hasChild()) throw new ForbiddenOperationException("This Engine does not have child!!!");
+		
+		List<Engine> runningChild = new ArrayList<Engine>();
+		
+		for (Engine child : this.children) {
+			if(child.isRunning()) {
+				runningChild.add(child);
+			}
+		}
+		
+		return runningChild;
+	}
+
 	protected boolean mustDoFinalCheck() {
 		return true;
 	}
@@ -254,6 +287,8 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 
 	private int performe(Connection conn) throws DBException {
+		logInfo("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
+		
 		List<SyncRecord> records = searchNextRecords(conn);
 		
 		this.monitor.logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "' FINISHED. FOUND: '"+ utilities.arraySize(records) + "' RECORDS.");
@@ -267,25 +302,11 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		return utilities.arraySize(records);
 	}
 
-	private synchronized void refreshProgressMeter(int newlyProcessedRecords, Connection conn) {
-		if (this.hasParent()) {
-			this.parent.refreshProgressMeter(newlyProcessedRecords, conn);
-		}
-		else this.progressMeter.refresh("RUNNING", this.progressMeter.getTotal(), this.getProgressMeter().getProcessed() + newlyProcessedRecords);
-	}
-
-	private synchronized void doInitProgressMeterRefresh(Connection conn) throws DBException  {
-		if (this.hasParent()) return;
-		
-		int remaining = this.searchParams.countNotProcessedRecords(conn);
-		int total = this.searchParams.countAllRecords(conn);
-		int processed = total - remaining;
-		
-		//this.progressMeter = new SyncProgressMeter("INITIALIZING", total, processed);
-		
-		this.progressMeter.refresh(this.progressMeter.getStatusMsg(), total, processed);
+	public synchronized void refreshProgressMeter(int newlyProcessedRecords, Connection conn) throws DBException {
+		this.monitor.refreshProgressMeter(newlyProcessedRecords, conn);
 	}
 	
+
 	protected boolean hasChild() {
 		return utilities.arrayHasElement(this.children);
 	}
@@ -296,13 +317,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	@Override
 	public TimeController getTimer() {
-		SyncProgressMeter pm = this.progressMeter;
-		
-		if (this.hasParent()) {
-			pm = this.parent.getProgressMeter();
-		}
-		
-		return pm != null ? pm.getTimer() : null;
+		return monitor.getTimer();
 	}
 	
 	@Override
@@ -404,10 +419,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	public void changeStatusToStopped() {
 		this.operationStatus = MonitoredOperation.STATUS_STOPPED;	
 		
-		SyncProgressMeter pm = this.progressMeter;
+		SyncProgressMeter pm = this.getProgressMeter_();
 		
 		if (this.hasParent()) {
-			pm = this.parent.getProgressMeter();
+			pm = this.parent.getProgressMeter_();
 		}
 		
 		if (pm != null) {
@@ -431,14 +446,12 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
 		}
 		
-		SyncProgressMeter pm = this.progressMeter;
-		
-		if (this.hasParent()) {
-			pm = this.parent.getProgressMeter();
-		}
-		
-		if (pm != null) {
-			pm.changeStatusToFinished();
+		if (isMainEngine()) {
+			SyncProgressMeter pm = this.getProgressMeter_();
+			
+			if (pm != null) {
+				pm.changeStatusToFinished();
+			}
 		}
 	}
 	
@@ -450,23 +463,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 	
 	public void reportProgress() {
-		SyncProgressMeter globalProgressMeter = this.progressMeter;
-		
-		if (this.hasParent()) {
-			globalProgressMeter = this.parent.progressMeter;
-		}
-		
-		if (globalProgressMeter == null) return;
-		
-		String log = "";
-		
-		log += getSyncTableConfiguration().getTableName() + " PROGRESS: ";
-		log += "[TOTAL RECS: " + globalProgressMeter.getTotal() + ", ";
-		log += "PROCESSED: " + globalProgressMeter.getDetailedProgress() + ", ";
-		log += "REMAINING: " + globalProgressMeter.getDetailedRemaining() + ",";
-		log += "TIME: " + globalProgressMeter.getHumanReadbleTime() + "]";
-		
-		this.monitor.logInfo(log);
+		this.monitor.reportProgress();
 	}
 	
 	public void resetLimits(RecordLimits limits) {
@@ -607,6 +604,10 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	public void logInfo(String msg) {
 		getRelatedOperationController().logInfo(msg);
+	}
+	
+	public void logDebug(String msg) {
+		getRelatedOperationController().logDebug(msg);
 	}
 	
 	protected RecordLimits retriveSavedLimits() {

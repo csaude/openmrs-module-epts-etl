@@ -188,7 +188,7 @@ public class ConfVM {
 		
 		if (this.syncConfiguration.isSourceSyncProcess()) {
 			if (this.syncConfiguration.getOriginAppLocationCode() == null) {
-				this.syncConfiguration.tryToDetermineOriginAppLocationCode();
+				//this.syncConfiguration.tryToDetermineOriginAppLocationCode();
 			}
 		}
 		

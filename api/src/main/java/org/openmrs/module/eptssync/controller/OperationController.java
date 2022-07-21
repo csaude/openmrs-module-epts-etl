@@ -87,7 +87,19 @@ public abstract class OperationController implements Controller{
 			
 		this.controllerId = this.controllerId.toLowerCase();
 			
-		this.progressInfo = this.processController.initOperationProgressMeter(this);
+		OpenConnection conn = openConnection();
+		
+		try {
+			this.progressInfo = this.processController.initOperationProgressMeter(this, conn);
+			
+			conn.markAsSuccessifullyTerminected();
+		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
 		
 	}
 		
@@ -166,7 +178,7 @@ public abstract class OperationController implements Controller{
 				
 				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				
-				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo.getProgressMeter());
+				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo);
 				
 				OpenConnection conn = getDefaultApp().openConnection();
 				
@@ -227,7 +239,7 @@ public abstract class OperationController implements Controller{
 					
 				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				
-				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo.getProgressMeter());
+				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo);
 
 				OpenConnection conn = getDefaultApp().openConnection();
 				
@@ -398,9 +410,9 @@ public abstract class OperationController implements Controller{
 		
 		TableOperationProgressInfo progressInfo = this.retrieveProgressInfo(conf);
 				
-		String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
+		//String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
 			
-		logInfo("WRITING OPERATION STATUS ON "+ fileName);
+		//logInfo("WRITING OPERATION STATUS ON "+ fileName);
 		
 		progressInfo.getProgressMeter().changeStatusToFinished();
 		
@@ -423,7 +435,7 @@ public abstract class OperationController implements Controller{
 		return this.getProcessController().getConfiguration();
 	}
 	
-	public File generateTableProcessStatusFile(SyncTableConfiguration conf) {
+	public File generateTableProcessStatusFile_(SyncTableConfiguration conf) {
 		String operationId = this.getControllerId() + "_" + conf.getTableName();
 		
 		String fileName = generateOperationStatusFolder() + FileUtilities.getPathSeparator() +  operationId;

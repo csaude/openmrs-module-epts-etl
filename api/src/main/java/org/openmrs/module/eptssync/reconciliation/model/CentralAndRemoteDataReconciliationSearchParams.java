@@ -94,8 +94,8 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 					searchClauses.addToClauses("id between ? and ?");
 				}
 				
-				searchClauses.addToParameters(this.limits.getFirstRecordId());
-				searchClauses.addToParameters(this.limits.getLastRecordId());
+				searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
+				searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
 			}
 			
 			if (this.tableInfo.getExtraConditionForExport() != null) {

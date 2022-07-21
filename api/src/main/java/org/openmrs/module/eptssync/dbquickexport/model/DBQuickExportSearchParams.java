@@ -37,8 +37,8 @@ public class DBQuickExportSearchParams extends SyncSearchParams<OpenMRSObject>{
 		if (!this.selectAllRecords) {
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-				searchClauses.addToParameters(this.limits.getFirstRecordId());
-				searchClauses.addToParameters(this.limits.getLastRecordId());
+				searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
+				searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
 			}
 			
 			if (this.tableInfo.getExtraConditionForExport() != null) {

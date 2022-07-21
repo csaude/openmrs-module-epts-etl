@@ -1,5 +1,6 @@
 package org.openmrs.module.eptssync.monitor;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -9,11 +10,13 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncProgressMeter;
+import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 /**
  * This class monitor all {@link Engine}s of an {@link OperationController}
@@ -33,9 +36,9 @@ public class EngineMonitor implements MonitoredOperation{
 	
 	private int operationStatus;
 	private boolean stopRequested;
-	private SyncProgressMeter progressMeter;
+	protected TableOperationProgressInfo tableOperationProgressInfo;
 	
-	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo, SyncProgressMeter progressMeter) {
+	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo, TableOperationProgressInfo tableOperationProgressInfo) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<Engine>();
 		this.syncTableInfo = syncTableInfo;
@@ -44,7 +47,7 @@ public class EngineMonitor implements MonitoredOperation{
 		this.engineId = (getController().getControllerId() + "_" + syncTableInfo.getTableName()).toLowerCase();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
-		this.progressMeter = progressMeter;
+		this.tableOperationProgressInfo = tableOperationProgressInfo;
 	}
 	
 	public String getEngineId() {
@@ -60,9 +63,7 @@ public class EngineMonitor implements MonitoredOperation{
 	}
 	
 	public SyncProgressMeter getProgressMeter() {
-		if (this.getMainEngine() != null) return this.getMainEngine().getProgressMeter();
-		
-		return null;
+		return this.tableOperationProgressInfo != null ? this.tableOperationProgressInfo.getProgressMeter() : null;
 	}
 	
 	public Engine getMainEngine() {
@@ -199,7 +200,6 @@ public class EngineMonitor implements MonitoredOperation{
 			mainEngine.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(0, 2));
 			
 			mainEngine.resetLimits(limits);
-			mainEngine.setProgressMeter(this.progressMeter);
 			
 			logInfo("ALLOCATED RECORDS [" + mainEngine.getSearchParams().getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
 			
@@ -210,9 +210,12 @@ public class EngineMonitor implements MonitoredOperation{
 			int i = 1;
 			
 			for (i = 1; i < qtyEngines; i++) {
-				 limits  = generateLimits(limits.getLastRecordId() + 1, limits.getLastRecordId() + qtyRecordsPerEngine, null);
+				 limits  = generateLimits(limits.getThreadMaxRecord() + 1, limits.getThreadMaxRecord() + qtyRecordsPerEngine, null);
 				 
-				 if (i == qtyEngines - 1) limits.setLastRecordId(maxRecId);
+				 if (i == qtyEngines - 1) {
+					 limits.setThreadMaxRecord(maxRecId);
+					 limits.reset();
+				 }
 				 
 				 Engine engine = retrieveAndRemoveSleepingEngin();
 				 
@@ -238,11 +241,6 @@ public class EngineMonitor implements MonitoredOperation{
 			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(mainEngine.getEngineId());
 			executor.execute(mainEngine);
 			
-			while(mainEngine.getProgressMeter() == null) {
-				logInfo("WAITING FOR PROGRESS METER OF '" + mainEngine.getEngineId() + "' BEEN CREATED TO START RELATED CHILDREN ENGINES!!!");
-				TimeCountDown.sleep(15);
-			}
-			
 			if (mainEngine.getChildren() != null) {
 				for (Engine childEngine : mainEngine.getChildren()) {
 					if (mainEngine.isNotInitialized()) {
@@ -259,7 +257,7 @@ public class EngineMonitor implements MonitoredOperation{
 	}
 	
 	protected RecordLimits generateLimits(long minRecId, long currMax, Engine engine) {
-		return new RecordLimits(minRecId, currMax, engine);
+		return new RecordLimits(minRecId, currMax, getQtyRecordsPerProcessing(),  engine);
 	}
 
 	private long determineQtyRecordsPerEngine(long qtyEngines, long qtyRecords) {
@@ -282,6 +280,10 @@ public class EngineMonitor implements MonitoredOperation{
 		initEngine();
 	}
 
+	public int getQtyRecordsPerProcessing() {
+		return getController().getOperationConfig().getMaxRecordPerProcessing();
+	}
+	
 	private Engine retrieveAndRemoveSleepingEngin() {
 		Engine sleepingEngine = null;
 		
@@ -361,8 +363,8 @@ public class EngineMonitor implements MonitoredOperation{
 		}
 	}
 
-	public static EngineMonitor init(OperationController controller, SyncTableConfiguration syncTableInfo, SyncProgressMeter progressMeter) {
-		EngineMonitor monitor = new EngineMonitor(controller, syncTableInfo, progressMeter);
+	public static EngineMonitor init(OperationController controller, SyncTableConfiguration syncTableInfo, TableOperationProgressInfo tableOperationProgressInfo) {
+		EngineMonitor monitor = new EngineMonitor(controller, syncTableInfo, tableOperationProgressInfo);
 		
 		return monitor;
 	}
@@ -429,7 +431,11 @@ public class EngineMonitor implements MonitoredOperation{
 	
 	@Override
 	public TimeController getTimer() {
-		return this.progressMeter.getTimer();
+		return getProgressMeter() != null ? getProgressMeter().getTimer() : null;
+	}
+	
+	public TableOperationProgressInfo getTableOperationProgressInfo() {
+		return tableOperationProgressInfo;
 	}
 	
 	@Override
@@ -514,5 +520,45 @@ public class EngineMonitor implements MonitoredOperation{
 			
 		this.stopRequested = true;
 	}
+	
+	
+	public synchronized void refreshProgressMeter(int newlyProcessedRecords, Connection conn) throws DBException {
+		this.getProgressMeter().refresh("RUNNING", this.getProgressMeter().getTotal(), this.getProgressMeter().getProcessed() + newlyProcessedRecords);
+			
+		this.getTableOperationProgressInfo().save(conn);
+	}
+	
+	public synchronized void doInitProgressMeterRefresh(Engine engine, Connection conn) throws DBException  {
+		int remaining = getProgressMeter().getRemain();
+		int total = getProgressMeter().getTotal();
+		int processed = total - remaining;
+	
+		if (total == 0) {
+			remaining = engine.getSearchParams().countNotProcessedRecords(conn);
+			total = engine.getSearchParams().countAllRecords(conn);
+			processed = total - remaining;
+		}
+
+		this.getProgressMeter().refresh(this.getProgressMeter().getStatusMsg(), total, processed);
+		
+		this.getProgressMeter().changeStatusToRunning();
+		
+	}
+	
+	
+	public void reportProgress() {
+		SyncProgressMeter globalProgressMeter = this.getProgressMeter();
+		
+		String log = "";
+		
+		log += this.syncTableInfo.getTableName() + " PROGRESS: ";
+		log += "[TOTAL RECS: " + globalProgressMeter.getTotal() + ", ";
+		log += "PROCESSED: " + globalProgressMeter.getDetailedProgress() + ", ";
+		log += "REMAINING: " + globalProgressMeter.getDetailedRemaining() + ",";
+		log += "TIME: " + globalProgressMeter.getHumanReadbleTime() + "]";
+		
+		this.logInfo(log);
+	}
+	
 	
 }

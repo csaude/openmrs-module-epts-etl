@@ -1,12 +1,14 @@
 package org.openmrs.module.eptssync.model;
 
 import java.io.File;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class ProcessProgressInfo {
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
@@ -19,7 +21,7 @@ public class ProcessProgressInfo {
 		this.operationsProgressInfo = new ArrayList<OperationProgressInfo>();
 	}
 	
-	public OperationProgressInfo initAndAddProgressMeterToList(OperationController operationController) {
+	public OperationProgressInfo initAndAddProgressMeterToList(OperationController operationController, Connection conn) throws DBException {
 		OperationProgressInfo progressInfo;
 		
 		File operationStatusFile = operationController.generateOperationStatusFile();
@@ -32,7 +34,7 @@ public class ProcessProgressInfo {
 			progressInfo = new OperationProgressInfo(operationController);
 		}
 		
-		progressInfo.initProgressMeter();
+		progressInfo.initProgressMeter(conn);
 		
 		this.operationsProgressInfo.add(progressInfo);
 		

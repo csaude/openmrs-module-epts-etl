@@ -7,7 +7,6 @@ import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
@@ -25,20 +24,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
-		if (!getLimits().isLoadedFromFile()) {
-			RecordLimits saveLimits = retriveSavedLimits();
-			
-			if (saveLimits != null) {
-				this.searchParams.setLimits(saveLimits);
-			}
-		}
-	
-		logInfo("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
-		
-		if (getLimits().canGoNext()) {
-			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
-		}
-		else return null;	
+		return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 
 	@Override
@@ -74,18 +60,6 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		}
 		
 		this.getMonitor().logInfo("RECONCILIATION DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
-
-		getLimits().moveNext(getQtyRecordsPerProcessing());
-		
-		saveCurrentLimits();
-		
-		if (isMainEngine()) {
-			TableOperationProgressInfo progressInfo = this.getRelatedOperationController().getProgressInfo().retrieveProgressInfo(getSyncTableConfiguration());
-			
-			progressInfo.refreshProgressMeter();
-			
-			progressInfo.refreshOnDB(conn);
-		}
 	}
 	
 	private void performeMissingRecordsCreation(List<SyncRecord> syncRecords, Connection conn) throws DBException{
@@ -137,10 +111,6 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			
 			i++;
 		}	
-	}
-	
-	private void saveCurrentLimits() {
-		getLimits().save();
 	}
 	
 	@Override

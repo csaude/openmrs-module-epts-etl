@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -20,8 +21,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
  *
  */
 public class RecordLimits {
-	protected long firstRecordId;
-	protected long lastRecordId;
+	protected long currentFirstRecordId;
+	protected long currentLastRecordId;
 	
 	protected String threadCode;
 	protected long threadMinRecord;
@@ -31,23 +32,27 @@ public class RecordLimits {
 	private boolean loadedFromFile;
 	
 	private String lastSavedOn;
+	private int qtyRecordsPerProcessing;
 	
 	public RecordLimits() {
 	}
 	
-	
-	public RecordLimits(long firstRecordId, long lastRecordId, Engine engine) {
-		this.firstRecordId = firstRecordId;
-		this.lastRecordId = lastRecordId;
-		
+	public RecordLimits(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing, Engine engine) {
 		this.threadMinRecord = firstRecordId;
 		this.threadMaxRecord = lastRecordId;
-		
+	
+		this.qtyRecordsPerProcessing = qtyRecordsPerProcessing;
+	
 		this.engine = engine;
 		
 		if (this.engine != null) this.threadCode = engine.getEngineId();
+		
+		this.reset();
 	}
 	
+	public void reset() {
+		this.setCurrentLimits(this.threadMinRecord);
+	}
 
 	public void setEngine(Engine engine) {
 		this.engine = engine;
@@ -58,24 +63,28 @@ public class RecordLimits {
 	public boolean isLoadedFromFile() {
 		return loadedFromFile;
 	}
+	
+	private void setCurrentLimits(long currentFirstRecordId) {
+		this.currentFirstRecordId = currentFirstRecordId;
+		this.currentLastRecordId = this.currentFirstRecordId + this.qtyRecordsPerProcessing - 1;
+		
+		if (this.currentLastRecordId > this.threadMaxRecord) {
+			this.currentLastRecordId = this.threadMaxRecord;
+		}
+	}
+	
+	public long getCurrentFirstRecordId() {
+		return currentFirstRecordId;
+	}
 
-	public void setFirstRecordId(long firstRecordId) {
-		this.firstRecordId = firstRecordId;
+	public long getCurrentLastRecordId() {
+		return currentLastRecordId;
 	}
 	
-	public void setLastRecordId(long lastRecordId) {
-		this.lastRecordId = lastRecordId;
+	public int getQtyRecordsPerProcessing() {
+		return qtyRecordsPerProcessing;
 	}
 	
-	public long getFirstRecordId() {
-		return firstRecordId;
-	}
-	
-	public long getLastRecordId() {
-		return lastRecordId;
-	}
-	
-
 	public String getThreadCode() {
 		return threadCode;
 	}
@@ -178,23 +187,24 @@ public class RecordLimits {
 
 	/**
 	 * Verifica se os limites ainda permitem pesquisa.
-	 * Os limites deixam de permitir pesquisa quando o valor de {@link #getFirstRecordId()} for inferior ou igual ao valor de {@link #getLastRecordId()}
+	 * Os limites deixam de permitir pesquisa quando o valor de {@link #getCurrentFirstRecordId()} for inferior ou igual ao valor de {@link #getCurrentLastRecordId()}
 	 * 
 	 * @return
 	 */
 	public boolean canGoNext() {
-		return this.getFirstRecordId() <= this.getLastRecordId();
+		return this.getCurrentLastRecordId() < this.getThreadMaxRecord();
 	}
 	
-	
-	public void moveNext(int qtyRecords) {
-		this.setFirstRecordId(this.getFirstRecordId() + qtyRecords);
+	public synchronized void moveNext(int qtyRecords) {
+		if (canGoNext()) {
+			this.setCurrentLimits(this.getCurrentFirstRecordId() + qtyRecords);
+		}
+		else throw new ForbiddenOperationException("You reached the max record. Curr Status: ["  + this.threadMinRecord + " - " + this.threadMaxRecord + "] Curr [" + this.currentFirstRecordId + " - " + this.currentLastRecordId + "]");
 	}
 
 	public boolean hasThreadCode() {
 		return Engine.utilities.stringHasValue(this.getThreadCode());
 	}
-	
 	
 	public static RecordLimits loadFromFile(File file, Engine engine) {
 		try {
@@ -217,6 +227,7 @@ public class RecordLimits {
 	}
 	@Override
 	public String toString() {
-		return getThreadCode() + " : Thread ["  + this.threadMinRecord + " - " + this.threadMaxRecord + "] Curr [" + this.firstRecordId + " - " + this.lastRecordId + "]";
+		return getThreadCode() + " : Thread ["  + this.threadMinRecord + " - " + this.threadMaxRecord + "] Curr [" + this.currentFirstRecordId + " - " + this.currentLastRecordId + "]";
 	}
+
 }

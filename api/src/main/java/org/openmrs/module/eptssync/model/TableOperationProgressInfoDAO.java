@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -15,7 +16,6 @@ public class TableOperationProgressInfoDAO extends BaseDAO{
 							   record.getOperationName(),
 							   record.getOperationTable(),
 							   record.getOriginAppLocationCode(),
-							   //record.getTableConfiguration().getOriginAppLocationCode() != null ? record.getTableConfiguration().getOriginAppLocationCode() : "central_site",
 							   DateAndTimeUtilities.getCurrentSystemDate(conn),
 							   DateAndTimeUtilities.getCurrentSystemDate(conn),
 							   record.getProgressMeter().getTotal(),
@@ -69,13 +69,21 @@ public class TableOperationProgressInfoDAO extends BaseDAO{
 		executeQuery(sql, params, conn);
 	}
 	
-	public static TableOperationProgressInfo find(String operationId, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
+	public static TableOperationProgressInfo find(OperationController controller, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
 		String syncStageSchema = tableConfiguration.getRelatedSynconfiguration().getSyncStageSchema();
 		
-		Object[] params = {operationId};
+		Object[] params = {TableOperationProgressInfo.generateOperationId(controller, tableConfiguration)};
 		
 		String sql = "SELECT * FROM " + syncStageSchema + ".table_operation_progress_info WHERE operation_id = ?";
 		
-		return BaseDAO.find(TableOperationProgressInfo.class, sql, params, conn);
+		TableOperationProgressInfo vo = BaseDAO.find(TableOperationProgressInfo.class, sql, params, conn);
+		
+		if (vo != null) {
+			vo.setTableConfiguration(tableConfiguration);
+			vo.setController(controller);
+		}
+		
+		return vo;
+		
 	}
 }

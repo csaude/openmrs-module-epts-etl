@@ -17,7 +17,6 @@ import org.openmrs.module.eptssync.merge.controller.DataBaseMergeFromSourceDBCon
 import org.openmrs.module.eptssync.merge.model.DataBaseMergeFromSourceDBSearchParams;
 import org.openmrs.module.eptssync.merge.model.MergingRecord;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -30,20 +29,7 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
-		if (!getLimits().isLoadedFromFile()) {
-			RecordLimits saveLimits = retriveSavedLimits();
-			
-			if (saveLimits != null) {
-				this.searchParams.setLimits(saveLimits);
-			}
-		}
-	
-		logInfo("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
-		
-		if (getLimits().canGoNext()) {
-			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
-		}
-		else return null;	
+		return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 
 	@Override
@@ -82,24 +68,6 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 			
 			i++;
 		}
-		
-		this.getMonitor().logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
-
-		getLimits().moveNext(getQtyRecordsPerProcessing());
-		
-		saveCurrentLimits();
-		
-		if (isMainEngine()) {
-			TableOperationProgressInfo progressInfo = this.getRelatedOperationController().getProgressInfo().retrieveProgressInfo(getSyncTableConfiguration());
-			
-			progressInfo.refreshProgressMeter();
-			
-			progressInfo.refreshOnDB(conn);
-		}
-	}
-	
-	private void saveCurrentLimits() {
-		getLimits().save();
 	}
 	
 	@Override

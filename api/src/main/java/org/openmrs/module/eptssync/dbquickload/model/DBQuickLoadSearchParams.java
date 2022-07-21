@@ -31,8 +31,8 @@ public class DBQuickLoadSearchParams extends SyncSearchParams<OpenMRSObject> imp
 		
 		this.controller = controller;
 		if (limits != null) {
-			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getFirstRecordId(), 10) + ".json"; 
-			this.lastFileName = tableInfo.getTableName() + "_" +  utilities.garantirXCaracterOnNumber(limits.getLastRecordId(), 10) + ".json"; 
+			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + ".json"; 
+			this.lastFileName = tableInfo.getTableName() + "_" +  utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json"; 
 		}
 	}
 	

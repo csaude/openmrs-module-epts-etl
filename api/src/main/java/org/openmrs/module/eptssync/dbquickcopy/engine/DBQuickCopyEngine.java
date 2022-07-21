@@ -11,7 +11,6 @@ import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
@@ -26,27 +25,15 @@ public class DBQuickCopyEngine extends Engine {
 	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
-		if (!getLimits().isLoadedFromFile()) {
-			RecordLimits saveLimits = retriveSavedLimits();
+		OpenConnection srcConn = getRelatedOperationController().openSrcConnection();
 		
-			if (saveLimits != null) {
-				this.searchParams.setLimits(saveLimits);
-			}
+		try {
+			return  utilities.parseList(SearchParamsDAO.search(this.searchParams, srcConn), SyncRecord.class);
 		}
-	
-		if (getLimits().canGoNext()) {
-			logInfo("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
-		
-			OpenConnection srcConn = getRelatedOperationController().openSrcConnection();
-			
-			try {
-				return  utilities.parseList(SearchParamsDAO.search(this.searchParams, srcConn), SyncRecord.class);
-			}
-			finally {
-				srcConn.finalizeConnection();
-			}
+		finally {
+			srcConn.finalizeConnection();
 		}
-		else return null;	
+
 	}
 	
 	@Override
@@ -83,22 +70,6 @@ public class DBQuickCopyEngine extends Engine {
 			
 			throw new RuntimeException(e);
 		}	
-		
-		getLimits().moveNext(getQtyRecordsPerProcessing());
-		
-		saveCurrentLimits();
-		
-		if (isMainEngine()) {
-			TableOperationProgressInfo progressInfo = this.getRelatedOperationController().getProgressInfo().retrieveProgressInfo(getSyncTableConfiguration());
-			
-			progressInfo.refreshProgressMeter();
-			
-			progressInfo.refreshOnDB(conn);
-		}
-	}
-	
-	private void saveCurrentLimits() {
-		getLimits().save();
 	}
 	
 	@Override

@@ -25,8 +25,8 @@ public class TransportSyncSearchParams extends SyncSearchParams<OpenMRSObject> i
 		this.controller = controller;
 		
 		if (limits != null) {
-			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getFirstRecordId(), 10) + "_" +  utilities.garantirXCaracterOnNumber(limits.getFirstRecordId(), 10) + ".json"; 
-			this.lastFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getLastRecordId(), 10) + "_" + utilities.garantirXCaracterOnNumber(limits.getLastRecordId(), 10) + ".json"; 
+			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + "_" +  utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + ".json"; 
+			this.lastFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + "_" + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json"; 
 		}
 		
 		//controller.logInfo("FIRT RECORD TO TRANSPORT " + this.firstFileName);
