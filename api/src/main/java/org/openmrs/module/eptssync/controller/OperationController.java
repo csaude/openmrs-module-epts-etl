@@ -281,18 +281,6 @@ public abstract class OperationController implements Controller{
 		return CommonUtilities.getInstance();
 	}
 	
-	public void logInfo(String msg) {
-		utilities().logInfo(msg, logger);
-	}
-	
-	public void logError(String msg) {
-		utilities().logErr(msg, logger);
-	}
-	
-	public void logDebug(String msg) {
-		utilities().logDebug(msg, logger);
-	}
-	
 	private void startAndAddToEnginesActivititieMonitor(EngineMonitor activitityMonitor) {
 		this.enginesActivititieMonitor.add(activitityMonitor);
 		
@@ -701,6 +689,22 @@ public abstract class OperationController implements Controller{
 	
 	public OpenConnection openConnection() {
 		return getProcessController().openConnection();
+	}
+
+	public void logWarn(String msg) {
+		utilities().logWarn(msg, logger);
+	}
+	
+	public void logInfo(String msg) {
+		utilities().logInfo(msg, logger);
+	}
+	
+	public void logError(String msg) {
+		utilities().logErr(msg, logger);
+	}
+	
+	public void logDebug(String msg) {
+		utilities().logDebug(msg, logger);
 	}
 
 } 

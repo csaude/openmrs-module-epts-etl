@@ -10,11 +10,13 @@ import org.openmrs.module.eptssync.dbquickmerge.model.MergingRecord;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.eptssync.exceptions.MissingParentException;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
+import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -66,25 +68,12 @@ public class DBQuickMergeEngine extends Engine {
 			for (SyncRecord record: syncRecords) {
 				String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 			
-				logInfo(startingStrLog  +": Merging Record: [" + record + "]");
 				
 				OpenMRSObject rec = (OpenMRSObject)record;
 				
 				MergingRecord data = new MergingRecord(rec , getSyncTableConfiguration(), this.remoteApp, this.mainApp);
 				
-				try {
-					
-					
-					if (getRelatedOperationController().getMergeType().isMissing()) {
-						data.merge(srcConn, conn);
-					}
-					else {
-						data.resolveConflict(srcConn, conn);
-					}
-				}
-				catch (MissingParentException e) {
-					logInfo(record + " - " + e.getMessage() + " The record will be skipped");
-				}
+				process(data, startingStrLog, 0, srcConn, conn);
 				
 				i++;
 			}
@@ -95,6 +84,31 @@ public class DBQuickMergeEngine extends Engine {
 		}
 		finally {
 			srcConn.finalizeConnection();
+		}
+	}
+	
+	private void process(MergingRecord mergingData, String startingStrLog, int reprocessingCount, Connection srcConn, Connection destConn) throws DBException {
+		String reprocessingMessage = reprocessingCount == 0 ? "Merging Record" : "Re-merging " + reprocessingCount + " Record";
+		
+		logDebug(startingStrLog  +": " + reprocessingMessage + ": [" + mergingData.getRecord() + "]");
+		
+		try {
+			if (getRelatedOperationController().getMergeType().isMissing()) {
+				mergingData.merge(srcConn, destConn);
+			}
+			else {
+				mergingData.resolveConflict(srcConn, destConn);
+			}	
+		}
+		catch (MissingParentException e) {
+			logWarn(mergingData.getRecord() + " - " + e.getMessage() + " The record will be skipped");
+		}
+		catch (ConflictWithRecordNotYetAvaliableException e) {
+			logWarn("Error while merging record: [" + mergingData.getRecord() + "]! " + e.getLocalizedMessage() + ". Re-merging the record...");
+			
+			TimeCountDown.sleep(5);
+			
+			process(mergingData, startingStrLog, ++reprocessingCount, srcConn, destConn);
 		}
 	}
 	

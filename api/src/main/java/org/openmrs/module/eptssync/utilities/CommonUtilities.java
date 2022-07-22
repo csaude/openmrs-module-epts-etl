@@ -140,7 +140,7 @@ public class  CommonUtilities implements Serializable{
 	 * @param o elementos a verificar
 	 * @return true se a lista contem todos os elementos ou false no caso contrario
 	 */
-	public <T> boolean containsAll(List<T> list, T ...o){
+	public <T> boolean containsAll(List<T> list, @SuppressWarnings("unchecked") T ...o){
 		for (T t : o){
 			if (!list.contains(t)) return false;
 		}
@@ -318,7 +318,7 @@ public class  CommonUtilities implements Serializable{
 	 * @param obj
 	 * @return
 	 */
-	public  <T> List<T> parseToList(T... obj){
+	public  <T> List<T> parseToList(@SuppressWarnings("unchecked") T... obj){
 		return FuncoesGenericas.parseToList(obj);
 	}
 	
@@ -875,6 +875,11 @@ public class  CommonUtilities implements Serializable{
 		}
 		
 		return attName;
+	}
+	
+
+	public void logWarn(String msg, Log logger) {
+		logger.warn(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
 	public void logInfo(String msg, Log logger) {

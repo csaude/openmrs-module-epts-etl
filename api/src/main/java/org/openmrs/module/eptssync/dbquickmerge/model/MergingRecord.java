@@ -118,4 +118,8 @@ public class MergingRecord {
 		}
 	}
 	
+	public OpenMRSObject getRecord() {
+		return record;
+	}
+	
 }

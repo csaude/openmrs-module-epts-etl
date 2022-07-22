@@ -20,6 +20,7 @@ import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
+import org.openmrs.module.eptssync.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.eptssync.model.base.BaseVO;
@@ -206,7 +207,9 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 						if (recordOnDB != null) {
 							resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
 						}
-						else throw e;
+						else {
+							throw new ConflictWithRecordNotYetAvaliableException(this);
+						}
 					}
 					else throw e;
 				}

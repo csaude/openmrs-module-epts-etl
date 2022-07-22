@@ -196,49 +196,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 						reportProgress();
 						
 						conn.markAsSuccessifullyTerminected();
-						
-						
-						if (getLimits().canGoNext()) {
-							getLimits().moveNext(getQtyRecordsPerProcessing());
-							getLimits().save();
-						}
-						else {
-							if (getRelatedOperationController().mustRestartInTheEnd()) {
-								this.requestANewJob();
-							}
-							else {
-								if (this.isMainEngine() && this.hasChild() && !finalCheckDone) {
-									//Do the final check before finishing
-									
-									while(this.hasChild() && !isAllChildFinished()) {
-										List<Engine> runningChild = getRunningChild();
-										
-										logInfo("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK! RUNNING CHILD " + runningChild);
-										
-										TimeCountDown.sleep(5);
-									}
-									
-									finalCheckDone = true;
-									
-									if (mustDoFinalCheck()) {
-										this.resetLimits(null);
-										
-										run();
-									} else {
-										finished  = true;
-									}
-								}
-								else {
-									getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + " ON LIMITS [" + getLimits() + "]! FINISHING..." );
-									
-									if (isMainEngine()) {
-										finished  = true;
-									}
-									else this.markAsFinished();
-									
-								}
-							}
-						}
 					} catch (Exception e) {
 						e.printStackTrace();
 						
@@ -247,6 +204,49 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 					finally {
 						conn.finalizeConnection();
 					}
+						
+					if (getLimits().canGoNext()) {
+						getLimits().moveNext(getQtyRecordsPerProcessing());
+						getLimits().save();
+					}
+					else {
+						if (getRelatedOperationController().mustRestartInTheEnd()) {
+							this.requestANewJob();
+						}
+						else {
+							if (this.isMainEngine() && this.hasChild() && !finalCheckDone) {
+								//Do the final check before finishing
+								
+								while(this.hasChild() && !isAllChildFinished()) {
+									List<Engine> runningChild = getRunningChild();
+									
+									logInfo("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK! RUNNING CHILD " + runningChild);
+									
+									TimeCountDown.sleep(5);
+								}
+								
+								finalCheckDone = true;
+								
+								if (mustDoFinalCheck()) {
+									this.resetLimits(null);
+									
+									run();
+								} else {
+									finished  = true;
+								}
+							}
+							else {
+								getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + " ON LIMITS [" + getLimits() + "]! FINISHING..." );
+								
+								if (isMainEngine()) {
+									finished  = true;
+								}
+								else this.markAsFinished();
+								
+							}
+						}
+					}
+					
 					
 					if (finished) markAsFinished();
 				}
@@ -609,6 +609,11 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	public void logDebug(String msg) {
 		getRelatedOperationController().logDebug(msg);
 	}
+	
+	public void logWarn(String msg) {
+		getRelatedOperationController().logWarn(msg);
+	}
+	
 	
 	protected RecordLimits retriveSavedLimits() {
 		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
