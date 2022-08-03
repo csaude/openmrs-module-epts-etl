@@ -42,19 +42,19 @@ public class DataLoadEngine extends Engine{
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
 		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
 		
-		this.getMonitor().logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO STAGING TABLE");
+		logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO STAGING TABLE");
 		
 		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSyncTableConfiguration(), conn);
 		
-		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " WROTE TO STAGING TABLE");
+		logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " WROTE TO STAGING TABLE");
 		
-		this.getMonitor().logInfo("MOVING SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] TO BACKUP AREA.");
+		logDebug("MOVING SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] TO BACKUP AREA.");
 		
 		BaseDAO.commit(conn);
 		
 		moveSoureJSONFileToBackup();
 		
-		this.getMonitor().logInfo("SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] MOVED TO BACKUP AREA.");
+		logDebug("SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] MOVED TO BACKUP AREA.");
 	}
 
 	private void moveSoureJSONFileToBackup() {

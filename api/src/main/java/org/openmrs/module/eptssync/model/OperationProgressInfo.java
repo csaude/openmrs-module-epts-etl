@@ -103,7 +103,14 @@ public class OperationProgressInfo {
 		for (SyncTableConfiguration tabConf: this.getConfiguration().getTablesConfigurations()) {
 			TableOperationProgressInfo pm = null;
 			
-			pm = TableOperationProgressInfoDAO.find(getController(), tabConf, conn);
+			try {
+				pm = TableOperationProgressInfoDAO.find(getController(), tabConf, conn);
+			}
+			catch (DBException e) {
+				if (!e.isTableOrViewDoesNotExistException()) {
+					throw e;
+				}
+			}
 			
 			if (pm == null) {
 				pm = new TableOperationProgressInfo(this.controller, tabConf);

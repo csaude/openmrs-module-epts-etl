@@ -70,13 +70,13 @@ public class DBQuickExportEngine extends Engine {
 			
 			FileUtilities.write(generateTmpMinimalJSONInfoFileName(jsonFIle), jsonInfo.generateMinimalInfo().parseToJSON());
 			
-			this.getMonitor().logInfo("JSON [" + jsonFIle + ".json] CREATED!");
+			this.logDebug("JSON [" + jsonFIle + ".json] CREATED!");
 			
-			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED");
+			this.logDebug("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED");
 			
-			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED FINISHED");
+			this.logDebug("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED FINISHED");
 			
-			this.getMonitor().logInfo("MAKING FILES AVALIABLE");
+			this.logDebug("MAKING FILES AVALIABLE");
 			
 			
 			FileUtilities.renameTo(generateTmpMinimalJSONInfoFileName(jsonFIle), generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json");

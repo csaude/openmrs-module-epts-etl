@@ -69,7 +69,7 @@ public class ChangedRecordsDetectorEngine extends Engine {
 			} catch (Exception e) {
 				e.printStackTrace();
 				
-				logInfo("Any error occurred processing record [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");
+				logError("Any error occurred processing record [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");
 				
 				throw new RuntimeException(e);
 			}

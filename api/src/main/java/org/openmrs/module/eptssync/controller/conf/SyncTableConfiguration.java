@@ -232,12 +232,12 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		foreignKeyRS.last();
 		
-		logInfo("DISCOVERED '" + foreignKeyRS.getRow() + "' CHILDREN FOR TABLE '" + getTableName() + "'");
+		logDebug("DISCOVERED '" + foreignKeyRS.getRow() + "' CHILDREN FOR TABLE '" + getTableName() + "'");
 		
 		foreignKeyRS.beforeFirst();
 	
 		while(foreignKeyRS.next()) {
-			logInfo("CONFIGURING CHILD [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
+			logDebug("CONFIGURING CHILD [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
 			
 			RefInfo ref = new RefInfo();
 			
@@ -255,12 +255,26 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			
 			this.childred.add(ref);
 			
-			logInfo("CHILDREN [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
+			logDebug("CHILDREN [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
 		}
+		
+		logInfo("LOADED CHILDREN FOR TABLE '" + getTableName() + "'");
 	}
 	
 	public void logInfo(String msg) {
 		getRelatedSynconfiguration().logInfo(msg);
+	}
+	
+	public void logDebug(String msg) {
+		getRelatedSynconfiguration().logDebug(msg);
+	}
+	
+	public void logWarn(String msg) {
+		getRelatedSynconfiguration().logWarn(msg);
+	}
+		
+	public void logErr(String msg) {
+		getRelatedSynconfiguration().logErr(msg);
 	}
 	
 	private synchronized void loadParents(Connection conn) throws SQLException {
@@ -272,12 +286,12 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		foreignKeyRS.last();
 		
-		logInfo("DISCOVERED '" + foreignKeyRS.getRow() + "' PARENTS FOR TABLE '" + getTableName() + "'");
+		logDebug("DISCOVERED '" + foreignKeyRS.getRow() + "' PARENTS FOR TABLE '" + getTableName() + "'");
 		
 		foreignKeyRS.beforeFirst();
 		
 		while(foreignKeyRS.next()) {
-			logInfo("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
+			logDebug("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
 			
 			String refColumName = foreignKeyRS.getString("FKCOLUMN_NAME");
 			
@@ -286,7 +300,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			RefInfo ref = generateRefInfo(refColumName, RefInfo.PARENT_REF_TYPE, refTableConfiguration, conn);
 			
 			if (utilities.existOnArray(auxRefInfo, ref)) {
-				logInfo("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' WAS ALREDY CONFIGURED! SKIPPING...");
+				logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' WAS ALREDY CONFIGURED! SKIPPING...");
 				continue;	
 			}
 			
@@ -297,7 +311,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 				ref.setSetNullDueInconsistency(configuredParent.isSetNullDueInconsistency());
 			}
 			
-			logInfo("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
+			logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
 			
 			auxRefInfo.add(ref);
 		}
@@ -320,6 +334,9 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		}
 		
 		this.parents = auxRefInfo;
+		
+		logInfo("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
+		
 	}
 			
 

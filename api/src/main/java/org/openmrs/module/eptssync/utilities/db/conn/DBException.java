@@ -1,15 +1,20 @@
 package org.openmrs.module.eptssync.utilities.db.conn;
 
+import java.sql.Connection;
 import java.sql.SQLException;
+
+import org.apache.log4j.Logger;
+import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 /**
  * Exception is thrown when any DB error occurs.
  * 
  */
-public class DBException extends SQLException
-{
+public class DBException extends SQLException{
 	private static final long serialVersionUID = 1L;
 
+	public static Logger logger = Logger.getLogger(DBException.class);
+	
 	/**
 	 * Os atributos abaixo só se aplicam no caso de 
 	 */
@@ -23,7 +28,6 @@ public class DBException extends SQLException
 	public static final int ORACLE_TABLE_OR_VIEW_DOES_NOT_EXIST=942;
 	
 	public static final int MYSQL_UNIQUE_CONSTRAINTS_VIOLATED_COD=1062;
-	
 	
 	
 	public DBException(String errorMessage, SQLException e){
@@ -126,7 +130,6 @@ public class DBException extends SQLException
 			return this.SQLCodeError == ORACLE_NAME_IS_ALREADY_USED_BY_AN_EXISTING_OBJECT;
 		}
 		
-		System.err.println("WARNING: Nao foi possivel determinar a base de dados");
 		return false;
 	}
 	
@@ -146,7 +149,26 @@ public class DBException extends SQLException
 			return this.SQLCodeError == ORACLE_TABLE_OR_VIEW_DOES_NOT_EXIST;
 		}
 		
-		System.err.println("WARNING: Nao foi possivel determinar a base de dados");
+		if (this.dataBaseName.equals(DBUtilities.MYSQL_DATABASE)) {
+			boolean containsTable= this.getMessage().toUpperCase().contains("TABLE");
+			boolean containsDoesNotExists = this.getMessage().toUpperCase().contains("DOESN'T EXIST");
+		
+			return containsTable && containsDoesNotExists;
+		}
+		
 		return false;
+	}
+
+	public boolean isDeadLock(Connection conn) throws DBException {
+		if (!CommonUtilities.getInstance().stringHasValue(getMessage())) return false;
+		
+		if (DBUtilities.isOracleDB(conn) && getMessage().contains("ORA-00060")){
+			return true;
+		}
+		else
+		if(DBUtilities.isMySQLDB(conn) && getMessage().toLowerCase().contains("deadlock")) {
+			return true;
+		}
+		else return false;
 	}
 }

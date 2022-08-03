@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
 
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 
@@ -48,7 +50,11 @@ public class ExportDBs {
 				}
 		}
 		
-		System.exit(0);
+		while(true) {
+			TimeCountDown.sleep(20);
+			
+			System.err.println("The aplication is working... check if all is finished and then stop the process manual...");
+		}
 		
 	}
 	

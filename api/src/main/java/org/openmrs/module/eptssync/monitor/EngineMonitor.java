@@ -93,7 +93,7 @@ public class EngineMonitor implements MonitoredOperation{
 			//this.controller.getProgressInfo().updateProgressInfo(this);
 			
 			if (!utilities.arrayHasElement(ownEngines)) {
-				logInfo("NO ENGINE FOR '" + getController().getOperationType().name().toLowerCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
+				logDebug("NO ENGINE FOR '" + getController().getOperationType().name().toLowerCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
 				
 				this.operationStatus = MonitoredOperation.STATUS_FINISHED;
 			}
@@ -151,16 +151,16 @@ public class EngineMonitor implements MonitoredOperation{
 		
 		SyncTableConfiguration syncInfo = getSyncTableInfo();
 		
-		logInfo("DETERMINING MIN RECORD FOR " + getSyncTableInfo().getTableName());
+		logDebug("DETERMINING MIN RECORD FOR " + getSyncTableInfo().getTableName());
 		
 		long minRecId = getController().getMinRecordId(getSyncTableInfo());
 		
-		logInfo("FOUND MIN RECORD " + getSyncTableInfo() + " = " + minRecId);
+		logDebug("FOUND MIN RECORD " + getSyncTableInfo() + " = " + minRecId);
 		
-		logInfo("DETERMINING MAX RECORD FOR " + getSyncTableInfo().getTableName());
+		logDebug("DETERMINING MAX RECORD FOR " + getSyncTableInfo().getTableName());
 	
 		long maxRecId =  getController().getMaxRecordId(getSyncTableInfo());
-		logInfo("FOUND MAX RECORD " + getSyncTableInfo() + " = " + maxRecId);
+		logDebug("FOUND MAX RECORD " + getSyncTableInfo() + " = " + maxRecId);
 			
 		if (maxRecId == 0 && minRecId == 0) {
 			String msg = "NO RECORD TO PROCESS FOR TABLE '"+ getSyncTableInfo().getTableName().toUpperCase() + "' NO ENGINE WILL BE CRIETED BY NOW!";
@@ -201,7 +201,7 @@ public class EngineMonitor implements MonitoredOperation{
 			
 			mainEngine.resetLimits(limits);
 			
-			logInfo("ALLOCATED RECORDS [" + mainEngine.getSearchParams().getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
+			logDebug("ALLOCATED RECORDS [" + mainEngine.getSearchParams().getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
 			
 			if (mainEngine.getChildren() == null) {
 				mainEngine.setChildren(new ArrayList<Engine>());
@@ -230,7 +230,7 @@ public class EngineMonitor implements MonitoredOperation{
 					 engine.resetLimits(limits);
 				 }
 				 
-				 logInfo("REALOCATED NEW RECORDS [" + engine.getSearchParams().getLimits() + "] FOR ENGINE [" + engine.getEngineId()  + "]");
+				 logDebug("REALOCATED NEW RECORDS [" + engine.getSearchParams().getLimits() + "] FOR ENGINE [" + engine.getEngineId()  + "]");
 			}
 		
 			//If this engine is new must be not initialized, otherwise must be on STOPPED STATE
@@ -275,7 +275,7 @@ public class EngineMonitor implements MonitoredOperation{
 	}
 
 	public void realocateJobToEngines() {
-		logInfo("REALOCATING ENGINES FOR '" + getSyncTableInfo().getTableName() + "'");
+		logDebug("REALOCATING ENGINES FOR '" + getSyncTableInfo().getTableName() + "'");
 		
 		initEngine();
 	}
@@ -320,8 +320,24 @@ public class EngineMonitor implements MonitoredOperation{
 		return getController().mustRestartInTheEnd();
 	}
 
+	public void logErr(String msg) {
+		getRelatedOperationController().logErr(msg);
+	}
+	
+	public OperationController getRelatedOperationController() {
+		return controller;
+	}
+
 	public void logInfo(String msg) {
-		getController().logInfo(msg);
+		getRelatedOperationController().logInfo(msg);
+	}
+	
+	public void logDebug(String msg) {
+		getRelatedOperationController().logDebug(msg);
+	}
+	
+	public void logWarn(String msg) {
+		getRelatedOperationController().logWarn(msg);
 	}
 
 	String generateEngineNewJobRequestStatus() {
@@ -359,7 +375,7 @@ public class EngineMonitor implements MonitoredOperation{
 
 	public void killSelfCreatedThreads() {
 		for (Engine engine : this.ownEngines) {
-			ThreadPoolService.getInstance().terminateTread(getController().getLogger(), engine.getEngineId());
+			ThreadPoolService.getInstance().terminateTread(getController().getLogger(), getController().getProcessController().getLogLevel(), engine.getEngineId());
 		}
 	}
 

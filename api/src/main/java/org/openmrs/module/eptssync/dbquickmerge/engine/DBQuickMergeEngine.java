@@ -58,7 +58,7 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		this.getMonitor().logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		int i = 1;
 		
@@ -78,7 +78,7 @@ public class DBQuickMergeEngine extends Engine {
 				i++;
 			}
 			
-			this.getMonitor().logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
 			
 			srcConn.markAsSuccessifullyTerminected();
 		}

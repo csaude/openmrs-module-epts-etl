@@ -44,19 +44,19 @@ public class DBQuickLoadEngine extends Engine{
 		
 		for (SyncImportInfoVO rec : migrationRecordAsSyncInfo) rec.setConsistent(1);
 		
-		this.getMonitor().logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO STAGING TABLE");
+		this.logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO STAGING TABLE");
 		
 		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSyncTableConfiguration(), conn);
 		
-		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " WROTE TO STAGING TABLE");
+		this.logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " WROTE TO STAGING TABLE");
 		
-		this.getMonitor().logInfo("MOVING SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] TO BACKUP AREA.");
+		this.logDebug("MOVING SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] TO BACKUP AREA.");
 		
 		BaseDAO.commit(conn);
 		
 		moveSoureJSONFileToBackup();
 		
-		this.getMonitor().logInfo("SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] MOVED TO BACKUP AREA.");
+		logDebug("SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] MOVED TO BACKUP AREA.");
 	}
 
 	private void moveSoureJSONFileToBackup() {

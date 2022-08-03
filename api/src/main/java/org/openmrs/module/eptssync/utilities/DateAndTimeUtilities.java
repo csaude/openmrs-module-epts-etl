@@ -1141,6 +1141,30 @@ public class DateAndTimeUtilities {
 		return calendar.getTime();
 	}
 	
+	
+	/**
+	 * Adiciona uma um perido de tempo (em meses) a uma data passada pelo parametro
+	 * 
+	 * @param dataInicial
+	 * @param qtdMeses
+	 * @return Retorna a dataInicial adicionada ao tempo passado pelo parametro qtdMeses
+	 */
+	public static Date addMonthsDate(Date dataInicial, int qtdMeses){     
+	    Calendar calendar = Calendar.getInstance();
+	    
+	    calendar.setTime(dataInicial);
+	       	   
+	    calendar.add(Calendar.MONTH, qtdMeses);
+	    
+		return calendar.getTime();
+	}	
+	
+	
+	public static void main(String[] args) {
+		Date d = addMonthsDate(getCurrentDate(), -1);
+	
+		System.out.println(d);
+	}
 	/**
 	 * Adiciona uma um perido de tempo (em anos) a uma data passada pelo parametro
 	 * @param dataInicial

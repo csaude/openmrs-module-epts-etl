@@ -64,11 +64,11 @@ public class ResolveConflictsInStageAreaEngine extends Engine {
 					recInConflict.markAsInconsistent(getSyncTableConfiguration(), conn);
 				}
 				
-				this.getMonitor().logInfo("Done Processing record: " + obj.getRecordUuid() + "! Win: {" + generateRecInfo(mostRecent) + "} loosers: [" + loosers + "]");
+				logDebug("Done Processing record: " + obj.getRecordUuid() + "! Win: {" + generateRecInfo(mostRecent) + "} loosers: [" + loosers + "]");
 			} catch (Exception e) {
 				e.printStackTrace();
 				
-				logInfo("Any error occurred processing record [uuid: " + obj.getRecordUuid() + ", id: " + obj.getId() + "]");
+				logError("Any error occurred processing record [uuid: " + obj.getRecordUuid() + ", id: " + obj.getId() + "]");
 				
 				throw new RuntimeException(e);
 			}

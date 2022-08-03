@@ -1,14 +1,17 @@
 package org.openmrs.module.eptssync.utilities.tools;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class GenerateLinkedConfFiles {
@@ -19,14 +22,15 @@ public class GenerateLinkedConfFiles {
 	public static void main(String[] args) throws IOException {
 		
 		if (args == null || args.length < 2) {
-			System.err.println("One o all params were not specified! Please specify to params 1. Template conf file path 2. Sites file path");
+			System.err.println("One o all params were not specified! Please specify to params 1. Template conf file path 2. DB dumps location");
 			
 			System.exit(1);
 		}
 		
+	
 		String templateConfFilePath = args[0];
-		String sitesFilePath = args[1];
-		
+		String dbExportRootDirectoryPath = args[1];
+			
 		Path path = Paths.get(templateConfFilePath);
 		
 		
@@ -35,27 +39,32 @@ public class GenerateLinkedConfFiles {
 			System.exit(1);
 		}
 		
-		if (!new File(sitesFilePath ).exists()) {
-			System.err.println("The path [" + sitesFilePath + "] for Sites file does not correspond existing file!");
+		if (!new File(dbExportRootDirectoryPath ).exists()) {
+			System.err.println("The path [" + dbExportRootDirectoryPath + "] for dumps files does not correspond existing file!");
 			System.exit(1);
 		}
 		
 		System.out.println("Initializing...");
 		System.out.println("Using Template File: " + templateConfFilePath);
-		System.out.println("Using Sites File: " + sitesFilePath);
+		System.out.println("Using Dumps directory: " + dbExportRootDirectoryPath);
 			
-		List<String> sites = FileUtilities.readAllFileAsListOfString(sitesFilePath);
-		
 		String linkedConfigAttibuteName = "childConfigFilePath";
 		
 		String nextConfigFileNamePathern = "next_config_file_name";
 		String dataBaseNamePathern = "db_name";
 		
-		for (int i = 0; i < sites.size(); i++) {
+		List<File> dumps = getDumps(new File(dbExportRootDirectoryPath));
+		
+		for (int i = 0; i < dumps.size(); i++) {
+			File dumpFile = dumps.get(i);
+			
+			//File Name Pathern: openmrs_site_code
+			
+			String dataBaseName = generateDBName(dumpFile);
+			String siteName = generateSiteName(dumpFile);
+			 
 			//Site Pathern: tmp_openmrs_site_code
 			
-			String dataBaseName = sites.get(i);
-			String siteName = dataBaseName.split("openmrs_q3fy22_")[1];
 			
 			Charset charset = StandardCharsets.UTF_8;
 
@@ -63,7 +72,8 @@ public class GenerateLinkedConfFiles {
 			
 			content = content.replaceAll(dataBaseNamePathern, dataBaseName);
 			
-			String nextDataBaseName = i < sites.size() - 1 ? sites.get(i+1) : null;
+			String nextDataBaseName = i < dumps.size() - 1 ? generateDBName(dumps.get(i+1)) : null;
+			
 			
 			if (nextDataBaseName != null) {
 				String nextFileName =  nextDataBaseName.split("openmrs_q3fy22_")[1];
@@ -78,6 +88,45 @@ public class GenerateLinkedConfFiles {
 			
 			Files.write(destPath, content.getBytes(charset));
 			
+			System.out.println("DONE CREATION OF [" + siteName + "] CONF FILE");
 		}
+	}
+	
+	private static String generateSiteName(File file) {
+		String dumpName = FileUtilities.generateFileNameFromRealPath(file.getAbsolutePath());
+		return (dumpName.split("openmrs_")[1]).split(".sql")[0];
+	}
+	
+	private static String generateDBName(File file) {
+		String dumpName = FileUtilities.generateFileNameFromRealPath(file.getAbsolutePath());
+		String siteName = (dumpName.split("openmrs_")[1]).split(".sql")[0];
+		
+		return "openmrs_q3fy22_" + siteName;
+	}
+	
+	public static List<File> getDumps(File rootDirectory){
+		//Assume-se que, os dumps encontram-se armazenados em directorios representado os distritos correspondentes
+		
+		List<File> dumps = new ArrayList<File>();
+		
+		//Loop over the districts folders
+		for (File file : rootDirectory.listFiles()) {
+		
+			if (!file.isDirectory()) continue;
+			
+			File[] files = file.listFiles(new FilenameFilter() {
+				@Override
+				public boolean accept(File dir, String name) {
+					return name.toLowerCase().endsWith("sql");
+				}
+			});
+			
+			
+			if (files.length > 0) {
+				 dumps.addAll(CommonUtilities.getInstance().parseArrayToList(files));
+			}
+		}
+		
+		return dumps;
 	}
 }

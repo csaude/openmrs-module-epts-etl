@@ -4,16 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 /**
  * @author jpboane
  *
  */
 public class ThreadPoolService {
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
+
 	private static ThreadPoolService service;
 	
 	private List<ExecutorServiceManager> createdThreadPools;
@@ -41,8 +45,8 @@ public class ThreadPoolService {
     	return null;
     }
     
-    public void terminateTread(Log logger, String threadId) {
-    	logger.info("TRYING TO TERMINATE THREAD [" + threadId + "]");
+    public void terminateTread(Log logger, Level logLevel, String threadId) {
+    	utilities.logDebug("TRYING TO TERMINATE THREAD [" + threadId + "]", logger, logLevel);
     	
     	ExecutorService service = retrieveExistingExecutor(threadId);
     	
@@ -51,10 +55,10 @@ public class ThreadPoolService {
     		
     		if (a != null && a.size() > 1) throw new ForbiddenOperationException("There were thread awating... " + a);
     	
-    		logger.info("THREAD [" + threadId + "] WAS TERMINATED SUCCESSIFULY!");
+    		utilities.logDebug("THREAD [" + threadId + "] WAS TERMINATED SUCCESSIFULY!", logger, logLevel);
        }
     	else {
-     		logger.info("THREAD [" + threadId + "] WAS NOT FOUND  IN THREAD POOL!!!!");
+    		utilities.logErr("THREAD [" + threadId + "] WAS NOT FOUND  IN THREAD POOL!!!!", logger, logLevel);
      	}
     }
 	

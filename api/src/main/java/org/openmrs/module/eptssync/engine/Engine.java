@@ -175,7 +175,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 						for (Engine child : getChildren()) {
 							while(!child.isStopped() || !child.isFinished()) {
 								logInfo("WAITING FOR ALL CHILD ENGINES TO BE STOPPED");
-								TimeCountDown.sleep(10);
+								TimeCountDown.sleep(15);
 							}
 						}
 					}
@@ -222,7 +222,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 									
 									logInfo("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK! RUNNING CHILD " + runningChild);
 									
-									TimeCountDown.sleep(5);
+									TimeCountDown.sleep(10);
 								}
 								
 								finalCheckDone = true;
@@ -236,7 +236,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 								}
 							}
 							else {
-								getRelatedOperationController().logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + " ON LIMITS [" + getLimits() + "]! FINISHING..." );
+								logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + " ON LIMITS [" + getLimits() + "]! FINISHING..." );
 								
 								if (isMainEngine()) {
 									finished  = true;
@@ -287,14 +287,14 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 
 	private int performe(Connection conn) throws DBException {
-		logInfo("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
+		logDebug("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
 		
 		List<SyncRecord> records = searchNextRecords(conn);
 		
-		this.monitor.logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "' FINISHED. FOUND: '"+ utilities.arraySize(records) + "' RECORDS.");
+		logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "' FINISHED. FOUND: '"+ utilities.arraySize(records) + "' RECORDS.");
 		
 		if (utilities.arrayHasElement(records)) {
-			this.monitor.logInfo("INITIALIZING " +  getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '" + records.size() + "' RECORDS OF TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
+			logDebug("INITIALIZING " +  getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '" + records.size() + "' RECORDS OF TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
 			
 			performeSync(records, conn);
 		}
@@ -563,11 +563,11 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		
 		if (hasChild()) {
 			for (Engine child : this.children) {
-				ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), child.getEngineId());
+				ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), getMonitor().getController().getProcessController().getLogLevel(), child.getEngineId());
 			}
 		}
 			
-		ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), getEngineId());	
+		ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), getMonitor().getController().getProcessController().getLogLevel(), getEngineId());	
 	}
 	
 	public void markAsFinished(){
@@ -602,16 +602,20 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		return 5;
 	}
 	
+	public void logError(String msg) {
+		monitor.logErr(msg);
+	}
+	
 	public void logInfo(String msg) {
-		getRelatedOperationController().logInfo(msg);
+		monitor.logInfo(msg);
 	}
 	
 	public void logDebug(String msg) {
-		getRelatedOperationController().logDebug(msg);
+		monitor.logDebug(msg);
 	}
 	
 	public void logWarn(String msg) {
-		getRelatedOperationController().logWarn(msg);
+		monitor.logWarn(msg);
 	}
 	
 	

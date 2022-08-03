@@ -166,11 +166,11 @@ public abstract class OperationController implements Controller{
 		
 		for (SyncTableConfiguration syncInfo: allSync) {
 			if (operationTableIsAlreadyFinished(syncInfo)) {
-				logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
+				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
 			}
 			else 
 			if (stopRequested()) {
-				logInfo("ABORTING THE ENGINE PROCESS DUE STOP REQUESTED!");
+				logWarn("ABORTING THE ENGINE PROCESS DUE STOP REQUESTED!");
 				break;		
 			}
 			else {
@@ -226,11 +226,11 @@ public abstract class OperationController implements Controller{
 		
 		for (SyncTableConfiguration syncInfo: allSync) {
 			if (operationTableIsAlreadyFinished(syncInfo)) {
-				logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
+				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "' was already finished!").toUpperCase());
 			}
 			else 
 			if (stopRequested()) {
-				logInfo("ABORTING THE ENGINE INITIALIZER DUE STOP REQUESTED!");
+				logWarn("ABORTING THE ENGINE INITIALIZER DUE STOP REQUESTED!");
 				
 				break;
 			}
@@ -305,7 +305,7 @@ public abstract class OperationController implements Controller{
 		executor.execute(this.activititieMonitor);
 
 		if (stopRequested()) {
-			logInfo("THE OPERATION " + getControllerId()  + " COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
+			logWarn("THE OPERATION " + getControllerId()  + " COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
 			
 			changeStatusToStopped();
 			
@@ -317,7 +317,7 @@ public abstract class OperationController implements Controller{
 		}
 		else
 		if (operationIsAlreadyFinished()) {
-			logInfo("THE OPERATION " + getControllerId() + " WAS ALREADY FINISHED!");
+			logWarn("THE OPERATION " + getControllerId() + " WAS ALREADY FINISHED!");
 			
 			changeStatusToFinished();
 		}
@@ -394,7 +394,7 @@ public abstract class OperationController implements Controller{
 	
 	public void markTableOperationAsFinished(SyncTableConfiguration conf, Engine engine, TimeController timer) {
 		
-		logInfo("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
+		logDebug("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
 		
 		TableOperationProgressInfo progressInfo = this.retrieveProgressInfo(conf);
 				
@@ -416,7 +416,7 @@ public abstract class OperationController implements Controller{
 			conn.finalizeConnection();
 		}
 		
-		logInfo("FILE WROTE");
+		logDebug("FILE WROTE");
 	}
 	
 	public SyncConfiguration getConfiguration() {
@@ -455,9 +455,9 @@ public abstract class OperationController implements Controller{
 	}
 	
 	public void markAsFinished() {
-		logInfo("FINISHING OPERATION "+ getControllerId());
+		logDebug("FINISHING OPERATION "+ getControllerId());
 		
-		logInfo("WRITING OPERATION STATUS ON FILE ["+ generateOperationStatusFile().getAbsolutePath() + "]");
+		logDebug("WRITING OPERATION STATUS ON FILE ["+ generateOperationStatusFile().getAbsolutePath() + "]");
 		
 		if (!this.progressInfo.isFinished()) this.progressInfo.changeStatusToFinished();
 		
@@ -526,7 +526,7 @@ public abstract class OperationController implements Controller{
 			logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
 		}
 		else {
-			logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED DUE ERROR!!!");
+			logErr("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED DUE ERROR!!!");
 		
 			lastException.printStackTrace();
 		}
@@ -535,7 +535,7 @@ public abstract class OperationController implements Controller{
 			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
 				monitor.killSelfCreatedThreads();
 				
-				ThreadPoolService.getInstance().terminateTread(logger, monitor.getEngineMonitorId());
+				ThreadPoolService.getInstance().terminateTread(logger, getProcessController().getLogLevel(), monitor.getEngineMonitorId());
 			}
 	}
 	
@@ -543,7 +543,7 @@ public abstract class OperationController implements Controller{
 	public void onFinish() {
 		getTimer().stop();
 		
-		logInfo("FINISHING OPERATION " + getControllerId());
+		logDebug("FINISHING OPERATION " + getControllerId());
 		List<OperationController> nextOperation = getChildren();
 		
 		logInfo("TRY TO INIT NEXT OPERATION");
@@ -557,7 +557,7 @@ public abstract class OperationController implements Controller{
 		if (nextOperation != null) {
 			if (!stopRequested()) {
 				for (OperationController controller : nextOperation) {
-					logInfo("STARTING NEXT OPERATION " + controller.getControllerId());
+					logDebug("STARTING NEXT OPERATION " + controller.getControllerId());
 					
 					ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId());
 					executor.execute(controller);
@@ -571,7 +571,7 @@ public abstract class OperationController implements Controller{
 				
 				nextOperations += "]";
 				
-				logInfo("THE OPERATION " + nextOperations.toUpperCase() + "NESTED COULD NOT BE INITIALIZED BECAUSE THERE WAS A STOP REQUEST!!!");
+				logWarn("THE OPERATION " + nextOperations.toUpperCase() + "NESTED COULD NOT BE INITIALIZED BECAUSE THERE WAS A STOP REQUEST!!!");
 			}
 		}
 		else {
@@ -589,11 +589,11 @@ public abstract class OperationController implements Controller{
 			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
 				monitor.killSelfCreatedThreads();
 				
-				ThreadPoolService.getInstance().terminateTread(logger, monitor.getEngineMonitorId());
+				ThreadPoolService.getInstance().terminateTread(logger, getProcessController().getLogLevel(), monitor.getEngineMonitorId());
 			}
 		}
 		
-		if (this.activititieMonitor != null) ThreadPoolService.getInstance().terminateTread(logger, this.activititieMonitor.getMonitorId());
+		if (this.activititieMonitor != null) ThreadPoolService.getInstance().terminateTread(logger, getProcessController().getLogLevel(), this.activititieMonitor.getMonitorId());
 		
 		selfTreadKilled = true;
 	}
@@ -692,19 +692,19 @@ public abstract class OperationController implements Controller{
 	}
 
 	public void logWarn(String msg) {
-		utilities().logWarn(msg, logger);
+		this.processController.logWarn(msg);
 	}
 	
 	public void logInfo(String msg) {
-		utilities().logInfo(msg, logger);
+		this.processController.logInfo(msg);
 	}
 	
-	public void logError(String msg) {
-		utilities().logErr(msg, logger);
+	public void logErr(String msg) {
+		this.processController.logErr(msg);
 	}
 	
 	public void logDebug(String msg) {
-		utilities().logDebug(msg, logger);
+		this.processController.logDebug(msg);
 	}
 
 } 

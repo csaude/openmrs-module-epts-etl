@@ -48,14 +48,14 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		this.getMonitor().logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		int i = 1;
 		
 		for (SyncRecord record: syncRecords) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 		
-			logInfo(startingStrLog  +": Merging Record: [" + record + "]");
+			logDebug(startingStrLog  +": Merging Record: [" + record + "]");
 			
 			MergingRecord data = new MergingRecord((SyncImportInfoVO) record , getSyncTableConfiguration(), getRelatedOperationController().getRemoteApp(), getRelatedOperationController().getMainApp());
 			
@@ -63,7 +63,7 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 				data.merge(conn);
 			}
 			catch (MissingParentException e) {
-				logInfo(record + " - " + e.getMessage() + " The record will be skipped");
+				logWarn(record + " - " + e.getMessage() + " The record will be skipped");
 			}
 			
 			i++;

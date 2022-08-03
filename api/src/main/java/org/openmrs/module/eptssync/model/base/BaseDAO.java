@@ -262,14 +262,15 @@ public abstract class BaseDAO{
 	}
 
 	private static boolean tryToSolveIssues(DBException e, String sql, Object[] params, Connection conn) throws DBException {
-		if (e.getMessage() != null && e.getMessage().contains("ORA-00060")){
+		if (e.isDeadLock(conn)){
 			logger.warn("DEADLOCK DETECTED");
-			DBOperation dbOp = new DBOperation(sql, params, conn, 5);
-			dbOp.retry();
+			DBOperation dbOp = new DBOperation(sql, params, conn, 10);
+			dbOp.retryDueDeadLock();
 			
 			return true;
 		}
-		else return false;
+		
+		return false;
 	}
 	
 	public static void commitConnection(Connection conn){

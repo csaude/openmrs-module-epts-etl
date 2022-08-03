@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,11 +50,18 @@ public class ProcessController implements Controller{
 	private boolean progressInfoLoaded;
 	
 	protected List<AppInfo> appsInfo; 
+	private Level logLevel;
 	
 	public ProcessController(){
 		this.progressInfo = new ProcessProgressInfo(this);
 	}	
 	
+
+	
+	public Level getLogLevel() {
+		return logLevel;
+	}
+
 	public ProcessController(SyncConfiguration configuration){
 		this();
 		
@@ -81,7 +89,8 @@ public class ProcessController implements Controller{
 		this.configuration = configuration;
 		this.configuration.setRelatedController(this);
 		this.appsInfo = configuration.getAppsInfo();
-		
+		this.logLevel = SyncConfiguration.determineLogLevel();
+
 		if (configuration.getChildConfig() != null) {
 			this.childController = new ProcessController(configuration.getChildConfig());
 		}
@@ -318,7 +327,7 @@ public class ProcessController implements Controller{
 		tryToRemoveOldStopRequested();
 		
 		if (stopRequested()) {
-			logInfo("THE PROCESS COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
+			logWarn("THE PROCESS COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
 			
 			changeStatusToStopped();
 			
@@ -328,7 +337,7 @@ public class ProcessController implements Controller{
 		}
 		else
 		if (processIsAlreadyFinished()) {
-			logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS ALREADY FINISHED!!!");
+			logWarn("THE PROCESS "+getControllerId().toUpperCase() + " WAS ALREADY FINISHED!!!");
 			changeStatusToFinished();
 		}
 		else {
@@ -394,12 +403,12 @@ public class ProcessController implements Controller{
 			for (OperationController operationController : this.operationsControllers) {
 				operationController.killSelfCreatedThreads();
 				
-				ThreadPoolService.getInstance().terminateTread(logger, operationController.getControllerId());
+				ThreadPoolService.getInstance().terminateTread(logger, getLogLevel(), operationController.getControllerId());
 			}
 		}
 		
-		ThreadPoolService.getInstance().terminateTread(logger, this.monitor.getMonitorId());
-		ThreadPoolService.getInstance().terminateTread(logger, this.getControllerId());
+		ThreadPoolService.getInstance().terminateTread(logger, getLogLevel(), this.monitor.getMonitorId());
+		ThreadPoolService.getInstance().terminateTread(logger, getLogLevel(), this.getControllerId());
 	}
 	
 	
@@ -426,11 +435,11 @@ public class ProcessController implements Controller{
 	}
 	
 	public void markAsFinished() {
-		logInfo("FINISHING PROCESS...");
+		logDebug("FINISHING PROCESS...");
 		
 		if (getConfiguration().isSourceSyncProcess()) {
 			if (!generateProcessStatusFile().exists()) {
-				logInfo("FINISHING PROCESS... WRITING PROCESS STATUS ON FILE ["+ generateProcessStatusFile().getAbsolutePath() + "]") ;
+				logDebug("FINISHING PROCESS... WRITING PROCESS STATUS ON FILE ["+ generateProcessStatusFile().getAbsolutePath() + "]") ;
 				
 				String desc = "";
 				
@@ -445,7 +454,7 @@ public class ProcessController implements Controller{
 				
 				FileUtilities.write(generateProcessStatusFile().getAbsolutePath(), desc);
 				
-				logInfo("FILE WROTE");
+				logDebug("FILE WROTE");
 			}
 		}
 		
@@ -477,12 +486,23 @@ public class ProcessController implements Controller{
 	public String getControllerId() {
 		return this.controllerId;
 	}
-
-	@Override
-	public void logInfo(String msg) {
-		utilities.logInfo(msg, logger);
+	
+	public void logDebug(String msg) {
+		utilities.logDebug(msg, logger, getLogLevel());
 	}
 
+	public void logInfo(String msg) {
+		utilities.logInfo(msg, logger, getLogLevel());
+	}
+	
+	public void logWarn(String msg) {
+		utilities.logWarn(msg, logger, getLogLevel());
+	}
+		
+	public void logErr(String msg) {
+		utilities.logErr(msg, logger, getLogLevel());
+	}
+		
 	public boolean isProgressInfoLoaded() {
 		return progressInfoLoaded;
 	}

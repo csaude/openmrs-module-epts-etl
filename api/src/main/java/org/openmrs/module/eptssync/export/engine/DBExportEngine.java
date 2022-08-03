@@ -46,13 +46,13 @@ public class DBExportEngine extends Engine {
 		try {
 			List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
 			
-			this.getMonitor().logInfo("GENERATING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE");
+			logDebug("GENERATING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE");
 			
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(syncRecordsAsOpenMRSObjects, getSyncTableConfiguration().getOriginAppLocationCode(), true);
 		
 			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(), syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
 			
-			this.getMonitor().logInfo("WRITING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE [" + jsonFIle.getAbsolutePath() + ".json]");
+			logInfo("WRITING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE [" + jsonFIle.getAbsolutePath() + ".json]");
 			
 			
 			//Try to remove not terminate files
@@ -69,11 +69,11 @@ public class DBExportEngine extends Engine {
 			
 			this.getMonitor().logInfo("JSON [" + jsonFIle + ".json] CREATED!");
 			
-			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED");
+			logDebug("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED");
 			
-			this.getMonitor().logInfo("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED FINISHED");
+			logDebug("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED FINISHED");
 			
-			this.getMonitor().logInfo("MAKING FILES AVALIABLE");
+			logDebug("MAKING FILES AVALIABLE");
 			
 			
 			FileUtilities.renameTo(generateTmpMinimalJSONInfoFileName(jsonFIle), generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json");

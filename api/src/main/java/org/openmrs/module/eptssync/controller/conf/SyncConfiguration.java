@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 
 import javax.ws.rs.ForbiddenException;
@@ -310,6 +311,22 @@ public class SyncConfiguration {
 		return conf;
 	}
 
+	public void logDebug(String msg) {
+		utilities.logDebug(msg, logger, determineLogLevel());
+	}
+
+	public void logInfo(String msg) {
+		utilities.logInfo(msg, logger, determineLogLevel());
+	}
+	
+	public void logWarn(String msg) {
+		utilities.logWarn(msg, logger, determineLogLevel());
+	}
+		
+	public void logErr(String msg) {
+		utilities.logErr(msg, logger, determineLogLevel());
+	}
+	
 	public void fullLoad() {
 		if (this.fullLoaded) return;
 		
@@ -358,9 +375,9 @@ public class SyncConfiguration {
 		
 	}
 	
-	public void logInfo(String msg) {
+	/*public void logInfo(String msg) {
 		utilities.logInfo(msg, logger);
-	}
+	}*/
 	
 	public static SyncConfiguration loadFromJSON (File file, String json) {
 		try {
@@ -728,4 +745,18 @@ public class SyncConfiguration {
 						this.isDBQuickExportProcess();
 	}
 	
+	
+	public static Level determineLogLevel() {
+		String log = System.getProperty("log.level");
+		
+		if (!utilities.stringHasValue(log)) return Level.INFO;
+		
+		if (log.equals("DEBUG")) return Level.FINE;
+		if (log.equals("INFO")) return Level.INFO;
+		if (log.equals("WARN")) return Level.WARNING;
+		if (log.equals("ERROR")) return Level.SEVERE;
+		
+		throw new ForbiddenOperationException("Unsupported Log Level [" + log + "]");
+		
+	}
 }

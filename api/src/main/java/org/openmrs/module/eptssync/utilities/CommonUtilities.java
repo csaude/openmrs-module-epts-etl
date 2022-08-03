@@ -18,8 +18,11 @@ import java.util.Stack;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
 
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.BasicConfigurator;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -878,20 +881,20 @@ public class  CommonUtilities implements Serializable{
 	}
 	
 
-	public void logWarn(String msg, Log logger) {
-		logger.warn(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
+	public void logWarn(String msg, Log logger, Level level) {
+		if (level.intValue() <= Level.WARNING.intValue()) logger.warn(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
-	public void logInfo(String msg, Log logger) {
-		logger.info(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
+	public void logInfo(String msg, Log logger, Level level) {
+		if (level.intValue() <= Level.INFO.intValue())  logger.info(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
-	public void logErr(String msg, Log logger) {
-		logger.error(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
+	public void logErr(String msg, Log logger, Level level) {
+		if (level.intValue() <= Level.SEVERE.intValue() )  logger.error(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
-	public void logDebug(String msg, Log logger) {
-		logger.debug(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
+	public void logDebug(String msg, Log logger, Level level) {
+		if (level.intValue() <= Level.FINE.intValue())    logger.debug(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 
 	public boolean isValidUUID(String str) {
@@ -973,11 +976,22 @@ public class  CommonUtilities implements Serializable{
 		return -1;
 	}
 
+	
+	private static Log logger = LogFactory.getLog(CommonUtilities.class);
+	
 	public static void main(String[] args) {
-		String strWithStrangeCharacters = "aaaaa";
+		BasicConfigurator.configure();
 		
+		CommonUtilities utilities = CommonUtilities.getInstance();
 		
-		System.out.println(getInstance().resolveScapeCharacter(strWithStrangeCharacters));
+
+		Level l = Level.FINE;
+		
+		utilities.logDebug("DEBUG", logger, l);
+		utilities.logErr("ERROR", logger, l);
+		utilities.logInfo("INFO", logger, l);
+		utilities.logWarn("WARN", logger, l);
+			
 	}
 
 	public  String quote(String strToQuote) {
