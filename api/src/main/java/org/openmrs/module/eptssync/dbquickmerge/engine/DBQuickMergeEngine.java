@@ -12,11 +12,11 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.eptssync.exceptions.MissingParentException;
+import org.openmrs.module.eptssync.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -29,7 +29,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 public class DBQuickMergeEngine extends Engine {
 	private AppInfo mainApp;
 	private AppInfo remoteApp;
-	
+
 	public DBQuickMergeEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	
@@ -44,7 +44,7 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	protected boolean mustDoFinalCheck() {
-		return false;
+		return getRelatedOperationController().getMergeType().isMissing();
 	}
 	
 	@Override
@@ -58,7 +58,7 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logDebug("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		int i = 1;
 		
@@ -73,12 +73,39 @@ public class DBQuickMergeEngine extends Engine {
 				
 				MergingRecord data = new MergingRecord(rec , getSyncTableConfiguration(), this.remoteApp, this.mainApp);
 				
-				process(data, startingStrLog, 0, srcConn, conn);
+				try {
+					process(data, startingStrLog, 0, srcConn, conn);
+				}
+				catch (MissingParentException e) {
+					logWarn(data.getRecord() + " - " + e.getMessage() + " The record will be skipped");
+					
+					InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(), rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
+					
+					inconsistenceInfo.save(getSyncTableConfiguration(), conn);
+				}
+				catch (ConflictWithRecordNotYetAvaliableException e) {
+					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
+				}
+				catch (DBException e) {
+					
+					if (e.isDuplicatePrimaryKeyException()) {
+						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
+					}
+					else
+					if (e.isIntegrityConstraintViolationException()) {
+						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
+					}
+					else {
+						logWarn("Error Code: " + e.getErrorCode());
+						
+						throw e;
+					}
+				}
 				
 				i++;
 			}
 			
-			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+			logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
 			
 			srcConn.markAsSuccessifullyTerminected();
 		}
@@ -92,24 +119,26 @@ public class DBQuickMergeEngine extends Engine {
 		
 		logDebug(startingStrLog  +": " + reprocessingMessage + ": [" + mergingData.getRecord() + "]");
 		
-		try {
+		//try {
 			if (getRelatedOperationController().getMergeType().isMissing()) {
 				mergingData.merge(srcConn, destConn);
 			}
 			else {
 				mergingData.resolveConflict(srcConn, destConn);
 			}	
-		}
+		/*}
 		catch (MissingParentException e) {
 			logWarn(mergingData.getRecord() + " - " + e.getMessage() + " The record will be skipped");
 		}
 		catch (ConflictWithRecordNotYetAvaliableException e) {
-			logWarn("Error while merging record: [" + mergingData.getRecord() + "]! " + e.getLocalizedMessage() + ". Re-merging the record...");
+			logWarn(startingStrLog + ". Error while merging record: [" + mergingData.getRecord() + "]! " + e.getLocalizedMessage() + ". Schedule Reprocessing...");
 			
-			TimeCountDown.sleep(5);
+			//TimeCountDown.sleep(5);
 			
-			process(mergingData, startingStrLog, ++reprocessingCount, srcConn, destConn);
-		}
+			//process(mergingData, startingStrLog, ++reprocessingCount, srcConn, destConn);
+			
+			getMonitor().addToRecordsToBeReprocessed(mergingData.getRecord());
+		}*/
 	}
 	
 	@Override

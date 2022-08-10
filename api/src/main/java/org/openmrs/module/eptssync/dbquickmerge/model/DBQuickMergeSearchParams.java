@@ -66,7 +66,25 @@ public class DBQuickMergeSearchParams extends OpenMRSObjectSearchParams{
 					
 			
 			if (isForMergeExistingRecords()) {
-				this.extraCondition = "EXISTS " + extraCondition;
+				String periodCondition = "(src_.date_changed >= ? or src_.date_voided >= ?)";
+				
+				if (utilities.isStringIn(tableInfo.getTableName(), "users", "location", "provider")) {
+					periodCondition = "(src_.date_changed >= ? or src_.date_retired >= ?)";
+				}
+				
+				if (utilities.isStringIn(tableInfo.getTableName(), "obs", "orders")) {
+					periodCondition = "(src_.date_voided >= ? or src_.date_voided >= ?)";
+				}
+				
+				if (utilities.isStringIn(tableInfo.getTableName(), "note")) {
+					periodCondition = "(src_.date_changed >= ? or src_.date_changed >= ?)";
+				}
+				
+				searchClauses.addToClauses(periodCondition);
+				searchClauses.addToParameters(getSyncStartDate());
+				searchClauses.addToParameters(getSyncStartDate());
+				
+				this.extraCondition = " EXISTS " + extraCondition;
 			}
 			else
 			if (isForMergeMissingRecords()) {

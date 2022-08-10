@@ -26,6 +26,10 @@ public class ForbiddenOperationException extends RuntimeException {
 		this.currentObject = currentObject;
 	}
 	
+	public ForbiddenOperationException(String msg, Exception exception){
+		super(msg, exception);
+	}
+	
 	public ForbiddenOperationException(Exception exception){
 		super(exception);
 	}

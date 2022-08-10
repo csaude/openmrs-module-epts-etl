@@ -333,11 +333,11 @@ public class SyncConfiguration {
 		try {
 			for (SyncTableConfiguration conf : this.getTablesConfigurations()) {
 				if (!conf.isFullLoaded()) {
-					logInfo("PERFORMING FULL CONFIGURATION LOAD ON TABLE '"  + conf.getTableName() + "'");
+					logDebug("PERFORMING FULL CONFIGURATION LOAD ON TABLE '"  + conf.getTableName() + "'");
 					conf.fullLoad();
 				}
 			
-				logInfo("THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '"  + conf.getTableName() + "'");
+				logDebug("THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '"  + conf.getTableName() + "'");
 			} 
 
 			this.fullLoaded = true;
@@ -375,16 +375,12 @@ public class SyncConfiguration {
 		
 	}
 	
-	/*public void logInfo(String msg) {
-		utilities.logInfo(msg, logger);
-	}*/
-	
 	public static SyncConfiguration loadFromJSON (File file, String json) {
 		try {
 			SyncConfiguration config = new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json, SyncConfiguration.class);
 			
 			if (config.getChildConfigFilePath() != null) {
-				config.logInfo("FOUND THE CHILD [" + config.getChildConfigFilePath()   + "] FOR [" + file.getAbsolutePath() + "]");
+				config.logDebug("FOUND THE CHILD [" + config.getChildConfigFilePath()   + "] FOR [" + file.getAbsolutePath() + "]");
 							
 				config.setChildConfig(loadFromFile(new File(config.getChildConfigFilePath())));
 			}
@@ -672,7 +668,13 @@ public class SyncConfiguration {
 	}
 	
 	public String generateControllerId() {
-		return this.processType.name().toLowerCase();
+		String controllerId = this.processType.name().toLowerCase();
+		
+		if (isSupposedToRunInOrigin() || isSupposedToHaveOriginAppCode()) {
+			controllerId += "_from_" + getOriginAppLocationCode();
+		}
+		
+		return controllerId;
 	}
 	
 	@JsonIgnore

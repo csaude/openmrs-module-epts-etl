@@ -352,11 +352,11 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	public String getDetailedRemaining(){
 		int remaining = total - processed;
 		
-		return remaining + "(" + (100 - this.getProgress()) + "%)";
+		return utilities.generateCommaSeparetedNumber(remaining) + "(" + (100 - this.getProgress()) + "%)";
 	}
 	
 	public String getDetailedProgress(){
-		return this.processed + "(" + this.getProgress() + "%)";
+		return utilities.generateCommaSeparetedNumber(this.processed) + "(" + this.getProgress() + "%)";
 	}
 	
 	/**

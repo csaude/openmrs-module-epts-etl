@@ -3,7 +3,6 @@
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,7 +15,6 @@ import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
-import org.openmrs.module.eptssync.monitor.ControllerMonitor;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -44,8 +42,6 @@ public abstract class OperationController implements Controller{
 	protected List<EngineMonitor> enginesActivititieMonitor;
 	protected List<EngineMonitor> allGeneratedEngineMonitor;
 	
-	protected ControllerMonitor activititieMonitor;
-	
 	protected List<OperationController> children;
 	
 	protected String controllerId;
@@ -72,21 +68,8 @@ public abstract class OperationController implements Controller{
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
 		
-		this.controllerId = processController.getControllerId();
+		this.controllerId =  (getOperationType().name().toLowerCase() + "_on_" + processController.getControllerId()).toLowerCase();
 		
-		if (operationConfig.getRelatedSyncConfig().isSupposedToRunInOrigin()) {
-			this.controllerId += "_" + getOperationType().name().toLowerCase() + "_from_" + operationConfig.getRelatedSyncConfig().getOriginAppLocationCode();
-		}
-		else
-		if (operationConfig.getRelatedSyncConfig().isSupposedToHaveOriginAppCode() && !operationConfig.isDatabasePreparationOperation()) {
-			this.controllerId += "_" + getOperationType().name().toLowerCase() + "_from_" + operationConfig.getRelatedSyncConfig().getOriginAppLocationCode();
-		}
-		else {
-			this.controllerId += "_" + getOperationType().name().toLowerCase();
-		}
-			
-		this.controllerId = this.controllerId.toLowerCase();
-			
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -298,12 +281,7 @@ public abstract class OperationController implements Controller{
 		timer.start();
 		
 		onStart();
-		
-		this.activititieMonitor = new ControllerMonitor(this);
-		
-		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.activititieMonitor.getMonitorId());
-		executor.execute(this.activititieMonitor);
-
+	
 		if (stopRequested()) {
 			logWarn("THE OPERATION " + getControllerId()  + " COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
 			
@@ -328,6 +306,25 @@ public abstract class OperationController implements Controller{
 		else {
 			runInSequencialMode();
 		}
+		
+		boolean running = true;
+		
+		while(running) {
+			TimeCountDown.sleep(getWaitTimeToCheckStatus());
+			
+			if (this.isFinished()) {
+				this.markAsFinished();
+				this.onFinish();
+			
+				running = false;
+			}
+			else 
+			if (this.isStopped()) {
+				running = false;
+				
+				this.onStop();
+			}
+		}			
 	}
 	
 	
@@ -398,10 +395,6 @@ public abstract class OperationController implements Controller{
 		
 		TableOperationProgressInfo progressInfo = this.retrieveProgressInfo(conf);
 				
-		//String fileName = generateTableProcessStatusFile(conf).getAbsolutePath();
-			
-		//logInfo("WRITING OPERATION STATUS ON "+ fileName);
-		
 		progressInfo.getProgressMeter().changeStatusToFinished();
 		
 		OpenConnection conn = getDefaultApp().openConnection();
@@ -415,8 +408,6 @@ public abstract class OperationController implements Controller{
 		finally {
 			conn.finalizeConnection();
 		}
-		
-		logDebug("FILE WROTE");
 	}
 	
 	public SyncConfiguration getConfiguration() {
@@ -523,7 +514,7 @@ public abstract class OperationController implements Controller{
 	@Override
 	public void onStop() {
 		if (lastException == null) {
-			logInfo("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
+			logWarn("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
 		}
 		else {
 			logErr("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED DUE ERROR!!!");
@@ -531,12 +522,7 @@ public abstract class OperationController implements Controller{
 			lastException.printStackTrace();
 		}
 		
-		if (this.enginesActivititieMonitor != null)
-			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
-				monitor.killSelfCreatedThreads();
-				
-				ThreadPoolService.getInstance().terminateTread(logger, getProcessController().getLogLevel(), monitor.getEngineMonitorId());
-			}
+		this.processController.finalize(this);
 	}
 	
 	@Override
@@ -544,43 +530,11 @@ public abstract class OperationController implements Controller{
 		getTimer().stop();
 		
 		logDebug("FINISHING OPERATION " + getControllerId());
-		List<OperationController> nextOperation = getChildren();
 		
-		logInfo("TRY TO INIT NEXT OPERATION");
-		
-		
-		//Remember, if one of multiple child is disabled, then all other children are disabled
-		while (nextOperation != null && !nextOperation.isEmpty() && nextOperation.get(0).getOperationConfig().isDisabled()) {
-			nextOperation = nextOperation.get(0).getChildren();
-		}
-		
-		if (nextOperation != null) {
-			if (!stopRequested()) {
-				for (OperationController controller : nextOperation) {
-					logDebug("STARTING NEXT OPERATION " + controller.getControllerId());
-					
-					ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId());
-					executor.execute(controller);
-				}
-			}
-			else {
-				String nextOperations = "[";
-				for (OperationController controller : nextOperation) {
-					nextOperations += controller.getControllerId() + ";";
-				}
-				
-				nextOperations += "]";
-				
-				logWarn("THE OPERATION " + nextOperations.toUpperCase() + "NESTED COULD NOT BE INITIALIZED BECAUSE THERE WAS A STOP REQUEST!!!");
-			}
-		}
-		else {
-			logInfo("THERE IS NO MORE OPERATION TO EXECUTE... FINALIZING PROCESS... "+this.getProcessController().getControllerId());
-		}
-		
-		killSelfCreatedThreads();
+		this.processController.finalize(this);
 	}
 	
+	@Override
 	public void killSelfCreatedThreads() {
 		if (selfTreadKilled) return;
 		
@@ -589,11 +543,9 @@ public abstract class OperationController implements Controller{
 			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
 				monitor.killSelfCreatedThreads();
 				
-				ThreadPoolService.getInstance().terminateTread(logger, getProcessController().getLogLevel(), monitor.getEngineMonitorId());
+				ThreadPoolService.getInstance().terminateTread(logger, getProcessController().getLogLevel(), monitor.getEngineMonitorId(), monitor);
 			}
 		}
-		
-		if (this.activititieMonitor != null) ThreadPoolService.getInstance().terminateTread(logger, getProcessController().getLogLevel(), this.activititieMonitor.getMonitorId());
 		
 		selfTreadKilled = true;
 	}
@@ -652,7 +604,7 @@ public abstract class OperationController implements Controller{
 			}
 		
 			while(!isStopped()) {
-				logInfo("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
+				logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
 				TimeCountDown.sleep(5);
 			}
 		}
@@ -660,7 +612,7 @@ public abstract class OperationController implements Controller{
 			monitor.requestStopDueError();
 			
 			while(!monitor.isStopped()) {
-				logInfo("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
+				logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
 				TimeCountDown.sleep(5);
 			}
 		}

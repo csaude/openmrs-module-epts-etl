@@ -341,4 +341,10 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+	@Override
+	public Object getFieldValue(String fieldName) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

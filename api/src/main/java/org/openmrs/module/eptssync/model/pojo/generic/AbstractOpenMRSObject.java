@@ -18,9 +18,9 @@ import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.eptssync.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.eptssync.model.base.BaseVO;
@@ -124,6 +124,30 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		
 		return true;
 	}
+	
+	@Override
+	public Object getFieldValue(String fieldName) {
+		Object[] fields = getFields();
+		
+		for (int i = 0; i < fields.length; i++) {
+			Field field = (Field) fields[i];
+			
+			if (!field.getName().equals(fieldName)) continue;
+			
+			try {
+				return field.get(this);
+			}
+			catch (IllegalArgumentException e) {
+				throw new RuntimeException(e);
+			}
+			catch (IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+		}	
+		
+		return null;
+	}
+	
 	
 	@Override
 	public SyncImportInfoVO getRelatedSyncInfo() {

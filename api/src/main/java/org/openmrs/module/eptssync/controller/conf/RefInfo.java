@@ -33,6 +33,10 @@ public class RefInfo {
 	private String refColumnType;
 	
 	private String refType;
+	
+	private String conditionField;
+	private Integer conditionValue;
+	
 	/*
 	 * Indicate if this parent can be ignored if not found in referenced table or not
 	 */
@@ -44,6 +48,23 @@ public class RefInfo {
 	
 	public boolean isSetNullDueInconsistency() {
 		return setNullDueInconsistency;
+	}
+	
+	public String getConditionField() {
+		return conditionField;
+	}
+	
+	public void setConditionField(String conditionField) {
+		this.conditionField = conditionField;
+	}
+	
+	public Integer getConditionValue() {
+		return conditionValue;
+	}
+	
+	
+	public void setConditionValue(Integer conditionValue) {
+		this.conditionValue = conditionValue;
 	}
 	
 	public void setSetNullDueInconsistency(boolean setNullDueInconsistency) {
@@ -120,6 +141,11 @@ public class RefInfo {
 	@JsonIgnore
 	public String getRefColumnAsClassAttName() {
 		return utilities.convertTableAttNameToClassAttName(this.getRefColumnName());
+	}
+	
+	@JsonIgnore
+	public String getRefConditionFieldAsClassAttName() {
+		return utilities.convertTableAttNameToClassAttName(this.getConditionField());
 	}
 	
 	public String getRefColumnType() {

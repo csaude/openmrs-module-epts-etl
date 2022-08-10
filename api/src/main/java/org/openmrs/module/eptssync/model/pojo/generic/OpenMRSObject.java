@@ -131,4 +131,7 @@ public interface OpenMRSObject extends SyncRecord{
 	 * @return true if this record has exactily the same values in all fields with the given object
 	 */
 	public abstract boolean hasExactilyTheSameDataWith(OpenMRSObject srcObj);
+	
+	public abstract Object getFieldValue(String fieldName);
+		
 }

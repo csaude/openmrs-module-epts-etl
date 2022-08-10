@@ -11,4 +11,6 @@ public interface Controller extends MonitoredOperation{
 	String getControllerId();
 	
 	void markAsFinished();
+	
+	void killSelfCreatedThreads();
 }

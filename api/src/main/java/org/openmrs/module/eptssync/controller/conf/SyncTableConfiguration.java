@@ -27,6 +27,8 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	private List<RefInfo> parents;
 	private List<RefInfo> childred;
 	
+	private List<RefInfo> conditionalParents;
+	
 	private Class<OpenMRSObject> syncRecordClass;
 
 	private SyncConfiguration relatedSyncTableInfoSource;
@@ -61,6 +63,14 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	public void setRemoveForbidden(boolean removeForbidden) {
 		this.removeForbidden = removeForbidden;
+	}
+	
+	public List<RefInfo> getConditionalParents() {
+		return conditionalParents;
+	}
+	
+	public void setConditionalParents(List<RefInfo> conditionalParents) {
+		this.conditionalParents = conditionalParents;
 	}
 	
 	@JsonIgnore
@@ -224,7 +234,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	private synchronized void loadChildren(Connection conn) throws SQLException {
-		logInfo("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
+		logDebug("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
 		
 		this.childred = new ArrayList<RefInfo>();  
 		
@@ -258,7 +268,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			logDebug("CHILDREN [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
 		}
 		
-		logInfo("LOADED CHILDREN FOR TABLE '" + getTableName() + "'");
+		logDebug("LOADED CHILDREN FOR TABLE '" + getTableName() + "'");
 	}
 	
 	public void logInfo(String msg) {
@@ -278,7 +288,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	private synchronized void loadParents(Connection conn) throws SQLException {
-		logInfo("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
+		logDebug("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
 		
 		List<RefInfo> auxRefInfo = new ArrayList<RefInfo>();  
 		
@@ -297,7 +307,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			
 			SyncTableConfiguration refTableConfiguration = SyncTableConfiguration.init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource);
 			
-			RefInfo ref = generateRefInfo(refColumName, RefInfo.PARENT_REF_TYPE, refTableConfiguration, conn);
+			RefInfo ref = generateRefInfo(refColumName, null, null, RefInfo.PARENT_REF_TYPE, refTableConfiguration, conn);
 			
 			if (utilities.existOnArray(auxRefInfo, ref)) {
 				logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' WAS ALREDY CONFIGURED! SKIPPING...");
@@ -335,12 +345,21 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		this.parents = auxRefInfo;
 		
-		logInfo("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
+		logDebug("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
 		
 	}
+	
+	private void loadConditionalParents(Connection conn) throws DBException {
+		if (!utilities.arrayHasElement(this.conditionalParents)) return;
+		
+		for (int i = 0; i < this.conditionalParents.size(); i++) {
+			RefInfo refInfo = this.conditionalParents.get(i);
 			
+			this.conditionalParents.set(i, generateRefInfo(refInfo.getRefColumnName(), refInfo.getConditionField(), refInfo.getConditionValue(), RefInfo.PARENT_REF_TYPE,  init(refInfo.getTableName(), this.getRelatedSynconfiguration()), conn));
+		}
+	}
 
-	private RefInfo generateRefInfo(String refColumName, String refType, SyncTableConfiguration refTableConfiguration, Connection conn) throws DBException {
+	private RefInfo generateRefInfo(String refColumName, String conditionField, Integer conditionValue, String refType, SyncTableConfiguration refTableConfiguration, Connection conn) throws DBException {
 		String refColumnType = AttDefinedElements.convertMySQLTypeTOJavaType(DBUtilities.determineColunType(this.getTableName(), refColumName, conn));
 		boolean ignorable = DBUtilities.isTableColumnAllowNull(this.tableName, refColumName, conn);
 		
@@ -352,6 +371,8 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		ref.setIgnorable(ignorable);
 		ref.setRefColumnType(refColumnType);
 		ref.setRelatedSyncTableConfiguration(this);		
+		ref.setConditionField(conditionField);
+		ref.setConditionValue(conditionValue);
 		
 		//Mark as metadata if is not specificaly mapped as parent in conf file
 		if (!ref.getRefTableConfiguration().isConfigured()) {
@@ -378,6 +399,17 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	@JsonIgnore
 	public Class<OpenMRSObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException{
 		if (syncRecordClass == null) this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application), getRelatedSynconfiguration());
+		
+		if (syncRecordClass == null) {
+			OpenConnection conn = application.openConnection();
+			
+			try {
+				generateRecordClass(application, true, conn);
+			}
+			finally {
+				conn.finalizeConnection();
+			}
+		}
 		
 		if (syncRecordClass == null) throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");
 		
@@ -554,6 +586,9 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			
 			loadParents(conn);
 			loadChildren(conn);
+			
+			loadConditionalParents(conn);
+			
 			this.fullLoaded = true;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -563,6 +598,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 	}
 	
+
 	public synchronized void fullLoad() {
 		OpenConnection conn = getRelatedSynconfiguration().getMainApp().openConnection();
 		

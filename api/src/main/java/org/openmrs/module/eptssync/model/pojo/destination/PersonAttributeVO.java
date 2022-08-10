@@ -194,7 +194,8 @@ public class PersonAttributeVO extends AbstractOpenMRSObject implements OpenMRSO
 		if (parentAttName.equals("creator")) return this.creator;		
 		if (parentAttName.equals("voidedBy")) return this.voidedBy;		
 		if (parentAttName.equals("personAttributeTypeId")) return this.personAttributeTypeId;		
-		if (parentAttName.equals("personId")) return this.personId;
+		if (parentAttName.equals("personId")) return this.personId;		
+		if (parentAttName.equals("value")) return Integer.parseInt(this.value);
 
 		throw new RuntimeException("No found parent for: " + parentAttName);	}
 
@@ -218,6 +219,10 @@ public class PersonAttributeVO extends AbstractOpenMRSObject implements OpenMRSO
 		}		
 		if (parentAttName.equals("personId")) {
 			this.personId = newParent.getObjectId();
+			return;
+		}		
+		if (parentAttName.equals("value")) {
+			this.value = newParent.getObjectId().toString();
 			return;
 		}
 

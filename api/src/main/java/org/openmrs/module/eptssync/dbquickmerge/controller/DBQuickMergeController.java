@@ -95,6 +95,7 @@ public class DBQuickMergeController extends SiteOperationController {
 	
 	private long getExtremeRecord(SyncTableConfiguration tableInfo, String function, Connection conn) throws DBException {
 		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(tableInfo, null, this);
+		searchParams.setSyncStartDate(getConfiguration().getObservationDate());
 		
 		SearchClauses<OpenMRSObject> searchClauses = searchParams.generateSearchClauses(conn);
 		

@@ -10,6 +10,13 @@ public class DBConnectionInfo {
 	public DBConnectionInfo(){
 	}
 	
+	public DBConnectionInfo(String dataBaseUserName, String dataBaseUserPassword, String connectionURI, String driveClassName){
+		this.dataBaseUserName = dataBaseUserName;
+		this.dataBaseUserPassword = dataBaseUserPassword;
+		this.connectionURI = connectionURI;
+		this.driveClassName = driveClassName;
+	}
+	
 	public String getDataBaseUserName() {
 		return dataBaseUserName;
 	}

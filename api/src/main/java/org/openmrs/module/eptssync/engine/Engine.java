@@ -45,6 +45,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	private boolean newJobRequested;
 	private Exception lastException;
 	
+		
 	public Engine(EngineMonitor monitr, RecordLimits limits) {
 		this.monitor = monitr;
 		
@@ -137,7 +138,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 				}
 			}
 		}
-		
 		else {
 			OpenConnection conn = openConnection();
 			
@@ -159,7 +159,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 				conn.finalizeConnection();
 			}
 			
-			if (!getLimits().isLoadedFromFile()) {
+			if (getLimits() != null && !getLimits().isLoadedFromFile()) {
 				RecordLimits saveLimits = retriveSavedLimits();
 				
 				if (saveLimits != null) {
@@ -167,89 +167,98 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 				}
 			}
 			
-			while(isRunning()) {
-				if (stopRequested()) {
-					logInfo("STOP REQUESTED... STOPPING NOW");
-					
-					if (this.hasChild()) {
-						for (Engine child : getChildren()) {
-							while(!child.isStopped() || !child.isFinished()) {
-								logInfo("WAITING FOR ALL CHILD ENGINES TO BE STOPPED");
-								TimeCountDown.sleep(15);
-							}
+			doRun();
+		}
+	}
+
+	private void doRun() {
+		OpenConnection conn;
+		
+		while(isRunning()) {
+			if (stopRequested()) {
+				logWarn("STOP REQUESTED... STOPPING NOW");
+				
+				if (this.hasChild()) {
+					for (Engine child : getChildren()) {
+						while(!child.isStopped() || !child.isFinished()) {
+							logWarn("WAITING FOR ALL CHILD ENGINES TO BE STOPPED");
+							TimeCountDown.sleep(15);
 						}
 					}
+				}
+				
+				this.changeStatusToStopped();
+			}
+			else {
+				logDebug("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
+				
+				conn = openConnection();
+				
+				boolean finished = false;
+				
+				try {
+					int processedRecords_ = performe(conn);
 					
-					this.changeStatusToStopped();
+					refreshProgressMeter(processedRecords_, conn);
+					reportProgress();
+					
+					conn.markAsSuccessifullyTerminected();
+				} catch (Exception e) {
+					e.printStackTrace();
+					
+					reportError(e);
+				}
+				finally {
+					conn.finalizeConnection();
+				}
+					
+				if (getLimits() != null && getLimits().canGoNext()) {
+					getLimits().moveNext(getQtyRecordsPerProcessing());
+					getLimits().save();
 				}
 				else {
-					logInfo("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
-					
-					conn = openConnection();
-					
-					boolean finished = false;
-					
-					try {
-						int processedRecords_ = performe(conn);
-						
-						refreshProgressMeter(processedRecords_, conn);
-						reportProgress();
-						
-						conn.markAsSuccessifullyTerminected();
-					} catch (Exception e) {
-						e.printStackTrace();
-						
-						reportError(e);
-					}
-					finally {
-						conn.finalizeConnection();
-					}
-						
-					if (getLimits().canGoNext()) {
-						getLimits().moveNext(getQtyRecordsPerProcessing());
-						getLimits().save();
+					if (getRelatedOperationController().mustRestartInTheEnd()) {
+						this.requestANewJob();
 					}
 					else {
-						if (getRelatedOperationController().mustRestartInTheEnd()) {
-							this.requestANewJob();
+						if (this.isMainEngine() && this.hasChild() && !finalCheckDone) {
+							//Do the final check before finishing
+							
+							while(this.hasChild() && !isAllChildFinished()) {
+								List<Engine> runningChild = getRunningChild();
+								
+								logDebug("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK! RUNNING CHILD ");
+								logDebug(runningChild.toString());
+								
+								TimeCountDown.sleep(15);
+							}
+							
+							finalCheckDone = true;
+							
+							//tryToPerformeSyncOnFailedRecords();
+							
+							if (mustDoFinalCheck()) {
+								this.resetLimits(null);
+								
+								doRun();
+							} else {
+								finished  = true;
+							}
 						}
 						else {
-							if (this.isMainEngine() && this.hasChild() && !finalCheckDone) {
-								//Do the final check before finishing
-								
-								while(this.hasChild() && !isAllChildFinished()) {
-									List<Engine> runningChild = getRunningChild();
-									
-									logInfo("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK! RUNNING CHILD " + runningChild);
-									
-									TimeCountDown.sleep(10);
-								}
-								
-								finalCheckDone = true;
-								
-								if (mustDoFinalCheck()) {
-									this.resetLimits(null);
-									
-									run();
-								} else {
-									finished  = true;
-								}
+							logDebug("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + " ON LIMITS [" + getLimits() + "]! FINISHING..." );
+							
+							if (isMainEngine()) {
+								finished  = true;
 							}
-							else {
-								logInfo("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + " ON LIMITS [" + getLimits() + "]! FINISHING..." );
-								
-								if (isMainEngine()) {
-									finished  = true;
-								}
-								else this.markAsFinished();
-								
-							}
+							else this.markAsFinished();
+							
 						}
 					}
-					
-					
-					if (finished) markAsFinished();
 				}
+				
+				
+				if (finished) markAsFinished();
 			}
 		}
 	}
@@ -286,12 +295,40 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		return this.getParent() == null;
 	}
 
+
+	/*
+	private void tryToPerformeSyncOnFailedRecords() {
+		logWarn("REPROCESSING FAILED RECORDS");
+		
+		OpenConnection conn = openConnection();
+		
+		try {
+			if (utilities.arrayHasElement(this.monitor.getRecordsToBeReprocessed())) {
+				performeSync(this.monitor.getRecordsToBeReprocessed(), conn);
+			}
+			
+			conn.markAsSuccessifullyTerminected();
+		} catch (Exception e) {
+			e.printStackTrace();
+			
+			reportError(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}*/
+	
 	private int performe(Connection conn) throws DBException {
-		logDebug("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
+		if (getLimits() != null) {
+			logDebug("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
+		}
+		else {
+			logDebug("SERCHING NEXT RECORDS");
+		}
 		
 		List<SyncRecord> records = searchNextRecords(conn);
 		
-		logInfo("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "' FINISHED. FOUND: '"+ utilities.arraySize(records) + "' RECORDS.");
+		logDebug("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "' FINISHED. FOUND: '"+ utilities.arraySize(records) + "' RECORDS.");
 		
 		if (utilities.arrayHasElement(records)) {
 			logDebug("INITIALIZING " +  getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '" + records.size() + "' RECORDS OF TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
@@ -327,22 +364,14 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	@Override
 	public boolean isNotInitialized() {
-		//logInfo("CHECK IF ENGINE "+this.getEngineId() + " IS INITIALIZED. CURR STATUS "+ this.operationStatus);
-		
 		if (utilities.arrayHasElement(this.children)) {
-			//logInfo("ENGINE STATUS "+this.getEngineId() + " CHILDREN STATUS: "+ this.operationStatus);
-			
 			for (Engine engine : this.children) {
 				if (engine.isNotInitialized()) {
-					//logInfo("CHILD ENGINE "+engine.getEngineId() + " STATUS " + engine.operationStatus);
-					
 					return true;
 				}
 			}
 		}
 
-		//logInfo("ENGINE STATUS "+this.getEngineId() + this.operationStatus);
-		
 		return this.operationStatus == MonitoredOperation.STATUS_NOT_INITIALIZED;
 	}
 	
@@ -419,14 +448,12 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	public void changeStatusToStopped() {
 		this.operationStatus = MonitoredOperation.STATUS_STOPPED;	
 		
-		SyncProgressMeter pm = this.getProgressMeter_();
-		
-		if (this.hasParent()) {
-			pm = this.parent.getProgressMeter_();
-		}
-		
-		if (pm != null) {
-			pm.changeStatusToStopped();
+		if (this.isMainEngine()) {
+			SyncProgressMeter pm = this.getProgressMeter_();
+			
+			if (pm != null) {
+				pm.changeStatusToStopped();
+			}
 		}
 	}
 	
@@ -435,7 +462,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		if (this.hasChild()) {
 			for (Engine child : getChildren()) {
 				while(!child.isFinished()) {
-					logInfo("WAITING FOR ALL CHILD ENGINES TO BE FINISHED");
+					logDebug("WAITING FOR ALL CHILD ENGINES TO BE FINISHED");
 					TimeCountDown.sleep(10);
 				}
 			}
@@ -467,7 +494,9 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 	
 	public void resetLimits(RecordLimits limits) {
-		limits.setEngine(this);
+		if (limits != null) {
+			limits.setEngine(this);
+		}
 		
 		getSearchParams().setLimits(limits);
 	}
@@ -513,7 +542,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			if (this.hasChild()) {
 				for (Engine engine : this.getChildren()) {
 					while(!engine.isStopped() && !engine.isFinished()) {
-						logInfo("AN ERROR OCURRED... WAITING FOR ALL CHILD STOP TO REPORT THE ERROR END STOP THE OPERATION");
+						logError("AN ERROR OCURRED... WAITING FOR ALL CHILD STOP TO REPORT THE ERROR END STOP THE OPERATION");
 						
 						TimeCountDown.sleep(5);
 					}
@@ -553,7 +582,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			
 			if (this.hasChild()) {
 				while(!isFinished()) {
-					logInfo("THE ENGINE "+ getEngineId() + " IS WAITING FOR ALL CHILDREN FINISH TO TERMINATE THE OPERATION");
+					logDebug("THE ENGINE "+ getEngineId() + " IS WAITING FOR ALL CHILDREN FINISH TO TERMINATE THE OPERATION");
 					TimeCountDown.sleep(15);
 				}
 			}
@@ -563,11 +592,11 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		
 		if (hasChild()) {
 			for (Engine child : this.children) {
-				ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), getMonitor().getController().getProcessController().getLogLevel(), child.getEngineId());
+				ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), getMonitor().getController().getProcessController().getLogLevel(), child.getEngineId(), this);
 			}
 		}
 			
-		ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), getMonitor().getController().getProcessController().getLogLevel(), getEngineId());	
+		ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), getMonitor().getController().getProcessController().getLogLevel(), getEngineId(), this);	
 	}
 	
 	public void markAsFinished(){
@@ -575,7 +604,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			if (hasChild()) {
 				for (Engine child : this.children) {
 					while(!child.isFinished()) {
-						logInfo("WATING FOR ALL CHILDREN BEEN TERMINATED!");
+						logDebug("WATING FOR ALL CHILDREN BEEN TERMINATED!");
 						TimeCountDown.sleep(15);
 					}
 				}
@@ -622,15 +651,15 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	protected RecordLimits retriveSavedLimits() {
 		if (!getLimits().hasThreadCode()) getLimits().setThreadCode(this.getEngineId());
 		
-		logInfo("Retrieving saved limits for " + getLimits());
+		logDebug("Retrieving saved limits for " + getLimits());
 		
 		RecordLimits savedLimits = RecordLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
 	
 		if (savedLimits != null) {
-			logInfo("Saved limits found [" + savedLimits + "]");
+			logDebug("Saved limits found [" + savedLimits + "]");
 		}
 		else {
-			logInfo("No saved limits found for [" + getLimits() + "]");
+			logDebug("No saved limits found for [" + getLimits() + "]");
 		}
 	
 		return savedLimits;

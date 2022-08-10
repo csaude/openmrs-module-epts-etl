@@ -8,6 +8,7 @@ import java.math.RoundingMode;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -532,11 +533,7 @@ public class FuncoesGenericas {
 	
 	}
 		*/
-	public static void main(String[] args){
-		System.out.println(getAlphabeticalCharAt(2));
-		System.out.println(getPosAlphabeticalChar('a'));
-	}
-	
+
 	/**
 	 * Concatena duas condicoes sql
 	 * @param condition
@@ -594,6 +591,26 @@ public class FuncoesGenericas {
 		if (number == 0) return "";
 		else return ""+number;
 	}
+	
+	
+	/** 
+	 * Permite formatar um numero para a visualizacao
+	 * @return
+	 */
+	public static String generateCommaSeparetedNumber(double number){
+		if (number == 0) return "";
+		
+		 BigDecimal valueToFormat = new BigDecimal(number);
+		 
+        NumberFormat franceFormat = NumberFormat.getInstance();
+        
+        return franceFormat.format(valueToFormat);
+   }
+	
+	public static void main(String[] args){
+		System.err.println(generateCommaSeparetedNumber(8567));
+	}
+	
 	
 	/** 
 	 * Permite formatar um numero para a visualizacao

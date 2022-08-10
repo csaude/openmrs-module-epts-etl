@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.tmp_openmrs_24_julho;
+package org.openmrs.module.eptssync.model.pojo.generic_src;
 
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  

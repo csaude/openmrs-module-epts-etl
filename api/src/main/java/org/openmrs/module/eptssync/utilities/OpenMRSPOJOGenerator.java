@@ -251,6 +251,17 @@ public class OpenMRSPOJOGenerator {
 			}
 		}
 		
+		if (utilities.arrayHasElement(syncTableInfo.getConditionalParents())) {
+			for(RefInfo refInfo : syncTableInfo.getConditionalParents()) {
+				if (refInfo.isNumericRefColumn()) {
+					methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName() + "\")) return this."+refInfo.getRefColumnAsClassAttName() + ";";
+				}
+				else {
+					methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName() + "\")) return Integer.parseInt(this."+refInfo.getRefColumnAsClassAttName() + ");";
+				}
+			}
+		}
+		
 		methodFromSuperClass += "\n\n";
 		
 		methodFromSuperClass += "		throw new RuntimeException(\"No found parent for: \" + parentAttName);";
@@ -267,6 +278,18 @@ public class OpenMRSPOJOGenerator {
 			}
 			else {
 				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."+refInfo.getRefColumnAsClassAttName() + " = \"\" + newParent.getObjectId();\n			return;\n		}";
+			}
+		}
+		
+		
+		if (utilities.arrayHasElement(syncTableInfo.getConditionalParents())) {
+			for(RefInfo refInfo : syncTableInfo.getConditionalParents()) {
+				if (refInfo.isNumericRefColumn()) {
+					methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."+refInfo.getRefColumnAsClassAttName() + " = newParent.getObjectId();\n			return;\n		}";
+				}
+				else {
+					methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."+refInfo.getRefColumnAsClassAttName() + " = newParent.getObjectId().toString();\n			return;\n		}";
+				}
 			}
 		}
 		

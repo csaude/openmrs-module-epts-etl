@@ -39,7 +39,7 @@ public class DBOperation {
 					
 					retryDueDeadLock();
 				}else {
-					throw new DBException(e);
+					throw e;
 				}
 			}
 		}else {

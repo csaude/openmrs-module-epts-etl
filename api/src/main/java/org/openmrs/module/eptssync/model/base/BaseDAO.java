@@ -357,7 +357,7 @@ public abstract class BaseDAO{
 	 * @throws DBException 
 	 */
 	public static void insert(BaseVO vo, String sql, Object[] params, Connection conn) throws DBException{
-	    logger.trace("INSERTING RECORD ON ["+vo.generateTableName() + "]");
+	    //logger.trace("INSERTING RECORD ON ["+vo.generateTableName() + "]");
 				
 		executeQuery(sql, params, conn);
 	}

@@ -177,7 +177,7 @@ public class ConfVM {
 			reloadedSyncConfiguration.getMainDBConnInfo().setDataBaseUserPassword(properties.getProperty("connection.password"));
 		}
 		
-		reloadedSyncConfiguration.setRelatedController(this.syncConfiguration.getRelatedController() == null ? new ProcessController(reloadedSyncConfiguration) : this.syncConfiguration.getRelatedController());
+		reloadedSyncConfiguration.setRelatedController(this.syncConfiguration.getRelatedController() == null ? new ProcessController(null, reloadedSyncConfiguration) : this.syncConfiguration.getRelatedController());
 		reloadedSyncConfiguration.getRelatedController().setConfiguration(reloadedSyncConfiguration);
 		reloadedSyncConfiguration.loadAllTables();
 		

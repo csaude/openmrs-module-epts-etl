@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 /**
@@ -26,40 +28,26 @@ public class DBException extends SQLException{
 	public static final int ORACLE_UNIQUE_CONSTRAINTS_VIOLATED_COD=1;
 	public static final int ORACLE_NAME_IS_ALREADY_USED_BY_AN_EXISTING_OBJECT=17081;
 	public static final int ORACLE_TABLE_OR_VIEW_DOES_NOT_EXIST=942;
+	public static final int ORACLE_INTEGRITY_CONSTRAINT_VIOLATION=2291;
 	
 	public static final int MYSQL_UNIQUE_CONSTRAINTS_VIOLATED_COD=1062;
-	
+	public static final int MYSQL_INTEGRITY_CONSTRAINT_VIOLATION=1452;
 	
 	public DBException(String errorMessage, SQLException e){
 		super(errorMessage, e);
+	
+		this.SQLState = e.getSQLState();
 		
-		if (e instanceof SQLException){
-			
-			SQLState = e.getSQLState();
-            SQLCodeError = e.getErrorCode();
-              
-            dataBaseName = DBUtilities.determineDataBaseFromException(e);
-            
-            //printStackTrace();
-            
-            //System.out.println("SQLCodeError "+SQLCodeError);
-            //System.out.println(getMessage()); 
-            //System.out.println(getLocalizedMessage());
-            //System.err.println(e);
-            //System.out.println(dataBaseName);
-       }
-	}
-
+        this.SQLCodeError = e.getErrorCode();
+          
+        this.dataBaseName = DBUtilities.determineDataBaseFromException(e);
+        
+        if (this.SQLCodeError == 0) throw new ForbiddenOperationException("The SQLCodeError could not be zero", e);
+   }
+	
 	public DBException(SQLException e){
 		this(e.getMessage(), e);
 	}
-
-	public DBException(String string)
-	{
-		super(string);
-	}
-	
-	
 	
 	public int getSQLCodeError() {
 		return SQLCodeError;
@@ -88,17 +76,39 @@ public class DBException extends SQLException{
 	public void setDataBaseName(String dataBaseName) {
 		this.dataBaseName = dataBaseName;
 	}
+
+	public static void main(String[] args) throws DBException {
+		String dataBaseUserName = "root";
+		String dataBaseUserPassword = "#eIPDB123#";
+		String connectionURI = "jdbc:mysql://10.10.2.2:53307/test?autoReconnect=true&useSSL=false";
+		String driveClassName = "com.mysql.jdbc.Driver";
+			
+		DBConnectionInfo dbConnInfo = new DBConnectionInfo(dataBaseUserName, dataBaseUserPassword, connectionURI, driveClassName);
+		
+		DBConnectionService service = DBConnectionService.init(dbConnInfo );
+		
+		OpenConnection conn = service.openConnection();
+		
+		try {
+			BaseDAO.insert(null, "INSERT INTO header (date_created, uuid) VALUES(now(), '123') ", null, conn);
+			BaseDAO.insert(null, "INSERT INTO header (date_created, uuid) VALUES(now(), '123') ", null, conn);
+		}
+		catch (DBException e) {
+			System.out.println(e.getLocalizedMessage());
+		}
+	}
+
 	
 	/**
 	 * Determina se o erro foi causado pela tentativa de duplicação de dados num campo chave
-	 * ATENCAO: Este método é limitado, apenas retorna resultados se a base de dados for ORACLE
+	 * ATENCAO: Este método é limitado, apenas retorna resultados se a base de dados for ORACLE ou MYSQL
 	 * 
-	 * @author JPBOANE. 17/12/2012
+	 * @author JPBOANE. 17/12/2012, Updated 10/08/2022
 	 * @return
 	 * @throws DBException 
 	 */
 	public boolean isDuplicatePrimaryKeyException() throws DBException{
-		if (this.dataBaseName == null || this.dataBaseName.isEmpty()) throw new DBException("Impossivel determinar o tipo de erro pois o nome da base de dados nao foi definido");
+		if (this.dataBaseName == null || this.dataBaseName.isEmpty()) throw new ForbiddenOperationException("Impossivel determinar o tipo de erro pois o nome da base de dados nao foi definido");
 		
 		if (this.dataBaseName.equals(DBUtilities.ORACLE_DATABASE)){
 			return this.SQLCodeError == ORACLE_UNIQUE_CONSTRAINTS_VIOLATED_COD;
@@ -106,6 +116,25 @@ public class DBException extends SQLException{
 		
 		if (this.dataBaseName.equals(DBUtilities.MYSQL_DATABASE)){
 			return this.SQLCodeError == MYSQL_UNIQUE_CONSTRAINTS_VIOLATED_COD;
+		}
+		
+		throw new ForbiddenOperationException("Base de dados nao suportada!");
+	}
+	
+	/**
+	 * @author JPBOANE. 10/08/2022
+	 * @return
+	 * @throws DBException 
+	 */
+	public boolean isIntegrityConstraintViolationException() throws DBException{
+		if (this.dataBaseName == null || this.dataBaseName.isEmpty()) throw new ForbiddenOperationException("Impossivel determinar o tipo de erro pois o nome da base de dados nao foi definido");
+		
+		if (this.dataBaseName.equals(DBUtilities.ORACLE_DATABASE)){
+			return this.SQLCodeError == ORACLE_INTEGRITY_CONSTRAINT_VIOLATION;
+		}
+		
+		if (this.dataBaseName.equals(DBUtilities.MYSQL_DATABASE)){
+			return this.SQLCodeError == MYSQL_INTEGRITY_CONSTRAINT_VIOLATION;
 		}
 		 //SQL Error [1062] [23000]: Duplicate entry '1' for key 'tmp_unq'
 		 //SQL Error [1062] [23000]: Duplicate entry '1' for key 'PRIMARY'
@@ -124,7 +153,7 @@ public class DBException extends SQLException{
 	 * @throws DBException 
 	 */
 	public boolean isAlredyExistTableException() throws DBException{
-		if (this.dataBaseName == null || this.dataBaseName.isEmpty()) throw new DBException("Impossivel determinar o tipo de erro pois o nome da base de dados nao foi definido");
+		if (this.dataBaseName == null || this.dataBaseName.isEmpty()) throw new ForbiddenOperationException("Impossivel determinar o tipo de erro pois o nome da base de dados nao foi definido");
 		
 		if (this.dataBaseName.equals(DBUtilities.ORACLE_DATABASE)){
 			return this.SQLCodeError == ORACLE_NAME_IS_ALREADY_USED_BY_AN_EXISTING_OBJECT;
@@ -143,7 +172,7 @@ public class DBException extends SQLException{
 	 * @throws DBException 
 	 */
 	public boolean isTableOrViewDoesNotExistException() throws DBException{
-		if (this.dataBaseName == null || this.dataBaseName.isEmpty()) throw new DBException("Impossivel determinar o tipo de erro pois o nome da base de dados nao foi definido");
+		if (this.dataBaseName == null || this.dataBaseName.isEmpty()) throw new ForbiddenOperationException("Impossivel determinar o tipo de erro pois o nome da base de dados nao foi definido");
 		
 		if (this.dataBaseName.equals(DBUtilities.ORACLE_DATABASE)){
 			return this.SQLCodeError == ORACLE_TABLE_OR_VIEW_DOES_NOT_EXIST;

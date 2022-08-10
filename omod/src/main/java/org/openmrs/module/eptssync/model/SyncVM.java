@@ -40,7 +40,7 @@ public class SyncVM {
 			throw new ForbiddenOperationException("Nenhum dicheiro de configuracao foi encontrado!");
 		}
 		
-		this.avaliableConfigurations = Main.loadSyncConfig(confDir.listFiles());
+		this.avaliableConfigurations = null;//Main.loadSyncConfig(confDir.listFiles());
 		
 		for (SyncConfiguration conf : this.avaliableConfigurations) {
 			if (conf.isAutomaticStart()) {

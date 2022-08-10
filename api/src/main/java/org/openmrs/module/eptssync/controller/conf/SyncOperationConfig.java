@@ -594,9 +594,7 @@ public class SyncOperationConfig {
 	}
 		
 	public static List<SyncOperationType>  getSupportedOperationsInDBQuickMergeProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DATABASE_PREPARATION,
-										  SyncOperationType.POJO_GENERATION,
-										  SyncOperationType.DB_QUICK_MERGE_EXISTING_RECORDS,
+		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE_EXISTING_RECORDS,
 										  SyncOperationType.DB_QUICK_MERGE_MISSING_RECORDS};
 		
 		return utilities.parseArrayToList(supported);

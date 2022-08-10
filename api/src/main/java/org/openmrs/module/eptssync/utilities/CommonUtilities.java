@@ -386,6 +386,10 @@ public class  CommonUtilities implements Serializable{
 		return FuncoesGenericas.concatCondition(condition, otherCondition, connector);
 	}
 	
+	public String generateCommaSeparetedNumber(double number){
+		return FuncoesGenericas.generateCommaSeparetedNumber(number);
+	}
+	
 	/**
 	
 	/**
