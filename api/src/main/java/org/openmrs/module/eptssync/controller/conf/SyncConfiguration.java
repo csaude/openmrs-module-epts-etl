@@ -198,8 +198,13 @@ public class SyncConfiguration {
 	}
 
 	@JsonIgnore
-	public boolean isDBQuickMergeProcess() {
-		return processType.isDBQuickMerge();
+	public boolean isQuickMergeUniformeDBProcess() {
+		return processType.isQuickMergeUniformeDB();
+	}
+	
+	@JsonIgnore
+	public boolean isQuickMergeNonUniformeDBProcess() {
+		return processType.isQuickMergeNonUniformeDB();
 	}
 	
 	@JsonIgnore
@@ -220,6 +225,11 @@ public class SyncConfiguration {
 	@JsonIgnore
 	public boolean isDataReconciliationProcess() {
 		return processType.isDataReconciliation();
+	}
+	
+	@JsonIgnore
+	public boolean isDBInconsistencyCheckProcess() {
+		return processType.isdDBInconsistencyCheck();
 	}
 	
 	@JsonIgnore
@@ -275,7 +285,7 @@ public class SyncConfiguration {
 	}
 	
 	public String getSyncStageSchema() {
-		if (isSourceSyncProcess()) {
+		if (isSupposedToRunInOrigin()) {
 			return this.originAppLocationCode + "_sync_stage_area";
 		}
 		if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDBQuickCopyProcess() || isDataBaseMergeFromSourceDBProcess()) {
@@ -546,8 +556,16 @@ public class SyncConfiguration {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDataBasesMergeFromSourceDBProcess();
 		}
 		else
-		if (isDBQuickMergeProcess()) {
-			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickMergeProcess();
+		if (isQuickMergeUniformeDBProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInQuickMergeUniformeDBProcess();
+		}
+		else
+		if (isQuickMergeNonUniformeDBProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInQuickMergeNonUniformeDBProcess();
+		}
+		else
+		if (isDBInconsistencyCheckProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBInconsistencyCheckProcess();
 		}
 		
 		if (supportedOperations != null) {
@@ -729,7 +747,7 @@ public class SyncConfiguration {
 	}
 	
 	public boolean isSupposedToHaveOriginAppCode() {
-		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isDBQuickMergeProcess();
+		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isQuickMergeUniformeDBProcess() || this.isQuickMergeNonUniformeDBProcess() || this.isDBInconsistencyCheckProcess();
 	}
 	
 	public boolean isSupposedToRunInDestination() {
@@ -738,13 +756,14 @@ public class SyncConfiguration {
 						this.isDataReconciliationProcess() ||
 							this.isDBQuickCopyProcess() ||
 							this.isDataBaseMergeFromSourceDBProcess() ||
-								this.isDBQuickMergeProcess();
+								this.isQuickMergeUniformeDBProcess();
 	}
 	
 	public boolean isSupposedToRunInOrigin() {
 		return this.isSourceSyncProcess() || 
 					this.isDBReSyncProcess() || 
-						this.isDBQuickExportProcess();
+						this.isDBQuickExportProcess() ||
+							this.isDBInconsistencyCheckProcess();
 	}
 	
 	

@@ -42,7 +42,9 @@ public class DBException extends SQLException{
           
         this.dataBaseName = DBUtilities.determineDataBaseFromException(e);
         
-        if (this.SQLCodeError == 0) throw new ForbiddenOperationException("The SQLCodeError could not be zero", e);
+        if (this.SQLCodeError == 0) {
+        	throw new ForbiddenOperationException("The SQLCodeError could not be zero", e);
+        }
    }
 	
 	public DBException(SQLException e){

@@ -45,7 +45,8 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	private boolean newJobRequested;
 	private Exception lastException;
 	
-		
+	protected MigrationFinalCheckStatus finalCheckStatus;
+	
 	public Engine(EngineMonitor monitr, RecordLimits limits) {
 		this.monitor = monitr;
 		
@@ -57,6 +58,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		conn.finalizeConnection();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;	
+		this.finalCheckStatus = MigrationFinalCheckStatus.NOT_INITIALIZED;
 	}
 	
 	public AppInfo getDefaultApp() {
@@ -121,9 +123,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	
 	public void setParent(Engine parent) {
 		this.parent = parent;
-	}
-	
-	boolean finalCheckDone;
+	}	
 	
 	@Override
 	public void run() {
@@ -139,25 +139,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 			}
 		}
 		else {
-			OpenConnection conn = openConnection();
-			
-			try {
-				
-				if (!this.hasParent()) {
-					monitor.doInitProgressMeterRefresh(this, conn);
-				}
-				
-				conn.markAsSuccessifullyTerminected();
-			} catch (DBException e) {
-				reportError(e);
-				
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
-			finally {
-				conn.finalizeConnection();
-			}
 			
 			if (getLimits() != null && !getLimits().isLoadedFromFile()) {
 				RecordLimits saveLimits = retriveSavedLimits();
@@ -190,8 +171,12 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 				this.changeStatusToStopped();
 			}
 			else {
-				logDebug("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
+				if (finalCheckStatus.onGoing()) {
+					logInfo("PERFORMING FINAL CHECK...");
+				}
 				
+				logDebug("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
+					
 				conn = openConnection();
 				
 				boolean finished = false;
@@ -221,7 +206,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 						this.requestANewJob();
 					}
 					else {
-						if (this.isMainEngine() && this.hasChild() && !finalCheckDone) {
+						if (this.isMainEngine() && this.hasChild() && finalCheckStatus.notInitialized()) {
 							//Do the final check before finishing
 							
 							while(this.hasChild() && !isAllChildFinished()) {
@@ -233,26 +218,31 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 								TimeCountDown.sleep(15);
 							}
 							
-							finalCheckDone = true;
-							
-							//tryToPerformeSyncOnFailedRecords();
-							
 							if (mustDoFinalCheck()) {
+								this.finalCheckStatus = MigrationFinalCheckStatus.ONGOING;
+								
 								this.resetLimits(null);
+								
+								logInfo("INITIALIZING FINAL CHECK...");
 								
 								doRun();
 							} else {
 								finished  = true;
+								
+								this.finalCheckStatus = MigrationFinalCheckStatus.IGNORED;
 							}
 						}
 						else {
 							logDebug("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + " ON LIMITS [" + getLimits() + "]! FINISHING..." );
 							
+							if (this.finalCheckStatus.onGoing()) {
+								this.finalCheckStatus = MigrationFinalCheckStatus.DONE;
+							}
+							
 							if (isMainEngine()) {
 								finished  = true;
 							}
 							else this.markAsFinished();
-							
 						}
 					}
 				}
@@ -291,32 +281,9 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 		return lastException;
 	}
 	
-	protected  boolean isMainEngine() {
+	public  boolean isMainEngine() {
 		return this.getParent() == null;
 	}
-
-
-	/*
-	private void tryToPerformeSyncOnFailedRecords() {
-		logWarn("REPROCESSING FAILED RECORDS");
-		
-		OpenConnection conn = openConnection();
-		
-		try {
-			if (utilities.arrayHasElement(this.monitor.getRecordsToBeReprocessed())) {
-				performeSync(this.monitor.getRecordsToBeReprocessed(), conn);
-			}
-			
-			conn.markAsSuccessifullyTerminected();
-		} catch (Exception e) {
-			e.printStackTrace();
-			
-			reportError(e);
-		}
-		finally {
-			conn.finalizeConnection();
-		}
-	}*/
 	
 	private int performe(Connection conn) throws DBException {
 		if (getLimits() != null) {

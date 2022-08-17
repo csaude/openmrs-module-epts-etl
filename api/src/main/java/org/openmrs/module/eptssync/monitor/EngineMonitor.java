@@ -17,6 +17,7 @@ import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
  * This class monitor all {@link Engine}s of an {@link OperationController}
@@ -50,6 +51,10 @@ public class EngineMonitor implements MonitoredOperation{
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
+	}
+	
+	public List<Engine> getOwnEngines() {
+		return ownEngines;
 	}
 	
 	/*public synchronized void addToRecordsToBeReprocessed(SyncRecord record) {
@@ -251,6 +256,40 @@ public class EngineMonitor implements MonitoredOperation{
 			if (mainEngine.isNotInitialized()) {
 				this.ownEngines.add(mainEngine);
 			}
+			
+			this.getProgressMeter().changeStatusToRunning();
+			
+			OpenConnection conn = controller.openConnection();
+			
+			try {
+				logInfo("CALCULATING STATISTICS...");
+				
+				int remaining = getProgressMeter().getRemain();
+				int total = getProgressMeter().getTotal();
+				int processed = total - remaining;
+			
+				if (total == 0) {
+					total = mainEngine.getSearchParams().countAllRecords(conn);
+					remaining = mainEngine.getSearchParams().countNotProcessedRecords(conn);
+					processed = total - remaining;
+				}
+
+				this.getProgressMeter().refresh(this.getProgressMeter().getStatusMsg(), total, processed);
+				
+				this.getTableOperationProgressInfo().save(conn);
+				
+				conn.markAsSuccessifullyTerminected();
+			} catch (DBException e) {
+				getRelatedOperationController().requestStopDueError(this, e);
+				
+				e.printStackTrace();
+				
+				throw new RuntimeException(e);
+			}
+			finally {
+				conn.finalizeConnection();
+			}
+
 			
 			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(mainEngine.getEngineId());
 			executor.execute(mainEngine);
@@ -560,24 +599,6 @@ public class EngineMonitor implements MonitoredOperation{
 		
 		logDebug("PROGRESS METER REFRESHED");
 	}
-	
-	public synchronized void doInitProgressMeterRefresh(Engine engine, Connection conn) throws DBException  {
-		int remaining = getProgressMeter().getRemain();
-		int total = getProgressMeter().getTotal();
-		int processed = total - remaining;
-	
-		if (total == 0) {
-			remaining = engine.getSearchParams().countNotProcessedRecords(conn);
-			total = engine.getSearchParams().countAllRecords(conn);
-			processed = total - remaining;
-		}
-
-		this.getProgressMeter().refresh(this.getProgressMeter().getStatusMsg(), total, processed);
-		
-		this.getProgressMeter().changeStatusToRunning();
-		
-	}
-	
 	
 	public void reportProgress() {
 		SyncProgressMeter globalProgressMeter = this.getProgressMeter();

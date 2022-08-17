@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.dbquickmerge.engine;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
@@ -8,6 +9,7 @@ import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeControlle
 import org.openmrs.module.eptssync.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.eptssync.dbquickmerge.model.MergingRecord;
 import org.openmrs.module.eptssync.engine.Engine;
+import org.openmrs.module.eptssync.engine.MigrationFinalCheckStatus;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ConflictWithRecordNotYetAvaliableException;
@@ -29,17 +31,41 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 public class DBQuickMergeEngine extends Engine {
 	private AppInfo mainApp;
 	private AppInfo remoteApp;
-
+	private List<SyncRecord> toBeReprocessed;
+	
 	public DBQuickMergeEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	
 		this.mainApp = getRelatedOperationController().getConfiguration().find(AppInfo.init("main"));
 		this.remoteApp = getRelatedOperationController().getConfiguration().find(AppInfo.init("remote"));
+		
+		this.toBeReprocessed = new ArrayList<SyncRecord>();
+	}
+	
+	private synchronized void addToRecordsToBeReprocessed(SyncRecord record) {
+		if (this.finalCheckStatus.notInitialized()) {
+			this.toBeReprocessed.add(record);
+		}
 	}
 	
 	@Override	
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
-		return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		List<SyncRecord> records = new ArrayList<SyncRecord>();
+		
+		if (this.finalCheckStatus.notInitialized()) {
+			records =  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		}
+		else
+		if (this.isMainEngine() && this.finalCheckStatus.onGoing()) {
+			
+			for (Engine engine: monitor.getOwnEngines()) {
+				records.addAll(((DBQuickMergeEngine)engine).toBeReprocessed);
+			}
+			
+			this.finalCheckStatus = MigrationFinalCheckStatus.DONE;
+		}
+		
+		return records;
 	}
 	
 	@Override
@@ -64,10 +90,14 @@ public class DBQuickMergeEngine extends Engine {
 		
 		OpenConnection srcConn = getRelatedOperationController().openSrcConnection();
 		
+		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
+		
 		try {
 			for (SyncRecord record: syncRecords) {
 				String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 			
+				
+				boolean wentWrong = true;
 				
 				OpenMRSObject rec = (OpenMRSObject)record;
 				
@@ -75,34 +105,57 @@ public class DBQuickMergeEngine extends Engine {
 				
 				try {
 					process(data, startingStrLog, 0, srcConn, conn);
+				
+					wentWrong = false;
 				}
 				catch (MissingParentException e) {
-					logWarn(data.getRecord() + " - " + e.getMessage() + " The record will be skipped");
+					logWarn(startingStrLog + "." + data.getRecord() + " - " + e.getMessage() + " The record will be skipped");
 					
 					InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(), rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
 					
 					inconsistenceInfo.save(getSyncTableConfiguration(), conn);
+					
+					recordsToIgnoreOnStatistics.add(data.getRecord());
 				}
 				catch (ConflictWithRecordNotYetAvaliableException e) {
 					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
+					
+					addToRecordsToBeReprocessed(record);
 				}
 				catch (DBException e) {
 					
 					if (e.isDuplicatePrimaryKeyException()) {
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
+						
+						addToRecordsToBeReprocessed(record);
 					}
 					else
 					if (e.isIntegrityConstraintViolationException()) {
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
+						
+						addToRecordsToBeReprocessed(record);
 					}
 					else {
-						logWarn("Error Code: " + e.getErrorCode());
+						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
 						
 						throw e;
 					}
 				}
+				catch (Exception e) {
+					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
+				}
+				finally {
+					if (wentWrong && this.finalCheckStatus.notInitialized()) {
+						recordsToIgnoreOnStatistics.add(record);
+					}
+				}
 				
 				i++;
+			}
+			
+			if (utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
+				logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
+				syncRecords.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
 			logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");

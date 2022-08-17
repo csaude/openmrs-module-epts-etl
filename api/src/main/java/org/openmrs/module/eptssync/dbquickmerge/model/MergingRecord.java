@@ -15,7 +15,6 @@ import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 
 public class MergingRecord {
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
@@ -113,7 +112,7 @@ public class MergingRecord {
 			if (parentIdInOrigin != null) {
 				OpenMRSObject parentInOrigin = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
 				
-				if (parentInOrigin == null) throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), mergingRecord.srcApp.getPojoPackageName(), refInfo);
+				if (parentInOrigin == null) throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
 				
 				OpenMRSObject parentInDest = OpenMRSObjectDAO.getByUuid(refInfo.getRefObjectClass(mergingRecord.destApp), parentInOrigin.getUuid(), destConn);
 		
@@ -150,7 +149,7 @@ public class MergingRecord {
 			if (parentId != null) {
 				OpenMRSObject parent = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.destApp), parentId, destConn);
 				
-				if (parent == null) throw new MissingParentException(parentId, refInfo.getTableName(), DBUtilities.determineSchemaName(srcConn), refInfo);
+				if (parent == null) throw new MissingParentException(parentId, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
 			}
 		}
 	}
@@ -179,7 +178,7 @@ public class MergingRecord {
 			if (parentIdInOrigin != null) {
 				OpenMRSObject parentInOrigin = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
 				
-				if (parentInOrigin == null) throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), DBUtilities.determineSchemaName(srcConn), refInfo);
+				if (parentInOrigin == null) throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
 				
 				OpenMRSObject parentInDest = OpenMRSObjectDAO.getByUuid(refInfo.getRefObjectClass(mergingRecord.destApp), parentInOrigin.getUuid(), destConn);
 		

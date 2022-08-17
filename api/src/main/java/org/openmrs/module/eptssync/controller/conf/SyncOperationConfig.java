@@ -488,8 +488,16 @@ public class SyncOperationConfig {
 			if (!this.canBeRunInDataBasesMergeFromSourceDBProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in data reconciliation process\n";
 		}
 		else
-		if (this.getRelatedSyncConfig().isDBQuickMergeProcess()) {
-			if (!this.canBeRunInDBQuickMergeProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in db quick merge process\n";
+		if (this.getRelatedSyncConfig().isQuickMergeUniformeDBProcess()) {
+			if (!this.canBeRunInQuickMergeUniformeDBProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in db quick merge process\n";
+		}
+		else
+		if (this.getRelatedSyncConfig().isQuickMergeNonUniformeDBProcess()) {
+			if (!this.canBeRunInQuickMergeNonUniformeDBProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in db quick merge process\n";
+		}
+		else
+		if (this.getRelatedSyncConfig().isDBInconsistencyCheckProcess()) {
+			if (!this.canBeRunInDBInconsistencyCheckProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in db inconsistency check process\n";
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
@@ -516,6 +524,22 @@ public class SyncOperationConfig {
 		
 		return utilities.parseArrayToList(supported);
 	}
+	
+	@JsonIgnore
+	public boolean canBeRunInDBInconsistencyCheckProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDBInconsistencyCheckProcess(), this.operationType);
+	}
+	
+	public static List<SyncOperationType> getSupportedOperationsInDBInconsistencyCheckProcess() {
+		SyncOperationType[] supported = {	SyncOperationType.INCONSISTENCY_SOLVER,
+				  							SyncOperationType.DATABASE_PREPARATION,
+				  							SyncOperationType.POJO_GENERATION};
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
+	
+	
 	
 	@JsonIgnore
 	public boolean canBeRunInReSyncProcess() {
@@ -589,16 +613,31 @@ public class SyncOperationConfig {
 	
 	
 	@JsonIgnore
-	public boolean canBeRunInDBQuickMergeProcess() {
-		return utilities.existOnArray(getSupportedOperationsInDBQuickMergeProcess(), this.operationType);
+	public boolean canBeRunInQuickMergeUniformeDBProcess() {
+		return utilities.existOnArray(getSupportedOperationsInQuickMergeUniformeDBProcess(), this.operationType);
 	}
 		
-	public static List<SyncOperationType>  getSupportedOperationsInDBQuickMergeProcess() {
+	public static List<SyncOperationType>  getSupportedOperationsInQuickMergeUniformeDBProcess() {
 		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE_EXISTING_RECORDS,
 										  SyncOperationType.DB_QUICK_MERGE_MISSING_RECORDS};
 		
 		return utilities.parseArrayToList(supported);
 	}	
+	
+	@JsonIgnore
+	public boolean canBeRunInQuickMergeNonUniformeDBProcess() {
+		return utilities.existOnArray(getSupportedOperationsInQuickMergeNonUniformeDBProcess(), this.operationType);
+	}
+		
+	public static List<SyncOperationType>  getSupportedOperationsInQuickMergeNonUniformeDBProcess() {
+		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE_EXISTING_RECORDS,
+										  SyncOperationType.DB_QUICK_MERGE_MISSING_RECORDS,
+										  SyncOperationType.DATABASE_PREPARATION,
+										  SyncOperationType.POJO_GENERATION};
+		
+		return utilities.parseArrayToList(supported);
+	}	
+	
 	
 	
 	@JsonIgnore

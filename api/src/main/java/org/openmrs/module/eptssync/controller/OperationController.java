@@ -277,53 +277,58 @@ public abstract class OperationController implements Controller{
 	
 	@Override
 	public void run() {
-		timer = new TimeController();
-		timer.start();
-		
-		onStart();
-	
-		if (stopRequested()) {
-			logWarn("THE OPERATION " + getControllerId()  + " COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
+		try {
+			timer = new TimeController();
+			timer.start();
 			
-			changeStatusToStopped();
+			onStart();
+
+			if (stopRequested()) {
+				logWarn("THE OPERATION " + getControllerId()  + " COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
+				
+				changeStatusToStopped();
+				
+				if (hasChild()) {
+					for (OperationController child : getChildren()) {
+						child.requestStop();
+					}
+				}
+			}
+			else
+			if (operationIsAlreadyFinished()) {
+				logWarn("THE OPERATION " + getControllerId() + " WAS ALREADY FINISHED!");
+				
+				changeStatusToFinished();
+			}
+			else
+			if (isParallelModeProcessing()) {
+				runInParallelMode();
+			}
+			else {
+				runInSequencialMode();
+			}
 			
-			if (hasChild()) {
-				for (OperationController child : getChildren()) {
-					child.requestStop();
+			boolean running = true;
+			
+			while(running) {
+				TimeCountDown.sleep(getWaitTimeToCheckStatus());
+				
+				if (this.isFinished()) {
+					this.markAsFinished();
+					this.onFinish();
+				
+					running = false;
+				}
+				else 
+				if (this.isStopped()) {
+					running = false;
+					
+					this.onStop();
 				}
 			}
 		}
-		else
-		if (operationIsAlreadyFinished()) {
-			logWarn("THE OPERATION " + getControllerId() + " WAS ALREADY FINISHED!");
-			
-			changeStatusToFinished();
-		}
-		else
-		if (isParallelModeProcessing()) {
-			runInParallelMode();
-		}
-		else {
-			runInSequencialMode();
-		}
-		
-		boolean running = true;
-		
-		while(running) {
-			TimeCountDown.sleep(getWaitTimeToCheckStatus());
-			
-			if (this.isFinished()) {
-				this.markAsFinished();
-				this.onFinish();
-			
-				running = false;
-			}
-			else 
-			if (this.isStopped()) {
-				running = false;
-				
-				this.onStop();
-			}
+		catch (Exception e) {
+			this.requestStopDueError(null, e);
 		}			
 	}
 	
@@ -609,11 +614,14 @@ public abstract class OperationController implements Controller{
 			}
 		}
 		else {
-			monitor.requestStopDueError();
 			
-			while(!monitor.isStopped()) {
-				logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
-				TimeCountDown.sleep(5);
+			if (monitor != null) {
+				monitor.requestStopDueError();
+				
+				while(!monitor.isStopped()) {
+					logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
+					TimeCountDown.sleep(5);
+				}
 			}
 		}
 		

@@ -15,7 +15,8 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class DBQuickMergeSearchParams extends OpenMRSObjectSearchParams{
 	private DBQuickMergeController relatedController;
-	
+	private int savedCount;
+
 	public DBQuickMergeSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, DBQuickMergeController relatedController) {
 		super(tableInfo, limits);
 
@@ -114,9 +115,11 @@ public class DBQuickMergeSearchParams extends OpenMRSObjectSearchParams{
 			srcConn.finalizeConnection();
 		}
 	}
-	
+		
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
+		if (this.savedCount > 0) return this.savedCount; 
+			
 		RecordLimits bkpLimits = this.limits;
 		
 		this.limits = null;
@@ -124,6 +127,8 @@ public class DBQuickMergeSearchParams extends OpenMRSObjectSearchParams{
 		int count = SearchParamsDAO.countAll(this, conn);
 		
 		this.limits = bkpLimits;
+		
+		this.savedCount = count;
 		
 		return count;	
 	}
