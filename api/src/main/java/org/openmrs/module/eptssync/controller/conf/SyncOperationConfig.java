@@ -20,6 +20,7 @@ import org.openmrs.module.eptssync.inconsistenceresolver.controller.Inconsistenc
 import org.openmrs.module.eptssync.load.controller.DataLoadController;
 import org.openmrs.module.eptssync.merge.controller.DataBaseMergeFromSourceDBController;
 import org.openmrs.module.eptssync.pojogeneration.controller.PojoGenerationController;
+import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
 import org.openmrs.module.eptssync.reconciliation.controller.CentralAndRemoteDataReconciliationController;
 import org.openmrs.module.eptssync.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
 import org.openmrs.module.eptssync.synchronization.controller.DatabaseMergeFromJSONController;
@@ -344,6 +345,11 @@ public class SyncOperationConfig {
 		return this.operationType.isDBQuickMergeExistingRecords();
 	}
 	
+	@JsonIgnore
+	public boolean isResolveProblem() {
+		return this.operationType.isResolveProblem();
+	}
+	
 	
 	@Override
 	public boolean equals(Object obj) {
@@ -447,6 +453,11 @@ public class SyncOperationConfig {
 		if (isDBQuickMergeMissingRecords() || isDBQuickMergeExistingRecords()) {
 			return new DBQuickMergeController(parent, this, appOriginCode);
 		}
+		else
+		if (isResolveProblem()) {
+			return new ProblemsSolverController(parent, this);
+		}
+		
 		else throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");		
 	}
 	
@@ -499,6 +510,10 @@ public class SyncOperationConfig {
 		if (this.getRelatedSyncConfig().isDBInconsistencyCheckProcess()) {
 			if (!this.canBeRunInDBInconsistencyCheckProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in db inconsistency check process\n";
 		}
+		else
+		if (this.getRelatedSyncConfig().isResolveProblems()) {
+			if (!this.canBeRunInResolveProblemsProcess()) errorMsg += ++errNum + ". This operation ["+ this.getOperationType() + "] Cannot be configured in db problems resolution process\n";
+		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
 			errorMsg = "There are errors on config operation configuration " + this.getOperationType() +  "[File:  " + this.getRelatedSyncConfig().getRelatedConfFile().getAbsolutePath() + "]\n" + errorMsg;
@@ -508,6 +523,17 @@ public class SyncOperationConfig {
 		if (this.getChild() != null){
 			this.getChild().validate();
 		}
+	}
+	
+	@JsonIgnore
+	public boolean canBeRunInResolveProblemsProcess() {
+		return utilities.existOnArray(getSupportedOperationsInResolveProblemsProcess(), this.operationType);
+	}
+	
+	public static List<SyncOperationType> getSupportedOperationsInResolveProblemsProcess() {
+		SyncOperationType[] supported = {	SyncOperationType.RESOLVE_PROBLEM};
+		
+		return utilities.parseArrayToList(supported);
 	}
 	
 	@JsonIgnore

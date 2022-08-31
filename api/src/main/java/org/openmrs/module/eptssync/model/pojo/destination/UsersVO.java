@@ -1,13 +1,13 @@
 package org.openmrs.module.eptssync.model.pojo.destination;
 
-import org.openmrs.module.eptssync.model.pojo.generic.*; 
- 
-import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
- 
-import org.openmrs.module.eptssync.utilities.AttDefinedElements; 
-import java.sql.SQLException; 
-import java.sql.ResultSet; 
- 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.openmrs.module.eptssync.model.pojo.generic.AbstractOpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.utilities.AttDefinedElements;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
+
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject { 
@@ -172,25 +172,30 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
  
 	public void load(ResultSet rs) throws SQLException{ 
 		super.load(rs);
-		if (rs.getObject("user_id") != null) this.userId = rs.getInt("user_id");
-		this.systemId = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("system_id") != null ? rs.getString("system_id").trim() : null);
-		this.username = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("username") != null ? rs.getString("username").trim() : null);
-		this.password = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("password") != null ? rs.getString("password").trim() : null);
-		this.salt = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("salt") != null ? rs.getString("salt").trim() : null);
-		this.secretQuestion = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("secret_question") != null ? rs.getString("secret_question").trim() : null);
-		this.secretAnswer = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("secret_answer") != null ? rs.getString("secret_answer").trim() : null);
-		if (rs.getObject("creator") != null) this.creator = rs.getInt("creator");
-		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
-		if (rs.getObject("changed_by") != null) this.changedBy = rs.getInt("changed_by");
-		this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
-		if (rs.getObject("person_id") != null) this.personId = rs.getInt("person_id");
-		this.retired = rs.getByte("retired");
-		if (rs.getObject("retired_by") != null) this.retiredBy = rs.getInt("retired_by");
-		this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
-		this.retireReason = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null);
-		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
-		this.activationKey = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("activation_key") != null ? rs.getString("activation_key").trim() : null);
-		this.email = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("email") != null ? rs.getString("email").trim() : null);
+		try {
+			if (rs.getObject("user_id") != null) this.userId = rs.getInt("user_id");
+			this.systemId = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("system_id") != null ? rs.getString("system_id").trim() : null);
+			this.username = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("username") != null ? rs.getString("username").trim() : null);
+			this.password = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("password") != null ? rs.getString("password").trim() : null);
+			this.salt = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("salt") != null ? rs.getString("salt").trim() : null);
+			this.secretQuestion = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("secret_question") != null ? rs.getString("secret_question").trim() : null);
+			this.secretAnswer = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("secret_answer") != null ? rs.getString("secret_answer").trim() : null);
+			if (rs.getObject("creator") != null) this.creator = rs.getInt("creator");
+			this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
+			if (rs.getObject("changed_by") != null) this.changedBy = rs.getInt("changed_by");
+			this.dateChanged =  rs.getTimestamp("date_changed") != null ? new java.util.Date( rs.getTimestamp("date_changed").getTime() ) : null;
+			if (rs.getObject("person_id") != null) this.personId = rs.getInt("person_id");
+			this.retired = rs.getByte("retired");
+			if (rs.getObject("retired_by") != null) this.retiredBy = rs.getInt("retired_by");
+			this.dateRetired =  rs.getTimestamp("date_retired") != null ? new java.util.Date( rs.getTimestamp("date_retired").getTime() ) : null;
+			this.retireReason = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("retire_reason") != null ? rs.getString("retire_reason").trim() : null);
+			this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
+			this.activationKey = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("activation_key") != null ? rs.getString("activation_key").trim() : null);
+			this.email = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("email") != null ? rs.getString("email").trim() : null);
+		}
+		catch (SQLException e) {
+			
+		}
 	} 
  
 	@JsonIgnore

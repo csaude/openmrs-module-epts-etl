@@ -259,11 +259,10 @@ public class SearchClauses<T extends VO> {
 			   sql += (FuncoesGenericas.stringHasValue(clauses) ? " AND " + clauses : "") ;
 	
 			   sql +=  "			  	 \n" + (FuncoesGenericas.stringHasValue(groupingFields) ? "GROUP BY " + groupingFields : "") ;
-			   sql +=  "			  	 \n" + (FuncoesGenericas.stringHasValue(orderByFields) ? "ORDER BY " + orderByFields + " " + this.orderByType : "");
 			   sql +=		   "			  	 \n" + (FuncoesGenericas.stringHasValue(havingClauses) ? "HAVING " + havingClauses : "");
-	
-
-				if (this.searchParameters.isPhaseSelected()) {
+			   sql +=  "			  	 \n" + (FuncoesGenericas.stringHasValue(orderByFields) ? "ORDER BY " + orderByFields + " " + this.orderByType : "");
+			
+				if (this.searchParameters.isPhaseSelected() &&  !utilities.stringHasValue(groupingFields)) {
 					sql = SQLUtilitie.createPhasedSelect(sql, this.searchParameters.getStartAt(), this.searchParameters.getQtdRecordPerSelected(), conn);
 				}
 				

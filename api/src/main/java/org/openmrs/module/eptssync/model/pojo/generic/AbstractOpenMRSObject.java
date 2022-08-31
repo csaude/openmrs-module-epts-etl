@@ -178,10 +178,13 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 		this.hasIgnoredParent = hasIgnoredParent;
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{ 
 		if (tableConfiguration.isMetadata()) {
-			OpenMRSObject recordOnDBByUuid = OpenMRSObjectDAO.getByUuid(this.getClass(), this.getUuid(), conn);
+			List<OpenMRSObject> recs = utilities.parseList(OpenMRSObjectDAO.getByUuid(this.getClass(), this.getUuid(), conn), OpenMRSObject.class);
+			
+			OpenMRSObject recordOnDBByUuid = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 			
 			if (recordOnDBByUuid == null) {
 				//Check if ID is free 
@@ -226,7 +229,10 @@ public abstract class AbstractOpenMRSObject extends BaseVO implements OpenMRSObj
 				catch (DBException e) {
 					if (e.isDuplicatePrimaryKeyException() && isDestOperation){
 						//Try to resolve conflict if it is destination operation
-						recordOnDB = OpenMRSObjectDAO.getByUuid(this.getClass(), this.getUuid(), conn);
+						
+						List<OpenMRSObject> recs = utilities.parseList(OpenMRSObjectDAO.getByUuid(this.getClass(), this.getUuid(), conn), OpenMRSObject.class);
+						
+						recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 						
 						if (recordOnDB != null) {
 							resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);

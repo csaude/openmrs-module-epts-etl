@@ -120,7 +120,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	}
 	
 	
-	public static <T extends OpenMRSObject> T getByUuid(Class<T> openMRSClass, String uuid, Connection conn) throws DBException{
+	public static <T extends OpenMRSObject> List<T> getByUuid(Class<T> openMRSClass, String uuid, Connection conn) throws DBException{
 		try {
 			Object[] params = {uuid};
 			
@@ -132,7 +132,33 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			sql += " FROM     " + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id " : "") + "\n";
 			sql += " WHERE 	uuid = ?;";
 			
-			return find(openMRSClass, sql, params, conn);
+			return search(openMRSClass, sql, params, conn);
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		
+			throw new RuntimeException(e);
+		}
+	}
+	
+	
+	public static <T extends OpenMRSObject> List<T> getByField(Class<T> openMRSClass, String fieldName, String fieldValue, Connection conn) throws DBException{
+		try {
+			Object[] params = {fieldValue};
+			
+			T obj = openMRSClass.newInstance();
+			
+			String sql = "";
+			
+			sql += " SELECT " + obj.generateTableName() + ".*" + (obj.generateTableName().equals("patient") ? ", uuid" : "") + "\n";
+			sql += " FROM     " + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id " : "") + "\n";
+			sql += " WHERE 	" + fieldName + " = ?";
+			sql += " ORDER BY " + fieldName;
+			
+			return search(openMRSClass, sql, params, conn);
 		} catch (InstantiationException e) {
 			e.printStackTrace();
 			
@@ -432,7 +458,11 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		//Check if is uuid duplication
 		if (utilities.isValidUUID(s)) {
-			return getByUuid(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), s, conn);
+			List<OpenMRSObject> recs = getByUuid(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), s, conn);
+		
+			if (utilities.arrayHasElement(recs)) {
+				return recs.get(0);
+			}
 		}	
 		/*else {
 		 	//ORIGIN duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 

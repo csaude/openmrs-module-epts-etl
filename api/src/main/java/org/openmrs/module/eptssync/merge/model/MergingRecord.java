@@ -64,7 +64,9 @@ public class MergingRecord {
 			
 			OpenMRSObject parent = parentData.record;
 			
-			parent = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(this.destApp), parentStageInfo.getRecordUuid(), conn);
+			List<OpenMRSObject> recs = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(this.destApp), parentStageInfo.getRecordUuid(), conn);
+			
+			parent = recs != null && recs.size() > 0 ? recs.get(0) : null;
 			
 			record.changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);
 		}		

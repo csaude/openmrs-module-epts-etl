@@ -13,7 +13,12 @@ public enum SyncProcessType {
 	DATABASE_MERGE_FROM_SOURCE_DB,
 	DB_QUICK_MERGE,
 	QUICK_MERGE_NON_UNIFORME_DB,
-	DB_INCONSISTENCY_CHECK;
+	DB_INCONSISTENCY_CHECK,
+	RESOLVE_PROBLEMS;
+	
+	public boolean isResolveProblems(){
+		return  this.equals(RESOLVE_PROBLEMS);
+	}
 	
 	public boolean isdDBInconsistencyCheck(){
 		return  this.equals(DB_INCONSISTENCY_CHECK);
@@ -106,6 +111,10 @@ public enum SyncProcessType {
 	
 	public static boolean isDBInconsistencyCheck(String processType){
 		return  SyncProcessType.valueOf(processType).isdDBInconsistencyCheck();
+	}
+	
+	public static boolean isResolveProblem(String processType){
+		return  SyncProcessType.valueOf(processType).isResolveProblems();
 	}
 	
 	public static boolean isSupportedProcessType(String processType) {

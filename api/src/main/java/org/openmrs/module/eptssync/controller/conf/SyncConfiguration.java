@@ -233,6 +233,11 @@ public class SyncConfiguration {
 	}
 	
 	@JsonIgnore
+	public boolean isResolveProblems() {
+		return processType.isResolveProblems();
+	}
+	
+	@JsonIgnore
 	public String getPojoPackage(AppInfo app) {
 		return app.getPojoPackageName();
 	}
@@ -567,6 +572,10 @@ public class SyncConfiguration {
 		if (isDBInconsistencyCheckProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBInconsistencyCheckProcess();
 		}
+		else
+		if (isResolveProblems()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInResolveProblemsProcess();
+		}
 		
 		if (supportedOperations != null) {
 			for (SyncOperationType operationType : supportedOperations) {
@@ -756,7 +765,8 @@ public class SyncConfiguration {
 						this.isDataReconciliationProcess() ||
 							this.isDBQuickCopyProcess() ||
 							this.isDataBaseMergeFromSourceDBProcess() ||
-								this.isQuickMergeUniformeDBProcess();
+								this.isQuickMergeUniformeDBProcess() ||
+									this.isResolveProblems();
 	}
 	
 	public boolean isSupposedToRunInOrigin() {

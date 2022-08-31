@@ -187,6 +187,58 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 					refreshProgressMeter(processedRecords_, conn);
 					reportProgress();
 					
+					if (getLimits() != null && getLimits().canGoNext()) {
+						getLimits().moveNext(getQtyRecordsPerProcessing());
+						getLimits().save();
+					}
+					else {
+						if (getRelatedOperationController().mustRestartInTheEnd()) {
+							this.requestANewJob();
+						}
+						else {
+							if (this.isMainEngine() && this.hasChild() && finalCheckStatus.notInitialized()) {
+								//Do the final check before finishing
+								
+								while(this.hasChild() && !isAllChildFinished()) {
+									List<Engine> runningChild = getRunningChild();
+									
+									logDebug("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK! RUNNING CHILD ");
+									logDebug(runningChild.toString());
+									
+									TimeCountDown.sleep(15);
+								}
+								
+								if (mustDoFinalCheck()) {
+									this.finalCheckStatus = MigrationFinalCheckStatus.ONGOING;
+									
+									this.resetLimits(null);
+									
+									logInfo("INITIALIZING FINAL CHECK...");
+									
+									doRun();
+								} else {
+									finished  = true;
+									
+									this.finalCheckStatus = MigrationFinalCheckStatus.IGNORED;
+								}
+							}
+							else {
+								logDebug("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + " ON LIMITS [" + getLimits() + "]! FINISHING..." );
+								
+								if (this.finalCheckStatus.onGoing()) {
+									this.finalCheckStatus = MigrationFinalCheckStatus.DONE;
+								}
+								
+								if (isMainEngine()) {
+									finished  = true;
+								}
+								else this.markAsFinished();
+							}
+						}
+					}
+					
+					if (finished) markAsFinished();
+					
 					conn.markAsSuccessifullyTerminected();
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -197,58 +249,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 					conn.finalizeConnection();
 				}
 					
-				if (getLimits() != null && getLimits().canGoNext()) {
-					getLimits().moveNext(getQtyRecordsPerProcessing());
-					getLimits().save();
-				}
-				else {
-					if (getRelatedOperationController().mustRestartInTheEnd()) {
-						this.requestANewJob();
-					}
-					else {
-						if (this.isMainEngine() && this.hasChild() && finalCheckStatus.notInitialized()) {
-							//Do the final check before finishing
-							
-							while(this.hasChild() && !isAllChildFinished()) {
-								List<Engine> runningChild = getRunningChild();
-								
-								logDebug("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK! RUNNING CHILD ");
-								logDebug(runningChild.toString());
-								
-								TimeCountDown.sleep(15);
-							}
-							
-							if (mustDoFinalCheck()) {
-								this.finalCheckStatus = MigrationFinalCheckStatus.ONGOING;
-								
-								this.resetLimits(null);
-								
-								logInfo("INITIALIZING FINAL CHECK...");
-								
-								doRun();
-							} else {
-								finished  = true;
-								
-								this.finalCheckStatus = MigrationFinalCheckStatus.IGNORED;
-							}
-						}
-						else {
-							logDebug("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO " + getRelatedOperationController().getOperationType().name().toLowerCase() + " ON LIMITS [" + getLimits() + "]! FINISHING..." );
-							
-							if (this.finalCheckStatus.onGoing()) {
-								this.finalCheckStatus = MigrationFinalCheckStatus.DONE;
-							}
-							
-							if (isMainEngine()) {
-								finished  = true;
-							}
-							else this.markAsFinished();
-						}
-					}
-				}
-				
-				
-				if (finished) markAsFinished();
 			}
 		}
 	}

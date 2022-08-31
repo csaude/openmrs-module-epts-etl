@@ -115,7 +115,7 @@ public class DBQuickMergeEngine extends Engine {
 					
 					inconsistenceInfo.save(getSyncTableConfiguration(), conn);
 					
-					recordsToIgnoreOnStatistics.add(data.getRecord());
+					wentWrong = false;
 				}
 				catch (ConflictWithRecordNotYetAvaliableException e) {
 					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");

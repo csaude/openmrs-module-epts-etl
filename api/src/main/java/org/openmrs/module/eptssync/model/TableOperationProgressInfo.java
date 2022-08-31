@@ -73,7 +73,8 @@ public class TableOperationProgressInfo extends BaseVO{
 								controller.getOperationConfig().isOutdateRecordsDetector() ||
 									controller.getOperationConfig().isPhantomRecordsDetector() ||
 										controller.getOperationConfig().isDBMergeFromSourceDB() ||
-											controller.getOperationConfig().isDataBaseMergeFromJSONOperation()) return "central_site"; 
+											controller.getOperationConfig().isDataBaseMergeFromJSONOperation() ||
+												controller.getConfiguration().isResolveProblems()) return "central_site"; 
 		
 		throw new ForbiddenException("The originAppCode cannot be determined for "+controller.getOperationType().name().toLowerCase() + " operation!");
 	}

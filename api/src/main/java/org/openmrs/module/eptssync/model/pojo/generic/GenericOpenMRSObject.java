@@ -37,6 +37,10 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 		this.syncTableConfiguration = syncTableConfiguration;
 	}
 	
+	public void setSyncTableConfiguration(SyncTableConfiguration syncTableConfiguration) {
+		this.syncTableConfiguration = syncTableConfiguration;
+	}
+	
 	@Override
 	@JsonIgnore
 	public String generateDBPrimaryKeyAtt() {

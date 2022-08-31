@@ -169,6 +169,7 @@ public abstract class OperationController implements Controller{
 					progressInfo.save(conn);
 					conn.markAsSuccessifullyTerminected();
 				} catch (DBException e) {
+					e.printStackTrace();
 					throw new RuntimeException(e);
 				}
 				finally {

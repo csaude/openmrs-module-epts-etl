@@ -72,7 +72,7 @@ public class DataReconciliationRecord {
 	}
 	
 	public void reloadRelatedRecordDataFromDestination(Connection conn) throws DBException, ForbiddenOperationException {
-		this.record= OpenMRSObjectDAO.getByUuid(this.config.getSyncRecordClass(config.getMainApp()), this.recordUuid, conn);
+		this.record= OpenMRSObjectDAO.getByUuid(this.config.getSyncRecordClass(config.getMainApp()), this.recordUuid, conn).get(0);
 	}
 	
 	public ConciliationReasonType getReasonType() {
@@ -156,7 +156,7 @@ public class DataReconciliationRecord {
 						
 						parent = parentData.record;
 						
-						parent = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), parentStageInfo.getRecordUuid(), conn);
+						parent = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), parentStageInfo.getRecordUuid(), conn).get(0);
 					}
 				}
 				
