@@ -16,6 +16,7 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.openmrs.module.ModuleUtil;
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -77,7 +78,7 @@ public class ClassPathUtilities {
 	        zin.close();
 	        tmpZip.delete();
 	    }catch(Exception e){
-	        e.printStackTrace();
+	       // e.printStackTrace();
 	    }
 	}
 	
@@ -106,32 +107,56 @@ public class ClassPathUtilities {
 	 * Identify a eptssync module file
 	 */
 	public static File retrieveModuleFile() {
-		File modulesDirectory = ModuleUtil.getModuleRepository();
+		File modulesDirectory = null;
+		
+		try {
+			modulesDirectory = ModuleUtil.getModuleRepository();
+		} catch (NoClassDefFoundError e) {
+			//e.printStackTrace();
+		} catch (Error e) {
+			//e.printStackTrace();
+		}
+		
+		if (modulesDirectory != null) {
+			File[] allFiles = modulesDirectory.listFiles(new FileFilter() {
+				@Override
+				public boolean accept(File pathname) {
+					return pathname.getName().startsWith("eptssync") && pathname.getName().endsWith("omod");
+				}
+			}); 
 			
-		File[] allFiles = modulesDirectory.listFiles(new FileFilter() {
-			@Override
-			public boolean accept(File pathname) {
-				return pathname.getName().startsWith("eptssync") && pathname.getName().endsWith("omod");
-			}
-		}); 
+			if (allFiles == null) throw new ForbiddenOperationException("The modules directory was not located on " + modulesDirectory.getAbsolutePath());
+			
+			if (allFiles.length == 0) 		throw new ForbiddenOperationException("The application was not able to identify the eptssync module on " + modulesDirectory.getAbsolutePath());
+			 
+			if (allFiles.length > 1) 		throw new ForbiddenOperationException("There are multiple eptssync modules on " + modulesDirectory.getAbsolutePath());
+	
+			return allFiles[0];
+		}
 		
-		if (allFiles == null) throw new ForbiddenOperationException("The modules directory was not located on " + modulesDirectory.getAbsolutePath());
-		
-		if (allFiles.length == 0) 		throw new ForbiddenOperationException("The application was not able to identify the eptssync module on " + modulesDirectory.getAbsolutePath());
-		 
-		if (allFiles.length > 1) 		throw new ForbiddenOperationException("There are multiple eptssync modules on " + modulesDirectory.getAbsolutePath());
-
-		return allFiles[0];
+		return null;
 	}
 	
 	public static File retrieveModuleJar() {
-		File moduleFilesDirectory = new File(OpenmrsClassLoader.getLibCacheFolder().getAbsolutePath() + FileUtilities.getPathSeparator() + FileUtilities.getPathSeparator() + "eptssync");
-	
-		return new File(moduleFilesDirectory.getAbsolutePath() + FileUtilities.getPathSeparator() + "eptssync.jar");	
+		try {
+			File moduleFilesDirectory = new File(OpenmrsClassLoader.getLibCacheFolder().getAbsolutePath() + FileUtilities.getPathSeparator() + FileUtilities.getPathSeparator() + "eptssync");
+
+			return new File(moduleFilesDirectory.getAbsolutePath() + FileUtilities.getPathSeparator() + "eptssync.jar");
+		} catch (NoClassDefFoundError e) {
+			//e.printStackTrace();
+		} catch (Error e) {
+			//e.printStackTrace();
+		}
+		
+		return null;
 	}
 	
 	public static File retrieveModuleFolder() {
-		return new File(retrieveModuleJar().getParent());
+		File moduleJar = retrieveModuleJar();
+		
+		if (moduleJar != null) return new File(retrieveModuleJar().getParent());
+		
+		return null;
 	}
 	
 	/*private static File retrieveModuleJarOnOpenMRS2x() {
@@ -194,42 +219,52 @@ public class ClassPathUtilities {
 			
 		} catch (ZipException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 	}
 
-	public static void addClassToClassPath(SyncTableConfiguration tableConfiguration){
-		String pojoPackageDir = tableConfiguration.getRelatedSynconfiguration().getPojoPackageAsDirectory().getAbsolutePath();
+	public static void addClassToClassPath(SyncTableConfiguration tableConfiguration, AppInfo app){
+		String pojoPackageDir = tableConfiguration.getRelatedSynconfiguration().getPojoPackageAsDirectory(app).getAbsolutePath();
 		
 		File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class");
 		
 		if (clazzFile.exists()) {
-			addClassToClassPath(utilities.parseObjectToArray(clazzFile), tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath(), tableConfiguration.getRelatedSynconfiguration());
+			addClassToClassPath(utilities.parseObjectToArray(clazzFile), tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath(app), tableConfiguration.getRelatedSynconfiguration());
 		}
 	}
 	
 	public static void addClassToClassPath(File[] clazzFiless, String path, SyncConfiguration syncConfiguration){
-		if (syncConfiguration.getClassPathAsFile().exists()) ClassPathUtilities.addFilesToZip(syncConfiguration.getClassPathAsFile(), clazzFiless, path);
-		
-		if (ClassPathUtilities.retrieveModuleJar().exists()) ClassPathUtilities.addFilesToZip(ClassPathUtilities.retrieveModuleJar(), clazzFiless, path);
+		try {
+			if (syncConfiguration.getClassPathAsFile().exists()) ClassPathUtilities.addFilesToZip(syncConfiguration.getClassPathAsFile(), clazzFiless, path);
+		} catch (Exception e) {}
 		
 		try {
-			if (ClassPathUtilities.retrieveModuleFile().exists()) ClassPathUtilities.addFilesToZip(ClassPathUtilities.retrieveModuleFile(), clazzFiless, path);
+			File moduleJar = ClassPathUtilities.retrieveModuleJar();
+			
+			if (moduleJar != null && moduleJar.exists()) ClassPathUtilities.addFilesToZip(moduleJar, clazzFiless, path);
+		} catch (Exception e) {}
+		
+		try {
+			File moduleFile = ClassPathUtilities.retrieveModuleJar();
+			
+			
+			if (moduleFile != null && moduleFile.exists()) ClassPathUtilities.addFilesToZip(moduleFile, clazzFiless, path);
 		} catch (Exception e) {}
 			
 		try {
-			if (ClassPathUtilities.retrieveModuleFolder().exists()) ClassPathUtilities.addFilesToFolder(ClassPathUtilities.retrieveModuleFolder(), clazzFiless, path);
+			File moduleFolder= ClassPathUtilities.retrieveModuleJar();
+			
+			if (moduleFolder != null && moduleFolder.exists()) ClassPathUtilities.addFilesToFolder(moduleFolder, clazzFiless, path);
 		} catch (Exception e) {}
 	}
 	
 
-	public static void tryToCopyPOJOToClassPath(SyncConfiguration syncConfiguration) {
-		if (syncConfiguration.getPojoPackageAsDirectory().exists()) {
-			//File[] clazzFiless = new File[syncConfiguration.getTablesConfigurations().size()];
-			String pojoPackageDir = syncConfiguration.getPojoPackageAsDirectory().getAbsolutePath();
+	public static void tryToCopyPOJOToClassPath(SyncConfiguration syncConfiguration, AppInfo app) {
+		if (syncConfiguration.getPojoPackageAsDirectory(app).exists()) {
+			String pojoPackageDir = syncConfiguration.getPojoPackageAsDirectory(app).getAbsolutePath();
 			
 			List<File> clazzListFiless = new  ArrayList<File>();
 			
@@ -242,7 +277,7 @@ public class ClassPathUtilities {
 				}
 			}
 			
-			addClassToClassPath(utilities.parseListToArray(clazzListFiless), syncConfiguration.getPojoPackageRelativePath(), syncConfiguration);
+			addClassToClassPath(utilities.parseListToArray(clazzListFiless), syncConfiguration.getPojoPackageRelativePath(app), syncConfiguration);
 		}
 	}
 }

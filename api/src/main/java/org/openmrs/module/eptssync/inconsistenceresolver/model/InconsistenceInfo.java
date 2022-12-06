@@ -8,19 +8,19 @@ import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class InconsistenceInfo extends BaseVO{
-	private int id;
+	private Integer id;
 	private String tableName;
-	private int recordId;
+	private Integer recordId;
 	private String parentTableName;
-	private int parentId;
-	private int defaultParentId;
+	private Integer parentId;
+	private Integer defaultParentId;
 	private String recordOriginLocationCode;
 	
 	public InconsistenceInfo() {
 	}
 	
 	
-	public InconsistenceInfo(String tableName, int recordId, String parentTableName, int parentId, int defaultParentId, String recordOriginLocationCode) {
+	public InconsistenceInfo(String tableName, Integer recordId, String parentTableName, Integer parentId, Integer defaultParentId, String recordOriginLocationCode) {
 		this.tableName = tableName;
 		this.recordId = recordId;
 		this.parentTableName = parentTableName;
@@ -39,11 +39,11 @@ public class InconsistenceInfo extends BaseVO{
 	}
 
 
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 
@@ -55,11 +55,11 @@ public class InconsistenceInfo extends BaseVO{
 		this.tableName = tableName;
 	}
 
-	public int getRecordId() {
+	public Integer getRecordId() {
 		return recordId;
 	}
 
-	public void setRecordId(int recordId) {
+	public void setRecordId(Integer recordId) {
 		this.recordId = recordId;
 	}
 
@@ -71,29 +71,29 @@ public class InconsistenceInfo extends BaseVO{
 		this.parentTableName = parentTableName;
 	}
 
-	public int getParentId() {
+	public Integer getParentId() {
 		return parentId;
 	}
 
-	public void setParentId(int parentId) {
+	public void setParentId(Integer parentId) {
 		this.parentId = parentId;
 	}
 	
-	public int getDefaultParentId() {
+	public Integer getDefaultParentId() {
 		return defaultParentId;
 	}
 	
-	public void setDefaultParentId(int defaultParentId) {
+	public void setDefaultParentId(Integer defaultParentId) {
 		this.defaultParentId = defaultParentId;
 	}
 	
-	public static InconsistenceInfo generate(OpenMRSObject record, OpenMRSObject parent, int defaultParentId, String recordOriginLocationCode) {
+	public static InconsistenceInfo generate(OpenMRSObject record, OpenMRSObject parent, Integer defaultParentId, String recordOriginLocationCode) {
 		InconsistenceInfo info = new InconsistenceInfo(record.generateTableName(), record.getObjectId(), parent.generateTableName(), parent.getObjectId(), defaultParentId, recordOriginLocationCode);
 	
 		return info;
 	}
 	
-	public static InconsistenceInfo generate(String tableName, int recordId, String parentTableName, int parentId, int defaultParentId, String recordOriginLocationCode) {
+	public static InconsistenceInfo generate(String tableName, Integer recordId, String parentTableName, Integer parentId, Integer defaultParentId, String recordOriginLocationCode) {
 		InconsistenceInfo info = new InconsistenceInfo(tableName, recordId, parentTableName, parentId, defaultParentId, recordOriginLocationCode);
 	
 		return info;

@@ -18,8 +18,11 @@ import java.util.Stack;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
 
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.BasicConfigurator;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -73,8 +76,8 @@ public class  CommonUtilities implements Serializable{
 	 * @scapeStr Caracteres de escape, por exemplo "\n" "," "<br>" 
 	 * @return
 	 */
-	public  String concatStrings(String currentString, String toConcant, String scapeStr){
-		return FuncoesGenericas.concatStrings(currentString, toConcant, scapeStr);
+	public  String concatStringsWithSeparator(String currentString, String toConcant, String scapeStr){
+		return FuncoesGenericas.concatStringsWithSeparator(currentString, toConcant, scapeStr);
 	}
 	
 	public boolean isStringStartWithAlphabeticalChar(String str){
@@ -140,7 +143,7 @@ public class  CommonUtilities implements Serializable{
 	 * @param o elementos a verificar
 	 * @return true se a lista contem todos os elementos ou false no caso contrario
 	 */
-	public <T> boolean containsAll(List<T> list, T ...o){
+	public <T> boolean containsAll(List<T> list, @SuppressWarnings("unchecked") T ...o){
 		for (T t : o){
 			if (!list.contains(t)) return false;
 		}
@@ -318,7 +321,7 @@ public class  CommonUtilities implements Serializable{
 	 * @param obj
 	 * @return
 	 */
-	public  <T> List<T> parseToList(T... obj){
+	public  <T> List<T> parseToList(@SuppressWarnings("unchecked") T... obj){
 		return FuncoesGenericas.parseToList(obj);
 	}
 	
@@ -381,6 +384,10 @@ public class  CommonUtilities implements Serializable{
 	 */
 	public  String concatCondition(String condition, String otherCondition, String connector){
 		return FuncoesGenericas.concatCondition(condition, otherCondition, connector);
+	}
+	
+	public String generateCommaSeparetedNumber(double number){
+		return FuncoesGenericas.generateCommaSeparetedNumber(number);
 	}
 	
 	/**
@@ -877,16 +884,21 @@ public class  CommonUtilities implements Serializable{
 		return attName;
 	}
 	
-	public void logInfo(String msg, Log logger) {
-		logger.info(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
+
+	public void logWarn(String msg, Log logger, Level level) {
+		if (level.intValue() <= Level.WARNING.intValue()) logger.warn(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
-	public void logErr(String msg, Log logger) {
-		logger.error(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
+	public void logInfo(String msg, Log logger, Level level) {
+		if (level.intValue() <= Level.INFO.intValue())  logger.info(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
-	public void logDebug(String msg, Log logger) {
-		logger.debug(formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()) + ": " + msg);
+	public void logErr(String msg, Log logger, Level level) {
+		if (level.intValue() <= Level.SEVERE.intValue() )  logger.error(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
+	}
+	
+	public void logDebug(String msg, Log logger, Level level) {
+		if (level.intValue() <= Level.FINE.intValue())    logger.debug(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 
 	public boolean isValidUUID(String str) {
@@ -899,6 +911,8 @@ public class  CommonUtilities implements Serializable{
 	}
 
 	public String scapeQuotationMarks(String str) {
+		if (str == null) return null;
+		
 		str = new String(str.replaceAll("\"", "\\\\\""));
 		
 		str = str.replaceAll("\\\\\\\\", "\\\\\\\\\\\\");
@@ -966,12 +980,27 @@ public class  CommonUtilities implements Serializable{
 		return -1;
 	}
 
-	public static void main(String[] args) {
-		String strWithStrangeCharacters = "\\a\\\"";
-		
-		System.out.println(strWithStrangeCharacters);
 	
+	private static Log logger = LogFactory.getLog(CommonUtilities.class);
+	
+	public static void main(String[] args) {
+		BasicConfigurator.configure();
 		
-		System.out.println(getInstance().resolveScapeCharacter(strWithStrangeCharacters));
+		CommonUtilities utilities = CommonUtilities.getInstance();
+		
+
+		Level l = Level.FINE;
+		
+		utilities.logDebug("DEBUG", logger, l);
+		utilities.logErr("ERROR", logger, l);
+		utilities.logInfo("INFO", logger, l);
+		utilities.logWarn("WARN", logger, l);
+			
+	}
+
+	public  String quote(String strToQuote) {
+		if (strToQuote == null) return strToQuote;
+		
+		return "\""  + strToQuote +"\"";
 	}
 }

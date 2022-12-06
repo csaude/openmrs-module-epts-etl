@@ -1,12 +1,10 @@
 package org.openmrs.module.eptssync.model;
 
 import java.io.IOException;
-import java.sql.Connection;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
+import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -40,9 +38,9 @@ public class SyncJSONInfo {
 	public SyncJSONInfo() {
 	}
 	
-	public SyncJSONInfo(SyncTableConfiguration tableConfiguration, List<OpenMRSObject> syncRecords, String recordOriginLocationCode, Connection conn) throws DBException {
+	public SyncJSONInfo(List<OpenMRSObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
 		this.qtyRecords = utilities.arraySize(syncRecords);
-		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(tableConfiguration, syncRecords, recordOriginLocationCode, conn);
+		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(syncRecords, recordOriginLocationCode, generateRecordJSON);
 		this.dateGenerated = DateAndTimeUtilities.getCurrentDate();
 		this.originAppLocationCode = recordOriginLocationCode;
 	}
@@ -79,8 +77,8 @@ public class SyncJSONInfo {
 		this.dateGenerated = dateGenerated;
 	}
 
-	public static SyncJSONInfo generate(SyncTableConfiguration tableConfiguration, List<OpenMRSObject> syncRecords, String recordOriginLocationCode, Connection conn) throws DBException {
-		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(tableConfiguration, syncRecords, recordOriginLocationCode, conn);
+	public static SyncJSONInfo generate(List<OpenMRSObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
+		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(syncRecords, recordOriginLocationCode, generateRecordJSON);
 
 		return syncJSONInfo;
 	}

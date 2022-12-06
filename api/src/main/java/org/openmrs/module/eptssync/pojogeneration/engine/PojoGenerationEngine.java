@@ -4,15 +4,17 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.eptssync.pojogeneration.model.PojoGenerationRecord;
+import org.openmrs.module.eptssync.pojogeneration.model.PojoGenerationSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
  * The engine responsible for transport synchronization files from origin to
@@ -42,7 +44,17 @@ public class PojoGenerationEngine extends Engine {
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
 		this.pojoGenerated = true;
 		
-		getSyncTableConfiguration().generateRecordClass(true, conn);
+		for (AppInfo app : getRelatedOperationController().getProcessController().getAppsInfo()) {
+			if (utilities.stringHasValue(app.getPojoPackageName())) {
+				OpenConnection appConn = app.openConnection();
+				
+				getSyncTableConfiguration().generateRecordClass(app, true, appConn);
+			}
+		}
+	}
+	
+	public boolean isPojoGenerated() {
+		return pojoGenerated;
 	}
 	
 	@Override
@@ -58,29 +70,7 @@ public class PojoGenerationEngine extends Engine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new SyncSearchParams<SyncRecord>(null, limits) {
-			@Override
-			public int countAllRecords(Connection conn) throws DBException {
-				return 1;
-			}
-
-			@Override
-			public int countNotProcessedRecords(Connection conn) throws DBException {
-				return 0;
-			}
-
-			@Override
-			public SearchClauses<SyncRecord> generateSearchClauses(Connection conn) throws DBException {
-				return null;
-			}
-
-			@Override
-			public Class<SyncRecord> getRecordClass() {
-				return null;
-			}
-		};
-
-		return searchParams;
+		return new PojoGenerationSearchParams(this, limits, conn);
 	}
 	
 	@Override
@@ -90,5 +80,10 @@ public class PojoGenerationEngine extends Engine {
 
 	@Override
 	public void requestStop() {
+	}
+	
+	@Override
+	protected boolean mustDoFinalCheck() {
+		return false;
 	}
 }

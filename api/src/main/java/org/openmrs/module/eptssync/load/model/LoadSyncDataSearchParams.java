@@ -11,11 +11,11 @@ import java.sql.Connection;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.load.controller.SyncDataLoadController;
+import org.openmrs.module.eptssync.load.controller.DataLoadController;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.synchronization.model.SynchronizationSearchParams;
+import org.openmrs.module.eptssync.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> implements FilenameFilter{
@@ -25,17 +25,17 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 	
 	private String fileNamePathern;
 	
-	private SyncDataLoadController controller;
+	private DataLoadController controller;
 	
-	public LoadSyncDataSearchParams(SyncDataLoadController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
+	public LoadSyncDataSearchParams(DataLoadController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
 		super(tableInfo, limits);
 		
 		this.controller = controller;
 	
 		
 		if (limits != null) {
-			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getFirstRecordId(), 10) + ".json"; 
-			this.lastFileName = tableInfo.getTableName() + "_" +  utilities.garantirXCaracterOnNumber(limits.getLastRecordId(), 10) + ".json"; 
+			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + ".json"; 
+			this.lastFileName = tableInfo.getTableName() + "_" +  utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json"; 
 		}
 	}
 	
@@ -54,7 +54,7 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass();
+		return this.tableInfo.getSyncRecordClass(this.tableInfo.getMainApp());
 	}
 	
 	@Override
@@ -81,7 +81,7 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<OpenMRSObject> im
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		SynchronizationSearchParams syncSearchParams = new SynchronizationSearchParams(tableInfo, null, controller.getAppOriginLocationCode());
+		DataBaseMergeFromJSONSearchParams syncSearchParams = new DataBaseMergeFromJSONSearchParams(tableInfo, null, controller.getAppOriginLocationCode());
 		
 		int processed = syncSearchParams.countAllRecords(conn);
 		int notProcessed = countNotProcessedRecords(conn);

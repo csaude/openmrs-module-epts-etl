@@ -24,13 +24,19 @@ public class RefInfo {
 	private SyncTableConfiguration refTableConfiguration;
 	private SyncTableConfiguration relatedSyncTableConfiguration;
 	
-	private int defaultValueDueInconsistency;
+	private boolean setNullDueInconsistency;
+	
+	private Integer defaultValueDueInconsistency;
 	private String tableName;
 	
 	private String refColumnName;
 	private String refColumnType;
 	
 	private String refType;
+	
+	private String conditionField;
+	private Integer conditionValue;
+	
 	/*
 	 * Indicate if this parent can be ignored if not found in referenced table or not
 	 */
@@ -38,6 +44,31 @@ public class RefInfo {
 	
 	public RefInfo() {
 		this.refType = PARENT_REF_TYPE;
+	}
+	
+	public boolean isSetNullDueInconsistency() {
+		return setNullDueInconsistency;
+	}
+	
+	public String getConditionField() {
+		return conditionField;
+	}
+	
+	public void setConditionField(String conditionField) {
+		this.conditionField = conditionField;
+	}
+	
+	public Integer getConditionValue() {
+		return conditionValue;
+	}
+	
+	
+	public void setConditionValue(Integer conditionValue) {
+		this.conditionValue = conditionValue;
+	}
+	
+	public void setSetNullDueInconsistency(boolean setNullDueInconsistency) {
+		this.setNullDueInconsistency = setNullDueInconsistency;
 	}
 
 	public void setRelatedSyncTableConfiguration(SyncTableConfiguration relatedSyncTableConfiguration) {
@@ -55,8 +86,8 @@ public class RefInfo {
 	}
 	
 	@JsonIgnore
-	public Class<OpenMRSObject> getRefObjectClass() {
-		return this.refTableConfiguration.getSyncRecordClass();
+	public Class<OpenMRSObject> getRefObjectClass(AppInfo application) {
+		return this.refTableConfiguration.getSyncRecordClass(application);
 	}
 	
 	public void setRefType(String refType) {
@@ -67,7 +98,7 @@ public class RefInfo {
 		this.refType = refType;
 	}
 	
-	public int getDefaultValueDueInconsistency() {
+	public Integer getDefaultValueDueInconsistency() {
 		return defaultValueDueInconsistency;
 	}
 	
@@ -90,7 +121,7 @@ public class RefInfo {
 		this.tableName = tableName;
 	}
 
-	public void setDefaultValueDueInconsistency(int defaultValueDueInconsistency) {
+	public void setDefaultValueDueInconsistency(Integer defaultValueDueInconsistency) {
 		this.defaultValueDueInconsistency = defaultValueDueInconsistency;
 	}
 
@@ -110,6 +141,11 @@ public class RefInfo {
 	@JsonIgnore
 	public String getRefColumnAsClassAttName() {
 		return utilities.convertTableAttNameToClassAttName(this.getRefColumnName());
+	}
+	
+	@JsonIgnore
+	public String getRefConditionFieldAsClassAttName() {
+		return utilities.convertTableAttNameToClassAttName(this.getConditionField());
 	}
 	
 	public String getRefColumnType() {
@@ -184,6 +220,10 @@ public class RefInfo {
 		if (obj == null) return false;
 		if (!(obj instanceof RefInfo)) return false;
 		
-		return this.tableName.equalsIgnoreCase(((RefInfo)obj).getTableName());
+		RefInfo other = (RefInfo)obj;
+		
+		String thisRefCol = this.getRefColumnName() != null ? this.getRefColumnName() : "";
+		
+		return thisRefCol.equals(other.getRefColumnName()) && this.tableName.equalsIgnoreCase(other.getTableName());
 	}
 }

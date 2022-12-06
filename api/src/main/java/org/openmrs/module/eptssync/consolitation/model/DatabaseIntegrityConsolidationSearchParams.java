@@ -12,12 +12,9 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams<OpenMRSObject>{
 	private boolean selectAllRecords;
-	private String appOriginLocationCode;
 	
-	public DatabaseIntegrityConsolidationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String appOriginLocationCode, Connection conn) {
+	public DatabaseIntegrityConsolidationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
 		super(tableInfo, limits);
-		
-		this.appOriginLocationCode = appOriginLocationCode;
 		
 		setOrderByFields(tableInfo.getPrimaryKey());
 	}
@@ -42,8 +39,8 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 		
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-				searchClauses.addToParameters(this.limits.getFirstRecordId());
-				searchClauses.addToParameters(this.limits.getLastRecordId());
+				searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
+				searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
 			}
 		
 			if (this.tableInfo.getExtraConditionForExport() != null) {
@@ -51,20 +48,17 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 			}
 		}
 		
-		searchClauses.addToClauses("record_origin_location_code = ?");
-		searchClauses.addToParameters(this.appOriginLocationCode);
-	
 		return searchClauses;
 	}	
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass();
+		return this.tableInfo.getSyncRecordClass(tableInfo.getMainApp());
 	}
 
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		DatabaseIntegrityConsolidationSearchParams auxSearchParams = new DatabaseIntegrityConsolidationSearchParams(this.tableInfo, this.limits, this.appOriginLocationCode, conn);
+		DatabaseIntegrityConsolidationSearchParams auxSearchParams = new DatabaseIntegrityConsolidationSearchParams(this.tableInfo, this.limits, conn);
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);

@@ -149,6 +149,17 @@ public class DBUtilities {
 	}
 	
 	
+	public static String determineSchemaName(Connection conn) throws DBException{
+		try {
+			if (isMySQLDB(conn)) return conn.getCatalog();
+			if (isOracleDB(conn)) return conn.getMetaData().getUserName();
+		} catch (SQLException e) {
+			throw new DBException(e);
+		}
+		
+		throw new ForbiddenOperationException("Unable to determine the schema");
+	}
+	
 	
 	@SuppressWarnings("unused")
 	private static Connection tempOpenConnection(){
@@ -191,6 +202,33 @@ public class DBUtilities {
 		}
 	}
 
+	public static void main(String[] args) throws DBException {
+		/*String dataBaseUserName = "root";
+		String dataBaseUserPassword = "#eIPDB123#";
+		String connectionURI = "jdbc:mysql://10.10.2.2:53307/test?autoReconnect=true&useSSL=false";
+		String driveClassName = "com.mysql.jdbc.Driver";*/
+			
+		String dataBaseUserName = "sys_contas";
+		String dataBaseUserPassword = "exi2k12";
+		String connectionURI = "jdbc:oracle:thin:@127.0.0.1:1521:xe";
+		String driveClassName = "oracle.jdbc.OracleDriver";
+			
+		
+		DBConnectionInfo dbConnInfo = new DBConnectionInfo(dataBaseUserName, dataBaseUserPassword, connectionURI, driveClassName);
+		
+		DBConnectionService service = DBConnectionService.init(dbConnInfo );
+		
+		OpenConnection conn = service.openConnection();
+		
+		try {
+			System.out.println(determineSchemaName(conn));
+		}
+		catch (DBException e) {
+			System.out.println(e.getLocalizedMessage());
+		}
+	}
+
+	
 	public static void enableForegnKeyChecks(Connection conn) throws DBException {
 		try {
 			if (isMySQLDB(conn)) {

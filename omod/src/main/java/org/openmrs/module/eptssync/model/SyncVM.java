@@ -40,7 +40,7 @@ public class SyncVM {
 			throw new ForbiddenOperationException("Nenhum dicheiro de configuracao foi encontrado!");
 		}
 		
-		this.avaliableConfigurations = Main.loadSyncConfig(confDir.listFiles());
+		this.avaliableConfigurations = null;//Main.loadSyncConfig(confDir.listFiles());
 		
 		for (SyncConfiguration conf : this.avaliableConfigurations) {
 			if (conf.isAutomaticStart()) {
@@ -49,11 +49,11 @@ public class SyncVM {
 			}
 		}
 		
-		String configFileName = this.activeConfiguration.getInstallationType().equals("source") ? "source_sync_config.json" : "dest_sync_config.json";
+		String configFileName = this.activeConfiguration.getProcessType().isSourceSync() ? "source_sync_config.json" : "dest_sync_config.json";
 
 		this.configFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "conf" + FileUtilities.getPathSeparator() + configFileName);
 	
-		this.activeTab = this.activeConfiguration.getOperationsAsList().get(0).getOperationType();
+		this.activeTab = this.activeConfiguration.getOperationsAsList().get(0).getOperationType().toString();
 
 		//ZipUtilities.copyModuleTagsToOpenMRS();	
 	}

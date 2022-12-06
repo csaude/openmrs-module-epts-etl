@@ -23,8 +23,15 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObj
 	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
 		
-		searchClauses.addColumnToSelect("*");
-		searchClauses.addToClauseFrom(tableInfo.getTableName());
+		
+		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+			searchClauses.addColumnToSelect("patient.*, person.uuid");
+			searchClauses.addToClauseFrom("patient left join person on patient_id = person_id");
+		}
+		else {
+			searchClauses.addColumnToSelect("*");
+			searchClauses.addToClauseFrom(tableInfo.getTableName());
+		}
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("NOT EXISTS (SELECT 	id " +
@@ -33,8 +40,8 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObj
 			
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-				searchClauses.addToParameters(this.limits.getFirstRecordId());
-				searchClauses.addToParameters(this.limits.getLastRecordId());
+				searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
+				searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
 			}
 			
 			if (this.tableInfo.getExtraConditionForExport() != null) {
@@ -47,7 +54,7 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<OpenMRSObj
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass();
+		return this.tableInfo.getSyncRecordClass(tableInfo.getMainApp());
 	}
 
 	@Override

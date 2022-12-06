@@ -152,7 +152,7 @@ public class AttDefinedElements {
 			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
 			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
 			
-			if (isForeignKey(dbAttName) && isNumeric()) {
+			/*if (isForeignKey(dbAttName) && isNumeric()) {
 				this.sqlInsertParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
 				this.sqlUpdateParamDefinifion = "this." + attName + " == 0 ? null : this." + attName + (isLast ? "" : ", ");
 				this.sqlInsertValues = "this." + attName + " == 0 ? null : this." + attName;
@@ -160,7 +160,7 @@ public class AttDefinedElements {
 				this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + "); 
 				
 			}
-			else {
+			else {*/
 				this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
 				this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
 	
@@ -180,7 +180,7 @@ public class AttDefinedElements {
 				}
 				
 				this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + "); 
-			}
+			//}
 		}	
 	}
 	
@@ -201,12 +201,15 @@ public class AttDefinedElements {
 	private String defineResultSetLOadDefinition() {
 		
 		
-		if (attType.equals("int")) {
-			return "this." + this.attName + " = rs.getInt(\"" + dbAttName + "\");"; 
+		if (attType.equals("Integer")) {
+			String loadStr = "if (rs.getObject(\"" + dbAttName + "\") != null) ";
+			loadStr += "this." + this.attName + " = rs.getInt(\"" + dbAttName + "\");";
+			
+			return loadStr; 
 		}
 		else 
 		if (attType.equals("boolean")) {
-			return "this." + this.attName + " = rs.getInt(\"" + dbAttName + "\") > 0;"; 
+			return "this." + this.attName + " = rs.getObject(\"" + dbAttName + "\") > 0;"; 
 		} 
 		else if (attType.equals("double")) {
 			return "this." + this.attName + " = rs.getDouble(\"" + dbAttName + "\");";
@@ -216,8 +219,10 @@ public class AttDefinedElements {
 			return "this." + this.attName + " = rs.getFloat(\"" + dbAttName + "\");"; 
 		}
 		else 
-		if (attType.equals("long")) {
-			return "this." + this.attName + " = rs.getLong(\"" + dbAttName + "\");"; 
+		if (attType.equals("Long")) {
+			String loadStr = "if (rs.getObject(\"" + dbAttName + "\") != null) ";
+			loadStr += "this." + this.attName + " = rs.getLong(\"" + dbAttName + "\");";
+			return loadStr;
 		}
 		else 
 		if (attType.equals("String")) {
@@ -258,11 +263,11 @@ public class AttDefinedElements {
 	}
 	
 	private boolean isNumeric() {
-		return utilities.isStringIn(this.attType, "int", "long", "byte", "short", "double", "float");
+		return utilities.isStringIn(this.attType, "Integer", "Long", "byte", "short", "double", "float");
 	}
 	
 	public static boolean isNumeric(String attType) {
-		return utilities.isStringIn(attType, "int", "long", "byte", "short", "double", "float");
+		return utilities.isStringIn(attType, "Integer", "Long", "byte", "short", "double", "float");
 	}
 
 	private boolean isPK() {
@@ -338,13 +343,13 @@ public class AttDefinedElements {
 		mySQLTypeName = mySQLTypeName.toUpperCase();
 
 		if (utilities.isStringIn(mySQLTypeName, "INT", "MEDIUMINT"))
-			return "int";
-		if (utilities.isStringIn(mySQLTypeName, "TINYINT"))
+			return "Integer";
+		if (utilities.isStringIn(mySQLTypeName, "TINYINT", "BIT"))
 			return "byte";
 		if (utilities.isStringIn(mySQLTypeName, "YEAR", "SMALLINT"))
 			return "short";
 		if (utilities.isStringIn(mySQLTypeName, "BIGINT"))
-			return "long";
+			return "Long";
 		if (utilities.isStringIn(mySQLTypeName, "DECIMAL", "NUMERIC", "SMALLINT", "REAL", "DOUBLE"))
 			return "double";
 		if (utilities.isStringIn(mySQLTypeName, "FLOAT", "NUMERIC", "SMALLINT"))

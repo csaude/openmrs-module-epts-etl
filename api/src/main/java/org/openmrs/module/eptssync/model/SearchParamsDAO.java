@@ -5,37 +5,27 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.engine.Engine;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.VO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
-import org.openmrs.module.eptssync.utilities.FuncoesGenericas;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class SearchParamsDAO extends BaseDAO{
 	public static <T extends VO> int countAll(AbstractSearchParams<T> parametros, Connection conn) throws DBException {
 		SearchClauses<T> searchClauses = parametros.generateSearchClauses(conn);
 		
-		String originalColumnsToSelect = searchClauses.getColumnsToSelect();
+		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
+		searchClauses.getSearchParameters().setQtdRecordPerSelected(0);
 		
-		if (searchClauses.isDistinctSelect() && !FuncoesGenericas.stringHasValue(searchClauses.getDefaultColumnToSelect())) throw new ForbiddenOperationException("O campo 'defaultColumnToSelect' deve ser preenchido para 'SELECT DISTINCT'");
-		
-		searchClauses.setColumnsToSelect("  count(" + (searchClauses.isDistinctSelect() ? ("DISTINCT " + searchClauses.getDefaultColumnToSelect()) : "*")  + ") value");
-		
-		String sql = searchClauses.generateSQL(conn);
-		
-		//logger.error(sql);
-		//logger.error(searchClauses.getParameters());
-		
+		String sql = "select count(*) value from (" + searchClauses.generateSQL(conn) + ") inner_result;";
+			
 		SimpleValue simpleValue = find(SimpleValue.class, sql, searchClauses.getParameters(), conn);
 		
-		searchClauses.setColumnsToSelect(originalColumnsToSelect);
+		searchClauses.getSearchParameters().setQtdRecordPerSelected(bkpQtyRecsPerSelect);
 		
-		if (CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())){
+		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())){
 			return simpleValue.intValue();
 		}
-		
-		
 		
 		return 0;
 	}
@@ -64,15 +54,7 @@ public class SearchParamsDAO extends BaseDAO{
 		
 		String sql = searchClauses.generateSQL(conn);
 		
-		//String sqlToLog = SQLUtilitie.transformPreparedStatmentToFullSQLStatment(sql, searchClauses.getParameters(), conn);
-		
 		List<T> records = (List<T>) search(engine.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(), conn);
-		
-		/*if (!utilities.arrayHasElement(records) && utilities.createInstance(engine.getSearchParams().getRecordClass()).generateTableName().equals("obs")) {
-			engine.getRelatedOperationController().logInfo(sqlToLog);
-			
-			records = (List<T>) search(engine.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(), conn);
-		}*/
 		
 		return records;	
 	}

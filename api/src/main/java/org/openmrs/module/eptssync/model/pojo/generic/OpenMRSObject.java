@@ -4,10 +4,10 @@ import java.sql.Connection;
 import java.util.Date;
 import java.util.Map;
 
+import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
@@ -18,8 +18,6 @@ import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
  * @author jpboane
  *
  */
-
-//@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "className")
 public interface OpenMRSObject extends SyncRecord{
 	public static final int CONSISTENCE_STATUS = 1;
 	public static final int INCONSISTENCE_STATUS = -1;
@@ -29,11 +27,8 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract String generateDBPrimaryKeyAtt();
 	
-	public abstract int getObjectId();	
-	public abstract void setObjectId(int objectId);
-	
-	//public abstract void setOriginRecordId(int originRecordId);
-	//public abstract int getOriginRecordId();	
+	public abstract Integer getObjectId();	
+	public abstract void setObjectId(Integer objectId);
 	
 	/**
 	 * Load the destination parents id to this object
@@ -71,15 +66,8 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract String getUuid();
 	public abstract void setUuid(String uuid);
-	//public abstract void markAsInconsistent();
-	//public abstract void markAsConsistent();
-	//public abstract void setConsistent(int consistent);
-	//public abstract boolean isConsistent();
-	//public abstract int getConsistent();
 	public abstract boolean hasParents();
-	//public abstract int retrieveSharedPKKey(Connection conn)  throws ParentNotYetMigratedException, DBException;
-	
-	public abstract int getParentValue(String parentAttName);
+	public abstract Integer getParentValue(String parentAttName);
 	
 	/**
 	 * Indicate if this object was generated or not using an eskeleton class
@@ -113,7 +101,8 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
 
 	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn) throws DBException;
-	
+	public abstract OpenMRSObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode, SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException;
+		
 	public abstract SyncImportInfoVO getRelatedSyncInfo();
 	public abstract void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo);
 	
@@ -124,15 +113,25 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract Map<RefInfo, Integer>  loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException;
 	
 	public abstract void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException;
-	
-	//public abstract void markAsConsistent(Connection conn) throws DBException;
 		
 	public abstract void changeParentValue(String parentAttName, OpenMRSObject newParent);
+	
+	public abstract void setParentToNull(String parentAttName);
 	
 	public abstract void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException;
 	public abstract void changeParentForAllChildren(OpenMRSObject newParent, SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	public abstract Date getDateChanged();
+	public abstract Date getDateVoided();
+	public abstract Date getDateCreated() ;
 	
-	//public abstract void updateDestinationRecordId(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException;
+	/**
+	 * Check if this record has exactily the same values in all fields with a given object
+	 * 
+	 * @param srcObj
+	 * @return true if this record has exactily the same values in all fields with the given object
+	 */
+	public abstract boolean hasExactilyTheSameDataWith(OpenMRSObject srcObj);
 	
+	public abstract Object getFieldValue(String fieldName);
+		
 }

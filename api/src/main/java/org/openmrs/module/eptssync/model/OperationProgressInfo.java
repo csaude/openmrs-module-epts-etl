@@ -3,6 +3,7 @@ package org.openmrs.module.eptssync.model;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -11,9 +12,9 @@ import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.SyncProgressMeter;
-import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -95,45 +96,20 @@ public class OperationProgressInfo {
 	public void setItemsProgressInfo(List<TableOperationProgressInfo> itemsProgressInfo) {
 		this.itemsProgressInfo = itemsProgressInfo;
 	}
-
-	/*public void updateProgressInfo(EngineMonitor engineMonitor) {
-		TableOperationProgressInfo info = findTableOperationStatus(engineMonitor.getSyncTableInfo());
-		info.tryToReloadProgressMeter(engineMonitor.getMainEngine());
 	
-		info.save();
-	}*/
-	
-	private TableOperationProgressInfo findTableOperationStatus(SyncTableConfiguration tableConfiguration) {
-		for (TableOperationProgressInfo info : this.itemsProgressInfo) {
-			if (info.getOperationTable().equals(tableConfiguration.getTableName())) {
-				return info;
-			}
-		}	
-		
-		return null;
-	}
-	
-	public void initProgressMeter() {
+	public void initProgressMeter(Connection conn) throws DBException{
 		this.itemsProgressInfo = new ArrayList<TableOperationProgressInfo>();
 		
 		for (SyncTableConfiguration tabConf: this.getConfiguration().getTablesConfigurations()) {
-			File syncStatus = this.controller.generateTableProcessStatusFile(tabConf);
-			
 			TableOperationProgressInfo pm = null;
 			
 			try {
-				
-				if (syncStatus.exists()) {
-					pm = TableOperationProgressInfo.loadFromFile(syncStatus);
-					
-					pm.setController(this.controller);
-					pm.setTableConfiguration(tabConf);
+				pm = TableOperationProgressInfoDAO.find(getController(), tabConf, conn);
+			}
+			catch (DBException e) {
+				if (!e.isTableOrViewDoesNotExistException()) {
+					throw e;
 				}
-				
-			} catch (Exception e) {
-				e.printStackTrace();
-				
-				FileUtilities.removeFile(syncStatus.getAbsolutePath());
 			}
 			
 			if (pm == null) {
@@ -261,7 +237,7 @@ public class OperationProgressInfo {
 	}	
 	
 	public void save() {
- 		String fileName = this.controller.generateProcessStatusFile().getAbsolutePath();
+ 		String fileName = this.controller.generateOperationStatusFile().getAbsolutePath();
 		
 		if (new File(fileName).exists()) {
 			FileUtilities.removeFile(fileName);

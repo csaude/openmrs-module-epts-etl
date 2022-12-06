@@ -38,13 +38,19 @@ public class InconsistenceSolverEngine extends Engine {
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
 		List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
 		
-		this.getMonitor().logInfo("DOING INCONSISTENCE SOLVER FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logInfo("DOING INCONSISTENCE SOLVER FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
-			obj.resolveInconsistence(getSyncTableConfiguration(), conn);
+			try {
+				obj.resolveInconsistence(getSyncTableConfiguration(), conn);
+			} catch (Exception e) {
+				logError("Any error occurred processing record [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");
+				
+				throw new RuntimeException(e);
+			}
 		}
 		
-		this.getMonitor().logInfo("INCONSISTENCE SOLVED FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
+		logInfo("INCONSISTENCE SOLVED FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
 	}
 	
 	@Override

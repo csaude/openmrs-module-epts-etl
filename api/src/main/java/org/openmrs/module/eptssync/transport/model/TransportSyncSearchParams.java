@@ -9,7 +9,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.transport.controller.SyncTransportController;
+import org.openmrs.module.eptssync.transport.controller.TransportController;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class TransportSyncSearchParams extends SyncSearchParams<OpenMRSObject> implements FilenameFilter{
@@ -17,16 +17,16 @@ public class TransportSyncSearchParams extends SyncSearchParams<OpenMRSObject> i
 	private String lastFileName;
 	
 	private String fileNamePathern;
-	private SyncTransportController controller;
+	private TransportController controller;
 	
-	public TransportSyncSearchParams(SyncTransportController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
+	public TransportSyncSearchParams(TransportController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
 		super(tableInfo, limits);
 		
 		this.controller = controller;
 		
 		if (limits != null) {
-			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getFirstRecordId(), 10) + "_" +  utilities.garantirXCaracterOnNumber(limits.getFirstRecordId(), 10) + ".json"; 
-			this.lastFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getLastRecordId(), 10) + "_" + utilities.garantirXCaracterOnNumber(limits.getLastRecordId(), 10) + ".json"; 
+			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + "_" +  utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + ".json"; 
+			this.lastFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + "_" + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json"; 
 		}
 		
 		//controller.logInfo("FIRT RECORD TO TRANSPORT " + this.firstFileName);
@@ -48,7 +48,7 @@ public class TransportSyncSearchParams extends SyncSearchParams<OpenMRSObject> i
 	
 	@Override
 	public Class<OpenMRSObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass();
+		return this.tableInfo.getSyncRecordClass(tableInfo.getMainApp());
 	}
 	
 	@Override

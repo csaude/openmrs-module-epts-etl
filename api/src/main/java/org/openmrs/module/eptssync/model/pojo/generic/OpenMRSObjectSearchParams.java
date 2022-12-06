@@ -3,64 +3,72 @@ package org.openmrs.module.eptssync.model.pojo.generic;
 import java.sql.Connection;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.model.AbstractSearchParams;
+import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchClauses;
-import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class OpenMRSObjectSearchParams <T extends OpenMRSObject> extends AbstractSearchParams<T>{
-	private Class<T> openMRSObjectClass;
-	
-	private T defaultObject;
-	private String originAppLocationCode;
-	
-	private CommonUtilities utilities;
-	
-	private SyncTableConfiguration tableConfiguration;
-	
-	public OpenMRSObjectSearchParams(SyncTableConfiguration tableConfiguration, Class<T> openMRSObjectClass){
-		this.openMRSObjectClass = openMRSObjectClass;
+public class OpenMRSObjectSearchParams extends SyncSearchParams<OpenMRSObject>{		
 		
-		this.utilities = CommonUtilities.getInstance();
-		
-		this.defaultObject = utilities.createInstance(openMRSObjectClass);
-		this.tableConfiguration = tableConfiguration;
-	}
-	
-	public void setOriginAppLocationCode(String originAppLocationCode) {
-		this.originAppLocationCode = originAppLocationCode;
+	public OpenMRSObjectSearchParams(SyncTableConfiguration tableConfiguration, RecordLimits limits){		
+		super(tableConfiguration, limits);
 	}
 	
 	@Override
-	public SearchClauses<T> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<T> searchClauses = new SearchClauses<T>(this);
+	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
 		
-		searchClauses.addColumnToSelect(defaultObject.generateTableName() + ".*");
-		searchClauses.addToClauseFrom(defaultObject.generateTableName());
 		
-		if (defaultObject.generateTableName().equalsIgnoreCase("patient")) {
-			searchClauses.addToClauseFrom("INNER JOIN person ON person.person_id = patient.patient_id");
-			searchClauses.addToClauseFrom("INNER JOIN " + this.tableConfiguration.generateFullStageTableName() + " ON uuid = record_uuid");
+		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+			searchClauses.addToClauseFrom("patient inner join person src_ on person_id = patient_id");
+			searchClauses.addColumnToSelect("patient.*, src_.uuid");
 		}
 		else {
-			searchClauses.addToClauseFrom("INNER JOIN " + this.tableConfiguration.generateFullStageTableName() + " ON uuid = record_uuid");
+			searchClauses.addToClauseFrom(tableInfo.getTableName() + " src_");
+			
+			searchClauses.addColumnToSelect("src_.*");
+		}
+			
+		if (limits != null) {
+			searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
+			searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
+			searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
 		}
 		
-		if (isByAppOriginLocation()) {
-				searchClauses.addToClauses("record_origin_location_code = ?");
-			searchClauses.addToParameters(this.originAppLocationCode);
+		if (this.tableInfo.getExtraConditionForExport() != null) {
+			searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
 		}
-	
+		
+		if (utilities.stringHasValue(getExtraCondition())) {
+			searchClauses.addToClauses(getExtraCondition());
+		}
+		
 		return searchClauses;
 	}
 
-	public boolean isByAppOriginLocation() {
-		return utilities.stringHasValue(this.originAppLocationCode);
-	}
-	
 	@Override
-	public Class<T> getRecordClass() {
-		return this.openMRSObjectClass;
+	public Class<OpenMRSObject> getRecordClass() {
+		return this.getTableInfo().getSyncRecordClass(tableInfo.getMainApp());
 	}
 
+	@Override
+	public int countAllRecords(Connection conn) throws DBException {
+		RecordLimits bkpLimits = this.limits;
+		
+		this.limits = null;
+		
+		int count = SearchParamsDAO.countAll(this, conn);
+		
+		this.limits = bkpLimits;
+		
+		
+		return count;	
+	}
+
+	@Override
+	public int countNotProcessedRecords(Connection conn) throws DBException {
+		throw new ForbiddenOperationException("Implement this method your self");
+	}
 }

@@ -129,8 +129,11 @@ public abstract class BaseDAO{
 				result.get(result.size() - 1).load(rs);
 			}			
 		}
-		catch(Exception e){
-			e.printStackTrace();
+		catch(SQLException e){
+			throw new DBException(e);
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 		finally{
 			releaseDBResources(st, rs, conn);
@@ -259,14 +262,15 @@ public abstract class BaseDAO{
 	}
 
 	private static boolean tryToSolveIssues(DBException e, String sql, Object[] params, Connection conn) throws DBException {
-		if (e.getMessage() != null && e.getMessage().contains("ORA-00060")){
+		if (e.isDeadLock(conn)){
 			logger.warn("DEADLOCK DETECTED");
-			DBOperation dbOp = new DBOperation(sql, params, conn, 5);
-			dbOp.retry();
+			DBOperation dbOp = new DBOperation(sql, params, conn, 10);
+			dbOp.retryDueDeadLock();
 			
 			return true;
 		}
-		else return false;
+		
+		return false;
 	}
 	
 	public static void commitConnection(Connection conn){
@@ -353,7 +357,7 @@ public abstract class BaseDAO{
 	 * @throws DBException 
 	 */
 	public static void insert(BaseVO vo, String sql, Object[] params, Connection conn) throws DBException{
-	    logger.trace("INSERTING RECORD ON ["+vo.generateTableName() + "]");
+	    //logger.trace("INSERTING RECORD ON ["+vo.generateTableName() + "]");
 				
 		executeQuery(sql, params, conn);
 	}

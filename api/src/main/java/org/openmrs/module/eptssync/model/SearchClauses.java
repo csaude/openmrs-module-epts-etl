@@ -88,12 +88,12 @@ public class SearchClauses<T extends VO> {
 	 */
 	public void addColumnToSelect(String columnToSelect){
 		this.columnsToSelect +=  FuncoesGenericas.stringHasValue(this.columnsToSelect) ? "\n" : "";
-		this.columnsToSelect = FuncoesGenericas.concatStrings(this.columnsToSelect, columnToSelect, ",");
+		this.columnsToSelect = FuncoesGenericas.concatStringsWithSeparator(this.columnsToSelect, columnToSelect, ",");
 	}
 		
 	public void addToGroupingFields(String field){
 		this.groupingFields += FuncoesGenericas.stringHasValue(this.groupingFields) ? "\n" : "";
-		this.groupingFields = FuncoesGenericas.concatStrings(this.groupingFields, field, ",");
+		this.groupingFields = FuncoesGenericas.concatStringsWithSeparator(this.groupingFields, field, ",");
 	}
 
 	/**
@@ -128,7 +128,7 @@ public class SearchClauses<T extends VO> {
 		}
 		
 		this.orderByFields  += FuncoesGenericas.stringHasValue(this.orderByFields) ? "\n" : "";
-		this.orderByFields = FuncoesGenericas.concatStrings(this.orderByFields, field, ",");
+		this.orderByFields = FuncoesGenericas.concatStringsWithSeparator(this.orderByFields, field, ",");
 	}
 	
 
@@ -253,17 +253,19 @@ public class SearchClauses<T extends VO> {
 	}
 
 	public String generateSQL(Connection conn) throws DBException{
-		String sql =   " SELECT " + (isDistinctSelect() ? " DISTINCT " : "") + columnsToSelect  + 
-					   " \n FROM   " + clauseFrom + 
-					   " \n WHERE  1 = 1 \n" + (FuncoesGenericas.stringHasValue(clauses) ? " AND " + clauses : "") +
-					   "			  	 \n" + (FuncoesGenericas.stringHasValue(groupingFields) ? "GROUP BY " + groupingFields : "") +
-					   "			  	 \n" + (FuncoesGenericas.stringHasValue(orderByFields) ? "ORDER BY " + orderByFields + " " + this.orderByType : "") +
-					   "			  	 \n" + (FuncoesGenericas.stringHasValue(havingClauses) ? "HAVING " + havingClauses : "");
+		String sql =  " SELECT " + (isDistinctSelect() ? " DISTINCT " : "") + columnsToSelect + " \n"; 
+			   sql += " FROM   " + clauseFrom + " \n";
+			   sql += " WHERE  1 = 1 \n";
+			   sql += (FuncoesGenericas.stringHasValue(clauses) ? " AND " + clauses : "") ;
 	
-		if (this.searchParameters.isPhaseSelected()) {
-			sql = SQLUtilitie.createPhasedSelect(sql, this.searchParameters.getStartAt(), this.searchParameters.getQtdRecordPerSelected(), conn);
-		}
-	
+			   sql +=  "			  	 \n" + (FuncoesGenericas.stringHasValue(groupingFields) ? "GROUP BY " + groupingFields : "") ;
+			   sql +=		   "			  	 \n" + (FuncoesGenericas.stringHasValue(havingClauses) ? "HAVING " + havingClauses : "");
+			   sql +=  "			  	 \n" + (FuncoesGenericas.stringHasValue(orderByFields) ? "ORDER BY " + orderByFields + " " + this.orderByType : "");
+			
+				if (this.searchParameters.isPhaseSelected() &&  !utilities.stringHasValue(groupingFields)) {
+					sql = SQLUtilitie.createPhasedSelect(sql, this.searchParameters.getStartAt(), this.searchParameters.getQtdRecordPerSelected(), conn);
+				}
+				
 		return sql;
 	}
 	
@@ -298,7 +300,7 @@ public class SearchClauses<T extends VO> {
 		String auxStr[] = this.clauseFrom.split(clauseFromLine);
 		
 		
-		if (auxStr.length < 0) return;
+		if (auxStr.length <= 0) return;
 		
 		if (auxStr.length == 1) {
 			clauseFrom = auxStr[0];

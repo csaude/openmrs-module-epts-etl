@@ -9,6 +9,8 @@ import javax.ws.rs.ForbiddenException;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
+import org.openmrs.module.eptssync.controller.conf.SyncProcessType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.utilities.ClassPathUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -37,7 +39,10 @@ public class ConfVM {
 	
 	private ConfVM(String installationType) throws IOException, DBException {
 		this.syncConfiguration = new SyncConfiguration();
-		this.syncConfiguration.setInstallationType(installationType);
+		
+		SyncProcessType processType = installationType.equals("source") ? SyncProcessType.SOURCE_SYNC : SyncProcessType.DATABASE_MERGE_FROM_JSON;
+		
+		this.syncConfiguration.setProcessType(processType);
 		
 		reset();
 	}
@@ -79,6 +84,7 @@ public class ConfVM {
 	}
 	
 	public static ConfVM getInstance(String installationType) throws IOException, DBException {
+		
 		ConfVM vm = null;
 		
 		if (installationType.equals("source")) {
@@ -126,13 +132,13 @@ public class ConfVM {
 	private void determineOtherSyncConfiguration() throws DBException {
 		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
 		
-		String otherConfFile = this.syncConfiguration.getInstallationType().equals("source") ? "dest_sync_config.json" : "source_sync_config.json";
+		String otherConfFile = this.syncConfiguration.getProcessType().isSourceSync() ? "dest_sync_config.json" : "source_sync_config.json";
 
 		File otherConfigFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "resources" + FileUtilities.getPathSeparator() + otherConfFile);
 		
 		if (otherConfigFile.exists()) {
 			try {
-				this.otherSyncConfiguration = ConfVM.getInstance(this.syncConfiguration.getInstallationType().equals("source") ? "destination" : "source").getSyncConfiguration();
+				this.otherSyncConfiguration = ConfVM.getInstance(this.syncConfiguration.getProcessType().isDataBaseMergeFromJSON() ? "destination" : "source").getSyncConfiguration();
 			} catch (IOException e) {
 				throw new ForbiddenException(e);
 			}
@@ -146,16 +152,16 @@ public class ConfVM {
 		
 		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
 		
-		String configFileName = this.syncConfiguration.getInstallationType().equals("source") ? "source_sync_config.json" : "dest_sync_config.json";
+		String configFileName = this.syncConfiguration.getProcessType().isSourceSync() ? "source_sync_config.json" : "dest_sync_config.json";
 
 		this.configFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "conf" + FileUtilities.getPathSeparator() + configFileName);
 
 		if (this.configFile.exists()) {
 			reloadedSyncConfiguration = SyncConfiguration.loadFromFile(this.configFile);
 		} else {
-			String json = this.syncConfiguration.getInstallationType().equals("source") ? ConfigData.generateDefaultSourcetConfig() : ConfigData.generateDefaultDestinationConfig();
+			String json = this.syncConfiguration.getProcessType().isSourceSync() ? ConfigData.generateDefaultSourcetConfig() : ConfigData.generateDefaultDestinationConfig();
 		
-			reloadedSyncConfiguration = SyncConfiguration.loadFromJSON(json);
+			reloadedSyncConfiguration = SyncConfiguration.loadFromJSON(null, json);
 			
 			reloadedSyncConfiguration.setSyncRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "data");
 			reloadedSyncConfiguration.setRelatedConfFile(this.configFile);
@@ -166,12 +172,12 @@ public class ConfVM {
 			
 			properties.load(FileUtilities.createStreamFromFile(openMrsRuntimePropertyFile));
 			
-			reloadedSyncConfiguration.getConnInfo().setConnectionURI(properties.getProperty("connection.url"));
-			reloadedSyncConfiguration.getConnInfo().setDataBaseUserName(properties.getProperty("connection.username"));
-			reloadedSyncConfiguration.getConnInfo().setDataBaseUserPassword(properties.getProperty("connection.password"));
+			reloadedSyncConfiguration.getMainDBConnInfo().setConnectionURI(properties.getProperty("connection.url"));
+			reloadedSyncConfiguration.getMainDBConnInfo().setDataBaseUserName(properties.getProperty("connection.username"));
+			reloadedSyncConfiguration.getMainDBConnInfo().setDataBaseUserPassword(properties.getProperty("connection.password"));
 		}
 		
-		reloadedSyncConfiguration.setRelatedController(this.syncConfiguration.getRelatedController() == null ? new ProcessController(reloadedSyncConfiguration) : this.syncConfiguration.getRelatedController());
+		reloadedSyncConfiguration.setRelatedController(this.syncConfiguration.getRelatedController() == null ? new ProcessController(null, reloadedSyncConfiguration) : this.syncConfiguration.getRelatedController());
 		reloadedSyncConfiguration.getRelatedController().setConfiguration(reloadedSyncConfiguration);
 		reloadedSyncConfiguration.loadAllTables();
 		
@@ -180,16 +186,16 @@ public class ConfVM {
 		
 		this.syncConfiguration = reloadedSyncConfiguration;
 		
-		if (this.syncConfiguration.isSourceInstallationType()) {
+		if (this.syncConfiguration.isSourceSyncProcess()) {
 			if (this.syncConfiguration.getOriginAppLocationCode() == null) {
-				this.syncConfiguration.tryToDetermineOriginAppLocationCode();
+				//this.syncConfiguration.tryToDetermineOriginAppLocationCode();
 			}
 		}
 		
 	}
 
-	public void selectOperation(String operationType) {
-		if (!operationType.isEmpty()) {
+	public void selectOperation(SyncOperationType operationType) {
+		if (operationType != null) {
 			this.selectedOperation = syncConfiguration.findOperation(operationType);
 		}
 		else {

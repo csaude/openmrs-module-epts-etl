@@ -23,9 +23,9 @@ public class ReportGenerator {
 	public static void main(String[] synConfigFiles) throws IOException, DBException {
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);
 
-		ProcessController controller = new ProcessController(syncConfigs.get(0));
+		ProcessController controller = new ProcessController(null, syncConfigs.get(0));
 		
-		OpenConnection conn = controller.openConnection();
+		OpenConnection conn = controller.getDefaultApp().openConnection();
 		
 		generateDataInconsistencyRepor(syncConfigs.get(0), conn);
 	

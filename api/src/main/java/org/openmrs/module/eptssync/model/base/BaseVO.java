@@ -15,6 +15,8 @@ import java.util.List;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Base class for all value objects. Provides utility function load(...) to fill
  * fields.
@@ -26,6 +28,8 @@ public abstract class BaseVO  implements VO{
 	protected Date dateCreated;
 	
 	protected Date dateChanged;
+	
+	protected Date dateVoided;
 	
 	protected boolean excluded;
 	/**
@@ -51,6 +55,8 @@ public abstract class BaseVO  implements VO{
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+		
+		try {this.setDateVoided(resultSet.getDate("date_retired"));} catch (SQLException e) {}
 	}
 	
 	public Date getDateChanged() {
@@ -67,6 +73,14 @@ public abstract class BaseVO  implements VO{
 	
 	public void setDateCreated(Date dateCreated) {
 		this.dateCreated = dateCreated;
+	}
+
+	public Date getDateVoided() {
+		return dateVoided;
+	}
+
+	public void setDateVoided(Date dateVoided) {
+		this.dateVoided = dateVoided;
 	}
 
 	/**
@@ -129,10 +143,11 @@ public abstract class BaseVO  implements VO{
 	 * @return todos os atributos de inst�ncia desta classe independentemento do
 	 *         modificador de acesso
 	 */
-	private Object[] getFields() {
+	protected Object[] getFields() {
 		return getFields(this);
 	}
 	
+	@JsonIgnore
 	public boolean isExcluded() {
 		return excluded;
 	}

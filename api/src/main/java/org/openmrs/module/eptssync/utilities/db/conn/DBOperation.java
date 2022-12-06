@@ -21,24 +21,25 @@ public class DBOperation {
 		this.params = params;
 		this.conn = conn;
 		this.maxTry = maxTry;
+		this.qtyTry= 0; 
 	}
 	
-	public void retry() throws DBException {
+	public void retryDueDeadLock() throws DBException {
 		if (qtyTry < maxTry){
 			qtyTry++;
-			logger.info("DEADLOCK DETECTED");
-			logger.info("RETRYING OPERATION [" +qtyTry+ "] OF ["+maxTry+"]");
+			logger.warn("DEADLOCK DETECTED");
+			logger.warn("RETRYING OPERATION [" +qtyTry+ "] OF ["+maxTry+"]");
 			try {
 				BaseDAO.executeDBQuery(sql, params, conn);
 			} catch (DBException e) {
 				this.exception = e;
 				
-				if (e.getMessage() != null && e.getMessage().contains("ORA-00060")){
+				if (e.isDeadLock(conn)){
 					try {Thread.sleep(5000);} catch (InterruptedException e1) {}
 					
-					retry();
+					retryDueDeadLock();
 				}else {
-					throw new DBException(e);
+					throw e;
 				}
 			}
 		}else {

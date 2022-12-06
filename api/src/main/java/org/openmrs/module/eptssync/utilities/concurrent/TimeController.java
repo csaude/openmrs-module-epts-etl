@@ -47,10 +47,13 @@ public class TimeController implements Runnable, Serializable{
 		
 		Date currTime = DateAndTimeUtilities.addSecondsToDate(startTime, elapsedTimeInSeconds);
 		
-		segundos = (long) DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.SECOND_FORMAT);
-		minutos = (long) DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.MINUTE_FORMAT);
-		horas = (long) DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.HOUR_FORMAT);
 		dias = (long) DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.DAY_FORMAT);
+		
+		horas = (long) (DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.HOUR_FORMAT)%24);
+		
+		minutos = (long) (DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.MINUTE_FORMAT)%60);
+		
+		segundos = (long) (DateAndTimeUtilities.dateDiff(currTime, startTime, DateAndTimeUtilities.SECOND_FORMAT)%60);
 		
 		this.startTime = startTime;
 	}
@@ -140,6 +143,10 @@ public class TimeController implements Runnable, Serializable{
 		   timer.interrupt();
 		   timer = null;
 	   }
+	}
+
+	public static double computeElapsedTime(Date startTime, Date stopTime) {
+		return DateAndTimeUtilities.dateDiff(stopTime, startTime, DateAndTimeUtilities.MINUTE_FORMAT);
 	}
 
 }

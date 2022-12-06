@@ -138,8 +138,6 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	 * @param timer Temporizador da migracao
 	 */
 	public synchronized void refresh(String statusMsg, int total, int processed){
-		//if (_default) throw new ForbiddenOperationException("You cannot refresh a default progress meter!");
-		
 		this.total = total;
 		this.processed = processed;
 		
@@ -184,7 +182,6 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	public Date getStartTime(){
 		return this.startTime;
 	}
-	
 	/**
 	 * 
 	 * @return a hora de inicio da migracao formatada
@@ -355,11 +352,11 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	public String getDetailedRemaining(){
 		int remaining = total - processed;
 		
-		return remaining + "(" + (100 - this.getProgress()) + "%)";
+		return utilities.generateCommaSeparetedNumber(remaining) + "(" + (100 - this.getProgress()) + "%)";
 	}
 	
 	public String getDetailedProgress(){
-		return this.processed + "(" + this.getProgress() + "%)";
+		return utilities.generateCommaSeparetedNumber(this.processed) + "(" + this.getProgress() + "%)";
 	}
 	
 	/**
@@ -410,5 +407,21 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 		if (getStartTime() != null) {
 			this.timer = TimeController.retrieveTimer(getStartTime(), getElapsedTime());
 		}
+	}
+
+	public static SyncProgressMeter fullInit(String status, Date startTime, Date stopTime, int total, int processed) {
+		SyncProgressMeter progressMeter = new SyncProgressMeter();
+		
+		progressMeter.status = status;
+		progressMeter.startTime = startTime;
+		progressMeter.total = total;
+		progressMeter.processed = processed;
+		progressMeter.elapsedTime = TimeController.computeElapsedTime(startTime, stopTime);
+		
+		progressMeter.timer = new TimeController(startTime, progressMeter.elapsedTime);
+		
+		if (progressMeter.isFinished()) progressMeter.finishTime = stopTime;
+		
+		return progressMeter;
 	}
 }

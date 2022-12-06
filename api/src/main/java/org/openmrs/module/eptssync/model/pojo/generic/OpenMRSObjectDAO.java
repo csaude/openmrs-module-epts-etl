@@ -1,13 +1,12 @@
 package org.openmrs.module.eptssync.model.pojo.generic;
 
 import java.sql.Connection;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.load.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -90,20 +89,27 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	
 	static Logger logger = Logger.getLogger(OpenMRSObjectDAO.class);
 	
-	public static OpenMRSObject thinGetByRecordOrigin(int recordOriginId, SyncTableConfiguration parentTableConfiguration, Connection conn) throws DBException{
+	public static OpenMRSObject thinGetByRecordOrigin(int recordOriginId, String recordOriginLocationCode, SyncTableConfiguration parentTableConfiguration, Connection conn) throws DBException{
 		
 		try {
-			Object[] params = {recordOriginId};
+			Object[] params = {recordOriginId, recordOriginLocationCode};
 			
-			String tableName = parentTableConfiguration.getTableName().equalsIgnoreCase("patient") ? "person" : parentTableConfiguration.getTableName();
+			String tableName = parentTableConfiguration.getTableName();
+			
+			String clauseFromStarting = tableName;
+			
+			if (tableName.equals("patient")) {
+				clauseFromStarting += " INNER JOIN person on person_id = patient_id \n";
+			}
 			
 			String sql = "";
 			
-			sql += " SELECT " + tableName + ".* \n";
-			sql += " FROM  	" + tableName + " INNER JOIN " + parentTableConfiguration.generateFullStageTableName() + " ON record_uuid = uuid\n";
-			sql += " WHERE 	record_origin_id = ?";
 			
-			return find(parentTableConfiguration.getSyncRecordClass(), sql, params, conn);
+			sql += " SELECT " + tableName + ".*" + (tableName.equals("patient") ? ", uuid" : "") + "\n";
+			sql += " FROM  	" + clauseFromStarting + " INNER JOIN " + parentTableConfiguration.generateFullStageTableName() + " ON record_uuid = uuid\n";
+			sql += " WHERE 	record_origin_id = ? and record_origin_location_code = ? ";
+			
+			return find(parentTableConfiguration.getSyncRecordClass(parentTableConfiguration.getMainApp()), sql, params, conn);
 		} catch (Exception e) {
 			logger.info("Error trying do retrieve record on table " + parentTableConfiguration.getTableName()  + "["+e.getMessage() + "]");
 			
@@ -114,17 +120,45 @@ public class OpenMRSObjectDAO extends BaseDAO {
 	}
 	
 	
-	public static <T extends OpenMRSObject> T thinGetByUuid(Class<T> openMRSClass, String uuid, Connection conn) throws DBException{
+	public static <T extends OpenMRSObject> List<T> getByUuid(Class<T> openMRSClass, String uuid, Connection conn) throws DBException{
 		try {
 			Object[] params = {uuid};
 			
+			T obj = openMRSClass.newInstance();
+			
 			String sql = "";
 			
-			sql += " SELECT * \n";
-			sql += " FROM  	" + openMRSClass.newInstance().generateTableName() + "\n";
+			sql += " SELECT " + obj.generateTableName() + ".*" + (obj.generateTableName().equals("patient") ? ", uuid" : "") + "\n";
+			sql += " FROM     " + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id " : "") + "\n";
 			sql += " WHERE 	uuid = ?;";
 			
-			return find(openMRSClass, sql, params, conn);
+			return search(openMRSClass, sql, params, conn);
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		
+			throw new RuntimeException(e);
+		}
+	}
+	
+	
+	public static <T extends OpenMRSObject> List<T> getByField(Class<T> openMRSClass, String fieldName, String fieldValue, Connection conn) throws DBException{
+		try {
+			Object[] params = {fieldValue};
+			
+			T obj = openMRSClass.newInstance();
+			
+			String sql = "";
+			
+			sql += " SELECT " + obj.generateTableName() + ".*" + (obj.generateTableName().equals("patient") ? ", uuid" : "") + "\n";
+			sql += " FROM     " + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id " : "") + "\n";
+			sql += " WHERE 	" + fieldName + " = ?";
+			sql += " ORDER BY " + fieldName;
+			
+			return search(openMRSClass, sql, params, conn);
 		} catch (InstantiationException e) {
 			e.printStackTrace();
 			
@@ -144,8 +178,8 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			
 			String sql = "";
 			
-			sql += " SELECT * \n";
-			sql += " FROM  	" + obj.generateTableName() + "\n";
+			sql += " SELECT " + obj.generateTableName() + ".* " + (obj.generateTableName().equals("patient") ? ", person.uuid" : "") +  "\n";
+			sql += " FROM  	" + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id" : "") + "\n";
 			sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + " = ?;";
 			
 			return find(openMRSClass, sql, params, conn);
@@ -160,6 +194,34 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		}
 	}
 	
+	public static <T extends OpenMRSObject> T getByIdOnSpecificSchema(Class<T> openMRSClass, Integer objectId, String schema, Connection conn) throws DBException{
+		try {
+			T obj = openMRSClass.newInstance();
+			
+			Object[] params = {objectId};
+			
+			
+			String tableName = obj.generateTableName();
+			
+			String sql = "";
+			
+			sql += " SELECT " + tableName + ".*" + (tableName.equals("patient") ? ", uuid" : "") + "\n";
+			sql += " FROM  	" + schema + "." + tableName +  (tableName.equals("patient") ? " left join person on person_id = patient_id" : "") + "\n";
+			sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + " = ?;";
+			
+			return find(openMRSClass, sql, params, conn);
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		
+			throw new RuntimeException(e);
+		}
+	}
+	
+	
 	public static List<OpenMRSObject> getByParentId(SyncTableConfiguration tableConfiguration, String parentField, int parentId, Connection conn) throws DBException {
 		Object[] params = {parentField};
 		
@@ -169,6 +231,19 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		return utilities.parseList(search(GenericOpenMRSObject.class, sql, params, conn), OpenMRSObject.class);
 	}
+	
+	public static OpenMRSObject getDefaultRecord(SyncTableConfiguration tableConfiguration,  Connection conn) throws DBException{
+		Object[] params = {};
+		
+		String sql = "";
+		
+		sql += " SELECT *\n";
+		sql += " FROM  	" +  tableConfiguration.getTableName() + "\n";
+		sql += " LIMIT 0, 1";
+		
+		return find(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);		
+	}
+	
 	
 	public static GenericOpenMRSObject getById(String tableName, String pkColumnName, int id, Connection conn) throws DBException{
 		Object[] params = {id};
@@ -181,81 +256,67 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		return find(GenericOpenMRSObject.class, sql, params, conn);		
 	}
-
-	private static OpenMRSObject getGenericSpecificRecord(SyncTableConfiguration tableInfo, String originAppLocationCode, String function, Date syncStartDate, Connection conn) throws DBException, ForbiddenOperationException {
+	
+	public static OpenMRSObject getFirstConsistentRecordInOrigin(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+		return getConsistentRecordInOrigin(tableInfo, "min", conn);
+	}
+	
+	public static OpenMRSObject getLastConsistentRecordOnOrigin(SyncTableConfiguration tableInfo,  Connection conn) throws DBException {
+		return getConsistentRecordInOrigin(tableInfo, "max", conn);
+	}
+	
+	
+	private static GenericOpenMRSObject getConsistentRecordInOrigin(SyncTableConfiguration tableConfiguration, String function, Connection conn) throws DBException {
 		Object[] params = {};
 		
 		String sql = "";
 		
-		OpenMRSObject obj = utilities.createInstance(tableInfo.getSyncRecordClass());
-	
-		String recordTableName	= tableInfo.getTableName().equalsIgnoreCase("patient") ? "person" : tableInfo.getTableName();
-		String pk = tableInfo.getTableName().equalsIgnoreCase("patient") ? "person_id" : obj.generateDBPrimaryKeyAtt();
+		String table = tableConfiguration.getTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
 		
+		String tablesToSelect = stageTable + " stage_ INNER JOIN " + table + " src_ on src_.uuid = stage_.record_uuid";
 		
-		String clause = "1 = 1";
+		if (table.equalsIgnoreCase("patient")) {
+			tablesToSelect = stageTable + " src_ INNER JOIN person on person.uuid = src_.record_uuid INNER JOIN patient dest_ ON patient_id = person_id ";
+		}
 
-		if (tableInfo.isUuidColumnNotExists()) {
-			clause = utilities.concatCondition(clause, "record_origin_id = " + recordTableName + "." + pk);
-		}
-		else {
-			clause = utilities.concatCondition(clause, "record_uuid = " + recordTableName + ".uuid");
-		}
+		sql += " SELECT " + tableConfiguration.getPrimaryKey() + " object_id \n";
+		sql += " FROM  	" + table + "\n";
+		sql += " WHERE 	1 = 1 \n";
+		sql += "		AND " + tableConfiguration.getPrimaryKey() + " = ";
+		sql += " 			 (	SELECT " + function+ "(" + tableConfiguration.getPrimaryKey()   + ")\n";
+		sql += "				FROM   " + tablesToSelect + "\n";
+		sql += "				WHERE consistent = 1;\n";
 		
-		if (syncStartDate != null) {
-			clause = utilities.concatCondition(clause, "last_sync_date >= ?");
-			
-			params = utilities.addToParams(params.length, params, syncStartDate);
-		}
+		return find(GenericOpenMRSObject.class, sql, params, conn);		
+	}	
+	
+	public static OpenMRSObject getFirstNeverProcessedRecordOnOrigin(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+		return getExtremeNeverProcessedRecordOnOrigin(tableInfo, "min", conn);
+	}
+	
+	public static OpenMRSObject getLastNeverProcessedRecordOnOrigin(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+		return getExtremeNeverProcessedRecordOnOrigin(tableInfo, "max", conn);
+	}
+
+	private static OpenMRSObject getExtremeNeverProcessedRecordOnOrigin(SyncTableConfiguration tableInfo, String function, Connection conn) throws DBException {
+		Object[] params = {};
 		
-		
-		if (utilities.stringHasValue(originAppLocationCode)) {
-			clause = utilities.concatCondition(clause, "record_origin_location_code = ?");
-		
-			params = utilities.addToParams(params.length, params, originAppLocationCode);
-		}
-		
+		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + obj.generateTableName() + "\n";
-		sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + "	= (	SELECT " + function + "(" + pk + ")\n";
-		sql += "													FROM   " + recordTableName + " \n";
+		sql += " FROM  	" + tableInfo.getTableName() + "\n";
+		sql += " WHERE 	" + tableInfo.getPrimaryKey() + "	=	 (	SELECT " + function + "(" + tableInfo.getPrimaryKey() + ")\n";
+		sql += "													FROM   " + tableInfo.getTableName() + " \n";
 		sql += "													WHERE  NOT EXISTS ( SELECT * \n";
 		sql += "																		FROM " + tableInfo.generateFullStageTableName() + "\n";
-		
-		sql += "																		WHERE " + clause + "\n)";
+		sql += "																		WHERE record_origin_id = " + tableInfo.getPrimaryKey() + "\n)";
 		sql += "												   )";
 		
-		try {
-			return find(tableInfo.getSyncRecordClass(), sql, params, conn);
-		} catch (DBException e) {
-			
-			//For old version of cohort_member, there is no uuid. This specific situation will be observerd on not upgraded source database
-			if (e.getLocalizedMessage().contains("Unknown column") && e.getLocalizedMessage().contains("cohort_member.uuid")){
-				tableInfo.setUuidColumnNotExists(true);
-				
-				return getGenericSpecificRecord(tableInfo, originAppLocationCode, function, syncStartDate, conn);
-			}
-			else throw e;
-		}
-		
-	}
+		return find(tableInfo.getSyncRecordClass(tableInfo.getMainApp()), sql, params, conn);
+	}	
 	
-	public static OpenMRSObject getFirstSyncRecordOnOrigin(SyncTableConfiguration tableInfo, String originAppLocationCode, Date syncStartDate, Connection conn) throws DBException {
-		return getGenericSpecificRecord(tableInfo, originAppLocationCode, "min", syncStartDate, conn);
-	}
-	
-	public static OpenMRSObject getLastRecordOnOrigin(SyncTableConfiguration tableInfo, String originAppLocationCode, Date syncStartDate, Connection conn) throws DBException {
-		return getGenericSpecificRecord(tableInfo, originAppLocationCode, "max", syncStartDate, conn);
-	}
 
-	public static OpenMRSObject getFirstRecordOnDestination(SyncTableConfiguration tableInfo, String originAppLocationCode, Date syncStartDate, Connection conn) throws DBException {
-		return getGenericSpecificRecord(tableInfo, originAppLocationCode, "min", syncStartDate, conn);
-	}
-	
-	public static OpenMRSObject getLastRecordOnDestination(SyncTableConfiguration tableInfo, String originAppLocationCode, Date syncStartDate, Connection conn) throws DBException {
-		return getGenericSpecificRecord(tableInfo, originAppLocationCode, "max",  syncStartDate, conn);
-	}
 	
 	public static void remove(OpenMRSObject record, Connection conn) throws DBException{
 		Object[] params = {record.getObjectId()};
@@ -306,16 +367,16 @@ public class OpenMRSObjectDAO extends BaseDAO {
   				sql +=	" WHERE 	" + parentField + " = ? ";
 				sql +=	"			AND record_origin_location_code = ? ";
 		
-		return search(tableConfiguration.getSyncRecordClass(), sql, params, conn);
+		return search(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
 	}
 	
 	public static List<OpenMRSObject> getByParentId(Class<OpenMRSObject> clazz, String parentField, int parentId, Connection conn) throws DBException {
-		Object[] params = {parentField};
+		Object[] params = {parentId};
 		
 		OpenMRSObject obj = utilities.createInstance(clazz);
 		
-		String sql = " SELECT * " +
-					 " FROM     " + obj.generateTableName() +
+		String sql = " SELECT " + obj.generateTableName() + ".*" + (obj.generateTableName().equals("patient") ? ", uuid" : "") +
+					 " FROM     " + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id " : "") +
 					 " WHERE 	" + parentField + " = ?";
 		
 		return search(clazz, sql, params, conn);
@@ -343,29 +404,6 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			insertAllData(objects, syncTableConfiguration, recordOriginLocationCode, conn);
 		}
 	}
-	
-	/*private static void updateDestinationRecordId(List<OpenMRSObject> objects, SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException {
-		for (OpenMRSObject object : objects) {
-			updateDestinationRecordId(object, syncTableConfiguration, conn);
-		}
-	}*/
-	
-	/*
-	public static void updateDestinationRecordId(OpenMRSObject object, SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException {
-		OpenMRSObject recordOnbDB = thinGetByUuid(object.getClass(), object.getUuid(), conn);
-		
-		if (recordOnbDB != null) {
-			Object[] params = {recordOnbDB.getObjectId(), object.getUuid()};
-			
-			String sql = "";
-			
-			sql += " UPDATE " + syncTableConfiguration.generateFullStageTableName();
-			sql += " SET    record_destination_id = ? "; 
-			sql += " WHERE  record_uuid = ? "; 
-				
-			executeQuery(sql, params, conn);
-		}
-	}*/
 
 	private static void insertAllData(List<OpenMRSObject> objects, SyncTableConfiguration syncTableConfiguration, String recordOriginLocationCode, Connection conn) throws DBException {
 		String sql = "";
@@ -420,7 +458,11 @@ public class OpenMRSObjectDAO extends BaseDAO {
 		
 		//Check if is uuid duplication
 		if (utilities.isValidUUID(s)) {
-			return thinGetByUuid(tableConfiguration.getSyncRecordClass(), s, conn);
+			List<OpenMRSObject> recs = getByUuid(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), s, conn);
+		
+			if (utilities.arrayHasElement(recs)) {
+				return recs.get(0);
+			}
 		}	
 		/*else {
 		 	//ORIGIN duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
@@ -451,7 +493,7 @@ public class OpenMRSObjectDAO extends BaseDAO {
 				return maxAcceptableId;
 			}
 			else {
-				if (getById(syncTableInfo.getSyncRecordClass(), maxAcceptableId - 1, conn) == null) {
+				if (getById(syncTableInfo.getSyncRecordClass(syncTableInfo.getMainApp()), maxAcceptableId - 1, conn) == null) {
 					return maxAcceptableId - 1;
 				}
 				else return getAvaliableObjectId(syncTableInfo, maxAcceptableId - 1, conn);
@@ -461,5 +503,168 @@ public class OpenMRSObjectDAO extends BaseDAO {
 			return maxAcceptableId;
 		}
 	}
+
+	public static int getFirstRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
+		return getSpecificRecord(tableConf, "min", conn);
+	}
 	
+	public static int getLastRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
+		return getSpecificRecord(tableConf, "max",  conn);
+	}
+	
+	public static int getSpecificRecord(SyncTableConfiguration tableConf, String function, Connection conn) throws DBException, ForbiddenOperationException {
+			
+		String 	sql =  " SELECT " + function + "("+ tableConf.getPrimaryKey() +") value\n";
+				sql += " FROM " + tableConf.getTableName() + "\n";
+				sql += " WHERE 1 = 1;";
+						
+		Object[] params = {};
+		
+		SimpleValue v = find(SimpleValue.class, sql, params, conn);
+		
+		return v != null && v.hasValue() ? v.intValue() : 0;
+	}	
+	
+
+	public static OpenMRSObject getFirstOutDatedRecordInDestination(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		return getOutDatedRecordInDestination(tableConfiguration, "min", conn);
+	}
+	
+	public static OpenMRSObject getLastOutDatedRecordInDestination(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		return getOutDatedRecordInDestination(tableConfiguration, "max", conn);
+	}
+	
+	private static GenericOpenMRSObject getOutDatedRecordInDestination(SyncTableConfiguration tableConfiguration, String function, Connection conn) throws DBException {
+		Object[] params = {};
+		
+		String sql = "";
+		
+		String table = tableConfiguration.getTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
+		
+		String tablesToSelect = stageTable + " src_ INNER JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
+		
+		if (table.equalsIgnoreCase("patient")) {
+			tablesToSelect = stageTable + " src_ INNER JOIN person on person.uuid = src_.record_uuid INNER JOIN patient dest_ ON patient_id = person_id ";
+		}
+		
+		
+		
+		String startingClause = "1 != 1 ";
+		String dateVoidedClause = "";
+		String dateChangedClause = "";
+		
+		if (!tableConfiguration.hasNoDateVoidedField()) {
+			dateVoidedClause += " or (dest_.date_voided is null and src_.record_date_voided is not null) ";
+			dateVoidedClause += " or (dest_.date_voided is not null and src_.record_date_voided is null) ";
+			dateVoidedClause += " or (dest_.date_voided < src_.record_date_voided)";
+		}
+		
+		
+		if (!tableConfiguration.hasNotDateChangedField()) {
+			dateChangedClause +=  " or (dest_.date_changed is null and src_.record_date_changed is not null) ";
+			dateChangedClause +=  " or (dest_.date_changed is not null and src_.record_date_changed is null) "; 
+			dateChangedClause +=  " or (dest_.date_changed < src_.record_date_changed)";
+		}
+		
+		
+		sql += " SELECT " + tableConfiguration.getPrimaryKey() + " object_id \n";
+		sql += " FROM  	" + table + "\n";
+		sql += " WHERE 	1 = 1 \n";
+		sql += "		AND " + tableConfiguration.getPrimaryKey() + " = ";
+		sql += " 			 (	SELECT " + function+ "(" + tableConfiguration.getPrimaryKey()   + ")\n";
+		sql += "				FROM   " + tablesToSelect + "\n";
+		sql += "				WHERE 1= 1\n";
+		sql += "					AND (" + startingClause + dateVoidedClause + dateChangedClause + "))";
+		
+		return find(GenericOpenMRSObject.class, sql, params, conn);		
+	}
+	
+	public static OpenMRSObject getFirstPhantomRecordInDestination(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		return getPhantomRecordInDestination(tableConfiguration, "min", conn);
+	}
+	
+	public static OpenMRSObject getLastPhantomRecordInDestination(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		return getPhantomRecordInDestination(tableConfiguration, "max", conn);
+	}
+	
+	private static OpenMRSObject getPhantomRecordInDestination(SyncTableConfiguration tableConfiguration, String function, Connection conn) throws DBException {
+		Object[] params = {};
+		
+		String sql = "";
+		
+		String table = tableConfiguration.getTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
+		
+		String tablesToSelect = stageTable + " src_ RIGHT JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
+		
+		if (table.equalsIgnoreCase("patient")) {
+			tablesToSelect = stageTable + " src_ RIGHT JOIN person dest_ on dest_.uuid = src_.record_uuid RIGHT JOIN patient ON patient_id = person_id ";
+		}
+		
+		sql += " SELECT " + tableConfiguration.getPrimaryKey() + " object_id \n";
+		sql += " FROM  	" + table + "\n";
+		sql += " WHERE 	1 = 1 \n";
+		sql += "		AND " + tableConfiguration.getPrimaryKey() + " = ";
+		sql += " 			 (	SELECT " + function+ "(" + tableConfiguration.getPrimaryKey()   + ")\n";
+		sql += "				FROM   " + tablesToSelect + "\n";
+		sql += "				WHERE id IS NULL\n)";
+		
+		return find(GenericOpenMRSObject.class, sql, params, conn);		
+	}
+	
+	
+	public static OpenMRSObject getFirstOutDatedRecordInDestination_(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		return getOutDatedRecordInDestination_(tableConfiguration, "min", conn);
+	}
+	
+	public static OpenMRSObject getLastOutDatedRecordInDestination_(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		return getOutDatedRecordInDestination_(tableConfiguration, "max", conn);
+	}
+	
+	private static GenericOpenMRSObject getOutDatedRecordInDestination_(SyncTableConfiguration tableConfiguration, String function, Connection conn) throws DBException {
+		Object[] params = {};
+		
+		String sql = "";
+		
+		String table = tableConfiguration.getTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
+		
+		String tablesToSelect = stageTable + " src_ INNER JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
+		
+		if (table.equalsIgnoreCase("patient")) {
+			tablesToSelect = stageTable + " src_ INNER JOIN person on person.uuid = src_.record_uuid INNER JOIN patient dest_ ON patient_id = person_id ";
+		}
+		
+		
+		
+		String startingClause = "1 != 1 ";
+		String dateVoidedClause = "";
+		String dateChangedClause = "";
+		
+		if (!tableConfiguration.hasNoDateVoidedField()) {
+			dateVoidedClause += " or (dest_.date_voided is null and src_.record_date_voided is not null) ";
+			dateVoidedClause += " or (dest_.date_voided is not null and src_.record_date_voided is null) ";
+			dateVoidedClause += " or (dest_.date_voided < src_.record_date_voided)";
+		}
+		
+		
+		if (!tableConfiguration.hasNotDateChangedField()) {
+			dateChangedClause +=  " or (dest_.date_changed is null and src_.record_date_changed is not null) ";
+			dateChangedClause +=  " or (dest_.date_changed is not null and src_.record_date_changed is null) "; 
+			dateChangedClause +=  " or (dest_.date_changed < src_.record_date_changed)";
+		}
+		
+		
+		sql += " SELECT " + tableConfiguration.getPrimaryKey() + " object_id \n";
+		sql += " FROM  	" + table + "\n";
+		sql += " WHERE 	1 = 1 \n";
+		sql += "		AND " + tableConfiguration.getPrimaryKey() + " = ";
+		sql += " 			 (	SELECT " + function+ "(" + tableConfiguration.getPrimaryKey()   + ")\n";
+		sql += "				FROM   " + tablesToSelect + "\n";
+		sql += "				WHERE 1= 1\n";
+		sql += "					AND (" + startingClause + dateVoidedClause + dateChangedClause + "))";
+		
+		return find(GenericOpenMRSObject.class, sql, params, conn);		
+	}
 }
