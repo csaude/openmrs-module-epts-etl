@@ -4,13 +4,15 @@ import java.sql.Connection;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectSearchParams;
+import org.openmrs.module.eptssync.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class ProblemsSolverSearchParams extends OpenMRSObjectSearchParams{
+public class ProblemsSolverSearchParams extends DatabaseObjectSearchParams{
 	private int savedCount;
 
 	public ProblemsSolverSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits) {
@@ -18,21 +20,20 @@ public class ProblemsSolverSearchParams extends OpenMRSObjectSearchParams{
 	}
 	
 	@Override
-	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
-			SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
+	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+			SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 			
 			String tableName = "tmp_user";
 			
 			searchClauses.addToClauseFrom(tableName);
 			
-			searchClauses.addColumnToSelect("distinct(" + tableName + ".user_uuid) uuid");
-			
-			searchClauses.addToGroupingFields("user_uuid");
-			searchClauses.addToHavingClauses("count(*) > 1");
-			
+			searchClauses.addColumnToSelect(tableName + ".*");
+				
 			if (this.tableInfo.getExtraConditionForExport() != null) {
 				searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
 			}
+			
+			searchClauses.addToClauses("processed = 0");
 			
 			if (utilities.stringHasValue(getExtraCondition())) {
 				searchClauses.addToClauses(getExtraCondition());
@@ -63,14 +64,13 @@ public class ProblemsSolverSearchParams extends OpenMRSObjectSearchParams{
 		return countAllRecords(conn);
 	}
 	
-	/*@SuppressWarnings("unchecked")
 	@Override
-	public Class<OpenMRSObject> getRecordClass() {
+	public Class<DatabaseObject> getRecordClass() {
 		try {
-			return (Class<OpenMRSObject>) GenericOpenMRSObject.class.getClassLoader().loadClass("org.openmrs.module.eptssync.model.pojo.generic.GenericOpenMRSObject");
+			return (Class<DatabaseObject>) GenericDatabaseObject.class.getClassLoader().loadClass("org.openmrs.module.eptssync.problems_solver.model.TmpUserVO");
 		}
 		catch (ClassNotFoundException e) {
 			throw new ForbiddenOperationException(e);
 		}
-	}*/
+	}
 }

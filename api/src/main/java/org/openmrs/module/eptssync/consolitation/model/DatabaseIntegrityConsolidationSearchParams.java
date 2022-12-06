@@ -7,10 +7,10 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams<OpenMRSObject>{
+public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams<DatabaseObject>{
 	private boolean selectAllRecords;
 	
 	public DatabaseIntegrityConsolidationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
@@ -20,8 +20,8 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 	}
 	
 	@Override
-	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
+	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		searchClauses.addColumnToSelect(tableInfo.getTableName() +".*");
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
@@ -52,7 +52,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 	}	
 	
 	@Override
-	public Class<OpenMRSObject> getRecordClass() {
+	public Class<DatabaseObject> getRecordClass() {
 		return this.tableInfo.getSyncRecordClass(tableInfo.getMainApp());
 	}
 

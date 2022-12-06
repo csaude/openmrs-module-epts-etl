@@ -11,7 +11,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.problems_solver.engine.ProblemsSolverEngine;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
@@ -74,7 +74,7 @@ public class ProblemsSolverController extends OperationController {
 		ProblemsSolverSearchParams searchParams = new ProblemsSolverSearchParams(tableInfo, null);
 		searchParams.setSyncStartDate(getConfiguration().getObservationDate());
 		
-		SearchClauses<OpenMRSObject> searchClauses = searchParams.generateSearchClauses(conn);
+		SearchClauses<DatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
 		
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		

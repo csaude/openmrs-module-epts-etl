@@ -11,8 +11,8 @@ import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.export.engine.DBExportEngine;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -40,7 +40,7 @@ public class DBExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstConsistentRecordInOrigin(tableInfo, conn);
+			DatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(tableInfo, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -60,7 +60,7 @@ public class DBExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastConsistentRecordOnOrigin(tableInfo, conn);
+			DatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(tableInfo, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			

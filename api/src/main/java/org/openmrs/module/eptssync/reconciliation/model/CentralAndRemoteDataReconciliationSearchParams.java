@@ -9,11 +9,11 @@ import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.utilities.OpenMRSPOJOGenerator;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchParams<OpenMRSObject>{
+public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchParams<DatabaseObject>{
 	private boolean selectAllRecords;
 	private SyncOperationType type;
 	
@@ -24,8 +24,8 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 	}
 	
 	@Override
-	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
+	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		if (this.type.isMissingRecordsDetector()) {
 			searchClauses.addColumnToSelect("src_.record_origin_id, src_.record_uuid uuid, src_.record_uuid,  src_.record_origin_location_code");
@@ -107,9 +107,9 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 	}	
 	
 	@Override
-	public Class<OpenMRSObject> getRecordClass() {
+	public Class<DatabaseObject> getRecordClass() {
 		 if (type.isMissingRecordsDetector() ) {
-			 return OpenMRSPOJOGenerator.tryToGetExistingCLass("org.openmrs.module.eptssync.model.pojo.generic.GenericOpenMRSObject");
+			 return DatabaseEntityPOJOGenerator.tryToGetExistingCLass("org.openmrs.module.eptssync.model.pojo.generic.GenericOpenMRSObject");
 		 }
 		 else
 		 if (type.isOutdatedRecordsDetector()) {

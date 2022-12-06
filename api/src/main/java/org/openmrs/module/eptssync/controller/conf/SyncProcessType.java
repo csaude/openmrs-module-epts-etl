@@ -11,8 +11,8 @@ public enum SyncProcessType {
 	DATA_RECONCILIATION,
 	DB_QUICK_COPY,
 	DATABASE_MERGE_FROM_SOURCE_DB,
-	DB_QUICK_MERGE,
-	QUICK_MERGE_NON_UNIFORME_DB,
+	QUICK_MERGE_WHITOUT_ENTITY_GENERATION,
+	QUICK_MERGE_WITH_ENTITY_GENERATION,
 	DB_INCONSISTENCY_CHECK,
 	RESOLVE_PROBLEMS;
 	
@@ -24,12 +24,12 @@ public enum SyncProcessType {
 		return  this.equals(DB_INCONSISTENCY_CHECK);
 	}
 	
-	public boolean isQuickMergeUniformeDB(){
-		return  this.equals(DB_QUICK_MERGE);
+	public boolean isQuickMergeWithoutEntityGeneration(){
+		return  this.equals(QUICK_MERGE_WHITOUT_ENTITY_GENERATION);
 	}
 	
-	public boolean isQuickMergeNonUniformeDB(){
-		return  this.equals(QUICK_MERGE_NON_UNIFORME_DB);
+	public boolean isQuickMergeWithEntityGeneration(){
+		return  this.equals(QUICK_MERGE_WITH_ENTITY_GENERATION);
 	}
 	
 	public boolean isDBQuickCopy(){
@@ -101,12 +101,12 @@ public enum SyncProcessType {
 		return  SyncProcessType.valueOf(processType).isDataBaseMergeFromSourceDB();
 	}
 	
-	public static boolean isQuickMergeUniformeDB(String processType){
-		return  SyncProcessType.valueOf(processType).isQuickMergeUniformeDB();
+	public static boolean isQuickMergeWithoutEntityGeneration(String processType){
+		return  SyncProcessType.valueOf(processType).isQuickMergeWithoutEntityGeneration();
 	}
 	
-	public static boolean isQuickMergeNonUniforme(String processType){
-		return  SyncProcessType.valueOf(processType).isQuickMergeNonUniformeDB();
+	public static boolean isQuickMergeWithEntityGeneration(String processType){
+		return  SyncProcessType.valueOf(processType).isQuickMergeWithEntityGeneration();
 	}
 	
 	public static boolean isDBInconsistencyCheck(String processType){

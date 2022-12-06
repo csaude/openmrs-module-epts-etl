@@ -10,15 +10,15 @@ import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class OpenMRSObjectSearchParams extends SyncSearchParams<OpenMRSObject>{		
+public class DatabaseObjectSearchParams extends SyncSearchParams<DatabaseObject>{		
 		
-	public OpenMRSObjectSearchParams(SyncTableConfiguration tableConfiguration, RecordLimits limits){		
+	public DatabaseObjectSearchParams(SyncTableConfiguration tableConfiguration, RecordLimits limits){		
 		super(tableConfiguration, limits);
 	}
 	
 	@Override
-	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
+	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		
 		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
@@ -49,7 +49,7 @@ public class OpenMRSObjectSearchParams extends SyncSearchParams<OpenMRSObject>{
 	}
 
 	@Override
-	public Class<OpenMRSObject> getRecordClass() {
+	public Class<DatabaseObject> getRecordClass() {
 		return this.getTableInfo().getSyncRecordClass(tableInfo.getMainApp());
 	}
 

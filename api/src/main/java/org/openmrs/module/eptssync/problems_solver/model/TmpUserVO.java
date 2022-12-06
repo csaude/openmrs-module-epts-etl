@@ -10,14 +10,15 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.pojo.destination.UsersVO;
-import org.openmrs.module.eptssync.model.pojo.generic.GenericOpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 
-public class TmpUserVO extends GenericOpenMRSObject {
+public class TmpUserVO extends GenericDatabaseObject {
 	private int deletable;
 	private int harmonized;
+	private int processed;
 	
 	private SyncTableConfiguration usersSyncTableConfiguration;
 	
@@ -48,8 +49,12 @@ public class TmpUserVO extends GenericOpenMRSObject {
 
 	public void markAsUndeletable() {
 		this.deletable = 0;
-	}
+	}	
 	
+	public void setProcessed(int processed) {
+		this.processed = processed;
+	}
+
 	@Override
 	public String generateTableName() {
 		return "tmp_user";
@@ -89,12 +94,18 @@ public class TmpUserVO extends GenericOpenMRSObject {
 
 	public static TmpUserVO getWinningRecord(List<TmpUserVO> dups, Connection conn) throws DBException {
 		for (TmpUserVO dup : dups) {
-			List<UsersVO> wins = OpenMRSObjectDAO.getByUuid(UsersVO.class, dup.getUuid(), conn);
+			List<UsersVO> wins = null; //DatabaseObjectDAO.getByUuid(UsersVO.class, dup.getUuid(), conn);
 		
 			if (wins != null && !wins.isEmpty()) return dup;
 		}
 		
 		throw new ForbiddenOperationException("No winning record found for " + dups.get(0).getUuid());
+	}
+
+	public void markAsProcessed(Connection conn) throws DBException {
+		setProcessed(1);
+		
+		BaseDAO.executeQuery("update tmp_user set processed = " + this.processed + " where user_id = " + getObjectId(), null, conn);
 	}
 	
 	

@@ -10,7 +10,7 @@ import java.sql.ResultSet;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class PatientStateVO extends AbstractOpenMRSObject implements OpenMRSObject { 
+public class PatientStateVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer patientStateId;
 	private Integer patientProgramId;
 	private Integer state;
@@ -209,7 +209,7 @@ public class PatientStateVO extends AbstractOpenMRSObject implements OpenMRSObje
 		throw new RuntimeException("No found parent for: " + parentAttName);	}
 
 	@Override
-	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {		
+	public void changeParentValue(String parentAttName, DatabaseObject newParent) {		
 		if (parentAttName.equals("patientProgramId")) {
 			this.patientProgramId = newParent.getObjectId();
 			return;

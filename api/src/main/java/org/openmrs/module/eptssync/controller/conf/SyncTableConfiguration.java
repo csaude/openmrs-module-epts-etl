@@ -9,10 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
-import org.openmrs.module.eptssync.utilities.OpenMRSPOJOGenerator;
+import org.openmrs.module.eptssync.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -29,7 +29,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	private List<RefInfo> conditionalParents;
 	
-	private Class<OpenMRSObject> syncRecordClass;
+	private Class<DatabaseObject> syncRecordClass;
 
 	private SyncConfiguration relatedSyncTableInfoSource;
 
@@ -46,7 +46,30 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	private boolean disabled;
 	
+	/**
+	 * List the field to observe when sync by date (ex: date_created, date_update, etc)
+	 */
+	private List<String> observationDateFields;
+	
+	private List<List<String>> uniqueKeys; 
+	
 	public SyncTableConfiguration() {
+	}
+	
+	public List<List<String>> getUniqueKeys() {
+		return uniqueKeys;
+	}
+	
+	public void setUniqueKeys(List<List<String>> uniqueKeys) {
+		this.uniqueKeys = uniqueKeys;
+	}
+	
+	public List<String> getObservationDateFields() {
+		return observationDateFields;
+	}
+	
+	public void setObservationDateFields(List<String> observationDateFields) {
+		this.observationDateFields = observationDateFields;
 	}
 	
 	public boolean isDisabled() {
@@ -201,6 +224,61 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		return primaryKey;
 	}
+	
+	@JsonIgnore
+	public void loadUniqueKeys() {
+		if (this.uniqueKeys == null) {
+			
+			OpenConnection conn = relatedSyncTableInfoSource.getMainApp().openConnection();
+			
+			try {
+				ResultSet rs = conn.getMetaData().getIndexInfo(null, null, tableName, true, true);
+				
+				String prevIndexName = null;
+				
+				List<String> keyElements = null;
+				
+				while  (rs.next()) {
+				
+					String indexName = rs.getString("INDEX_NAME");
+				    
+					if (!indexName.equals(prevIndexName)) {
+						addUniqueKey(keyElements);
+						
+						prevIndexName = indexName;
+						keyElements = new ArrayList<String>();
+					}
+					
+					keyElements.add(rs.getString("COLUMN_NAME"));
+				}
+				
+				addUniqueKey(keyElements);
+			} catch (SQLException e) {
+				e.printStackTrace();
+				
+				throw new RuntimeException(e);
+			}
+			finally {
+				conn.finalizeConnection();
+			}
+		}
+	}
+	
+	private boolean addUniqueKey(List<String> keyElements) {
+		if (keyElements == null || keyElements.isEmpty()) return false;
+		
+		//Don't add PK as uniqueKey
+		if (keyElements.size() == 1 &&  keyElements.get(0).equals(this.getPrimaryKey())) {
+			return false;
+		}
+		
+		if (this.uniqueKeys == null) this.uniqueKeys = new ArrayList<>();
+		
+		this.uniqueKeys.add(keyElements);
+		
+		return true;
+	}
+	
 	
 	@JsonIgnore
 	public String getPrimaryKeyType() {
@@ -397,8 +475,8 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	@JsonIgnore
-	public Class<OpenMRSObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException{
-		if (syncRecordClass == null) this.syncRecordClass = OpenMRSPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application), getRelatedSynconfiguration());
+	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException{
+		if (syncRecordClass == null) this.syncRecordClass = DatabaseEntityPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application), getRelatedSynconfiguration());
 		
 		if (syncRecordClass == null) {
 			OpenConnection conn = application.openConnection();
@@ -437,7 +515,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		}
 	}
 
-	public void setSyncRecordClass(Class<OpenMRSObject> syncRecordClass) {
+	public void setSyncRecordClass(Class<DatabaseObject> syncRecordClass) {
 		this.syncRecordClass = syncRecordClass;
 	}
 
@@ -471,10 +549,10 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public void generateRecordClass(AppInfo application, boolean fullClass,  Connection conn) {
 		try {
 			if (fullClass) {
-				this.syncRecordClass = OpenMRSPOJOGenerator.generate(this, application, conn);
+				this.syncRecordClass = DatabaseEntityPOJOGenerator.generate(this, application, conn);
 			}
 			else {
-				this.syncRecordClass = OpenMRSPOJOGenerator.generateSkeleton(this, application, conn);
+				this.syncRecordClass = DatabaseEntityPOJOGenerator.generateSkeleton(this, application, conn);
 			}
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
@@ -493,7 +571,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 
 	public void generateSkeletonRecordClass(AppInfo application, Connection conn) {
 		try {
-			this.syncRecordClass = OpenMRSPOJOGenerator.generateSkeleton(this, application, conn);
+			this.syncRecordClass = DatabaseEntityPOJOGenerator.generateSkeleton(this, application, conn);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 
@@ -583,6 +661,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		try {
 			
 			getPrimaryKey();
+			loadUniqueKeys();
 			
 			loadParents(conn);
 			loadChildren(conn);
@@ -695,11 +774,86 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return getRelatedSynconfiguration().isDataBaseMergeFromSourceDBProcess();
 	}
 	
+	@JsonIgnore
 	public boolean hasNoDateVoidedField() {
 		return utilities.isStringIn(getTableName(), "note");
 	}
 	
+	@JsonIgnore
 	public boolean hasNotDateChangedField() {
 		return utilities.isStringIn(getTableName(), "obs");
 	}
+	
+	/**
+	 * Generates SQL join condition between two tables (some table) one from source another from destination database
+	 * based on the {@link #uniqueKeys}
+	 * 
+	 * @param sourceTableAlias alias name for source table
+	 * @param destinationTableAlias alias name for destination table
+	 * 
+	 * @return the generated join condition based on {@link #uniqueKeys} 
+	 */
+	@JsonIgnore
+	public String generateUniqueKeysJoinCondition(String sourceTableAlias, String destinationTableAlias) {
+		String joinCondition = "";
+		
+		for (int i = 0; i < this.getUniqueKeys().size(); i++) {
+			
+			String uniqueKeyJoinField = generateUniqueKeyJoinField(this.getUniqueKeys().get(i)); 
+			
+			if (i > 0) joinCondition += " OR ";
+			
+			joinCondition += "(" + uniqueKeyJoinField + ")";
+		}	
+		
+		return joinCondition;
+	}
+	
+	private String generateUniqueKeyJoinField(List<String> uniqueKeyFields) {
+		String joinFields = "";
+		
+		for (int i = 0; i < uniqueKeyFields.size(); i++) {
+			if (i > 0) joinFields += " AND ";
+			
+			joinFields += "dest_." + uniqueKeyFields.get(i) + " = src_." + uniqueKeyFields.get(i); 
+		}
+		
+		return joinFields;
+	}
+	
+	/**
+	 * Generates SQL condition using the {@link #uniqueKeys} fulfilled with related values from especific object 
+	 * @param dbObject the object from where the condition values will be retrieved from 
+	 *  
+	 * @return a SQL condition 
+	 */
+	@JsonIgnore
+	public String generateUniqueKeysParametrizedCondition() {
+		String joinCondition = "";
+		
+		for (int i = 0; i < this.getUniqueKeys().size(); i++) {
+			
+			String uniqueKeyJoinField = generateUniqueKeyConditionsFields(this.getUniqueKeys().get(i)); 
+			
+			if (i > 0) joinCondition += " OR ";
+			
+			joinCondition += "(" + uniqueKeyJoinField + ")";
+		}	
+		
+		return joinCondition;
+	}
+	
+	private String generateUniqueKeyConditionsFields(List<String> uniqueKeyFields) {
+		String joinFields = "";
+		
+		for (int i = 0; i < uniqueKeyFields.size(); i++) {
+			if (i > 0) joinFields += " AND ";
+			
+			joinFields += uniqueKeyFields.get(i) + " = ? ";
+		}
+		
+		return joinFields;
+	}
+	
+		
 }

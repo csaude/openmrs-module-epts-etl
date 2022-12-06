@@ -599,7 +599,7 @@ public class EngineMonitor implements MonitoredOperation{
 	
 	
 	public synchronized void refreshProgressMeter(int newlyProcessedRecords, Connection conn) throws DBException {
-		logDebug("REFRESHING PROGRESS METER FOR MORE " + newlyProcessedRecords + "RECORDS.");
+		logDebug("REFRESHING PROGRESS METER FOR MORE " + newlyProcessedRecords + " RECORDS.");
 		this.getProgressMeter().refresh("RUNNING", this.getProgressMeter().getTotal(), this.getProgressMeter().getProcessed() + newlyProcessedRecords);
 			
 		this.getTableOperationProgressInfo().save(conn);

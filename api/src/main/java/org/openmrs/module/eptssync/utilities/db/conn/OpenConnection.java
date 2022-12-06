@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 /**
@@ -49,7 +48,7 @@ public class OpenConnection implements Connection, Closeable{
    }
 
 	public void markAsSuccessifullyTerminected(){
-		if (this.operationTerminatedSuccessifully) throw new ForbiddenOperationException("This connection is already marcked as successifuly terminated!");
+		//if (this.operationTerminatedSuccessifully) throw new ForbiddenOperationException("This connection is already marcked as successifuly terminated!");
 		
 		this.operationTerminatedSuccessifully = true;
 	}
@@ -115,7 +114,9 @@ public class OpenConnection implements Connection, Closeable{
      * 
      */
     public void finalizeConnection(){
-    	if (isFinalized()) throw new ForbiddenOperationException("A conexao ja se encontra finalizada!");
+    	if (connection == null) return;
+    	
+    	//if (isFinalized()) throw new ForbiddenOperationException("A conexao ja se encontra finalizada!");
     	
     	//this.closeDate = UtilitarioDeDatas.getCurrentSystemDate(connection);
     	
@@ -152,7 +153,7 @@ public class OpenConnection implements Connection, Closeable{
 	/**
 	 * @return
 	 */
-	private boolean isFinalized() {
+	public boolean isFinalized() {
 		return connection == null;
 	}
 
@@ -233,7 +234,7 @@ public class OpenConnection implements Connection, Closeable{
 
 	@Override
 	public boolean isClosed() throws SQLException {
-		return connection.isClosed();
+		return connection != null && connection.isClosed();
 	}
 
 	@Override

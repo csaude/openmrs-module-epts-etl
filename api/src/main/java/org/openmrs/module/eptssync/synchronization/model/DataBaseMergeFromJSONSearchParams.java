@@ -8,7 +8,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectSearchParams;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParams{
@@ -68,7 +68,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		OpenMRSObjectSearchParams migratedRecordSearchParams = new OpenMRSObjectSearchParams(getTableInfo(), null);
+		DatabaseObjectSearchParams migratedRecordSearchParams = new DatabaseObjectSearchParams(getTableInfo(), null);
 		
 		int migrated = SearchParamsDAO.countAll(migratedRecordSearchParams, conn);
 		int notMigrated = countNotProcessedRecords(conn);

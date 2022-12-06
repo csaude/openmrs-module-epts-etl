@@ -9,7 +9,7 @@ import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.BaseVO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 
@@ -117,7 +117,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 		this.recordOriginLocationCode = recordOriginLocationCode;
 	}
 
-	public static DetectedRecordInfo generate(OpenMRSObject record,  String appCode, String recordOriginLocationCode) {
+	public static DetectedRecordInfo generate(DatabaseObject record,  String appCode, String recordOriginLocationCode) {
 		DetectedRecordInfo info = new DetectedRecordInfo();
 		
 		info.setTableName(record.generateTableName());
@@ -136,7 +136,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 		return info;
 	}
 	
-	private static OperationInfo determineOperationType(OpenMRSObject record) {
+	private static OperationInfo determineOperationType(DatabaseObject record) {
 		if (record.getDateVoided() != null) return OperationInfo.fastCreateVoidOperation(record.getDateVoided());
 		if (record.getDateChanged() != null) return OperationInfo.fastCreateChangeOperation(record.getDateChanged());
 		
@@ -305,7 +305,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 	}
 
 	@Override
-	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {
+	public void changeParentValue(String parentAttName, DatabaseObject newParent) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -323,28 +323,29 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 	}
 
 	@Override
-	public void changeParentForAllChildren(OpenMRSObject newParent, SyncTableConfiguration syncTableInfo, Connection conn)
+	public void changeParentForAllChildren(DatabaseObject newParent, SyncTableConfiguration syncTableInfo, Connection conn)
 	        throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public OpenMRSObject retrieveParentInDestination(Integer parentId, String a, SyncTableConfiguration parentTableConfiguration,
+	public DatabaseObject retrieveParentInDestination(Integer parentId, String a, SyncTableConfiguration parentTableConfiguration,
 	        boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public boolean hasExactilyTheSameDataWith(OpenMRSObject srcObj) {
+	public boolean hasExactilyTheSameDataWith(DatabaseObject srcObj) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public Object getFieldValue(String fieldName) {
+	public Object[] getFieldValues(String... fieldName) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 }

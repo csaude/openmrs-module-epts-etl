@@ -1,7 +1,9 @@
 package org.openmrs.module.eptssync.model.pojo.generic;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
@@ -9,16 +11,17 @@ import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
+import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 
 /**
- * This interface represent any openMRS class subject of synchronization records. Ex. "Patient", "Enconter", "Obs"
+ * This interface represent any Database Entintiy class subject of synchronization records.
  * 
  * @author jpboane
  *
  */
-public interface OpenMRSObject extends SyncRecord{
+public interface DatabaseObject extends SyncRecord{
 	public static final int CONSISTENCE_STATUS = 1;
 	public static final int INCONSISTENCE_STATUS = -1;
 	
@@ -48,38 +51,18 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract String generateInsertValues();
 	
-	//public abstract String getOriginAppLocationCode();
-	//public abstract void setOriginAppLocationCode(String originAppLocationCode);
-	
 	public abstract boolean hasIgnoredParent();
 	public abstract void save(SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
-	
-	//public abstract boolean isMetadata();
 		
-	/**
-	 * Consolidate this object if it is an metadata object
-	 * 
-	 * @param conn
-	 * @throws DBException
-	 */
-	//public abstract void consolidateMetadata(SyncTableConfiguration tableInfo, Connection conn) throws DBException;	
-	
 	public abstract String getUuid();
 	public abstract void setUuid(String uuid);
 	public abstract boolean hasParents();
 	public abstract Integer getParentValue(String parentAttName);
-	
-	/**
-	 * Indicate if this object was generated or not using an eskeleton class
-	 * @return
-	 */
-	//public abstract boolean isGeneratedFromSkeletonClass();
-	
+		
 	/**
 	 * Consolidate data for database consistency
 	 * <p> The consolidation consist on re-arranging foreign keys between records from different tables
-	 * <p> Because the consolidation process would be in cascade mode, each consolidation is imediatily commited to t@Override
-	he dadabase
+	 * <p> Because the consolidation process would be in cascade mode, each consolidation is imediatily commited to t@Override he dadabase
 	 * 
 	 * @param tableInfo
 	 * @param conn
@@ -101,7 +84,7 @@ public interface OpenMRSObject extends SyncRecord{
 	public abstract void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
 
 	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn) throws DBException;
-	public abstract OpenMRSObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode, SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException;
+	public abstract DatabaseObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode, SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn) throws ParentNotYetMigratedException, DBException;
 		
 	public abstract SyncImportInfoVO getRelatedSyncInfo();
 	public abstract void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo);
@@ -114,12 +97,12 @@ public interface OpenMRSObject extends SyncRecord{
 	
 	public abstract void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents, Connection conn) throws DBException;
 		
-	public abstract void changeParentValue(String parentAttName, OpenMRSObject newParent);
+	public abstract void changeParentValue(String parentAttName, DatabaseObject newParent);
 	
 	public abstract void setParentToNull(String parentAttName);
 	
 	public abstract void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException;
-	public abstract void changeParentForAllChildren(OpenMRSObject newParent, SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
+	public abstract void changeParentForAllChildren(DatabaseObject newParent, SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	public abstract Date getDateChanged();
 	public abstract Date getDateVoided();
 	public abstract Date getDateCreated() ;
@@ -130,8 +113,33 @@ public interface OpenMRSObject extends SyncRecord{
 	 * @param srcObj
 	 * @return true if this record has exactily the same values in all fields with the given object
 	 */
-	public abstract boolean hasExactilyTheSameDataWith(OpenMRSObject srcObj);
+	public abstract boolean hasExactilyTheSameDataWith(DatabaseObject srcObj);
 	
-	public abstract Object getFieldValue(String fieldName);
+	/**
+	 * Return a value of given field
+	 * 
+	 * @param fieldName of field to retrieve
+	 * 
+	 * @return Return a value of given field
+	 */
+	public abstract Object[] getFieldValues(String ... fieldName);
+	
+	/**
+	 * Retrive values for all {@link SyncTableConfiguration#getUniqueKeys()} fields.
+	 * The values follow the very same sequence defined with {@link SyncTableConfiguration#getUniqueKeys()}
+	 * 
+	 * @param tableConfiguration the {@link SyncTableConfiguration} from where the  {@link SyncTableConfiguration#getUniqueKeys()} will be retrieved from
+	 * 
+	 * @return values for all {@link SyncTableConfiguration#getUniqueKeys()} field.
+	 */
+	public default Object[] getUniqueKeysFieldValues(SyncTableConfiguration tableConfiguration) {
+		if (!tableConfiguration.isFullLoaded()) tableConfiguration.fullLoad();
 		
+		List<Object> values = new ArrayList<Object>();
+		
+		tableConfiguration.getUniqueKeys().forEach(uniqueKeyFields -> values.addAll(utils.parseArrayToList(this.getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKeyFields))))));
+		
+		return utils.parseListToArray(values);
+	}
+	
 }

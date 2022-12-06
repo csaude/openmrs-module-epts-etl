@@ -1,5 +1,8 @@
 package org.openmrs.module.eptssync.utilities;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -335,7 +338,7 @@ public class AttDefinedElements {
 	}
 
 	
-	private static String convertTableAttNameToClassAttName(String tableAttName) {
+	public static String convertTableAttNameToClassAttName(String tableAttName) {
 		return utilities.convertTableAttNameToClassAttName(tableAttName);
 	}
 
@@ -362,6 +365,16 @@ public class AttDefinedElements {
 			return "java.util.Date";
 		
 		throw new ForbiddenOperationException("Unknown data type [" + mySQLTypeName + "]");
+	}
+
+	public static String[] convertTableAttNameToClassAttName(String[] dbAtts) {
+		List<String> atts = new ArrayList<String>();
+		
+		for (String att: dbAtts) {
+			atts.add(convertTableAttNameToClassAttName(att));
+		}
+		
+		return utilities.parseListToArray(atts);
 	}
 	
 }

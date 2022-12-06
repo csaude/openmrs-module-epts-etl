@@ -2,9 +2,9 @@ package fgh.spi.changedrecordsdetector;
 
 import java.util.Date;
 
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 
-public interface ChangedRecord extends OpenMRSObject{
+public interface ChangedRecord extends DatabaseObject{
 	public abstract String getTableName();
 	public abstract Date getOperationDate();
 	public abstract char getOperationType();

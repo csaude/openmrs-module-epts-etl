@@ -183,6 +183,15 @@ public abstract class BaseDAO{
 	 */
 	public static void executeQuery(String sql, Object[] params, Connection connection) throws DBException{
 		try{
+			
+			try {
+				if (utilities.getPosOnArray(params, "d3b55ee7-cb8e-44da-b3fd-f0d8878c1413") >= 0) {
+					System.out.println("Stop");
+				}
+			}
+			catch (Exception e) {
+			}
+			
 			executeDBQuery(sql, params, connection);
 		}catch(DBException e){
 			if (!tryToSolveIssues(e, sql, params, connection)) throw e;

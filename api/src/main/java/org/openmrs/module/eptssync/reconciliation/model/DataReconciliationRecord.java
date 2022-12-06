@@ -9,12 +9,12 @@ import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class DataReconciliationRecord {
-	private OpenMRSObject record;
+	private DatabaseObject record;
 	private SyncTableConfiguration config;
 	private SyncImportInfoVO stageInfo;
 	private String recordUuid;
@@ -26,7 +26,7 @@ public class DataReconciliationRecord {
 		this.reasonType = reasonType;
 	}
 	
-	public DataReconciliationRecord(OpenMRSObject record, SyncTableConfiguration config, ConciliationReasonType reasonType) {
+	public DataReconciliationRecord(DatabaseObject record, SyncTableConfiguration config, ConciliationReasonType reasonType) {
 		this.record = record;
 		this.recordUuid = record.getUuid();
 		this.stageInfo = record.getRelatedSyncInfo();
@@ -34,14 +34,14 @@ public class DataReconciliationRecord {
 		this.reasonType = reasonType;
 	}
 	
-	public static void tryToReconciliate(OpenMRSObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
+	public static void tryToReconciliate(DatabaseObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
 		DataReconciliationRecord dataReciliationRecord = new DataReconciliationRecord(record.getUuid(), config, ConciliationReasonType.OUTDATED);
 		
 		dataReciliationRecord.record = record; 
 		dataReciliationRecord.config = config;
 		dataReciliationRecord.stageInfo = record.getRelatedSyncInfo();
 		
-		OpenMRSObject srcObj = OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginId(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
+		DatabaseObject srcObj = DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginId(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
 		
 		srcObj.setRelatedSyncInfo(record.getRelatedSyncInfo());
 		
@@ -60,7 +60,7 @@ public class DataReconciliationRecord {
 		if (this.stageInfo == null) this.stageInfo = SyncImportInfoDAO.getWinRecord(this.config, this.recordUuid, conn);
 		
 		if (this.stageInfo != null) {
-			this.record= OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), stageInfo.getRecordOriginId(), stageInfo.getRecordOriginLocationCode(), conn);
+			this.record= DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), stageInfo.getRecordOriginId(), stageInfo.getRecordOriginLocationCode(), conn);
 		}
 		else {
 			this.record = null;
@@ -72,7 +72,8 @@ public class DataReconciliationRecord {
 	}
 	
 	public void reloadRelatedRecordDataFromDestination(Connection conn) throws DBException, ForbiddenOperationException {
-		this.record= OpenMRSObjectDAO.getByUuid(this.config.getSyncRecordClass(config.getMainApp()), this.recordUuid, conn).get(0);
+		throw new ForbiddenOperationException();
+		//this.record= DatabaseObjectDAO.getByUuid(this.config.getSyncRecordClass(config.getMainApp()), this.recordUuid, conn).get(0);
 	}
 	
 	public ConciliationReasonType getReasonType() {
@@ -124,7 +125,7 @@ public class DataReconciliationRecord {
 		
 	}
 
-	private static void loadDestParentInfo(OpenMRSObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
+	private static void loadDestParentInfo(DatabaseObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
 		SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
 		
 		
@@ -134,7 +135,7 @@ public class DataReconciliationRecord {
 			Integer parentIdInOrigin = record.getParentValue(refInfo.getRefColumnAsClassAttName());
 				 
 			if (parentIdInOrigin != null) {
-				OpenMRSObject parent;
+				DatabaseObject parent;
 			
 				parent = record.retrieveParentInDestination(parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  true, conn);
 			
@@ -156,7 +157,9 @@ public class DataReconciliationRecord {
 						
 						parent = parentData.record;
 						
-						parent = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), parentStageInfo.getRecordUuid(), conn).get(0);
+						throw new ForbiddenOperationException();
+
+						//parent = DatabaseObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), parentStageInfo.getRecordUuid(), conn).get(0);
 					}
 				}
 				
@@ -176,9 +179,9 @@ public class DataReconciliationRecord {
 			if (!refInfo.getRefTableConfiguration().isConfigured()) continue;
 		
 			
-			List<OpenMRSObject> children =  OpenMRSObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), refInfo.getRefColumnName(), this.record.getObjectId(), conn);
+			List<DatabaseObject> children =  DatabaseObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), refInfo.getRefColumnName(), this.record.getObjectId(), conn);
 					
-			for (OpenMRSObject child : children) {
+			for (DatabaseObject child : children) {
 				DataReconciliationRecord childDataInfo = new DataReconciliationRecord(child.getUuid(), refInfo.getRefTableConfiguration(), ConciliationReasonType.WRONG_RELATIONSHIPS);
 				
 				childDataInfo.reloadRelatedRecordDataFromRemote(conn);

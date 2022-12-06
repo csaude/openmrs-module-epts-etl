@@ -1,7 +1,6 @@
 package org.openmrs.module.eptssync.problems_solver.engine;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,14 +12,17 @@ import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
+import org.openmrs.module.eptssync.model.pojo.destination.UserRoleVO;
 import org.openmrs.module.eptssync.model.pojo.destination.UsersVO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.eptssync.problems_solver.model.TmpUserVO;
+import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
  * 
@@ -29,8 +31,24 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
  * @see DBQuickMergeController
  */
 public class ProblemsSolverEngine extends Engine {
+	
+	DatabasesInfo[] DBsInfo = {   
+								new DatabasesInfo("Server 24", DatabasesInfo.DB_NAMES_24, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
+								new DatabasesInfo("Server 23", DatabasesInfo.DB_NAMES_23, new DBConnectionInfo("root", "0pen10mrs4FGh", "jdbc:mysql://10.0.0.23:3307/export_db_lugela_mulide?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
+								new DatabasesInfo("Server 22", DatabasesInfo.DB_NAMES_22, new DBConnectionInfo("root", "Fgh397$@Wy$Q7", "jdbc:mysql://10.0.0.22:3307/openmrs_derre?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) ,
+								new DatabasesInfo("Server 21", DatabasesInfo.DB_NAMES_21, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.21:3307/openmrs_ile_mugulama?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver"))
+							  };
+	
+	private SyncTableConfiguration userRoleTableConf;
+	private Class<DatabaseObject> userRoleRecordClass;
+	private Class<DatabaseObject> userRecordClass;
+	
 	public ProblemsSolverEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
+		
+		this.userRoleTableConf = SyncTableConfiguration.init("user_role", getSyncTableConfiguration().getRelatedSynconfiguration());
+		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());
+		this.userRecordClass = getSyncTableConfiguration().getSyncRecordClass(getDefaultApp());
 	}
 
 	
@@ -50,76 +68,91 @@ public class ProblemsSolverEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
-		
+		logInfo("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+	
 		int i = 1;
 		
-		for (SyncRecord record: syncRecords) {
-			if ( ((OpenMRSObject)record).getUuid().isEmpty()) continue;
+		for (TmpUserVO record : utilities.parseList(syncRecords, TmpUserVO.class)) {
+			boolean found = false;
 			
-			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
-			
-			OpenMRSObject rec = (OpenMRSObject)record;
-			
-			SyncTableConfiguration syncTableInfo = SyncTableConfiguration.init("tmp_user", getSyncTableConfiguration().getRelatedSynconfiguration());
-			
-			List<TmpUserVO> dups = OpenMRSObjectDAO.getByField(TmpUserVO.class, "user_uuid", rec.getUuid(), conn);
-				
-			logDebug(startingStrLog + " RESOLVING..." + rec);
-			
-		
-				
-			TmpUserVO preservedUser = TmpUserVO.getWinningRecord(dups, conn);
-			preservedUser.setUsersSyncTableConfiguration(getSyncTableConfiguration());
-			
-			for (int j = 1; j < dups.size(); j++) {
-				TmpUserVO dup = dups.get(j);
-				
-				dup.setSyncTableConfiguration(syncTableInfo);
-				
-				
-				UsersVO user = new UsersVO();
-				
-				user.setUserId(dup.getObjectId());
-				user.setUuid(dup.getUuid());
-			
-				try {
-					logDebug("REMOVING USER [" + dup + "]");
+			try {
+				for (DatabasesInfo dbsInfo : DBsInfo) {
+					String startingStrLog = utilities.garantirXCaracterOnNumber(i, ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 					
-					user.remove(conn);
-					dup.markAsDeletable();
-				}
-				catch (DBException e) {
-					logWarn("THE USER HAS RECORDS ASSOCIETED... HARMONIZING...");
-					dup.markAsUndeletable();
-					preservedUser.harmonize(dup, conn);
-					logWarn(e.getLocalizedMessage());
-				}
-				
-				finally {
-					/*try {
-						conn.rollback();
-					}
-					catch (SQLException e) {
-					}*/
+					logInfo(startingStrLog + " TRYING TO RETRIVE DATA FOR RECORD [" + record + "] ON SERVER "+dbsInfo.getServerName());
 					
-					dup.save(syncTableInfo, conn);
+					found = performeOnServer(record, dbsInfo, conn);
 					
-					try {
-						conn.commit();
-					}
-					catch (SQLException e) {
-						logWarn(e.getLocalizedMessage());
-					}
+					if (found) break;
 				}
 			}
-			
-			
-			
-			i++;
-		}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+			finally {
+				i++;
+				record.markAsProcessed(conn);
+				if (found) {
+					((TmpUserVO) record).markAsHarmonized(conn);
+				}
+				else {
+					logError("Not found [" + record + "]");
+					
+					//throw new ForbiddenOperationException("Not found");
+				}
+			}
+		} 
 	}
 
+	private boolean performeOnServer(TmpUserVO record,  DatabasesInfo dbInfo, Connection conn) throws DBException {
+		boolean found = false;
+		
+		OpenConnection srcConn = dbInfo.acquireConnection();
+		
+		for (String dbName : dbInfo.getDbNames()) {
+			logDebug("Retrieving user on [" + dbName + "]");
+			
+			org.openmrs.module.eptssync.model.pojo.destination.UsersVO userOnSrc = new UsersVO();
+			userOnSrc.setUuid(record.getUuid());
+			
+			userOnSrc = (UsersVO)DatabaseObjectDAO.getByUuidOnSpecificSchema(getSyncTableConfiguration(), userOnSrc, dbName, srcConn);
+			
+			if (userOnSrc == null) {
+				logDebug("The user was not found on [" + dbName + "], Skipping role check");
+				continue;
+			}
+			
+			List<DatabaseObject> roles = DatabaseObjectDAO.getByParentIdOnSpecificSchema(this.userRoleRecordClass, "user_id", userOnSrc.getObjectId(), dbName, srcConn);
+		
+			if (utilities.arrayHasElement(roles)) {
+				
+				logInfo("RESOLVING USER PROBLEM USING DATA FROM [" + dbName + "]");
+				
+				List<UserRoleVO> userRoles = utilities.parseList(roles, UserRoleVO.class);
+				
+				for (UserRoleVO userRole : userRoles) {
+					userRole.setUserId(record.getObjectId());
+					try {
+						logDebug("Saving Role " + userRole.getRole() + " for Record [" + record + "]");
+						userRole.save(userRoleTableConf, conn);
+						logDebug("Role " + userRole.getRole() + " for Record [" + record + "] saved!");
+					}
+					catch (DBException e) {
+						e.printStackTrace();
+					}
+				}
+				
+				found = true;
+				
+				break;
+			} else {
+				logDebug("NO ROLE FOUND ON [" + dbName + "]");
+			}
+		}
+		
+		return found;
+	}
+	
 	
 	
 	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn) throws DBException, ForbiddenOperationException {
@@ -132,14 +165,14 @@ public class ProblemsSolverEngine extends Engine {
 		for (SyncRecord record: syncRecords) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 			
-			OpenMRSObject rec = (OpenMRSObject)record;
+			DatabaseObject rec = (DatabaseObject)record;
 			
-			List<OpenMRSObject> dups = OpenMRSObjectDAO.getByUuid(getSyncTableConfiguration().getSyncRecordClass(getDefaultApp()), rec.getUuid(), conn);
+			List<DatabaseObject> dups = new ArrayList<DatabaseObject>();//DatabaseObjectDAO.getByUuid(getSyncTableConfiguration().getSyncRecordClass(getDefaultApp()), rec.getUuid(), conn);
 				
 			logDebug(startingStrLog + " RESOLVING..." + rec);
 			
 			for (int j = 1; j < dups.size(); j++) {
-				OpenMRSObject dup = dups.get(j);
+				DatabaseObject dup = dups.get(j);
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				

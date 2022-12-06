@@ -153,7 +153,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 
 	private void doRun() {
-		OpenConnection conn;
 		
 		while(isRunning()) {
 			if (stopRequested()) {
@@ -177,14 +176,18 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 				
 				logDebug("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
 					
-				conn = openConnection();
+				OpenConnection conn = openConnection();
 				
 				boolean finished = false;
-				
+			
 				try {
 					int processedRecords_ = performe(conn);
 					
 					refreshProgressMeter(processedRecords_, conn);
+					
+					conn.markAsSuccessifullyTerminected();
+					conn.finalizeConnection();
+					
 					reportProgress();
 					
 					if (getLimits() != null && getLimits().canGoNext()) {
@@ -232,23 +235,20 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 								if (isMainEngine()) {
 									finished  = true;
 								}
-								else this.markAsFinished();
+								else {
+									this.markAsFinished();
+								}
 							}
 						}
 					}
-					
+				
 					if (finished) markAsFinished();
-					
-					conn.markAsSuccessifullyTerminected();
-				} catch (Exception e) {
-					e.printStackTrace();
+				}
+				catch (Exception e) {
+					conn.finalizeConnection();
 					
 					reportError(e);
-				}
-				finally {
-					conn.finalizeConnection();
-				}
-					
+				}	
 			}
 		}
 	}
@@ -272,6 +272,8 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 
 	private void reportError(Exception e) {
+		e.printStackTrace();
+		
 		this.lastException = e;
 		
 		getRelatedOperationController().requestStopDueError(getMonitor(), e);

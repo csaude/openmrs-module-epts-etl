@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
@@ -38,7 +38,7 @@ public class SyncJSONInfo {
 	public SyncJSONInfo() {
 	}
 	
-	public SyncJSONInfo(List<OpenMRSObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
+	public SyncJSONInfo(List<DatabaseObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
 		this.qtyRecords = utilities.arraySize(syncRecords);
 		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(syncRecords, recordOriginLocationCode, generateRecordJSON);
 		this.dateGenerated = DateAndTimeUtilities.getCurrentDate();
@@ -77,7 +77,7 @@ public class SyncJSONInfo {
 		this.dateGenerated = dateGenerated;
 	}
 
-	public static SyncJSONInfo generate(List<OpenMRSObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
+	public static SyncJSONInfo generate(List<DatabaseObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
 		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(syncRecords, recordOriginLocationCode, generateRecordJSON);
 
 		return syncJSONInfo;

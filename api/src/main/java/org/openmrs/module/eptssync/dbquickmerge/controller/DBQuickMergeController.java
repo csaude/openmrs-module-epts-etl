@@ -16,7 +16,7 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -97,7 +97,7 @@ public class DBQuickMergeController extends SiteOperationController {
 		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(tableInfo, null, this);
 		searchParams.setSyncStartDate(getConfiguration().getObservationDate());
 		
-		SearchClauses<OpenMRSObject> searchClauses = searchParams.generateSearchClauses(conn);
+		SearchClauses<DatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
 		
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		

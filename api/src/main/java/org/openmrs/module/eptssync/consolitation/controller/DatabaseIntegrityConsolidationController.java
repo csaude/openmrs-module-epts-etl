@@ -7,7 +7,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
@@ -35,7 +35,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			return OpenMRSObjectDAO.getFirstRecord(tableInfo, conn);
+			return DatabaseObjectDAO.getFirstRecord(tableInfo, conn);
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -51,7 +51,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			return OpenMRSObjectDAO.getLastRecord(tableInfo, conn);
+			return DatabaseObjectDAO.getLastRecord(tableInfo, conn);
 		} catch (DBException e) {
 			e.printStackTrace();
 			

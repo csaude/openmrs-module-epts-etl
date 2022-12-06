@@ -13,8 +13,8 @@ import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
@@ -186,17 +186,17 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		return migrationStatus;
 	}
 	
-	public static List<SyncImportInfoVO> generateFromSyncRecord(List<OpenMRSObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
+	public static List<SyncImportInfoVO> generateFromSyncRecord(List<DatabaseObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
 		List<SyncImportInfoVO> importInfo = new ArrayList<SyncImportInfoVO>();
 	
-		for (OpenMRSObject syncRecord : syncRecords) {
+		for (DatabaseObject syncRecord : syncRecords) {
 			importInfo.add(generateFromSyncRecord(syncRecord, recordOriginLocationCode, generateRecordJSON));
 		}
 		
 		return importInfo;
 	}
 	
-	public static SyncImportInfoVO generateFromSyncRecord(OpenMRSObject syncRecord, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
+	public static SyncImportInfoVO generateFromSyncRecord(DatabaseObject syncRecord, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
 		SyncImportInfoVO syncInfo = new SyncImportInfoVO();
 			
 		syncInfo.setRecordUuid(syncRecord.getUuid());
@@ -212,15 +212,15 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		return syncInfo;
 	}
 
-	public static SyncImportInfoVO retrieveFromSyncRecord(SyncTableConfiguration tableConfiguration, OpenMRSObject syncRecord, String recordOriginLocationCode, Connection conn) throws DBException {
+	public static SyncImportInfoVO retrieveFromSyncRecord(SyncTableConfiguration tableConfiguration, DatabaseObject syncRecord, String recordOriginLocationCode, Connection conn) throws DBException {
 		SyncImportInfoVO syncInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(tableConfiguration, syncRecord, recordOriginLocationCode, conn);
 		syncRecord.setRelatedSyncInfo(syncInfo);
 		
 		return syncInfo;
 	}
 	
-	public void sync(SyncTableConfiguration tableInfo, Class<OpenMRSObject> objectClass, Connection conn) throws DBException {
-		OpenMRSObject source = utilities.loadObjectFormJSON(objectClass, this.json);
+	public void sync(SyncTableConfiguration tableInfo, Class<DatabaseObject> objectClass, Connection conn) throws DBException {
+		DatabaseObject source = utilities.loadObjectFormJSON(objectClass, this.json);
 		source.setRelatedSyncInfo(this);
 		try {
 				
@@ -273,11 +273,11 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	 * @throws ParentNotYetMigratedException
 	 * @throws DBException
 	 */
-	private void refrieveSharedPKKey(SyncTableConfiguration tableConfiguration, OpenMRSObject source, int qtyTry, Connection conn) throws ParentNotYetMigratedException, DBException {
+	private void refrieveSharedPKKey(SyncTableConfiguration tableConfiguration, DatabaseObject source, int qtyTry, Connection conn) throws ParentNotYetMigratedException, DBException {
 		try {
-			List<OpenMRSObject> recs = OpenMRSObjectDAO.getByUuid(tableConfiguration.getSharedKeyRefInfo(conn).getRefObjectClass(tableConfiguration.getMainApp()), this.getRecordUuid(), conn);
+			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, source, conn);
 			
-			OpenMRSObject obj = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+			DatabaseObject obj = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 			
 			if (obj != null) {
 				source.setObjectId(obj.getObjectId());
@@ -307,15 +307,15 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		SyncImportInfoDAO.remove(this, tableInfo, conn);
 	}
 	
-	public static List<OpenMRSObject> convertAllToOpenMRSObject(SyncTableConfiguration tableInfo, Class<OpenMRSObject> objectClass, List<SyncImportInfoVO> toParse, Connection conn) {
-		List<OpenMRSObject> records = new ArrayList<OpenMRSObject>();
+	public static List<DatabaseObject> convertAllToOpenMRSObject(SyncTableConfiguration tableInfo, Class<DatabaseObject> objectClass, List<SyncImportInfoVO> toParse, Connection conn) {
+		List<DatabaseObject> records = new ArrayList<DatabaseObject>();
 		
 		for (SyncImportInfoVO imp : toParse) {
 			String modifiedJSON = imp.getJson();
 			
 			//String modifiedJSON = imp.getJson().replaceFirst(imp.retrieveSourcePackageName(tableInfo), tableInfo.getClasspackage());
 			
-			OpenMRSObject rec = null;
+			DatabaseObject rec = null;
 			
 			try {
 				rec = utilities.loadObjectFormJSON(objectClass, modifiedJSON );
@@ -332,17 +332,17 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 			
 			rec.setRelatedSyncInfo(imp);
 			
-			imp.setConsistent(OpenMRSObject.INCONSISTENCE_STATUS);
+			imp.setConsistent(DatabaseObject.INCONSISTENCE_STATUS);
 			records.add(rec);
 		}
 		
 		return records;
 	}
 	
-	public OpenMRSObject convertToOpenMRSObject(SyncTableConfiguration tableInfo,  Connection conn) {
+	public DatabaseObject convertToOpenMRSObject(SyncTableConfiguration tableInfo,  Connection conn) {
 		String modifiedJSON = this.getJson();
 			
-		OpenMRSObject rec = null;
+		DatabaseObject rec = null;
 			
 		try {
 			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(tableInfo.getMainApp()), modifiedJSON );
@@ -357,7 +357,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 			rec.setObjectId(0);
 		}
 			
-		this.setConsistent(OpenMRSObject.INCONSISTENCE_STATUS);
+		this.setConsistent(DatabaseObject.INCONSISTENCE_STATUS);
 		
 		return rec;
 	}
