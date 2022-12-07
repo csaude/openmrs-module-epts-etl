@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
@@ -20,10 +21,11 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
- * Represent a Synchronization Engine. A Synchronization engine performe the task wich will endup
- * pruducing ou consumming the synchronization info.
- * <p> There are two types of engines: (1) the export engine wich generates the synchronization data from the origin site
- * (2) the import engine, wich retrieve data produced from export engine and reproduce this data in the destination data base
+ * Represent a Synchronization Engine. A Synchronization engine performes the task which will end up
+ * producing or  consuming the synchronization info.
+ * 
+ * <p> There are several kinds of engines that performes diferents kind of operations. All the avaliable operations are listed in {@link SyncOperationType} enum
+ * 
  * @author jpboane
  *
  */

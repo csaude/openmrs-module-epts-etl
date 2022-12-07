@@ -216,16 +216,17 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			}
 		}
 		else {
-			DatabaseObject recordOnDB = null;
 			
-			boolean isDestOperation = tableConfiguration.getRelatedSynconfiguration().isSupposedToRunInDestination();
-			
-			recordOnDB = DatabaseObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
-				
-			if (recordOnDB != null) {
-				this.setObjectId(recordOnDB.getObjectId());
-				
-				DatabaseObjectDAO.update(this, conn);
+			boolean isPerformedInTheSameDatabase = tableConfiguration.getRelatedSynconfiguration().isPerformedInTheSameDatabase();
+			 
+			if (isPerformedInTheSameDatabase) {
+				DatabaseObject recordOnDB = DatabaseObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
+					
+				if (recordOnDB != null) {
+					this.setObjectId(recordOnDB.getObjectId());
+					
+					DatabaseObjectDAO.update(this, conn);
+				}
 			}
 			else {
 				
@@ -233,12 +234,12 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					DatabaseObjectDAO.insert(this, conn);
 				}
 				catch (DBException e) {
-					if (e.isDuplicatePrimaryKeyException() && isDestOperation && this.getUuid() != null){
+					
+					if (e.isDuplicatePrimaryKeyException() && tableConfiguration.getRelatedSynconfiguration().isSupposedToRunInDestination() && tableConfiguration.hasUniqueKeys()){
 						//Try to resolve conflict if it is destination operation
-						
 						List<DatabaseObject> recs = utilities.parseList(DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), DatabaseObject.class);
 						
-						recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+						DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 						
 						if (recordOnDB != null) {
 							resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);

@@ -854,6 +854,9 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		return joinFields;
 	}
+
+	public boolean hasUniqueKeys() {
+		return utilities.arrayHasElement(this.getUniqueKeys());
+	}
 	
-		
 }

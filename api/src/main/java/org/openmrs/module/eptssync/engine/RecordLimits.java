@@ -192,13 +192,7 @@ public class RecordLimits {
 	 * @return
 	 */
 	public boolean canGoNext() {
-		boolean canGo = this.getCurrentLastRecordId() < this.getThreadMaxRecord();
-		
-		if (!canGo) {
-			System.out.println("Sys");
-		}
-		
-		return canGo;
+		return this.getCurrentLastRecordId() < this.getThreadMaxRecord();
 	}
 	
 	public synchronized void moveNext(int qtyRecords) {

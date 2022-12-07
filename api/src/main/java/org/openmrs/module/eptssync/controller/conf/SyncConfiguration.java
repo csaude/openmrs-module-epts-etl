@@ -791,4 +791,9 @@ public class SyncConfiguration {
 		throw new ForbiddenOperationException("Unsupported Log Level [" + log + "]");
 		
 	}
+
+	public boolean isPerformedInTheSameDatabase() {
+		return this.isResolveProblems() || 
+					this.isDBInconsistencyCheckProcess();
+	}
 }

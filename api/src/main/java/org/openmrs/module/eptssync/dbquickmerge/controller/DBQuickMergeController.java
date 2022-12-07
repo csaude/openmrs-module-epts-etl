@@ -23,7 +23,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
- * This class is responsible for control the quick merge process. The quick merge process imediatly merge records from the source to the destination db
+ * This class is responsible for control the quick merge process. The quick merge process immediately merge records from the source to the destination db
  * This process assume that the source and destination are located in the same network
  * 
  * @author jpboane
