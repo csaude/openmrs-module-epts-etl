@@ -8,12 +8,12 @@ import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeControlle
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectSearchParams;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
-public class DBQuickMergeSearchParams extends OpenMRSObjectSearchParams{
+public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
 	private DBQuickMergeController relatedController;
 	private int savedCount;
 
@@ -33,7 +33,7 @@ public class DBQuickMergeSearchParams extends OpenMRSObjectSearchParams{
 	}
 	
 	@Override
-	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		OpenConnection srcConn = this.relatedController.openSrcConnection();
 			
 		String srcSchema;
@@ -41,7 +41,7 @@ public class DBQuickMergeSearchParams extends OpenMRSObjectSearchParams{
 		try {
 			srcSchema = srcConn.getCatalog();
 			 
-			SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
+			SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 			
 			if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
 				searchClauses.addToClauseFrom(srcSchema + ".patient inner join " + srcSchema + ".person src_ on person_id = patient_id");
@@ -63,33 +63,44 @@ public class DBQuickMergeSearchParams extends OpenMRSObjectSearchParams{
 			
 			this.extraCondition += "  (SELECT * ";
 			this.extraCondition += "   FROM    " + (tableInfo.getTableName().equals("patient") ? patientFromClause : normalFromClause); 		
-			this.extraCondition += "   WHERE   dest_.uuid = src_.uuid)";	
-					
+			
 			
 			if (isForMergeExistingRecords()) {
-				String periodCondition = "(src_.date_changed >= ? or src_.date_voided >= ?)";
 				
-				if (utilities.isStringIn(tableInfo.getTableName(), "users", "location", "provider")) {
-					periodCondition = "(src_.date_changed >= ? or src_.date_retired >= ?)";
+				if (utilities.arrayHasElement(tableInfo.getUniqueKeys())){
+					String periodCondition = "";
+					
+					if (utilities.arrayHasElement(tableInfo.getObservationDateFields())) {
+						for (int i = 0; i < tableInfo.getObservationDateFields().size(); i++) {
+							if (!periodCondition.isEmpty()) periodCondition += " or ";
+							
+							periodCondition += "src_." + tableInfo.getObservationDateFields().get(i) + " >= ? ";
+							searchClauses.addToParameters(getSyncStartDate());
+						}
+						
+						searchClauses.addToClauses(periodCondition);
+					}
+					
+					this.extraCondition += " WHERE " + this.tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
+				}
+				else {
+					//No joind field so nothing to query
+					this.extraCondition += " WHERE 1 != 1";
 				}
 				
-				if (utilities.isStringIn(tableInfo.getTableName(), "obs", "orders")) {
-					periodCondition = "(src_.date_voided >= ? or src_.date_voided >= ?)";
-				}
-				
-				if (utilities.isStringIn(tableInfo.getTableName(), "note")) {
-					periodCondition = "(src_.date_changed >= ? or src_.date_changed >= ?)";
-				}
-				
-				searchClauses.addToClauses(periodCondition);
-				searchClauses.addToParameters(getSyncStartDate());
-				searchClauses.addToParameters(getSyncStartDate());
-				
-				this.extraCondition = " EXISTS " + extraCondition;
+				this.extraCondition = " EXISTS " + this.extraCondition + ")";
 			}
-			else
 			if (isForMergeMissingRecords()) {
-				this.extraCondition = "NOT EXISTS " + extraCondition;
+				if (utilities.arrayHasElement(tableInfo.getUniqueKeys())){
+					this.extraCondition += " WHERE " + this.tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");	
+				}
+				else {
+					//No joind field so select all
+					this.extraCondition += " WHERE 1 != 1";
+				}
+			
+				this.extraCondition = "NOT EXISTS " + this.extraCondition + ")";
+				
 			}			
 			
 			if (limits != null) {

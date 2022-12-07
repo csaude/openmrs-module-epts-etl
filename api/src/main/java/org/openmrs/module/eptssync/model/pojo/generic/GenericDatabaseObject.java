@@ -12,15 +12,15 @@ import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class GenericOpenMRSObject extends AbstractOpenMRSObject {
+public class GenericDatabaseObject extends AbstractDatabaseObject {
 	private Integer objectId;
 	
 	private SyncTableConfiguration syncTableConfiguration;
 	
-	public GenericOpenMRSObject() {
+	public GenericDatabaseObject() {
 	}
 	
-	public GenericOpenMRSObject(Integer objectId) {
+	public GenericDatabaseObject(Integer objectId) {
 		this.objectId = objectId;
 	}
 	
@@ -33,7 +33,7 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 		} catch (SQLException e) {}
 	}
 	
-	public GenericOpenMRSObject(SyncTableConfiguration syncTableConfiguration) {
+	public GenericDatabaseObject(SyncTableConfiguration syncTableConfiguration) {
 		this.syncTableConfiguration = syncTableConfiguration;
 	}
 	
@@ -132,12 +132,12 @@ public class GenericOpenMRSObject extends AbstractOpenMRSObject {
 	}
 
 	@Override
-	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {
+	public void changeParentValue(String parentAttName, DatabaseObject newParent) {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 	
-	public static GenericOpenMRSObject fastCreate(SyncImportInfoVO syncImportInfo, SyncTableConfiguration syncTableConfiguration) {
-		GenericOpenMRSObject obj = new GenericOpenMRSObject(syncTableConfiguration);
+	public static GenericDatabaseObject fastCreate(SyncImportInfoVO syncImportInfo, SyncTableConfiguration syncTableConfiguration) {
+		GenericDatabaseObject obj = new GenericDatabaseObject(syncTableConfiguration);
 		obj.setObjectId(syncImportInfo.getRecordOriginId());
 		obj.setUuid(syncImportInfo.getRecordUuid());
 		

@@ -199,12 +199,12 @@ public class SyncConfiguration {
 
 	@JsonIgnore
 	public boolean isQuickMergeUniformeDBProcess() {
-		return processType.isQuickMergeUniformeDB();
+		return processType.isQuickMergeWithoutEntityGeneration();
 	}
 	
 	@JsonIgnore
 	public boolean isQuickMergeNonUniformeDBProcess() {
-		return processType.isQuickMergeNonUniformeDB();
+		return processType.isQuickMergeWithEntityGeneration();
 	}
 	
 	@JsonIgnore
@@ -766,7 +766,8 @@ public class SyncConfiguration {
 							this.isDBQuickCopyProcess() ||
 							this.isDataBaseMergeFromSourceDBProcess() ||
 								this.isQuickMergeUniformeDBProcess() ||
-									this.isResolveProblems();
+									this.isResolveProblems() ||
+										this.isQuickMergeNonUniformeDBProcess();
 	}
 	
 	public boolean isSupposedToRunInOrigin() {
@@ -789,5 +790,10 @@ public class SyncConfiguration {
 		
 		throw new ForbiddenOperationException("Unsupported Log Level [" + log + "]");
 		
+	}
+
+	public boolean isPerformedInTheSameDatabase() {
+		return this.isResolveProblems() || 
+					this.isDBInconsistencyCheckProcess();
 	}
 }

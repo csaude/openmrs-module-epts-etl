@@ -3,14 +3,14 @@ package org.openmrs.module.eptssync.model.pojo.destination;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.openmrs.module.eptssync.model.pojo.generic.AbstractOpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.AbstractDatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject { 
+public class UsersVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer userId;
 	private String systemId;
 	private String username;
@@ -261,7 +261,7 @@ public class UsersVO extends AbstractOpenMRSObject implements OpenMRSObject {
 		throw new RuntimeException("No found parent for: " + parentAttName);	}
 
 	@Override
-	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {		
+	public void changeParentValue(String parentAttName, DatabaseObject newParent) {		
 		if (parentAttName.equals("personId")) {
 			this.personId = newParent.getObjectId();
 			return;

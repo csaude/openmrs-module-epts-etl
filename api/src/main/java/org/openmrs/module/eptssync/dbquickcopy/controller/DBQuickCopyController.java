@@ -8,7 +8,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickcopy.engine.DBQuickCopyEngine;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -41,7 +41,7 @@ public class DBQuickCopyController extends SiteOperationController {
 		OpenConnection conn = openSrcConnection();
 		
 		try {
-			return OpenMRSObjectDAO.getFirstRecord(tableInfo, conn);
+			return DatabaseObjectDAO.getFirstRecord(tableInfo, conn);
 		} catch (DBException e) {
 			e.printStackTrace();
 			
@@ -57,7 +57,7 @@ public class DBQuickCopyController extends SiteOperationController {
 		OpenConnection conn = openSrcConnection();
 		
 		try {
-			return OpenMRSObjectDAO.getLastRecord(tableInfo, conn);
+			return DatabaseObjectDAO.getLastRecord(tableInfo, conn);
 		} catch (DBException e) {
 			e.printStackTrace();
 			

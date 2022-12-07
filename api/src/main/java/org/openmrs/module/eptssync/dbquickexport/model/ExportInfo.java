@@ -1,7 +1,7 @@
 package org.openmrs.module.eptssync.dbquickexport.model;
 
 import org.openmrs.module.eptssync.model.base.BaseVO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 
 public class ExportInfo extends BaseVO{
 	private String uuid;
@@ -42,7 +42,7 @@ public class ExportInfo extends BaseVO{
 		this.recordOriginLocationCode = recordOriginLocationCode;
 	}
 
-	public static ExportInfo generate(OpenMRSObject record,  String appCode, String recordOriginLocationCode) {
+	public static ExportInfo generate(DatabaseObject record,  String appCode, String recordOriginLocationCode) {
 		ExportInfo info = new ExportInfo();
 		
 		info.setTableName(record.generateTableName());

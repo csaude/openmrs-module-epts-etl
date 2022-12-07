@@ -3,7 +3,7 @@ package org.openmrs.module.eptssync.controller.conf;
 import java.sql.Connection;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
@@ -86,7 +86,7 @@ public class RefInfo {
 	}
 	
 	@JsonIgnore
-	public Class<OpenMRSObject> getRefObjectClass(AppInfo application) {
+	public Class<DatabaseObject> getRefObjectClass(AppInfo application) {
 		return this.refTableConfiguration.getSyncRecordClass(application);
 	}
 	

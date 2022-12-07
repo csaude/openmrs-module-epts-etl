@@ -10,22 +10,22 @@ import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.MissingParentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.eptssync.model.pojo.generic.AbstractOpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.AbstractDatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class MergingRecord {
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private OpenMRSObject record;
+	private DatabaseObject record;
 	private SyncTableConfiguration config;
 	private List<ParentInfo>  parentsWithDefaultValues;
 	private AppInfo srcApp;
 	private AppInfo destApp;
 	
-	public MergingRecord(OpenMRSObject record, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp) {
+	public MergingRecord(DatabaseObject record, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp) {
 		this.record = record;
 		this.config = config;	
 		this.srcApp = srcApp;
@@ -75,11 +75,11 @@ public class MergingRecord {
 			throw new DBException(e);
 		}
 		
-		List<OpenMRSObject> recs = OpenMRSObjectDAO.getByUuid(this.config.getSyncRecordClass(this.destApp), this.record.getUuid(), destConn);
+		List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
 		
-		OpenMRSObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+		DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 		
-		((AbstractOpenMRSObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
+		((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 		
 		if (!this.parentsWithDefaultValues.isEmpty()) {
 			reloadParentsWithDefaultValues(srcConn, destConn);
@@ -91,12 +91,12 @@ public class MergingRecord {
 			
 			RefInfo refInfo = parentInfo.getRefInfo();
 			
-			OpenMRSObject parent= parentInfo.getParent();
+			DatabaseObject parent= parentInfo.getParent();
 			
 			MergingRecord parentData = new MergingRecord(parent, refInfo.getRefTableConfiguration(), this.srcApp, this.destApp);
 			parentData.merge(srcConn, destConn);
 				
-			List<OpenMRSObject> recs = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(this.destApp), parent.getUuid(), destConn);
+			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(), this.record, destConn);
 			
 			parent = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 			
@@ -105,8 +105,13 @@ public class MergingRecord {
 	}
 	
 	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, SQLException {
-		OpenMRSObject record = mergingRecord.record;
+		DatabaseObject record = mergingRecord.record;
+		
 		SyncTableConfiguration config = mergingRecord.config;
+		
+		if (true) {
+			System.out.println();
+		}
 		
 		for (RefInfo refInfo: config.getParents()) {
 			if (refInfo.getRefTableConfiguration().isMetadata()) continue;
@@ -114,18 +119,18 @@ public class MergingRecord {
 			Integer parentIdInOrigin = record.getParentValue(refInfo.getRefColumnAsClassAttName());
 				 
 			if (parentIdInOrigin != null) {
-				OpenMRSObject parentInOrigin = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
 				
 				if (parentInOrigin == null) throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
 				
-				List<OpenMRSObject> recs = OpenMRSObjectDAO.getByUuid(refInfo.getRefObjectClass(mergingRecord.destApp), parentInOrigin.getUuid(), destConn);
-		
-				OpenMRSObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(), parentInOrigin, destConn);
+				
+				DatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 				
 				if (parentInDest == null) {
 					mergingRecord.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInOrigin));
 					
-					parentInDest = OpenMRSObjectDAO.getDefaultRecord(refInfo.getRefTableConfiguration(), destConn);
+					parentInDest = DatabaseObjectDAO.getDefaultRecord(refInfo.getRefTableConfiguration(), destConn);
 				}
 				
 				record.changeParentValue(refInfo.getRefColumnAsClassAttName(), parentInDest);
@@ -144,7 +149,7 @@ public class MergingRecord {
 	 * @throws SQLException
 	 */
 	private static void determineMissingMetadataParent(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws MissingParentException, DBException{
-		OpenMRSObject record = mergingRecord.record;
+		DatabaseObject record = mergingRecord.record;
 		SyncTableConfiguration config = mergingRecord.config;
 		
 		for (RefInfo refInfo: config.getParents()) {
@@ -153,7 +158,7 @@ public class MergingRecord {
 			Integer parentId = record.getParentValue(refInfo.getRefColumnAsClassAttName());
 				 
 			if (parentId != null) {
-				OpenMRSObject parent = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.destApp), parentId, destConn);
+				DatabaseObject parent = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.destApp), parentId, destConn);
 				
 				if (parent == null) throw new MissingParentException(parentId, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
 			}
@@ -163,13 +168,13 @@ public class MergingRecord {
 	private static void loadDestConditionalParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException {
 		if (!utilities.arrayHasElement(mergingRecord.config.getConditionalParents())) return;
 			
-		OpenMRSObject record = mergingRecord.record;
+		DatabaseObject record = mergingRecord.record;
 		SyncTableConfiguration config = mergingRecord.config;
 		
 		for (RefInfo refInfo: config.getConditionalParents()) {
 			if (refInfo.getRefTableConfiguration().isMetadata()) continue;
 			
-			Object conditionFieldValue = record.getFieldValue(refInfo.getRefConditionFieldAsClassAttName());
+			Object conditionFieldValue = record.getFieldValues(refInfo.getRefConditionFieldAsClassAttName())[0];
 			
 			if (!conditionFieldValue.equals(refInfo.getConditionValue())) continue;
 			
@@ -182,18 +187,18 @@ public class MergingRecord {
 			}
 				 
 			if (parentIdInOrigin != null) {
-				OpenMRSObject parentInOrigin = OpenMRSObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
 				
 				if (parentInOrigin == null) throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
 				
-				List<OpenMRSObject> recs = OpenMRSObjectDAO.getByUuid(refInfo.getRefObjectClass(mergingRecord.destApp), parentInOrigin.getUuid(), destConn);
-		
-				OpenMRSObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(), parentInOrigin, destConn); 
+			
+				DatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 				
 				if (parentInDest == null) {
 					mergingRecord.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInOrigin));
 					
-					parentInDest = OpenMRSObjectDAO.getDefaultRecord(refInfo.getRefTableConfiguration(), destConn);
+					parentInDest = DatabaseObjectDAO.getDefaultRecord(refInfo.getRefTableConfiguration(), destConn);
 				}
 				
 				record.changeParentValue(refInfo.getRefColumnAsClassAttName(), parentInDest);
@@ -202,7 +207,7 @@ public class MergingRecord {
 	}
 	
 	
-	public OpenMRSObject getRecord() {
+	public DatabaseObject getRecord() {
 		return record;
 	}
 	

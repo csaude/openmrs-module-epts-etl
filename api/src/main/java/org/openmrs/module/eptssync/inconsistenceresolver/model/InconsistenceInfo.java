@@ -4,7 +4,7 @@ import java.sql.Connection;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.model.base.BaseVO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class InconsistenceInfo extends BaseVO{
@@ -87,7 +87,7 @@ public class InconsistenceInfo extends BaseVO{
 		this.defaultParentId = defaultParentId;
 	}
 	
-	public static InconsistenceInfo generate(OpenMRSObject record, OpenMRSObject parent, Integer defaultParentId, String recordOriginLocationCode) {
+	public static InconsistenceInfo generate(DatabaseObject record, DatabaseObject parent, Integer defaultParentId, String recordOriginLocationCode) {
 		InconsistenceInfo info = new InconsistenceInfo(record.generateTableName(), record.getObjectId(), parent.generateTableName(), parent.getObjectId(), defaultParentId, recordOriginLocationCode);
 	
 		return info;

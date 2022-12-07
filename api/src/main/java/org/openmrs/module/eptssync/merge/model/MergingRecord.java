@@ -11,12 +11,12 @@ import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.MissingParentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class MergingRecord {
-	private OpenMRSObject record;
+	private DatabaseObject record;
 	private SyncTableConfiguration config;
 	private SyncImportInfoVO stageInfo;
 	private List<ParentInfo>  parentsWithDefaultValues;
@@ -33,7 +33,7 @@ public class MergingRecord {
 	}
 	
 	public void merge(Connection conn) throws DBException {
-		this.record = OpenMRSObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(this.srcApp), stageInfo.getRecordOriginId(),  stageInfo.getRecordOriginLocationCode(), conn);
+		this.record = DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(this.srcApp), stageInfo.getRecordOriginId(),  stageInfo.getRecordOriginLocationCode(), conn);
 		this.record.setRelatedSyncInfo(stageInfo);
 		
 		consolidateAndSaveData(conn);
@@ -59,12 +59,12 @@ public class MergingRecord {
 			SyncImportInfoVO parentStageInfo = parentInfo.getParentStageInfo();
 			
 			MergingRecord parentData = new MergingRecord(parentStageInfo, refInfo.getRefTableConfiguration(), this.srcApp, this.destApp);
-			parentData.record = OpenMRSObjectDAO.getByIdOnSpecificSchema(refInfo.getRefTableConfiguration().getSyncRecordClass(this.srcApp), parentStageInfo.getRecordOriginId(),  parentStageInfo.getRecordOriginLocationCode(), conn);
+			parentData.record = DatabaseObjectDAO.getByIdOnSpecificSchema(refInfo.getRefTableConfiguration().getSyncRecordClass(this.srcApp), parentStageInfo.getRecordOriginId(),  parentStageInfo.getRecordOriginLocationCode(), conn);
 			parentData.merge(conn);
 			
-			OpenMRSObject parent = parentData.record;
+			DatabaseObject parent = parentData.record;
 			
-			List<OpenMRSObject> recs = OpenMRSObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(this.destApp), parentStageInfo.getRecordUuid(), conn);
+			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(), parentData.record, conn);
 			
 			parent = recs != null && recs.size() > 0 ? recs.get(0) : null;
 			
@@ -73,7 +73,7 @@ public class MergingRecord {
 	}
 	
 	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection conn) throws ParentNotYetMigratedException, DBException {
-		OpenMRSObject record = mergingRecord.record;
+		DatabaseObject record = mergingRecord.record;
 		SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
 		SyncTableConfiguration config = mergingRecord.config;
 		
@@ -83,7 +83,7 @@ public class MergingRecord {
 			Integer parentIdInOrigin = record.getParentValue(refInfo.getRefColumnAsClassAttName());
 				 
 			if (parentIdInOrigin != null) {
-				OpenMRSObject parent = record.retrieveParentInDestination(parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  true, conn);
+				DatabaseObject parent = record.retrieveParentInDestination(parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  true, conn);
 		
 				if (parent == null) {
 					SyncImportInfoVO parentStageInfo = SyncImportInfoDAO.getByOriginIdAndLocation(refInfo.getRefTableConfiguration(), parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), conn);
@@ -93,7 +93,7 @@ public class MergingRecord {
 					}
 					else throw new MissingParentException("Missing parent "+ refInfo + " with value [" + parentIdInOrigin + "] from [" + stageInfo.getRecordOriginLocationCode() + "]");
 					
-					parent = OpenMRSObjectDAO.getDefaultRecord(refInfo.getRefTableConfiguration(), conn);
+					parent = DatabaseObjectDAO.getDefaultRecord(refInfo.getRefTableConfiguration(), conn);
 				}
 				
 				record.changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);

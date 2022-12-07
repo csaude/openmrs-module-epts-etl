@@ -14,8 +14,8 @@ import org.openmrs.module.eptssync.export.model.ExportSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.SyncJSONInfo;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -44,7 +44,7 @@ public class DBExportEngine extends Engine {
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) {
 		try {
-			List<OpenMRSObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, OpenMRSObject.class);
+			List<DatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, DatabaseObject.class);
 			
 			logDebug("GENERATING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE");
 			
@@ -88,7 +88,7 @@ public class DBExportEngine extends Engine {
 				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
 			}
 			
-			markAllAsSynchronized(utilities.parseList(syncRecords, OpenMRSObject.class));		
+			markAllAsSynchronized(utilities.parseList(syncRecords, DatabaseObject.class));		
 		} catch (IOException e) {
 			e.printStackTrace();
 			
@@ -105,11 +105,11 @@ public class DBExportEngine extends Engine {
 		return mainTempJSONInfoFile.getAbsolutePath() + "_minimal";
 	}
 
-	private void markAllAsSynchronized(List<OpenMRSObject> syncRecords) {
+	private void markAllAsSynchronized(List<DatabaseObject> syncRecords) {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSyncTableConfiguration(), getSyncTableConfiguration().getOriginAppLocationCode(), conn);
+			DatabaseObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSyncTableConfiguration(), getSyncTableConfiguration().getOriginAppLocationCode(), conn);
 			
 			conn.markAsSuccessifullyTerminected();
 		} 

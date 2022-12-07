@@ -8,7 +8,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.reconciliation.controller.CentralAndRemoteDataReconciliationController;
 import org.openmrs.module.eptssync.reconciliation.model.CentralAndRemoteDataReconciliationSearchParams;
@@ -70,7 +70,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		
 			logInfo(startingStrLog  +": Restoring record: [" + record + "]");
 			
-			DataReconciliationRecord data = new DataReconciliationRecord((OpenMRSObject) record , getSyncTableConfiguration(), ConciliationReasonType.MISSING);
+			DataReconciliationRecord data = new DataReconciliationRecord((DatabaseObject) record , getSyncTableConfiguration(), ConciliationReasonType.MISSING);
 			
 			data.reloadRelatedRecordDataFromRemote(conn);
 			
@@ -90,7 +90,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			
 			logInfo(startingStrLog + ": Updating record: [" + record + "]");
 			
-			DataReconciliationRecord.tryToReconciliate((OpenMRSObject) record, getSyncTableConfiguration(), conn);
+			DataReconciliationRecord.tryToReconciliate((DatabaseObject) record, getSyncTableConfiguration(), conn);
 			
 			i++;
 		}	
@@ -104,7 +104,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			
 			logInfo(startingStrLog + ": Removing record: [" + record + "]");
 			
-			DataReconciliationRecord data = new DataReconciliationRecord(((OpenMRSObject)record).getUuid() , getSyncTableConfiguration(), ConciliationReasonType.PHANTOM);
+			DataReconciliationRecord data = new DataReconciliationRecord(((DatabaseObject)record).getUuid() , getSyncTableConfiguration(), ConciliationReasonType.PHANTOM);
 			data.reloadRelatedRecordDataFromDestination(conn);
 			data.removeRelatedRecord(conn);
 			data.save(conn);

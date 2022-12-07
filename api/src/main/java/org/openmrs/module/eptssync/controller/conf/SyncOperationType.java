@@ -2,6 +2,13 @@ package org.openmrs.module.eptssync.controller.conf;
 
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
+/**
+ * Suported operation type  in sync process
+ * 
+ * 
+ * @author jpboane
+ *
+ */
 public enum SyncOperationType {
 		CONSOLIDATION,
 		EXPORT,

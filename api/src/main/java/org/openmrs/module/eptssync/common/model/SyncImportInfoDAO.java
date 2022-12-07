@@ -6,7 +6,7 @@ import java.util.List;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
@@ -355,7 +355,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 	
 	
 
-	public static SyncImportInfoVO retrieveFromOpenMRSObject(SyncTableConfiguration tableInfo, OpenMRSObject object, String recordOriginLocationCode, Connection conn) throws DBException, ForbiddenOperationException {
+	public static SyncImportInfoVO retrieveFromOpenMRSObject(SyncTableConfiguration tableInfo, DatabaseObject object, String recordOriginLocationCode, Connection conn) throws DBException, ForbiddenOperationException {
 		Object[] params = {	object.getUuid(), 
 							recordOriginLocationCode};
 		

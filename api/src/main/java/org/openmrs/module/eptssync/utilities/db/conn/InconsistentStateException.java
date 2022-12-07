@@ -5,7 +5,7 @@ import java.util.Map.Entry;
 
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 /**
@@ -25,13 +25,13 @@ public class InconsistentStateException extends SyncExeption {
 		super("The record is in inconsistent state. There are missing some parents");
 	}
 	
-	public InconsistentStateException(OpenMRSObject obj, Map<RefInfo, Integer> missingParents){
+	public InconsistentStateException(DatabaseObject obj, Map<RefInfo, Integer> missingParents){
 		super(generateMissingInfo(obj, missingParents));
 		
 		this.missingParents = missingParents;
 	}
 	
-	public static String generateMissingInfo(OpenMRSObject obj, Map<RefInfo, Integer> missingParents) {
+	public static String generateMissingInfo(DatabaseObject obj, Map<RefInfo, Integer> missingParents) {
 		String missingInfo = "";
 		
 		for (Entry<RefInfo, Integer> missing : missingParents.entrySet()) {

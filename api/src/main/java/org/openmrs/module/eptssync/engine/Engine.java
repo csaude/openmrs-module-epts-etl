@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
@@ -20,10 +21,11 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
- * Represent a Synchronization Engine. A Synchronization engine performe the task wich will endup
- * pruducing ou consumming the synchronization info.
- * <p> There are two types of engines: (1) the export engine wich generates the synchronization data from the origin site
- * (2) the import engine, wich retrieve data produced from export engine and reproduce this data in the destination data base
+ * Represent a Synchronization Engine. A Synchronization engine performes the task which will end up
+ * producing or  consuming the synchronization info.
+ * 
+ * <p> There are several kinds of engines that performes diferents kind of operations. All the avaliable operations are listed in {@link SyncOperationType} enum
+ * 
  * @author jpboane
  *
  */
@@ -153,7 +155,6 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 
 	private void doRun() {
-		OpenConnection conn;
 		
 		while(isRunning()) {
 			if (stopRequested()) {
@@ -177,14 +178,18 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 				
 				logDebug("SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
 					
-				conn = openConnection();
+				OpenConnection conn = openConnection();
 				
 				boolean finished = false;
-				
+			
 				try {
 					int processedRecords_ = performe(conn);
 					
 					refreshProgressMeter(processedRecords_, conn);
+					
+					conn.markAsSuccessifullyTerminected();
+					conn.finalizeConnection();
+					
 					reportProgress();
 					
 					if (getLimits() != null && getLimits().canGoNext()) {
@@ -232,23 +237,20 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 								if (isMainEngine()) {
 									finished  = true;
 								}
-								else this.markAsFinished();
+								else {
+									this.markAsFinished();
+								}
 							}
 						}
 					}
-					
+				
 					if (finished) markAsFinished();
-					
-					conn.markAsSuccessifullyTerminected();
-				} catch (Exception e) {
-					e.printStackTrace();
+				}
+				catch (Exception e) {
+					conn.finalizeConnection();
 					
 					reportError(e);
-				}
-				finally {
-					conn.finalizeConnection();
-				}
-					
+				}	
 			}
 		}
 	}
@@ -272,6 +274,8 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 	}
 
 	private void reportError(Exception e) {
+		e.printStackTrace();
+		
 		this.lastException = e;
 		
 		getRelatedOperationController().requestStopDueError(getMonitor(), e);

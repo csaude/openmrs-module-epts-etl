@@ -8,11 +8,11 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.utilities.OpenMRSPOJOGenerator;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRSObject>{
+public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<DatabaseObject>{
 	private boolean selectAllRecords;
 	private String appCode;
 	private SyncOperationType type;
@@ -28,8 +28,8 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRS
 	}
 	
 	@Override
-	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<OpenMRSObject> searchClauses = new SearchClauses<OpenMRSObject>(this);
+	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
 	
@@ -85,8 +85,8 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<OpenMRS
 	}	
 	
 	@Override
-	public Class<OpenMRSObject> getRecordClass() {
-		 return OpenMRSPOJOGenerator.tryToGetExistingCLass("org.openmrs.module.eptssync.model.pojo.generic.GenericOpenMRSObject");
+	public Class<DatabaseObject> getRecordClass() {
+		 return DatabaseEntityPOJOGenerator.tryToGetExistingCLass("org.openmrs.module.eptssync.model.pojo.generic.GenericOpenMRSObject");
 	}
 
 	@Override

@@ -27,14 +27,14 @@ import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
-public class OpenMRSPOJOGenerator {
+public class DatabaseEntityPOJOGenerator {
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	static final String[] ignorableFields = {"date_changed", "date_created", "uuid"};
 	
-	public static Class<OpenMRSObject> generate(SyncTableConfiguration syncTableInfo, AppInfo application, Connection conn) throws IOException, SQLException, ClassNotFoundException {
+	public static Class<DatabaseObject> generate(SyncTableConfiguration syncTableInfo, AppInfo application, Connection conn) throws IOException, SQLException, ClassNotFoundException {
 		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad();
 
 		String pojoRootFolder = syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath();
@@ -45,7 +45,7 @@ public class OpenMRSPOJOGenerator {
 		
 		String fullClassName = syncTableInfo.generateFullClassName(application);
 		
-		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
+		Class<DatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 			
 		if (existingCLass != null) {
 			if (!Modifier.isAbstract(existingCLass.getModifiers())) {
@@ -270,7 +270,7 @@ public class OpenMRSPOJOGenerator {
 		
 	
 		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public void changeParentValue(String parentAttName, OpenMRSObject newParent) {";
+		methodFromSuperClass += "	public void changeParentValue(String parentAttName, DatabaseObject newParent) {";
 		
 		for(RefInfo refInfo : syncTableInfo.getParents()) {
 			if (refInfo.isNumericRefColumn()) {
@@ -322,7 +322,7 @@ public class OpenMRSPOJOGenerator {
 		classDefinition += "import java.sql.ResultSet; \n \n";
 		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";
 		
-		classDefinition += "public class " + syncTableInfo.generateClassName() + " extends AbstractOpenMRSObject implements OpenMRSObject { \n";
+		classDefinition += "public class " + syncTableInfo.generateClassName() + " extends AbstractDatabaseObject implements DatabaseObject { \n";
 		classDefinition += 		attsDefinition + "\n \n";
 		classDefinition += "	public " + syncTableInfo.generateClassName() + "() { \n";
 		classDefinition += "		this.metadata = " + syncTableInfo.isMetadata() + ";\n";
@@ -361,7 +361,7 @@ public class OpenMRSPOJOGenerator {
 		return false;
 	}
 
-	public static Class<OpenMRSObject> generateSkeleton(SyncTableConfiguration syncTableInfo, AppInfo application, Connection conn) throws IOException, SQLException, ClassNotFoundException {
+	public static Class<DatabaseObject> generateSkeleton(SyncTableConfiguration syncTableInfo, AppInfo application, Connection conn) throws IOException, SQLException, ClassNotFoundException {
 		if (!syncTableInfo.isFullLoaded()) syncTableInfo.fullLoad();
 			
 		String pojoRootPackage = syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath();
@@ -376,7 +376,7 @@ public class OpenMRSPOJOGenerator {
 		
 		fullClassName += syncTableInfo.getClasspackage(application) + "." + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
 		
-		Class<OpenMRSObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
+		Class<DatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 			
 		if (existingCLass != null) return existingCLass;
 	
@@ -389,7 +389,7 @@ public class OpenMRSPOJOGenerator {
 		
 		classDefinition += "import org.openmrs.module.eptssync.model.pojo.generic.*; \n \n";
 		
-		classDefinition += "public abstract class " + syncTableInfo.generateClassName() + " extends AbstractOpenMRSObject implements OpenMRSObject { \n";
+		classDefinition += "public abstract class " + syncTableInfo.generateClassName() + " extends AbstractDatabaseObject implements DatabaseObject { \n";
 		classDefinition += "	public " + syncTableInfo.generateClassName() + "() { \n";
 		classDefinition += "	} \n \n";
 		classDefinition += "}";
@@ -407,10 +407,10 @@ public class OpenMRSPOJOGenerator {
 		return tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
 	}
 	
-	static Logger logger = Logger.getLogger(OpenMRSPOJOGenerator.class);
+	static Logger logger = Logger.getLogger(DatabaseEntityPOJOGenerator.class);
 	
-	public static Class<OpenMRSObject> tryToGetExistingCLass(String fullClassName, SyncConfiguration syncConfiguration) {
-		Class<OpenMRSObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
+	public static Class<DatabaseObject> tryToGetExistingCLass(String fullClassName, SyncConfiguration syncConfiguration) {
+		Class<DatabaseObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
 		
 		if (clazz == null) {
 			if (syncConfiguration.getModuleRootDirectory() != null) clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getModuleRootDirectory());
@@ -423,32 +423,31 @@ public class OpenMRSPOJOGenerator {
 		return clazz;
 	}
 	
-	public static Class<OpenMRSObject> tryToGetExistingCLass(String fullClassName) {
+	public static Class<DatabaseObject> tryToGetExistingCLass(String fullClassName) {
 		return tryToLoadFromOpenMRSClassLoader(fullClassName);
 	}
 	
 	
 	@SuppressWarnings({ "unchecked" })
-	private static Class<OpenMRSObject> tryToLoadFromOpenMRSClassLoader(String fullClassName) {
+	private static Class<DatabaseObject> tryToLoadFromOpenMRSClassLoader(String fullClassName) {
 		try {
-			return (Class<OpenMRSObject>) OpenMRSObject.class.getClassLoader().loadClass(fullClassName);
-			//return (Class<OpenMRSObject>) Class.forName(fullClassName);
+			return (Class<DatabaseObject>) DatabaseObject.class.getClassLoader().loadClass(fullClassName);
 		} catch (ClassNotFoundException e) {
 			return null;
 		}
 	}
 	
 	@SuppressWarnings({ "unchecked"})
-	private static Class<OpenMRSObject> tryToLoadFromClassPath(String fullClassName, File classPath) {
+	private static Class<DatabaseObject> tryToLoadFromClassPath(String fullClassName, File classPath) {
 		
 		try {
 			URL[] classPaths = new URL[] {classPath.toURI().toURL()};
 			
 			URLClassLoader loader = URLClassLoader.newInstance(classPaths);
 			
-			Class<OpenMRSObject> c = null;
+			Class<DatabaseObject> c = null;
 			
-			c = (Class<OpenMRSObject>) loader.loadClass(fullClassName);
+			c = (Class<DatabaseObject>) loader.loadClass(fullClassName);
 			
 	        loader.close();
 	        

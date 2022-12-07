@@ -18,32 +18,16 @@ public class Main implements Runnable{
 	
 	public static void main(String[] synConfigFiles) throws IOException {
 		BasicConfigurator.configure();
-
-		
-		
-		/*int i = -3;
-		
-		while(i <= 3) {
-			i++;
-			
-			System.out.println(i);
-		
-			TimeCountDown.sleep(1);
-		}*/
 		
 		ProcessStarter p = new ProcessStarter(synConfigFiles, logger);
 		
 		p.run();
 	}
 	
-	
-
-	
 	public static void runSync(SyncConfiguration configuration) {
 		ProcessController controller = new ProcessController(null, configuration);
 		ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId()).execute(controller);
 	}
-	
 
 	@Override
 	public void run() {

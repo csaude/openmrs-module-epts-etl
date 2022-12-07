@@ -11,8 +11,8 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.reconciliation.engine.CentralAndRemoteDataReconciliationEngine;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -74,11 +74,11 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			}
 			else
 			if (isOutdateRecordsDetector()) {
-				id = OpenMRSObjectDAO.getFirstRecord(tableInfo, conn);
+				id = DatabaseObjectDAO.getFirstRecord(tableInfo, conn);
 			}
 			else
 			if (isPhantomRecordsDetector()){
-				OpenMRSObject record = OpenMRSObjectDAO.getFirstPhantomRecordInDestination(tableInfo, conn);
+				DatabaseObject record = DatabaseObjectDAO.getFirstPhantomRecordInDestination(tableInfo, conn);
 				
 				id = record != null ? record.getObjectId() : 0;
 			}
@@ -110,11 +110,11 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			}
 			else
 			if (isOutdateRecordsDetector()) {
-				id = OpenMRSObjectDAO.getLastRecord(tableInfo, conn);
+				id = DatabaseObjectDAO.getLastRecord(tableInfo, conn);
 			}
 			else
 			if (isPhantomRecordsDetector()){
-				OpenMRSObject record = OpenMRSObjectDAO.getLastPhantomRecordInDestination(tableInfo, conn);
+				DatabaseObject record = DatabaseObjectDAO.getLastPhantomRecordInDestination(tableInfo, conn);
 				
 				id = record != null ? record.getObjectId() : 0;
 			}

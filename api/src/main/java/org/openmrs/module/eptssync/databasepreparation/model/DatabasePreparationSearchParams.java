@@ -6,10 +6,10 @@ import org.openmrs.module.eptssync.databasepreparation.engine.DatabasePreparatio
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchClauses;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class DatabasePreparationSearchParams extends SyncSearchParams<OpenMRSObject>{
+public class DatabasePreparationSearchParams extends SyncSearchParams<DatabaseObject>{
 	private DatabasePreparationEngine engine;
 	
 	public DatabasePreparationSearchParams(DatabasePreparationEngine engine, RecordLimits limits, Connection conn) {
@@ -19,12 +19,12 @@ public class DatabasePreparationSearchParams extends SyncSearchParams<OpenMRSObj
 	}
 	
 	@Override
-	public SearchClauses<OpenMRSObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		return null;
 	}	
 	
 	@Override
-	public Class<OpenMRSObject> getRecordClass() {
+	public Class<DatabaseObject> getRecordClass() {
 		return this.tableInfo.getSyncRecordClass(engine.getDefaultApp());
 	}
 

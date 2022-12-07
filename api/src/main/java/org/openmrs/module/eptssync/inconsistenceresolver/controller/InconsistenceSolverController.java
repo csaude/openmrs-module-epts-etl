@@ -7,8 +7,8 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.inconsistenceresolver.engine.InconsistenceSolverEngine;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObject;
-import org.openmrs.module.eptssync.model.pojo.generic.OpenMRSObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
@@ -35,7 +35,7 @@ public class InconsistenceSolverController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getFirstNeverProcessedRecordOnOrigin(tableInfo, conn);
+			DatabaseObject obj = DatabaseObjectDAO.getFirstNeverProcessedRecordOnOrigin(tableInfo, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -55,7 +55,7 @@ public class InconsistenceSolverController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			OpenMRSObject obj = OpenMRSObjectDAO.getLastNeverProcessedRecordOnOrigin(tableInfo, conn);
+			DatabaseObject obj = DatabaseObjectDAO.getLastNeverProcessedRecordOnOrigin(tableInfo, conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
