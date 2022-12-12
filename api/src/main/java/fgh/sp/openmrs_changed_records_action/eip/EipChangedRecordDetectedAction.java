@@ -42,7 +42,6 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 		event.setOperation(""+record.getOperationType());
 		event.setSnapshot(Boolean.FALSE);
 		
-		item.setDestination("out-bound-db-sync");
 		item.setAttemptCount(0);
 		item.setMessage("RE-SYNC FOR FILL GAPES");
 		item.setDateCreated(record.getDateCreated());

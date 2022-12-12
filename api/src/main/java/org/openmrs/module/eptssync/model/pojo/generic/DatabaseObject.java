@@ -9,6 +9,7 @@ import java.util.Map;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
@@ -123,7 +124,7 @@ public interface DatabaseObject extends SyncRecord{
 	 * @return Return a value of given field
 	 */
 	public abstract Object[] getFieldValues(String ... fieldName);
-	
+
 	/**
 	 * Retrive values for all {@link SyncTableConfiguration#getUniqueKeys()} fields.
 	 * The values follow the very same sequence defined with {@link SyncTableConfiguration#getUniqueKeys()}
@@ -131,15 +132,41 @@ public interface DatabaseObject extends SyncRecord{
 	 * @param tableConfiguration the {@link SyncTableConfiguration} from where the  {@link SyncTableConfiguration#getUniqueKeys()} will be retrieved from
 	 * 
 	 * @return values for all {@link SyncTableConfiguration#getUniqueKeys()} field.
+	 *
+	 * @throws ForbiddenOperationException if one or more fields in any key have null value
 	 */
-	public default Object[] getUniqueKeysFieldValues(SyncTableConfiguration tableConfiguration) {
+	public default Object[] getUniqueKeysFieldValues(SyncTableConfiguration tableConfiguration) throws ForbiddenOperationException{
 		if (!tableConfiguration.isFullLoaded()) tableConfiguration.fullLoad();
 		
 		List<Object> values = new ArrayList<Object>();
 		
-		tableConfiguration.getUniqueKeys().forEach(uniqueKeyFields -> values.addAll(utils.parseArrayToList(this.getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKeyFields))))));
+		for (List<String> uniqueKeyFields: tableConfiguration.getUniqueKeys()) {
+			Object[] fieldValues = this.getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKeyFields)));
+			
+			if (fieldValues != null && fieldValues.length == uniqueKeyFields.size()) {
+				values.addAll(utils.parseArrayToList(fieldValues));
+			}
+			else throw new ForbiddenOperationException("On or more fields of key [" + uniqueKeyFields + "] has no value.");
+		}
 		
 		return utils.parseListToArray(values);
 	}
 	
+	/**
+	 * Retrive values for all fields in any unique key.
+	 * 
+	 * @param uniqueKeyFields the list of fields in a unique key
+	 * 
+	 * @return values for all fields in a unique key.
+	 *
+	 * @throws ForbiddenOperationException if one or more fields in any key have null value
+	 */
+	public default Object[] getUniqueKeysFieldValues(List<String> uniqueKeyFields) throws ForbiddenOperationException{
+		Object[] fieldValues = this.getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKeyFields)));
+			
+		if (fieldValues != null && fieldValues.length == uniqueKeyFields.size()) {
+			return fieldValues;
+		}
+		else throw new ForbiddenOperationException("On or more fields of key [" + uniqueKeyFields + "] has no value.");
+	}		
 }

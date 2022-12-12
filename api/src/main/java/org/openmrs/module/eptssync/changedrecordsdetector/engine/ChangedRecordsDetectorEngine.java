@@ -13,6 +13,7 @@ import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -60,6 +61,8 @@ public class ChangedRecordsDetectorEngine extends Engine {
 
 		for (DatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
+				((GenericDatabaseObject)obj).setSyncTableConfiguration(getSyncTableConfiguration());
+				
 				processedRecords.add(DetectedRecordInfo.generate(obj, getRelatedOperationController().getActionPerformeApp().getApplicationCode(), getMonitor().getSyncTableInfo().getOriginAppLocationCode()));
 				
 				if (getRelatedOperationController().getActionPerformeApp().isSinglePerformingMode()) {

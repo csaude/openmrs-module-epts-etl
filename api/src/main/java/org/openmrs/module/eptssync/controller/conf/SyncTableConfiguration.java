@@ -228,8 +228,33 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	@JsonIgnore
 	public void loadUniqueKeys() {
 		if (this.uniqueKeys == null) {
+			loadUniqueKeys(this);
 			
-			OpenConnection conn = relatedSyncTableInfoSource.getMainApp().openConnection();
+			if (this.useSharedPKKey()) {
+				SyncTableConfiguration parentTableInfo = new SyncTableConfiguration();
+				
+				parentTableInfo = new SyncTableConfiguration();
+				parentTableInfo.setTableName(this.getSharePkWith());
+				parentTableInfo.setRelatedSyncTableInfoSource(this.getRelatedSynconfiguration());
+				
+				parentTableInfo.loadUniqueKeys();
+				
+				if (utilities.arrayHasElement(parentTableInfo.getUniqueKeys())) {
+					
+					for (List<String> keyElements : parentTableInfo.getUniqueKeys()) {
+						this.addUniqueKey(keyElements);
+					}
+			
+				}
+			}
+		}
+	}
+	
+	@JsonIgnore
+	private void loadUniqueKeys(SyncTableConfiguration tableConfiguration) {
+		if (tableConfiguration.uniqueKeys == null) {
+			
+			OpenConnection conn = tableConfiguration.getRelatedSynconfiguration().getMainApp().openConnection();
 			
 			try {
 				ResultSet rs = conn.getMetaData().getIndexInfo(null, null, tableName, true, true);
@@ -243,7 +268,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 					String indexName = rs.getString("INDEX_NAME");
 				    
 					if (!indexName.equals(prevIndexName)) {
-						addUniqueKey(keyElements);
+						tableConfiguration.addUniqueKey(keyElements);
 						
 						prevIndexName = indexName;
 						keyElements = new ArrayList<String>();
@@ -252,7 +277,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 					keyElements.add(rs.getString("COLUMN_NAME"));
 				}
 				
-				addUniqueKey(keyElements);
+				tableConfiguration.addUniqueKey(keyElements);
 			} catch (SQLException e) {
 				e.printStackTrace();
 				
@@ -263,6 +288,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			}
 		}
 	}
+		
 	
 	private boolean addUniqueKey(List<String> keyElements) {
 		if (keyElements == null || keyElements.isEmpty()) return false;

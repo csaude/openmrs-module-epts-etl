@@ -13,7 +13,6 @@ public class SenderRetryQueueItemDAO extends BaseDAO{
 							   record.getEvent().getPrimaryKeyId(),
 							   record.getEvent().getIdentifier(),
 							   record.getEvent().getOperation(),
-							   record.getDestination(),
 							   record.getAttemptCount(),
 							   record.getEvent().getSnapshot(),
 							   record.getMessage(),
@@ -28,7 +27,6 @@ public class SenderRetryQueueItemDAO extends BaseDAO{
 			sql += "									PRIMARY_KEY_ID,\n";
 			sql += "									IDENTIFIER,\n";
 			sql += "									OPERATION,\n";
-			sql += "									DESTINATION,\n";
 			sql += "									ATTEMPT_COUNT,\n";
 			sql += "									SNAPSHOT,\n";
 			sql += "									MESSAGE,\n";
@@ -36,7 +34,6 @@ public class SenderRetryQueueItemDAO extends BaseDAO{
 			sql += "									DATE_CHANGED,\n";
 			sql += "									EXCEPTION_TYPE)\n";
 			sql += "	VALUES(?,\n";
-			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
