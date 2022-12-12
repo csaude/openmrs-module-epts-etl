@@ -142,7 +142,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 				if (!field.getName().equals(fieldName)) continue;
 				
 				try {
-					values.add(field.get(this));
+					if (field.get(this) != null) values.add(field.get(this));
 				}
 				catch (IllegalArgumentException e) {
 					throw new RuntimeException(e);
@@ -154,7 +154,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		
 		}
 		
-		return utilities.parseListToArray(values);
+		return values != null ? utilities.parseListToArray(values) : null;
 		
 	}
 	
@@ -258,9 +258,14 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		boolean existingRecordIsOutdated = false;
 		
 		for (String dateField: tableConfiguration.getObservationDateFields()) {
-			Date thisRecordDate = (Date)this.getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(dateField))[0];
-			Date recordOnDBDate = (Date)recordOnDB.getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(dateField))[0];
-				
+			
+			Object[] thisRecordDateArray = this.getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
+			Object[] recordOnDBDateArray = recordOnDB.getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
+			
+			Date thisRecordDate =    thisRecordDateArray != null ? (Date)thisRecordDateArray[0] : null;
+			Date recordOnDBDate =    recordOnDBDateArray != null ? (Date)recordOnDBDateArray[0] : null;
+			
+					
 			if (thisRecordDate != null) {
 				 if (recordOnDBDate == null) {
 					 existingRecordIsOutdated = true;

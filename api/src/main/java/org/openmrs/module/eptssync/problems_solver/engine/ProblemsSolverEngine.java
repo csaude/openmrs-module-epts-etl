@@ -115,7 +115,7 @@ public class ProblemsSolverEngine extends Engine {
 			org.openmrs.module.eptssync.model.pojo.destination.UsersVO userOnSrc = new UsersVO();
 			userOnSrc.setUuid(record.getUuid());
 			
-			userOnSrc = (UsersVO)DatabaseObjectDAO.getByUuidOnSpecificSchema(getSyncTableConfiguration(), userOnSrc, dbName, srcConn);
+			userOnSrc = (UsersVO)DatabaseObjectDAO.getByUniqueKeysOnSpecificSchema(getSyncTableConfiguration(), userOnSrc, dbName, srcConn);
 			
 			if (userOnSrc == null) {
 				logDebug("The user was not found on [" + dbName + "], Skipping role check");

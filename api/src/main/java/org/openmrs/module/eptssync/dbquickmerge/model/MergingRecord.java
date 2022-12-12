@@ -108,11 +108,7 @@ public class MergingRecord {
 		DatabaseObject record = mergingRecord.record;
 		
 		SyncTableConfiguration config = mergingRecord.config;
-		
-		if (true) {
-			System.out.println();
-		}
-		
+
 		for (RefInfo refInfo: config.getParents()) {
 			if (refInfo.getRefTableConfiguration().isMetadata()) continue;
 			

@@ -118,16 +118,57 @@ public class DatabaseObjectDAO extends BaseDAO {
 			throw new RuntimeException("Error trying do retrieve record on table " + parentTableConfiguration.getTableName()   + "["+e.getMessage() + "]");
 		}
 	}
+
+	public static <T extends DatabaseObject> List<T> getByUniqueKeys(SyncTableConfiguration tableConfiguration, T obj,  Connection conn) throws DBException{
+		return getByUniqueKeys(tableConfiguration, null, obj, conn);
+	}
+	
+	public static <T extends DatabaseObject> T getByUniqueKeysOnSpecificSchema(SyncTableConfiguration tableConfiguration, T obj, String schema, Connection conn) throws DBException{
+		List<T> result = getByUniqueKeys(tableConfiguration, schema, obj, conn);
+		
+		return utilities.arrayHasElement(result) ? result.get(0) : null; 
+	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends DatabaseObject> List<T> getByUniqueKeys(SyncTableConfiguration tableConfiguration, T obj,  Connection conn) throws DBException{
-		Object[] params = obj.getUniqueKeysFieldValues(tableConfiguration);
-			
-		String sql = "";
+	private static <T extends DatabaseObject> List<T> getByUniqueKeys(SyncTableConfiguration tableConfiguration, String schema, T obj,  Connection conn) throws DBException{
+		if (!tableConfiguration.isFullLoaded()) tableConfiguration.fullLoad();
 		
-		sql += " SELECT " + obj.generateTableName() + ".*" + (obj.generateTableName().equals("patient") ? ", uuid" : "") + "\n";
-		sql += " FROM     " + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id " : "") + "\n";
-		sql += " WHERE 	" + tableConfiguration.generateUniqueKeysParametrizedCondition();
+		Object[] params = {};
+		
+		String conditionSQL = "";
+		
+		
+		for (List<String> ukFields : tableConfiguration.getUniqueKeys()) {
+			String tmpCodition = "";
+			
+			try {
+				params = utilities.setParam(params, obj.getUniqueKeysFieldValues(ukFields));
+				
+				for (String field : ukFields) {
+					if (!tmpCodition.isEmpty()) tmpCodition += " AND ";
+					
+					tmpCodition += field + " = ?";
+				}
+			}
+			catch (ForbiddenOperationException e) {
+			}
+			
+			
+			if (!tmpCodition.isEmpty()) {
+				if (!conditionSQL.isEmpty()) conditionSQL += " OR ";
+				
+				conditionSQL += "(" + tmpCodition + ")";
+			}
+		}
+			
+		if (conditionSQL.isEmpty()) return null;
+		
+		String sql = "";
+		String SCHEMA = schema != null ? schema + "." : "";
+		
+		sql += " SELECT " + SCHEMA + obj.generateTableName() + ".*" + (obj.generateTableName().equals("patient") ? ", uuid" : "") + "\n";
+		sql += " FROM     " + SCHEMA + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join " + SCHEMA + "person on person_id = patient_id " : "") + "\n";
+		sql += " WHERE 	" + conditionSQL;
 		
 		return (List<T>) search(obj.getClass(), sql, params, conn);
 	}
@@ -207,21 +248,6 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 			throw new RuntimeException(e);
 		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <T extends DatabaseObject> T getByUuidOnSpecificSchema(SyncTableConfiguration tableConfiguration, T obj, String schema, Connection conn) throws DBException{
-		Object[] params = obj.getUniqueKeysFieldValues(tableConfiguration);
-			
-		String tableName = obj.generateTableName();
-		
-		String sql = "";
-		
-		sql += " SELECT " + tableName + ".*" + (tableName.equals("patient") ? ", uuid" : "") + "\n";
-		sql += " FROM  	" + schema + "." + tableName +  (tableName.equals("patient") ? " left join person on person_id = patient_id" : "") + "\n";
-		sql += " WHERE 	" + tableConfiguration.generateUniqueKeysParametrizedCondition();
-		
-		return (T) find(obj.getClass(), sql, params, conn);
 	}
 	
 	
