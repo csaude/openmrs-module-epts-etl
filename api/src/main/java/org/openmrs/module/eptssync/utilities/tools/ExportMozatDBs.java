@@ -11,7 +11,7 @@ import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 
-public class ExportDBs {
+public class ExportMozatDBs {
 	static String dir = "/home/eip/bkps/q3fy22";
 	
 	public static void main(String[] args) {
@@ -35,8 +35,8 @@ public class ExportDBs {
 			//File Name Pathern: openmrs_site_code
 			
 			String dumpName = FileUtilities.generateFileNameFromRealPath(file.getAbsolutePath());
-			String siteName = dumpName.split(".sql")[0];
-			String dbName = siteName;
+			String siteName = (dumpName.split("openmrs_")[1]).split(".sql")[0];
+			String dbName = "openmrs_q3fy22_" + siteName;
 		
 			String[] cmd = new String[] { "/bin/bash", dbExportRootDirectoryPath+ "/db_import.sh", dbName, file.getAbsolutePath() };
 				

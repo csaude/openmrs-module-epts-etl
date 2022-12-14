@@ -23,8 +23,7 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<DatabaseOb
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		
-		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addColumnToSelect("patient.*, person.uuid");
 			searchClauses.addToClauseFrom("patient left join person on patient_id = person_id");
 		}

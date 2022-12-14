@@ -33,7 +33,7 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 		
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
 	
-		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+		if (tableInfo.isFromOpenMRSModel() && tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addColumnToSelect("patient.*, person.uuid");
 			searchClauses.addToClauseFrom("inner join person on person.person_id = patient_id");
 		}

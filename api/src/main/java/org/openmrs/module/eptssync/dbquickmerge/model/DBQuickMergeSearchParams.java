@@ -43,7 +43,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
 			 
 			SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 			
-			if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+			if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
 				searchClauses.addToClauseFrom(srcSchema + ".patient inner join " + srcSchema + ".person src_ on person_id = patient_id");
 				searchClauses.addColumnToSelect("patient.*, src_.uuid");
 			}
@@ -62,7 +62,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
 			this.extraCondition = "";
 			
 			this.extraCondition += "  (SELECT * ";
-			this.extraCondition += "   FROM    " + (tableInfo.getTableName().equals("patient") ? patientFromClause : normalFromClause); 		
+			this.extraCondition += "   FROM    " + (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equals("patient") ? patientFromClause : normalFromClause); 		
 			
 			
 			if (isForMergeExistingRecords()) {

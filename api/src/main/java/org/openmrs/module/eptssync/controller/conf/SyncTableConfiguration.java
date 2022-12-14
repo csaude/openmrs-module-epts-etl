@@ -80,6 +80,11 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		this.disabled = disabled;
 	}
 	
+	@JsonIgnore
+	public boolean isFromOpenMRSModel() {
+		return this.getRelatedSynconfiguration().isOpenMRSModel();
+	}
+	
 	public boolean isRemoveForbidden() {
 		return removeForbidden;
 	}
@@ -125,7 +130,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	@JsonIgnore
 	public boolean isUuidColumnNotExists() {
-		return this.tableName.equals("patient") ? true : false;
+		return this.isFromOpenMRSModel() && this.tableName.equals("patient") ? true : false;
 		
 		//return uuidColumnNotExists;
 	}

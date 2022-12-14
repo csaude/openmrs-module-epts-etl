@@ -30,7 +30,7 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject>{
 		
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
 	
-		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addColumnToSelect("patient.*, person.uuid");
 			searchClauses.addToClauseFrom("inner join person on person.person_id = patient_id");
 		}
