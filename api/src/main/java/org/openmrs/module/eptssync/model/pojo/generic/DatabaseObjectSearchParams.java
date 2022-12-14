@@ -21,7 +21,7 @@ public class DatabaseObjectSearchParams extends SyncSearchParams<DatabaseObject>
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		
-		if (tableInfo.getTableName().equalsIgnoreCase("patient")) {
+		if (tableInfo.isFromOpenMRSModel() &&  tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addToClauseFrom("patient inner join person src_ on person_id = patient_id");
 			searchClauses.addColumnToSelect("patient.*, src_.uuid");
 		}

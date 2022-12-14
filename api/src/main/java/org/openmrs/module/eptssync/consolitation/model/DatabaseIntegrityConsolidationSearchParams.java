@@ -26,7 +26,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 		searchClauses.addColumnToSelect(tableInfo.getTableName() +".*");
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
 		
-		if (getTableInfo().getTableName().equalsIgnoreCase("patient")) {
+		if (tableInfo.isFromOpenMRSModel() && getTableInfo().getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addToClauseFrom("INNER JOIN person ON person.person_id = patient.patient_id");
 		}
 

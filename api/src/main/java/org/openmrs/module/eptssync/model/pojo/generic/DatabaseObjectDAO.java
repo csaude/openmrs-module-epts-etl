@@ -98,14 +98,14 @@ public class DatabaseObjectDAO extends BaseDAO {
 			
 			String clauseFromStarting = tableName;
 			
-			if (tableName.equals("patient")) {
+			if (parentTableConfiguration.isFromOpenMRSModel() && tableName.equals("patient")) {
 				clauseFromStarting += " INNER JOIN person on person_id = patient_id \n";
 			}
 			
 			String sql = "";
 			
 			
-			sql += " SELECT " + tableName + ".*" + (tableName.equals("patient") ? ", uuid" : "") + "\n";
+			sql += " SELECT " + tableName + ".*" + (parentTableConfiguration.isFromOpenMRSModel() && tableName.equals("patient") ? ", uuid" : "") + "\n";
 			sql += " FROM  	" + clauseFromStarting + " INNER JOIN " + parentTableConfiguration.generateFullStageTableName() + " ON record_uuid = uuid\n";
 			sql += " WHERE 	record_origin_id = ? and record_origin_location_code = ? ";
 			
@@ -166,8 +166,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		String SCHEMA = schema != null ? schema + "." : "";
 		
-		sql += " SELECT " + SCHEMA + obj.generateTableName() + ".*" + (obj.generateTableName().equals("patient") ? ", uuid" : "") + "\n";
-		sql += " FROM     " + SCHEMA + obj.generateTableName() + (obj.generateTableName().equals("patient") ? " inner join " + SCHEMA + "person on person_id = patient_id " : "") + "\n";
+		sql += " SELECT " + SCHEMA + obj.generateTableName() + ".*" + (tableConfiguration.isFromOpenMRSModel() && obj.generateTableName().equals("patient") ? ", uuid" : "") + "\n";
+		sql += " FROM     " + SCHEMA + obj.generateTableName() + (tableConfiguration.isFromOpenMRSModel() &&  obj.generateTableName().equals("patient") ? " inner join " + SCHEMA + "person on person_id = patient_id " : "") + "\n";
 		sql += " WHERE 	" + conditionSQL;
 		
 		return (List<T>) search(obj.getClass(), sql, params, conn);
@@ -305,7 +305,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String tablesToSelect = stageTable + " stage_ INNER JOIN " + table + " src_ on src_.uuid = stage_.record_uuid";
 		
-		if (table.equalsIgnoreCase("patient")) {
+		if (tableConfiguration.isFromOpenMRSModel() &&  table.equalsIgnoreCase("patient")) {
 			tablesToSelect = stageTable + " src_ INNER JOIN person on person.uuid = src_.record_uuid INNER JOIN patient dest_ ON patient_id = person_id ";
 		}
 
@@ -589,7 +589,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String tablesToSelect = stageTable + " src_ INNER JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
 		
-		if (table.equalsIgnoreCase("patient")) {
+		if (tableConfiguration.isFromOpenMRSModel() &&  table.equalsIgnoreCase("patient")) {
 			tablesToSelect = stageTable + " src_ INNER JOIN person on person.uuid = src_.record_uuid INNER JOIN patient dest_ ON patient_id = person_id ";
 		}
 		
@@ -643,7 +643,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String tablesToSelect = stageTable + " src_ RIGHT JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
 		
-		if (table.equalsIgnoreCase("patient")) {
+		if (tableConfiguration.isFromOpenMRSModel() &&  table.equalsIgnoreCase("patient")) {
 			tablesToSelect = stageTable + " src_ RIGHT JOIN person dest_ on dest_.uuid = src_.record_uuid RIGHT JOIN patient ON patient_id = person_id ";
 		}
 		
@@ -677,7 +677,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String tablesToSelect = stageTable + " src_ INNER JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
 		
-		if (table.equalsIgnoreCase("patient")) {
+		if (tableConfiguration.isFromOpenMRSModel() &&  table.equalsIgnoreCase("patient")) {
 			tablesToSelect = stageTable + " src_ INNER JOIN person on person.uuid = src_.record_uuid INNER JOIN patient dest_ ON patient_id = person_id ";
 		}
 		

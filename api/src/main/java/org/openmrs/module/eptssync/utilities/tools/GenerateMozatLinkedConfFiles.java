@@ -14,7 +14,7 @@ import java.util.List;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
-public class GenerateLinkedConfFiles {
+public class GenerateMozatLinkedConfFiles {
 	public static final String testBaseFilePath ="D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\testing\\db_quick_copy_template.json";
 	public static final String testSitesFilePath = "D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\testing\\sites.txt";
 	
@@ -76,7 +76,7 @@ public class GenerateLinkedConfFiles {
 			
 			
 			if (nextDataBaseName != null) {
-				String nextFileName =  nextDataBaseName.split("openmrs_q3fy22_")[1];
+				String nextFileName =  nextDataBaseName;
 				
 				content = content.replaceAll(nextConfigFileNamePathern, nextFileName + ".json");
 			}
@@ -94,14 +94,14 @@ public class GenerateLinkedConfFiles {
 	
 	private static String generateSiteName(File file) {
 		String dumpName = FileUtilities.generateFileNameFromRealPath(file.getAbsolutePath());
-		return (dumpName.split("openmrs_")[1]).split(".sql")[0];
+		return dumpName.split(".sql")[0];
 	}
 	
 	private static String generateDBName(File file) {
 		String dumpName = FileUtilities.generateFileNameFromRealPath(file.getAbsolutePath());
-		String siteName = (dumpName.split("openmrs_")[1]).split(".sql")[0];
+		String siteName = dumpName.split(".sql")[0];
 		
-		return "openmrs_q3fy22_" + siteName;
+		return siteName;
 	}
 	
 	public static List<File> getDumps(File rootDirectory){

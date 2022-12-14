@@ -287,7 +287,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String tablesToSelect = stageTable + " src_ LEFT JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
 		
-		if (table.equalsIgnoreCase("patient")) {
+		if (tableConfiguration.isFromOpenMRSModel() && table.equalsIgnoreCase("patient")) {
 			tablesToSelect = stageTable + " src_ LEFT JOIN person dest_ on dest_.uuid = src_.record_uuid LEFT JOIN patient ON patient_id = person_id ";
 		}
 		
@@ -321,7 +321,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String tablesToSelect = stageTable + " src_ INNER JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
 		
-		if (table.equalsIgnoreCase("patient")) {
+		if (tableConfiguration.isFromOpenMRSModel() && table.equalsIgnoreCase("patient")) {
 			tablesToSelect = stageTable + " src_ INNER JOIN person dest_ on dest_.uuid = src_.record_uuid LEFT JOIN patient ON patient_id = person_id ";
 		}
 		

@@ -104,7 +104,7 @@ public class DataReconciliationRecord {
 		record.save(config, conn);
 
 		
-		if (getTableName().equals("person")) {
+		if (getConfig().isFromOpenMRSModel() &&  getTableName().equals("person")) {
 			//Try to Restore the related patient
 			
 			for (RefInfo refInfo: config.getChildred()) {

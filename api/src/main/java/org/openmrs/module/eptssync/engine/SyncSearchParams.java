@@ -21,6 +21,7 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 		this.tableInfo = tableInfo;
 		this.limits = limits;
 	}
+
 	
 	public Date getSyncStartDate() {
 		return syncStartDate;

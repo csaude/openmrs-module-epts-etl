@@ -32,7 +32,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 		
 			searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName() + " src_ ");
 			
-			if (getTableInfo().getTableName().equalsIgnoreCase("patient")) {
+			if (getTableInfo().isFromOpenMRSModel() &&   getTableInfo().getTableName().equalsIgnoreCase("patient")) {
 				searchClauses.addToClauses("not exists (select * from person dest_ inner join patient on patient_id = person_id where dest_.uuid = src_.record_uuid)");
 			}
 			else {
@@ -47,7 +47,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 			
 			searchClauses.addColumnToSelect("src_.record_origin_id, src_.record_uuid, src_.record_origin_location_code");
 			
-			if (getTableInfo().getTableName().equalsIgnoreCase("patient")) {
+			if (tableInfo.isFromOpenMRSModel() &&  getTableInfo().getTableName().equalsIgnoreCase("patient")) {
 				searchClauses.addToClauseFrom("person inner join patient dest_ on patient_id = person_id");
 				searchClauses.addColumnToSelect("person.uuid");
 				searchClauses.addToClauseFrom("inner join " + getTableInfo().generateFullStageTableName() + " src_ on person.uuid = src_.record_uuid");
@@ -64,7 +64,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 		if (this.type.isPhantomRecordsDetector() ) {
 			searchClauses.addColumnToSelect("dest_.*");
 			
-			if (getTableInfo().getTableName().equalsIgnoreCase("patient")) {
+			if (tableInfo.isFromOpenMRSModel() &&   getTableInfo().getTableName().equalsIgnoreCase("patient")) {
 				searchClauses.addToClauseFrom("person inner join patient dest_ on patient_id = person_id");
 				searchClauses.addToClauseFrom("left join " + getTableInfo().generateFullStageTableName() + " src_ on person.uuid = src_.record_uuid");
 				

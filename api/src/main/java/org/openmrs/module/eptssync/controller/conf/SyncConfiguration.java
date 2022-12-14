@@ -72,11 +72,22 @@ public class SyncConfiguration {
 
 	private static Log logger = LogFactory.getLog(SyncConfiguration.class);
 	
+	private ModelType modelType;
+	
 	public SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
 		this.allTables = new ArrayList<SyncTableConfiguration>();
 	}
 	
+	public ModelType getModelType() {
+		return modelType;
+	}
+	
+	public void setModelType(ModelType modelType) {
+		this.modelType = modelType;
+	}
+
+
 	@JsonIgnore
 	public List<SyncTableConfiguration> getAllTables() {
 		return allTables;
@@ -109,6 +120,10 @@ public class SyncConfiguration {
 		return mainApp;
 	}
 	
+	@JsonIgnore
+	public boolean isOpenMRSModel() {
+		return this.modelType.isOpenMRS();
+	}
 	
 	public String getClassPath() {
 		return classPath;
