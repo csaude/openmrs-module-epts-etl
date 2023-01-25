@@ -538,6 +538,10 @@ public class SyncConfiguration {
 			if (utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You cannot configure for 'originAppLocationCode' parameter in [" + getProcessType() + " configuration\n" ;
 		}
 		
+		if (getProcessType() == null || !utilities.stringHasValue(getProcessType().name())) errorMsg += ++errNum + ". You must specify value for 'processType' parameter\n";
+		
+		if (getModelType() == null || !utilities.stringHasValue(getModelType().name())) errorMsg += ++errNum + ". You must specify value for 'modelType' parameter\n";
+		
 		for (SyncOperationConfig operation : this.operations) {
 			operation.validate(); 
 		}
