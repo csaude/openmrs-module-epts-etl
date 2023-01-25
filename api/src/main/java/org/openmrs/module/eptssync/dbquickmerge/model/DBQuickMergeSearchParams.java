@@ -143,6 +143,11 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
 		
 		return count;	
 	}
+	
+	@Override
+	public Class<DatabaseObject> getRecordClass() {
+		return this.getTableInfo().getSyncRecordClass(this.relatedController.getRemoteApp());
+	}
 
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
