@@ -5,4 +5,4 @@ The eptssync module is writen in java and follow the openmrs modules pattern. It
 On the top of eptssync logic there is Processes which represents a set of operations which can be intended as tasks which together complete a process of ETL.
  ![eptssync_arquitecture](docs/Eptssync_Arquitecture.png)
  Some ETL may require a set of processes to have a full job done.
- From the code perspective an process is handled by the [ProcessController](api/src/main/java/org/openmrs/module/eptssync/controller/ProcessController.java)
+ From the code perspective an process is handled by the [ProcessController](api/src/main/java/org/openmrs/module/eptssync/controller/ProcessController.java) class and the tasks or processes are handled by [OperationController](api/src/main/java/org/openmrs/module/eptssync/controller/OperationController.java) class   
