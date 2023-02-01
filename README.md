@@ -16,13 +16,22 @@ On the top of eptssync logic there is Processes which represents a set of operat
  
  The interation between the core classes is ilustrated on the image bellow
  
- ![eptssync_arquitecture](docs/how-the-process-is-performed.png)
- 
- 
- ## The Process Configuration File
- The process configuration file
+ ![how-the-process-is-performed](docs/how-the-process-is-performed.png)
  
  ## The Process Configuration File
- The process configuration file
+ The process configuration file is the heart of the application. For each process type there is specific configuration setup which must be done. An configuration file is a json file which in almost all the cases have 4 sections as shown bellow.
+
+ ![config-sections](docs/config-sections.png)
+ 
+ - **The section 1** contains the general configuratios usually applayed to all the operations and involved tables.
+ - **The section 2** define the auxiliary application info. Usually an application info define database connection info for example for source database and/or destination database.
+ - **The section 3** define the operations configuration parameters.
+ - **The section 4** list the involved tables and some specific configurations for each table.
+
+## The common configuration
+Bellow are listed the common 
+ 
+ 
+ 
  
  
