@@ -12,7 +12,12 @@ On the top of eptssync logic there is Processes which represents a set of operat
  The process configuration is mapped to [SyncConfiguration](api/src/main/java/org/openmrs/module/eptssync/controller/conf/SyncConfiguration.java) class and each operation are mapped to [SyncOperationConfig](api/src/main/java/org/openmrs/module/eptssync/controller/conf/SyncOperationConfig.java).
  Each operation defined in the process configuration file will performe the very same task on all tables listed on the configuration file. The table configuration is mapped to [SyncTableConfiguration](api/src/main/java/org/openmrs/module/eptssync/controller/conf/SyncTableConfiguration.java).
  
- An [Operation Controller](api/src/main/java/org/openmrs/module/eptssync/controller/OperationController.java) perfomes its task using an [Engine](api/src/main/java/org/openmrs/module/eptssync/engine/Engine.java). The egines are monitored by [EngineMonitor](api/src/main/java/org/openmrs/module/eptssync/monitor/EngineMonitor.java) class. 
+ An [Operation Controller](api/src/main/java/org/openmrs/module/eptssync/controller/OperationController.java) perfomes its task using an [Engine](api/src/main/java/org/openmrs/module/eptssync/engine/Engine.java). The egines are monitored by [EngineMonitor](api/src/main/java/org/openmrs/module/eptssync/monitor/EngineMonitor.java) class.
+ 
+ The interation between the core classes is ilustrated on the image bellow
+ 
+ ![eptssync_arquitecture](docs/how-the-process-is-performed.png)
+ 
  
  ## The Process Configuration File
  The process configuration file
