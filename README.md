@@ -96,22 +96,61 @@ This process is similar to QUICK_MERGE_WITH_ENTITY_GENERATION BUT here no POJO i
 The template for this process can be found [here](docs/process_templates/quick_merge_whitout_entity_generation.json)
 
 ###### DB_INCONSISTENCY_CHECK
-This process performe an referencial inconsitence check on a specific database. One of the follow action will be taken to identified inconsistences:
-- The ofending records will be moved from the database;
+This process performs a referential inconsistency check on a specific database. One of the follow action will be taken to identified inconsistencies:
+- The offending records will be moved from the database;
 - The missing records will be replaced by the default parents.
 
-All the afected records will be recorded in a staging area in a table called "inconsistence_info". 
+All the affected records will be recorded in a staging area in a table called "inconsistence_info".
+This process is performed by the follow operations:
+- DATABASE_PREPARATION: prepare the sync stage area database;
+- POJO_GENERATION: Generated the java POJO classes of the involved tables
+- INCONSISTENCY_SOLVER: perform the inconsistency check and solver
 
-The template for this process can be found [here](docs/process templates/quick_merge_whitout_entity_generation.json)
+The template for this process can be found [here](docs/process_templates/db_inconsistency_check.json)
 
 
 ###### DB_RE_SYNC
+Performe the database re-sync from an openmrs database to dbsync application. This process is performed using the follow operations
+- DATABASE_PREPARATION: prepare the sync stage area database;
+- CHANGED_RECORDS_DETECTOR: performe a resync of updated records; 
+- NEW_RECORDS_DETECTOR: performe a resync of new records. 
+
+The template for this process can be found [here](docs/process_templates/db_re_sync.json)
 
 ###### DB_EXPORT
+This process can be used to perform a remote sync between two databases using json files. The full sync process will need an [DATABASE_MERGE_FROM_JSON](#DATABASE_MERGE_FROM_JSON) to be run in the destination database.
+The DB_EXPORT process is run in the source database and uses below operations:
+- DATABASE_PREPARATION: prepare the sync stage area database;
+- POJO_GENERATION: Generated the java POJO classes of the involved tables
+- INCONSISTENCY_SOLVER: perform the inconsistency check and solver on the database
+- EXPORT: export the database to json files
+- TRANSPORT: transport the json files from source to the destination server. NOTE that by now the transport is using a simple copy command from one folder to another but in the future the transport could support injection of several transport mechanisms.
+
+The template for this process can be found [here](docs/process_templates/db_export.json)
 
 ###### DATABASE_MERGE_FROM_JSON
+This process completes the sync process started by a DB_EXPORT process. This process is supposed to run in a destination database.  
+To perform its task this process uses below operations:
+- DATABASE_PREPARATION: prepare the sync stage area database;
+- POJO_GENERATION: Generated the java POJO classes of the involved tables
+- LOAD: load json files to stage area
+- DB_MERGE_FROM_JSON: perform the merge on destination using the stage area json data;
+- CONSOLIDATION: perform the referential data consolidation 
+- 
+The template for this process can be found [here](docs/process_templates/database_merge_from_json.json)
 
-###### DB_QUICK_EXPORT,
-###### DB_QUICK_LOAD,
-###### DATA_RECONCILIATION
-###### DB_QUICK_COPY
+# Running the application
+To run this application you should (1) get the jar file either from the releases or (2) cloning and compiling the [eptssync project](https://github.com/FriendsInGlobalHealth/openmrs-module-eptssync.git).
+
+If you go for the second option follow the steps bellow from your machine
+```
+git clone https://github.com/FriendsInGlobalHealth/openmrs-module-eptssync.git
+cd openmrs-module-eptssync
+mvn clean install -DskipTests
+```
+
+Once you have the jar and have set up the configuration file (or configurations file) you run the application hitting the below command.
+```
+java -Dlog.level=LOG_LEVEL -jar eptssync-api-1.0-SNAPSHOT.jar "path/to/configuration/file"
+```
+The LOG_LEVEL can be one of the following: DEBUG, INFO, WARN, ERR
