@@ -1,12 +1,11 @@
 # Introduction
-The eptssync module is an OpenMRS module designed to perform several operations related to data synchronization between OpenMRS databases and other data models. It can also act as an ETL tool. The eptssync module can be integrated to an OpenMRS instance BUT can also run as a stand-alone java application. Take in mind that this module is still in development and some of its features may not well function now.
+The eptssync module is an OpenMRS module designed to perform several operations related to data exchange between OpenMRS databases and other data models. The eptssync module can be integrated to an OpenMRS instance BUT can also run as a stand-alone java application. Take in mind that this module is still in development and some of its features may not well function now.
 # Architecture overview
 The EPTSSync module is written in Java and follows the OpenMRS modules pattern. Its core is implemented on the API level so it can run as a stand-alone application.
-On the top of EPTSSync  logic there is Processes which represents a set of operations which can be intended as tasks which together complete a process of ETL.
+On the top of EPTSSync logic there is Processes which represents a set of operations which can be intended as tasks which together complete a certain objective.
 
  ![eptssync_arquitecture](docs/Eptssync_Arquitecture.png)
 
-Some ETL may require a set of processes to have a full job done.
 From the code perspective an process is handled by the [ProcessController](api/src/main/java/org/openmrs/module/eptssync/controller/ProcessController.java) class and the tasks or operations are handled by [OperationController](api/src/main/java/org/openmrs/module/eptssync/controller/OperationController.java) class. 
  
 The process and its operations are configured via JSON file on which all the necessary information for a process to be run are specified. The configuration file will determine which kind of process must be performed.
