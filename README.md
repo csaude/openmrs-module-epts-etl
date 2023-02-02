@@ -14,9 +14,9 @@ The process configuration is mapped to [SyncConfiguration](api/src/main/java/org
 Each operation defined in the process configuration file will perform the very same task on all tables listed on the configuration file. The table configuration is mapped to [SyncTableConfiguration](api/src/main/java/org/openmrs/module/eptssync/controller/conf/SyncTableConfiguration.java).
  
 An [Operation Controller](api/src/main/java/org/openmrs/module/eptssync/controller/OperationController.java) performs its task using an [Engine](api/src/main/java/org/openmrs/module/eptssync/engine/Engine.java). The engines are monitored by [EngineMonitor](api/src/main/java/org/openmrs/module/eptssync/monitor/EngineMonitor.java) class. The interaction between the core classes is illustrated on the image below.
- 
+
 ![how-the-process-is-performed](docs/how-the-process-is-performed.png)
- 
+
 ## The Process Configuration File
 The process configuration file is the heart of the application. For each process type there is a specific configuration setup which must be done. A configuration file is a JSON file which in almost all cases has 4 sections as shown below.
 
