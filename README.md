@@ -86,13 +86,14 @@ This process performs a merge of a source database to a destination database in 
 
 Note that since the POJO classes are dynamically generated (both for source and destination dbs) the source and destination model can be slightly different.  
 
-The template for this process can be found [here].(docs/process templates/quick_merge_with_entity_generation.json)  
+The template for this process can be found [here](docs/process templates/quick_merge_with_entity_generation.json)  
+
 
 
 ###### QUICK_MERGE_WHITOUT_ENTITY_GENERATION
 This process is similar to QUICK_MERGE_WITH_ENTITY_GENERATION BUT here no POJO is generated since the process assumes that the two data models (source and destination) are uniform. But to use this process you need to first run the QUICK_MERGE_WITH_ENTITY_GENERATION so that the POJO will be generated and for the next merges you can use this process.
 
-The template for this process can be found [here].(docs/process templates/quick_merge_whitout_entity_generation.json)
+The template for this process can be found [here](docs/process templates/quick_merge_whitout_entity_generation.json)
 
 ###### DB_INCONSISTENCY_CHECK
 
