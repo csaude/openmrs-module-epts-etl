@@ -59,16 +59,50 @@ The table configuration section lists the tables which will be involved in the p
 - *sharePkWith*: this indicate if the primary key of this table is shared with a parent. In this case that parent should be mentioned here.
 - *extraConditionForExport*: the extra sql condition to be injected when the operation queries for records to process.
 
-### Parents configuration
+###### Parents configuration
 A parent if configured as an object and can have additional properties. Note that when there are no additional properties you can omit the parent on the list of parents. When the parent appear on the table configuration it can have below properties:
 - *tableName*: the table name
 - *defaultValueDueInconsistency*: default value which will be used when the inconsistency check find any orphan record of this parent
 - *setNullDueInconsistency*: a boolean which indicate that if the record is orphan of this parent then the field can be nulled
 
-### Conditional parents configuration
+###### Conditional parents configuration
 The conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the person_attribute.value=7)  
 A conditional parent is configured as an object and can have bellow properties:  
 - *tableName*: the parent table name
 - *refColumnName*: the name of column which has conditional relationship
 - *conditionField*: the name of column which determines the conditional relationship;
-- *conditionValue*: the conditional value for *conditionField*. 
+- *conditionValue*: the conditional value for *conditionField*.
+
+## Supported processes and its configuration files
+In this section are listed all the avaliable process and the template of its configuration files.
+
+###### QUICK_MERGE_WITH_ENTITY_GENERATION
+
+This process performs a merge of a source database to a destination database in the same network. The process is called "quick" because no staging area and no data transport is done here. the operation for this process are:
+- *DATABASE_PREPARATION*: prepare the sync stage area database;
+- *POJO_GENERATION*: Generated the java POJO classes of the involved tables
+- *DB_QUICK_MERGE_EXISTING_RECORDS*: performs the updates of existing records in destination database
+- *DB_QUICK_MERGE_MISSING_RECORDS*: performs the merge of missing records in destination database
+
+Note that since the POJO classes are dynamically generated (both for source and destination dbs) the source and destination model can be slightly different.  
+
+The template for this process can be found [here].(docs/process templates/quick_merge_with_entity_generation.json)  
+
+
+###### QUICK_MERGE_WHITOUT_ENTITY_GENERATION
+This process is similar to QUICK_MERGE_WITH_ENTITY_GENERATION BUT here no POJO is generated since the process assumes that the two data models (source and destination) are uniform. But to use this process you need to first run the QUICK_MERGE_WITH_ENTITY_GENERATION so that the POJO will be generated and for the next merges you can use this process.
+
+The template for this process can be found [here].(docs/process templates/quick_merge_whitout_entity_generation.json)
+
+###### DB_INCONSISTENCY_CHECK
+
+###### DB_RE_SYNC
+
+###### DB_EXPORT
+
+###### DATABASE_MERGE_FROM_JSON
+
+###### DB_QUICK_EXPORT,
+###### DB_QUICK_LOAD,
+###### DATA_RECONCILIATION
+###### DB_QUICK_COPY
