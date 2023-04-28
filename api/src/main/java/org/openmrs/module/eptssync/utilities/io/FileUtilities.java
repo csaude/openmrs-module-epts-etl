@@ -143,7 +143,7 @@ public class FileUtilities {
 	}
 	
 	public static void write(String fileName, byte[] source) throws IOException{
-		FileOutputStream fout= new FileOutputStream (fileName);
+		FileOutputStream fout= new FileOutputStream (fileName, true);
 		
 		BufferedOutputStream bout= new BufferedOutputStream (fout);
 		
