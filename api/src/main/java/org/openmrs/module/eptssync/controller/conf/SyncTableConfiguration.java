@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -19,22 +20,26 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SyncTableConfiguration implements Comparable<SyncTableConfiguration>{
+public class SyncTableConfiguration implements Comparable<SyncTableConfiguration> {
+	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
-
+	
 	private String tableName;
 	
 	private List<RefInfo> parents;
+	
 	private List<RefInfo> childred;
 	
 	private List<RefInfo> conditionalParents;
 	
 	private Class<DatabaseObject> syncRecordClass;
-
+	
 	private SyncConfiguration relatedSyncTableInfoSource;
-
+	
 	private String primaryKey;
+	
 	private String primaryKeyType;
+	
 	private String sharePkWith;
 	
 	private String extraConditionForExport;
@@ -42,6 +47,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	private boolean metadata;
 	
 	private boolean fullLoaded;
+	
 	private boolean removeForbidden;
 	
 	private boolean disabled;
@@ -51,9 +57,19 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	 */
 	private List<String> observationDateFields;
 	
-	private List<List<String>> uniqueKeys; 
+	private List<List<String>> uniqueKeys;
+	
+	private List<Field> fields;
 	
 	public SyncTableConfiguration() {
+	}
+	
+	public List<Field> getFields() {
+		return fields;
+	}
+	
+	public void setFields(List<Field> fields) {
+		this.fields = fields;
 	}
 	
 	public List<List<String>> getUniqueKeys() {
@@ -169,24 +185,24 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public String getSharePkWith() {
 		return sharePkWith;
 	}
-
+	
 	public void setSharePkWith(String sharePkWith) {
 		this.sharePkWith = sharePkWith;
 	}
-
+	
 	@JsonIgnore
 	public SyncConfiguration getRelatedSynconfiguration() {
 		return relatedSyncTableInfoSource;
 	}
-
+	
 	public void setRelatedSyncTableInfoSource(SyncConfiguration relatedSyncTableInfoSource) {
 		this.relatedSyncTableInfoSource = relatedSyncTableInfoSource;
 	}
-
+	
 	public String getTableName() {
 		return tableName;
 	}
-
+	
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
 	}
@@ -212,12 +228,13 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 				
 				if (rs.next()) {
 					this.primaryKey = rs.getString("COLUMN_NAME");
-				
+					
 					this.primaryKeyType = DBUtilities.determineColunType(tableName, this.primaryKey, conn);
-				
+					
 					this.primaryKeyType = AttDefinedElements.convertMySQLTypeTOJavaType(this.primaryKeyType);
 				}
-			} catch (SQLException e) {
+			}
+			catch (SQLException e) {
 				e.printStackTrace();
 				
 				throw new RuntimeException(e);
@@ -249,7 +266,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 					for (List<String> keyElements : parentTableInfo.getUniqueKeys()) {
 						this.addUniqueKey(keyElements);
 					}
-			
+					
 				}
 			}
 		}
@@ -268,10 +285,10 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 				
 				List<String> keyElements = null;
 				
-				while  (rs.next()) {
-				
+				while (rs.next()) {
+					
 					String indexName = rs.getString("INDEX_NAME");
-				    
+					
 					if (!indexName.equals(prevIndexName)) {
 						tableConfiguration.addUniqueKey(keyElements);
 						
@@ -283,7 +300,8 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 				}
 				
 				tableConfiguration.addUniqueKey(keyElements);
-			} catch (SQLException e) {
+			}
+			catch (SQLException e) {
 				e.printStackTrace();
 				
 				throw new RuntimeException(e);
@@ -293,27 +311,28 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			}
 		}
 	}
-		
 	
 	private boolean addUniqueKey(List<String> keyElements) {
-		if (keyElements == null || keyElements.isEmpty()) return false;
+		if (keyElements == null || keyElements.isEmpty())
+			return false;
 		
 		//Don't add PK as uniqueKey
-		if (keyElements.size() == 1 &&  keyElements.get(0).equals(this.getPrimaryKey())) {
+		if (keyElements.size() == 1 && keyElements.get(0).equals(this.getPrimaryKey())) {
 			return false;
 		}
 		
-		if (this.uniqueKeys == null) this.uniqueKeys = new ArrayList<>();
+		if (this.uniqueKeys == null)
+			this.uniqueKeys = new ArrayList<>();
 		
 		this.uniqueKeys.add(keyElements);
 		
 		return true;
 	}
 	
-	
 	@JsonIgnore
 	public String getPrimaryKeyType() {
-		if (primaryKeyType == null) getPrimaryKey();
+		if (primaryKeyType == null)
+			getPrimaryKey();
 		
 		return primaryKeyType;
 	}
@@ -333,7 +352,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
-		for (RefInfo  parent : this.getParents()) {
+		for (RefInfo parent : this.getParents()) {
 			if (parent.getRefColumnAsClassAttName().equals(parentAttName)) {
 				return parent.isIgnorable();
 			}
@@ -345,7 +364,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	private synchronized void loadChildren(Connection conn) throws SQLException {
 		logDebug("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
 		
-		this.childred = new ArrayList<RefInfo>();  
+		this.childred = new ArrayList<RefInfo>();
 		
 		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
 		
@@ -354,18 +373,22 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		logDebug("DISCOVERED '" + foreignKeyRS.getRow() + "' CHILDREN FOR TABLE '" + getTableName() + "'");
 		
 		foreignKeyRS.beforeFirst();
-	
-		while(foreignKeyRS.next()) {
-			logDebug("CONFIGURING CHILD [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
+		
+		while (foreignKeyRS.next()) {
+			logDebug(
+			    "CONFIGURING CHILD [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
 			
 			RefInfo ref = new RefInfo();
 			
 			ref.setRefType(RefInfo.CHILD_REF_TYPE);
 			ref.setRefColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
-			ref.setRefTableConfiguration(SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"), this.relatedSyncTableInfoSource));
-			ref.setRefColumnType(AttDefinedElements.convertMySQLTypeTOJavaType(DBUtilities.determineColunType(ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(), conn)));
+			ref.setRefTableConfiguration(
+			    SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"), this.relatedSyncTableInfoSource));
+			ref.setRefColumnType(AttDefinedElements.convertMySQLTypeTOJavaType(DBUtilities
+			        .determineColunType(ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(), conn)));
 			ref.setRelatedSyncTableConfiguration(this);
-			ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(), conn));
+			ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getRefTableConfiguration().getTableName(),
+			    ref.getRefColumnName(), conn));
 			
 			//Mark as metadata if there is no table info configured
 			if (getRelatedSynconfiguration().find(ref.getRefTableConfiguration()) == null) {
@@ -374,7 +397,8 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			
 			this.childred.add(ref);
 			
-			logDebug("CHILDREN [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
+			logDebug(
+			    "CHILDREN [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
 		}
 		
 		logDebug("LOADED CHILDREN FOR TABLE '" + getTableName() + "'");
@@ -391,7 +415,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public void logWarn(String msg) {
 		getRelatedSynconfiguration().logWarn(msg);
 	}
-		
+	
 	public void logErr(String msg) {
 		getRelatedSynconfiguration().logErr(msg);
 	}
@@ -399,7 +423,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	private synchronized void loadParents(Connection conn) throws SQLException {
 		logDebug("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
 		
-		List<RefInfo> auxRefInfo = new ArrayList<RefInfo>();  
+		List<RefInfo> auxRefInfo = new ArrayList<RefInfo>();
 		
 		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(null, null, tableName);
 		
@@ -409,18 +433,21 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		foreignKeyRS.beforeFirst();
 		
-		while(foreignKeyRS.next()) {
-			logDebug("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
+		while (foreignKeyRS.next()) {
+			logDebug(
+			    "CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
 			
 			String refColumName = foreignKeyRS.getString("FKCOLUMN_NAME");
 			
-			SyncTableConfiguration refTableConfiguration = SyncTableConfiguration.init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource);
+			SyncTableConfiguration refTableConfiguration = SyncTableConfiguration
+			        .init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource);
 			
 			RefInfo ref = generateRefInfo(refColumName, null, null, RefInfo.PARENT_REF_TYPE, refTableConfiguration, conn);
 			
 			if (utilities.existOnArray(auxRefInfo, ref)) {
-				logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' WAS ALREDY CONFIGURED! SKIPPING...");
-				continue;	
+				logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName()
+				        + "' WAS ALREDY CONFIGURED! SKIPPING...");
+				continue;
 			}
 			
 			RefInfo configuredParent = findParent(ref);
@@ -430,25 +457,28 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 				ref.setSetNullDueInconsistency(configuredParent.isSetNullDueInconsistency());
 			}
 			
-			logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
+			logDebug(
+			    "PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
 			
 			auxRefInfo.add(ref);
 		}
 		
 		//Check if there is a configured parent but not defined on the db schema
 		
-		if (utilities.arrayHasElement(this.parents)){
+		if (utilities.arrayHasElement(this.parents)) {
 			for (RefInfo configuredParent : this.parents) {
-				if (configuredParent.getRefColumnName() == null) continue;
+				if (configuredParent.getRefColumnName() == null)
+					continue;
 				
-				 RefInfo autoGeneratedParent = utilities.findOnList(auxRefInfo, configuredParent);
-				 
-				 if (autoGeneratedParent == null) {
-					 configuredParent.setRefTableConfiguration(SyncTableConfiguration.init(configuredParent.getTableName(), this.relatedSyncTableInfoSource));
-					 configuredParent.setRelatedSyncTableConfiguration(this);		
-						
-					 auxRefInfo.add(configuredParent);
-				 }
+				RefInfo autoGeneratedParent = utilities.findOnList(auxRefInfo, configuredParent);
+				
+				if (autoGeneratedParent == null) {
+					configuredParent.setRefTableConfiguration(
+					    SyncTableConfiguration.init(configuredParent.getTableName(), this.relatedSyncTableInfoSource));
+					configuredParent.setRelatedSyncTableConfiguration(this);
+					
+					auxRefInfo.add(configuredParent);
+				}
 			}
 		}
 		
@@ -459,17 +489,22 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	private void loadConditionalParents(Connection conn) throws DBException {
-		if (!utilities.arrayHasElement(this.conditionalParents)) return;
+		if (!utilities.arrayHasElement(this.conditionalParents))
+			return;
 		
 		for (int i = 0; i < this.conditionalParents.size(); i++) {
 			RefInfo refInfo = this.conditionalParents.get(i);
 			
-			this.conditionalParents.set(i, generateRefInfo(refInfo.getRefColumnName(), refInfo.getConditionField(), refInfo.getConditionValue(), RefInfo.PARENT_REF_TYPE,  init(refInfo.getTableName(), this.getRelatedSynconfiguration()), conn));
+			this.conditionalParents.set(i,
+			    generateRefInfo(refInfo.getRefColumnName(), refInfo.getConditionField(), refInfo.getConditionValue(),
+			        RefInfo.PARENT_REF_TYPE, init(refInfo.getTableName(), this.getRelatedSynconfiguration()), conn));
 		}
 	}
-
-	private RefInfo generateRefInfo(String refColumName, String conditionField, Integer conditionValue, String refType, SyncTableConfiguration refTableConfiguration, Connection conn) throws DBException {
-		String refColumnType = AttDefinedElements.convertMySQLTypeTOJavaType(DBUtilities.determineColunType(this.getTableName(), refColumName, conn));
+	
+	private RefInfo generateRefInfo(String refColumName, String conditionField, Integer conditionValue, String refType,
+	        SyncTableConfiguration refTableConfiguration, Connection conn) throws DBException {
+		String refColumnType = AttDefinedElements
+		        .convertMySQLTypeTOJavaType(DBUtilities.determineColunType(this.getTableName(), refColumName, conn));
 		boolean ignorable = DBUtilities.isTableColumnAllowNull(this.tableName, refColumName, conn);
 		
 		RefInfo ref = new RefInfo();
@@ -479,7 +514,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		ref.setRefTableConfiguration(refTableConfiguration);
 		ref.setIgnorable(ignorable);
 		ref.setRefColumnType(refColumnType);
-		ref.setRelatedSyncTableConfiguration(this);		
+		ref.setRelatedSyncTableConfiguration(this);
 		ref.setConditionField(conditionField);
 		ref.setConditionValue(conditionValue);
 		
@@ -506,29 +541,34 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	@JsonIgnore
-	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException{
-		if (syncRecordClass == null) this.syncRecordClass = DatabaseEntityPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application), getRelatedSynconfiguration());
+	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+		if (syncRecordClass == null)
+			this.syncRecordClass = DatabaseEntityPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application),
+			    getRelatedSynconfiguration());
 		
 		if (syncRecordClass == null) {
 			OpenConnection conn = application.openConnection();
 			
 			try {
-				generateRecordClass(application, true, conn);
+				generateRecordClass(application, true);
 			}
 			finally {
 				conn.finalizeConnection();
 			}
 		}
 		
-		if (syncRecordClass == null) throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");
+		if (syncRecordClass == null)
+			throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");
 		
 		return syncRecordClass;
 	}
 	
 	private static String[] REMOVABLE_METADATA = {};
-
+	
 	/**
-	 * By default an metadata cannot be removed, but there are situations where is needed to remove a metadata
+	 * By default an metadata cannot be removed, but there are situations where is needed to remove
+	 * a metadata
+	 * 
 	 * @return
 	 */
 	@JsonIgnore
@@ -540,16 +580,17 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public boolean existsSyncRecordClass(AppInfo application) {
 		try {
 			return getSyncRecordClass(application) != null;
-		} catch (ForbiddenOperationException e) {
+		}
+		catch (ForbiddenOperationException e) {
 			
 			return false;
 		}
 	}
-
+	
 	public void setSyncRecordClass(Class<DatabaseObject> syncRecordClass) {
 		this.syncRecordClass = syncRecordClass;
 	}
-
+	
 	@JsonIgnore
 	public String generateFullClassName(AppInfo application) {
 		String rootPackageName = "org.openmrs.module.eptssync.model.pojo";
@@ -558,7 +599,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		String fullPackageName = utilities.concatStringsWithSeparator(rootPackageName, packageName, ".");
 		
-		return  utilities.concatStringsWithSeparator(fullPackageName,  generateClassName(),  ".");
+		return utilities.concatStringsWithSeparator(fullPackageName, generateClassName(), ".");
 	}
 	
 	@JsonIgnore
@@ -577,43 +618,48 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return getRelatedSynconfiguration().getOriginAppLocationCode();
 	}
 	
-	public void generateRecordClass(AppInfo application, boolean fullClass,  Connection conn) {
+	public void generateRecordClass(AppInfo application, boolean fullClass) {
 		try {
 			if (fullClass) {
-				this.syncRecordClass = DatabaseEntityPOJOGenerator.generate(this, application, conn);
+				this.syncRecordClass = DatabaseEntityPOJOGenerator.generate(this, application);
+			} else {
+				this.syncRecordClass = DatabaseEntityPOJOGenerator.generateSkeleton(this, application);
 			}
-			else {
-				this.syncRecordClass = DatabaseEntityPOJOGenerator.generateSkeleton(this, application, conn);
-			}
-		} catch (ClassNotFoundException e) {
+		}
+		catch (ClassNotFoundException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
 		}
 	}
-
-	public void generateSkeletonRecordClass(AppInfo application, Connection conn) {
+	
+	public void generateSkeletonRecordClass(AppInfo application) {
 		try {
-			this.syncRecordClass = DatabaseEntityPOJOGenerator.generateSkeleton(this, application, conn);
-		} catch (ClassNotFoundException e) {
+			this.syncRecordClass = DatabaseEntityPOJOGenerator.generateSkeleton(this, application);
+		}
+		catch (ClassNotFoundException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
 		}
 	}
@@ -622,23 +668,23 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public String generateClassName() {
 		return generateClassName(this.tableName);
 	}
-
+	
 	private String generateClassName(String tableName) {
 		String[] nameParts = tableName.split("_");
-
+		
 		String className = utilities.capitalize(nameParts[0]);
-
+		
 		for (int i = 1; i < nameParts.length; i++) {
 			className += utilities.capitalize(nameParts[i]);
 		}
-
+		
 		return className + "VO";
 	}
-
+	
 	public boolean isMetadata() {
 		return metadata;
 	}
-
+	
 	public void setMetadata(boolean metadata) {
 		this.metadata = metadata;
 		
@@ -649,12 +695,12 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public String generateRelatedStageTableName() {
 		return this.getTableName() + "_stage";
 	}
-
+	
 	@JsonIgnore
 	public String getSyncStageSchema() {
 		return getRelatedSynconfiguration().getSyncStageSchema();
 	}
-
+	
 	@JsonIgnore
 	public String generateFullStageTableName() {
 		return getSyncStageSchema() + "." + generateRelatedStageTableName();
@@ -664,16 +710,17 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = generateRelatedStageTableName();
-
+		
 		try {
 			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	@JsonIgnore
 	public boolean isFullLoaded() {
 		return fullLoaded;
@@ -682,7 +729,8 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	@JsonIgnore
 	public boolean isConfigured() {
 		for (SyncTableConfiguration tabConf : getRelatedSynconfiguration().getTablesConfigurations()) {
-			if (tabConf.equals(this)) return true;
+			if (tabConf.equals(this))
+				return true;
 		}
 		
 		return false;
@@ -690,7 +738,6 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	private synchronized void fullLoad(Connection conn) {
 		try {
-			
 			getPrimaryKey();
 			loadUniqueKeys();
 			
@@ -699,8 +746,11 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			
 			loadConditionalParents(conn);
 			
+			setFields(DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn));
+			
 			this.fullLoaded = true;
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -708,7 +758,6 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 	}
 	
-
 	public synchronized void fullLoad() {
 		OpenConnection conn = getRelatedSynconfiguration().getMainApp().openConnection();
 		
@@ -719,62 +768,67 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			conn.finalizeConnection();
 		}
 	}
-
+	
 	public RefInfo getSharedKeyRefInfo(Connection conn) {
 		if (sharePkWith == null) {
 			return null;
-		}
-		else
-		for (RefInfo refInfo : getParents()) {
-			if (refInfo.getRefTableConfiguration().getTableName().equalsIgnoreCase(this.sharePkWith)) {
-				return refInfo;
+		} else
+			for (RefInfo refInfo : getParents()) {
+				if (refInfo.getRefTableConfiguration().getTableName().equalsIgnoreCase(this.sharePkWith)) {
+					return refInfo;
+				}
 			}
-		}
-			
-		throw new ForbiddenOperationException("The related table of shared pk " + sharePkWith + " of table " + this.getTableName() + " is not listed inparents!");
+		
+		throw new ForbiddenOperationException("The related table of shared pk " + sharePkWith + " of table "
+		        + this.getTableName() + " is not listed inparents!");
 	}
-
+	
 	@Override
 	@JsonIgnore
 	public String toString() {
-		return "Table [name:" + this.tableName + ", pk: " + this.primaryKey +"]";
+		return "Table [name:" + this.tableName + ", pk: " + this.primaryKey + "]";
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (obj == null) return false;
-		if (!(obj instanceof SyncTableConfiguration)) return false;
+		if (obj == null)
+			return false;
+		if (!(obj instanceof SyncTableConfiguration))
+			return false;
 		
-		return this.getTableName().equalsIgnoreCase(((SyncTableConfiguration)obj).getTableName());
+		return this.getTableName().equalsIgnoreCase(((SyncTableConfiguration) obj).getTableName());
 	}
-
+	
 	@JsonIgnore
 	public File getPOJOCopiledFilesDirectory() {
 		return getRelatedSynconfiguration().getPOJOCompiledFilesDirectory();
 	}
-
+	
 	@JsonIgnore
 	public File getPOJOSourceFilesDirectory() {
 		return getRelatedSynconfiguration().getPOJOSourceFilesDirectory();
 	}
 	
 	public RefInfo findParent(RefInfo parent) {
-		if (!utilities.arrayHasElement(this.parents)) return null;
+		if (!utilities.arrayHasElement(this.parents))
+			return null;
 		
 		for (RefInfo info : this.parents) {
-			if (info.getTableName().equals(parent.getTableName())) return info;
+			if (info.getTableName().equals(parent.getTableName()))
+				return info;
 		}
 		
 		return null;
 	}
-
+	
 	@Override
 	public int compareTo(SyncTableConfiguration o) {
-		if (this.equals(o)) return 0;
+		if (this.equals(o))
+			return 0;
 		
 		return this.tableName.compareTo(o.getTableName());
 	}
-
+	
 	@JsonIgnore
 	public File getClassPath() {
 		return new File(relatedSyncTableInfoSource.getClassPath());
@@ -816,13 +870,12 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	/**
-	 * Generates SQL join condition between two tables (some table) one from source another from destination database
-	 * based on the {@link #uniqueKeys}
+	 * Generates SQL join condition between two tables (some table) one from source another from
+	 * destination database based on the {@link #uniqueKeys}
 	 * 
 	 * @param sourceTableAlias alias name for source table
 	 * @param destinationTableAlias alias name for destination table
-	 * 
-	 * @return the generated join condition based on {@link #uniqueKeys} 
+	 * @return the generated join condition based on {@link #uniqueKeys}
 	 */
 	@JsonIgnore
 	public String generateUniqueKeysJoinCondition(String sourceTableAlias, String destinationTableAlias) {
@@ -830,12 +883,13 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		for (int i = 0; i < this.getUniqueKeys().size(); i++) {
 			
-			String uniqueKeyJoinField = generateUniqueKeyJoinField(this.getUniqueKeys().get(i)); 
+			String uniqueKeyJoinField = generateUniqueKeyJoinField(this.getUniqueKeys().get(i));
 			
-			if (i > 0) joinCondition += " OR ";
+			if (i > 0)
+				joinCondition += " OR ";
 			
 			joinCondition += "(" + uniqueKeyJoinField + ")";
-		}	
+		}
 		
 		return joinCondition;
 	}
@@ -844,19 +898,21 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		String joinFields = "";
 		
 		for (int i = 0; i < uniqueKeyFields.size(); i++) {
-			if (i > 0) joinFields += " AND ";
+			if (i > 0)
+				joinFields += " AND ";
 			
-			joinFields += "dest_." + uniqueKeyFields.get(i) + " = src_." + uniqueKeyFields.get(i); 
+			joinFields += "dest_." + uniqueKeyFields.get(i) + " = src_." + uniqueKeyFields.get(i);
 		}
 		
 		return joinFields;
 	}
 	
 	/**
-	 * Generates SQL condition using the {@link #uniqueKeys} fulfilled with related values from especific object 
-	 * @param dbObject the object from where the condition values will be retrieved from 
-	 *  
-	 * @return a SQL condition 
+	 * Generates SQL condition using the {@link #uniqueKeys} fulfilled with related values from
+	 * especific object
+	 * 
+	 * @param dbObject the object from where the condition values will be retrieved from
+	 * @return a SQL condition
 	 */
 	@JsonIgnore
 	public String generateUniqueKeysParametrizedCondition() {
@@ -864,12 +920,13 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		
 		for (int i = 0; i < this.getUniqueKeys().size(); i++) {
 			
-			String uniqueKeyJoinField = generateUniqueKeyConditionsFields(this.getUniqueKeys().get(i)); 
+			String uniqueKeyJoinField = generateUniqueKeyConditionsFields(this.getUniqueKeys().get(i));
 			
-			if (i > 0) joinCondition += " OR ";
+			if (i > 0)
+				joinCondition += " OR ";
 			
 			joinCondition += "(" + uniqueKeyJoinField + ")";
-		}	
+		}
 		
 		return joinCondition;
 	}
@@ -878,14 +935,15 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		String joinFields = "";
 		
 		for (int i = 0; i < uniqueKeyFields.size(); i++) {
-			if (i > 0) joinFields += " AND ";
+			if (i > 0)
+				joinFields += " AND ";
 			
 			joinFields += uniqueKeyFields.get(i) + " = ? ";
 		}
 		
 		return joinFields;
 	}
-
+	
 	public boolean hasUniqueKeys() {
 		return utilities.arrayHasElement(this.getUniqueKeys());
 	}

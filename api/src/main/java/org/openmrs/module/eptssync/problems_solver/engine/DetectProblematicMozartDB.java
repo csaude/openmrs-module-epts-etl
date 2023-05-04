@@ -11,11 +11,9 @@ import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeControlle
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
@@ -32,7 +30,7 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  * @see DBQuickMergeController
  */
-public class ProblemsSolverEngine extends Engine {
+public class DetectProblematicMozartDB extends Engine {
 	
 	private static boolean done;
 	
@@ -45,13 +43,11 @@ public class ProblemsSolverEngine extends Engine {
 			new DatabasesInfo("ICAP_NAMPULA", DatabasesInfo.ICAP_DB_NAMES_NAMPULA, new DBConnectionInfo("root",
 		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
 			new DatabasesInfo("ARIEL_MAPUTO", DatabasesInfo.ARIEL_DB_NAMES_MAPUTO, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")), 
+		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")), */
 			new DatabasesInfo("CCS_MAPUTO", DatabasesInfo.CCS_DB_NAMES_MAPUTO, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),*/
-			new DatabasesInfo("TEST", DatabasesInfo.TESTING_DB, new DBConnectionInfo("root",
 		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver"))};
 	
-	public ProblemsSolverEngine(EngineMonitor monitor, RecordLimits limits) {
+	public DetectProblematicMozartDB(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	

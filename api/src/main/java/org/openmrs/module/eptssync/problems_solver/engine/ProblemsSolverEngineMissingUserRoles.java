@@ -20,7 +20,6 @@ import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.eptssync.problems_solver.model.TmpUserVO;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -34,14 +33,14 @@ public class ProblemsSolverEngineMissingUserRoles extends Engine {
 	
 	
 	DatabasesInfo[] fghDBInfo = {   
-								new DatabasesInfo("Server 24", DatabasesInfo.DB_NAMES_24, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
+								/*new DatabasesInfo("Server 24", DatabasesInfo.DB_NAMES_24, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
 								new DatabasesInfo("Server 23", DatabasesInfo.DB_NAMES_23, new DBConnectionInfo("root", "0pen10mrs4FGh", "jdbc:mysql://10.0.0.23:3307/export_db_lugela_mulide?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
 								new DatabasesInfo("Server 22", DatabasesInfo.DB_NAMES_22, new DBConnectionInfo("root", "Fgh397$@Wy$Q7", "jdbc:mysql://10.0.0.22:3307/openmrs_derre?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) ,
 								new DatabasesInfo("Server 21", DatabasesInfo.DB_NAMES_21, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.21:3307/openmrs_ile_mugulama?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver"))
-							  };
+							  */};
 
 	DatabasesInfo[] DBsInfo = {   
-								new DatabasesInfo("Echo Central Server", DatabasesInfo.DB_NAMES_ECHO, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
+								//new DatabasesInfo("Echo Central Server", DatabasesInfo.DB_NAMES_ECHO, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
 							  };
 	
 	private SyncTableConfiguration userRoleTableConf;

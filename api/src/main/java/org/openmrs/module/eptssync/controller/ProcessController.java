@@ -155,7 +155,6 @@ public class ProcessController implements Controller, ControllerStarter{
 		else {
 			logWarn("THERE IS NO MORE OPERATION TO EXECUTE... FINALIZING PROCESS... "+this.getControllerId());
 		}
-		
 	}
 	
 	@JsonIgnore
@@ -191,7 +190,11 @@ public class ProcessController implements Controller, ControllerStarter{
 
 	@Override
 	public boolean stopRequested() {
-		return new File (getConfiguration().getSyncRootDirectory()+"/process_status/stop_requested.info").exists();
+		return generateStopRequestFile().exists();
+	}
+	
+	public File generateStopRequestFile() {
+		return new File (getConfiguration().getSyncRootDirectory()+"/process_status/stop_requested_" + getControllerId() + ".info");
 	}
 	
 	@Override
@@ -330,7 +333,11 @@ public class ProcessController implements Controller, ControllerStarter{
 	}
 
 	@Override
-	public synchronized void requestStop() {	
+	public synchronized void requestStop() {
+		String fileName = generateStopRequestFile().getAbsolutePath();
+		
+		FileUtilities.write(fileName, "{\"stopRequestedAt\":" + DateAndTimeUtilities.formatToMilissegundos(DateAndTimeUtilities.getCurrentDate()) + "\"}");
+		
 		if (isNotInitialized()) {
 			changeStatusToStopped();
 		}
@@ -428,6 +435,8 @@ public class ProcessController implements Controller, ControllerStarter{
 	@Override
 	public void onStop() {
 		logWarn("THE PROCESS "+getControllerId().toUpperCase() + " WAS STOPPED!!!");
+		
+		FileUtilities.removeFile(generateStopRequestFile().getAbsolutePath());
 		
 		this.starter.finalize(this);
 	}

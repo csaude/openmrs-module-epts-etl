@@ -24,16 +24,15 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
- * 
  * @author jpboane
- *
  * @see DBQuickMergeController
  */
 public class ProblemsSolverEngineWrongLinkToUsers extends Engine {
 	
-	public static String[] DB_NAMES = DatabasesInfo.DB_NAMES_ECHO;
+	public static String[] DB_NAMES = DatabasesInfo.ARIEL_DB_NAMES_MAPUTO;
 	
 	private AppInfo mainApp;
+	
 	private AppInfo remoteApp;
 	
 	public ProblemsSolverEngineWrongLinkToUsers(EngineMonitor monitor, RecordLimits limits) {
@@ -41,10 +40,9 @@ public class ProblemsSolverEngineWrongLinkToUsers extends Engine {
 		
 		this.remoteApp = getRelatedOperationController().getConfiguration().find(AppInfo.init("remote"));
 	}
-
 	
-	@Override	
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
+	@Override
+	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
@@ -58,7 +56,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
+	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		OpenConnection srcConn = remoteApp.openConnection();
@@ -74,7 +72,9 @@ public class ProblemsSolverEngineWrongLinkToUsers extends Engine {
 					logDebug(startingStrLog + " STARTING RESOLVE PROBLEMS OF RECORD [" + record + "]");
 					
 					Class<DatabaseObject> syncRecordClass = getSyncTableConfiguration().getSyncRecordClass(getDefaultApp());
-					Class<DatabaseObject> prsonRecordClass = SyncTableConfiguration.init("person", getSyncTableConfiguration().getRelatedSynconfiguration()).getSyncRecordClass(getDefaultApp());
+					Class<DatabaseObject> prsonRecordClass = SyncTableConfiguration
+					        .init("person", getSyncTableConfiguration().getRelatedSynconfiguration())
+					        .getSyncRecordClass(getDefaultApp());
 					
 					DatabaseObject userOnDestDB = DatabaseObjectDAO.getById(syncRecordClass,
 					    ((DatabaseObject) record).getObjectId(), conn);
@@ -130,27 +130,29 @@ public class ProblemsSolverEngineWrongLinkToUsers extends Engine {
 					i++;
 					((TmpUserVO) record).markAsHarmonized(conn);
 				}
-			} 
+			}
 		}
 		finally {
 			srcConn.finalizeConnection();
 		}
 	}
 	
-	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn) throws DBException, ForbiddenOperationException {
+	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)
+	        throws DBException, ForbiddenOperationException {
 		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		int i = 1;
 		
 		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
 		
-		for (SyncRecord record: syncRecords) {
-			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+		for (SyncRecord record : syncRecords) {
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 			
-			DatabaseObject rec = (DatabaseObject)record;
+			DatabaseObject rec = (DatabaseObject) record;
 			
 			List<DatabaseObject> dups = null;//DatabaseObjectDAO.getByUuid(getSyncTableConfiguration().getSyncRecordClass(getDefaultApp()), rec.getUuid(), conn);
-				
+			
 			logDebug(startingStrLog + " RESOLVING..." + rec);
 			
 			for (int j = 1; j < dups.size(); j++) {
@@ -161,7 +163,6 @@ public class ProblemsSolverEngineWrongLinkToUsers extends Engine {
 				dup.save(getSyncTableConfiguration(), conn);
 			}
 			
-			
 			i++;
 		}
 		
@@ -170,20 +171,21 @@ public class ProblemsSolverEngineWrongLinkToUsers extends Engine {
 			syncRecords.removeAll(recordsToIgnoreOnStatistics);
 		}
 		
-		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");		
+		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
 	}
 	
 	@Override
 	public void requestStop() {
 	}
-
+	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getSyncTableConfiguration(), null);
+		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(
+		        this.getSyncTableConfiguration(), null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
 		
 		return searchParams;
 	}
-
+	
 }

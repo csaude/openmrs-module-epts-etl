@@ -11,7 +11,7 @@ public enum SyncProcessType {
 	DATA_RECONCILIATION,
 	DB_QUICK_COPY,
 	DATABASE_MERGE_FROM_SOURCE_DB,
-	QUICK_MERGE_WHITOUT_ENTITY_GENERATION,
+	QUICK_MERGE_WITHOUT_ENTITY_GENERATION,
 	QUICK_MERGE_WITH_ENTITY_GENERATION,
 	DB_INCONSISTENCY_CHECK,
 	RESOLVE_PROBLEMS;
@@ -25,7 +25,7 @@ public enum SyncProcessType {
 	}
 	
 	public boolean isQuickMergeWithoutEntityGeneration(){
-		return  this.equals(QUICK_MERGE_WHITOUT_ENTITY_GENERATION);
+		return  this.equals(QUICK_MERGE_WITHOUT_ENTITY_GENERATION);
 	}
 	
 	public boolean isQuickMergeWithEntityGeneration(){

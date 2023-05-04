@@ -133,6 +133,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 	private static <T extends DatabaseObject> List<T> getByUniqueKeys(SyncTableConfiguration tableConfiguration, String schema, T obj,  Connection conn) throws DBException{
 		if (!tableConfiguration.isFullLoaded()) tableConfiguration.fullLoad();
 		
+		if (!utilities.arrayHasElement(tableConfiguration.getUniqueKeys())) return null;
+		
 		Object[] params = {};
 		
 		String conditionSQL = "";

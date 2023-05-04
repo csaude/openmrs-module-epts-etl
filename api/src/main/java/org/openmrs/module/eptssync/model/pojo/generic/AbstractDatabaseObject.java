@@ -200,18 +200,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 				DatabaseObject recOnDBById = DatabaseObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
 				
 				if (recOnDBById == null) {
-					DatabaseObjectDAO.insert(this, conn);
-				}
-				else {
-					this.resolveMetadataCollision(recOnDBById, tableConfiguration, conn);
-				}
-			}
-			else {
-				if (recordOnDBByUuid.getObjectId() != this.getObjectId()) {
-					resolveMetadataCollision(recordOnDBByUuid, tableConfiguration, conn);
-				}
-				else {
-					getRelatedSyncInfo().markAsConsistent(tableConfiguration, conn);
+					DatabaseObjectDAO.insertWithObjectId(this, conn);
 				}
 			}
 		}
@@ -255,6 +244,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	} 
 	
 	public void resolveConflictWithExistingRecord(DatabaseObject recordOnDB, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException, ForbiddenOperationException {
+		if (!utilities.arrayHasElement(tableConfiguration.getObservationDateFields())) return;
+		
 		boolean existingRecordIsOutdated = false;
 		
 		for (String dateField: tableConfiguration.getObservationDateFields()) {

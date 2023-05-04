@@ -29,11 +29,14 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  */
 public class PojoGenerationEngine extends Engine {
+	private List<String> alreadyGeneratedClasses;
 	
 	private boolean pojoGenerated;
 	
 	public PojoGenerationEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
+		
+		this.alreadyGeneratedClasses = new ArrayList<String>();
 	}
 
 	@Override
@@ -46,11 +49,27 @@ public class PojoGenerationEngine extends Engine {
 		
 		for (AppInfo app : getRelatedOperationController().getProcessController().getAppsInfo()) {
 			if (utilities.stringHasValue(app.getPojoPackageName())) {
-				OpenConnection appConn = app.openConnection();
 				
-				getSyncTableConfiguration().generateRecordClass(app, true, appConn);
+				String fullClassName = getSyncTableConfiguration().generateFullClassName(app);
+				
+				if (!checkIfIsAlredyGenerated(fullClassName)) {
+					OpenConnection appConn = app.openConnection();
+				
+					try {
+						getSyncTableConfiguration().generateRecordClass(app, true);
+						
+						this.alreadyGeneratedClasses.add(fullClassName);
+					}
+					finally {
+						appConn.finalizeConnection();
+					} 
+				}
 			}
 		}
+	}
+	
+	private boolean checkIfIsAlredyGenerated(String fullClassPath) {
+		return this.alreadyGeneratedClasses.contains(fullClassPath);
 	}
 	
 	public boolean isPojoGenerated() {

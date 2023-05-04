@@ -10,6 +10,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.logging.Level;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.BasicConfigurator;
+import org.openmrs.api.APIException;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -1003,4 +1005,30 @@ public class  CommonUtilities implements Serializable{
 		
 		return "\""  + strToQuote +"\"";
 	}
+	
+	/**
+	 * Create a map populated with an initial entries passed by parameter
+	 * 
+	 * @param params the entries which will populate the map. It's an array which emulate a map entries
+	 *            in this format [key1, val1, key2, val2, key3, val3, ..]
+	 * @return the generated map
+	 * @throws APIException when the params array length is not odd
+	 */
+	public  Map<String, Object> fastCreateMap(Object... params) throws APIException {
+		if (params.length % 2 != 0)
+			throw new APIException("The parameters for fastCreatMap must be pars <K1, V1>, <K2, V2>");
+		
+		Map<String, Object> map = new HashMap<>();
+		
+		int paramsSize = params.length / 2;
+		
+		for (int set = 1; set <= paramsSize; set++) {
+			int pos = set * 2 - 1;
+			
+			map.put(((String) params[pos - 1]), params[pos]);
+		}
+		
+		return map;
+	}
+		
 }

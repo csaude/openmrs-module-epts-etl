@@ -50,7 +50,9 @@ public class ProblemsSolverSearchParams extends DatabaseObjectSearchParams{
 		
 		this.limits = null;
 		
-		int count = SearchParamsDAO.countAll(this, conn);
+		//int count = SearchParamsDAO.countAll(this, conn);
+		
+		int count = 1;
 		
 		this.limits = bkpLimits;
 		

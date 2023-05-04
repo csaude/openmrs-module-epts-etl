@@ -619,7 +619,7 @@ public abstract class OperationController implements Controller{
 			if (monitor != null) {
 				monitor.requestStopDueError();
 				
-				while(!monitor.isStopped()) {
+				while(!monitor.isStopped() && !monitor.isNotInitialized()) {
 					logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
 					TimeCountDown.sleep(5);
 				}
@@ -631,6 +631,8 @@ public abstract class OperationController implements Controller{
 				child.requestStop();
 			}
 		}
+		
+		this.getProcessController().requestStop();
 	}
 
 	public TableOperationProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
