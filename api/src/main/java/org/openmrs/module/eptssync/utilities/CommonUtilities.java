@@ -24,7 +24,6 @@ import java.util.logging.Level;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.BasicConfigurator;
-import org.openmrs.api.APIException;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -1012,11 +1011,11 @@ public class  CommonUtilities implements Serializable{
 	 * @param params the entries which will populate the map. It's an array which emulate a map entries
 	 *            in this format [key1, val1, key2, val2, key3, val3, ..]
 	 * @return the generated map
-	 * @throws APIException when the params array length is not odd
+	 * @throws ForbiddenOperationException when the params array length is not odd
 	 */
-	public  Map<String, Object> fastCreateMap(Object... params) throws APIException {
+	public  Map<String, Object> fastCreateMap(Object... params) throws ForbiddenOperationException {
 		if (params.length % 2 != 0)
-			throw new APIException("The parameters for fastCreatMap must be pars <K1, V1>, <K2, V2>");
+			throw new ForbiddenOperationException("The parameters for fastCreatMap must be pars <K1, V1>, <K2, V2>");
 		
 		Map<String, Object> map = new HashMap<>();
 		

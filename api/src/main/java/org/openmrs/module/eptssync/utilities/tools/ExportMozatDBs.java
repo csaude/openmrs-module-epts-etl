@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.api.APIException;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -148,11 +148,11 @@ public class ExportMozatDBs {
 	 * @param params the entries which will populate the map. It's an array which emulate a map entries
 	 *            in this format [key1, val1, key2, val2, key3, val3, ..]
 	 * @return the generated map
-	 * @throws APIException when the params array length is not odd
+	 * @throws ForbiddenOperationException when the params array length is not odd
 	 */
-	public static Map<String, Object> fastCreateMap(Object... params) throws APIException {
+	public static Map<String, Object> fastCreateMap(Object... params) throws ForbiddenOperationException {
 		if (params.length % 2 != 0)
-			throw new APIException("The parameters for fastCreatMap must be pars <K1, V1>, <K2, V2>");
+			throw new ForbiddenOperationException("The parameters for fastCreatMap must be pars <K1, V1>, <K2, V2>");
 		
 		Map<String, Object> map = new HashMap<>();
 		

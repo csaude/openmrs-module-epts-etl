@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.api.APIException;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 public class GenerateContentFileFromTemplate {
 	
@@ -210,7 +210,7 @@ public class GenerateContentFileFromTemplate {
 	
 	public static Map<String, String> fastCreateMap(String... params) {
 		if (params.length % 2 != 0)
-			throw new APIException("The parameters for fastCreatMap must be pars <K1, V1>, <K2, V2>");
+			throw new ForbiddenOperationException("The parameters for fastCreatMap must be pars <K1, V1>, <K2, V2>");
 		
 		Map<String, String> map = new HashMap<>();
 		
