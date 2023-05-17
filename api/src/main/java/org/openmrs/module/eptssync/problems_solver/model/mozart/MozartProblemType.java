@@ -5,7 +5,8 @@ public enum MozartProblemType {
 	OLD_STRUCTURE,
 	MISSIN_FIELDS,
 	MISSING_TABLES,
-	EMPTY_TABLES;
+	EMPTY_TABLES,
+	MISSING_DB;
 	
 	public boolean isOldStructure() {
 		return this.equals(OLD_STRUCTURE);

@@ -7,7 +7,6 @@ import java.util.List;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
-import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -27,7 +26,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  * @see DBQuickMergeController
  */
-public class ProblemsSolverEngineWrongLinkToUsers extends Engine {
+public class ProblemsSolverEngineWrongLinkToUsers extends ProblemsSolverEngine {
 	
 	public static String[] DB_NAMES = DatabasesInfo.ARIEL_DB_NAMES_MAPUTO;
 	

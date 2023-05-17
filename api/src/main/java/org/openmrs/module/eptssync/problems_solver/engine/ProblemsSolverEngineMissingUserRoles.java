@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
-import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -29,7 +28,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  *
  * @see DBQuickMergeController
  */
-public class ProblemsSolverEngineMissingUserRoles extends Engine {
+public class ProblemsSolverEngineMissingUserRoles extends ProblemsSolverEngine {
 	
 	
 	DatabasesInfo[] fghDBInfo = {   

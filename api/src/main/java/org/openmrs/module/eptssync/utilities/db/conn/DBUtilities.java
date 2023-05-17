@@ -355,7 +355,7 @@ public class DBUtilities {
 	}
 	
 	public static boolean isResourceExist(String resourceSchema, String resourceType, String resourceName, Connection conn)
-	        throws SQLException {
+	        throws DBException {
 		if (isMySQLDB(conn)) {
 			return isMySQLResourceExist(resourceSchema, resourceType, resourceName, conn);
 		}
@@ -364,7 +364,7 @@ public class DBUtilities {
 	}
 	
 	private static boolean isMySQLResourceExist(String resourceSchema, String resourceType, String resourceName,
-	        Connection conn) throws SQLException {
+	        Connection conn) throws DBException {
 		String resourceSchemaCondition = "";
 		String resourceNameCondition = "";
 		String fromClause = "";
@@ -388,7 +388,8 @@ public class DBUtilities {
 			resourceNameCondition = "SCHEMA_NAME = '" + resourceName + "'";
 			
 			resourceSchemaCondition = "1 = 1";
-		} else
+		}
+		else
 			throw new ForbiddenOperationException("Resource not supported");
 		
 		String selectQuery = "";
@@ -399,11 +400,16 @@ public class DBUtilities {
 		selectQuery += " 		AND  " + resourceSchemaCondition + "\n";
 		selectQuery += "		AND  " + resourceNameCondition;
 		
-		PreparedStatement statement = conn.prepareStatement(selectQuery);
-		
-		ResultSet result = statement.executeQuery();
-		
-		return result.next();
+		try {
+			PreparedStatement statement = conn.prepareStatement(selectQuery);
+			
+			ResultSet result = statement.executeQuery();
+			
+			return result.next();
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
 	}
 	
 	public static boolean isColumnExistOnTable(String tableName, String columnName, Connection conn) throws SQLException {
@@ -455,7 +461,7 @@ public class DBUtilities {
 		List<List<String>> uniqueKeys = new ArrayList<List<String>>();
 		
 		try {
-			ResultSet rs = conn.getMetaData().getIndexInfo(null, null, tableName, true, true);
+			ResultSet rs = conn.getMetaData().getIndexInfo(null, schema, tableName, true, true);
 			
 			String prevIndexName = null;
 			
@@ -515,7 +521,7 @@ public class DBUtilities {
 			
 			int qtyAttrs = rsMetaData.getColumnCount();
 			
-			for (int i = 1; i <= qtyAttrs - 1; i++) {
+			for (int i = 1; i <= qtyAttrs; i++) {
 				Field field = new Field(rsMetaData.getColumnName(i));
 				field.setType(rsMetaData.getColumnTypeName(i));
 				
@@ -553,6 +559,51 @@ public class DBUtilities {
 			return "java.util.Date";
 		
 		throw new ForbiddenOperationException("Unknown data type [" + mySQLTypeName + "]");
+	}
+	
+	public static void dropTable(String schema, String tableName, Connection conn) throws DBException {
+		executeBatch(conn, "drop table " + schema + "." + tableName);
+	}
+	
+	public static void renameTable(String schema, String oldTableName, String newTableName, Connection conn)
+	        throws DBException {
+		try {
+			if (isMySQLDB(conn)) {
+				renameMySQLTable(schema, oldTableName, newTableName, conn);
+			} else
+				throw new ForbiddenOperationException(
+				        "Unsupported DB Engine.. [" + determineDataBaseFromConnection(conn) + "]");
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+	}
+
+	private static void renameMySQLTable(String schema, String oldTableName, String newTableName, Connection conn)
+	        throws DBException {
+		String sql = "";
+		
+		sql += "RENAME TABLE " + schema + "." + oldTableName + " TO " + schema + "." + newTableName + ";";
+		
+		executeBatch(conn, sql);
+	}
+	
+	public static void executeBatch(Connection conn, String... batches) throws DBException {
+		
+		try {
+			Statement st = conn.createStatement();
+			
+			for (String batch : batches) {
+				st.addBatch(batch);
+			}
+			
+			st.executeBatch();
+			
+			st.close();
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
 	}
 	
 }

@@ -11,9 +11,8 @@ import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeControlle
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.Field;
-import org.openmrs.module.eptssync.model.SimpleValue;
+import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
@@ -29,36 +28,16 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  * @see DBQuickMergeController
  */
-public class DetectProblematicMozartDB extends ProblemsSolverEngine {
+public class MozartRenamePatientStateFields extends ProblemsSolverEngine {
 	
 	static List<DBValidateReport> reportsProblematicDBs;
 	
 	static List<DBValidateReport> reportsNoIssueDBs;
 	
-	/*DatabasesInfo[] DB_INFOs = { new DatabasesInfo("FGH_ZAMBEZIA", DatabasesInfo.FGH_DB_NAMES, new DBConnectionInfo("root",
-	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ICAP_NAMPULA", DatabasesInfo.ICAP_DB_NAMES_NAMPULA, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ARIEL_MAPUTO", DatabasesInfo.ARIEL_DB_NAMES_MAPUTO, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")), 
-			new DatabasesInfo("CCS_MAPUTO", DatabasesInfo.CCS_DB_NAMES_MAPUTO, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),			
-	};*/
-	
-	DatabasesInfo[] DB_INFOs_01 = {
-	        new DatabasesInfo("CCS_MAPUTO", DatabasesInfo.CCS_DB_NAMES_MAPUTO, new DBConnectionInfo("root", "root",
-	                "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
-	
-	DatabasesInfo[] DB_INFOs_02 = {
-	        new DatabasesInfo("ARIEL_MAPUTO", DatabasesInfo.ARIEL_DB_NAMES_MAPUTO, new DBConnectionInfo("root", "root",
-	                "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
-	
 	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
 	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
 	
-	public DetectProblematicMozartDB(EngineMonitor monitor, RecordLimits limits) {
+	public MozartRenamePatientStateFields(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
@@ -113,44 +92,26 @@ public class DetectProblematicMozartDB extends ProblemsSolverEngine {
 			if (!DBUtilities.isResourceExist(dbName, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
 				logWarn("DB '" + dbName + "' is missing!");
 				
-				report.addProblemType(MozartProblemType.MISSING_DB);
-				
 				continue;
 			}
 			
 			for (SyncTableConfiguration configuredTable : configuredTables) {
+				
+				if (!configuredTable.getTableName().equals("patient_state"))
+					continue;
+				
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();
 				}
 				
-				if (!checkIfTableExists(configuredTable.getTableName(), dbName, srcConn)) {
-					if (report == null)
-						report = new DBValidateReport(dbInfo.getServerName(), dbName);
+				List<String> missingField = generateMissingFields(dbName, configuredTable, srcConn);
+				
+				tryToRenameFields(dbName, missingField, srcConn);
+				
+				if (utilities.arrayHasElement(missingField)) {
+					report.addMissingFields(configuredTable.getTableName(), missingField);
 					
-					report.addMissingTable(configuredTable.getTableName());
-					
-					report.addProblemType(MozartProblemType.MISSING_TABLES);
-				} else {
-					
-					String sql = "select count(*) as value from  " + dbName + "." + configuredTable.getTableName();
-					
-					SimpleValue result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
-					
-					if (result.intValue() == 0) {
-						
-						if (!configuredTable.getTableName().equals("key_vulnerable_pop")) {
-							report.addProblemType(MozartProblemType.EMPTY_TABLES);
-							report.addEmptyTable(configuredTable.getTableName());
-						}
-					}
-					
-					List<String> missingField = generateMissingFields(dbName, configuredTable, srcConn);
-					
-					if (utilities.arrayHasElement(missingField)) {
-						report.addMissingFields(configuredTable.getTableName(), missingField);
-						
-						report.addProblemType(MozartProblemType.MISSIN_FIELDS);
-					}
+					report.addProblemType(MozartProblemType.MISSIN_FIELDS);
 				}
 			}
 			
@@ -166,6 +127,74 @@ public class DetectProblematicMozartDB extends ProblemsSolverEngine {
 				reportsNoIssueDBs.add(report);
 			}
 		}
+	}
+	
+	private void tryToRenameFields(String dbName, List<String> missingField, OpenConnection conn) throws DBException {
+		
+		if (utilities.arrayHasElement(missingField) && utilities.existOnArray(missingField, "program_enrollment_date")) {
+			missingField.remove("program_enrollment_date");
+			
+			String table = dbName + ".patient_state";
+			
+			logWarn("Renaming field 'program_enrolment_date' to 'program_enrollment_date' on " + table);
+			
+			String sql = "";
+			
+			sql += "ALTER TABLE " + table
+			        + " CHANGE `program_enrolment_date` `program_enrollment_date` datetime DEFAULT NULL";
+			
+			DBUtilities.executeBatch(conn, sql);
+		}
+		
+		if (utilities.arrayHasElement(missingField) && utilities.existOnArray(missingField, "enrollment_uuid")) {
+			missingField.remove("enrollment_uuid");
+			
+			String table = dbName + ".patient_state";
+			
+			logWarn("Renaming field 'enrolment_uuid' to 'enrollment_uuid' on " + table);
+			
+			String sql = "";
+			
+			sql += "ALTER TABLE " + table + " CHANGE `enrolment_uuid` `enrollment_uuid` char(38) DEFAULT NULL";
+			
+			DBUtilities.executeBatch(conn, sql);
+		}
+		
+		if (utilities.arrayHasElement(missingField) && utilities.existOnArray(missingField, "created_date")) {
+			missingField.remove("created_date");
+			
+			String table = dbName + ".patient_state";
+			
+			logWarn("Adding 'created_date' on " + table);
+			
+			String sql = "";
+			
+			sql += "ALTER TABLE " + table + " ADD `created_date` datetime DEFAULT NULL";
+			
+			DBUtilities.executeBatch(conn, sql);
+			
+			sql = "UPDATE " + table + " SET created_date = state_date WHERE created_date is NULL";
+			
+			BaseDAO.executeDBQuery(sql, null, conn);
+			
+		}
+		
+		if (utilities.arrayHasElement(missingField) && utilities.existOnArray(missingField, "encounter_uuid")) {
+			missingField.remove("encounter_uuid");
+			
+			String table = dbName + ".patient_state";
+			
+			logWarn("Adding 'encounter_uuid' on " + table);
+			
+			String sql = "";
+			
+			sql += "ALTER TABLE " + table + " ADD `encounter_uuid` char(38) DEFAULT NULL";
+			
+			DBUtilities.executeBatch(conn, sql);
+		}
+		
+		conn.commitCurrentWork();
+		
 	}
 	
 	private List<String> generateMissingFields(String dbName, SyncTableConfiguration configuredTable, Connection conn)

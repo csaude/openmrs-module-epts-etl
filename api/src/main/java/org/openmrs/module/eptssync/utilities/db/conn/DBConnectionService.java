@@ -58,6 +58,14 @@ public class DBConnectionService {
 		init(connInfo);
 	}
 
+	/**
+	 * @param connURI the connection URI for new Service
+	 * @return
+	 */
+	public DBConnectionService clone(String connURI) {
+		return init(this.dbConnInfo.clone(connURI));
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) {

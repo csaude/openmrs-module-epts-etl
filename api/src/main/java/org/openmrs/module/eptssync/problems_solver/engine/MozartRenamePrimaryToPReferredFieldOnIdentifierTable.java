@@ -1,7 +1,6 @@
 package org.openmrs.module.eptssync.problems_solver.engine;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +11,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.SimpleValue;
+import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
@@ -29,36 +29,18 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  * @see DBQuickMergeController
  */
-public class DetectProblematicMozartDB extends ProblemsSolverEngine {
+public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends ProblemsSolverEngine {
+	
+	private static boolean done;
 	
 	static List<DBValidateReport> reportsProblematicDBs;
 	
 	static List<DBValidateReport> reportsNoIssueDBs;
 	
-	/*DatabasesInfo[] DB_INFOs = { new DatabasesInfo("FGH_ZAMBEZIA", DatabasesInfo.FGH_DB_NAMES, new DBConnectionInfo("root",
-	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ICAP_NAMPULA", DatabasesInfo.ICAP_DB_NAMES_NAMPULA, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ARIEL_MAPUTO", DatabasesInfo.ARIEL_DB_NAMES_MAPUTO, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")), 
-			new DatabasesInfo("CCS_MAPUTO", DatabasesInfo.CCS_DB_NAMES_MAPUTO, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),			
-	};*/
-	
-	DatabasesInfo[] DB_INFOs_01 = {
-	        new DatabasesInfo("CCS_MAPUTO", DatabasesInfo.CCS_DB_NAMES_MAPUTO, new DBConnectionInfo("root", "root",
-	                "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
-	
-	DatabasesInfo[] DB_INFOs_02 = {
-	        new DatabasesInfo("ARIEL_MAPUTO", DatabasesInfo.ARIEL_DB_NAMES_MAPUTO, new DBConnectionInfo("root", "root",
-	                "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
-	
 	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
 	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
 	
-	public DetectProblematicMozartDB(EngineMonitor monitor, RecordLimits limits) {
+	public MozartRenamePrimaryToPReferredFieldOnIdentifierTable(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
@@ -76,7 +58,7 @@ public class DetectProblematicMozartDB extends ProblemsSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING PROBLEMS ON TABLE '" + getSyncTableConfiguration().getTableName() + "'");
+		logInfo("STARTING PROBLEMS RESOLUTION...'");
 		
 		for (DatabasesInfo dbsInfo : DB_INFOs) {
 			performeOnServer(dbsInfo, conn);
@@ -112,45 +94,26 @@ public class DetectProblematicMozartDB extends ProblemsSolverEngine {
 			
 			if (!DBUtilities.isResourceExist(dbName, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
 				logWarn("DB '" + dbName + "' is missing!");
-				
-				report.addProblemType(MozartProblemType.MISSING_DB);
-				
 				continue;
 			}
 			
 			for (SyncTableConfiguration configuredTable : configuredTables) {
+				
+				if (!configuredTable.getTableName().equals("identifier"))
+					continue;
+				
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();
 				}
 				
-				if (!checkIfTableExists(configuredTable.getTableName(), dbName, srcConn)) {
-					if (report == null)
-						report = new DBValidateReport(dbInfo.getServerName(), dbName);
+				List<String> missingField = generateMissingFields(dbName, configuredTable, srcConn);
+				
+				tryToRenamePrimaryFieldToPreferred(dbName, missingField, srcConn);
+				
+				if (utilities.arrayHasElement(missingField)) {
+					report.addMissingFields(configuredTable.getTableName(), missingField);
 					
-					report.addMissingTable(configuredTable.getTableName());
-					
-					report.addProblemType(MozartProblemType.MISSING_TABLES);
-				} else {
-					
-					String sql = "select count(*) as value from  " + dbName + "." + configuredTable.getTableName();
-					
-					SimpleValue result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
-					
-					if (result.intValue() == 0) {
-						
-						if (!configuredTable.getTableName().equals("key_vulnerable_pop")) {
-							report.addProblemType(MozartProblemType.EMPTY_TABLES);
-							report.addEmptyTable(configuredTable.getTableName());
-						}
-					}
-					
-					List<String> missingField = generateMissingFields(dbName, configuredTable, srcConn);
-					
-					if (utilities.arrayHasElement(missingField)) {
-						report.addMissingFields(configuredTable.getTableName(), missingField);
-						
-						report.addProblemType(MozartProblemType.MISSIN_FIELDS);
-					}
+					report.addProblemType(MozartProblemType.MISSIN_FIELDS);
 				}
 			}
 			
@@ -165,6 +128,53 @@ public class DetectProblematicMozartDB extends ProblemsSolverEngine {
 				
 				reportsNoIssueDBs.add(report);
 			}
+		}
+	}
+	
+	private void tryToAddPReferredFieldOnIdentifiedTable(String dbName, List<String> missingField, OpenConnection conn)
+	        throws DBException {
+		if (utilities.arrayHasElement(missingField) && utilities.existOnArray(missingField, "preferred")) {
+			missingField.remove("preferred");
+			
+			String table = dbName + ".identifier";
+			
+			logWarn("Generating preferred field on " + dbName + ".identifier");
+			
+			DBUtilities.executeBatch(conn, "alter table " + table + " add preferred tinyint(4) DEFAULT 0; ");
+			
+			String query = "select max(identifier_seq) value from " + table + " group by patient_uuid";
+			
+			List<SimpleValue> maxIdentifiers = BaseDAO.search(SimpleValue.class, query, null, conn);
+			
+			if (!utilities.arrayHasElement(maxIdentifiers))
+				return;
+			
+			for (SimpleValue v : maxIdentifiers) {
+				query = "update " + table + " set preferred = 1 where identifier_seq = ? ";
+				Object[] params = { v.intValue() };
+				
+				BaseDAO.executeQuery(query, params, conn);
+			}
+			
+			conn.commitCurrentWork();
+		}
+	}
+	
+	private void tryToRenamePrimaryFieldToPreferred(String dbName, List<String> missingField, OpenConnection conn)
+	        throws DBException {
+		
+		if (utilities.arrayHasElement(missingField) && utilities.existOnArray(missingField, "preferred")) {
+			missingField.remove("preferred");
+			
+			String table = dbName + ".identifier";
+			
+			logWarn("Renaming field 'primary' to 'preferred' on " + table);
+			
+			String sql = "";
+			
+			sql += "ALTER TABLE " + table + " CHANGE `primary` `preferred` tinyint(4) DEFAULT NULL";
+			
+			DBUtilities.executeBatch(conn, sql);
 		}
 	}
 	

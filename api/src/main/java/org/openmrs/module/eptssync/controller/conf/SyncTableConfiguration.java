@@ -61,7 +61,23 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	
 	private List<Field> fields;
 	
+	/**
+	 * When merge existing records, the incoming record will win if the listed fields have the specified values.
+	 * Note that, for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND" 
+	 */
+	private List<List<Field>> winningRecordFieldsInfo;
+	
 	public SyncTableConfiguration() {
+	}
+	
+	
+	public List<List<Field>> getWinningRecordFieldsInfo() {
+		return winningRecordFieldsInfo;
+	}
+	
+	
+	public void setWinningRecordFieldsInfo(List<List<Field>> winningRecordFieldsInfo) {
+		this.winningRecordFieldsInfo = winningRecordFieldsInfo;
 	}
 	
 	public List<Field> getFields() {

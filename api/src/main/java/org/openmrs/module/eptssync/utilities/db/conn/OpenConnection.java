@@ -46,7 +46,11 @@ public class OpenConnection implements Connection, Closeable{
 		
 		this.connService = service;
    }
-
+	
+	public DBConnectionService getConnService() {
+		return connService;
+	}
+	
 	public void markAsSuccessifullyTerminected(){
 		//if (this.operationTerminatedSuccessifully) throw new ForbiddenOperationException("This connection is already marcked as successifuly terminated!");
 		
@@ -217,7 +221,16 @@ public class OpenConnection implements Connection, Closeable{
 	public void commit() throws SQLException {
 		if (!isClosed()) connection.commit();
 	}
-
+	
+	public void commitCurrentWork() throws DBException {
+		try {
+			this.commit();
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+	}
+	
 	@Override
 	public void rollback() throws SQLException {
 		if (!isClosed()) connection.rollback();

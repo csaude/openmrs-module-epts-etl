@@ -206,7 +206,26 @@ public class DatabasesInfo {
 													"icap_nam_yapalamonapo"};
 	
 	
-	
+	public static String[] ARIEL_DB_NAMES_CD =	{	"ariel_cab_ancuabe",
+														"ariel_cab_cs_cimento",
+														"ariel_cab_cs_muxara",
+														"ariel_cab_cs_natite",
+														"ariel_cab_cs_ocua",
+														"ariel_cab_cschiure_sede",
+														"ariel_cab_csnakoto",
+														"ariel_cab_csnamugelia",
+														"ariel_cab_csnamunoi",
+														"ariel_cab_cssamora_machel",
+														"ariel_cab_eduardo_mondlane",
+														"ariel_cab_hpp",
+														"ariel_cab_hrmontepuez_20032023",
+														"ariel_cab_hrmueda",
+														"ariel_cab_mahate",
+														"ariel_cab_mariri",
+														"ariel_cab_mbuo",
+														"ariel_cab_metoro",
+														"ariel_cab_meza"};
+		
 	public static String[] ARIEL_DB_NAMES_MAPUTO = {"arie_map_cs_moamba_20230420",
 													"ariel_map_20230420",
 													"ariel_map_3_de_fevereiro",
@@ -240,23 +259,36 @@ public class DatabasesInfo {
 													"ariel_map_tenga",
 													"ariel_map_xinavane"};
 	
-	public static String[] CCS_DB_NAMES_MAPUTO = {	"ccs_map_catembe_m2",
+	public static String[] CCS_DB_NAMES_MAPUTO = {	"ccs_map_albasine_m2",
+													"ccs_map_alto_mae_m2",
+													"ccs_map_bagamoio_m2",
+													"ccs_map_catembe_m2",
+													"ccs_map_chamanculo_m2",
 													"ccs_map_cimento_m2",
 													"ccs_map_hcmped_m2",
 													"ccs_map_hpi_m2",
+													"ccs_map_hulene_m2",
+													"ccs_map_incassane",
 													"ccs_map_inhaca_m2",
 													"ccs_map_inhagoia_m2",
+													"ccs_map_josemacamo_cs_m2",
 													"ccs_map_josemacamohg_m2",
 													"ccs_map_junho_m2",
 													"ccs_map_magoanine_m2",
+													"ccs_map_maio_m2",
 													"ccs_map_malhangalene_m2",
+													"ccs_map_mavalane_m2",
 													"ccs_map_mavalanehg_m2",
 													"ccs_map_mavalaneped_m2",
 													"ccs_map_maxaquene_m2",
 													"ccs_map_pescadores_m2",
+													"ccs_map_polana_canico_m2",
 													"ccs_map_porto_m2",
-													"ccs_map_romao_m2"};
-	
+													"ccs_map_romao_m2",
+													"ccs_map_xipamanine_m2",
+													"ccs_map_zimpeto_m2",
+													"css_map_magoanine_tendas_m2"};
+											
 	
 	public static String[] TESTING_DB = {"mozart_q2_fy23_consolidated"};
 	

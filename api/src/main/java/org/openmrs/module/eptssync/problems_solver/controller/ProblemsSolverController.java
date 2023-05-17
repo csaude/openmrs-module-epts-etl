@@ -1,6 +1,8 @@
 package org.openmrs.module.eptssync.problems_solver.controller;
 
-import java.sql.Connection;
+import java.lang.reflect.Constructor;
+
+import javax.ws.rs.ForbiddenException;
 
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
@@ -8,16 +10,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.model.SearchClauses;
-import org.openmrs.module.eptssync.model.SimpleValue;
-import org.openmrs.module.eptssync.model.base.BaseDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.problems_solver.engine.ProblemsSolverEngine;
-import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
-import org.openmrs.module.eptssync.utilities.CommonUtilities;
-import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
  * This class is responsible for control the quick merge process. The quick merge process imediatly
@@ -32,9 +25,20 @@ public class ProblemsSolverController extends OperationController {
 		super(processController, operationConfig);
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new ProblemsSolverEngine(monitor, limits);
+		
+		Class[] parameterTypes = {EngineMonitor.class, RecordLimits.class};
+		
+		try {
+			Constructor<Engine> a = getOperationConfig().getEngineClazz().getConstructor(parameterTypes);
+			
+			return a.newInstance(monitor, limits);
+		}
+		catch (Exception e) {
+			throw new ForbiddenException(e);
+		}
 	}
 	
 	@Override
@@ -47,32 +51,9 @@ public class ProblemsSolverController extends OperationController {
 		return 1;
 	}
 	
-	@SuppressWarnings("unused")
-	private long getExtremeRecord(SyncTableConfiguration tableInfo, String function, Connection conn) throws DBException {
-		ProblemsSolverSearchParams searchParams = new ProblemsSolverSearchParams(tableInfo, null);
-		searchParams.setSyncStartDate(getConfiguration().getObservationDate());
-		
-		SearchClauses<DatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
-		
-		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
-		
-		searchClauses.setColumnsToSelect(function + "(" + tableInfo.getPrimaryKey() + ") as value");
-		
-		String sql = searchClauses.generateSQL(conn);
-		
-		SimpleValue simpleValue = BaseDAO.find(SimpleValue.class, sql, searchClauses.getParameters(), conn);
-		
-		searchClauses.getSearchParameters().setQtdRecordPerSelected(bkpQtyRecsPerSelect);
-		
-		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
-			return simpleValue.intValue();
-		}
-		
-		return 0;
-	}
-	
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return false;
 	}
+		
 }

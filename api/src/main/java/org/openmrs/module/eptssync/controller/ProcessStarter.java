@@ -15,7 +15,6 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
-import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class ProcessStarter implements ControllerStarter{
 	private static Log logger = LogFactory.getLog(ProcessController.class);
@@ -62,6 +61,8 @@ public class ProcessStarter implements ControllerStarter{
 		
 		while (!isAllFinished(allController) && !isAllStopped(allController)){
 			TimeCountDown.sleep(120);
+			
+			logger.info("THE APPLICATION IS STILL RUNING...");
 		}
 		
 		if (isAllFinished(allController)) {

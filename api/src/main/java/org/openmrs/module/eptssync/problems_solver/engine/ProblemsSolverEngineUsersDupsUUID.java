@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
-import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -28,7 +27,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
  *
  * @see DBQuickMergeController
  */
-public class ProblemsSolverEngineUsersDupsUUID extends Engine {
+public class ProblemsSolverEngineUsersDupsUUID extends ProblemsSolverEngine {
 	public ProblemsSolverEngineUsersDupsUUID(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}

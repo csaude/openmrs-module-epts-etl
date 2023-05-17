@@ -409,7 +409,7 @@ public class ProcessController implements Controller, ControllerStarter{
 	}
 	
 	private void tryToRemoveOldStopRequested() {
-		File file = new File (getConfiguration().getSyncRootDirectory()+"/process_status/stop_requested.info");
+		File file = generateStopRequestFile();
 		
 		if (file.exists()) file.delete();
 	}

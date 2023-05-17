@@ -44,13 +44,6 @@ public class DBQuickMergeEngine extends Engine {
 		
 		records =  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 		
-		if (!utilities.arrayHasElement(records)) {
-			records =  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
-		}
-		else {
-			System.out.println("Continue");
-		}
-		
 		return records;
 	}
 	

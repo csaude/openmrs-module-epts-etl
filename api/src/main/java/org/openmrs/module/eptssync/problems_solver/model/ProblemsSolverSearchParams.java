@@ -6,10 +6,9 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchClauses;
-import org.openmrs.module.eptssync.model.SearchParamsDAO;
-import org.openmrs.module.eptssync.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectSearchParams;
+import org.openmrs.module.eptssync.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class ProblemsSolverSearchParams extends DatabaseObjectSearchParams{

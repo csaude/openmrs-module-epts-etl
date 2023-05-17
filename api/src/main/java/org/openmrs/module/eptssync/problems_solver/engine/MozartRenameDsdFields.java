@@ -1,8 +1,8 @@
 package org.openmrs.module.eptssync.problems_solver.engine;
 
+import static org.openmrs.module.eptssync.problems_solver.engine.ProblemsSolverEngine.done;
+
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +12,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.SimpleValue;
+import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
@@ -20,6 +21,7 @@ import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchPar
 import org.openmrs.module.eptssync.problems_solver.model.mozart.DBValidateReport;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.MozartProblemType;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
+import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -29,36 +31,16 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  * @see DBQuickMergeController
  */
-public class DetectProblematicMozartDB extends ProblemsSolverEngine {
-	
+public class MozartRenameDsdFields extends ProblemsSolverEngine {
 	static List<DBValidateReport> reportsProblematicDBs;
 	
 	static List<DBValidateReport> reportsNoIssueDBs;
 	
-	/*DatabasesInfo[] DB_INFOs = { new DatabasesInfo("FGH_ZAMBEZIA", DatabasesInfo.FGH_DB_NAMES, new DBConnectionInfo("root",
-	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ICAP_NAMPULA", DatabasesInfo.ICAP_DB_NAMES_NAMPULA, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ARIEL_MAPUTO", DatabasesInfo.ARIEL_DB_NAMES_MAPUTO, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")), 
-			new DatabasesInfo("CCS_MAPUTO", DatabasesInfo.CCS_DB_NAMES_MAPUTO, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),			
-	};*/
-	
-	DatabasesInfo[] DB_INFOs_01 = {
-	        new DatabasesInfo("CCS_MAPUTO", DatabasesInfo.CCS_DB_NAMES_MAPUTO, new DBConnectionInfo("root", "root",
+	DatabasesInfo[] DB_INFOs = {
+	        new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root", "root",
 	                "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
 	
-	DatabasesInfo[] DB_INFOs_02 = {
-	        new DatabasesInfo("ARIEL_MAPUTO", DatabasesInfo.ARIEL_DB_NAMES_MAPUTO, new DBConnectionInfo("root", "root",
-	                "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
-	
-	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
-	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
-	
-	public DetectProblematicMozartDB(EngineMonitor monitor, RecordLimits limits) {
+	public MozartRenameDsdFields(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
@@ -113,44 +95,26 @@ public class DetectProblematicMozartDB extends ProblemsSolverEngine {
 			if (!DBUtilities.isResourceExist(dbName, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
 				logWarn("DB '" + dbName + "' is missing!");
 				
-				report.addProblemType(MozartProblemType.MISSING_DB);
-				
 				continue;
 			}
 			
 			for (SyncTableConfiguration configuredTable : configuredTables) {
+				
+				if (!configuredTable.getTableName().equals("dsd"))
+					continue;
+				
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();
 				}
+					
+				List<String> missingField = generateMissingFields(dbName, configuredTable, srcConn);
 				
-				if (!checkIfTableExists(configuredTable.getTableName(), dbName, srcConn)) {
-					if (report == null)
-						report = new DBValidateReport(dbInfo.getServerName(), dbName);
+				tryToRenameFields(dbName, missingField, srcConn);
+				
+				if (utilities.arrayHasElement(missingField)) {
+					report.addMissingFields(configuredTable.getTableName(), missingField);
 					
-					report.addMissingTable(configuredTable.getTableName());
-					
-					report.addProblemType(MozartProblemType.MISSING_TABLES);
-				} else {
-					
-					String sql = "select count(*) as value from  " + dbName + "." + configuredTable.getTableName();
-					
-					SimpleValue result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
-					
-					if (result.intValue() == 0) {
-						
-						if (!configuredTable.getTableName().equals("key_vulnerable_pop")) {
-							report.addProblemType(MozartProblemType.EMPTY_TABLES);
-							report.addEmptyTable(configuredTable.getTableName());
-						}
-					}
-					
-					List<String> missingField = generateMissingFields(dbName, configuredTable, srcConn);
-					
-					if (utilities.arrayHasElement(missingField)) {
-						report.addMissingFields(configuredTable.getTableName(), missingField);
-						
-						report.addProblemType(MozartProblemType.MISSIN_FIELDS);
-					}
+					report.addProblemType(MozartProblemType.MISSIN_FIELDS);
 				}
 			}
 			
@@ -165,6 +129,104 @@ public class DetectProblematicMozartDB extends ProblemsSolverEngine {
 				
 				reportsNoIssueDBs.add(report);
 			}
+		}
+	}
+	
+	private void tryToRenameFields(String dbName, List<String> missingField, OpenConnection conn_)
+	        throws DBException {
+		
+		String table = dbName + ".dsd";
+		
+		DBConnectionService srcConnService = conn_.getConnService().clone("jdbc:mysql://10.10.2.2:53301/"+ dbName +"?autoReconnect=true&useSSL=false");
+		
+		OpenConnection srcConn = srcConnService.openConnection();
+		
+		if (!utilities.existOnArray(missingField, "dsd_uuid")) {
+			logDebug("The dsd_uuid field exists");
+			
+			//TRy to generate unique key on dsd_uuid field
+			
+			tryToAddUniqueKeyOnDsdUuid(dbName, srcConn);
+			
+			//TRy to fill dsd_uuid field
+			
+			logDebug("Checking data");
+			
+			SimpleValue count = DatabaseObjectDAO.find(SimpleValue.class, "select count(*) from " + table + " where dsd_uuid is null", null, srcConn);
+			
+			if (count.integerValue() > 0) {
+				logDebug("The field is empty! Update...");
+				updateDsdField(dbName, srcConn);
+			}
+		}
+		else
+		if (utilities.arrayHasElement(missingField) && utilities.existOnArray(missingField, "dsd_uuid")) {
+			missingField.remove("dsd_uuid");
+			
+			
+			logWarn("Adding 'encounter_uuid' on " +table);
+			
+			String sql = "";
+			
+			sql += "ALTER TABLE " + table + " ADD `dsd_uuid` char(38) DEFAULT NULL;";
+			
+			DBUtilities.executeBatch(srcConn, sql);
+			
+			tryToAddUniqueKeyOnDsdUuid(dbName, srcConn);
+			
+			updateDsdField(dbName, srcConn);
+		}		
+		
+		srcConn.markAsSuccessifullyTerminected();
+		
+		srcConn.finalizeConnection();
+	}
+	
+	private void tryToAddUniqueKeyOnDsdUuid(String dbName, Connection conn) throws DBException {
+		logDebug("Checking key");
+		
+		String table = dbName + ".dsd";
+		
+		List<List<String>> uniqueKeys = DBUtilities.getUniqueKeys("dsd", dbName, conn);
+		
+		boolean hasKeyOnDdsUuid = false;
+		
+		for (List<String> keyElements : uniqueKeys) {
+			if (keyElements.contains("dsd_uuid")) {
+				hasKeyOnDdsUuid = true;
+				break;
+			}
+		}
+		
+		if (!hasKeyOnDdsUuid) {
+			logDebug("The key does not exist. Adding it..");
+			
+			String sql = "ALTER TABLE " + table + " ADD UNIQUE KEY `dsd_uniqueness_key` (`dsd_uuid`);";
+			
+			DBUtilities.executeBatch(conn, sql);
+		}else {
+			logDebug("The key exists");
+		}		
+	}
+	
+	private void updateDsdField(String dbName, Connection conn) throws DBException {
+		String table = dbName + ".dsd";
+		
+		String sql = "SELECT id value FROM " + table;
+		
+		List<SimpleValue> dsds = DatabaseObjectDAO.search(SimpleValue.class, sql, null, conn);
+		
+		for (int i =0; i < dsds.size(); i++) {
+			SimpleValue dsd  = dsds.get(i);
+			
+			logDebug("Updating dsd ["+dsd + "] " + i+"/"+dsds.size());
+			sql = "UPDATE " + table + " SET dsd_uuid =  ? WHERE id = ?";
+			
+			Object[] params = {utilities.generateUUID().toString(), dsd.integerValue()};
+			
+		
+			
+			BaseDAO.executeDBQuery(sql, params, conn);
 		}
 	}
 	
@@ -186,16 +248,6 @@ public class DetectProblematicMozartDB extends ProblemsSolverEngine {
 		return missingFields;
 	}
 	
-	private boolean checkIfTableExists(String tableName, String schema, Connection conn) throws DBException {
-		try {
-			return DBUtilities.isResourceExist(schema, DBUtilities.RESOURCE_TYPE_TABLE, tableName, conn);
-		}
-		catch (SQLException e) {
-			throw new DBException(e);
-		}
-	}
-	
-	@Override
 	public void requestStop() {
 	}
 	
