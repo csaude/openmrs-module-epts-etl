@@ -88,7 +88,7 @@ public class DBQuickExportController extends  OperationController {
 		return conn;
 	}	
 	
-	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, int startRecord, int lastRecord) throws IOException {
+	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, Integer startRecord, Integer lastRecord) throws IOException {
 		String fileName = "";
 		
 		fileName += tableInfo.getRelatedSynconfiguration().getSyncRootDirectory();

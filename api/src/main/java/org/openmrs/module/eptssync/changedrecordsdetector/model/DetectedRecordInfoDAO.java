@@ -48,23 +48,23 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 		}
 	}
 	
-	public static long getFirstNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getFirstNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
 		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationType.NEW_RECORDS_DETECTOR, conn);
 	}
 	
-	public static long getLastNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getLastNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
 		return getChangedRecord(tableConf, appCode, observationDate, "max",  SyncOperationType.NEW_RECORDS_DETECTOR, conn);
 	}
 	
-	public static long getFirstChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getFirstChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
 		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationType.CHANGED_RECORDS_DETECTOR, conn);
 	}
 	
-	public static long getLastChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getLastChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
 		return getChangedRecord(tableConf, appCode, observationDate, "max",  SyncOperationType.CHANGED_RECORDS_DETECTOR, conn);
 	}
 	
-	public static long getChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, String function, SyncOperationType type, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, String function, SyncOperationType type, Connection conn) throws DBException, ForbiddenOperationException {
 		
 		String dateCreatedCondition = type.equals(SyncOperationType.NEW_RECORDS_DETECTOR) ? "date_created >= ?" : ""; 
 		String dateChangedCondition = type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !tableConf.getTableName().equalsIgnoreCase("obs") ? "date_changed >= ?" : "";
@@ -90,6 +90,6 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 		
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
 		
-		return v != null && v.hasValue() ? v.longValue() : 0;
+		return v != null && v.hasValue() ? v.intValue() : 0;
 	}	
 }

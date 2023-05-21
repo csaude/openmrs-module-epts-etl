@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.MetadataInconsistentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.BaseVO;
@@ -36,9 +37,8 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	public static final int MIGRATION_STATUS_INCOMPLETE = 0;
 	public static final int MIGRATION_STATUS_FAILED = -1;
 	
-	private int id;
-	private int recordOriginId;
-	private String recordUuid;
+	private Integer id;
+	private Integer recordOriginId;
 	private String recordOriginLocationCode;
 	
 	private String json;
@@ -50,6 +50,10 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	
 	private int consistent;
 	private int migrationStatus;
+
+	private int destinationId;
+	
+	private List<UniqueKeyInfo> uniqueKeys;
 	
 	public SyncImportInfoVO(){
 		this.migrationStatus = MIGRATION_STATUS_PENDING;
@@ -64,6 +68,24 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		try {this.dateVoided = resultSet.getDate("record_date_voided");} catch (SQLException e) {}
 	}
 	
+	public Integer getDestinationId() {
+		return destinationId;
+	}
+	
+	
+	public void setDestinationId(Integer destinationId) {
+		this.destinationId = destinationId;
+	}
+	
+	@JsonIgnore
+	public List<UniqueKeyInfo> getUniqueKeys() {
+		return uniqueKeys;
+	}
+	
+	public void setUniqueKeys(List<UniqueKeyInfo> uniqueKeys) {
+		this.uniqueKeys = uniqueKeys;
+	}
+	
 	@JsonIgnore
 	public int getConsistent() {
 		return consistent;
@@ -75,14 +97,6 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 
 	public void setRecordOriginId(int recordOriginId) {
 		this.recordOriginId = recordOriginId;
-	}
-	
-	public String getRecordUuid() {
-		return recordUuid;
-	}
-
-	public void setRecordUuid(String recordUuid) {
-		this.recordUuid = recordUuid;
 	}
 
 	public String getRecordOriginLocationCode() {
@@ -112,11 +126,11 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	}
 
 	@JsonIgnore
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 
@@ -199,7 +213,6 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	public static SyncImportInfoVO generateFromSyncRecord(DatabaseObject syncRecord, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
 		SyncImportInfoVO syncInfo = new SyncImportInfoVO();
 			
-		syncInfo.setRecordUuid(syncRecord.getUuid());
 		syncInfo.setRecordOriginId(syncRecord.getObjectId());
 		syncInfo.setRecordOriginLocationCode (recordOriginLocationCode);
 		
@@ -208,6 +221,8 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		syncInfo.setDateVoided(syncRecord.getDateVoided());
 		syncInfo.setJson(generateRecordJSON ? utilities.parseToJSON(syncRecord) : null);
 		syncInfo.setLastUpdateDate(syncRecord.getDateChanged());
+		syncInfo.setDestinationId(syncRecord.getObjectId());
+		syncInfo.setUniqueKeys(syncRecord.getUniqueKeysInfo());
 		
 		return syncInfo;
 	}
@@ -318,7 +333,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 			DatabaseObject rec = null;
 			
 			try {
-				rec = utilities.loadObjectFormJSON(objectClass, modifiedJSON );
+				rec = utilities.loadObjectFormJSON(objectClass, modifiedJSON);
 			} catch (Exception e) {
 				
 				//try to resolve pathern problems
@@ -370,7 +385,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 		
 		SyncImportInfoVO otherObj = (SyncImportInfoVO)obj;
 		
-		return this.getRecordOriginLocationCode().equalsIgnoreCase(otherObj.getRecordOriginLocationCode()) && this.getRecordUuid().equalsIgnoreCase(otherObj.getRecordUuid());
+		return this.getRecordOriginLocationCode().equalsIgnoreCase(otherObj.getRecordOriginLocationCode()) && this.getRecordOriginId() == otherObj.getRecordOriginId();
 	}
 
 	public void delete(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
@@ -388,7 +403,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 
 	@Override
 	public String toString() {
-		return "recordUuid: " + recordUuid + ", recordOriginId: " + recordOriginId + ", recordOriginLocationCode: " + recordOriginLocationCode;
+		return " RecordOriginId: " + recordOriginId + ", recordOriginLocationCode: " + recordOriginLocationCode;
 	}
 	
 	public static SyncImportInfoVO chooseMostRecent(List<SyncImportInfoVO> records) {

@@ -1,7 +1,6 @@
 package org.openmrs.module.eptssync.problems_solver.engine;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,18 +34,6 @@ public class DetectProblematicMozartDB extends ProblemsSolverEngine {
 	
 	static List<DBValidateReport> reportsNoIssueDBs;
 	
-	/*DatabasesInfo[] DB_INFOs = { new DatabasesInfo("FGH_ZAMBEZIA", DatabasesInfo.FGH_DB_NAMES, new DBConnectionInfo("root",
-	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ICAP_NAMPULA", DatabasesInfo.ICAP_DB_NAMES_NAMPULA, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ARIEL_MAPUTO", DatabasesInfo.ARIEL_DB_NAMES_MAPUTO, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")), 
-			new DatabasesInfo("CCS_MAPUTO", DatabasesInfo.CCS_DB_NAMES_MAPUTO, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-			new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
-		        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),			
-	};*/
-	
 	DatabasesInfo[] DB_INFOs_01 = {
 	        new DatabasesInfo("CCS_MAPUTO", DatabasesInfo.CCS_DB_NAMES_MAPUTO, new DBConnectionInfo("root", "root",
 	                "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
@@ -55,7 +42,11 @@ public class DetectProblematicMozartDB extends ProblemsSolverEngine {
 	        new DatabasesInfo("ARIEL_MAPUTO", DatabasesInfo.ARIEL_DB_NAMES_MAPUTO, new DBConnectionInfo("root", "root",
 	                "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
 	
-	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
+	DatabasesInfo[] DB_INFOs_03 = { new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
+	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
+	
+	
+	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("EGPAF_GZ", DatabasesInfo.EGPAF_DB_NAMES_GAZA, new DBConnectionInfo("root",
 	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
 	
 	public DetectProblematicMozartDB(EngineMonitor monitor, RecordLimits limits) {

@@ -1,13 +1,13 @@
 package org.openmrs.module.eptssync.model.pojo.generic_src;
 
-import org.openmrs.module.eptssync.model.pojo.generic.*; 
- 
-import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
- 
-import org.openmrs.module.eptssync.utilities.AttDefinedElements; 
-import java.sql.SQLException; 
-import java.sql.ResultSet; 
- 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.openmrs.module.eptssync.model.pojo.generic.AbstractDatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.utilities.AttDefinedElements;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
+
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class EncounterProviderVO extends AbstractDatabaseObject implements DatabaseObject { 

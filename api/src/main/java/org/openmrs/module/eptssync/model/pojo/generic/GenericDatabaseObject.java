@@ -139,7 +139,6 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	public static GenericDatabaseObject fastCreate(SyncImportInfoVO syncImportInfo, SyncTableConfiguration syncTableConfiguration) {
 		GenericDatabaseObject obj = new GenericDatabaseObject(syncTableConfiguration);
 		obj.setObjectId(syncImportInfo.getRecordOriginId());
-		obj.setUuid(syncImportInfo.getRecordUuid());
 		
 		return obj;
 	}

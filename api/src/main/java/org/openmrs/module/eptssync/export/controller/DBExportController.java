@@ -75,7 +75,7 @@ public class DBExportController extends OperationController {
 		}
 	}
 	
-	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, int startRecord, int lastRecord) throws IOException {
+	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, Integer startRecord, Integer lastRecord) throws IOException {
 		String fileName = "";
 		
 		fileName += tableInfo.getRelatedSynconfiguration().getSyncRootDirectory();

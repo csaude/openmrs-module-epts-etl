@@ -126,7 +126,9 @@ public class DataReconciliationRecord {
 	}
 
 	private static void loadDestParentInfo(DatabaseObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
-		SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
+		throw new ForbiddenOperationException("Review this method");
+		
+	/*SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
 		
 		
 		for (RefInfo refInfo: config.getParents()) {
@@ -158,14 +160,12 @@ public class DataReconciliationRecord {
 						parent = parentData.record;
 						
 						throw new ForbiddenOperationException();
-
-						//parent = DatabaseObjectDAO.getByUuid(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), parentStageInfo.getRecordUuid(), conn).get(0);
 					}
 				}
 				
 				record.changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);
 			}
-		}
+		}*/
 	}
 
 	public void save(Connection conn) throws DBException {

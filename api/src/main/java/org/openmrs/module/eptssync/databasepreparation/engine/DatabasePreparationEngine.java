@@ -61,6 +61,14 @@ public class DatabasePreparationEngine extends Engine {
 			logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
 		}
 	
+		if (!getSyncTableConfiguration().existRelatedExportStageUniqueKeysTable(conn)) {
+			logDebug("GENERATING RELATED STAGE UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
+			
+			createRelatedSyncStageAreaUniqueKeysTable(conn);
+			
+			logDebug("RELATED STAGE UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
+		}	
+		
 		logDebug("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
 	}
 	
@@ -187,13 +195,49 @@ public class DatabasePreparationEngine extends Engine {
 		return new DatabasePreparationSearchParams(this, limits, conn);
 	}
 	
+	private void createRelatedSyncStageAreaUniqueKeysTable(Connection conn) {
+		String sql = "";
+
+		String parentTableName = getSyncTableConfiguration().generateRelatedStageTableName();
+		String tableName = getSyncTableConfiguration().generateRelatedStageUniqueKeysTableName();
+		
+		sql += "CREATE TABLE " + getSyncTableConfiguration().generateFullStageUniqueKeysTableName() + "(\n";
+		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
+		sql += "	record_id int(11) NOT NULL,\n";
+		sql += "	key_name varchar(100)  NOT NULL,\n";
+		sql += "	column_name varchar(100)  NOT NULL,\n";
+		sql += "	key_value VARCHAR(100) NULL,\n";
+		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
+		
+		
+		
+		sql += "	UNIQUE KEY " + tableName + "_unq_record_key(record_id, key_name, column_name),\n";
+		
+		sql += "	CONSTRAINT " + tableName + "_parent_record FOREIGN KEY (record_id) REFERENCES " + parentTableName + " (id),\n ";
+	
+		sql += "	PRIMARY KEY (id)\n";
+		sql += ")\n";
+		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";
+		
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+
+			st.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} 
+	}
+	
 	private void createRelatedSyncStageAreaTable(Connection conn) {
 		String sql = "";
 
 		sql += "CREATE TABLE " + getSyncTableConfiguration().generateFullStageTableName() + "(\n";
 		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
 		sql += "	record_origin_id int(11) NOT NULL,\n";
-		sql += "	record_uuid varchar(38)  NULL,\n";
 		sql += "	record_origin_location_code VARCHAR(100) NOT NULL,\n";
 		
 		sql += "	json text NULL,\n";
@@ -209,15 +253,14 @@ public class DatabasePreparationEngine extends Engine {
 		sql += "	record_date_created DATETIME NULL,\n";
 		sql += "	record_date_changed DATETIME NULL,\n";
 		sql += "	record_date_voided DATETIME NULL,\n";
+		sql += "	destination_id int(11) NULL,\n";
 		
 		sql += "	CONSTRAINT CHK_" + getSyncTableConfiguration().generateRelatedStageTableName() + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
 		
 		if (getSyncTableConfiguration().isDestinationInstallationType() || getSyncTableConfiguration().isDBQuickLoad() || getSyncTableConfiguration().isDBQuickCopy()) {
-			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_UUID(record_uuid, record_origin_location_code),\n";
 			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_ID(record_origin_id, record_origin_location_code),\n";
 		}
 		else {
-			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_UUID(record_uuid),\n";
 			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_ID(record_origin_id),\n";
 		}
 		
@@ -237,6 +280,7 @@ public class DatabasePreparationEngine extends Engine {
 			throw new RuntimeException(e);
 		} 
 	}
+	
 	
 	@Override
 	public DatabasePreparationController getRelatedOperationController() {

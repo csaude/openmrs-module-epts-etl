@@ -454,6 +454,10 @@ public class  CommonUtilities implements Serializable{
 		return FuncoesGenericas.arrayHasElement(list);
 	}
 	
+	public  boolean arrayHasElement(Object[] array){
+		return array != null && array.length > 0;
+	}
+	
 	public int getPosOfElementOnList(List<?> list, Object toFind){
 		if (!arrayHasElement(list)) return -1;
 		

@@ -11,6 +11,8 @@ import java.util.List;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.mozart.DsdVO;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DatabaseEntityPOJOGenerator;
@@ -57,24 +59,23 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	 */
 	private List<String> observationDateFields;
 	
-	private List<List<String>> uniqueKeys;
+	private List<UniqueKeyInfo> uniqueKeys;
 	
 	private List<Field> fields;
 	
 	/**
-	 * When merge existing records, the incoming record will win if the listed fields have the specified values.
-	 * Note that, for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND" 
+	 * When merge existing records, the incoming record will win if the listed fields have the
+	 * specified values. Note that, for the outer list the join condition will be "OR" and for the
+	 * inner list the join condition will be "AND"
 	 */
 	private List<List<Field>> winningRecordFieldsInfo;
 	
 	public SyncTableConfiguration() {
 	}
 	
-	
 	public List<List<Field>> getWinningRecordFieldsInfo() {
 		return winningRecordFieldsInfo;
 	}
-	
 	
 	public void setWinningRecordFieldsInfo(List<List<Field>> winningRecordFieldsInfo) {
 		this.winningRecordFieldsInfo = winningRecordFieldsInfo;
@@ -88,11 +89,11 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		this.fields = fields;
 	}
 	
-	public List<List<String>> getUniqueKeys() {
+	public List<UniqueKeyInfo> getUniqueKeys() {
 		return uniqueKeys;
 	}
 	
-	public void setUniqueKeys(List<List<String>> uniqueKeys) {
+	public void setUniqueKeys(List<UniqueKeyInfo> uniqueKeys) {
 		this.uniqueKeys = uniqueKeys;
 	}
 	
@@ -267,24 +268,6 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	public void loadUniqueKeys() {
 		if (this.uniqueKeys == null) {
 			loadUniqueKeys(this);
-			
-			if (this.useSharedPKKey()) {
-				SyncTableConfiguration parentTableInfo = new SyncTableConfiguration();
-				
-				parentTableInfo = new SyncTableConfiguration();
-				parentTableInfo.setTableName(this.getSharePkWith());
-				parentTableInfo.setRelatedSyncTableInfoSource(this.getRelatedSynconfiguration());
-				
-				parentTableInfo.loadUniqueKeys();
-				
-				if (utilities.arrayHasElement(parentTableInfo.getUniqueKeys())) {
-					
-					for (List<String> keyElements : parentTableInfo.getUniqueKeys()) {
-						this.addUniqueKey(keyElements);
-					}
-					
-				}
-			}
 		}
 	}
 	
@@ -295,54 +278,15 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			OpenConnection conn = tableConfiguration.getRelatedSynconfiguration().getMainApp().openConnection();
 			
 			try {
-				ResultSet rs = conn.getMetaData().getIndexInfo(null, null, tableName, true, true);
-				
-				String prevIndexName = null;
-				
-				List<String> keyElements = null;
-				
-				while (rs.next()) {
-					
-					String indexName = rs.getString("INDEX_NAME");
-					
-					if (!indexName.equals(prevIndexName)) {
-						tableConfiguration.addUniqueKey(keyElements);
-						
-						prevIndexName = indexName;
-						keyElements = new ArrayList<String>();
-					}
-					
-					keyElements.add(rs.getString("COLUMN_NAME"));
-				}
-				
-				tableConfiguration.addUniqueKey(keyElements);
+				this.uniqueKeys = UniqueKeyInfo.loadUniqueKeysInfo(this, conn);
 			}
 			catch (SQLException e) {
-				e.printStackTrace();
-				
 				throw new RuntimeException(e);
 			}
 			finally {
 				conn.finalizeConnection();
 			}
 		}
-	}
-	
-	private boolean addUniqueKey(List<String> keyElements) {
-		if (keyElements == null || keyElements.isEmpty())
-			return false;
-		
-		//Don't add PK as uniqueKey
-		if (keyElements.size() == 1 && keyElements.get(0).equals(this.getPrimaryKey())) {
-			return false;
-		}
-		
-		if (this.uniqueKeys == null)
-			this.uniqueKeys = new ArrayList<>();
-		
-		this.uniqueKeys.add(keyElements);
-		
-		return true;
 	}
 	
 	@JsonIgnore
@@ -713,6 +657,11 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	}
 	
 	@JsonIgnore
+	public String generateRelatedStageUniqueKeysTableName() {
+		return generateRelatedStageTableName() + "_unique_keys";
+	}
+	
+	@JsonIgnore
 	public String getSyncStageSchema() {
 		return getRelatedSynconfiguration().getSyncStageSchema();
 	}
@@ -720,6 +669,11 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	@JsonIgnore
 	public String generateFullStageTableName() {
 		return getSyncStageSchema() + "." + generateRelatedStageTableName();
+	}
+	
+	@JsonIgnore
+	public String generateFullStageUniqueKeysTableName() {
+		return getSyncStageSchema() + "." + generateRelatedStageUniqueKeysTableName();
 	}
 	
 	public boolean existRelatedExportStageTable(Connection conn) {
@@ -736,6 +690,21 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public boolean existRelatedExportStageUniqueKeysTable(Connection conn) {
+		String schema = getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = generateRelatedStageUniqueKeysTableName();
+		
+		try {
+			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+	}	
 	
 	@JsonIgnore
 	public boolean isFullLoaded() {
@@ -910,14 +879,16 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return joinCondition;
 	}
 	
-	private String generateUniqueKeyJoinField(List<String> uniqueKeyFields) {
+	private String generateUniqueKeyJoinField(UniqueKeyInfo uniqueKey_) {
+		List<Field> uniqueKeyFields = uniqueKey_.getFields();
+		
 		String joinFields = "";
 		
 		for (int i = 0; i < uniqueKeyFields.size(); i++) {
 			if (i > 0)
 				joinFields += " AND ";
 			
-			joinFields += "dest_." + uniqueKeyFields.get(i) + " = src_." + uniqueKeyFields.get(i);
+			joinFields += "dest_." + uniqueKeyFields.get(i).getName() + " = src_." + uniqueKeyFields.get(i).getName();
 		}
 		
 		return joinFields;
@@ -929,6 +900,31 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	 * 
 	 * @param dbObject the object from where the condition values will be retrieved from
 	 * @return a SQL condition
+	 */
+	@JsonIgnore
+	public String generateUniqueKeysParametrizedCondition(DatabaseObject dbObject) {
+		if (this.getUniqueKeys() == null)
+			return null;
+		
+		String joinCondition = "";
+		
+		for (int i = 0; i < this.getUniqueKeys().size(); i++) {
+			
+			String uniqueKeyJoinField = generateUniqueKeyConditionsFields(this.getUniqueKeys().get(i), dbObject);
+			
+			if (i > 0)
+				joinCondition += " OR ";
+			
+			joinCondition += "(" + uniqueKeyJoinField + ")";
+		}
+		
+		return joinCondition;
+	}
+	
+	/**
+	 * Generates SQL parametrized condition for {@link #uniqueKeys}
+	 * 
+	 * @return a parametrized SQL condition
 	 */
 	@JsonIgnore
 	public String generateUniqueKeysParametrizedCondition() {
@@ -947,8 +943,10 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return joinCondition;
 	}
 	
-	private String generateUniqueKeyConditionsFields(List<String> uniqueKeyFields) {
+	private String generateUniqueKeyConditionsFields(UniqueKeyInfo uniqueKey) {
 		String joinFields = "";
+		
+		List<Field> uniqueKeyFields = uniqueKey.getFields();
 		
 		for (int i = 0; i < uniqueKeyFields.size(); i++) {
 			if (i > 0)
@@ -960,8 +958,46 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		return joinFields;
 	}
 	
+	private String generateUniqueKeyConditionsFields(UniqueKeyInfo uniqueKey, DatabaseObject dbObject) {
+		String conditionFields = "";
+		
+		List<Field> uniqueKeyFields = uniqueKey.getFields();
+		
+		uniqueKey.loadValuesToFields(dbObject);
+		
+		for (int i = 0; i < uniqueKeyFields.size(); i++) {
+			if (i > 0)
+				conditionFields += " AND ";
+			
+			Field field = uniqueKeyFields.get(i);
+			
+			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getName(), field.getValue());
+		}
+		
+		return conditionFields;
+	}
+	
 	public boolean hasUniqueKeys() {
 		return utilities.arrayHasElement(this.getUniqueKeys());
 	}
 	
+	public static void main(String[] args) throws DBException, IOException {
+		SyncConfiguration syncConfig = SyncConfiguration
+		        .loadFromFile(new File("D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\mozart\\detect_problematic_dbs.json"));
+		
+		SyncTableConfiguration config = syncConfig.find(SyncTableConfiguration.init("dsd", syncConfig));
+		config.fullLoad();
+		
+		Object[] params = { "946a0f13-dfa8-4eeb-b63a-d17b16ebc495" };
+		
+		OpenConnection conn = syncConfig.getMainApp().openConnection();
+		
+		DsdVO dbObject = DatabaseObjectDAO.find(DsdVO.class, "select * from dsd where dsd_uuid = ? ", params, conn);
+		
+		String condition = config.generateUniqueKeysParametrizedCondition(dbObject);
+		
+		System.out.println(condition);
+		
+		conn.finalizeConnection();
+	}
 }

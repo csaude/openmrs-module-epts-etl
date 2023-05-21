@@ -123,7 +123,7 @@ public class DBExportEngine extends Engine {
 		}
 	}
 
-	private File generateJSONTempFile(SyncJSONInfo jsonInfo, int startRecord, int lastRecord) throws IOException {
+	private File generateJSONTempFile(SyncJSONInfo jsonInfo, Integer startRecord, Integer lastRecord) throws IOException {
 		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSyncTableConfiguration(), startRecord, lastRecord);
 	}
 	

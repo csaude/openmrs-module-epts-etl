@@ -266,7 +266,7 @@ public class ObsVO extends AbstractDatabaseObject implements DatabaseObject {
 
 
  
-	public String getInterpretation(){ 
+	public String getIntegererpretation(){ 
 		return this.interpretation;
 	}
  

@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
@@ -36,8 +37,13 @@ public class MergingRecord {
 	
 	public void merge(Connection srcConn, Connection destConn) throws DBException {
 		consolidateAndSaveData(srcConn, destConn);
+		
+		save(destConn);
 	}
 	
+	public SyncTableConfiguration getConfig() {
+		return config;
+	}
 	private void consolidateAndSaveData(Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException{
 		if (!config.isFullLoaded()) config.fullLoad(); 
 		
@@ -202,6 +208,11 @@ public class MergingRecord {
 		}
 	}
 	
+	public void save(Connection conn) throws DBException {
+		SyncImportInfoVO syncInfo = SyncImportInfoVO.generateFromSyncRecord(getRecord(), getConfig().getOriginAppLocationCode(), false);
+		
+		syncInfo.save(getConfig(), conn);
+	}
 	
 	public DatabaseObject getRecord() {
 		return record;

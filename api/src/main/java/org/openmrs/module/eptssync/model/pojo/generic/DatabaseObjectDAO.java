@@ -6,7 +6,9 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -70,7 +72,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = record.getInsertParamsWithoutObjectId();
 		String sql = record.getInsertSQLWithoutObjectId();
 		
-		executeQuery(sql, params, conn);
+		Integer objectId = executeQuery(sql, params, conn);
+		
+		record.setObjectId(objectId);
 	}
 	
 	public static void insertWithObjectId(DatabaseObject record, Connection conn) throws DBException{
@@ -89,7 +93,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	
 	static Logger logger = Logger.getLogger(DatabaseObjectDAO.class);
 	
-	public static DatabaseObject thinGetByRecordOrigin(int recordOriginId, String recordOriginLocationCode, SyncTableConfiguration parentTableConfiguration, Connection conn) throws DBException{
+	public static DatabaseObject thinGetByRecordOrigin(Integer recordOriginId, String recordOriginLocationCode, SyncTableConfiguration parentTableConfiguration, Connection conn) throws DBException{
 		
 		try {
 			Object[] params = {recordOriginId, recordOriginLocationCode};
@@ -139,14 +143,16 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String conditionSQL = "";
 		
-		
-		for (List<String> ukFields : tableConfiguration.getUniqueKeys()) {
+		for (UniqueKeyInfo uniqueKey : tableConfiguration.getUniqueKeys()) {
+			
+			List<Field> ukFields = uniqueKey.getFields();
+			
 			String tmpCodition = "";
 			
 			try {
-				params = utilities.setParam(params, obj.getUniqueKeysFieldValues(ukFields));
+				params = utilities.setParam(params, obj.getUniqueKeysFieldValues(uniqueKey));
 				
-				for (String field : ukFields) {
+				for (Field field : ukFields) {
 					if (!tmpCodition.isEmpty()) tmpCodition += " AND ";
 					
 					tmpCodition += field + " = ?";
@@ -201,7 +207,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 
-	public static <T extends DatabaseObject> T getById(Class<T> openMRSClass, int id, Connection conn) throws DBException{
+	public static <T extends DatabaseObject> T getById(Class<T> openMRSClass, Integer id, Connection conn) throws DBException{
 		try {
 			T obj = openMRSClass.newInstance();
 			
@@ -253,7 +259,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	
-	public static List<DatabaseObject> getByParentId(SyncTableConfiguration tableConfiguration, String parentField, int parentId, Connection conn) throws DBException {
+	public static List<DatabaseObject> getByParentId(SyncTableConfiguration tableConfiguration, String parentField, Integer parentId, Connection conn) throws DBException {
 		Object[] params = {parentField};
 		
 		String sql = " SELECT " + tableConfiguration.getPrimaryKey() + " as object_id "+
@@ -276,7 +282,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	
-	public static GenericDatabaseObject getById(String tableName, String pkColumnName, int id, Connection conn) throws DBException{
+	public static GenericDatabaseObject getById(String tableName, String pkColumnName, Integer id, Connection conn) throws DBException{
 		Object[] params = {id};
 		
 		String sql = "";
@@ -359,7 +365,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		executeQuery(sql, params, conn);
 	}
 	
-	public static int countAllOfOriginParentId(String parentField, int parentOriginId, String appOriginCode, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public static int countAllOfOriginParentId(String parentField, Integer parentOriginId, String appOriginCode, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		
 		Object[] params = { parentOriginId, 
 							appOriginCode};
@@ -375,7 +381,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}	
 	
 	
-	public static int countAllOfParentId(Class<DatabaseObject> clazz, String parentField, int parentId, Connection conn) throws DBException {
+	public static Integer countAllOfParentId(Class<DatabaseObject> clazz, String parentField, Integer parentId, Connection conn) throws DBException {
 		Object[] params = {parentId};
 
 		DatabaseObject obj = utilities.createInstance(clazz);
@@ -386,10 +392,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
 		
-		return v.intValue();
+		return v.IntegerValue();
 	}	
 	
-	public static List<DatabaseObject> getByOriginParentId(String parentField, int parentOriginId, String appOriginCode, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public static List<DatabaseObject> getByOriginParentId(String parentField, Integer parentOriginId, String appOriginCode, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		Object[] params = {parentOriginId, 
 						   appOriginCode};
 		
@@ -401,7 +407,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return search(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
 	}
 	
-	public static List<DatabaseObject> getByParentId(Class<DatabaseObject> clazz, String parentField, int parentId, Connection conn) throws DBException {
+	public static List<DatabaseObject> getByParentId(Class<DatabaseObject> clazz, String parentField, Integer parentId, Connection conn) throws DBException {
 		Object[] params = {parentId};
 		
 		DatabaseObject obj = utilities.createInstance(clazz);
@@ -413,7 +419,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return search(clazz, sql, params, conn);
 	}
 	
-	public static List<DatabaseObject> getByParentIdOnSpecificSchema(Class<DatabaseObject> clazz, String parentField, int parentId, String schema, Connection conn) throws DBException {
+	public static List<DatabaseObject> getByParentIdOnSpecificSchema(Class<DatabaseObject> clazz, String parentField, Integer parentId, String schema, Connection conn) throws DBException {
 		Object[] params = {parentId};
 		
 		DatabaseObject obj = utilities.createInstance(clazz);
@@ -511,21 +517,11 @@ public class DatabaseObjectDAO extends BaseDAO {
 				return recs.get(0);
 			}
 		}	
-		/*else {
-		 	//ORIGIN duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
-			String[] idParts = (e.getLocalizedMessage().split("'")[1]).split("-");
-			
-			int objectId = Integer.parseInt(idParts[0]);
-			String originAppLocationCode = idParts[1];
-			
-			
-			return thinGetByRecordOrigin(objectId, originAppLocationCode, tableConfiguration.getSyncRecordClass(), tableConfiguration, conn);
-		}*/
 		
 		return null;
 	}
 	
-	public static int getAvaliableObjectId(SyncTableConfiguration syncTableInfo, int maxAcceptableId, Connection conn) throws DBException {
+	public static Integer getAvaliableObjectId(SyncTableConfiguration syncTableInfo, Integer maxAcceptableId, Connection conn) throws DBException {
 		if (maxAcceptableId <= 0) throw new ForbiddenOperationException("There was not find any avaliable id for " + syncTableInfo.getTableName());
 		
 		String sql = "";  
@@ -551,15 +547,15 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 
-	public static int getFirstRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
+	public static Integer getFirstRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
 		return getSpecificRecord(tableConf, "min", conn);
 	}
 	
-	public static int getLastRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
+	public static Integer getLastRecord(SyncTableConfiguration tableConf, Connection conn) throws DBException, ForbiddenOperationException {
 		return getSpecificRecord(tableConf, "max",  conn);
 	}
 	
-	public static int getSpecificRecord(SyncTableConfiguration tableConf, String function, Connection conn) throws DBException, ForbiddenOperationException {
+	public static Integer getSpecificRecord(SyncTableConfiguration tableConf, String function, Connection conn) throws DBException, ForbiddenOperationException {
 			
 		String 	sql =  " SELECT " + function + "("+ tableConf.getPrimaryKey() +") value\n";
 				sql += " FROM " + tableConf.getTableName() + "\n";
@@ -569,7 +565,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
 		
-		return v != null && v.hasValue() ? v.intValue() : 0;
+		return v != null && v.hasValue() ? v.IntegerValue() : 0;
 	}	
 	
 

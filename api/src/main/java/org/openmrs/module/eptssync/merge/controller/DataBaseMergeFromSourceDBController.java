@@ -51,7 +51,7 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {	
 		OpenConnection conn = openConnection();
 		
-		int id = 0;
+		Integer id = Integer.valueOf(0);
 			
 		try {
 			SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(tableInfo, conn);
@@ -73,7 +73,7 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {	
 		OpenConnection conn = openConnection();
 		
-		int id = 0;
+		Integer id = Integer.valueOf(0);
 		
 		try {
 			SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(tableInfo, conn);

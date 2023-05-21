@@ -66,7 +66,7 @@ public class SimpleValue extends BaseVO {
 		setValue("" + value);
 	}
 	
-	public SimpleValue(long value) {
+	public SimpleValue(Integer value) {
 		setValue("" + value);
 	}
 	
@@ -118,8 +118,8 @@ public class SimpleValue extends BaseVO {
 		return Integer.parseInt(this.value);
 	}
 	
-	public long longValue() {
-		return Long.parseLong(this.value);
+	public Integer IntegerValue() {
+		return Integer.parseInt(this.value);
 	}
 	
 	public static ArrayList<SimpleValue> fillListByInts(int start, int end) {
@@ -191,7 +191,7 @@ public class SimpleValue extends BaseVO {
 		return new SimpleValue(value);
 	}
 	
-	public static SimpleValue create(long value) {
+	public static SimpleValue create(Integer value) {
 		return new SimpleValue(value);
 	}
 	

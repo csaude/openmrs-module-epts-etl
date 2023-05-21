@@ -4,7 +4,9 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
+import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -24,7 +26,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 				e.printStackTrace();
 			
 				 if (e.isDuplicatePrimaryKeyException()) {
-					 SyncImportInfoVO recordOnDB = getByUuid(tableInfo, record.getRecordUuid(), record.getRecordOriginLocationCode(), conn);
+					 SyncImportInfoVO recordOnDB = getByOriginIdAndLocation(tableInfo, record.getRecordOriginId(), record.getRecordOriginLocationCode(), conn);
 						
 					 updateByRecord(tableInfo, recordOnDB, conn);
 				 }
@@ -38,7 +40,6 @@ public class SyncImportInfoDAO extends BaseDAO {
 
 			sql += "INSERT IGNORE INTO \n"; 
 			sql += "	" + tableInfo.generateFullStageTableName() + "(	record_origin_id,\n";
-			sql += "											 		record_uuid,\n";
 			sql += "											 		json,\n";
 			sql += "											 		record_date_created,\n";
 			sql += "											 		record_date_changed,\n";
@@ -54,7 +55,6 @@ public class SyncImportInfoDAO extends BaseDAO {
 				
 				if (record.isExcluded()) continue;
 					
-				String recordUuuid = utilities.quote(record.getRecordUuid());
 				String recordOriginCode  = utilities.quote(record.getRecordOriginLocationCode());
 				String recordDateCreated= record.getDateCreated() != null ? utilities.quote(DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(record.getDateCreated())) : null;
 				String recordDateChanged= record.getDateChanged() != null ? utilities.quote(DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(record.getDateChanged())) : null;
@@ -63,7 +63,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 				String json = record.getJson() != null ? utilities.quote( utilities.scapeQuotationMarks(record.getJson())) : null;
 				
 				
-				values += "(" + record.getRecordOriginId() + ","  + recordUuuid + "," + json + "," + recordDateCreated + "," + recordDateChanged + "," + recordDateVoide + "," + record.isConsistent() + "," + recordOriginCode  + "),";
+				values += "(" + record.getRecordOriginId() + "," + json + "," + recordDateCreated + "," + recordDateChanged + "," + recordDateVoide + "," + record.isConsistent() + "," + recordOriginCode  + "),";
 			}
 			
 			if (utilities.stringHasValue(values)) {
@@ -101,9 +101,32 @@ public class SyncImportInfoDAO extends BaseDAO {
 			}
 	}
 	
+	private static void insertUniqueKeyInfo(SyncTableConfiguration tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {
+		if (!utilities.arrayHasElement(record.getUniqueKeys())) return;
+	
+		String tableName = tableInfo.generateFullStageUniqueKeysTableName();
+		
+		for (UniqueKeyInfo uk : record.getUniqueKeys() ) {
+		
+			for (Field field : uk.getFields()) {
+				Object[] params = {	record.getId(),
+									uk.getKeyName(),
+									field.getName(),
+									field.getValue()};
+		
+				String sql = "";
+				
+				sql += " INSERT INTO " + tableName + "(record_id, key_name, column_name, key_value)";
+				sql += " 						values (?,?,?,?)";
+				
+				executeQuery(sql, params, conn);	
+			}
+		}
+	}
+	
 	private static void updateByRecord(SyncTableConfiguration tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {
 		Object[] params = {record.getJson(),
-						   record.getRecordUuid(),
+						   record.getRecordOriginId(),
 						   record.getRecordOriginLocationCode()};
 
 		String sql = "";
@@ -112,7 +135,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += " SET json = ?, ";
 		sql += "	 last_sync_date = null, ";
 		sql += "	 last_sync_try_err = null  ";
-		sql += " WHERE 	record_uuid = ?  ";
+		sql += " WHERE 	record_origin_id = ?  ";
 		sql += " 		AND record_origin_location_code = ? ";
 		
 		executeQuery(sql, params, conn);
@@ -121,7 +144,6 @@ public class SyncImportInfoDAO extends BaseDAO {
 	public static void insert(SyncImportInfoVO record, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
 		try {
 			Object[] params = {record.getRecordOriginId(),
-							   record.getRecordUuid(),
 							   record.getJson(),
 							   record.getMigrationStatus(),
 							   record.getLastSyncTryErr(),
@@ -130,13 +152,13 @@ public class SyncImportInfoDAO extends BaseDAO {
 							   record.getDateCreated(),
 							   record.getDateChanged(),
 							   record.getDateVoided(),
-							   record.getConsistent()};
+							   record.getConsistent(),
+							   record.getDestinationId()};
 			
 			String sql = "";
 			
 			sql += "INSERT INTO \n"; 
 			sql += "	" + tableInfo.generateFullStageTableName() + "(	record_origin_id,\n";
-			sql += "											 		record_uuid,\n";
 			sql += "											 		json,\n";
 			sql += "											 		migration_status,\n";
 			sql += "											 		last_sync_try_err,\n";
@@ -145,7 +167,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 			sql += "											 		record_date_created,\n";
 			sql += "											 		record_date_changed,\n";
 			sql += "											 		record_date_voided,\n";
-			sql += "													consistent)\n";
+			sql += "													consistent,\n";
+			sql += "													destination_id)\n";
 			sql += "	VALUES(?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
@@ -158,7 +181,12 @@ public class SyncImportInfoDAO extends BaseDAO {
 			sql += "		   ?,\n";
 			sql += "		   ?);";
 			
-			executeQuery(sql, params, conn);
+			int id = executeQuery(sql, params, conn);
+			
+			record.setId(id);
+			
+			insertUniqueKeyInfo(tableInfo, record, conn);
+			
 		} catch (DBException e) {
 			if (!e.isDuplicatePrimaryKeyException()) {
 				throw e;
@@ -170,7 +198,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		Object[] params = {record.getJson(),
 						   record.getMigrationStatus(),
 						   record.getLastSyncTryErr(),
-						   record.getRecordUuid()};
+						   record.getRecordOriginId(),
+						   record.getRecordOriginLocationCode()};
 		
 		String sql = "";
 		
@@ -178,12 +207,13 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += " SET	json = ?,\n";
 		sql += "		migration_status = ?,\n";
 		sql += "		last_sync_try_err = ?\n";
-		sql += " WHERE record_uuid = ? \n";
-		
+		sql += " WHERE 	record_origin_id = ? \n";
+		sql += " 		AND record_origin_location_code = ? \n";
+			
 		executeQuery(sql, params, conn);
 	}
 	
-	public static SyncImportInfoVO getByOriginIdAndLocation(SyncTableConfiguration tableConfiguration, int originRecordId, String originAppLocationCode, Connection conn) throws DBException {
+	public static SyncImportInfoVO getByOriginIdAndLocation(SyncTableConfiguration tableConfiguration, long originRecordId, String originAppLocationCode, Connection conn) throws DBException {
 		Object[] params = {originRecordId, originAppLocationCode};
 		
 		String sql = "";
@@ -209,7 +239,10 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return find(SyncImportInfoVO.class, sql, params, conn);
 	}
 	
+	@SuppressWarnings("unused")
 	public static SyncImportInfoVO getWinRecord(SyncTableConfiguration tableConfiguration, String originRecordUuid, Connection conn) throws DBException {
+		if (true) throw new ForbiddenOperationException("Review this method");
+		
 		Object[] params = {originRecordUuid, 1};
 		
 		String sql = "";

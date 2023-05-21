@@ -29,7 +29,7 @@ public class MozatRenameKeypopVulnerableTable extends ProblemsSolverEngine {
 	
 	static List<DBValidateReport> reportsNoIssueDBs;
 	
-	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
+	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("EGPAF_GAZA", DatabasesInfo.EGPAF_DB_NAMES_GAZA, new DBConnectionInfo("root",
 	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver"))};
 	
 	public MozatRenameKeypopVulnerableTable(EngineMonitor monitor, RecordLimits limits) {

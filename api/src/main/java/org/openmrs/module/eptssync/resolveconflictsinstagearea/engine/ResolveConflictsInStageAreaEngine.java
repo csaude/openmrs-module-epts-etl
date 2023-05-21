@@ -8,6 +8,7 @@ import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
@@ -43,7 +44,9 @@ public class ResolveConflictsInStageAreaEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		List<SyncImportInfoVO> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, SyncImportInfoVO.class);
+		throw new ForbiddenOperationException("Review this method");
+		
+		/*List<SyncImportInfoVO> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, SyncImportInfoVO.class);
 		
 		this.getMonitor().logInfo("PERFORMING CONFLICTS RESOLUTION ACTION '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 
@@ -75,6 +78,7 @@ public class ResolveConflictsInStageAreaEngine extends Engine {
 		}
 		
 		this.getMonitor().logInfo("CONFLICTS RESOLVED FOR RECORDS '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
+		*/
 	}
 	
 	

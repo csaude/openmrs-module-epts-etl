@@ -86,10 +86,6 @@ public abstract class AbstractSearchParams<T extends VO> {
 		this.parameters = parameters;
 	}
 
-	public static long getSerialVersionUID() {
-		return serialVersionUID;
-	}
-
 	/**
 	 * Indica se o selected é "faseado"
 	 */

@@ -20,6 +20,7 @@ import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
@@ -46,6 +47,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	protected String uuid;
 	
 	protected SyncImportInfoVO relatedSyncInfo;
+	protected List<UniqueKeyInfo> uniqueKeysInfo;
 	
 	public void load(ResultSet rs) throws SQLException {
 		super.load(rs);
@@ -172,7 +174,16 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		}
 		
 		return values != null ? utilities.parseListToArray(values) : null;
-		
+	}
+	
+	@Override
+	public List<UniqueKeyInfo> getUniqueKeysInfo() {
+		return this.uniqueKeysInfo;
+	}
+	
+	@Override
+	public void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo) {
+		this.uniqueKeysInfo = uniqueKeysInfo;
 	}
 	
 	@Override
@@ -335,6 +346,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	 * @param conn
 	 * @throws DBException
 	 */
+	@SuppressWarnings("unused")
 	private void resolveMetadataCollision(DatabaseObject recordInConflict, SyncTableConfiguration syncTableInfo,
 	        Connection conn) throws DBException {
 		//Object Id Collision
@@ -510,8 +522,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	        Connection conn) throws DBException {
 		if (!syncTableInfo.getRelatedSynconfiguration().isSourceSyncProcess())
 			throw new SyncExeption("You cannot move record to stage area in a installation different to source") {
-				
 				private static final long serialVersionUID = 1L;
+				
 			};
 		
 		if ((syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) && !syncTableInfo.isRemovableMetadata())
@@ -526,7 +538,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			if (!refInfo.getRefTableConfiguration().isConfigured())
 				continue;
 			
-			int qtyChildren = DatabaseObjectDAO.countAllOfParentId(
+			Integer qtyChildren = DatabaseObjectDAO.countAllOfParentId(
 			    refInfo.getRefTableConfiguration().getSyncRecordClass(syncTableInfo.getMainApp()),
 			    refInfo.getRefColumnName(), this.getObjectId(), conn);
 			
@@ -873,9 +885,23 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	public String toString() {
 		String objectId = "objectId = " + (this.getObjectId() != null ? this.getObjectId() : "");
 		
-		String uuid = "uuid = " + (this.getUuid() != null ? this.getUuid() : "");
+		String ukeys = "";
 		
-		return "[" + utilities.concatStringsWithSeparator(objectId, uuid, ",") + "]";
+		if (utilities.arrayHasElement(getUniqueKeysInfo())) {
+			int i=0;
+			
+			for (UniqueKeyInfo uk : getUniqueKeysInfo()) {
+				uk.loadValuesToFields(this);
+				
+				if (i>0) ukeys += ", ";
+				
+				ukeys += uk.toString();
+						
+				i++;
+			}
+		}
+		
+		return "[" + utilities.concatStringsWithSeparator(objectId, ukeys, ",") + "]";
 	}
 	
 }

@@ -13,7 +13,6 @@ import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
@@ -37,7 +36,7 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Proble
 	
 	static List<DBValidateReport> reportsNoIssueDBs;
 	
-	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root",
+	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("EGPAF_GZ", DatabasesInfo.EGPAF_DB_NAMES_GAZA, new DBConnectionInfo("root",
 	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
 	
 	public MozartRenamePrimaryToPReferredFieldOnIdentifierTable(EngineMonitor monitor, RecordLimits limits) {

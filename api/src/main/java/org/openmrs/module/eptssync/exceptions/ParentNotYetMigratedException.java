@@ -7,7 +7,7 @@ public class ParentNotYetMigratedException extends SyncExeption {
 		super("On or more parents not yet migrated");
 	}
 	
-	public ParentNotYetMigratedException(int parentId, String parentTable, String originAppLocationConde) {
+	public ParentNotYetMigratedException(Integer parentId, String parentTable, String originAppLocationConde) {
 		super("Parent not yet migrated! Parent: [table: " + parentTable +", id: " + parentId + ", from:" +originAppLocationConde +  "]");
 	}
 	

@@ -1,7 +1,5 @@
 package org.openmrs.module.eptssync.problems_solver.engine;
 
-import static org.openmrs.module.eptssync.problems_solver.engine.ProblemsSolverEngine.done;
-
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +35,7 @@ public class MozartRenameDsdFields extends ProblemsSolverEngine {
 	static List<DBValidateReport> reportsNoIssueDBs;
 	
 	DatabasesInfo[] DB_INFOs = {
-	        new DatabasesInfo("ARIEL_CD", DatabasesInfo.ARIEL_DB_NAMES_CD, new DBConnectionInfo("root", "root",
+	        new DatabasesInfo("EGPAF_GZ", DatabasesInfo.EGPAF_DB_NAMES_GAZA, new DBConnectionInfo("root", "root",
 	                "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
 	
 	public MozartRenameDsdFields(EngineMonitor monitor, RecordLimits limits) {
@@ -90,6 +88,10 @@ public class MozartRenameDsdFields extends ProblemsSolverEngine {
 		for (String dbName : dbInfo.getDbNames()) {
 			logDebug("Validating DB '[" + dbName + "]");
 			
+			if (dbName.equals("egpaf_gz_manjangue")) {
+				logDebug("STOP");
+			}
+			
 			DBValidateReport report = new DBValidateReport(dbInfo.getServerName(), dbName);
 			
 			if (!DBUtilities.isResourceExist(dbName, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
@@ -106,7 +108,8 @@ public class MozartRenameDsdFields extends ProblemsSolverEngine {
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();
 				}
-					
+				
+				
 				List<String> missingField = generateMissingFields(dbName, configuredTable, srcConn);
 				
 				tryToRenameFields(dbName, missingField, srcConn);

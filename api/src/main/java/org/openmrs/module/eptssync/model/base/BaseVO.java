@@ -209,8 +209,8 @@ public abstract class BaseVO  implements VO{
 						field.setDouble(this, resultSet.getDouble(name));
 					else if (c.equals("float"))
 						field.setFloat(this, resultSet.getFloat(name));
-					else if (c.equals("long"))
-						field.setLong(this, resultSet.getLong(name));
+					else if (c.equals("Integer"))
+						field.setInt(this, resultSet.getInt(name));
 					else if (c.equals("java.lang.String")) {
 						/*
 						 * JP: 2015.02.18

@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.utilities;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
@@ -232,6 +233,29 @@ public class AttDefinedElements {
 		
 	}
 	
+	public static String defineSqlAtribuitionString(String attName, Object attValue) {
+		String sqlAtribuitionString = "";
+		//String aspasAbrir = "\"\\\"\"+";
+		//String aspasFechar = "+\"\\\"\"";
+		
+		String aspasAbrir = "\"";
+		String aspasFechar = "\"";
+	
+		
+		if (utilities.isNumeric(attValue.toString())) {
+			sqlAtribuitionString = attName + " = " + attValue;
+		} else if (attValue instanceof Date) {
+			sqlAtribuitionString = attName + " = " + aspasAbrir + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) attValue) + aspasFechar;
+		} else if (attValue instanceof String) {
+			sqlAtribuitionString =  attName + " = " + aspasAbrir + utilities.scapeQuotationMarks(attValue.toString()) + aspasFechar;
+		} else {
+			sqlAtribuitionString = attName + " = " + aspasAbrir + attName + aspasFechar;
+		}
+			
+		
+		return sqlAtribuitionString;
+	}
+
 	private boolean isDate() {
 		return utilities.isStringIn(this.attType, "java.util.Date", "Date");
 	}

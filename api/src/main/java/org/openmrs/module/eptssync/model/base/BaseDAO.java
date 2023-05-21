@@ -181,11 +181,13 @@ public abstract class BaseDAO{
 	 * @param connection to use
 	 * 
 	 */
-	public static void executeQuery(String sql, Object[] params, Connection connection) throws DBException{
+	public static Integer executeQuery(String sql, Object[] params, Connection connection) throws DBException{
 		try{
-			executeDBQuery(sql, params, connection);
+			return executeDBQuery(sql, params, connection);
 		}catch(DBException e){
-			if (!tryToSolveIssues(e, sql, params, connection)) throw e;
+			if (!tryToSolveIssues(e, sql, params, connection)) {
+				throw e;
+			}else return 0;
 		}
 	}
 	
@@ -207,15 +209,22 @@ public abstract class BaseDAO{
 		}
 	}
 
-	public static void executeDBQuery(String sql, Object[] params, Connection connection) throws DBException{
+	public static Integer executeDBQuery(String sql, Object[] params, Connection connection) throws DBException{
 		PreparedStatement st = null;
 		
 		try{
-			st = connection.prepareStatement(sql);
-			//st.setQueryTimeout(10);
+			st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+			
 			loadParamsToStatment(st, params, connection);
 			
 			st.execute();
+			
+			ResultSet rs = st.getGeneratedKeys();
+			
+			if (rs != null && rs.next()) {
+				return rs.getInt(1);
+			} else return 0;
+			
 		}catch(SQLException e){
 			throw new DBException(e);
 		}

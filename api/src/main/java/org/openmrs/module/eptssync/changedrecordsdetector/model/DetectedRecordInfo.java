@@ -2,11 +2,13 @@ package org.openmrs.module.eptssync.changedrecordsdetector.model;
 
 import java.sql.Connection;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
@@ -44,11 +46,20 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 		this.recordOriginLocationCode = recordOriginLocationCode;
 	}
 
-	public int getId() {
+	@Override
+	public void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo) {
+	}
+	
+	@Override
+	public List<UniqueKeyInfo> getUniqueKeysInfo() {
+		return null;
+	}
+	
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 
@@ -104,11 +115,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 		this.uuid = uuid;
 	}
 
-	
-	public void setId(Integer id) {
-		this.id = id;
-	}
-
 	public String getRecordOriginLocationCode() {
 		return recordOriginLocationCode;
 	}
@@ -144,7 +150,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 	}
 	
 	
-	public static DetectedRecordInfo generate(String tableName, int recordId, String recordUuid, String appCode, String recordOriginLocationCode) {
+	public static DetectedRecordInfo generate(String tableName, Integer recordId, String recordUuid, String appCode, String recordOriginLocationCode) {
 		DetectedRecordInfo info = new DetectedRecordInfo(tableName, recordId, recordUuid, appCode, recordOriginLocationCode);
 	
 		return info;
@@ -242,7 +248,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord{
 
 	@Override
 	public Integer getParentValue(String parentAttName) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

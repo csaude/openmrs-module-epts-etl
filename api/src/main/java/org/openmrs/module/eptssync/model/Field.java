@@ -94,21 +94,21 @@ public class Field implements Serializable {
 	}
 	
 	/**
-	 * Retorna o valor long correspondente ao valor do parametro identificado por 'paramName'; Se o
+	 * Retorna o valor Integer correspondente ao valor do parametro identificado por 'paramName'; Se o
 	 * parametro nao existir ou se o valor nao for compativel, retorna '0'
 	 * 
 	 * @param fields
 	 * @param paramName
 	 * @return
 	 */
-	public static long getLong(List<? extends Field> fields, String paramName) {
+	public static Integer getInteger(List<? extends Field> fields, String paramName) {
 		Object value = getParameter(fields, paramName);
 		
 		if (value == null)
 			return 0;
 		
 		try {
-			return Long.parseLong((String) value);
+			return Integer.parseInt((String) value);
 		}
 		catch (NumberFormatException e) {
 			return 0;
