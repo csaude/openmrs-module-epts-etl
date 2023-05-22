@@ -57,6 +57,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord{
 	
 	public SyncImportInfoVO(){
 		this.migrationStatus = MIGRATION_STATUS_PENDING;
+		this.id = Integer.valueOf(0);
 	}
 	
 	@Override

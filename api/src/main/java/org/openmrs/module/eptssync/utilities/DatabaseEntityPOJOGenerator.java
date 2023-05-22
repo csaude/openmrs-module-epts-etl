@@ -198,14 +198,14 @@ public class DatabaseEntityPOJOGenerator {
 		
 		String primaryKeyAtt = syncTableInfo.hasPK() ? syncTableInfo.getPrimaryKeyAsClassAtt() : null;
 		
-		methodFromSuperClass += "	public Long getObjectId() { \n ";
+		methodFromSuperClass += "	public Integer getObjectId() { \n ";
 		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK())
 			methodFromSuperClass += "		return this." + primaryKeyAtt + "; \n";
 		else
 			methodFromSuperClass += "		return 0; \n";
 		methodFromSuperClass += "	} \n \n";
 		
-		methodFromSuperClass += "	public void setObjectId(Long selfId){ \n";
+		methodFromSuperClass += "	public void setObjectId(Integer selfId){ \n";
 		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK())
 			methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
 		methodFromSuperClass += "	} \n \n";
@@ -276,7 +276,7 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	}\n\n";
 		
 		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public Long getParentValue(String parentAttName) {";
+		methodFromSuperClass += "	public Integer getParentValue(String parentAttName) {";
 		
 		for (RefInfo refInfo : syncTableInfo.getParents()) {
 			if (refInfo.isNumericRefColumn()) {
@@ -296,7 +296,7 @@ public class DatabaseEntityPOJOGenerator {
 					        + refInfo.getRefColumnAsClassAttName() + ";";
 				} else {
 					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) return Long.parseLong(this."
+					        + refInfo.getRefColumnAsClassAttName() + "\")) return Integer.parseInt(this."
 					        + refInfo.getRefColumnAsClassAttName() + ");";
 				}
 			}

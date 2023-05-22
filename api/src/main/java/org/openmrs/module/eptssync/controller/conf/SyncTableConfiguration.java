@@ -70,7 +70,17 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	 */
 	private List<List<Field>> winningRecordFieldsInfo;
 	
+	private List<Extension> extension;
+	
 	public SyncTableConfiguration() {
+	}
+	
+	public List<Extension> getExtension() {
+		return extension;
+	}
+	
+	public void setExtension(List<Extension> extension) {
+		this.extension = extension;
 	}
 	
 	public List<List<Field>> getWinningRecordFieldsInfo() {
@@ -704,7 +714,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 			
 			throw new RuntimeException(e);
 		}
-	}	
+	}
 	
 	@JsonIgnore
 	public boolean isFullLoaded() {

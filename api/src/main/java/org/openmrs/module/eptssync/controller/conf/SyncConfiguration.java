@@ -34,10 +34,13 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class SyncConfiguration {
+	
 	private String syncRootDirectory;
 	
 	private String originAppLocationCode;
+	
 	private Date observationDate;
+	
 	private Map<String, SyncTableConfiguration> syncTableConfigurationPull;
 	
 	private List<SyncTableConfiguration> tablesConfigurations;
@@ -47,6 +50,7 @@ public class SyncConfiguration {
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private SyncProcessType processType;
+	
 	private File relatedConfFile;
 	
 	private List<SyncOperationConfig> operations;
@@ -55,28 +59,42 @@ public class SyncConfiguration {
 	private boolean automaticStart;
 	
 	private String childConfigFilePath;
+	
 	private SyncConfiguration childConfig;
 	
 	private boolean disabled;
 	
-	public static String PROCESSING_MODE_SEQUENCIAL="sequencial";
-	public static String PROCESSING_MODE_PARALLEL="parallel";
+	public static String PROCESSING_MODE_SEQUENCIAL = "sequencial";
+	
+	public static String PROCESSING_MODE_PARALLEL = "parallel";
 	
 	private String classPath;
+	
 	private File moduleRootDirectory;
 	
 	private boolean fullLoaded;
+	
 	private ProcessController relatedController;
 	
 	private List<SyncTableConfiguration> allTables;
-
+	
 	private static Log logger = LogFactory.getLog(SyncConfiguration.class);
 	
 	private ModelType modelType;
 	
+	private List<Extension> extension;
+	
 	public SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
 		this.allTables = new ArrayList<SyncTableConfiguration>();
+	}
+	
+	public List<Extension> getExtension() {
+		return extension;
+	}
+	
+	public void setExtension(List<Extension> extension) {
+		this.extension = extension;
 	}
 	
 	public ModelType getModelType() {
@@ -86,8 +104,7 @@ public class SyncConfiguration {
 	public void setModelType(ModelType modelType) {
 		this.modelType = modelType;
 	}
-
-
+	
 	@JsonIgnore
 	public List<SyncTableConfiguration> getAllTables() {
 		return allTables;
@@ -105,18 +122,19 @@ public class SyncConfiguration {
 	public ProcessController getRelatedController() {
 		return relatedController;
 	}
-
+	
 	@JsonIgnore
 	public DBConnectionInfo getMainDBConnInfo() {
 		return find(AppInfo.init(AppInfo.MAIN_APP_CODE)).getConnInfo();
 	}
 	
 	@JsonIgnore
-	public AppInfo getMainApp() throws ForbiddenOperationException{
+	public AppInfo getMainApp() throws ForbiddenOperationException {
 		AppInfo mainApp = find(AppInfo.init(AppInfo.MAIN_APP_CODE));
 		
-		if (mainApp == null) throw new ForbiddenOperationException("No main app found on configurations!");
-	
+		if (mainApp == null)
+			throw new ForbiddenOperationException("No main app found on configurations!");
+		
 		return mainApp;
 	}
 	
@@ -149,11 +167,11 @@ public class SyncConfiguration {
 	public Date getObservationDate() {
 		return observationDate;
 	}
-
+	
 	public void setObservationDate(Date observationDate) {
 		this.observationDate = observationDate;
 	}
-
+	
 	@JsonIgnore
 	public SyncConfiguration getChildConfig() {
 		return childConfig;
@@ -186,7 +204,7 @@ public class SyncConfiguration {
 	public void setProcessType(SyncProcessType processType) {
 		
 		if (processType != null && !processType.isSupportedProcessType()) {
-			throw new ForbiddenException("The 'processType' of syncConf file must be in "+SyncProcessType.values());
+			throw new ForbiddenException("The 'processType' of syncConf file must be in " + SyncProcessType.values());
 		}
 		
 		this.processType = processType;
@@ -211,7 +229,7 @@ public class SyncConfiguration {
 	public boolean isDBQuickExportProcess() {
 		return processType.isDBQuickExport();
 	}
-
+	
 	@JsonIgnore
 	public boolean isQuickMergeUniformeDBProcess() {
 		return processType.isQuickMergeWithoutEntityGeneration();
@@ -226,7 +244,7 @@ public class SyncConfiguration {
 	public boolean isDataBaseMergeFromSourceDBProcess() {
 		return processType.isDataBaseMergeFromSourceDB();
 	}
-
+	
 	@JsonIgnore
 	public boolean isDBQuickLoadProcess() {
 		return processType.isDBQuickLoad();
@@ -249,7 +267,7 @@ public class SyncConfiguration {
 	
 	@JsonIgnore
 	public boolean isResolveProblems() {
-		return processType.isResolveProblems();
+		return processType.isGenericProcess();
 	}
 	
 	@JsonIgnore
@@ -260,11 +278,11 @@ public class SyncConfiguration {
 	public List<AppInfo> getAppsInfo() {
 		return appsInfo;
 	}
-
+	
 	public void setAppsInfo(List<AppInfo> appsInfo) {
 		this.appsInfo = appsInfo;
 	}
-
+	
 	@JsonIgnore
 	public boolean isDoIntegrityCheckInTheEnd(SyncOperationType operationType) {
 		SyncOperationConfig op = findOperation(operationType);
@@ -279,11 +297,11 @@ public class SyncConfiguration {
 	public String getSyncRootDirectory() {
 		return syncRootDirectory;
 	}
-
+	
 	public void setSyncRootDirectory(String syncRootDirectory) {
 		this.syncRootDirectory = syncRootDirectory;
 	}
-
+	
 	public void setTablesConfigurations(List<SyncTableConfiguration> tablesConfigurations) {
 		if (tablesConfigurations != null) {
 			for (SyncTableConfiguration config : tablesConfigurations) {
@@ -299,7 +317,7 @@ public class SyncConfiguration {
 	public void addToTableConfigurationPull(SyncTableConfiguration tableConfiguration) {
 		syncTableConfigurationPull.put(tableConfiguration.getTableName(), tableConfiguration);
 	}
-
+	
 	public SyncTableConfiguration findPulledTableConfiguration(String tableName) {
 		return syncTableConfigurationPull.get(tableName);
 	}
@@ -308,10 +326,10 @@ public class SyncConfiguration {
 		if (isSupposedToRunInOrigin()) {
 			return this.originAppLocationCode + "_sync_stage_area";
 		}
-		if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDBQuickCopyProcess() || isDataBaseMergeFromSourceDBProcess()) {
+		if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDBQuickCopyProcess()
+		        || isDataBaseMergeFromSourceDBProcess()) {
 			return "minimal_db_info";
-		}
-		else {
+		} else {
 			return "sync_stage_area";
 		}
 	}
@@ -319,10 +337,10 @@ public class SyncConfiguration {
 	public String getOriginAppLocationCode() {
 		return originAppLocationCode;
 	}
-
+	
 	public void setOriginAppLocationCode(String originAppLocationCode) {
 		this.originAppLocationCode = originAppLocationCode;
-	}	
+	}
 	
 	public void setRelatedConfFile(File relatedConfFile) {
 		this.relatedConfFile = relatedConfFile;
@@ -340,11 +358,11 @@ public class SyncConfiguration {
 		
 		return conf;
 	}
-
+	
 	public void logDebug(String msg) {
 		utilities.logDebug(msg, logger, determineLogLevel());
 	}
-
+	
 	public void logInfo(String msg) {
 		utilities.logInfo(msg, logger, determineLogLevel());
 	}
@@ -352,43 +370,46 @@ public class SyncConfiguration {
 	public void logWarn(String msg) {
 		utilities.logWarn(msg, logger, determineLogLevel());
 	}
-		
+	
 	public void logErr(String msg) {
 		utilities.logErr(msg, logger, determineLogLevel());
 	}
 	
 	public void fullLoad() {
-		if (this.fullLoaded) return;
+		if (this.fullLoaded)
+			return;
 		
 		try {
 			for (SyncTableConfiguration conf : this.getTablesConfigurations()) {
 				if (!conf.isFullLoaded()) {
-					logDebug("PERFORMING FULL CONFIGURATION LOAD ON TABLE '"  + conf.getTableName() + "'");
+					logDebug("PERFORMING FULL CONFIGURATION LOAD ON TABLE '" + conf.getTableName() + "'");
 					conf.fullLoad();
 				}
+				
+				logDebug("THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '" + conf.getTableName() + "'");
+			}
 			
-				logDebug("THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '"  + conf.getTableName() + "'");
-			} 
-
 			this.fullLoaded = true;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	public void loadAllTables() {
 		OpenConnection conn = getMainApp().openConnection();
 		
-        try {
+		try {
 			DatabaseMetaData dbmd = conn.getMetaData();
-			String[] types = {"TABLE"};
+			String[] types = { "TABLE" };
 			
 			ResultSet rs = dbmd.getTables(conn.getCatalog(), null, "%", types);
 			
 			while (rs.next()) {
 				SyncTableConfiguration tab = SyncTableConfiguration.init(rs.getString("TABLE_NAME"), this);
-			
-				if (tab.getTableName().startsWith("_")) continue;
+				
+				if (tab.getTableName().startsWith("_"))
+					continue;
 				
 				if (find(tab) == null) {
 					tab.setDisabled(true);
@@ -396,41 +417,47 @@ public class SyncConfiguration {
 				
 				this.allTables.add(tab);
 			}
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
-        finally {
+		finally {
 			conn.finalizeConnection();
 		}
 		
 	}
 	
-	public static SyncConfiguration loadFromJSON (File file, String json) {
+	public static SyncConfiguration loadFromJSON(File file, String json) {
 		try {
-			SyncConfiguration config = new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json, SyncConfiguration.class);
+			SyncConfiguration config = new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json,
+			    SyncConfiguration.class);
 			
 			if (config.getChildConfigFilePath() != null) {
-				config.logDebug("FOUND THE CHILD [" + config.getChildConfigFilePath()   + "] FOR [" + file.getAbsolutePath() + "]");
-							
+				config.logDebug(
+				    "FOUND THE CHILD [" + config.getChildConfigFilePath() + "] FOR [" + file.getAbsolutePath() + "]");
+				
 				config.setChildConfig(loadFromFile(new File(config.getChildConfigFilePath())));
 			}
 			
 			return config;
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-		
-			throw new RuntimeException(e);
-		} catch (JsonMappingException e) {
-			e.printStackTrace();
-		
-			throw new RuntimeException(e);
-		} catch (IOException e) {
+		}
+		catch (JsonParseException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
-		} 
+		}
+		catch (JsonMappingException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
 	}
-
+	
 	public SyncTableConfiguration findSyncTableConfiguration(String tableName) {
 		SyncTableConfiguration tableConfiguration = new SyncTableConfiguration();
 		tableConfiguration.setTableName(tableName);
@@ -448,7 +475,9 @@ public class SyncConfiguration {
 	public AppInfo find(AppInfo appToFind) {
 		AppInfo app = utilities.findOnArray(this.appsInfo, appToFind);
 		
-		if (app == null) throw new ForbiddenOperationException("No configured app found with code [" +appToFind.getApplicationCode() + "]");
+		if (app == null)
+			throw new ForbiddenOperationException(
+			        "No configured app found with code [" + appToFind.getApplicationCode() + "]");
 		
 		return app;
 	}
@@ -456,7 +485,7 @@ public class SyncConfiguration {
 	public SyncTableConfiguration find(SyncTableConfiguration tableConfiguration) {
 		return utilities.findOnList(this.tablesConfigurations, tableConfiguration);
 	}
-
+	
 	@JsonIgnore
 	public String getDesignation() {
 		return this.processType.name().toLowerCase();
@@ -474,7 +503,7 @@ public class SyncConfiguration {
 			if (operation.getChild() != null) {
 				SyncOperationConfig child = operation.getChild();
 				
-				while(child != null) {
+				while (child != null) {
 					child.setRelatedSyncConfig(this);
 					
 					child = child.getChild();
@@ -489,7 +518,8 @@ public class SyncConfiguration {
 		SyncOperationConfig toFind = SyncOperationConfig.fastCreate(operationType);
 		
 		for (SyncOperationConfig op : this.operations) {
-			if (op.equals(toFind)) return op;
+			if (op.equals(toFind))
+				return op;
 			
 			SyncOperationConfig child = op.getChild();
 			
@@ -497,7 +527,7 @@ public class SyncConfiguration {
 				if (child.equals(toFind)) {
 					return child;
 				}
-			
+				
 				child = child.getChild();
 			}
 		}
@@ -506,8 +536,8 @@ public class SyncConfiguration {
 	}
 	
 	@JsonIgnore
-	public List<SyncOperationConfig> getOperationsAsList(){
-		List<SyncOperationConfig>  operationsAsList = new ArrayList<SyncOperationConfig>();
+	public List<SyncOperationConfig> getOperationsAsList() {
+		List<SyncOperationConfig> operationsAsList = new ArrayList<SyncOperationConfig>();
 		
 		for (SyncOperationConfig op : this.operations) {
 			operationsAsList.add(op);
@@ -524,81 +554,66 @@ public class SyncConfiguration {
 		return operationsAsList;
 	}
 	
-	public void validate() throws ForbiddenOperationException{
+	public void validate() throws ForbiddenOperationException {
 		String errorMsg = "";
 		int errNum = 0;
 		
 		if (this.isSupposedToHaveOriginAppCode()) {
-			if (!utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You must specify value for 'originAppLocationCode' parameter \n" ;
+			if (!utilities.stringHasValue(getOriginAppLocationCode()))
+				errorMsg += ++errNum + ". You must specify value for 'originAppLocationCode' parameter \n";
 		}
 		
-		if (!utilities.stringHasValue(getSyncRootDirectory())) errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter\n";
-			
+		if (!utilities.stringHasValue(getSyncRootDirectory()))
+			errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter\n";
+		
 		if (!this.isSupposedToHaveOriginAppCode()) {
-			if (utilities.stringHasValue(getOriginAppLocationCode())) errorMsg += ++errNum + ". You cannot configure for 'originAppLocationCode' parameter in [" + getProcessType() + " configuration\n" ;
+			if (utilities.stringHasValue(getOriginAppLocationCode()))
+				errorMsg += ++errNum + ". You cannot configure for 'originAppLocationCode' parameter in [" + getProcessType()
+				        + " configuration\n";
 		}
 		
-		if (getProcessType() == null || !utilities.stringHasValue(getProcessType().name())) errorMsg += ++errNum + ". You must specify value for 'processType' parameter\n";
+		if (getProcessType() == null || !utilities.stringHasValue(getProcessType().name()))
+			errorMsg += ++errNum + ". You must specify value for 'processType' parameter\n";
 		
-		if (getModelType() == null || !utilities.stringHasValue(getModelType().name())) errorMsg += ++errNum + ". You must specify value for 'modelType' parameter\n";
+		if (getModelType() == null || !utilities.stringHasValue(getModelType().name()))
+			errorMsg += ++errNum + ". You must specify value for 'modelType' parameter\n";
 		
 		for (SyncOperationConfig operation : this.operations) {
-			operation.validate(); 
+			operation.validate();
 		}
-			
+		
 		List<SyncOperationType> supportedOperations = null;
 		
-		if (isSourceSyncProcess() ) {
+		if (isSourceSyncProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInSourceSyncProcess();
-		}
-		else
-		if (isDataBaseMergeFromJSONProcess()) {
+		} else if (isDataBaseMergeFromJSONProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDestinationSyncProcess();
-		}
-		else
-		if (isDBReSyncProcess()) {
+		} else if (isDBReSyncProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBReSyncProcess();
-		}
-		else
-		if (isDBQuickExportProcess()) {
+		} else if (isDBQuickExportProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickExportProcess();
-		}				
-		else
-		if (isDBQuickLoadProcess()) {
+		} else if (isDBQuickLoadProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickLoadProcess();
-		}		
-		else
-		if (isDataReconciliationProcess()) {
+		} else if (isDataReconciliationProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDataReconciliationProcess();
-		}		
-		else
-		if (isDBQuickCopyProcess()) {
+		} else if (isDBQuickCopyProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickCopyProcess();
-		}
-		else
-		if (isDataBaseMergeFromSourceDBProcess()) {
+		} else if (isDataBaseMergeFromSourceDBProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDataBasesMergeFromSourceDBProcess();
-		}
-		else
-		if (isQuickMergeUniformeDBProcess()) {
+		} else if (isQuickMergeUniformeDBProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInQuickMergeUniformeDBProcess();
-		}
-		else
-		if (isQuickMergeNonUniformeDBProcess()) {
+		} else if (isQuickMergeNonUniformeDBProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInQuickMergeNonUniformeDBProcess();
-		}
-		else
-		if (isDBInconsistencyCheckProcess()) {
+		} else if (isDBInconsistencyCheckProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBInconsistencyCheckProcess();
-		}
-		else
-		if (isResolveProblems()) {
+		} else if (isResolveProblems()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInResolveProblemsProcess();
 		}
 		
 		if (supportedOperations != null) {
 			for (SyncOperationType operationType : supportedOperations) {
-				if (!isOperationConfigured(operationType)) errorMsg += ++errNum + ". The operation '" + operationType + " is not configured\n";
+				if (!isOperationConfigured(operationType))
+					errorMsg += ++errNum + ". The operation '" + operationType + " is not configured\n";
 			}
 		}
 		
@@ -606,15 +621,13 @@ public class SyncConfiguration {
 			getMainApp();
 		}
 		catch (ForbiddenOperationException e) {
-			errorMsg += ++errNum + ". No main app were configured!";	
+			errorMsg += ++errNum + ". No main app were configured!";
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
 			errorMsg = "There are errors on config file " + this.relatedConfFile.getAbsolutePath() + "\n" + errorMsg;
 			throw new ForbiddenOperationException(errorMsg);
-		}
-		else
-		if (this.childConfig != null){
+		} else if (this.childConfig != null) {
 			this.childConfig.validate();
 		}
 		
@@ -624,15 +637,16 @@ public class SyncConfiguration {
 		SyncOperationConfig operation = new SyncOperationConfig();
 		operation.setOperationType(operationType);
 		
-		
 		for (SyncOperationConfig op : this.getOperations()) {
-			if (operation.equals(op)) return true;
+			if (operation.equals(op))
+				return true;
 			
 			SyncOperationConfig child = op.getChild();
 			
-			while(child != null) {
-				if (operation.equals(child)) return true;
-			
+			while (child != null) {
+				if (operation.equals(child))
+					return true;
+				
 				child = child.getChild();
 			}
 		}
@@ -642,11 +656,13 @@ public class SyncConfiguration {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (obj == null) return false;
+		if (obj == null)
+			return false;
 		
-		if (!(obj instanceof SyncConfiguration)) return false;
+		if (!(obj instanceof SyncConfiguration))
+			return false;
 		
-		SyncConfiguration otherObj = (SyncConfiguration)obj;
+		SyncConfiguration otherObj = (SyncConfiguration) obj;
 		
 		return this.getDesignation().equalsIgnoreCase(otherObj.getDesignation());
 	}
@@ -654,21 +670,23 @@ public class SyncConfiguration {
 	public boolean existsOnArray(List<SyncConfiguration> syncConfigs) {
 		return utilities.findOnArray(syncConfigs, this) != null;
 	}
-
+	
 	@JsonIgnore
 	public File getPOJOCompiledFilesDirectory() {
-		String packageDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() ;
+		String packageDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo"
+		        + FileUtilities.getPathSeparator();
 		
-		return new File(packageDir+ "bin");
+		return new File(packageDir + "bin");
 	}
-
+	
 	@JsonIgnore
 	public File getPOJOSourceFilesDirectory() {
-		String packageDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo" + FileUtilities.getPathSeparator() ;
+		String packageDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo"
+		        + FileUtilities.getPathSeparator();
 		
 		return new File(packageDir + FileUtilities.getPathSeparator() + "src");
 	}
-
+	
 	public void refreshTables() {
 		List<SyncTableConfiguration> tablesConfigurations = new ArrayList<SyncTableConfiguration>();
 		
@@ -690,13 +708,13 @@ public class SyncConfiguration {
 	public String parseToJSON() {
 		return utilities.parseToJSON(this);
 	}
-
+	
 	public void tryToDetermineOriginAppL_ocationCode() throws DBException {
 		OpenConnection conn = getMainApp().openConnection();
 		
-		String sql = " SELECT location.name as designacao, count(*) as value " +
-					 " FROM visit INNER JOIN location on location.location_id = visit.location_id " +
-					 " GROUP BY location.name ";
+		String sql = " SELECT location.name as designacao, count(*) as value "
+		        + " FROM visit INNER JOIN location on location.location_id = visit.location_id "
+		        + " GROUP BY location.name ";
 		
 		List<SimpleValue> locations = BaseDAO.search(SimpleValue.class, sql, null, conn);
 		
@@ -709,7 +727,8 @@ public class SyncConfiguration {
 		}
 		
 		if (locationWithMoreRecords != null) {
-			this.setOriginAppLocationCode(utilities.replaceAllEmptySpace(locationWithMoreRecords.getDesignacao(), '_').toLowerCase());
+			this.setOriginAppLocationCode(
+			    utilities.replaceAllEmptySpace(locationWithMoreRecords.getDesignacao(), '_').toLowerCase());
 		}
 	}
 	
@@ -737,7 +756,8 @@ public class SyncConfiguration {
 		String pojoPackageDir = "";
 		pojoPackageDir += getPOJOCompiledFilesDirectory().getAbsolutePath() + FileUtilities.getPathSeparator();
 		
-		pojoPackageDir +=  getPojoPackageRelativePath(app).replaceAll("/", Matcher.quoteReplacement(FileUtilities.getPathSeparator()) );
+		pojoPackageDir += getPojoPackageRelativePath(app).replaceAll("/",
+		    Matcher.quoteReplacement(FileUtilities.getPathSeparator()));
 		
 		return new File(pojoPackageDir);
 	}
@@ -754,13 +774,13 @@ public class SyncConfiguration {
 		pojoPackageDir += "eptssync" + relativePathSeparator;
 		pojoPackageDir += "model" + relativePathSeparator;
 		pojoPackageDir += "pojo" + relativePathSeparator;
-	
+		
 		pojoPackageDir += this.getPojoPackage(app) + relativePathSeparator;
 		
 		return pojoPackageDir;
 	}
 	
-	public List<AppInfo> exposeAllAppsNotMain(){
+	public List<AppInfo> exposeAllAppsNotMain() {
 		List<AppInfo> apps = new ArrayList<AppInfo>();
 		
 		AppInfo mainApp = AppInfo.init(AppInfo.MAIN_APP_CODE);
@@ -775,44 +795,42 @@ public class SyncConfiguration {
 	}
 	
 	public boolean isSupposedToHaveOriginAppCode() {
-		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isQuickMergeUniformeDBProcess() || this.isQuickMergeNonUniformeDBProcess() || this.isDBInconsistencyCheckProcess();
+		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isQuickMergeUniformeDBProcess()
+		        || this.isQuickMergeNonUniformeDBProcess() || this.isDBInconsistencyCheckProcess();
 	}
 	
 	public boolean isSupposedToRunInDestination() {
-		return this.isDataBaseMergeFromJSONProcess() || 
-					this.isDBQuickLoadProcess() || 
-						this.isDataReconciliationProcess() ||
-							this.isDBQuickCopyProcess() ||
-							this.isDataBaseMergeFromSourceDBProcess() ||
-								this.isQuickMergeUniformeDBProcess() ||
-									this.isResolveProblems() ||
-										this.isQuickMergeNonUniformeDBProcess();
+		return this.isDataBaseMergeFromJSONProcess() || this.isDBQuickLoadProcess() || this.isDataReconciliationProcess()
+		        || this.isDBQuickCopyProcess() || this.isDataBaseMergeFromSourceDBProcess()
+		        || this.isQuickMergeUniformeDBProcess() || this.isResolveProblems()
+		        || this.isQuickMergeNonUniformeDBProcess();
 	}
 	
 	public boolean isSupposedToRunInOrigin() {
-		return this.isSourceSyncProcess() || 
-					this.isDBReSyncProcess() || 
-						this.isDBQuickExportProcess() ||
-							this.isDBInconsistencyCheckProcess();
+		return this.isSourceSyncProcess() || this.isDBReSyncProcess() || this.isDBQuickExportProcess()
+		        || this.isDBInconsistencyCheckProcess();
 	}
-	
 	
 	public static Level determineLogLevel() {
 		String log = System.getProperty("log.level");
 		
-		if (!utilities.stringHasValue(log)) return Level.INFO;
+		if (!utilities.stringHasValue(log))
+			return Level.INFO;
 		
-		if (log.equals("DEBUG")) return Level.FINE;
-		if (log.equals("INFO")) return Level.INFO;
-		if (log.equals("WARN")) return Level.WARNING;
-		if (log.equals("ERROR")) return Level.SEVERE;
+		if (log.equals("DEBUG"))
+			return Level.FINE;
+		if (log.equals("INFO"))
+			return Level.INFO;
+		if (log.equals("WARN"))
+			return Level.WARNING;
+		if (log.equals("ERROR"))
+			return Level.SEVERE;
 		
 		throw new ForbiddenOperationException("Unsupported Log Level [" + log + "]");
 		
 	}
-
+	
 	public boolean isPerformedInTheSameDatabase() {
-		return this.isResolveProblems() || 
-					this.isDBInconsistencyCheckProcess();
+		return this.isResolveProblems() || this.isDBInconsistencyCheckProcess();
 	}
 }

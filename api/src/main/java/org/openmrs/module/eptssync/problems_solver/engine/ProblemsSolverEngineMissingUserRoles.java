@@ -16,7 +16,7 @@ import org.openmrs.module.eptssync.model.pojo.destination.UsersVO;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
+import org.openmrs.module.eptssync.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.eptssync.problems_solver.model.TmpUserVO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -28,7 +28,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  *
  * @see DBQuickMergeController
  */
-public class ProblemsSolverEngineMissingUserRoles extends ProblemsSolverEngine {
+public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	
 	
 	DatabasesInfo[] fghDBInfo = {   
@@ -61,8 +61,8 @@ public class ProblemsSolverEngineMissingUserRoles extends ProblemsSolverEngine {
 	}
 	
 	@Override
-	public ProblemsSolverController getRelatedOperationController() {
-		return (ProblemsSolverController) super.getRelatedOperationController();
+	public GenericOperationController getRelatedOperationController() {
+		return (GenericOperationController) super.getRelatedOperationController();
 	}
 	
 	@Override

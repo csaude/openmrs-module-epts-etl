@@ -36,6 +36,8 @@ public class MergingRecord {
 	}
 	
 	public void merge(Connection srcConn, Connection destConn) throws DBException {
+		this.record.setUniqueKeysInfo(this.config.getUniqueKeys());
+		
 		consolidateAndSaveData(srcConn, destConn);
 		
 		save(destConn);

@@ -13,15 +13,11 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 
 /**
- * This class is responsible for control the quick merge process. The quick merge process imediatly
- * merge records from the source to the destination db This process assume that the source and
- * destination are located in the same network
- * 
  * @author jpboane
  */
-public class ProblemsSolverController extends OperationController {
+public class GenericOperationController extends OperationController {
 	
-	public ProblemsSolverController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public GenericOperationController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	

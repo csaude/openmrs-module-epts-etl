@@ -155,7 +155,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 				for (Field field : ukFields) {
 					if (!tmpCodition.isEmpty()) tmpCodition += " AND ";
 					
-					tmpCodition += field + " = ?";
+					tmpCodition += field.getName() + " = ?";
 				}
 			}
 			catch (ForbiddenOperationException e) {

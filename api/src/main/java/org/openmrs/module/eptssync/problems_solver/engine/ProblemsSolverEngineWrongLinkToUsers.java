@@ -16,7 +16,7 @@ import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
+import org.openmrs.module.eptssync.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.eptssync.problems_solver.model.TmpUserVO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -26,7 +26,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  * @see DBQuickMergeController
  */
-public class ProblemsSolverEngineWrongLinkToUsers extends ProblemsSolverEngine {
+public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	
 	public static String[] DB_NAMES = DatabasesInfo.ARIEL_DB_NAMES_MAPUTO;
 	
@@ -46,8 +46,8 @@ public class ProblemsSolverEngineWrongLinkToUsers extends ProblemsSolverEngine {
 	}
 	
 	@Override
-	public ProblemsSolverController getRelatedOperationController() {
-		return (ProblemsSolverController) super.getRelatedOperationController();
+	public GenericOperationController getRelatedOperationController() {
+		return (GenericOperationController) super.getRelatedOperationController();
 	}
 	
 	@Override

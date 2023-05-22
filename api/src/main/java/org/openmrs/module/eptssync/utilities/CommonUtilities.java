@@ -1,11 +1,8 @@
 package org.openmrs.module.eptssync.utilities;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -28,7 +25,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.BasicConfigurator;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;

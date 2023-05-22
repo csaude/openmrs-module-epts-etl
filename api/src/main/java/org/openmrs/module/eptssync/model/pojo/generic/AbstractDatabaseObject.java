@@ -184,6 +184,12 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	@Override
 	public void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo) {
 		this.uniqueKeysInfo = uniqueKeysInfo;
+		
+		if (utilities.arrayHasElement(this.uniqueKeysInfo)) {
+			for (UniqueKeyInfo uk : this.uniqueKeysInfo) {
+				uk.loadValuesToFields(this);
+			}
+		}
 	}
 	
 	@Override

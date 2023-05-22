@@ -1,7 +1,6 @@
 package org.openmrs.module.eptssync.problems_solver.engine;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,11 +13,10 @@ import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
+import org.openmrs.module.eptssync.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.DBValidateReport;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.MozartProblemType;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
@@ -28,22 +26,15 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  * @see DBQuickMergeController
  */
-public class MozartRenamePatientStateFields extends ProblemsSolverEngine {
-	
-	static List<DBValidateReport> reportsProblematicDBs;
-	
-	static List<DBValidateReport> reportsNoIssueDBs;
-	
-	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("EGPAF_GZ", DatabasesInfo.EGPAF_DB_NAMES_GAZA, new DBConnectionInfo("root",
-	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
-	
+public class MozartRenamePatientStateFields extends MozartProblemSolver {
+
 	public MozartRenamePatientStateFields(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
 	@Override
-	public ProblemsSolverController getRelatedOperationController() {
-		return (ProblemsSolverController) super.getRelatedOperationController();
+	public GenericOperationController getRelatedOperationController() {
+		return (GenericOperationController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -57,9 +48,8 @@ public class MozartRenamePatientStateFields extends ProblemsSolverEngine {
 		
 		logInfo("DETECTING PROBLEMS ON TABLE '" + getSyncTableConfiguration().getTableName() + "'");
 		
-		for (DatabasesInfo dbsInfo : DB_INFOs) {
-			performeOnServer(dbsInfo, conn);
-		}
+
+		performeOnServer(this.dbsInfo, conn);
 		
 		String fileNameProblematicDBs = getSyncTableConfiguration().getRelatedSynconfiguration().getSyncRootDirectory()
 		        + FileUtilities.getPathSeparator() + "problematicDBs.json";

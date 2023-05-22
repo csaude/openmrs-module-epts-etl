@@ -16,7 +16,7 @@ import org.openmrs.module.eptssync.model.pojo.destination.UsersVO;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
+import org.openmrs.module.eptssync.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.eptssync.problems_solver.model.TmpUserVO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -27,7 +27,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
  *
  * @see DBQuickMergeController
  */
-public class ProblemsSolverEngineUsersDupsUUID extends ProblemsSolverEngine {
+public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	public ProblemsSolverEngineUsersDupsUUID(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
@@ -39,8 +39,8 @@ public class ProblemsSolverEngineUsersDupsUUID extends ProblemsSolverEngine {
 	}
 	
 	@Override
-	public ProblemsSolverController getRelatedOperationController() {
-		return (ProblemsSolverController) super.getRelatedOperationController();
+	public GenericOperationController getRelatedOperationController() {
+		return (GenericOperationController) super.getRelatedOperationController();
 	}
 	
 	@Override

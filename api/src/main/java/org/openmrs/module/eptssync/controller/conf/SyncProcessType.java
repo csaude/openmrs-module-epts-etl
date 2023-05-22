@@ -14,10 +14,10 @@ public enum SyncProcessType {
 	QUICK_MERGE_WITHOUT_ENTITY_GENERATION,
 	QUICK_MERGE_WITH_ENTITY_GENERATION,
 	DB_INCONSISTENCY_CHECK,
-	RESOLVE_PROBLEMS;
+	GENERIC_PROCESS;
 	
-	public boolean isResolveProblems(){
-		return  this.equals(RESOLVE_PROBLEMS);
+	public boolean isGenericProcess(){
+		return  this.equals(GENERIC_PROCESS);
 	}
 	
 	public boolean isdDBInconsistencyCheck(){
@@ -113,8 +113,8 @@ public enum SyncProcessType {
 		return  SyncProcessType.valueOf(processType).isdDBInconsistencyCheck();
 	}
 	
-	public static boolean isResolveProblem(String processType){
-		return  SyncProcessType.valueOf(processType).isResolveProblems();
+	public static boolean isGenericProcess(String processType){
+		return  SyncProcessType.valueOf(processType).isGenericProcess();
 	}
 	
 	public static boolean isSupportedProcessType(String processType) {

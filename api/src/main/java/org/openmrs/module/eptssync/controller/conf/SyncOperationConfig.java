@@ -24,8 +24,8 @@ import org.openmrs.module.eptssync.inconsistenceresolver.controller.Inconsistenc
 import org.openmrs.module.eptssync.load.controller.DataLoadController;
 import org.openmrs.module.eptssync.merge.controller.DataBaseMergeFromSourceDBController;
 import org.openmrs.module.eptssync.pojogeneration.controller.PojoGenerationController;
-import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
-import org.openmrs.module.eptssync.problems_solver.engine.ProblemsSolverEngine;
+import org.openmrs.module.eptssync.problems_solver.controller.GenericOperationController;
+import org.openmrs.module.eptssync.problems_solver.engine.GenericEngine;
 import org.openmrs.module.eptssync.reconciliation.controller.CentralAndRemoteDataReconciliationController;
 import org.openmrs.module.eptssync.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
 import org.openmrs.module.eptssync.synchronization.controller.DatabaseMergeFromJSONController;
@@ -72,11 +72,30 @@ public class SyncOperationConfig {
 	
 	private String engineFullClassName;
 	
-	public Class<Engine> engineClazz;
+	private Class<Engine> engineClazz;
+	
+	private List<Extension> extension;
 	
 	public SyncOperationConfig() {
 	}
 	
+	public List<Extension> getExtension() {
+		return extension;
+	}
+	
+	public Extension findExtesion(String extensionCode) {
+		if (this.extension == null) return null;
+		for (Extension ex : this.extension) {
+			if (ex.getCoding().equals(extensionCode)) return ex;
+		}
+		
+		throw new ForbiddenOperationException("Not defined extension '" + extensionCode + "");
+	}
+	
+	public void setExtension(List<Extension> extension) {
+		this.extension = extension;
+	}
+
 	public String getEngineFullClassName() {
 		return engineFullClassName;
 	}
@@ -378,7 +397,7 @@ public class SyncOperationConfig {
 	
 	@JsonIgnore
 	public boolean isResolveProblem() {
-		return this.operationType.isResolveProblem();
+		return this.operationType.isGenericOperation();
 	}
 	
 	@Override
@@ -454,7 +473,7 @@ public class SyncOperationConfig {
 		} else if (isDBQuickMergeMissingRecords() || isDBQuickMergeExistingRecords()) {
 			return new DBQuickMergeController(parent, this, appOriginCode);
 		} else if (isResolveProblem()) {
-			return new ProblemsSolverController(parent, this);
+			return new GenericOperationController(parent, this);
 		}
 		
 		else
@@ -525,7 +544,7 @@ public class SyncOperationConfig {
 				
 				if (this.engineClazz == null) {
 					errorMsg += ++errNum + ". The engine class [" + this.getEngineFullClassName() + "] cannot be found\n";
-				} else if (!ProblemsSolverEngine.class.isAssignableFrom(this.engineClazz)) {
+				} else if (!GenericEngine.class.isAssignableFrom(this.engineClazz)) {
 					errorMsg += ++errNum + ". The engine class [" + this.getEngineFullClassName()
 					        + "] is not any org.openmrs.module.eptssync.problems_solver.engine.ProblemsSolverEngine \n";
 				}
@@ -547,7 +566,7 @@ public class SyncOperationConfig {
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInResolveProblemsProcess() {
-		SyncOperationType[] supported = { SyncOperationType.RESOLVE_PROBLEM };
+		SyncOperationType[] supported = { SyncOperationType.GENERIC_OPERATION };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -714,10 +733,8 @@ public class SyncOperationConfig {
 			
 			this.engineClazz = (Class<Engine>) c;
 		}
-		catch (ClassNotFoundException e) {
-		}
-		catch (IOException e) {
-		}
+		catch (ClassNotFoundException e) {}
+		catch (IOException e) {}
 	}
 	
 }

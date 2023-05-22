@@ -7,18 +7,14 @@ import java.util.List;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
-import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.DBValidateReport;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.MozartProblemType;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
@@ -29,26 +25,10 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  * @see DBQuickMergeController
  */
-public class MozartRenameDsdFields extends ProblemsSolverEngine {
-	static List<DBValidateReport> reportsProblematicDBs;
-	
-	static List<DBValidateReport> reportsNoIssueDBs;
-	
-	DatabasesInfo[] DB_INFOs = {
-	        new DatabasesInfo("EGPAF_GZ", DatabasesInfo.EGPAF_DB_NAMES_GAZA, new DBConnectionInfo("root", "root",
-	                "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
+public class MozartRenameDsdFields extends MozartProblemSolver {
 	
 	public MozartRenameDsdFields(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
-	}
-	
-	@Override
-	public ProblemsSolverController getRelatedOperationController() {
-		return (ProblemsSolverController) super.getRelatedOperationController();
-	}
-	
-	@Override
-	protected void restart() {
 	}
 	
 	@Override
@@ -58,9 +38,7 @@ public class MozartRenameDsdFields extends ProblemsSolverEngine {
 		
 		logInfo("DETECTING PROBLEMS ON TABLE '" + getSyncTableConfiguration().getTableName() + "'");
 		
-		for (DatabasesInfo dbsInfo : DB_INFOs) {
-			performeOnServer(dbsInfo, conn);
-		}
+		performeOnServer(this.dbsInfo, conn);
 		
 		String fileNameProblematicDBs = getSyncTableConfiguration().getRelatedSynconfiguration().getSyncRootDirectory()
 		        + FileUtilities.getPathSeparator() + "problematicDBs.json";
@@ -252,16 +230,6 @@ public class MozartRenameDsdFields extends ProblemsSolverEngine {
 	}
 	
 	public void requestStop() {
-	}
-	
-	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(
-		        this.getSyncTableConfiguration(), null);
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
-		
-		return searchParams;
 	}
 	
 }

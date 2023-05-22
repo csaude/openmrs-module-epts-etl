@@ -31,11 +31,11 @@ public enum SyncOperationType {
 		DB_MERGE_FROM_SOURCE_DB,
 		DB_QUICK_MERGE_EXISTING_RECORDS,
 		DB_QUICK_MERGE_MISSING_RECORDS,
-		RESOLVE_PROBLEM;
+		GENERIC_OPERATION;
 	
 	
-	public static boolean isResolveProblem(String operationType){
-		return  SyncOperationType.valueOf(operationType).equals(RESOLVE_PROBLEM);
+	public static boolean isGenericOperation(String operationType){
+		return  SyncOperationType.valueOf(operationType).equals(GENERIC_OPERATION);
 	}
 	
 	public static boolean isDBQuickMergeMissingRecords(String operationType){
@@ -201,8 +201,8 @@ public enum SyncOperationType {
 	public boolean isDBQuickMergeExistingRecords(){
 		return  this.equals(DB_QUICK_MERGE_EXISTING_RECORDS);
 	}	
-	public boolean isResolveProblem(){
-		return  this.equals(RESOLVE_PROBLEM);
+	public boolean isGenericOperation(){
+		return  this.equals(GENERIC_OPERATION);
 	}
 	
 	public boolean isSupportedOperation() {

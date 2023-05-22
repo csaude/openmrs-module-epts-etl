@@ -389,16 +389,61 @@ public class DatabasesInfo {
 													"css_map_magoanine_tendas_m2"};
 											
 	
+	public static String[] ECHO_DB_MANICA = {	/*"echo_man_4_congresso_m2",
+												"echo_man_amatongas_m2",
+												"echo_man_bassane_m2",
+												"echo_man_cabeca_velho_m2",
+												"echo_man_catandica_m2",
+												"echo_man_chaiva_m2",
+												"echo_man_chigodole_m2",
+												"echo_man_chipopopo_m2",
+												"echo_man_chipudji_m2",
+												"echo_man_chissui_m2",
+												"echo_man_chitobe_m2",
+												"echo_man_chiuala_m2",
+												"echo_man_cruzamento_de_macossa_m2",
+												"echo_man_dacata_m2",
+												"echo_man_darue_m2",
+												"echo_man_dombe_m2",
+												"echo_man_espungabera_m2",
+												"echo_man_garagua_m2",
+												"echo_man_gondola_m2",
+												"echo_man_gunhe_m2",
+												"echo_man_guro_m2",
+												"echo_man_honde_m2",
+												"echo_man_hpc_m2",
+												"echo_man_iac_m2",
+												"echo_man_macate_m2",
+												"echo_man_mandie_m2",
+												"echo_man_manica_m2",
+												"echo_man_marera_m2",
+												"echo_man_matsinho_m2",
+												"echo_man_mavende_m2",
+												"echo_man_messica_m2",
+												"echo_man_muda_serracao_m2",
+												"echo_man_mude_m2",
+												"echo_man_mupengo_m2",
+												"echo_man_nhamaonha_m2",
+												"echo_man_nhampassa_m2",
+												"echo_man_nhassacara_m2",*/
+												"echo_man_nhazonia_m2",
+												/*"echo_man_pungue_sul_m2",
+												"echo_man_save_m2",
+												"echo_man_sdabril_m2",
+												"echo_man_sembezea_m2",
+												"echo_man_vanduzi_m2",
+												"echo_man_vila_nova_m2",
+												"echo_man_zembe_centro_m2"*/};
 	
 	public static String[] TESTING_DB = {"mozart_q2_fy23_consolidated"};
 	
-	private String[] db_names;
+	private List<String> db_names;
 	private DBConnectionInfo connInfo;
 	private OpenConnection conn;
 	private DBConnectionService connService;
 	private String serverName;
 	
-	public DatabasesInfo(String serverName, String[] db_names, DBConnectionInfo connInfo) {
+	public DatabasesInfo(String serverName, List<String> db_names, DBConnectionInfo connInfo) {
 		this.db_names = db_names;
 		this.connInfo = connInfo;
 		this.connService = DBConnectionService.init(this.connInfo);
@@ -409,7 +454,7 @@ public class DatabasesInfo {
 		return serverName;
 	}
 	
-	public String[] getDbNames() {
+	public List<String> getDbNames() {
 		return db_names;
 	}
 	

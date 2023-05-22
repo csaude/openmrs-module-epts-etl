@@ -14,7 +14,7 @@ import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.problems_solver.controller.ProblemsSolverController;
+import org.openmrs.module.eptssync.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.DBValidateReport;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.MozartProblemType;
@@ -28,24 +28,15 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * @author jpboane
  * @see DBQuickMergeController
  */
-public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends ProblemsSolverEngine {
-	
-	private static boolean done;
-	
-	static List<DBValidateReport> reportsProblematicDBs;
-	
-	static List<DBValidateReport> reportsNoIssueDBs;
-	
-	DatabasesInfo[] DB_INFOs = { new DatabasesInfo("EGPAF_GZ", DatabasesInfo.EGPAF_DB_NAMES_GAZA, new DBConnectionInfo("root",
-	        "root", "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) };
+public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends MozartProblemSolver {
 	
 	public MozartRenamePrimaryToPReferredFieldOnIdentifierTable(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
 	@Override
-	public ProblemsSolverController getRelatedOperationController() {
-		return (ProblemsSolverController) super.getRelatedOperationController();
+	public GenericOperationController getRelatedOperationController() {
+		return (GenericOperationController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -59,9 +50,8 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Proble
 		
 		logInfo("STARTING PROBLEMS RESOLUTION...'");
 		
-		for (DatabasesInfo dbsInfo : DB_INFOs) {
-			performeOnServer(dbsInfo, conn);
-		}
+
+		performeOnServer(this.dbsInfo, conn);
 		
 		String fileNameProblematicDBs = getSyncTableConfiguration().getRelatedSynconfiguration().getSyncRootDirectory()
 		        + FileUtilities.getPathSeparator() + "problematicDBs.json";
