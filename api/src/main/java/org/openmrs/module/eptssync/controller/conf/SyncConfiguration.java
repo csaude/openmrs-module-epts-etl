@@ -84,9 +84,19 @@ public class SyncConfiguration {
 	
 	private List<Extension> extension;
 	
+	private boolean resumable;
+	
 	public SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
 		this.allTables = new ArrayList<SyncTableConfiguration>();
+	}
+	
+	public boolean isResumable() {
+		return resumable;
+	}
+	
+	public void setResumable(boolean resumable) {
+		this.resumable = resumable;
 	}
 	
 	public List<Extension> getExtension() {

@@ -76,7 +76,22 @@ public class SyncOperationConfig {
 	
 	private List<Extension> extension;
 	
+	/**
+	 * Indicates whether this operation will executed over all tables configured under
+	 * {@link #relatedSyncConfig}. If true, the operation will be run only once (for the first
+	 * table)
+	 */
+	private boolean runOnce;
+	
 	public SyncOperationConfig() {
+	}
+	
+	public boolean isRunOnce() {
+		return runOnce;
+	}
+	
+	public void setRunOnce(boolean runOnce) {
+		this.runOnce = runOnce;
 	}
 	
 	public List<Extension> getExtension() {
@@ -84,9 +99,11 @@ public class SyncOperationConfig {
 	}
 	
 	public Extension findExtesion(String extensionCode) {
-		if (this.extension == null) return null;
+		if (this.extension == null)
+			return null;
 		for (Extension ex : this.extension) {
-			if (ex.getCoding().equals(extensionCode)) return ex;
+			if (ex.getCoding().equals(extensionCode))
+				return ex;
 		}
 		
 		throw new ForbiddenOperationException("Not defined extension '" + extensionCode + "");
@@ -95,7 +112,7 @@ public class SyncOperationConfig {
 	public void setExtension(List<Extension> extension) {
 		this.extension = extension;
 	}
-
+	
 	public String getEngineFullClassName() {
 		return engineFullClassName;
 	}

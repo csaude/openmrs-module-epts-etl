@@ -178,6 +178,10 @@ public abstract class OperationController implements Controller{
 				
 				engineMonitor.run();
 				
+				if (getOperationConfig().isRunOnce()) {
+					break;
+				}
+				
 				if (stopRequested() && engineMonitor.isStopped()) {
 					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());
 					break;
@@ -668,6 +672,10 @@ public abstract class OperationController implements Controller{
 	
 	public void logDebug(String msg) {
 		this.processController.logDebug(msg);
+	}
+
+	public boolean isResumable() {
+		return getProcessController().isResumable();
 	}
 
 } 

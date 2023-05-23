@@ -517,7 +517,7 @@ public class ProcessController implements Controller, ControllerStarter{
 
 	@JsonIgnore
 	private boolean processIsAlreadyFinished() {
-		return generateProcessStatusFile().exists();
+		return  isResumable() && generateProcessStatusFile().exists();
 	}
 	
 	@Override
@@ -570,6 +570,10 @@ public class ProcessController implements Controller, ControllerStarter{
 
 	public OpenConnection openConnection() {
 		return getDefaultApp().openConnection();
+	}
+
+	public boolean isResumable() {
+		return getConfiguration().isResumable();
 	}
 
 }

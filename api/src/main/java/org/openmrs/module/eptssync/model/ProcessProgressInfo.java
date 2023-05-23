@@ -26,7 +26,7 @@ public class ProcessProgressInfo {
 		
 		File operationStatusFile = operationController.generateOperationStatusFile();
 		
-		if (operationStatusFile.exists()) {
+		if (operationController.isResumable() && operationStatusFile.exists()) {
 			progressInfo = OperationProgressInfo.loadFromFile(operationController.generateOperationStatusFile());
 			progressInfo.setController(operationController);
 		}

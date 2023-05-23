@@ -2,14 +2,13 @@ package org.openmrs.module.eptssync.problems_solver.controller;
 
 import java.lang.reflect.Constructor;
 
-import javax.ws.rs.ForbiddenException;
-
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 
 /**
@@ -33,7 +32,7 @@ public class GenericOperationController extends OperationController {
 			return a.newInstance(monitor, limits);
 		}
 		catch (Exception e) {
-			throw new ForbiddenException(e);
+			throw new ForbiddenOperationException(e);
 		}
 	}
 	

@@ -471,6 +471,27 @@ public class DateAndTimeUtilities {
 		return formatToYYYYMMDD(date) + " " + formatToHHMISS(date);
 	}
 	
+	/**
+	 * @author Jorge Boane
+	 * @return Transforma uma data para uma sitring no formato yyyy-mm-dd hh:mi:ss
+	 * @param  date
+	 * 
+	 */
+	
+	public static String formatAsPartOfFileName(Date date){	
+		
+		//DD-Mon-YY HH:MI:SS
+		if (date == null){
+			return "";
+		}
+		
+		String strDate = getYear(date) + "_" +  FuncoesGenericas.garantirXCaracterOnNumber(getMonth(date), 2) + "_" + FuncoesGenericas.garantirXCaracterOnNumber(getDayOfMonth(date), 2);
+		String strTime = FuncoesGenericas.garantirXCaracterOnNumber(getHours(date), 2) + "_" + FuncoesGenericas.garantirXCaracterOnNumber(getMinutes(date), 2) + "_" + FuncoesGenericas.garantirXCaracterOnNumber(getSeconds(date), 2);
+
+		
+		
+		return strDate + "_" + strTime;
+	}
 	
 	/**
 	 * @author Jorge Boane

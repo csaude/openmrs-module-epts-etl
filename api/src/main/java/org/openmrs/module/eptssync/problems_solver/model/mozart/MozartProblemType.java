@@ -6,7 +6,11 @@ public enum MozartProblemType {
 	MISSIN_FIELDS,
 	MISSING_TABLES,
 	EMPTY_TABLES,
-	MISSING_DB;
+	MISSING_DB,
+	EMPTY_FIELD,
+	MISSING_UNIQUE_KEY,
+	WRONG_FIELD_NAME,
+	WRONG_TABLE_NAME;
 	
 	public boolean isOldStructure() {
 		return this.equals(OLD_STRUCTURE);
