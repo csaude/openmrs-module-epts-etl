@@ -6,8 +6,6 @@ import java.util.List;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.eptssync.engine.RecordLimits;
-import org.openmrs.module.eptssync.model.SimpleValue;
-import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.problems_solver.controller.GenericOperationController;
@@ -51,11 +49,12 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Mozart
 		List<SyncTableConfiguration> configuredTables = getRelatedOperationController().getConfiguration()
 		        .getTablesConfigurations();
 		
+		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
-			logDebug("Validating DB '[" + dbName + "]");
+			logDebug("Trying to rename Prefered Field on Identifier table on  " + ++i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
 			
-			DBValidateInfo report = new DBValidateInfo(this.reportOfResolvedProblems, dbName);
-			
+			DBValidateInfo report = this.reportOfResolvedProblems.initDBValidatedInfo(dbName);
+					
 			if (!DBUtilities.isResourceExist(dbName, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
 				logWarn("DB '" + dbName + "' is missing!");
 				
@@ -80,7 +79,6 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Mozart
 			
 		}
 	}
-	
 	
 	private void tryToRenamePrimaryFieldToPreferred(DBValidateInfo report, String dbName, List<String> missingField,
 	        OpenConnection conn) throws DBException {

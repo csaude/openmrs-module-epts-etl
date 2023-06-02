@@ -581,10 +581,13 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 				}
 			}
 		
-			getRelatedOperationController().markTableOperationAsFinished(getSyncTableConfiguration(), this, getTimer());
-			changeStatusToFinished();
+			tmp();
 		}
 		else changeStatusToFinished();
+	}
+	
+	void tmp() {
+		this.changeStatusToFinished();
 	}
 	
 	public boolean isAllChildFinished(){

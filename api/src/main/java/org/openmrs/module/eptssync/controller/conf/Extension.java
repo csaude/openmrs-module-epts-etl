@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Extension {
+	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String coding;
@@ -26,6 +27,10 @@ public class Extension {
 	public Extension(String coding, String value) {
 		this.coding = coding;
 		this.valueString = value;
+	}
+	
+	public List<Extension> getExtension() {
+		return extension;
 	}
 	
 	public String getCoding() {
@@ -48,13 +53,15 @@ public class Extension {
 		if (this.extension == null)
 			this.extension = new ArrayList<Extension>();
 		
-		if (findExtension(extensionData.getCoding()) != null) throw new ForbiddenException("The item '" + extensionData.getCoding() + "' already exists on this extension!!" );
+		if (findExtension(extensionData.getCoding()) != null)
+			throw new ForbiddenException("The item '" + extensionData.getCoding() + "' already exists on this extension!!");
 		
 		this.extension.add(extensionData);
 	}
 	
 	public void setExtension(List<Extension> extension) {
-		if (this.valueString != null) throw new ForbiddenOperationException("You cannot set both value and extension on any extension item!");
+		if (this.valueString != null)
+			throw new ForbiddenOperationException("You cannot set both value and extension on any extension item!");
 		
 		this.extension = extension;
 	}
@@ -68,10 +75,12 @@ public class Extension {
 	}
 	
 	public Extension findExtension(String coding) {
-		if (utilities.arrayHasElement(this.extension)) return null;
+		if (utilities.arrayHasElement(this.extension))
+			return null;
 		
 		for (Extension item : this.extension) {
-			if (item.getCoding().equals(coding)) return item;
+			if (item.getCoding().equals(coding))
+				return item;
 		}
 		
 		return null;
@@ -81,5 +90,5 @@ public class Extension {
 	public String toString() {
 		return utilities.parseToJSON(this);
 	}
-
+	
 }

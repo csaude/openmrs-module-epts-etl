@@ -7,8 +7,11 @@ import java.util.Map;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class DBValidateInfo {
+	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String database;
@@ -21,36 +24,30 @@ public class DBValidateInfo {
 	
 	private List<Map<String, Object>> missingFields;
 	
+	private List<Map<String, Object>> emptyFields;
+	
 	private List<ResolvedProblem> resolvedProblems;
+	
+	private List<Map<String, Object>> missingUniqueKeys;
+	
 	private MozartValidateInfoReport report;
 	
-	public DBValidateInfo() {
-	}
+	private List<Map<String, Object>> notFullMergedTables;
 	
-	public DBValidateInfo(MozartValidateInfoReport report, String database) {
-		this.database = database;
-		this.report = report;
-		
-		if (this.report != null) this.report.addReport(this);
+	public DBValidateInfo() {
 	}
 	
 	public DBValidateInfo(String database) {
 		this.database = database;
 	}
 	
-	public void setReport(MozartValidateInfoReport report) {
-		if (this.report != null) this.report.removeDBValidateInfo(this);
-		
-		this.report = report;
-		
-		
-		
-		if (this.report != null) this.report.addReport(this);
-	}
-	
 	@JsonIgnore
 	public MozartValidateInfoReport getReport() {
 		return report;
+	}
+	
+	public void setReport(MozartValidateInfoReport report) {
+		this.report = report;
 	}
 	
 	public void addResolvedProblem(ResolvedProblem resolvedProblem) {
@@ -63,6 +60,11 @@ public class DBValidateInfo {
 	@JsonIgnore
 	public boolean hasProblem() {
 		return utilities.arrayHasElement(this.problems);
+	}
+	
+	@JsonIgnore
+	public boolean hasResolvedProblem() {
+		return utilities.arrayHasElement(this.resolvedProblems);
 	}
 	
 	public void addMissingTable(String tableName) {
@@ -86,12 +88,36 @@ public class DBValidateInfo {
 		this.missingFields.add(utilities.fastCreateMap("tableName", tableName, "missingFields", fields));
 	}
 	
-	public void addProblemType(MozartProblemType type) {
-		if (problems == null)
-			problems = new ArrayList<MozartProblemType>();
+	public void addEmptyFields(String tableName, List<String> fields) {
+		if (this.emptyFields == null)
+			this.emptyFields = new ArrayList<Map<String, Object>>();
 		
-		if (!utilities.existOnArray(this.problems, type))
+		this.emptyFields.add(utilities.fastCreateMap("tableName", tableName, "emptyFields", fields));
+	}
+	
+	public void addNotFullMergedTables(String tableName, int notMerged) {
+		if (this.notFullMergedTables == null)
+			this.notFullMergedTables = new ArrayList<Map<String, Object>>();
+		
+		this.notFullMergedTables.add(utilities.fastCreateMap("tableName", tableName, "notMergedRecords", notMerged));
+	}
+	
+	public List<Map<String, Object>> getNotFullMergedTables() {
+		return notFullMergedTables;
+	}
+	
+	public List<Map<String, Object>> getEmptyFields() {
+		return emptyFields;
+	}
+	
+	public void addProblemType(MozartProblemType type) {
+		if (problems == null) {
+			problems = new ArrayList<MozartProblemType>();
+		}
+		
+		if (!utilities.existOnArray(this.problems, type)) {
 			problems.add(type);
+		}
 	}
 	
 	public String getDatabase() {
@@ -138,13 +164,29 @@ public class DBValidateInfo {
 		return resolvedProblems;
 	}
 	
+	public List<Map<String, Object>> getMissingUniqueKeys() {
+		return missingUniqueKeys;
+	}
+	
+	public void setMissingUniqueKeys(List<Map<String, Object>> missingUniqueKeys) {
+		this.missingUniqueKeys = missingUniqueKeys;
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof DBValidateInfo)) return false;
+		if (!(obj instanceof DBValidateInfo))
+			return false;
 		
-		DBValidateInfo otherObj = (DBValidateInfo)obj;
+		DBValidateInfo otherObj = (DBValidateInfo) obj;
 		
-		return this.database.equalsIgnoreCase(otherObj.getDatabase()) && this.report.equals(otherObj.report);
+		return this.database.equalsIgnoreCase(otherObj.getDatabase());
+	}
+	
+	public void addMissingUniqueKeys(String tableName, List<String> keyFields) {
+		if (this.missingUniqueKeys == null)
+			this.missingUniqueKeys = new ArrayList<>();
+		
+		this.missingUniqueKeys.add(utilities.fastCreateMap("tableName", tableName, "uniqueKey", keyFields));
 	}
 	
 }

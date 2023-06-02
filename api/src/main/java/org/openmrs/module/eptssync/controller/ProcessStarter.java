@@ -37,6 +37,11 @@ public class ProcessStarter implements ControllerStarter{
 	}
 	
 	public void run() throws IOException {
+		
+		if (getLogLevel().getName().equals(Level.FINE.getName())) {
+			TimeCountDown.sleep(10);
+		}
+		
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(this.synConfigFilesPaths);
 
 		if (countQtyDestination(syncConfigs) > 1) throw new ForbiddenOperationException("You must define only one destination file");
@@ -78,11 +83,12 @@ public class ProcessStarter implements ControllerStarter{
 	
 	@Override
 	public void finalize(Controller c) {
-		c.killSelfCreatedThreads();
-		
-		ThreadPoolService.getInstance().terminateTread(logger, getLogLevel(), c.getControllerId(), c);
+		//c.killSelfCreatedThreads();
+		//ThreadPoolService.getInstance().terminateTread(logger, getLogLevel(), c.getControllerId(), c);
 		
 		ProcessController controller = (ProcessController)c;
+		
+		
 		
 		if (controller.getChildController() != null) {
 			ProcessController child = controller.getChildController();

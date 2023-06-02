@@ -33,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-public class SyncConfiguration {
+public class SyncConfiguration extends BaseConfiguration{
 	
 	private String syncRootDirectory;
 	
@@ -82,13 +82,17 @@ public class SyncConfiguration {
 	
 	private ModelType modelType;
 	
-	private List<Extension> extension;
-	
 	private boolean resumable;
+	
+	private String syncStageSchema;
 	
 	public SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
 		this.allTables = new ArrayList<SyncTableConfiguration>();
+	}
+	
+	public void setSyncStageSchema(String syncStageSchema) {
+		this.syncStageSchema = syncStageSchema;
 	}
 	
 	public boolean isResumable() {
@@ -97,14 +101,6 @@ public class SyncConfiguration {
 	
 	public void setResumable(boolean resumable) {
 		this.resumable = resumable;
-	}
-	
-	public List<Extension> getExtension() {
-		return extension;
-	}
-	
-	public void setExtension(List<Extension> extension) {
-		this.extension = extension;
 	}
 	
 	public ModelType getModelType() {
@@ -333,6 +329,10 @@ public class SyncConfiguration {
 	}
 	
 	public String getSyncStageSchema() {
+		if(utilities.stringHasValue(this.syncStageSchema)) {
+			return this.syncStageSchema;
+		}
+		
 		if (isSupposedToRunInOrigin()) {
 			return this.originAppLocationCode + "_sync_stage_area";
 		}

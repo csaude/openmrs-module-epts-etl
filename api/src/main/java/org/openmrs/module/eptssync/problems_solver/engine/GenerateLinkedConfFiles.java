@@ -34,11 +34,11 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	public GenerateLinkedConfFiles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
-		Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtesion("databaseListFile");
+		Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("databaseListFile");
 		
 		this.fileWithListOfDBs = exItem.getValueString();
 		
-		exItem = this.getRelatedOperationController().getOperationConfig().findExtesion("templateFile");
+		exItem = this.getRelatedOperationController().getOperationConfig().findExtension("templateFile");
 		
 		this.templateConfFilePath = exItem.getValueString();
 		

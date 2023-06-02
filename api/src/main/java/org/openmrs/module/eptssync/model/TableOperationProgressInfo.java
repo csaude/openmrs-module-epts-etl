@@ -23,9 +23,12 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-public class TableOperationProgressInfo extends BaseVO{
+public class TableOperationProgressInfo extends BaseVO {
+	
 	private SyncTableConfiguration tableConfiguration;
+	
 	private SyncProgressMeter progressMeter;
+	
 	private OperationController controller;
 	
 	/*
@@ -63,20 +66,22 @@ public class TableOperationProgressInfo extends BaseVO{
 		}
 		
 		if (controller instanceof SiteOperationController) {
-			return ((SiteOperationController)controller).getAppOriginLocationCode();
+			return ((SiteOperationController) controller).getAppOriginLocationCode();
 		}
-		 
-		if (controller.getOperationConfig().isDatabasePreparationOperation() || 
-				controller.getOperationConfig().isPojoGeneration() || 
-						controller.getOperationConfig().isResolveConflictsInStageArea() ||
-							controller.getOperationConfig().isMissingRecordsDetector() ||
-								controller.getOperationConfig().isOutdateRecordsDetector() ||
-									controller.getOperationConfig().isPhantomRecordsDetector() ||
-										controller.getOperationConfig().isDBMergeFromSourceDB() ||
-											controller.getOperationConfig().isDataBaseMergeFromJSONOperation() ||
-												controller.getConfiguration().isResolveProblems()) return "central_site"; 
 		
-		throw new ForbiddenException("The originAppCode cannot be determined for "+controller.getOperationType().name().toLowerCase() + " operation!");
+		if (controller.getOperationConfig().isDatabasePreparationOperation()
+		        || controller.getOperationConfig().isPojoGeneration()
+		        || controller.getOperationConfig().isResolveConflictsInStageArea()
+		        || controller.getOperationConfig().isMissingRecordsDetector()
+		        || controller.getOperationConfig().isOutdateRecordsDetector()
+		        || controller.getOperationConfig().isPhantomRecordsDetector()
+		        || controller.getOperationConfig().isDBMergeFromSourceDB()
+		        || controller.getOperationConfig().isDataBaseMergeFromJSONOperation()
+		        || controller.getConfiguration().isResolveProblems())
+			return "central_site";
+		
+		throw new ForbiddenException("The originAppCode cannot be determined for "
+		        + controller.getOperationType().name().toLowerCase() + " operation!");
 	}
 	
 	public void setController(OperationController controller) {
@@ -91,7 +96,7 @@ public class TableOperationProgressInfo extends BaseVO{
 	public void setTableConfiguration(SyncTableConfiguration tableConfiguration) {
 		this.tableConfiguration = tableConfiguration;
 	}
-
+	
 	public String getOperationId() {
 		return generateOperationId(controller, tableConfiguration);
 	}
@@ -99,11 +104,11 @@ public class TableOperationProgressInfo extends BaseVO{
 	public String getOperationName() {
 		return this.controller.getControllerId();
 	}
-
+	
 	public String getOperationTable() {
 		return this.tableConfiguration.getTableName();
 	}
-
+	
 	public SyncProgressMeter getProgressMeter() {
 		return progressMeter;
 	}
@@ -116,62 +121,70 @@ public class TableOperationProgressInfo extends BaseVO{
 		this.originAppLocationCode = originAppLocationCode;
 	}
 	
-	public static String generateOperationId(OperationController operationController, SyncTableConfiguration tableConfiguration) {
+	public static String generateOperationId(OperationController operationController,
+	        SyncTableConfiguration tableConfiguration) {
 		return operationController.getControllerId() + "_" + tableConfiguration.getTableName();
 	}
 	
-	public void save(Connection conn) throws DBException {
-		TableOperationProgressInfo recordOnDB = TableOperationProgressInfoDAO.find(this.controller, getTableConfiguration(), conn);
+	public synchronized void save(Connection conn) throws DBException {
+		TableOperationProgressInfo recordOnDB = TableOperationProgressInfoDAO.find(this.controller, getTableConfiguration(),
+		    conn);
 		
 		if (recordOnDB != null) {
 			TableOperationProgressInfoDAO.update(this, getTableConfiguration(), conn);
-		}
-		else {
+		} else {
 			TableOperationProgressInfoDAO.insert(this, getTableConfiguration(), conn);
 		}
 	}
-
+	
 	@JsonIgnore
-	public String parseToJSON(){
+	public String parseToJSON() {
 		try {
 			return new ObjectMapperProvider().getContext(TableOperationProgressInfo.class).writeValueAsString(this);
-		} catch (JsonProcessingException e) {
+		}
+		catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	public static TableOperationProgressInfo loadFromFile(File file) {
 		try {
-			TableOperationProgressInfo top = TableOperationProgressInfo.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
+			TableOperationProgressInfo top = TableOperationProgressInfo
+			        .loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 			top.getProgressMeter().retrieveTimer();
 			
 			return top;
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 			throw new RuntimeException();
 		}
 	}
 	
-	public static TableOperationProgressInfo loadFromJSON (String json) {
+	public static TableOperationProgressInfo loadFromJSON(String json) {
 		try {
-			TableOperationProgressInfo config = new ObjectMapperProvider().getContext(TableOperationProgressInfo.class).readValue(json, TableOperationProgressInfo.class);
-		
+			TableOperationProgressInfo config = new ObjectMapperProvider().getContext(TableOperationProgressInfo.class)
+			        .readValue(json, TableOperationProgressInfo.class);
+			
 			return config;
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-		
-			throw new RuntimeException(e);
-		} catch (JsonMappingException e) {
-			e.printStackTrace();
-		
-			throw new RuntimeException(e);
-		} catch (IOException e) {
+		}
+		catch (JsonParseException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
-		} 
+		}
+		catch (JsonMappingException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
 	}
-
+	
 	public void refreshProgressMeter() {
 		
 	}

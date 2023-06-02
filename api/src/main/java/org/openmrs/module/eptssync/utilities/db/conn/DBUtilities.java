@@ -9,6 +9,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -457,8 +458,8 @@ public class DBUtilities {
 		return att;
 	}
 	
-	public static List<List<String>> getUniqueKeys(String tableName, String schema, Connection conn) throws DBException {
-		List<List<String>> uniqueKeys = new ArrayList<List<String>>();
+	public static List<UniqueKeyInfo> getUniqueKeys(String tableName, String schema, Connection conn) throws DBException {
+		List<UniqueKeyInfo> uniqueKeys = new ArrayList<UniqueKeyInfo>();
 		
 		try {
 			ResultSet rs = conn.getMetaData().getIndexInfo(null, schema, tableName, true, true);
@@ -469,21 +470,25 @@ public class DBUtilities {
 			
 			Field primaryKey = getPrimaryKey(tableName, schema, conn);
 			
+			String indexName = null;
+			
 			while (rs.next()) {
 				
-				String indexName = rs.getString("INDEX_NAME");
+				indexName = rs.getString("INDEX_NAME");
 				
 				if (!indexName.equals(prevIndexName)) {
-					addUniqueKey(keyElements, uniqueKeys, primaryKey.getName());
+					
+					addUniqueKey(indexName, keyElements, uniqueKeys, primaryKey.getName());
 					
 					prevIndexName = indexName;
 					keyElements = new ArrayList<String>();
 				}
 				
+				
 				keyElements.add(rs.getString("COLUMN_NAME"));
 			}
 			
-			addUniqueKey(keyElements, uniqueKeys, primaryKey.getName());
+			addUniqueKey(indexName, keyElements, uniqueKeys, primaryKey.getName());
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
@@ -492,7 +497,7 @@ public class DBUtilities {
 		return uniqueKeys;
 	}
 	
-	private static boolean addUniqueKey(List<String> keyElements, List<List<String>> uniqueKeys, String primaryKey) {
+	private static boolean addUniqueKey(String keyName, List<String> keyElements, List<UniqueKeyInfo> uniqueKeys, String primaryKey) {
 		if (keyElements == null || keyElements.isEmpty())
 			return false;
 		
@@ -501,7 +506,10 @@ public class DBUtilities {
 			return false;
 		}
 		
-		uniqueKeys.add(keyElements);
+		UniqueKeyInfo uk = UniqueKeyInfo.generateFromFieldList(keyElements);
+		uk.setKeyName(keyName);
+		
+		uniqueKeys.add(uk);
 		
 		return true;
 	}

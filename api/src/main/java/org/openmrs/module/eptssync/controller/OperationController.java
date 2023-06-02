@@ -142,7 +142,7 @@ public abstract class OperationController implements Controller{
 		this.allGeneratedEngineMonitor = allGeneratedEngineMonitor;
 	}
 	
-	private void runInSequencialMode() {
+	private synchronized void runInSequencialMode() {
 		changeStatusToRunning();
 		
 		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
@@ -161,12 +161,18 @@ public abstract class OperationController implements Controller{
 				
 				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				
+				if (this.progressInfo.getItemsProgressInfo() == null) {
+					progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
+				}
+				
 				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo);
 				
 				OpenConnection conn = getDefaultApp().openConnection();
 				
 				try {
-					progressInfo.save(conn);
+					if (getProcessController().isResumable()) {
+						progressInfo.save(conn);
+					}
 					conn.markAsSuccessifullyTerminected();
 				} catch (DBException e) {
 					e.printStackTrace();
@@ -188,10 +194,10 @@ public abstract class OperationController implements Controller{
 				}
 				else {
 					if (engineMonitor.getMainEngine() != null) {
-						markTableOperationAsFinished(syncInfo, engineMonitor.getMainEngine(), engineMonitor.getMainEngine().getTimer());
+						markTableOperationAsFinished(syncInfo);
 					}
 					else {
-						markTableOperationAsFinished(syncInfo, null, null);
+						markTableOperationAsFinished(syncInfo);
 					}
 					
 					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '" + syncInfo.getTableName() + "' is finished!").toUpperCase());
@@ -207,7 +213,7 @@ public abstract class OperationController implements Controller{
 		}
 	}
 
-	private void runInParallelMode() {
+	private synchronized void runInParallelMode() {
 		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
 		
 		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
@@ -249,7 +255,14 @@ public abstract class OperationController implements Controller{
 	}
 	
 	public boolean operationTableIsAlreadyFinished(SyncTableConfiguration tableConfiguration) {
-		return retrieveProgressInfo(tableConfiguration).getProgressMeter().isFinished();
+		try {
+			return retrieveProgressInfo(tableConfiguration).getProgressMeter().isFinished();
+		}
+		catch (Exception e) {
+			retrieveProgressInfo(tableConfiguration).getProgressMeter();
+		}
+		
+		return false;
 	}
 
 	private boolean operationIsAlreadyFinished() {
@@ -399,7 +412,7 @@ public abstract class OperationController implements Controller{
 		}
 	}
 	
-	public void markTableOperationAsFinished(SyncTableConfiguration conf, Engine engine, TimeController timer) {
+	public synchronized void markTableOperationAsFinished(SyncTableConfiguration conf) {
 		
 		logDebug("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
 		
@@ -640,7 +653,7 @@ public abstract class OperationController implements Controller{
 	}
 
 	public TableOperationProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
-		if (progressInfo != null) {
+		if (progressInfo != null && utilities().arrayHasElement(progressInfo.getItemsProgressInfo())) {
 			for (TableOperationProgressInfo item : progressInfo.getItemsProgressInfo()) {
 				if (item.getTableConfiguration().equals(tableConfiguration)) return item;
 			}

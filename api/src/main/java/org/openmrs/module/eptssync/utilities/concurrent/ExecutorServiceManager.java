@@ -44,7 +44,9 @@ public class ExecutorServiceManager {
 		
 		try {
 			for (ExecutorServiceManager manager : managers){
-				if (toFind.equals(manager)) return manager;
+				if (toFind.equals(manager)) {
+					return manager;
+				}
 			}
 		} catch (ConcurrentModificationException e) {
 			TimeCountDown.sleep(5);

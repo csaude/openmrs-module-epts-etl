@@ -10,7 +10,8 @@ public enum MozartProblemType {
 	EMPTY_FIELD,
 	MISSING_UNIQUE_KEY,
 	WRONG_FIELD_NAME,
-	WRONG_TABLE_NAME;
+	WRONG_TABLE_NAME,
+	NOT_FULL_MERGED_DB;
 	
 	public boolean isOldStructure() {
 		return this.equals(OLD_STRUCTURE);

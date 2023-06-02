@@ -1,7 +1,6 @@
 package org.openmrs.module.eptssync.dbquickmerge.controller;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.SiteOperationController;
@@ -21,7 +20,6 @@ import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
@@ -96,6 +94,17 @@ public class DBQuickMergeController extends SiteOperationController {
 	
 	
 	private long getExtremeRecord(SyncTableConfiguration tableInfo, String function, Connection conn) throws DBException {
+		//Try to skip merge of existing records if there is no info for winning records
+		if (getOperationConfig().isDBQuickMergeExistingRecords()) {
+			boolean existWinningRecInfo = utilities().arrayHasElement(tableInfo.getWinningRecordFieldsInfo());
+			boolean existObservationDateFields = utilities().arrayHasElement(tableInfo.getObservationDateFields());
+			
+			if (!existWinningRecInfo && !existObservationDateFields) {
+				return 0;
+			}
+		}
+		
+
 		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(tableInfo, null, this);
 		searchParams.setSyncStartDate(getConfiguration().getObservationDate());
 		
@@ -118,26 +127,6 @@ public class DBQuickMergeController extends SiteOperationController {
 		return 0;
 	}
 	
-	public boolean existsRecordMergeInfoTable() {
-		OpenConnection conn = openConnection();
-		
-		String schema = getConfiguration().getSyncStageSchema();
-		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = "record_merge_info";
-
-		try {
-			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.markAsSuccessifullyTerminected();
-			conn.finalizeConnection();
-		}
-	}
-
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return false;

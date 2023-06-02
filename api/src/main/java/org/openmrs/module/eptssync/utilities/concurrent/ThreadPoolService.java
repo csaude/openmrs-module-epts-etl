@@ -90,7 +90,9 @@ public class ThreadPoolService {
 	public synchronized ExecutorService createNewThreadPoolExecutor(String namingPattern){
 		ExecutorServiceManager existingManager = ExecutorServiceManager.find(this.createdThreadPools, namingPattern);
 		
-		if (existingManager != null) return existingManager.getExecutorService();
+		if (existingManager != null) {
+			return existingManager.getExecutorService();
+		}
 		
 		BasicThreadFactory threadFactory = new BasicThreadFactory.Builder()
 				.namingPattern(namingPattern)

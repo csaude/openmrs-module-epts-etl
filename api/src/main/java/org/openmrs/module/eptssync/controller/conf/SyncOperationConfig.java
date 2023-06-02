@@ -34,7 +34,7 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SyncOperationConfig {
+public class SyncOperationConfig extends BaseConfiguration {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -74,8 +74,6 @@ public class SyncOperationConfig {
 	
 	private Class<Engine> engineClazz;
 	
-	private List<Extension> extension;
-	
 	/**
 	 * Indicates whether this operation will executed over all tables configured under
 	 * {@link #relatedSyncConfig}. If true, the operation will be run only once (for the first
@@ -92,25 +90,6 @@ public class SyncOperationConfig {
 	
 	public void setRunOnce(boolean runOnce) {
 		this.runOnce = runOnce;
-	}
-	
-	public List<Extension> getExtension() {
-		return extension;
-	}
-	
-	public Extension findExtesion(String extensionCode) {
-		if (this.extension == null)
-			return null;
-		for (Extension ex : this.extension) {
-			if (ex.getCoding().equals(extensionCode))
-				return ex;
-		}
-		
-		throw new ForbiddenOperationException("Not defined extension '" + extensionCode + "");
-	}
-	
-	public void setExtension(List<Extension> extension) {
-		this.extension = extension;
 	}
 	
 	public String getEngineFullClassName() {

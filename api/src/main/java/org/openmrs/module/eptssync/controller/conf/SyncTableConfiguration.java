@@ -22,7 +22,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SyncTableConfiguration implements Comparable<SyncTableConfiguration> {
+public class SyncTableConfiguration extends BaseConfiguration implements Comparable<SyncTableConfiguration> {
 	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -70,17 +70,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 	 */
 	private List<List<Field>> winningRecordFieldsInfo;
 	
-	private List<Extension> extension;
-	
 	public SyncTableConfiguration() {
-	}
-	
-	public List<Extension> getExtension() {
-		return extension;
-	}
-	
-	public void setExtension(List<Extension> extension) {
-		this.extension = extension;
 	}
 	
 	public List<List<Field>> getWinningRecordFieldsInfo() {
@@ -995,7 +985,7 @@ public class SyncTableConfiguration implements Comparable<SyncTableConfiguration
 		SyncConfiguration syncConfig = SyncConfiguration
 		        .loadFromFile(new File("D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\mozart\\detect_problematic_dbs.json"));
 		
-		SyncTableConfiguration config = syncConfig.find(SyncTableConfiguration.init("dsd", syncConfig));
+		SyncTableConfiguration config = syncConfig.find(SyncTableConfiguration.init("patient_state", syncConfig));
 		config.fullLoad();
 		
 		Object[] params = { "946a0f13-dfa8-4eeb-b63a-d17b16ebc495" };

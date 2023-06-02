@@ -36,13 +36,13 @@ public class MozartFillEmptyFields extends MozartProblemSolver {
 	public MozartFillEmptyFields(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
-		Extension exItem1 = this.getRelatedOperationController().getOperationConfig().findExtesion("tableToFill");
+		Extension exItem1 = this.getRelatedOperationController().getOperationConfig().findExtension("tableToFill");
 		this.tableToFill = exItem1.getValueString();
 		
-		Extension exItem2 = this.getRelatedOperationController().getOperationConfig().findExtesion("columnToFill");
+		Extension exItem2 = this.getRelatedOperationController().getOperationConfig().findExtension("columnToFill");
 		this.columnToFill = exItem2.getValueString();
 		
-		Extension exItem3 = this.getRelatedOperationController().getOperationConfig().findExtesion("fieldType");
+		Extension exItem3 = this.getRelatedOperationController().getOperationConfig().findExtension("fieldType");
 		
 		this.type = MozartFieldToFillType.valueOf(exItem3.getValueString());
 		
@@ -66,10 +66,11 @@ public class MozartFillEmptyFields extends MozartProblemSolver {
 		List<SyncTableConfiguration> configuredTables = getRelatedOperationController().getConfiguration()
 		        .getTablesConfigurations();
 		
+		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
-			logDebug("Validating DB '[" + dbName + "]");
+			logDebug("Trying to fill empty fields on Table " + ++i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
 			
-			DBValidateInfo report = new DBValidateInfo(this.reportOfResolvedProblems, dbName);
+			DBValidateInfo report = this.reportOfResolvedProblems.initDBValidatedInfo(dbName);
 			
 			if (!DBUtilities.isResourceExist(dbName, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
 				logDebug("DB '" + dbName + "' is missing!");
@@ -106,21 +107,21 @@ public class MozartFillEmptyFields extends MozartProblemSolver {
 		
 		List<SimpleValue> records = DatabaseObjectDAO.search(SimpleValue.class, sql, null, conn);
 		
-		for (int i =0; i < records.size(); i++) {
-			SimpleValue record  = records.get(i);
+		for (int i = 0; i < records.size(); i++) {
+			SimpleValue record = records.get(i);
 			
-			logDebug("Updating " + this.tableToFill + " ["+record + "] " + i+"/"+records.size());
+			logDebug("Updating " + dbName + "." + this.tableToFill + " [" + record + "] " + i + "/" + records.size());
 			sql = "UPDATE " + table + " SET " + columnToFill + " =  ? WHERE id = ?";
 			
 			Object value = null;
 			
 			if (type.isUuid()) {
 				value = utilities.generateUUID().toString();
-			}
-			else throw new ForbiddenOperationException("Unsupported type for auto generation! [" + this.type + "]");
+			} else
+				throw new ForbiddenOperationException("Unsupported type for auto generation! [" + this.type + "]");
 			
-			Object[] params = {value, record.integerValue()};
-				
+			Object[] params = { value, record.integerValue() };
+			
 			BaseDAO.executeDBQuery(sql, params, conn);
 			
 			ResolvedProblem rp = ResolvedProblem.init(this.tableToFill);
@@ -131,6 +132,8 @@ public class MozartFillEmptyFields extends MozartProblemSolver {
 			
 			report.addResolvedProblem(rp);
 		}
+		
+		report.getReport().saveOnFile();
 	}
 	
 }

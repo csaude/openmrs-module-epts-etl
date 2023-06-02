@@ -44,11 +44,12 @@ public class MozartRenamePatientStateFields extends MozartProblemSolver {
 		List<SyncTableConfiguration> configuredTables = getRelatedOperationController().getConfiguration()
 		        .getTablesConfigurations();
 		
+		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
-			logDebug("Validating DB '[" + dbName + "]");
+			logDebug("Trying to rename fields on Patient_State on DB " + ++i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
 			
-			DBValidateInfo report = new DBValidateInfo(this.reportOfResolvedProblems, dbName);
-			
+			DBValidateInfo report = this.reportOfResolvedProblems.initDBValidatedInfo(dbName);
+				
 			if (!DBUtilities.isResourceExist(dbName, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
 				logWarn("DB '" + dbName + "' is missing!");
 				
