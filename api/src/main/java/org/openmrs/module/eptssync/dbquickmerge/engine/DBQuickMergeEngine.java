@@ -100,6 +100,7 @@ public class DBQuickMergeEngine extends Engine {
 					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
 				}
 				catch (DBException e) {
+					e.printStackTrace();
 					
 					if (e.isDuplicatePrimaryKeyException()) {
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
@@ -115,6 +116,7 @@ public class DBQuickMergeEngine extends Engine {
 					}
 				}
 				catch (Exception e) {
+					e.printStackTrace();
 					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! " + e.getLocalizedMessage() + ". Skipping... ");
 				}
 				finally {

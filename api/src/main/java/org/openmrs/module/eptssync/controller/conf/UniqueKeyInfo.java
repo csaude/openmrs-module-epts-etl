@@ -70,7 +70,9 @@ public class UniqueKeyInfo {
 		for (Field field : this.fields) {
 			String attClasse = AttDefinedElements.convertTableAttNameToClassAttName(field.getName());
 			
-			Object value = object.getFieldValues(attClasse)[0];
+			Object[] fieldValues = object.getFieldValues(attClasse);
+			
+			Object value = fieldValues != null ? fieldValues[0] : null;
 			
 			field.setValue(value);
 		}

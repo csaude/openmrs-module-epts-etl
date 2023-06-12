@@ -53,7 +53,7 @@ public class MergingRecord {
 			MergingRecord.loadDestParentInfo(this,  srcConn, destConn);
 			MergingRecord.loadDestConditionalParentInfo(this, srcConn, destConn);
 		}
-		catch (SQLException e) {
+		catch (DBException e) {
 			throw new DBException(e);
 		}
 
@@ -75,13 +75,8 @@ public class MergingRecord {
 	public void resolveConflict(Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException{
 		if (!config.isFullLoaded()) config.fullLoad(); 
 		
-		try {
-			MergingRecord.loadDestParentInfo(this,  srcConn, destConn);
-			MergingRecord.loadDestConditionalParentInfo(this, srcConn, destConn);
-		}
-		catch (SQLException e) {
-			throw new DBException(e);
-		}
+		MergingRecord.loadDestParentInfo(this,  srcConn, destConn);
+		MergingRecord.loadDestConditionalParentInfo(this, srcConn, destConn);
 		
 		List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
 		
@@ -112,7 +107,7 @@ public class MergingRecord {
 		}		
 	}
 	
-	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, SQLException {
+	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException {
 		DatabaseObject record = mergingRecord.record;
 		
 		SyncTableConfiguration config = mergingRecord.config;
@@ -125,7 +120,9 @@ public class MergingRecord {
 			if (parentIdInOrigin != null) {
 				DatabaseObject parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
 				
-				if (parentInOrigin == null) throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
+				if (parentInOrigin == null) {
+					throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
+				}
 				
 				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(), parentInOrigin, destConn);
 				

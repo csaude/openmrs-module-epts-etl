@@ -1,13 +1,13 @@
 package org.openmrs.module.eptssync.model.pojo.destination;
 
-import org.openmrs.module.eptssync.model.pojo.generic.*; 
- 
-import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
- 
-import org.openmrs.module.eptssync.utilities.AttDefinedElements; 
-import java.sql.SQLException; 
-import java.sql.ResultSet; 
- 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.openmrs.module.eptssync.model.pojo.generic.AbstractDatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.utilities.AttDefinedElements;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
+
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class PersonAddressVO extends AbstractDatabaseObject implements DatabaseObject { 
@@ -21,7 +21,7 @@ public class PersonAddressVO extends AbstractDatabaseObject implements DatabaseO
 	private String postalCode;
 	private String country;
 	private String latitude;
-	private String Integeritude;
+	private String longitude;
 	private Integer creator;
 	private byte voided;
 	private Integer voidedBy;
@@ -129,12 +129,12 @@ public class PersonAddressVO extends AbstractDatabaseObject implements DatabaseO
 		return this.latitude;
 	}
  
-	public void setIntegeritude(String Integeritude){ 
-	 	this.Integeritude = Integeritude;
+	public void setLongitude(String longitude){ 
+	 	this.longitude = longitude;
 	}
  
-	public String getIntegeritude(){ 
-		return this.Integeritude;
+	public String getLongitude(){ 
+		return this.longitude;
 	}
  
 	public void setCreator(Integer creator){ 
@@ -335,7 +335,7 @@ public class PersonAddressVO extends AbstractDatabaseObject implements DatabaseO
 		this.postalCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("postal_code") != null ? rs.getString("postal_code").trim() : null);
 		this.country = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("country") != null ? rs.getString("country").trim() : null);
 		this.latitude = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("latitude") != null ? rs.getString("latitude").trim() : null);
-		this.Integeritude = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("Integeritude") != null ? rs.getString("Integeritude").trim() : null);
+		this.longitude = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("longitude") != null ? rs.getString("longitude").trim() : null);
 		if (rs.getObject("creator") != null) this.creator = rs.getInt("creator");
 		this.dateCreated =  rs.getTimestamp("date_created") != null ? new java.util.Date( rs.getTimestamp("date_created").getTime() ) : null;
 		this.voided = rs.getByte("voided");
@@ -370,37 +370,37 @@ public class PersonAddressVO extends AbstractDatabaseObject implements DatabaseO
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO person_address(person_id, preferred, address1, address2, city_village, state_province, postal_code, country, latitude, Integeritude, creator, date_created, voided, voided_by, date_voided, void_reason, county_district, address3, address6, address5, address4, uuid, date_changed, changed_by, start_date, end_date, address7, address8, address9, address10, address11, address12, address13, address14, address15) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO person_address(person_id, preferred, address1, address2, city_village, state_province, postal_code, country, latitude, longitude, creator, date_created, voided, voided_by, date_voided, void_reason, county_district, address3, address6, address5, address4, uuid, date_changed, changed_by, start_date, end_date, address7, address8, address9, address10, address11, address12, address13, address14, address15) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.personId, this.preferred, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.Integeritude, this.creator, this.dateCreated, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.uuid, this.dateChanged, this.changedBy, this.startDate, this.endDate, this.address7, this.address8, this.address9, this.address10, this.address11, this.address12, this.address13, this.address14, this.address15};		return params; 
+ 		Object[] params = {this.personId, this.preferred, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator, this.dateCreated, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.uuid, this.dateChanged, this.changedBy, this.startDate, this.endDate, this.address7, this.address8, this.address9, this.address10, this.address11, this.address12, this.address13, this.address14, this.address15};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO person_address(person_address_id, person_id, preferred, address1, address2, city_village, state_province, postal_code, country, latitude, Integeritude, creator, date_created, voided, voided_by, date_voided, void_reason, county_district, address3, address6, address5, address4, uuid, date_changed, changed_by, start_date, end_date, address7, address8, address9, address10, address11, address12, address13, address14, address15) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO person_address(person_address_id, person_id, preferred, address1, address2, city_village, state_province, postal_code, country, latitude, longitude, creator, date_created, voided, voided_by, date_voided, void_reason, county_district, address3, address6, address5, address4, uuid, date_changed, changed_by, start_date, end_date, address7, address8, address9, address10, address11, address12, address13, address14, address15) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.personAddressId, this.personId, this.preferred, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.Integeritude, this.creator, this.dateCreated, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.uuid, this.dateChanged, this.changedBy, this.startDate, this.endDate, this.address7, this.address8, this.address9, this.address10, this.address11, this.address12, this.address13, this.address14, this.address15};		return params; 
+ 		Object[] params = {this.personAddressId, this.personId, this.preferred, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator, this.dateCreated, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.uuid, this.dateChanged, this.changedBy, this.startDate, this.endDate, this.address7, this.address8, this.address9, this.address10, this.address11, this.address12, this.address13, this.address14, this.address15};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.personId, this.preferred, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.Integeritude, this.creator, this.dateCreated, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.uuid, this.dateChanged, this.changedBy, this.startDate, this.endDate, this.address7, this.address8, this.address9, this.address10, this.address11, this.address12, this.address13, this.address14, this.address15, this.personAddressId};		return params; 
+ 		Object[] params = {this.personId, this.preferred, this.address1, this.address2, this.cityVillage, this.stateProvince, this.postalCode, this.country, this.latitude, this.longitude, this.creator, this.dateCreated, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.countyDistrict, this.address3, this.address6, this.address5, this.address4, this.uuid, this.dateChanged, this.changedBy, this.startDate, this.endDate, this.address7, this.address8, this.address9, this.address10, this.address11, this.address12, this.address13, this.address14, this.address15, this.personAddressId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE person_address SET person_id = ?, preferred = ?, address1 = ?, address2 = ?, city_village = ?, state_province = ?, postal_code = ?, country = ?, latitude = ?, Integeritude = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, county_district = ?, address3 = ?, address6 = ?, address5 = ?, address4 = ?, uuid = ?, date_changed = ?, changed_by = ?, start_date = ?, end_date = ?, address7 = ?, address8 = ?, address9 = ?, address10 = ?, address11 = ?, address12 = ?, address13 = ?, address14 = ?, address15 = ? WHERE person_address_id = ?;"; 
+ 		return "UPDATE person_address SET person_id = ?, preferred = ?, address1 = ?, address2 = ?, city_village = ?, state_province = ?, postal_code = ?, country = ?, latitude = ?, longitude = ?, creator = ?, date_created = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, county_district = ?, address3 = ?, address6 = ?, address5 = ?, address4 = ?, uuid = ?, date_changed = ?, changed_by = ?, start_date = ?, end_date = ?, address7 = ?, address8 = ?, address9 = ?, address10 = ?, address11 = ?, address12 = ?, address13 = ?, address14 = ?, address15 = ? WHERE person_address_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.personId) + "," + (this.preferred) + "," + (this.address1 != null ? "\""+ utilities.scapeQuotationMarks(address1)  +"\"" : null) + "," + (this.address2 != null ? "\""+ utilities.scapeQuotationMarks(address2)  +"\"" : null) + "," + (this.cityVillage != null ? "\""+ utilities.scapeQuotationMarks(cityVillage)  +"\"" : null) + "," + (this.stateProvince != null ? "\""+ utilities.scapeQuotationMarks(stateProvince)  +"\"" : null) + "," + (this.postalCode != null ? "\""+ utilities.scapeQuotationMarks(postalCode)  +"\"" : null) + "," + (this.country != null ? "\""+ utilities.scapeQuotationMarks(country)  +"\"" : null) + "," + (this.latitude != null ? "\""+ utilities.scapeQuotationMarks(latitude)  +"\"" : null) + "," + (this.Integeritude != null ? "\""+ utilities.scapeQuotationMarks(Integeritude)  +"\"" : null) + "," + (this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.countyDistrict != null ? "\""+ utilities.scapeQuotationMarks(countyDistrict)  +"\"" : null) + "," + (this.address3 != null ? "\""+ utilities.scapeQuotationMarks(address3)  +"\"" : null) + "," + (this.address6 != null ? "\""+ utilities.scapeQuotationMarks(address6)  +"\"" : null) + "," + (this.address5 != null ? "\""+ utilities.scapeQuotationMarks(address5)  +"\"" : null) + "," + (this.address4 != null ? "\""+ utilities.scapeQuotationMarks(address4)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.address7 != null ? "\""+ utilities.scapeQuotationMarks(address7)  +"\"" : null) + "," + (this.address8 != null ? "\""+ utilities.scapeQuotationMarks(address8)  +"\"" : null) + "," + (this.address9 != null ? "\""+ utilities.scapeQuotationMarks(address9)  +"\"" : null) + "," + (this.address10 != null ? "\""+ utilities.scapeQuotationMarks(address10)  +"\"" : null) + "," + (this.address11 != null ? "\""+ utilities.scapeQuotationMarks(address11)  +"\"" : null) + "," + (this.address12 != null ? "\""+ utilities.scapeQuotationMarks(address12)  +"\"" : null) + "," + (this.address13 != null ? "\""+ utilities.scapeQuotationMarks(address13)  +"\"" : null) + "," + (this.address14 != null ? "\""+ utilities.scapeQuotationMarks(address14)  +"\"" : null) + "," + (this.address15 != null ? "\""+ utilities.scapeQuotationMarks(address15)  +"\"" : null); 
+ 		return ""+(this.personId) + "," + (this.preferred) + "," + (this.address1 != null ? "\""+ utilities.scapeQuotationMarks(address1)  +"\"" : null) + "," + (this.address2 != null ? "\""+ utilities.scapeQuotationMarks(address2)  +"\"" : null) + "," + (this.cityVillage != null ? "\""+ utilities.scapeQuotationMarks(cityVillage)  +"\"" : null) + "," + (this.stateProvince != null ? "\""+ utilities.scapeQuotationMarks(stateProvince)  +"\"" : null) + "," + (this.postalCode != null ? "\""+ utilities.scapeQuotationMarks(postalCode)  +"\"" : null) + "," + (this.country != null ? "\""+ utilities.scapeQuotationMarks(country)  +"\"" : null) + "," + (this.latitude != null ? "\""+ utilities.scapeQuotationMarks(latitude)  +"\"" : null) + "," + (this.longitude != null ? "\""+ utilities.scapeQuotationMarks(longitude)  +"\"" : null) + "," + (this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.countyDistrict != null ? "\""+ utilities.scapeQuotationMarks(countyDistrict)  +"\"" : null) + "," + (this.address3 != null ? "\""+ utilities.scapeQuotationMarks(address3)  +"\"" : null) + "," + (this.address6 != null ? "\""+ utilities.scapeQuotationMarks(address6)  +"\"" : null) + "," + (this.address5 != null ? "\""+ utilities.scapeQuotationMarks(address5)  +"\"" : null) + "," + (this.address4 != null ? "\""+ utilities.scapeQuotationMarks(address4)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.changedBy) + "," + (this.startDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(startDate)  +"\"" : null) + "," + (this.endDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(endDate)  +"\"" : null) + "," + (this.address7 != null ? "\""+ utilities.scapeQuotationMarks(address7)  +"\"" : null) + "," + (this.address8 != null ? "\""+ utilities.scapeQuotationMarks(address8)  +"\"" : null) + "," + (this.address9 != null ? "\""+ utilities.scapeQuotationMarks(address9)  +"\"" : null) + "," + (this.address10 != null ? "\""+ utilities.scapeQuotationMarks(address10)  +"\"" : null) + "," + (this.address11 != null ? "\""+ utilities.scapeQuotationMarks(address11)  +"\"" : null) + "," + (this.address12 != null ? "\""+ utilities.scapeQuotationMarks(address12)  +"\"" : null) + "," + (this.address13 != null ? "\""+ utilities.scapeQuotationMarks(address13)  +"\"" : null) + "," + (this.address14 != null ? "\""+ utilities.scapeQuotationMarks(address14)  +"\"" : null) + "," + (this.address15 != null ? "\""+ utilities.scapeQuotationMarks(address15)  +"\"" : null); 
 	} 
  
 	@Override
