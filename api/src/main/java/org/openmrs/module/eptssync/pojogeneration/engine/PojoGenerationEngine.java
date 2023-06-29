@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.pojogeneration.controller.PojoGenerationController;
@@ -17,18 +19,18 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
- * The engine responsible for transport synchronization files from origin to
- * destination site
+ * The engine responsible for transport synchronization files from origin to destination site
  * <p>
- * This is temporariy transportation method which suppose that the origin and
- * destination are in the same matchine, so the transport process consist on
- * moving files from export directory to import directory
+ * This is temporariy transportation method which suppose that the origin and destination are in the
+ * same matchine, so the transport process consist on moving files from export directory to import
+ * directory
  * <p>
  * In the future a propery transportation method should be implemented.
  * 
  * @author jpboane
  */
 public class PojoGenerationEngine extends Engine {
+	
 	private List<String> alreadyGeneratedClasses;
 	
 	private boolean pojoGenerated;
@@ -38,7 +40,7 @@ public class PojoGenerationEngine extends Engine {
 		
 		this.alreadyGeneratedClasses = new ArrayList<String>();
 	}
-
+	
 	@Override
 	protected void restart() {
 	}
@@ -47,23 +49,38 @@ public class PojoGenerationEngine extends Engine {
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
 		this.pojoGenerated = true;
 		
-		for (AppInfo app : getRelatedOperationController().getProcessController().getAppsInfo()) {
-			if (utilities.stringHasValue(app.getPojoPackageName())) {
+		AppInfo mainApp = getSyncTableConfiguration().getMainApp();
+		
+		generate(mainApp, getSyncTableConfiguration());
+		
+		List<AppInfo> otherApps = getSyncTableConfiguration().getRelatedSynconfiguration().exposeAllAppsNotMain();
+		
+		AppInfo mappingAppInfo = null;
+		
+		if (utilities.arrayHasElement(otherApps)) {
+			mappingAppInfo = otherApps.get(0);
+			
+			generate(mappingAppInfo, getSyncTableConfiguration().getMappedTableInfo());
+		}
+	}
+	
+	private void generate(AppInfo app, SyncTableConfiguration tableConfiguration) {
+		if (!utilities.stringHasValue(app.getPojoPackageName())) {
+			throw new ForbiddenOperationException("The app " + app.getApplicationCode() + " has no package name!");
+		}
+		
+		String fullClassName = tableConfiguration.generateFullClassName(app);
+		
+		if (!checkIfIsAlredyGenerated(fullClassName)) {
+			OpenConnection appConn = app.openConnection();
+			
+			try {
+				tableConfiguration.generateRecordClass(app, true);
 				
-				String fullClassName = getSyncTableConfiguration().generateFullClassName(app);
-				
-				if (!checkIfIsAlredyGenerated(fullClassName)) {
-					OpenConnection appConn = app.openConnection();
-				
-					try {
-						getSyncTableConfiguration().generateRecordClass(app, true);
-						
-						this.alreadyGeneratedClasses.add(fullClassName);
-					}
-					finally {
-						appConn.finalizeConnection();
-					} 
-				}
+				this.alreadyGeneratedClasses.add(fullClassName);
+			}
+			finally {
+				appConn.finalizeConnection();
 			}
 		}
 	}
@@ -78,7 +95,8 @@ public class PojoGenerationEngine extends Engine {
 	
 	@Override
 	protected List<SyncRecord> searchNextRecords(Connection conn) {
-		if (pojoGenerated) return null;
+		if (pojoGenerated)
+			return null;
 		
 		List<SyncRecord> records = new ArrayList<SyncRecord>();
 		
@@ -96,7 +114,7 @@ public class PojoGenerationEngine extends Engine {
 	public PojoGenerationController getRelatedOperationController() {
 		return (PojoGenerationController) super.getRelatedOperationController();
 	}
-
+	
 	@Override
 	public void requestStop() {
 	}

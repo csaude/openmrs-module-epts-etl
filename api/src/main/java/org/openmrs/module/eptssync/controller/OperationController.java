@@ -1,6 +1,8 @@
 	package org.openmrs.module.eptssync.controller;
 
 import java.io.File;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +25,7 @@ import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -529,6 +532,8 @@ public abstract class OperationController implements Controller{
 			this.progressInfo.setStartTime(DateAndTimeUtilities.getCurrentDate());
 		}
 	}
+
+
 
 	@Override
 	public void onSleep() {

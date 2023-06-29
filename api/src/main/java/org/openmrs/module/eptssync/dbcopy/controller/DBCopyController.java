@@ -1,16 +1,16 @@
-package org.openmrs.module.eptssync.dbquickcopy.controller;
+package org.openmrs.module.eptssync.dbcopy.controller;
 
+import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
-import org.openmrs.module.eptssync.controller.SiteOperationController;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.dbquickcopy.engine.DBQuickCopyEngine;
+import org.openmrs.module.eptssync.dbcopy.engine.DBCopyEngine;
+import org.openmrs.module.eptssync.dbcopy.model.DBCopySearchParams;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
@@ -19,23 +19,30 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class DBQuickCopyController extends SiteOperationController {
+public class DBCopyController extends OperationController {
 	
-	private DBConnectionService srcDBService;
+	private AppInfo srcAppInfo;
 	
+	private AppInfo destAppInfo;
 	
-	public DBQuickCopyController(ProcessController processController, SyncOperationConfig operationConfig,
-	    String appOriginLocationCode) {
-		super(processController, operationConfig, appOriginLocationCode);
+	public DBCopyController(ProcessController processController, SyncOperationConfig operationConfig) {
+		super(processController, operationConfig);
 		
-		AppInfo srcApp = getConfiguration().exposeAllAppsNotMain().get(0);
-		
-		this.srcDBService = DBConnectionService.init(srcApp.getConnInfo());
+		this.srcAppInfo = getConfiguration().getMainApp();
+		this.destAppInfo = getConfiguration().exposeAllAppsNotMain().get(0);
+	}
+	
+	public AppInfo getSrcAppInfo() {
+		return srcAppInfo;
+	}
+	
+	public AppInfo getDestAppInfo() {
+		return destAppInfo;
 	}
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new DBQuickCopyEngine(monitor, limits);
+		return new DBCopyEngine(monitor, limits);
 	}
 	
 	@Override
@@ -43,7 +50,9 @@ public class DBQuickCopyController extends SiteOperationController {
 		OpenConnection conn = openSrcConnection();
 		
 		try {
-			return DatabaseObjectDAO.getFirstRecord(tableInfo, conn);
+			DBCopySearchParams searchParams = new DBCopySearchParams(tableInfo, null, this);
+			
+			return DatabaseObjectDAO.getFirstRecord(searchParams, conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -59,8 +68,10 @@ public class DBQuickCopyController extends SiteOperationController {
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openSrcConnection();
 		
+		DBCopySearchParams searchParams = new DBCopySearchParams(tableInfo, null, this);
+		
 		try {
-			return DatabaseObjectDAO.getLastRecord(tableInfo, conn);
+			return DatabaseObjectDAO.getLastRecord(searchParams, conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -78,6 +89,10 @@ public class DBQuickCopyController extends SiteOperationController {
 	}
 	
 	public OpenConnection openSrcConnection() {
-		return srcDBService.openConnection();
+		return srcAppInfo.openConnection();
+	}
+	
+	public OpenConnection openDestConnection() {
+		return destAppInfo.openConnection();
 	}
 }

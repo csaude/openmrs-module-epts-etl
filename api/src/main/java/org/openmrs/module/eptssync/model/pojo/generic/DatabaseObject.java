@@ -79,6 +79,8 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract Integer getParentValue(String parentAttName);
 	
+	
+	
 	/**
 	 * Consolidate data for database consistency
 	 * <p>
@@ -145,7 +147,7 @@ public interface DatabaseObject extends SyncRecord {
 	public abstract Date getDateVoided();
 	
 	public abstract Date getDateCreated();
-	
+		
 	/**
 	 * Check if this record has exactily the same values in all fields with a given object
 	 * 
@@ -155,12 +157,24 @@ public interface DatabaseObject extends SyncRecord {
 	public abstract boolean hasExactilyTheSameDataWith(DatabaseObject srcObj);
 	
 	/**
+	 * Return the values of given fields
+	 * 
+	 * @param fieldName of fields to retrieve
+	 * @return Return the values of given fields
+	 */
+	public abstract Object[] getFieldValues(String... fieldName);
+	
+	
+	/**
 	 * Return a value of given field
 	 * 
 	 * @param fieldName of field to retrieve
 	 * @return Return a value of given field
 	 */
-	public abstract Object[] getFieldValues(String... fieldName);
+	public abstract Object getFieldValue(String fieldName);
+	
+	
+	public abstract void setFieldValue(String fieldName, Object value);
 	
 	/**
 	 * Retrive values for all {@link SyncTableConfiguration#getUniqueKeys()} fields. The values

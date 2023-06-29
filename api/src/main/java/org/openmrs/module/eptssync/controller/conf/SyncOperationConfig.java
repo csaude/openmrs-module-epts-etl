@@ -13,6 +13,7 @@ import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.SiteOperationController;
 import org.openmrs.module.eptssync.databasepreparation.controller.DatabasePreparationController;
+import org.openmrs.module.eptssync.dbcopy.controller.DBCopyController;
 import org.openmrs.module.eptssync.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.eptssync.dbquickexport.controller.DBQuickExportController;
 import org.openmrs.module.eptssync.dbquickload.controller.DBQuickLoadController;
@@ -346,6 +347,10 @@ public class SyncOperationConfig extends BaseConfiguration {
 		return this.operationType.isDbQuickCopy();
 	}
 	
+	public boolean isDbCopy() {
+		return this.operationType.isDbCopyOperation();
+	}	
+	
 	@JsonIgnore
 	public boolean isNewRecordsDetector() {
 		return this.operationType.isNewRecordsDetector();
@@ -470,8 +475,9 @@ public class SyncOperationConfig extends BaseConfiguration {
 			return new DBQuickMergeController(parent, this, appOriginCode);
 		} else if (isResolveProblem()) {
 			return new GenericOperationController(parent, this);
+		} else if (isDbCopy()) {
+			return new DBCopyController(parent, this);
 		}
-		
 		else
 			throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");
 	}
@@ -527,6 +533,10 @@ public class SyncOperationConfig extends BaseConfiguration {
 			if (!this.canBeRunInDBInconsistencyCheckProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db inconsistency check process\n";
+		} else if (this.getRelatedSyncConfig().isDbCopy()) {
+			if (!this.canBeRunInDbCopyProcess())
+				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
+				        + "] Cannot be configured in db copy process\n";
 		} else if (this.getRelatedSyncConfig().isResolveProblems()) {
 			if (!this.canBeRunInResolveProblemsProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
@@ -578,6 +588,17 @@ public class SyncOperationConfig extends BaseConfiguration {
 		        SyncOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);
+	}
+	
+	public static List<SyncOperationType> getSupportedOperationsInDbCopyProcess() {
+		SyncOperationType[] supported = { SyncOperationType.POJO_GENERATION, SyncOperationType.DB_COPY };
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
+	@JsonIgnore
+	public boolean canBeRunInDbCopyProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDbCopyProcess(), this.operationType);
 	}
 	
 	@JsonIgnore

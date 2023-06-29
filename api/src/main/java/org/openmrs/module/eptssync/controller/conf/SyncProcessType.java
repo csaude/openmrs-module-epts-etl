@@ -14,10 +14,15 @@ public enum SyncProcessType {
 	QUICK_MERGE_WITHOUT_ENTITY_GENERATION,
 	QUICK_MERGE_WITH_ENTITY_GENERATION,
 	DB_INCONSISTENCY_CHECK,
-	GENERIC_PROCESS;
+	GENERIC_PROCESS,
+	DB_COPY;
 	
 	public boolean isGenericProcess(){
 		return  this.equals(GENERIC_PROCESS);
+	}
+	
+	public boolean isDbCopy(){
+		return  this.equals(DB_COPY);
 	}
 	
 	public boolean isdDBInconsistencyCheck(){
@@ -59,7 +64,6 @@ public enum SyncProcessType {
 	public boolean isDataReconciliation(){
 		return  this.equals(DATA_RECONCILIATION);
 	}
-	
 	
 	public boolean isDataBaseMergeFromSourceDB(){
 		return  this.equals(DATABASE_MERGE_FROM_SOURCE_DB);
@@ -116,6 +120,11 @@ public enum SyncProcessType {
 	public static boolean isGenericProcess(String processType){
 		return  SyncProcessType.valueOf(processType).isGenericProcess();
 	}
+	
+	public static boolean isDbCopy(String processType){
+		return  SyncProcessType.valueOf(processType).isDbCopy();
+	}
+	
 	
 	public static boolean isSupportedProcessType(String processType) {
 		return SyncProcessType.valueOf(processType).isSupportedProcessType();

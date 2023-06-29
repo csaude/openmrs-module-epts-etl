@@ -3,6 +3,8 @@ package org.openmrs.module.eptssync.controller;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -13,7 +15,6 @@ import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.model.ProcessProgressInfo;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -23,6 +24,7 @@ import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -106,6 +108,18 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
 		this.operationsControllers = new ArrayList<OperationController>();
+		
+		if (!this.isImportStageSchemaExists()) {
+			this.createStageSchema();
+		}
+		
+		if (!existInconsistenceInfoTable()) {
+			generateInconsistenceInfoTable();
+		}
+
+		if (!existOperationProgressInfoTable()) {
+			generateTableOperationProgressInfo();
+		}
 		
 		OpenConnection conn = getDefaultApp().openConnection();
 		
@@ -596,5 +610,155 @@ public class ProcessController implements Controller, ControllerStarter {
 	public boolean isResumable() {
 		return getConfiguration().isResumable();
 	}
+
+	private void createStageSchema() {
+		OpenConnection conn = getDefaultApp().openConnection();
+		
+		try {
+			Statement st = conn.createStatement();
+
+			st.addBatch("CREATE DATABASE " + getConfiguration().getSyncStageSchema());
+
+			st.executeBatch();
+
+			st.close();
+			
+			conn.markAsSuccessifullyTerminected();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+
+	private boolean isImportStageSchemaExists() {
+		OpenConnection conn = openConnection();
+		
+		try {
+			return DBUtilities.isResourceExist(null, DBUtilities.RESOURCE_TYPE_SCHEMA, getConfiguration().getSyncStageSchema(), conn);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
 	
+	public boolean existInconsistenceInfoTable() {
+		OpenConnection conn = openConnection();
+		
+		String schema = getConfiguration().getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = "inconsistence_info";
+
+		try {
+			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}
+	}
+	
+	public boolean existOperationProgressInfoTable() {
+		OpenConnection conn = openConnection();
+		
+		String schema = getConfiguration().getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = "table_operation_progress_info";
+
+		try {
+			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}
+	}
+	
+
+	private void generateTableOperationProgressInfo() {
+		OpenConnection conn = openConnection();
+		
+		String sql = "";
+		
+		sql += "CREATE TABLE " + getConfiguration().getSyncStageSchema() + ".table_operation_progress_info (\n";
+		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
+		sql += "operation_id varchar(250) NOT NULL,\n";
+		sql += "operation_name varchar(250) NOT NULL,\n";
+		sql += "table_name varchar(100) NOT NULL,\n";
+		sql += "record_origin_location_code VARCHAR(100) NOT NULL,\n";
+		sql += "started_at datetime NOT NULL,\n";
+		sql += "last_refresh_at datetime NOT NULL,\n";
+		sql += "total_records int(11) NOT NULL,\n";
+		sql += "total_processed_records int(11) NOT NULL,\n";
+		sql += "status varchar(50) NOT NULL,\n";
+		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
+		sql += "UNIQUE KEY " + getConfiguration().getSyncStageSchema() + "UNQ_OPERATION_ID(operation_id),\n";
+		sql += "PRIMARY KEY (id)\n";
+		sql += ") ENGINE=InnoDB;\n";
+				
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+
+			st.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} 
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void generateInconsistenceInfoTable() {
+		OpenConnection conn = openConnection();
+		
+		String sql = "";
+		
+		sql += "CREATE TABLE " + getConfiguration().getSyncStageSchema() + ".inconsistence_info (\n";
+		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
+		sql += "table_name varchar(100) NOT NULL,\n";
+		sql += "record_id int(11) NOT NULL,\n";
+		sql += "parent_table_name varchar(100) NOT NULL,\n";
+		sql += "parent_id int(11) NOT NULL,\n";
+		sql += "default_parent_id int(11) DEFAULT NULL,\n";
+		sql += "record_origin_location_code VARCHAR(100) NOT NULL,\n";
+		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
+		sql += "PRIMARY KEY (id)\n";
+		sql += ") ENGINE=InnoDB;\n";
+				
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+
+			st.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+
+			throw new RuntimeException(e);
+		} 
+		finally {
+			conn.markAsSuccessifullyTerminected();
+			conn.finalizeConnection();
+		}
+	}	
 }

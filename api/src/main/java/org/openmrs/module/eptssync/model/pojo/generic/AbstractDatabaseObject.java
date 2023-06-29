@@ -18,6 +18,7 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
+import org.openmrs.module.eptssync.controller.conf.FieldsMapping;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
@@ -47,6 +48,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	protected String uuid;
 	
 	protected SyncImportInfoVO relatedSyncInfo;
+	
 	protected List<UniqueKeyInfo> uniqueKeysInfo;
 	
 	public void load(ResultSet rs) throws SQLException {
@@ -147,6 +149,25 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
+	public void setFieldValue(String fieldName, Object value) {
+		try {
+			for (Field field : getFields()) {
+				if (field.getName().equals(fieldName)) {
+					field.set(this, value);
+					
+					break;
+				}
+			}
+		}
+		catch (IllegalArgumentException e) {
+			throw new RuntimeException(e);
+		}
+		catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	@Override
 	public Object[] getFieldValues(String... fieldsName) {
 		List<Object> values = new ArrayList<Object>();
 		
@@ -174,6 +195,17 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		}
 		
 		return values != null ? utilities.parseListToArray(values) : null;
+	}
+	
+	@Override
+	public Object getFieldValue(String fieldsName) {
+		Object[] values = getFieldValues(fieldsName);
+		
+		if (utilities.arrayHasElement(values)) {
+			return values[0];
+		}
+		
+		return null;
 	}
 	
 	@Override
@@ -307,9 +339,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					break;
 				}
 			}
-		}
-		else
-		if (utilities.arrayHasElement(tableConfiguration.getObservationDateFields())) {
+		} else if (utilities.arrayHasElement(tableConfiguration.getObservationDateFields())) {
 			for (String dateField : tableConfiguration.getObservationDateFields()) {
 				
 				Object[] thisRecordDateArray = this
@@ -528,6 +558,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	        Connection conn) throws DBException {
 		if (!syncTableInfo.getRelatedSynconfiguration().isSourceSyncProcess())
 			throw new SyncExeption("You cannot move record to stage area in a installation different to source") {
+				
 				private static final long serialVersionUID = 1L;
 				
 			};
@@ -894,15 +925,16 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		String ukeys = "";
 		
 		if (utilities.arrayHasElement(getUniqueKeysInfo())) {
-			int i=0;
+			int i = 0;
 			
 			for (UniqueKeyInfo uk : getUniqueKeysInfo()) {
 				uk.loadValuesToFields(this);
 				
-				if (i>0) ukeys += ", ";
+				if (i > 0)
+					ukeys += ", ";
 				
 				ukeys += uk.toString();
-						
+				
 				i++;
 			}
 		}

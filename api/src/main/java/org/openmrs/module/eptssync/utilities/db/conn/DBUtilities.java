@@ -466,19 +466,25 @@ public class DBUtilities {
 			
 			String prevIndexName = null;
 			
-			List<String> keyElements = null;
+			List<String> keyElements = new ArrayList<String>();
 			
 			Field primaryKey = getPrimaryKey(tableName, schema, conn);
 			
 			String indexName = null;
+			
+			boolean starting = true;
 			
 			while (rs.next()) {
 				
 				indexName = rs.getString("INDEX_NAME");
 				
 				if (!indexName.equals(prevIndexName)) {
-					
-					addUniqueKey(indexName, keyElements, uniqueKeys, primaryKey.getName());
+					if (starting) {
+						starting = false;
+					}
+					else {
+						addUniqueKey(prevIndexName, keyElements, uniqueKeys, primaryKey.getName());
+					}
 					
 					prevIndexName = indexName;
 					keyElements = new ArrayList<String>();

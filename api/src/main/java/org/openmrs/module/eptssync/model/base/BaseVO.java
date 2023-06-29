@@ -143,7 +143,7 @@ public abstract class BaseVO  implements VO{
 	 * @return todos os atributos de inst�ncia desta classe independentemento do
 	 *         modificador de acesso
 	 */
-	protected Object[] getFields() {
+	protected Field[] getFields() {
 		return getFields(this);
 	}
 	
@@ -163,9 +163,10 @@ public abstract class BaseVO  implements VO{
 	 * @return todos os atributos de inst�ncia de da classe de um objecto
 	 *         independentemento do modificador de acesso
 	 */
-	public static Object[] getFields(Object obj) {
-		List<Object> fields = new ArrayList<Object>();
+	public static Field[] getFields(Object obj) {
+		List<Field> fields = new ArrayList<Field>();
 		Class<?> cl = obj.getClass();
+		
 		while (cl != null) {
 			Field[] in = cl.getDeclaredFields();
 			for (int i = 0; i < in.length; i++) {
@@ -177,7 +178,7 @@ public abstract class BaseVO  implements VO{
 			}
 			cl = cl.getSuperclass();
 		}
-		return fields.toArray();
+		return utilities.parseListToArray(fields);
 	}
 	
 	/**

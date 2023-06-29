@@ -247,6 +247,7 @@ public abstract class Engine implements Runnable, MonitoredOperation{
 					if (finished) markAsFinished();
 				}
 				catch (Exception e) {
+					
 					conn.finalizeConnection();
 					
 					reportError(e);

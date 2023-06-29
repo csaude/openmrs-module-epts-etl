@@ -8,12 +8,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 
-import javax.ws.rs.ForbiddenException;
-
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.SiteOperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.SyncProgressMeter;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseVO;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -77,10 +76,12 @@ public class TableOperationProgressInfo extends BaseVO {
 		        || controller.getOperationConfig().isPhantomRecordsDetector()
 		        || controller.getOperationConfig().isDBMergeFromSourceDB()
 		        || controller.getOperationConfig().isDataBaseMergeFromJSONOperation()
-		        || controller.getConfiguration().isResolveProblems())
+		        || controller.getConfiguration().isResolveProblems()
+		        || controller.getConfiguration().isDbCopy()
+		        )
 			return "central_site";
 		
-		throw new ForbiddenException("The originAppCode cannot be determined for "
+		throw new ForbiddenOperationException("The originAppCode cannot be determined for "
 		        + controller.getOperationType().name().toLowerCase() + " operation!");
 	}
 	

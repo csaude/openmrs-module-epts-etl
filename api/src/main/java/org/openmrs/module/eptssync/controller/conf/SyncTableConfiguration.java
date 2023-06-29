@@ -48,7 +48,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	private boolean metadata;
 	
-	private boolean fullLoaded;
+	protected boolean fullLoaded;
 	
 	private boolean removeForbidden;
 	
@@ -70,7 +70,39 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	 */
 	private List<List<Field>> winningRecordFieldsInfo;
 	
+	private MappedTableInfo mappedTableInfo;
+	
 	public SyncTableConfiguration() {
+	}
+	
+	public MappedTableInfo getMappedTableInfo() {
+		return mappedTableInfo;
+	}
+	
+	public void setMappedTableInfo(MappedTableInfo mappedTableInfo) {
+		this.mappedTableInfo = mappedTableInfo;
+	}
+	
+	public void clone(SyncTableConfiguration toCloneFrom) {
+		this.tableName = toCloneFrom.tableName;
+		this.parents = toCloneFrom.parents;
+		this.childred = toCloneFrom.childred;
+		this.conditionalParents = toCloneFrom.conditionalParents;
+		this.syncRecordClass = toCloneFrom.syncRecordClass;
+		this.relatedSyncTableInfoSource = toCloneFrom.relatedSyncTableInfoSource;
+		this.primaryKey = toCloneFrom.primaryKey;
+		this.primaryKeyType = toCloneFrom.primaryKeyType;
+		this.sharePkWith = toCloneFrom.sharePkWith;
+		this.extraConditionForExport = toCloneFrom.extraConditionForExport;
+		this.metadata = toCloneFrom.metadata;
+		this.fullLoaded = toCloneFrom.fullLoaded;
+		this.removeForbidden = toCloneFrom.removeForbidden;
+		this.disabled = toCloneFrom.disabled;
+		this.observationDateFields = toCloneFrom.observationDateFields;
+		this.uniqueKeys = toCloneFrom.uniqueKeys;
+		this.fields = toCloneFrom.fields;
+		this.winningRecordFieldsInfo = toCloneFrom.winningRecordFieldsInfo;
+		this.mappedTableInfo = toCloneFrom.mappedTableInfo;
 	}
 	
 	public List<List<Field>> getWinningRecordFieldsInfo() {
@@ -236,10 +268,19 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public String getPrimaryKey() {
+		OpenConnection conn = relatedSyncTableInfoSource.getMainApp().openConnection();
+		
+		try {
+			return getPrimaryKey(conn);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	@JsonIgnore
+	public String getPrimaryKey(Connection conn) {
 		if (primaryKey == null) {
-			
-			OpenConnection conn = relatedSyncTableInfoSource.getMainApp().openConnection();
-			
 			try {
 				ResultSet rs = conn.getMetaData().getPrimaryKeys(null, null, tableName);
 				
@@ -256,9 +297,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 				
 				throw new RuntimeException(e);
 			}
-			finally {
-				conn.finalizeConnection();
-			}
+			
 		}
 		
 		return primaryKey;
@@ -266,26 +305,33 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public void loadUniqueKeys() {
-		if (this.uniqueKeys == null) {
-			loadUniqueKeys(this);
+		OpenConnection conn = getRelatedSynconfiguration().getMainApp().openConnection();
+		
+		try {
+			loadUniqueKeys(conn);
+		}
+		finally {
+			conn.finalizeConnection();
 		}
 	}
 	
 	@JsonIgnore
-	private void loadUniqueKeys(SyncTableConfiguration tableConfiguration) {
+	public void loadUniqueKeys(Connection conn) {
+		if (this.uniqueKeys == null) {
+			loadUniqueKeys(this, conn);
+		}
+	}
+	
+	@JsonIgnore
+	private void loadUniqueKeys(SyncTableConfiguration tableConfiguration, Connection conn) {
 		if (tableConfiguration.uniqueKeys == null) {
-			
-			OpenConnection conn = tableConfiguration.getRelatedSynconfiguration().getMainApp().openConnection();
-			
 			try {
 				this.uniqueKeys = UniqueKeyInfo.loadUniqueKeysInfo(this, conn);
 			}
 			catch (SQLException e) {
 				throw new RuntimeException(e);
 			}
-			finally {
-				conn.finalizeConnection();
-			}
+			
 		}
 	}
 	
@@ -297,14 +343,31 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		return primaryKeyType;
 	}
 	
+	public String getPrimaryKeyType(Connection conn) {
+		if (primaryKeyType == null)
+			getPrimaryKey(conn);
+		
+		return primaryKeyType;
+	}
+	
 	@JsonIgnore
 	public boolean isNumericColumnType() {
 		return AttDefinedElements.isNumeric(this.getPrimaryKeyType());
 	}
 	
 	@JsonIgnore
+	public boolean isNumericColumnType(Connection conn) {
+		return AttDefinedElements.isNumeric(this.getPrimaryKeyType(conn));
+	}
+	
+	@JsonIgnore
 	public boolean hasPK() {
 		return getPrimaryKey() != null;
+	}
+	
+	@JsonIgnore
+	public boolean hasPK(Connection conn) {
+		return getPrimaryKey(conn) != null;
 	}
 	
 	private static String convertTableAttNameToClassAttName(String tableAttName) {
@@ -321,7 +384,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		throw new ForbiddenOperationException("The att '" + parentAttName + "' doesn't represent any defined parent att");
 	}
 	
-	private synchronized void loadChildren(Connection conn) throws SQLException {
+	protected synchronized void loadChildren(Connection conn) throws SQLException {
 		logDebug("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
 		
 		this.childred = new ArrayList<RefInfo>();
@@ -380,7 +443,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		getRelatedSynconfiguration().logErr(msg);
 	}
 	
-	private synchronized void loadParents(Connection conn) throws SQLException {
+	protected synchronized void loadParents(Connection conn) throws SQLException {
 		logDebug("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
 		
 		List<RefInfo> auxRefInfo = new ArrayList<RefInfo>();
@@ -448,7 +511,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		
 	}
 	
-	private void loadConditionalParents(Connection conn) throws DBException {
+	protected void loadConditionalParents(Connection conn) throws DBException {
 		if (!utilities.arrayHasElement(this.conditionalParents))
 			return;
 		
@@ -721,10 +784,10 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		return false;
 	}
 	
-	private synchronized void fullLoad(Connection conn) {
+	protected synchronized void fullLoad(Connection conn) {
 		try {
-			getPrimaryKey();
-			loadUniqueKeys();
+			getPrimaryKey(conn);
+			loadUniqueKeys(conn);
 			
 			loadParents(conn);
 			loadChildren(conn);
@@ -734,6 +797,17 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			setFields(DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn));
 			
 			this.fullLoaded = true;
+			
+			if (mappedTableInfo == null) {
+				mappedTableInfo = MappedTableInfo.generateFromSyncTableConfiguration(this);
+			}else {
+				this.mappedTableInfo.setRelatedSyncTableInfoSource(relatedSyncTableInfoSource);
+			
+				if (!utilities.arrayHasElement(this.mappedTableInfo.getFieldsMapping())) {
+					this.mappedTableInfo.generateMappingFields(this);
+				}
+			}
+			
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -744,13 +818,27 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	public synchronized void fullLoad() {
-		OpenConnection conn = getRelatedSynconfiguration().getMainApp().openConnection();
+		OpenConnection mainConn = getRelatedSynconfiguration().getMainApp().openConnection();
+		
+		OpenConnection mappedConn = null;
 		
 		try {
-			fullLoad(conn);
+			fullLoad(mainConn);
+			
+			List<AppInfo> otherApps = getRelatedSynconfiguration().exposeAllAppsNotMain();
+			
+			if (utilities.arrayHasElement(otherApps)) {
+				mappedConn = otherApps.get(0).openConnection();
+				
+				this.mappedTableInfo.fullLoad(mappedConn);
+			}
 		}
 		finally {
-			conn.finalizeConnection();
+			mainConn.finalizeConnection();
+			
+			if (mappedConn != null) {
+				mappedConn.finalizeConnection();
+			}
 		}
 	}
 	
@@ -836,6 +924,11 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public boolean isDBQuickCopy() {
+		return getRelatedSynconfiguration().isDbCopy();
+	}
+	
+	@JsonIgnore
+	public boolean isDbCopy() {
 		return getRelatedSynconfiguration().isDBQuickCopyProcess();
 	}
 	

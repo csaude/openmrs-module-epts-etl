@@ -232,6 +232,12 @@ public class SyncConfiguration extends BaseConfiguration{
 	}
 	
 	@JsonIgnore
+	public boolean isDbCopy() {
+		return this.processType.isDbCopy();
+	}
+	
+	
+	@JsonIgnore
 	public boolean isDBQuickExportProcess() {
 		return processType.isDBQuickExport();
 	}
@@ -578,7 +584,7 @@ public class SyncConfiguration extends BaseConfiguration{
 		
 		if (!this.isSupposedToHaveOriginAppCode()) {
 			if (utilities.stringHasValue(getOriginAppLocationCode()))
-				errorMsg += ++errNum + ". You cannot configure for 'originAppLocationCode' parameter in [" + getProcessType()
+				errorMsg += ++errNum + ". You cannot configure 'originAppLocationCode' parameter in [" + getProcessType()
 				        + " configuration\n";
 		}
 		
@@ -618,6 +624,8 @@ public class SyncConfiguration extends BaseConfiguration{
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBInconsistencyCheckProcess();
 		} else if (isResolveProblems()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInResolveProblemsProcess();
+		}else if (isDbCopy()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDbCopyProcess();
 		}
 		
 		if (supportedOperations != null) {

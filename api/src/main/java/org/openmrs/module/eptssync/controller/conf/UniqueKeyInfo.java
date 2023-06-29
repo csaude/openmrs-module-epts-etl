@@ -80,7 +80,7 @@ public class UniqueKeyInfo {
 	
 	public static List<UniqueKeyInfo> loadUniqueKeysInfo(SyncTableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
-		if (!utilities.stringHasValue(tableConfiguration.getPrimaryKey())) {
+		if (!utilities.stringHasValue(tableConfiguration.getPrimaryKey(conn))) {
 			throw new ForbiddenOperationException("The primary key is not defined!");
 		}
 		
@@ -101,7 +101,7 @@ public class UniqueKeyInfo {
 				indexName = rs.getString("INDEX_NAME");
 				
 				if (!indexName.equals(prevIndexName)) {
-					addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration);
+					addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);
 					
 					prevIndexName = indexName;
 					keyElements = new ArrayList<>();
@@ -110,7 +110,7 @@ public class UniqueKeyInfo {
 				keyElements.add(new Field(rs.getString("COLUMN_NAME")));
 			}
 			
-			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration);
+			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);
 			
 			if (tableConfiguration.useSharedPKKey()) {
 				SyncTableConfiguration parentTableInfo = new SyncTableConfiguration();
@@ -137,13 +137,13 @@ public class UniqueKeyInfo {
 	}
 	
 	private static boolean addUniqueKey(String keyName, List<Field> keyElements, List<UniqueKeyInfo> uniqueKeys,
-	        SyncTableConfiguration config) {
+	        SyncTableConfiguration config, Connection conn) {
 		
 		if (keyElements == null || keyElements.isEmpty())
 			return false;
 		
 		//Don't add PK as uniqueKey
-		if (keyElements.size() == 1 && keyElements.get(0).getName().equals(config.getPrimaryKey())) {
+		if (keyElements.size() == 1 && keyElements.get(0).getName().equals(config.getPrimaryKey(conn))) {
 			return false;
 		}
 		
@@ -246,10 +246,9 @@ public class UniqueKeyInfo {
 		if (this.fields == null)
 			this.fields = new ArrayList<Field>();
 		
-		if (this.fields.contains(field))
-			throw new ForbiddenOperationException("The field " + field.getName() + " Alredy exists on the key");
-		
-		this.fields.add(field);
+		if (!this.fields.contains(field)) {
+			this.fields.add(field);
+		}
 	}
 	
 	public static UniqueKeyInfo generateFromFieldList(List<String> fields) {
