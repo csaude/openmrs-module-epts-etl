@@ -30,7 +30,11 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		searchClauses.addToClauseFrom(tableInfo.getTableName() + " src_");
+		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
+		
+		srsFullTableName += tableInfo.getTableName();
+		
+		searchClauses.addToClauseFrom(srsFullTableName + " src_");
 		
 		searchClauses.addColumnToSelect("*");
 		

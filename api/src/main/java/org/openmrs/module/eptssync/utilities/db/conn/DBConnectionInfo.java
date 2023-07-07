@@ -10,15 +10,30 @@ public class DBConnectionInfo {
 	
 	private String driveClassName;
 	
+	private String schema;
+	
 	public DBConnectionInfo() {
 	}
 	
-	public DBConnectionInfo(String dataBaseUserName, String dataBaseUserPassword, String connectionURI,
-	    String driveClassName) {
+	public DBConnectionInfo(String dataBaseUserName, String dataBaseUserPassword, String connectionURI, String driveClassName) {
 		this.dataBaseUserName = dataBaseUserName;
 		this.dataBaseUserPassword = dataBaseUserPassword;
 		this.connectionURI = connectionURI;
 		this.driveClassName = driveClassName;
+	}
+	
+	public DBConnectionInfo(String dataBaseUserName, String dataBaseUserPassword, String connectionURI, String schema, String driveClassName) {
+		this(dataBaseUserName, dataBaseUserPassword, connectionURI, driveClassName);
+		
+		this.schema = schema;
+	}
+	
+	public String getSchema() {
+		return schema;
+	}
+	
+	public void setSchema(String schema) {
+		this.schema = schema;
 	}
 	
 	public String getDataBaseUserName() {

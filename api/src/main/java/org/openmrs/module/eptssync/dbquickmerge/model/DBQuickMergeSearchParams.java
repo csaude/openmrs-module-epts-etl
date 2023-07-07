@@ -11,6 +11,7 @@ import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
@@ -37,9 +38,10 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
 		OpenConnection srcConn = this.relatedController.openSrcConnection();
 			
 		String srcSchema;
-		
+		String dstSchema = DBUtilities.determineSchemaName(conn);
+			
 		try {
-			srcSchema = srcConn.getCatalog();
+			srcSchema = DBUtilities.determineSchemaName(srcConn);
 			 
 			SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 			
@@ -53,11 +55,16 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
 				searchClauses.addColumnToSelect("src_.*");
 			}
 		
+			
+			String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
+			
+			srsFullTableName += tableInfo.getTableName();
+			
 			String normalFromClause;
 			String patientFromClause;
 			
-			normalFromClause = tableInfo.getTableName() + " dest_";
-			patientFromClause = "patient inner join person dest_ on person_id = patient_id ";
+			normalFromClause = srsFullTableName + " dest_";
+			patientFromClause = dstSchema + ".patient inner join " + dstSchema + ".person dest_ on person_id = patient_id ";
 		
 			this.extraCondition = "";
 			

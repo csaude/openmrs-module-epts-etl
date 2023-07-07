@@ -46,7 +46,7 @@ public class DBConnectionService {
 		this.dataSource.setMaxIdle(50);
 		this.dataSource.setMinIdle(20);
 	}
-
+	
 	public static synchronized DBConnectionService init(String driveClassName, String connectionURI, String dataBaseUserName, String dataBaseUserPassword) {
 		DBConnectionInfo connInfo = new DBConnectionInfo();
 
@@ -56,6 +56,10 @@ public class DBConnectionService {
 		connInfo.setDataBaseUserPassword(dataBaseUserPassword);
 
 		return init(connInfo);
+	}
+	
+	public DBConnectionInfo getDbConnInfo() {
+		return dbConnInfo;
 	}
 
 	/**

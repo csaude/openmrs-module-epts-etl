@@ -9,6 +9,7 @@ import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 
 public class ExportSearchParams extends SyncSearchParams<DatabaseObject>{
 	private boolean selectAllRecords;
@@ -23,10 +24,11 @@ public class ExportSearchParams extends SyncSearchParams<DatabaseObject>{
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
+		String schema = DBUtilities.determineSchemaName(conn);
 		
 		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addColumnToSelect("patient.*, person.uuid");
-			searchClauses.addToClauseFrom("inner join person on person.person_id = patient_id");
+			searchClauses.addToClauseFrom("inner join " + schema + ".person on person.person_id = patient_id");
 		}
 		else {
 			searchClauses.addColumnToSelect("*");

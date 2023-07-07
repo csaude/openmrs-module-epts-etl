@@ -12,6 +12,7 @@ import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject>{
@@ -28,7 +29,11 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject>{
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		searchClauses.addToClauseFrom(tableInfo.getTableName());
+		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
+			
+		srsFullTableName += tableInfo.getTableName();
+			
+		searchClauses.addToClauseFrom(srsFullTableName);
 	
 		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addColumnToSelect("patient.*, person.uuid");
