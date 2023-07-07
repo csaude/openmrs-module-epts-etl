@@ -745,7 +745,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		String tabName = generateRelatedStageTableName();
 		
 		try {
-			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -760,7 +760,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		String tabName = generateRelatedStageUniqueKeysTableName();
 		
 		try {
-			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 		}
 		catch (SQLException e) {
 			e.printStackTrace();

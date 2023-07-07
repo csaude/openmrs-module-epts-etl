@@ -134,7 +134,7 @@ public abstract class MozartProblemSolver extends GenericEngine {
 	
 	public boolean checkIfTableExists(String tableName, String schema, Connection conn) throws DBException {
 		try {
-			return DBUtilities.isResourceExist(schema, DBUtilities.RESOURCE_TYPE_TABLE, tableName, conn);
+			return DBUtilities.isResourceExist(schema, null, DBUtilities.RESOURCE_TYPE_TABLE, tableName, conn);
 		}
 		catch (SQLException e) {
 			throw new DBException(e);

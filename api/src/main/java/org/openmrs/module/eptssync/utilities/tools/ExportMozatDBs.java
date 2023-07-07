@@ -113,7 +113,7 @@ public class ExportMozatDBs {
 		int oldQtyRecordsOnTypeIdLookupTable = (int) db.get("qtyRecordsOnTypeIdLookupTable");
 		
 		if (!typeIdLookupExists) {
-			typeIdLookupExists = DBUtilities.isResourceExist(dbName, DBUtilities.RESOURCE_TYPE_TABLE, "type_id_lookup", conn);
+			typeIdLookupExists = DBUtilities.isResourceExist(dbName, null, DBUtilities.RESOURCE_TYPE_TABLE, "type_id_lookup", conn);
 			
 			if (!typeIdLookupExists) {
 				return true;

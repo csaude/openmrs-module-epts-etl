@@ -643,7 +643,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DBUtilities.isResourceExist(null, DBUtilities.RESOURCE_TYPE_SCHEMA, getConfiguration().getSyncStageSchema(), conn);
+			return DBUtilities.isResourceExist(null, null, DBUtilities.RESOURCE_TYPE_SCHEMA, getConfiguration().getSyncStageSchema(), conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 			
@@ -662,7 +662,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		String tabName = "inconsistence_info";
 
 		try {
-			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 
@@ -682,7 +682,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		String tabName = "table_operation_progress_info";
 
 		try {
-			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 

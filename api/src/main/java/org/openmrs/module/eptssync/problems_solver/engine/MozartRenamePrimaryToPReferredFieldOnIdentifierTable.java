@@ -55,7 +55,7 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Mozart
 			
 			DBValidateInfo report = this.reportOfResolvedProblems.initDBValidatedInfo(dbName);
 					
-			if (!DBUtilities.isResourceExist(dbName, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
+			if (!DBUtilities.isResourceExist(dbName, null, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
 				logWarn("DB '" + dbName + "' is missing!");
 				
 				this.reportOfProblematics.addMissingDb(dbName);

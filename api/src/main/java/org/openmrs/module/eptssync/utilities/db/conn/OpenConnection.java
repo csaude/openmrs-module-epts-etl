@@ -32,6 +32,8 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
  *
  */
 public class OpenConnection implements Connection, Closeable{
+	public static CommonUtilities utilities = CommonUtilities.getInstance();
+	
 	private Connection connection;
 	private boolean operationTerminatedSuccessifully;
 	private String id;
@@ -524,7 +526,20 @@ public class OpenConnection implements Connection, Closeable{
 
 	@Override
 	public String getSchema() throws SQLException {
+		String schema = connService.getDbConnInfo().getSchema();
+		
+		if (utilities.stringHasValue(schema)) {
+			return schema;
+		}
+		
 		tryToReopen();
+		
+		if ( DBUtilities.isMySQLDB(this))
+			return this.getCatalog();
+		if (DBUtilities.isOracleDB(this))
+			return this.getMetaData().getUserName();
+		if (DBUtilities.isPostgresDB(this))
+			return "public";	
 		
 		return connection.getSchema();
 	}

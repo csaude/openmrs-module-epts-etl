@@ -1,5 +1,7 @@
 package org.openmrs.module.eptssync.utilities.db.conn;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -10,10 +12,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
-import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 /**
@@ -181,13 +183,16 @@ public class DBUtilities {
 	
 	public static String determineSchemaName(Connection conn) throws DBException {
 		try {
+			if (conn instanceof OpenConnection) {
+				return conn.getSchema();
+			}
+			
 			if (isMySQLDB(conn))
 				return conn.getCatalog();
 			if (isOracleDB(conn))
-				return conn.getCatalog();
-				//return conn.getMetaData().getUserName();
+				return conn.getMetaData().getUserName();
 			if (isPostgresDB(conn))
-				return conn.getCatalog();
+				return "public";
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
@@ -237,31 +242,7 @@ public class DBUtilities {
 		}
 	}
 	
-	
-	public static boolean isResourceExists_(String resourceSchema, String resourceType, String resourceName, Connection conn) throws SQLException {
-		DatabaseMetaData databaseMetaData = conn.getMetaData();
-		ResultSet resultSet = null;
-		
-		if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_TABLE)) {
-			String catalog=conn.getCatalog();
-			String schemaPattern="SYS_CONTAS";
-			String tableNamePattern="AGENDA";
-			String types[] = new String[] {"TABLE"};
-			
-			resultSet = databaseMetaData.getTables(catalog, schemaPattern, tableNamePattern, types);
-
-			while (resultSet.next()) {
-			    String name = resultSet.getString("table_name");
-			    String schema = resultSet.getString("table_schem");
-			    System.out.println(name + " on schema " + schema + " on Catalog " + catalog);
-			}
-		
-		}
-		
-		return false;		
-	}
-	
-	public static void main(String[] args) throws DBException {
+	public static void main(String[] args) throws DBException, IOException {
 		//Mysql
 		/*String dataBaseUserName = "root";
 		String dataBaseUserPassword = "#eIPDB123#";
@@ -269,11 +250,11 @@ public class DBUtilities {
 		String driveClassName = "com.mysql.jdbc.Driver";*/
 		
 		//Oracle
+		/*
 		String dataBaseUserName = "sys_contas";
 		String dataBaseUserPassword = "exi2k12";
 		String connectionURI = "jdbc:oracle:thin:@127.0.0.1:1521:xe";
-		String driveClassName = "oracle.jdbc.OracleDriver";
-		
+		String driveClassName = "oracle.jdbc.OracleDriver";*/
 		
 		//Postgres
 		/*String dataBaseUserName = "mozart";
@@ -281,28 +262,37 @@ public class DBUtilities {
 		String connectionURI = "jdbc:postgresql://10.10.2.2:5433/postgres";
 		String driveClassName = "org.postgresql.Driver";*/
 		
-		DBConnectionInfo dbConnInfo = new DBConnectionInfo(dataBaseUserName, dataBaseUserPassword, connectionURI,
-		        driveClassName);
-		
+		/*DBConnectionInfo dbConnInfo = new DBConnectionInfo(dataBaseUserName, dataBaseUserPassword, connectionURI,
+	        driveClassName);
+	
 		DBConnectionService service = DBConnectionService.init(dbConnInfo);
 		
-		OpenConnection conn = service.openConnection();
+		OpenConnection conn = service.openConnection();*/
+		
+		
+		SyncConfiguration syncConfig = SyncConfiguration.loadFromFile(new File("D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\mozart\\db_copy_mozart_postgres.json"));
+			
+		OpenConnection conn = syncConfig.getAppsInfo().get(1).openConnection();
+		
+		//conn = syncConfig.getMainApp().openConnection();
+		//System.out.println("Schema " + determineSchemaName(conn));
 		
 		try {
-			String resourceName="test";
-			String resourceType=RESOURCE_TYPE_TABLE;
-			String resourceSchema = "mozart2";
+			String resourceName = "test1_username_key";
+			String resourceType = RESOURCE_TYPE_INDEX;
+			String resourceTable = "test1";
+			String resourceSchema = "mozart2_test";
 			
-			boolean b = isResourceExists_(resourceSchema, resourceType, resourceName, conn);
-		
-			System.out.println(b ? "Resource exists" : "Resource does not exist");
+			
+			boolean b = isResourceExist(resourceSchema, resourceTable, resourceType, resourceName, conn);
+			
+			System.out.println(b ? resourceType + " " + resourceSchema + "." + resourceName + " exists" : "Resource does not exist");
 		}
 		catch (SQLException e) {
 			System.out.println(e.getLocalizedMessage());
 		}
 	}
 	
-
 	public static void enableForegnKeyChecks(Connection conn) throws DBException {
 		try {
 			if (isMySQLDB(conn)) {
@@ -400,16 +390,70 @@ public class DBUtilities {
 		return result.next();
 	}
 	
-	public static boolean isResourceExist(String resourceSchema, String resourceType, String resourceName, Connection conn)
+	public static boolean isResourceExist(String resourceSchema, String resourceTable, String resourceType, String resourceName, Connection conn)
 	        throws DBException {
 		if (isMySQLDB(conn)) {
-			return isMySQLResourceExist(resourceSchema, resourceType, resourceName, conn);
+			return isMySQLResourceExist(resourceSchema, resourceTable, resourceType, resourceName, conn);
+		}
+		
+		if (isPostgresDB(conn)) {
+			return isPostgresResourceExist(resourceSchema, resourceTable, resourceType, resourceName, conn);
 		}
 		
 		throw new RuntimeException("Database not supported!");
 	}
+
+	private static boolean isPostgresResourceExist(String resourceSchema, String resourceTable, String resourceType, String resourceName,
+	        Connection conn) throws DBException {
+		String resourceSchemaCondition = "1 = 1";
+		String resourceTableCondition = "1 = 1";
+		String resourceNameCondition = "1 = 1";
+		String fromClause = "";
+		
+		if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_INDEX)) {
+			fromClause = "pg_indexes";
+			resourceSchemaCondition = "schemaname = '" + resourceSchema + "'";
+			resourceTableCondition = "tablename = '" + resourceTable+ "'";
+			resourceNameCondition = "indexname = '" + resourceName  + "'";
+		} else if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_TRIGGER)) {
+			fromClause = "INFORMATION_SCHEMA.TRIGGERS";
+			resourceNameCondition = "TRIGGER_NAME = '" + resourceName + "'";
+			resourceSchemaCondition = "EVENT_OBJECT_SCHEMA = '" + resourceSchema + "'";
+		} else if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_TABLE)) {
+			fromClause = "pg_tables";
+			resourceNameCondition = "tablename = '" + resourceName + "'";
+			resourceSchemaCondition = "schemaname = '" + resourceSchema + "'";
+		} else if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_SCHEMA)) {
+			fromClause = "INFORMATION_SCHEMA.SCHEMATA";
+			
+			resourceNameCondition = "SCHEMA_NAME = '" + resourceName + "'";
+			
+			resourceSchemaCondition = "1 = 1";
+		} else
+			throw new ForbiddenOperationException("Resource not supported");
+		
+		String selectQuery = "";
+		
+		selectQuery += " SELECT * \n";
+		selectQuery += " FROM " + fromClause + "\n";
+		selectQuery += " WHERE 	1 = 1\n";
+		selectQuery += " 		AND  " + resourceSchemaCondition + "\n";
+		selectQuery += " 		AND  " + resourceTableCondition + "\n";
+		selectQuery += "		AND  " + resourceNameCondition;
+		
+		try {
+			PreparedStatement statement = conn.prepareStatement(selectQuery);
+			
+			ResultSet result = statement.executeQuery();
+			
+			return result.next();
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+	}
 	
-	private static boolean isMySQLResourceExist(String resourceSchema, String resourceType, String resourceName,
+	private static boolean isMySQLResourceExist(String resourceSchema, String resourceTable, String resourceType, String resourceName,
 	        Connection conn) throws DBException {
 		String resourceSchemaCondition = "";
 		String resourceNameCondition = "";
@@ -434,8 +478,7 @@ public class DBUtilities {
 			resourceNameCondition = "SCHEMA_NAME = '" + resourceName + "'";
 			
 			resourceSchemaCondition = "1 = 1";
-		}
-		else
+		} else
 			throw new ForbiddenOperationException("Resource not supported");
 		
 		String selectQuery = "";
@@ -526,15 +569,13 @@ public class DBUtilities {
 				if (!indexName.equals(prevIndexName)) {
 					if (starting) {
 						starting = false;
-					}
-					else {
+					} else {
 						addUniqueKey(prevIndexName, keyElements, uniqueKeys, primaryKey.getName());
 					}
 					
 					prevIndexName = indexName;
 					keyElements = new ArrayList<String>();
 				}
-				
 				
 				keyElements.add(rs.getString("COLUMN_NAME"));
 			}
@@ -548,7 +589,8 @@ public class DBUtilities {
 		return uniqueKeys;
 	}
 	
-	private static boolean addUniqueKey(String keyName, List<String> keyElements, List<UniqueKeyInfo> uniqueKeys, String primaryKey) {
+	private static boolean addUniqueKey(String keyName, List<String> keyElements, List<UniqueKeyInfo> uniqueKeys,
+	        String primaryKey) {
 		if (keyElements == null || keyElements.isEmpty())
 			return false;
 		
@@ -637,7 +679,7 @@ public class DBUtilities {
 			throw new DBException(e);
 		}
 	}
-
+	
 	private static void renameMySQLTable(String schema, String oldTableName, String newTableName, Connection conn)
 	        throws DBException {
 		String sql = "";

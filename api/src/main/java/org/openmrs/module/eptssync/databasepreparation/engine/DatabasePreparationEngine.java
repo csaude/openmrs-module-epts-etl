@@ -24,7 +24,7 @@ public class DatabasePreparationEngine extends Engine {
 	public DatabasePreparationEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
-
+	
 	public boolean isUpdateDone() {
 		return updateDone;
 	}
@@ -43,16 +43,17 @@ public class DatabasePreparationEngine extends Engine {
 			updateTableInfo(conn);
 			
 			this.updateDone = true;
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-		
+			
 			throw new DBException(e);
 		}
 	}
 	
 	private void updateTableInfo(Connection conn) throws SQLException {
 		logDebug("UPGRATING TABLE INFO [" + this.getTableName() + "]");
-			
+		
 		if (!getSyncTableConfiguration().existRelatedExportStageTable(conn)) {
 			logDebug("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
 			
@@ -60,14 +61,14 @@ public class DatabasePreparationEngine extends Engine {
 			
 			logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
 		}
-	
+		
 		if (!getSyncTableConfiguration().existRelatedExportStageUniqueKeysTable(conn)) {
 			logDebug("GENERATING RELATED STAGE UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
 			
 			createRelatedSyncStageAreaUniqueKeysTable(conn);
 			
 			logDebug("RELATED STAGE UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
-		}	
+		}
 		
 		logDebug("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
 	}
@@ -84,30 +85,31 @@ public class DatabasePreparationEngine extends Engine {
 	
 	protected void createLastUpdateDateMonitorTrigger(Connection conn) throws SQLException {
 		Statement st = conn.createStatement();
-	
+		
 		st.addBatch(generateTriggerCode(this.generateLastUpdateDateInsertTriggerMonitor(), "INSERT"));
 		st.addBatch(generateTriggerCode(this.generateLastUpdateDateUpdateTriggerMonitor(), "UPDATE"));
-	
+		
 		st.executeBatch();
-	
+		
 		st.close();
 	}
 	
 	private String generateTriggerCode(String triggerName, String triggerEvent) {
 		String sql = "";
-	
+		
 		sql += "CREATE TRIGGER " + triggerName + " BEFORE " + triggerEvent + " ON " + this.getTableName() + "\n";
 		sql += "FOR EACH ROW\n";
 		sql += "	BEGIN\n";
-		sql += "	UPDATE " + getSyncTableConfiguration().generateFullStageTableName() + " SET last_update_date = CURRENT_TIMESTAMP();\n";
+		sql += "	UPDATE " + getSyncTableConfiguration().generateFullStageTableName()
+		        + " SET last_update_date = CURRENT_TIMESTAMP();\n";
 		sql += "	END;\n";
-	
+		
 		return sql;
 	}
 	
 	protected boolean isExistRelatedTriggers(Connection conn) throws SQLException {
-		return DBUtilities.isResourceExist(conn.getCatalog(), DBUtilities.RESOURCE_TYPE_TRIGGER,
-				generateLastUpdateDateInsertTriggerMonitor(), conn);
+		return DBUtilities.isResourceExist(conn.getCatalog(), getSyncTableConfiguration().getTableName(),
+		    DBUtilities.RESOURCE_TYPE_TRIGGER, generateLastUpdateDateInsertTriggerMonitor(), conn);
 	}
 	
 	private String generateLastUpdateDateInsertTriggerMonitor() {
@@ -157,31 +159,33 @@ public class DatabasePreparationEngine extends Engine {
 	private boolean isOriginRecordIdColumnExistOnTable(Connection conn) throws SQLException {
 		return DBUtilities.isColumnExistOnTable(getTableName(), "record_origin_id", conn);
 	}
-
+	
 	@SuppressWarnings("unused")
 	private boolean isUniqueOriginConstraintsExists(Connection conn) throws SQLException {
-		String unqKey = generateUniqueOriginConstraintsName(); 
-	
+		String unqKey = generateUniqueOriginConstraintsName();
+		
 		return DBUtilities.isIndexExistsOnTable(conn.getCatalog(), getTableName(), unqKey, conn);
 	}
-
+	
 	private String generateUniqueOriginConstraintsName() {
 		return this.getTableName() + "origin_unq";
 	}
-
+	
 	@SuppressWarnings("unused")
 	private boolean isOriginAppLocationCodeColumnExistsOnTable(Connection conn) throws SQLException {
-		return DBUtilities.isColumnExistOnTable(getSyncTableConfiguration().getTableName(), "origin_app_location_code", conn);
+		return DBUtilities.isColumnExistOnTable(getSyncTableConfiguration().getTableName(), "origin_app_location_code",
+		    conn);
 	}
 	
 	@SuppressWarnings("unused")
 	private String generateOriginAppLocationCodeColumnGeneration() {
 		return "origin_app_location_code VARCHAR(100) NULL";
 	}
-
+	
 	@Override
 	protected List<SyncRecord> searchNextRecords(Connection conn) {
-		if (updateDone) return null;
+		if (updateDone)
+			return null;
 		
 		List<SyncRecord> records = new ArrayList<SyncRecord>();
 		
@@ -197,7 +201,7 @@ public class DatabasePreparationEngine extends Engine {
 	
 	private void createRelatedSyncStageAreaUniqueKeysTable(Connection conn) {
 		String sql = "";
-
+		
 		String parentTableName = getSyncTableConfiguration().generateRelatedStageTableName();
 		String tableName = getSyncTableConfiguration().generateRelatedStageUniqueKeysTableName();
 		
@@ -209,12 +213,11 @@ public class DatabasePreparationEngine extends Engine {
 		sql += "	key_value VARCHAR(100) NULL,\n";
 		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
 		
-		
-		
 		sql += "	UNIQUE KEY " + tableName + "_unq_record_key(record_id, key_name, column_name),\n";
 		
-		sql += "	CONSTRAINT " + tableName + "_parent_record FOREIGN KEY (record_id) REFERENCES " + parentTableName + " (id),\n ";
-	
+		sql += "	CONSTRAINT " + tableName + "_parent_record FOREIGN KEY (record_id) REFERENCES " + parentTableName
+		        + " (id),\n ";
+		
 		sql += "	PRIMARY KEY (id)\n";
 		sql += ")\n";
 		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";
@@ -223,18 +226,19 @@ public class DatabasePreparationEngine extends Engine {
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
 			st.executeBatch();
-
+			
 			st.close();
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
-		} 
+		}
 	}
 	
 	private void createRelatedSyncStageAreaTable(Connection conn) {
 		String sql = "";
-
+		
 		sql += "CREATE TABLE " + getSyncTableConfiguration().generateFullStageTableName() + "(\n";
 		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
 		sql += "	record_origin_id int(11) NOT NULL,\n";
@@ -255,13 +259,16 @@ public class DatabasePreparationEngine extends Engine {
 		sql += "	record_date_voided DATETIME NULL,\n";
 		sql += "	destination_id int(11) NULL,\n";
 		
-		sql += "	CONSTRAINT CHK_" + getSyncTableConfiguration().generateRelatedStageTableName() + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
+		sql += "	CONSTRAINT CHK_" + getSyncTableConfiguration().generateRelatedStageTableName()
+		        + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
 		
-		if (getSyncTableConfiguration().isDestinationInstallationType() || getSyncTableConfiguration().isDBQuickLoad() || getSyncTableConfiguration().isDBQuickCopy()) {
-			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_ID(record_origin_id, record_origin_location_code),\n";
-		}
-		else {
-			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName() + "UNQ_RECORD_ID(record_origin_id),\n";
+		if (getSyncTableConfiguration().isDestinationInstallationType() || getSyncTableConfiguration().isDBQuickLoad()
+		        || getSyncTableConfiguration().isDBQuickCopy()) {
+			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName()
+			        + "UNQ_RECORD_ID(record_origin_id, record_origin_location_code),\n";
+		} else {
+			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName()
+			        + "UNQ_RECORD_ID(record_origin_id),\n";
 		}
 		
 		sql += "	PRIMARY KEY (id)\n";
@@ -272,21 +279,21 @@ public class DatabasePreparationEngine extends Engine {
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
 			st.executeBatch();
-
+			
 			st.close();
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
-		} 
+		}
 	}
-	
 	
 	@Override
 	public DatabasePreparationController getRelatedOperationController() {
 		return (DatabasePreparationController) super.getRelatedOperationController();
 	}
-
+	
 	@Override
 	public void requestStop() {
 	}

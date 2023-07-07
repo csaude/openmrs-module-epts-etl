@@ -65,7 +65,7 @@ public class MozartDetectProblematicDB extends MozartProblemSolver {
 			
 			DBValidateInfo report = new DBValidateInfo(dbName);
 			
-			if (!DBUtilities.isResourceExist(dbName, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
+			if (!DBUtilities.isResourceExist(dbName, null, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
 				logWarn("DB '" + dbName + "' is missing!");
 				
 				report.addProblemType(MozartProblemType.MISSING_DB);

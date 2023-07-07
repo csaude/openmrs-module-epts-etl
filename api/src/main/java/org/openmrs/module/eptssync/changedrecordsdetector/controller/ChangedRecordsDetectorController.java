@@ -133,7 +133,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 			String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 			String tabName = "detected_record_info";
 			
-			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 
