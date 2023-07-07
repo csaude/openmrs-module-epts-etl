@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.utilities.db.conn;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -12,6 +13,7 @@ import java.util.List;
 import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
+import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 
 /**
@@ -182,7 +184,10 @@ public class DBUtilities {
 			if (isMySQLDB(conn))
 				return conn.getCatalog();
 			if (isOracleDB(conn))
-				return conn.getMetaData().getUserName();
+				return conn.getCatalog();
+				//return conn.getMetaData().getUserName();
+			if (isPostgresDB(conn))
+				return conn.getCatalog();
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
@@ -232,16 +237,49 @@ public class DBUtilities {
 		}
 	}
 	
+	
+	public static boolean isResourceExists_(String resourceSchema, String resourceType, String resourceName, Connection conn) throws SQLException {
+		DatabaseMetaData databaseMetaData = conn.getMetaData();
+		ResultSet resultSet = null;
+		
+		if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_TABLE)) {
+			String catalog=conn.getCatalog();
+			String schemaPattern="SYS_CONTAS";
+			String tableNamePattern="AGENDA";
+			String types[] = new String[] {"TABLE"};
+			
+			resultSet = databaseMetaData.getTables(catalog, schemaPattern, tableNamePattern, types);
+
+			while (resultSet.next()) {
+			    String name = resultSet.getString("table_name");
+			    String schema = resultSet.getString("table_schem");
+			    System.out.println(name + " on schema " + schema + " on Catalog " + catalog);
+			}
+		
+		}
+		
+		return false;		
+	}
+	
 	public static void main(String[] args) throws DBException {
+		//Mysql
 		/*String dataBaseUserName = "root";
 		String dataBaseUserPassword = "#eIPDB123#";
 		String connectionURI = "jdbc:mysql://10.10.2.2:53307/test?autoReconnect=true&useSSL=false";
 		String driveClassName = "com.mysql.jdbc.Driver";*/
 		
+		//Oracle
 		String dataBaseUserName = "sys_contas";
 		String dataBaseUserPassword = "exi2k12";
 		String connectionURI = "jdbc:oracle:thin:@127.0.0.1:1521:xe";
 		String driveClassName = "oracle.jdbc.OracleDriver";
+		
+		
+		//Postgres
+		/*String dataBaseUserName = "mozart";
+		String dataBaseUserPassword = "moZart123";
+		String connectionURI = "jdbc:postgresql://10.10.2.2:5433/postgres";
+		String driveClassName = "org.postgresql.Driver";*/
 		
 		DBConnectionInfo dbConnInfo = new DBConnectionInfo(dataBaseUserName, dataBaseUserPassword, connectionURI,
 		        driveClassName);
@@ -251,13 +289,20 @@ public class DBUtilities {
 		OpenConnection conn = service.openConnection();
 		
 		try {
-			System.out.println(determineSchemaName(conn));
+			String resourceName="test";
+			String resourceType=RESOURCE_TYPE_TABLE;
+			String resourceSchema = "mozart2";
+			
+			boolean b = isResourceExists_(resourceSchema, resourceType, resourceName, conn);
+		
+			System.out.println(b ? "Resource exists" : "Resource does not exist");
 		}
-		catch (DBException e) {
+		catch (SQLException e) {
 			System.out.println(e.getLocalizedMessage());
 		}
 	}
 	
+
 	public static void enableForegnKeyChecks(Connection conn) throws DBException {
 		try {
 			if (isMySQLDB(conn)) {
