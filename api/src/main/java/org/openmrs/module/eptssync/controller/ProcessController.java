@@ -617,8 +617,13 @@ public class ProcessController implements Controller, ControllerStarter {
 		try {
 			Statement st = conn.createStatement();
 
-			st.addBatch("CREATE DATABASE " + getConfiguration().getSyncStageSchema());
-
+			if (DBUtilities.isMySQLDB(conn)) {
+				st.addBatch("CREATE DATABASE " + getConfiguration().getSyncStageSchema());
+			}
+			else {
+				st.addBatch("CREATE SCHEMA " + getConfiguration().getSyncStageSchema());
+			}
+			
 			st.executeBatch();
 
 			st.close();
