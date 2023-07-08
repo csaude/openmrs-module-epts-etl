@@ -15,6 +15,7 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class ProcessStarter implements ControllerStarter{
 	private static Log logger = LogFactory.getLog(ProcessController.class);
@@ -36,7 +37,7 @@ public class ProcessStarter implements ControllerStarter{
 		return logLevel;
 	}
 	
-	public void run() throws IOException {
+	public void run() throws IOException, DBException {
 		
 		if (getLogLevel().getName().equals(Level.FINE.getName())) {
 			TimeCountDown.sleep(10);

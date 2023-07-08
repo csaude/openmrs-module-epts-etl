@@ -9,6 +9,7 @@ import org.openmrs.module.eptssync.controller.ProcessStarter;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class Main implements Runnable{
 
@@ -16,7 +17,7 @@ public class Main implements Runnable{
 
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	public static void main(String[] synConfigFiles) throws IOException {
+	public static void main(String[] synConfigFiles) throws IOException, DBException {
 		BasicConfigurator.configure();
 		
 		ProcessStarter p = new ProcessStarter(synConfigFiles, logger);
@@ -24,7 +25,7 @@ public class Main implements Runnable{
 		p.run();
 	}
 	
-	public static void runSync(SyncConfiguration configuration) {
+	public static void runSync(SyncConfiguration configuration) throws DBException {
 		ProcessController controller = new ProcessController(null, configuration);
 		ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId()).execute(controller);
 	}

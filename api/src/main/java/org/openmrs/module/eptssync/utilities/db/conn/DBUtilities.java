@@ -3,7 +3,6 @@ package org.openmrs.module.eptssync.utilities.db.conn;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -13,7 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
+import org.openmrs.module.eptssync.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -130,8 +131,14 @@ public class DBUtilities {
 		}
 	}
 	
-	public static String determineDataBaseFromConnection(Connection conn) throws SQLException {
-		String str = conn.getMetaData().getDriverName().toUpperCase();
+	public static String determineDataBaseFromConnection(Connection conn) throws DBException {
+		String str;
+		try {
+			str = conn.getMetaData().getDriverName().toUpperCase();
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
 		
 		if (str.contains("ORACLE"))
 			return ORACLE_DATABASE;
@@ -241,8 +248,101 @@ public class DBUtilities {
 			throw new DBException(e);
 		}
 	}
+
 	
-	public static void main(String[] args) throws DBException, IOException {
+	private static void createRelatedSyncStageAreaUniqueKeysTable(SyncTableConfiguration config, Connection conn) throws DBException {
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		String parentTableName = config.generateFullStageTableName();
+		String tableName = config.generateRelatedStageUniqueKeysTableName();
+		
+		sql += "CREATE TABLE " + config.generateFullStageUniqueKeysTableName() + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_value", 100, "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(), "record_id, key_name, column_name", conn) + endLineMarker;
+		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "record_id", parentTableName, "id", conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
+		
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+			
+			st.close();
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private static void createRelatedSyncStageAreaTable(SyncTableConfiguration config, Connection conn) throws DBException {
+		String tableName = config.generateRelatedStageTableName();
+		
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		sql += "CREATE TABLE " + config.generateFullStageTableName() + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("record_origin_id", notNullConstraint, conn)+ endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableTextField("json", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("last_sync_date", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("last_sync_try_err", 250, "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("last_update_date", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableNumericField("consistent", 1, "NULL", -1, conn) + endLineMarker;
+		sql += DBUtilities.generateTableNumericField("migration_status", 1, "NULL", 1, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		
+		sql += DBUtilities.generateTableDateTimeField("record_date_created", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("record_date_changed", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("record_date_voided", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("destination_id", "NULL", conn) + endLineMarker;
+		
+		String checkCondition = "migration_status = -1 OR migration_status = 0 OR migration_status = 1";
+		String keyName = "CHK_" + config.generateRelatedStageTableName() + "_MIG_STATUS";
+		
+		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
+		
+		String uniqueKeyName = tableName + "_UNQ_RECORD_ID".toLowerCase();
+		
+		if (config.isDestinationInstallationType() || config.isDBQuickLoad()
+		        || config.isDBQuickCopy()) {
+			
+			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName, "record_origin_id, record_origin_location_code",
+			    conn) + endLineMarker;
+			
+		} else {
+			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName, "record_origin_id", conn) + endLineMarker;
+		}
+		
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
+		sql += ")";
+		
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+			
+			st.close();
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public static void main(String[] args) throws IOException, SQLException {
 		//Mysql
 		/*String dataBaseUserName = "root";
 		String dataBaseUserPassword = "#eIPDB123#";
@@ -274,9 +374,38 @@ public class DBUtilities {
 			
 		OpenConnection conn = syncConfig.getAppsInfo().get(1).openConnection();
 		
+		/*createRelatedSyncStageAreaTable(syncConfig.getTablesConfigurations().get(0), conn);
+		conn.markAsSuccessifullyTerminected();
+		conn.finalizeConnection();
+		
+		conn = syncConfig.getAppsInfo().get(1).openConnection();*/
+		
+		//createRelatedSyncStageAreaUniqueKeysTable(syncConfig.getTablesConfigurations().get(0), conn);
+		
+		
+		conn.markAsSuccessifullyTerminected();
+		conn.finalizeConnection();
+		
+		/*conn = syncConfig.getMainApp().openConnection();
+		createRelatedSyncStageAreaTable(syncConfig.getTablesConfigurations().get(0), conn);
+		
+		conn.markAsSuccessifullyTerminected();
+		conn.finalizeConnection();
+		*/
+		
+		conn = syncConfig.getMainApp().openConnection();
+		
+		
+		createRelatedSyncStageAreaUniqueKeysTable(syncConfig.getTablesConfigurations().get(0), conn);
+		
+		
+		conn.markAsSuccessifullyTerminected();
+		conn.finalizeConnection();
+		
 		//conn = syncConfig.getMainApp().openConnection();
 		//System.out.println("Schema " + determineSchemaName(conn));
 		
+		/*
 		try {
 			String resourceName = "test1_username_key";
 			String resourceType = RESOURCE_TYPE_INDEX;
@@ -287,10 +416,14 @@ public class DBUtilities {
 			boolean b = isResourceExist(resourceSchema, resourceTable, resourceType, resourceName, conn);
 			
 			System.out.println(b ? resourceType + " " + resourceSchema + "." + resourceName + " exists" : "Resource does not exist");
+			
+			
+			
 		}
 		catch (SQLException e) {
 			System.out.println(e.getLocalizedMessage());
 		}
+		*/
 	}
 	
 	public static void enableForegnKeyChecks(Connection conn) throws DBException {
@@ -418,6 +551,7 @@ public class DBUtilities {
 		} else if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_TRIGGER)) {
 			fromClause = "INFORMATION_SCHEMA.TRIGGERS";
 			resourceNameCondition = "TRIGGER_NAME = '" + resourceName + "'";
+			resourceTableCondition = "EVENT_OBJECT_TABLE = '" + resourceTable + "'";
 			resourceSchemaCondition = "EVENT_OBJECT_SCHEMA = '" + resourceSchema + "'";
 		} else if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_TABLE)) {
 			fromClause = "pg_tables";
@@ -427,8 +561,6 @@ public class DBUtilities {
 			fromClause = "INFORMATION_SCHEMA.SCHEMATA";
 			
 			resourceNameCondition = "SCHEMA_NAME = '" + resourceName + "'";
-			
-			resourceSchemaCondition = "1 = 1";
 		} else
 			throw new ForbiddenOperationException("Resource not supported");
 		
@@ -707,4 +839,90 @@ public class DBUtilities {
 		}
 	}
 	
+	
+	public static String generateTableAutoIncrementField(String fieldName, Connection conn) throws DBException {
+		if (isMySQLDB(conn)) {
+			return fieldName + " bigint NOT NULL AUTO_INCREMENT"; 
+		}
+		else if (isPostgresDB(conn)) {
+			return fieldName + " serial NOT NULL"; 
+		}
+		
+		throw new DatabaseNotSupportedException(conn); 	
+			
+	}
+	
+	public static String generateTablePrimaryKeyDefinition(String fieldName, String pkName, Connection conn) throws DBException {
+		return  " CONSTRAINT " + pkName + " PRIMARY KEY (" + fieldName + ")";  
+	}
+	
+	public static String generateTableVarcharField(String fieldName, int precision, String constraint, Connection conn) throws DBException {
+		return fieldName + " VARCHAR(" + precision + ") " + constraint; 
+	}
+
+	public static String generateTableTextField(String fieldName, String constraint, Connection conn) throws DBException {
+		return fieldName + " text " + constraint; 
+	}
+	
+	public static String generateTableIntegerField(String fieldName, String constraint, Connection conn) throws DBException {
+		return fieldName + " INTEGER " + constraint; 
+	}
+	
+	public static String generateTableNumericField(String fieldName, int precision, String constraint, Number defaultValue, Connection conn) throws DBException {
+		return fieldName + " NUMERIC (" + precision + ")" + constraint + " DEFAULT " + defaultValue; 
+	}
+	
+	public static String generateTableBigIntField(String fieldName, String constraint, Connection conn) throws DBException {
+		return fieldName + " BIGINT " + constraint; 
+	}
+	
+	public static String generateTableDateTimeField(String fieldName, String constraint, Connection conn) throws DBException {
+		return fieldName + " TIMESTAMP " + constraint; 
+	}
+	
+	public static String generateTableDateTimeFieldWithDefaultValue(String fieldName, Connection conn) throws DBException {
+		String definition = generateTableDateTimeField(fieldName, "", conn);
+		
+		if (isMySQLDB(conn)) {
+			return definition += " DEFAULT CURRENT_TIMESTAMP";
+			
+		}
+		else if (isPostgresDB(conn)) {
+			return definition += " DEFAULT CURRENT_TIMESTAMP";
+		}
+		else if (isOracleDB(conn)) {
+			return definition += " DEFAULT CURRENT_TIMESTAMP";
+		}
+		
+		throw new DatabaseNotSupportedException(conn); 	 
+	}
+
+	public static String generateTableDateField(String fieldName, String constraint, Connection conn) throws DBException {
+		return fieldName + " DATE " + constraint; 
+	}
+	
+	public static String generateTableUniqueKeyDefinition(String uniqueKeyName, String uniqueKeyFields, Connection conn) throws DBException {
+		if (isMySQLDB(conn)) {
+			return "UNIQUE KEY " + uniqueKeyName  + "(" + uniqueKeyFields + ")";
+			
+		}
+		else if (isPostgresDB(conn)) {
+			return "CONSTRAINT " + uniqueKeyName  + " UNIQUE (" + uniqueKeyFields + ")";
+		}
+		else if (isOracleDB(conn)) {
+			return "CONSTRAINT " + uniqueKeyName  + " UNIQUE (" + uniqueKeyFields + ")";
+		}
+		
+		throw new DatabaseNotSupportedException(conn); 	
+	}
+
+	public static String generateTableForeignKeyDefinition(String keyName, String field, String parentTableName, String parentField, Connection conn) throws DBException {
+		return "CONSTRAINT " + keyName + " FOREIGN KEY (" + field + ") REFERENCES " + parentTableName + " (" + parentField + ")";
+	}
+	
+
+	public static String generateTableCheckConstraintDefinition(String keyName, String checkCondition, Connection conn) throws DBException {
+		return "CONSTRAINT " + keyName + " CHECK (" + checkCondition + ")";
+	}
+		
 }

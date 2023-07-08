@@ -68,7 +68,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.progressInfo = new ProcessProgressInfo(this);
 	}
 	
-	public ProcessController(ProcessStarter starter, SyncConfiguration configuration) {
+	public ProcessController(ProcessStarter starter, SyncConfiguration configuration) throws DBException {
 		this();
 		
 		this.starter = starter;
@@ -85,7 +85,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		return this.progressInfo.initAndAddProgressMeterToList(operationController, conn);
 	}
 	
-	public void init(File syncCongigurationFile) {
+	public void init(File syncCongigurationFile) throws DBException {
 		try {
 			init(SyncConfiguration.loadFromFile(syncCongigurationFile));
 		}
@@ -94,7 +94,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-	public void init(SyncConfiguration configuration) {
+	public void init(SyncConfiguration configuration) throws DBException {
 		this.configuration = configuration;
 		this.configuration.setRelatedController(this);
 		this.appsInfo = configuration.getAppsInfo();
@@ -694,61 +694,71 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-
-	private void generateTableOperationProgressInfo() {
+	
+	private void generateTableOperationProgressInfo() throws DBException {
+		
+		SyncConfiguration config = getConfiguration();
+		
 		OpenConnection conn = openConnection();
 		
-		String sql = "";
-		
-		sql += "CREATE TABLE " + getConfiguration().getSyncStageSchema() + ".table_operation_progress_info (\n";
-		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
-		sql += "operation_id varchar(250) NOT NULL,\n";
-		sql += "operation_name varchar(250) NOT NULL,\n";
-		sql += "table_name varchar(100) NOT NULL,\n";
-		sql += "record_origin_location_code VARCHAR(100) NOT NULL,\n";
-		sql += "started_at datetime NOT NULL,\n";
-		sql += "last_refresh_at datetime NOT NULL,\n";
-		sql += "total_records int(11) NOT NULL,\n";
-		sql += "total_processed_records int(11) NOT NULL,\n";
-		sql += "status varchar(50) NOT NULL,\n";
-		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
-		sql += "UNIQUE KEY " + getConfiguration().getSyncStageSchema() + "UNQ_OPERATION_ID(operation_id),\n";
-		sql += "PRIMARY KEY (id)\n";
-		sql += ") ENGINE=InnoDB;\n";
-				
 		try {
+			String sql = "";
+			
+			sql += "CREATE TABLE " + config.getSyncStageSchema() + ".table_operation_progress_info (\n";
+			sql += DBUtilities.generateTableAutoIncrementField("id", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("operation_id", 250, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("operation_name", 250, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("table_name", 100, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableDateTimeField("started_at", "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableDateTimeField("last_refresh_at", "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("total_records", "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("total_processed_records", "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("status", 50, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + ",\n";
+			sql += DBUtilities.generateTableUniqueKeyDefinition(config.getSyncStageSchema() + "_UNQ_OPERATION_ID".toLowerCase(), "operation_id", conn) + ",\n";
+			sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "table_operation_progress_info_pk", conn) + "\n";
+
+			sql += ");\n";
+					
+
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
 			st.executeBatch();
 
 			st.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		} 
-		finally {
+			
 			conn.markAsSuccessifullyTerminected();
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+		finally {
 			conn.finalizeConnection();
 		}
 	}
 	
-	private void generateInconsistenceInfoTable() {
+	
+	private void generateInconsistenceInfoTable() throws DBException {
 		OpenConnection conn = openConnection();
+		
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
 		
 		String sql = "";
 		
 		sql += "CREATE TABLE " + getConfiguration().getSyncStageSchema() + ".inconsistence_info (\n";
-		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
-		sql += "table_name varchar(100) NOT NULL,\n";
-		sql += "record_id int(11) NOT NULL,\n";
-		sql += "parent_table_name varchar(100) NOT NULL,\n";
-		sql += "parent_id int(11) NOT NULL,\n";
-		sql += "default_parent_id int(11) DEFAULT NULL,\n";
-		sql += "record_origin_location_code VARCHAR(100) NOT NULL,\n";
-		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
-		sql += "PRIMARY KEY (id)\n";
-		sql += ") ENGINE=InnoDB;\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("table_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableIntegerField("record_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("parent_table_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("parent_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("default_parent_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "inconsistence_info_pk", conn) ;
+		sql += ");";
 				
 		try {
 			Statement st = conn.createStatement();

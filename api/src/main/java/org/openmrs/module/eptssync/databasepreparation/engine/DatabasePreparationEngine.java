@@ -199,28 +199,27 @@ public class DatabasePreparationEngine extends Engine {
 		return new DatabasePreparationSearchParams(this, limits, conn);
 	}
 	
-	private void createRelatedSyncStageAreaUniqueKeysTable(Connection conn) {
+	private void createRelatedSyncStageAreaUniqueKeysTable(Connection conn) throws DBException {
 		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
 		
-		String parentTableName = getSyncTableConfiguration().generateRelatedStageTableName();
+		String parentTableName = getSyncTableConfiguration().generateFullStageTableName();
 		String tableName = getSyncTableConfiguration().generateRelatedStageUniqueKeysTableName();
 		
 		sql += "CREATE TABLE " + getSyncTableConfiguration().generateFullStageUniqueKeysTableName() + "(\n";
-		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
-		sql += "	record_id int(11) NOT NULL,\n";
-		sql += "	key_name varchar(100)  NOT NULL,\n";
-		sql += "	column_name varchar(100)  NOT NULL,\n";
-		sql += "	key_value VARCHAR(100) NULL,\n";
-		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
-		
-		sql += "	UNIQUE KEY " + tableName + "_unq_record_key(record_id, key_name, column_name),\n";
-		
-		sql += "	CONSTRAINT " + tableName + "_parent_record FOREIGN KEY (record_id) REFERENCES " + parentTableName
-		        + " (id),\n ";
-		
-		sql += "	PRIMARY KEY (id)\n";
-		sql += ")\n";
-		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_value", 100, "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+		    "record_id, key_name, column_name", conn) + endLineMarker;
+		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "record_id", parentTableName, "id",
+		    conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
 		
 		try {
 			Statement st = conn.createStatement();
@@ -236,44 +235,49 @@ public class DatabasePreparationEngine extends Engine {
 		}
 	}
 	
-	private void createRelatedSyncStageAreaTable(Connection conn) {
+	private void createRelatedSyncStageAreaTable(Connection conn) throws DBException {
+		String tableName = getSyncTableConfiguration().generateRelatedStageTableName();
+		
 		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
 		
 		sql += "CREATE TABLE " + getSyncTableConfiguration().generateFullStageTableName() + "(\n";
-		sql += "	id int(11) NOT NULL AUTO_INCREMENT,\n";
-		sql += "	record_origin_id int(11) NOT NULL,\n";
-		sql += "	record_origin_location_code VARCHAR(100) NOT NULL,\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("record_origin_id", notNullConstraint, conn)+ endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableTextField("json", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("last_sync_date", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("last_sync_try_err", 250, "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("last_update_date", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableNumericField("consistent", 1, "NULL", -1, conn) + endLineMarker;
+		sql += DBUtilities.generateTableNumericField("migration_status", 1, "NULL", 1, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
 		
-		sql += "	json text NULL,\n";
+		sql += DBUtilities.generateTableDateTimeField("record_date_created", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("record_date_changed", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("record_date_voided", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("destination_id", "NULL", conn) + endLineMarker;
 		
-		sql += "	last_sync_date DATETIME DEFAULT NULL,\n";
-		sql += "	last_sync_try_err varchar(250) DEFAULT NULL,\n";
-		sql += "	last_update_date DATETIME DEFAULT NULL,\n";
+		String checkCondition = "migration_status = -1 OR migration_status = 0 OR migration_status = 1";
+		String keyName = "CHK_" + getSyncTableConfiguration().generateRelatedStageTableName() + "_MIG_STATUS";
 		
-		sql += "	consistent int(1) DEFAULT -1,\n";
+		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
 		
-		sql += "	migration_status int(1) DEFAULT 1,\n";
-		sql += "	creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,\n";
-		sql += "	record_date_created DATETIME NULL,\n";
-		sql += "	record_date_changed DATETIME NULL,\n";
-		sql += "	record_date_voided DATETIME NULL,\n";
-		sql += "	destination_id int(11) NULL,\n";
-		
-		sql += "	CONSTRAINT CHK_" + getSyncTableConfiguration().generateRelatedStageTableName()
-		        + "_MIG_STATUS CHECK (migration_status = -1 OR migration_status = 0 OR migration_status = 1),";
+		String uniqueKeyName = tableName + "_UNQ_RECORD_ID".toLowerCase();
 		
 		if (getSyncTableConfiguration().isDestinationInstallationType() || getSyncTableConfiguration().isDBQuickLoad()
 		        || getSyncTableConfiguration().isDBQuickCopy()) {
-			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName()
-			        + "UNQ_RECORD_ID(record_origin_id, record_origin_location_code),\n";
+			
+			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName, "record_origin_id, record_origin_location_code",
+			    conn) + endLineMarker;
+			
 		} else {
-			sql += "	UNIQUE KEY " + getSyncTableConfiguration().generateRelatedStageTableName()
-			        + "UNQ_RECORD_ID(record_origin_id),\n";
+			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName, "record_origin_id", conn) + endLineMarker;
 		}
 		
-		sql += "	PRIMARY KEY (id)\n";
-		sql += ")\n";
-		sql += " ENGINE=InnoDB DEFAULT CHARSET=utf8";
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
+		sql += ")";
 		
 		try {
 			Statement st = conn.createStatement();
