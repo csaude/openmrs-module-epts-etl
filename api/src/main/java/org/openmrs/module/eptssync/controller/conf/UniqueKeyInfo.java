@@ -86,10 +86,12 @@ public class UniqueKeyInfo {
 		
 		List<UniqueKeyInfo> uniqueKeysInfo = new ArrayList<UniqueKeyInfo>();
 		
+		ResultSet rs = null;
+		
 		try {
 			String tableName = tableConfiguration.getTableName();
 			
-			ResultSet rs = conn.getMetaData().getIndexInfo(null, null, tableName, true, true);
+			rs = conn.getMetaData().getIndexInfo(conn.getSchema(), conn.getSchema(), tableName, true, true);
 			
 			String prevIndexName = null;
 			
@@ -129,7 +131,12 @@ public class UniqueKeyInfo {
 			return uniqueKeysInfo;
 		}
 		catch (SQLException e) {
-			e.printStackTrace();
+			if (rs != null) {
+				try {
+					rs.close();
+				}
+				catch (SQLException e1) {}
+			}
 			
 			throw new DBException(e);
 		}
@@ -175,12 +182,14 @@ public class UniqueKeyInfo {
 	}
 	
 	public boolean hasSameFields(UniqueKeyInfo other) {
-		for (Field field: this.getFields()) {
-			if (!other.getFields().contains(field)) return false;
+		for (Field field : this.getFields()) {
+			if (!other.getFields().contains(field))
+				return false;
 		}
 		
-		for (Field field: other.getFields()) {
-			if (!this.getFields().contains(field)) return false;
+		for (Field field : other.getFields()) {
+			if (!this.getFields().contains(field))
+				return false;
 		}
 		
 		return true;
@@ -221,17 +230,15 @@ public class UniqueKeyInfo {
 		List<UniqueKeyInfo> uks = loadUniqueKeysInfo(config, conn);
 		
 		List<UniqueKeyInfo> knownKeys = generateKnownUk(config);
-		UniqueKeyInfo keyInfo = knownKeys.get(0);	
+		UniqueKeyInfo keyInfo = knownKeys.get(0);
 		
 		List<UniqueKeyInfo> uniqueKeys = DBUtilities.getUniqueKeys(config.getTableName(), conn.getCatalog(), conn);
-
-			
+		
 		for (UniqueKeyInfo uk : uniqueKeys) {
 			if (keyInfo.hasSameFields(uk)) {
 				System.out.println("The key exists");
 			}
 		}
-			
 		
 		/*for (UniqueKeyInfo uk : uks) {
 			uk.loadValuesToFields(dbObject);
@@ -264,14 +271,13 @@ public class UniqueKeyInfo {
 		return uk;
 	}
 	
-	
 	private static List<UniqueKeyInfo> generateKnownUk(SyncTableConfiguration configuredTable) {
 		try {
 			List<UniqueKeyInfo> knownKeys_ = new ArrayList<UniqueKeyInfo>();
 			
 			Extension knownKeys = configuredTable.findExtension("knownKeys");
 			
-			for (Extension keyInfo: knownKeys.getExtension()) {
+			for (Extension keyInfo : knownKeys.getExtension()) {
 				UniqueKeyInfo uk = new UniqueKeyInfo();
 				
 				for (Extension keyPart : keyInfo.getExtension()) {
@@ -284,7 +290,7 @@ public class UniqueKeyInfo {
 			return knownKeys_;
 		}
 		catch (ForbiddenOperationException e1) {
-			return  null;
+			return null;
 		}
 	}
 	

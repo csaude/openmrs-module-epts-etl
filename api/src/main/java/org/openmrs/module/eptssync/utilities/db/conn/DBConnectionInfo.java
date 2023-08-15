@@ -1,6 +1,18 @@
 package org.openmrs.module.eptssync.utilities.db.conn;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+
+import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
+import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 public class DBConnectionInfo {
+	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String dataBaseUserName;
 	
@@ -83,4 +95,9 @@ public class DBConnectionInfo {
 		return db;
 	}
 	
+	public static DBConnectionInfo loadFromFile(File file) throws IOException {
+		DBConnectionInfo conf =  utilities.loadObjectFormJSON(DBConnectionInfo.class, new String(Files.readAllBytes(file.toPath())));
+		
+		return conf;
+	}
 }

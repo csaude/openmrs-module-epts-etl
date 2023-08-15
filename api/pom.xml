@@ -20,29 +20,12 @@
 	<description>API project for EptsSynchronize</description>
 		
 	<dependencies>
-	
-		<!-- 
-		Add other dependencies from parent's pom:
-		<dependency>
-			<groupId>org.other.library</groupId> 
-			<artifactId>library-name</artifactId>
-		</dependency> 
-		-->
-
-		
-		
 
 		<!-- Begin OpenMRS core -->
 		
 		<dependency>
 			<groupId>org.openmrs.api</groupId>
 			<artifactId>openmrs-api</artifactId>
-			<type>jar</type>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.openmrs.web</groupId>
-			<artifactId>openmrs-web</artifactId>
 			<type>jar</type>
 		</dependency>
 				
@@ -52,19 +35,20 @@
 			<type>test-jar</type>
 		</dependency>
 		
-		<dependency>
-			<groupId>org.openmrs.web</groupId>
-			<artifactId>openmrs-web</artifactId>
-			<type>test-jar</type>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.openmrs.test</groupId>
-			<artifactId>openmrs-test</artifactId>
-			<type>pom</type>
-		</dependency>
-		
 		<!-- End OpenMRS core -->
+		
+		<dependency>
+		    <groupId>com.microsoft.sqlserver</groupId>
+		    <artifactId>mssql-jdbc</artifactId>
+		    <version>12.3.1.jre8-preview</version>
+		</dependency>
+
+		<dependency>
+		    <groupId>org.postgresql</groupId>
+		    <artifactId>postgresql</artifactId>
+		    <version>42.6.0</version>
+		   	<scope>provided</scope>
+		</dependency>
 		
 		<dependency>
 		  <groupId>com.fasterxml.jackson.core</groupId>

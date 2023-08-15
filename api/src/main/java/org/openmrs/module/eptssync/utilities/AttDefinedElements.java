@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
@@ -149,7 +148,7 @@ public class AttDefinedElements {
 	}
 	
 	private void generateElemets() {
-		this.attType = convertMySQLTypeTOJavaType(dbAttType);
+		this.attType = convertDatabaseTypeTOJavaType(dbAttType);
 		this.attName = convertTableAttNameToClassAttName(dbAttName);
 		
 		this.attDefinition = defineAtt(attName, attType);
@@ -287,16 +286,6 @@ public class AttDefinedElements {
 		return false;
 	}
 	
-	private boolean isForeignKey(String dbAttName) {
-		for (RefInfo parent : this.syncTableInfo.getParents()) {
-			if (parent.getRefColumnName().equalsIgnoreCase(dbAttName)) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,
 	        SyncTableConfiguration syncTableInfo) {
 		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, syncTableInfo);
@@ -343,29 +332,32 @@ public class AttDefinedElements {
 		return utilities.convertTableAttNameToClassAttName(tableAttName);
 	}
 	
-	public static String convertMySQLTypeTOJavaType(String mySQLTypeName) {
-		mySQLTypeName = mySQLTypeName.toUpperCase();
+	public static String convertDatabaseTypeTOJavaType(String databaseType) {
+		databaseType = databaseType.toUpperCase();
 		
-		if (utilities.isStringIn(mySQLTypeName, "INT", "MEDIUMINT"))
+		/*NOTE: Temporary Convert INT8 and SERIAL as Integer as Postgres use INT8 for serial columns (PK) Which is INT8.
+		  note that this type should be converted to LONG but as if the core of EptsSync use Integer for PK for now we 
+		  are forcing INT8 to be Integer*/
+		if (utilities.isStringIn(databaseType, "INT", "MEDIUMINT", "INT8", "BIGINT", "SERIAL", "SERIAL4"))
 			return "Integer";
-		if (utilities.isStringIn(mySQLTypeName, "TINYINT", "BIT"))
+		if (utilities.isStringIn(databaseType, "TINYINT", "BIT"))
 			return "byte";
-		if (utilities.isStringIn(mySQLTypeName, "YEAR", "SMALLINT"))
+		if (utilities.isStringIn(databaseType, "YEAR", "SMALLINT"))
 			return "short";
-		if (utilities.isStringIn(mySQLTypeName, "BIGINT"))
+		if (utilities.isStringIn(databaseType, "BIGINT", "INT8", "SERIAL"))
 			return "Long";
-		if (utilities.isStringIn(mySQLTypeName, "DECIMAL", "NUMERIC", "SMALLINT", "REAL", "DOUBLE"))
+		if (utilities.isStringIn(databaseType, "DECIMAL", "NUMERIC", "SMALLINT", "REAL", "DOUBLE"))
 			return "double";
-		if (utilities.isStringIn(mySQLTypeName, "FLOAT", "NUMERIC", "SMALLINT"))
+		if (utilities.isStringIn(databaseType, "FLOAT", "NUMERIC", "SMALLINT"))
 			return "float";
-		if (utilities.isStringIn(mySQLTypeName, "VARCHAR", "CHAR"))
+		if (utilities.isStringIn(databaseType, "VARCHAR", "CHAR"))
 			return "String";
-		if (utilities.isStringIn(mySQLTypeName, "VARBINARY", "BLOB", "TEXT", "LONGBLOB"))
+		if (utilities.isStringIn(databaseType, "VARBINARY", "BLOB", "TEXT", "LONGBLOB"))
 			return "byte[]";
-		if (utilities.isStringIn(mySQLTypeName, "DATE", "DATETIME", "TIME", "TIMESTAMP"))
+		if (utilities.isStringIn(databaseType, "DATE", "DATETIME", "TIME", "TIMESTAMP"))
 			return "java.util.Date";
 		
-		throw new ForbiddenOperationException("Unknown data type [" + mySQLTypeName + "]");
+		throw new ForbiddenOperationException("Unknown data type [" + databaseType + "]");
 	}
 	
 	public static String[] convertTableAttNameToClassAttName(String[] dbAtts) {

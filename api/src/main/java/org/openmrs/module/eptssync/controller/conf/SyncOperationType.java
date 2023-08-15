@@ -31,7 +31,12 @@ public enum SyncOperationType {
 	DB_MERGE_FROM_SOURCE_DB,
 	DB_QUICK_MERGE_EXISTING_RECORDS,
 	DB_QUICK_MERGE_MISSING_RECORDS,
-	GENERIC_OPERATION;
+	GENERIC_OPERATION,
+	DETECT_GAPES;
+	
+	public static boolean isDetectGapesOperation(String operationType) {
+		return SyncOperationType.valueOf(operationType).equals(DETECT_GAPES);
+	}
 	
 	public static boolean isDbCopyOperation(String operationType) {
 		return SyncOperationType.valueOf(operationType).equals(DB_COPY);
@@ -212,6 +217,10 @@ public enum SyncOperationType {
 	
 	public boolean isDbCopyOperation() {
 		return this.equals(DB_COPY);
+	}
+	
+	public boolean isDetectGapesOperation() {
+		return this.equals(DETECT_GAPES);
 	}
 	
 	public boolean isSupportedOperation() {

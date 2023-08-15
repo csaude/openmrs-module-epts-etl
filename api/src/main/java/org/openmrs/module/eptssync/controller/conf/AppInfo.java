@@ -102,4 +102,9 @@ public class AppInfo {
 	public static AppInfo init(String appCode) {
 		return new AppInfo(appCode);
 	}
+	
+	@Override
+	public String toString() {
+		return this.applicationCode;
+	}
 }

@@ -36,7 +36,7 @@ public class InconsistenceInfoDAO extends BaseDAO{
 			
 			executeQuery(sql, params, conn);
 		} catch (DBException e) {
-			if (!e.isDuplicatePrimaryKeyException()) {
+			if (!e.isDuplicatePrimaryOrUniqueKeyException()) {
 				throw e;
 			}
 		}

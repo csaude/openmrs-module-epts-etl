@@ -650,7 +650,7 @@ public class SQLUtilitie  {
 				fasedCondition = " WHERE ROWNUM >= " + start + " AND ROWNUM <= " + (start+qtdRecordSuported-1);
 			}
 			else	
-			if (DBUtilities.determineDataBaseFromConnection(conn).equals(DBUtilities.POSTGRES_DATABASE)){
+			if (DBUtilities.determineDataBaseFromConnection(conn).equals(DBUtilities.POSTGRESQL_DATABASE)){
 				fasedCondition = " OFFSET " + (start-1) + " LIMIT  " + qtdRecordSuported;
 			}
 			
@@ -714,7 +714,7 @@ public class SQLUtilitie  {
 				return createPhasedSelectOracle(originalSelect, start, qtdRecordSuported, conn);
 			}
 			else	
-			if (DBUtilities.determineDataBaseFromConnection(conn).equals(DBUtilities.POSTGRES_DATABASE)){
+			if (DBUtilities.determineDataBaseFromConnection(conn).equals(DBUtilities.POSTGRESQL_DATABASE)){
 				return createPhasedSelectPostgres(originalSelect, start, qtdRecordSuported, conn);
 			}
 			else	

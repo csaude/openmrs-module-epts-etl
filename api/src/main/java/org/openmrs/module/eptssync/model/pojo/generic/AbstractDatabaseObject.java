@@ -18,7 +18,6 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoDAO;
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
-import org.openmrs.module.eptssync.controller.conf.FieldsMapping;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
@@ -32,6 +31,7 @@ import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.InconsistentStateException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -289,10 +289,29 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 				}
 				catch (DBException e) {
 					
-					if (e.isDuplicatePrimaryKeyException()
+					if (e.isDuplicatePrimaryOrUniqueKeyException()
 					        && tableConfiguration.getRelatedSynconfiguration().isSupposedToRunInDestination()
 					        && tableConfiguration.hasUniqueKeys()) {
+						
+						if (DBUtilities.isPostgresDB(conn)) {
+							/*
+							 * PosgresSql fails when you continue to use a connection which previously encontred an exception
+							 * So we are commiting before try to use the connection again
+							 * 
+							 * NOTE that we are taking risk if some othe bug happen and the transaction need to be aborted
+							 */
+							try {
+								
+								conn.commit();
+								;
+							}
+							catch (SQLException e1) {
+								throw new DBException(e);
+							}
+						}
+						
 						//Try to resolve conflict if it is destination operation
+						
 						List<DatabaseObject> recs = utilities.parseList(
 						    DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), DatabaseObject.class);
 						
@@ -650,6 +669,9 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		        && !tableInfo.getRelatedSynconfiguration().isDataReconciliationProcess())
 			throw new ForbiddenOperationException("You can only load destination parent in a destination installation");
 		
+		if (!utilities.arrayHasElement(tableInfo.getParents()))
+			return;
+		
 		for (RefInfo refInfo : tableInfo.getParents()) {
 			if (tableInfo.getSharePkWith() != null
 			        && tableInfo.getSharePkWith().equals(refInfo.getRefTableConfiguration().getTableName())) {
@@ -758,6 +780,9 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	
 	public Map<RefInfo, Integer> loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		Map<RefInfo, Integer> missingParents = new HashMap<RefInfo, Integer>();
+		
+		if (!utilities.arrayHasElement(tableInfo.getParents()))
+			return missingParents;
 		
 		for (RefInfo refInfo : tableInfo.getParents()) {
 			Integer parentId = null;

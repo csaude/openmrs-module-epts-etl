@@ -30,6 +30,7 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	private String templateConfFilePath;
 	
 	private String fileWithListOfDBs;
+	private File destinationFolder;
 	
 	public GenerateLinkedConfFiles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
@@ -37,6 +38,8 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 		Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("databaseListFile");
 		
 		this.fileWithListOfDBs = exItem.getValueString();
+		
+		this.destinationFolder = new File(this.fileWithListOfDBs).getParentFile();
 		
 		exItem = this.getRelatedOperationController().getOperationConfig().findExtension("templateFile");
 		
@@ -95,7 +98,7 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 					content = content.replaceAll(linkedConfigAttibuteName, linkedConfigAttibuteName + "_");
 				}
 				
-				Path destPath = Paths.get(path.getParent().toString() + FileUtilities.getPathSeparator() + siteName + ".json");
+				Path destPath = Paths.get(this.destinationFolder.toString() + FileUtilities.getPathSeparator() + siteName + ".json");
 				
 				Files.write(destPath, content.getBytes(charset));
 				

@@ -100,6 +100,7 @@ public class MappedTableInfo extends SyncTableConfiguration {
 			loadConditionalParents(conn);
 			
 			setFields(DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn));
+			org.postgresql.Driver d;
 			
 			this.fullLoaded = true;
 			

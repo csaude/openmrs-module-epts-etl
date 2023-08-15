@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.mozart;
+package org.openmrs.module.eptssync.model.pojo.mozart.old;
 
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  
@@ -10,7 +10,7 @@ import java.sql.ResultSet;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class FormClinicalVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class FormFilaRecepcaoVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private Integer encounterId;
 	private String encounterUuid;
@@ -23,7 +23,7 @@ public class FormClinicalVO extends AbstractDatabaseObject implements DatabaseOb
 	private String locationUuid;
 	private String sourceDatabase;
  
-	public FormClinicalVO() { 
+	public FormFilaRecepcaoVO() { 
 		this.metadata = false;
 	} 
  
@@ -147,7 +147,7 @@ public class FormClinicalVO extends AbstractDatabaseObject implements DatabaseOb
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO form_clinical(encounter_id, encounter_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO form_fila_recepcao(encounter_id, encounter_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -157,7 +157,7 @@ public class FormClinicalVO extends AbstractDatabaseObject implements DatabaseOb
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO form_clinical(id, encounter_id, encounter_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO form_fila_recepcao(id, encounter_id, encounter_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -172,7 +172,7 @@ public class FormClinicalVO extends AbstractDatabaseObject implements DatabaseOb
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE form_clinical SET encounter_id = ?, encounter_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
+ 		return "UPDATE form_fila_recepcao SET encounter_id = ?, encounter_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore

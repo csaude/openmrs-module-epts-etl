@@ -33,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-public class SyncConfiguration extends BaseConfiguration{
+public class SyncConfiguration extends BaseConfiguration {
 	
 	private String syncRootDirectory;
 	
@@ -236,6 +236,10 @@ public class SyncConfiguration extends BaseConfiguration{
 		return this.processType.isDbCopy();
 	}
 	
+	@JsonIgnore
+	public boolean isDetectGapesOnDbTables() {
+		return this.processType.isDetectGapesOnDbTables();
+	}
 	
 	@JsonIgnore
 	public boolean isDBQuickExportProcess() {
@@ -335,7 +339,7 @@ public class SyncConfiguration extends BaseConfiguration{
 	}
 	
 	public String getSyncStageSchema() {
-		if(utilities.stringHasValue(this.syncStageSchema)) {
+		if (utilities.stringHasValue(this.syncStageSchema)) {
 			return this.syncStageSchema;
 		}
 		
@@ -624,8 +628,10 @@ public class SyncConfiguration extends BaseConfiguration{
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBInconsistencyCheckProcess();
 		} else if (isResolveProblems()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInResolveProblemsProcess();
-		}else if (isDbCopy()) {
+		} else if (isDbCopy()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDbCopyProcess();
+		} else if (isDetectGapesOnDbTables()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDetectGapesOnDbTables();
 		}
 		
 		if (supportedOperations != null) {

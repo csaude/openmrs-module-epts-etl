@@ -147,7 +147,12 @@ public class SyncVM {
 		
 		ProcessController.retrieveRunningThread(activeConfiguration);
 		
-		Main.runSync(this.activeConfiguration);
+		try {
+			Main.runSync(this.activeConfiguration);
+		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
+		}
 		
 		while(this.activeConfiguration.getRelatedController() == null || !this.activeConfiguration.getRelatedController().isProgressInfoLoaded()) {
 			TimeCountDown.sleep(10);

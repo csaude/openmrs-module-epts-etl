@@ -14,15 +14,6 @@
 	<description>OMOD project for EptsSynchronize</description>
 
 	<dependencies>
-
-		<!-- 
-		Add other dependencies from parent's pom: 
-		<dependency> 
-			<groupId>org.other.library</groupId> 
-			<artifactId>library-name</artifactId> 
-		</dependency> 
-		-->
-		
 		<!-- Begin OpenMRS modules -->
 		
 		<dependency>
@@ -71,23 +62,6 @@
 		</dependency>
 		
 		<!-- End OpenMRS core -->
-
-		<!-- 
-		<dependency>
-		    <groupId>log4j</groupId>
-		    <artifactId>log4j</artifactId>
-		    <version>1.2.17</version>
-		</dependency>
-		 -->
-		 
-		 <!-- 
-		<dependency>
-		    <groupId>org.openmrs.module</groupId>
-		    <artifactId>legacyui-omod</artifactId>
-		    <version>1.5.0</version>
-		    <scope>provided</scope>
-		</dependency>
-		 	 -->
 	</dependencies>
 
 	 

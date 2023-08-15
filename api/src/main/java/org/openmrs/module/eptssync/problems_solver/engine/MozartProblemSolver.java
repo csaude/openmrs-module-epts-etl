@@ -46,6 +46,8 @@ public abstract class MozartProblemSolver extends GenericEngine {
 	public MozartProblemSolver(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
+		
+		
 		try {
 			Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("databaseListFile");
 			

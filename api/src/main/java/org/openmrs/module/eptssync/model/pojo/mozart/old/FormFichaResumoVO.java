@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.model.pojo.mozart;
+package org.openmrs.module.eptssync.model.pojo.mozart.old;
 
 import org.openmrs.module.eptssync.model.pojo.generic.*; 
  

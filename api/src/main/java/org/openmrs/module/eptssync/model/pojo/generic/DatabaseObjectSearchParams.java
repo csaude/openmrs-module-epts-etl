@@ -19,14 +19,13 @@ public class DatabaseObjectSearchParams extends SyncSearchParams<DatabaseObject>
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
-		
-		
+			
 		if (tableInfo.isFromOpenMRSModel() &&  tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addToClauseFrom("patient inner join person src_ on person_id = patient_id");
 			searchClauses.addColumnToSelect("patient.*, src_.uuid");
 		}
 		else {
-			searchClauses.addToClauseFrom(tableInfo.getTableName() + " src_");
+			searchClauses.addToClauseFrom(tableInfo.generateFullTableName(conn) + " src_");
 			
 			searchClauses.addColumnToSelect("src_.*");
 		}

@@ -13,28 +13,33 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * Define the refencial information betwen a {@link SyncTableConfiguration} and its main parent;
  * 
  * @author jpboane
- *
  */
 public class RefInfo {
+	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
-
+	
 	public static final String PARENT_REF_TYPE = "PARENT";
+	
 	public static final String CHILD_REF_TYPE = "CHILD";
 	
 	private SyncTableConfiguration refTableConfiguration;
+	
 	private SyncTableConfiguration relatedSyncTableConfiguration;
 	
 	private boolean setNullDueInconsistency;
 	
 	private Integer defaultValueDueInconsistency;
+	
 	private String tableName;
 	
 	private String refColumnName;
+	
 	private String refColumnType;
 	
 	private String refType;
 	
 	private String conditionField;
+	
 	private Integer conditionValue;
 	
 	/*
@@ -62,7 +67,6 @@ public class RefInfo {
 		return conditionValue;
 	}
 	
-	
 	public void setConditionValue(Integer conditionValue) {
 		this.conditionValue = conditionValue;
 	}
@@ -70,7 +74,7 @@ public class RefInfo {
 	public void setSetNullDueInconsistency(boolean setNullDueInconsistency) {
 		this.setNullDueInconsistency = setNullDueInconsistency;
 	}
-
+	
 	public void setRelatedSyncTableConfiguration(SyncTableConfiguration relatedSyncTableConfiguration) {
 		this.relatedSyncTableConfiguration = relatedSyncTableConfiguration;
 	}
@@ -92,7 +96,8 @@ public class RefInfo {
 	
 	public void setRefType(String refType) {
 		if (!utilities.isStringIn(refType, CHILD_REF_TYPE, PARENT_REF_TYPE)) {
-			throw new ForbiddenOperationException("The RefInfo Type must be in [" + PARENT_REF_TYPE + ", " + CHILD_REF_TYPE + "]");
+			throw new ForbiddenOperationException(
+			        "The RefInfo Type must be in [" + PARENT_REF_TYPE + ", " + CHILD_REF_TYPE + "]");
 		}
 		
 		this.refType = refType;
@@ -106,25 +111,25 @@ public class RefInfo {
 	public SyncTableConfiguration getRefTableConfiguration() {
 		return refTableConfiguration;
 	}
-
+	
 	public void setRefTableConfiguration(SyncTableConfiguration refTableConfiguration) {
 		this.refTableConfiguration = refTableConfiguration;
 		
 		this.tableName = refTableConfiguration.getTableName();
 	}
-
+	
 	public String getTableName() {
 		return tableName;
 	}
-
+	
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
 	}
-
+	
 	public void setDefaultValueDueInconsistency(Integer defaultValueDueInconsistency) {
 		this.defaultValueDueInconsistency = defaultValueDueInconsistency;
 	}
-
+	
 	@JsonIgnore
 	public boolean isNumericRefColumn() {
 		return AttDefinedElements.isNumeric(getRefColumnType());
@@ -155,9 +160,9 @@ public class RefInfo {
 	public void setRefColumnType(String refColumnType) {
 		this.refColumnType = refColumnType;
 	}
-
+	
 	public String getFullReferencedColumn(Connection conn) {
-		return  this.getRefTableConfiguration().getTableName() + "." + this.getRefColumnName();
+		return this.getRefTableConfiguration().getTableName() + "." + this.getRefColumnName();
 	}
 	
 	public boolean isIgnorable() {
@@ -167,20 +172,24 @@ public class RefInfo {
 	public void setIgnorable(boolean ignorable) {
 		this.ignorable = ignorable;
 	}
-
+	
 	@JsonIgnore
 	public boolean isSharedPk() {
 		if (getRefTableConfiguration().getSharePkWith() == null) {
 			return false;
-		}
-		else
-		for (RefInfo refInfo : getRefTableConfiguration().getParents()) {
-			if (refInfo.getRefTableConfiguration().getTableName().equalsIgnoreCase(this.getRefTableConfiguration().getSharePkWith())) {
-				return true;
+		} else if (utilities.arrayHasElement(getRefTableConfiguration().getParents())) {
+			
+			for (RefInfo refInfo : getRefTableConfiguration().getParents()) {
+				if (refInfo.getRefTableConfiguration().getTableName()
+				        .equalsIgnoreCase(this.getRefTableConfiguration().getSharePkWith())) {
+					return true;
+				}
 			}
 		}
 		
-		throw new ForbiddenOperationException("The related table of shared pk " + this.getRefTableConfiguration().getSharePkWith() + " of table " + this.getRefTableConfiguration().getTableName() + " is not listed inparents!");
+		throw new ForbiddenOperationException(
+		        "The related table of shared pk " + this.getRefTableConfiguration().getSharePkWith() + " of table "
+		                + this.getRefTableConfiguration().getTableName() + " is not listed inparents!");
 	}
 	
 	@JsonIgnore
@@ -199,15 +208,17 @@ public class RefInfo {
 		String str = "[TYPE: " + this.refType;
 		
 		if (isChild()) {
-			str += " REF: " + getTableName() + "." + this.getRefColumnName() + " > "  + this.getRelatedSyncTableConfiguration().getTableName() + "." + this.getRelatedSyncTableConfiguration().getPrimaryKey()  + "]";
-		}
-		else {
-			str += " REF: " + this.getRelatedSyncTableConfiguration().getTableName() + "." + this.getRefColumnName() + " > "  +  getTableName() + "." + this.getRefTableConfiguration().getPrimaryKey()  + "]";
+			str += " REF: " + getTableName() + "." + this.getRefColumnName() + " > "
+			        + this.getRelatedSyncTableConfiguration().getTableName() + "."
+			        + this.getRelatedSyncTableConfiguration().getPrimaryKey() + "]";
+		} else {
+			str += " REF: " + this.getRelatedSyncTableConfiguration().getTableName() + "." + this.getRefColumnName() + " > "
+			        + getTableName() + "." + this.getRefTableConfiguration().getPrimaryKey() + "]";
 		}
 		
 		return str;
 	}
-
+	
 	public static RefInfo init(String tableName) {
 		RefInfo refInfo = new RefInfo();
 		refInfo.setTableName(tableName);
@@ -217,10 +228,12 @@ public class RefInfo {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (obj == null) return false;
-		if (!(obj instanceof RefInfo)) return false;
+		if (obj == null)
+			return false;
+		if (!(obj instanceof RefInfo))
+			return false;
 		
-		RefInfo other = (RefInfo)obj;
+		RefInfo other = (RefInfo) obj;
 		
 		String thisRefCol = this.getRefColumnName() != null ? this.getRefColumnName() : "";
 		

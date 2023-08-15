@@ -15,15 +15,16 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 	private String encounterUuid;
 	private Integer regimenId;
 	private Integer formulationId;
-	private double quantity;
-	private String dosage;
+	private double quantityPrescribed;
+	private byte[] dosage;
+	private java.util.Date medicationPickupDate;
 	private java.util.Date nextPickupDate;
 	private Integer modeDispensationId;
-	private Integer medLineId;
+	private Integer medSequenceId;
 	private Integer typeDispensationId;
 	private Integer alternativeLineId;
 	private Integer reasonChangeRegimenId;
-	private Integer arvSideEffectsId;
+	private Integer medSideEffectsId;
 	private Integer adherenceId;
 	private String medicationUuid;
  
@@ -63,20 +64,28 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 		return this.formulationId;
 	}
  
-	public void setQuantity(double quantity){ 
-	 	this.quantity = quantity;
+	public void setQuantityPrescribed(double quantityPrescribed){ 
+	 	this.quantityPrescribed = quantityPrescribed;
 	}
  
-	public double getQuantity(){ 
-		return this.quantity;
+	public double getQuantityPrescribed(){ 
+		return this.quantityPrescribed;
 	}
  
-	public void setDosage(String dosage){ 
+	public void setDosage(byte[] dosage){ 
 	 	this.dosage = dosage;
 	}
  
-	public String getDosage(){ 
+	public byte[] getDosage(){ 
 		return this.dosage;
+	}
+ 
+	public void setMedicationPickupDate(java.util.Date medicationPickupDate){ 
+	 	this.medicationPickupDate = medicationPickupDate;
+	}
+ 
+	public java.util.Date getMedicationPickupDate(){ 
+		return this.medicationPickupDate;
 	}
  
 	public void setNextPickupDate(java.util.Date nextPickupDate){ 
@@ -95,12 +104,12 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 		return this.modeDispensationId;
 	}
  
-	public void setMedLineId(Integer medLineId){ 
-	 	this.medLineId = medLineId;
+	public void setMedSequenceId(Integer medSequenceId){ 
+	 	this.medSequenceId = medSequenceId;
 	}
  
-	public Integer getMedLineId(){ 
-		return this.medLineId;
+	public Integer getMedSequenceId(){ 
+		return this.medSequenceId;
 	}
  
 	public void setTypeDispensationId(Integer typeDispensationId){ 
@@ -127,12 +136,12 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 		return this.reasonChangeRegimenId;
 	}
  
-	public void setArvSideEffectsId(Integer arvSideEffectsId){ 
-	 	this.arvSideEffectsId = arvSideEffectsId;
+	public void setMedSideEffectsId(Integer medSideEffectsId){ 
+	 	this.medSideEffectsId = medSideEffectsId;
 	}
  
-	public Integer getArvSideEffectsId(){ 
-		return this.arvSideEffectsId;
+	public Integer getMedSideEffectsId(){ 
+		return this.medSideEffectsId;
 	}
  
 	public void setAdherenceId(Integer adherenceId){ 
@@ -167,15 +176,16 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		if (rs.getObject("regimen_id") != null) this.regimenId = rs.getInt("regimen_id");
 		if (rs.getObject("formulation_id") != null) this.formulationId = rs.getInt("formulation_id");
-		this.quantity = rs.getDouble("quantity");
-		this.dosage = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("dosage") != null ? rs.getString("dosage").trim() : null);
+		this.quantityPrescribed = rs.getDouble("quantity_prescribed");
+		this.dosage = rs.getBytes("dosage");
+		this.medicationPickupDate =  rs.getTimestamp("medication_pickup_date") != null ? new java.util.Date( rs.getTimestamp("medication_pickup_date").getTime() ) : null;
 		this.nextPickupDate =  rs.getTimestamp("next_pickup_date") != null ? new java.util.Date( rs.getTimestamp("next_pickup_date").getTime() ) : null;
 		if (rs.getObject("mode_dispensation_id") != null) this.modeDispensationId = rs.getInt("mode_dispensation_id");
-		if (rs.getObject("med_line_id") != null) this.medLineId = rs.getInt("med_line_id");
+		if (rs.getObject("med_sequence_id") != null) this.medSequenceId = rs.getInt("med_sequence_id");
 		if (rs.getObject("type_dispensation_id") != null) this.typeDispensationId = rs.getInt("type_dispensation_id");
 		if (rs.getObject("alternative_line_id") != null) this.alternativeLineId = rs.getInt("alternative_line_id");
 		if (rs.getObject("reason_change_regimen_id") != null) this.reasonChangeRegimenId = rs.getInt("reason_change_regimen_id");
-		if (rs.getObject("arv_side_effects_id") != null) this.arvSideEffectsId = rs.getInt("arv_side_effects_id");
+		if (rs.getObject("med_side_effects_id") != null) this.medSideEffectsId = rs.getInt("med_side_effects_id");
 		if (rs.getObject("adherence_id") != null) this.adherenceId = rs.getInt("adherence_id");
 		this.medicationUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("medication_uuid") != null ? rs.getString("medication_uuid").trim() : null);
 	} 
@@ -187,37 +197,37 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO medication(encounter_uuid, regimen_id, formulation_id, quantity, dosage, next_pickup_date, mode_dispensation_id, med_line_id, type_dispensation_id, alternative_line_id, reason_change_regimen_id, arv_side_effects_id, adherence_id, medication_uuid) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO medication(encounter_uuid, regimen_id, formulation_id, quantity_prescribed, dosage, medication_pickup_date, next_pickup_date, mode_dispensation_id, med_sequence_id, type_dispensation_id, alternative_line_id, reason_change_regimen_id, med_side_effects_id, adherence_id, medication_uuid) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.encounterUuid, this.regimenId, this.formulationId, this.quantity, this.dosage, this.nextPickupDate, this.modeDispensationId, this.medLineId, this.typeDispensationId, this.alternativeLineId, this.reasonChangeRegimenId, this.arvSideEffectsId, this.adherenceId, this.medicationUuid};		return params; 
+ 		Object[] params = {this.encounterUuid, this.regimenId, this.formulationId, this.quantityPrescribed, this.dosage, this.medicationPickupDate, this.nextPickupDate, this.modeDispensationId, this.medSequenceId, this.typeDispensationId, this.alternativeLineId, this.reasonChangeRegimenId, this.medSideEffectsId, this.adherenceId, this.medicationUuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO medication(id, encounter_uuid, regimen_id, formulation_id, quantity, dosage, next_pickup_date, mode_dispensation_id, med_line_id, type_dispensation_id, alternative_line_id, reason_change_regimen_id, arv_side_effects_id, adherence_id, medication_uuid) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO medication(id, encounter_uuid, regimen_id, formulation_id, quantity_prescribed, dosage, medication_pickup_date, next_pickup_date, mode_dispensation_id, med_sequence_id, type_dispensation_id, alternative_line_id, reason_change_regimen_id, med_side_effects_id, adherence_id, medication_uuid) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.encounterUuid, this.regimenId, this.formulationId, this.quantity, this.dosage, this.nextPickupDate, this.modeDispensationId, this.medLineId, this.typeDispensationId, this.alternativeLineId, this.reasonChangeRegimenId, this.arvSideEffectsId, this.adherenceId, this.medicationUuid};		return params; 
+ 		Object[] params = {this.id, this.encounterUuid, this.regimenId, this.formulationId, this.quantityPrescribed, this.dosage, this.medicationPickupDate, this.nextPickupDate, this.modeDispensationId, this.medSequenceId, this.typeDispensationId, this.alternativeLineId, this.reasonChangeRegimenId, this.medSideEffectsId, this.adherenceId, this.medicationUuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.encounterUuid, this.regimenId, this.formulationId, this.quantity, this.dosage, this.nextPickupDate, this.modeDispensationId, this.medLineId, this.typeDispensationId, this.alternativeLineId, this.reasonChangeRegimenId, this.arvSideEffectsId, this.adherenceId, this.medicationUuid, this.id};		return params; 
+ 		Object[] params = {this.encounterUuid, this.regimenId, this.formulationId, this.quantityPrescribed, this.dosage, this.medicationPickupDate, this.nextPickupDate, this.modeDispensationId, this.medSequenceId, this.typeDispensationId, this.alternativeLineId, this.reasonChangeRegimenId, this.medSideEffectsId, this.adherenceId, this.medicationUuid, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE medication SET encounter_uuid = ?, regimen_id = ?, formulation_id = ?, quantity = ?, dosage = ?, next_pickup_date = ?, mode_dispensation_id = ?, med_line_id = ?, type_dispensation_id = ?, alternative_line_id = ?, reason_change_regimen_id = ?, arv_side_effects_id = ?, adherence_id = ?, medication_uuid = ? WHERE id = ?;"; 
+ 		return "UPDATE medication SET encounter_uuid = ?, regimen_id = ?, formulation_id = ?, quantity_prescribed = ?, dosage = ?, medication_pickup_date = ?, next_pickup_date = ?, mode_dispensation_id = ?, med_sequence_id = ?, type_dispensation_id = ?, alternative_line_id = ?, reason_change_regimen_id = ?, med_side_effects_id = ?, adherence_id = ?, medication_uuid = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.regimenId) + "," + (this.formulationId) + "," + (this.quantity) + "," + (this.dosage != null ? "\""+ utilities.scapeQuotationMarks(dosage)  +"\"" : null) + "," + (this.nextPickupDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(nextPickupDate)  +"\"" : null) + "," + (this.modeDispensationId) + "," + (this.medLineId) + "," + (this.typeDispensationId) + "," + (this.alternativeLineId) + "," + (this.reasonChangeRegimenId) + "," + (this.arvSideEffectsId) + "," + (this.adherenceId) + "," + (this.medicationUuid != null ? "\""+ utilities.scapeQuotationMarks(medicationUuid)  +"\"" : null); 
+ 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.regimenId) + "," + (this.formulationId) + "," + (this.quantityPrescribed) + "," + (this.dosage != null ? "\""+dosage+"\"" : null) + "," + (this.medicationPickupDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(medicationPickupDate)  +"\"" : null) + "," + (this.nextPickupDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(nextPickupDate)  +"\"" : null) + "," + (this.modeDispensationId) + "," + (this.medSequenceId) + "," + (this.typeDispensationId) + "," + (this.alternativeLineId) + "," + (this.reasonChangeRegimenId) + "," + (this.medSideEffectsId) + "," + (this.adherenceId) + "," + (this.medicationUuid != null ? "\""+ utilities.scapeQuotationMarks(medicationUuid)  +"\"" : null); 
 	} 
  
 	@Override

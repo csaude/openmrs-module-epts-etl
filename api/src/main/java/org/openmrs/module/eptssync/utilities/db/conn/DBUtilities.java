@@ -3,6 +3,7 @@ package org.openmrs.module.eptssync.utilities.db.conn;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -31,7 +32,7 @@ public class DBUtilities {
 	
 	public static final String MYSQL_DATABASE = "MYSQL";
 	
-	public static final String POSTGRES_DATABASE = "POSTGRES";
+	public static final String POSTGRESQL_DATABASE = "POSTGRES";
 	
 	public static final String SQLSERVER_DATABASE = "SQLSERVER";
 	
@@ -61,33 +62,35 @@ public class DBUtilities {
 	
 	public static final String RESOURCE_TYPE_SCHEMA = "SCHEMA";
 	
-	private static String determineDataBaseString(String msg) {
+	private static String determineDataBaseFromString(String msg) {
 		if (msg.toUpperCase().contains("ORA")) {
 			return ORACLE_DATABASE;
 		} else if (msg.toUpperCase().contains("MYSQL")) {
 			return MYSQL_DATABASE;
-		} else if (msg.toLowerCase().contains("postgresql")) {
-			return POSTGRES_DATABASE;
+		} else if (msg.toUpperCase().contains("POSTGRESQL")) {
+			return POSTGRESQL_DATABASE;
+		} else if (msg.toUpperCase().contains("SQLSERVER")) {
+			return SQLSERVER_DATABASE;
 		}
 		
 		return null;
 	}
 	
 	public static String determineDataBaseFromException(SQLException sqlExcetion) {
-		String db = determineDataBaseString(sqlExcetion.getClass().getName());
+		String db = determineDataBaseFromString(sqlExcetion.getClass().getName());
 		
 		if (db != null)
 			return db;
 		
 		if (sqlExcetion.getCause() != null) {
-			db = determineDataBaseString(sqlExcetion.getCause().getClass().getName());
+			db = determineDataBaseFromString(sqlExcetion.getCause().getClass().getName());
 			
 			if (db != null)
 				return db;
 		}
 		
 		if (sqlExcetion.getLocalizedMessage() != null) {
-			db = determineDataBaseString(sqlExcetion.getLocalizedMessage().toString());
+			db = determineDataBaseFromString(sqlExcetion.getLocalizedMessage().toString());
 			if (db != null)
 				return db;
 		}
@@ -95,7 +98,7 @@ public class DBUtilities {
 		StackTraceElement[] trace = sqlExcetion.getStackTrace();
 		
 		for (int i = 0; i < trace.length; i++) {
-			db = determineDataBaseString((trace[i].toString()));
+			db = determineDataBaseFromString((trace[i].toString()));
 			
 			if (db != null)
 				return db;
@@ -106,7 +109,7 @@ public class DBUtilities {
 	
 	public static boolean isPostgresDB(Connection conn) throws DBException {
 		try {
-			return determineDataBaseFromConnection(conn).equals(POSTGRES_DATABASE);
+			return determineDataBaseFromConnection(conn).equals(POSTGRESQL_DATABASE);
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
@@ -116,6 +119,15 @@ public class DBUtilities {
 	public static boolean isOracleDB(Connection conn) throws DBException {
 		try {
 			return determineDataBaseFromConnection(conn).equals(ORACLE_DATABASE);
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+	}
+	
+	public static boolean isSqlServerDB(Connection conn) throws DBException {
+		try {
+			return determineDataBaseFromConnection(conn).equals(SQLSERVER_DATABASE);
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
@@ -145,13 +157,49 @@ public class DBUtilities {
 		if (str.contains("MYSQL"))
 			return MYSQL_DATABASE;
 		if (str.contains("POSTGRES"))
-			return POSTGRES_DATABASE;
-		if (str.contains("SQLSERVER"))
+			return POSTGRESQL_DATABASE;
+		if (str.contains("SQLSERVER") || str.contains("SQL SERVER"))
 			return SQLSERVER_DATABASE;
 		
 		throw new RuntimeException("Impossivel determinar a base de dados a partir da conexao");
 	}
 	
+	
+	public static boolean isSameDatabaseServer(Connection srcConn, Connection dstConn) throws DBException {
+		try {
+			String srcDatabaseType = DBUtilities.determineDataBaseFromConnection(srcConn);
+			String dstDatabaseType = DBUtilities.determineDataBaseFromConnection(dstConn);
+
+			if (!srcDatabaseType.equals(dstDatabaseType)) {
+				return false;
+			}
+			
+			DatabaseMetaData srcMetadata = srcConn.getMetaData();
+			DatabaseMetaData dstMetadata = dstConn.getMetaData();
+			
+			String srcUrl = srcMetadata.getURL();
+			String dstUrl = dstMetadata.getURL();
+			
+			
+			if (isPostgresDB(srcConn)) {
+				return srcUrl.equals(dstUrl);
+			}
+			else if (isOracleDB(srcConn)) {
+				return srcUrl.equals(dstUrl);
+			} else if (isMySQLDB(srcConn)) {
+				String srcHostAndPort = srcUrl.split("//")[1].split("/")[0];
+				String dstHostAndPort = dstUrl.split("//")[1].split("/")[0];
+				
+				return srcHostAndPort.equals(dstHostAndPort);
+			}
+			
+			throw new ForbiddenOperationException("Unsupported database [" + srcDatabaseType + "]");
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+	}
+		
 	public static Connection cloneConnetion(Connection conn) throws SQLException {
 		//DatabaseMetaData metadata = conn.getMetaData();
 		
@@ -165,27 +213,45 @@ public class DBUtilities {
 	}
 	
 	public static String tryToPutSchemaOnDatabaseObject(String tableName, Connection conn) throws DBException {
+	
 		try {
-			
-			if (isPostgresDB(conn))
-				return tableName;
-			if (isMySQLDB(conn))
-				return tableName;
-			
 			String[] tableNameComposition = tableName.split("\\.");
 			
-			if (tableNameComposition != null && tableNameComposition.length == 1) {
-				String userName = conn.getMetaData().getUserName().toLowerCase().equals("sisflof") ? "lims"
-				        : conn.getMetaData().getUserName();
-				
-				return userName + "." + tableName;
-			}
+			if (tableNameComposition != null && tableNameComposition.length > 1)
+				return tableName;
 			
-			return tableName;
+			return determineSchemaName(conn) + "." + tableName;
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
 		}
+	}
+	
+	public static String tryToPutSchemaOnInsertScript(String sql, Connection conn) throws DBException {
+		String tableName = (sql.toUpperCase().split("INSERT INTO")[1]).split("\\(")[0];
+		
+	
+		String[] tableNameComposition = tableName.split("\\.");
+		
+		if (tableNameComposition != null && tableNameComposition.length > 1)
+			return sql;
+		
+		String fullTableName = tryToPutSchemaOnDatabaseObject(utilities.removeAllEmptySpace(tableName), conn);
+		
+		return sql.toUpperCase().replaceFirst(tableName, " " +fullTableName);
+	}
+
+	public static String tryToPutSchemaOnUpdateScript(String sql, Connection conn) throws DBException {
+		String tableName = (sql.toUpperCase().split("UPDATE ")[1]).split(" ")[0];
+		
+		String[] tableNameComposition = tableName.split("\\.");
+		
+		if (tableNameComposition != null && tableNameComposition.length > 1)
+			return sql;
+		
+		String fullTableName = tryToPutSchemaOnDatabaseObject(utilities.removeAllEmptySpace(tableName), conn);
+		
+		return sql.toUpperCase().replaceFirst(tableName, " " +fullTableName);
 	}
 	
 	public static String determineSchemaName(Connection conn) throws DBException {
@@ -248,99 +314,6 @@ public class DBUtilities {
 			throw new DBException(e);
 		}
 	}
-
-	
-	private static void createRelatedSyncStageAreaUniqueKeysTable(SyncTableConfiguration config, Connection conn) throws DBException {
-		String sql = "";
-		String notNullConstraint = "NOT NULL";
-		String endLineMarker = ",\n";
-		
-		String parentTableName = config.generateFullStageTableName();
-		String tableName = config.generateRelatedStageUniqueKeysTableName();
-		
-		sql += "CREATE TABLE " + config.generateFullStageUniqueKeysTableName() + "(\n";
-		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
-		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("key_value", 100, "NULL", conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
-		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(), "record_id, key_name, column_name", conn) + endLineMarker;
-		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "record_id", parentTableName, "id", conn) + endLineMarker;
-		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
-		sql += ")";
-		
-		try {
-			Statement st = conn.createStatement();
-			st.addBatch(sql);
-			st.executeBatch();
-			
-			st.close();
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-	}
-	
-	private static void createRelatedSyncStageAreaTable(SyncTableConfiguration config, Connection conn) throws DBException {
-		String tableName = config.generateRelatedStageTableName();
-		
-		String sql = "";
-		String notNullConstraint = "NOT NULL";
-		String endLineMarker = ",\n";
-		
-		sql += "CREATE TABLE " + config.generateFullStageTableName() + "(\n";
-		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
-		sql += DBUtilities.generateTableBigIntField("record_origin_id", notNullConstraint, conn)+ endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableTextField("json", "NULL", conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeField("last_sync_date", "NULL", conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("last_sync_try_err", 250, "NULL", conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeField("last_update_date", "NULL", conn) + endLineMarker;
-		sql += DBUtilities.generateTableNumericField("consistent", 1, "NULL", -1, conn) + endLineMarker;
-		sql += DBUtilities.generateTableNumericField("migration_status", 1, "NULL", 1, conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
-		
-		sql += DBUtilities.generateTableDateTimeField("record_date_created", "NULL", conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeField("record_date_changed", "NULL", conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeField("record_date_voided", "NULL", conn) + endLineMarker;
-		sql += DBUtilities.generateTableBigIntField("destination_id", "NULL", conn) + endLineMarker;
-		
-		String checkCondition = "migration_status = -1 OR migration_status = 0 OR migration_status = 1";
-		String keyName = "CHK_" + config.generateRelatedStageTableName() + "_MIG_STATUS";
-		
-		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
-		
-		String uniqueKeyName = tableName + "_UNQ_RECORD_ID".toLowerCase();
-		
-		if (config.isDestinationInstallationType() || config.isDBQuickLoad()
-		        || config.isDBQuickCopy()) {
-			
-			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName, "record_origin_id, record_origin_location_code",
-			    conn) + endLineMarker;
-			
-		} else {
-			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName, "record_origin_id", conn) + endLineMarker;
-		}
-		
-		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
-		sql += ")";
-		
-		try {
-			Statement st = conn.createStatement();
-			st.addBatch(sql);
-			st.executeBatch();
-			
-			st.close();
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-	}
 	
 	public static void main(String[] args) throws IOException, SQLException {
 		//Mysql
@@ -363,67 +336,29 @@ public class DBUtilities {
 		String driveClassName = "org.postgresql.Driver";*/
 		
 		/*DBConnectionInfo dbConnInfo = new DBConnectionInfo(dataBaseUserName, dataBaseUserPassword, connectionURI,
-	        driveClassName);
-	
+		    driveClassName);
+		
 		DBConnectionService service = DBConnectionService.init(dbConnInfo);
 		
 		OpenConnection conn = service.openConnection();*/
 		
+		SyncConfiguration syncConfig = SyncConfiguration
+		        .loadFromFile(new File("D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\mozart\\db_copy_mozart_sqlserver_test.json"));
 		
-		SyncConfiguration syncConfig = SyncConfiguration.loadFromFile(new File("D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\mozart\\db_copy_mozart_postgres.json"));
-			
-		OpenConnection conn = syncConfig.getAppsInfo().get(1).openConnection();
-		
-		/*createRelatedSyncStageAreaTable(syncConfig.getTablesConfigurations().get(0), conn);
-		conn.markAsSuccessifullyTerminected();
-		conn.finalizeConnection();
-		
-		conn = syncConfig.getAppsInfo().get(1).openConnection();*/
-		
-		//createRelatedSyncStageAreaUniqueKeysTable(syncConfig.getTablesConfigurations().get(0), conn);
+		OpenConnection srcConn = syncConfig.getMainApp().openConnection();
+		OpenConnection dstConn = syncConfig.getAppsInfo().get(1).openConnection();
 		
 		
-		conn.markAsSuccessifullyTerminected();
-		conn.finalizeConnection();
+		SyncTableConfiguration tableConfig = syncConfig.getTablesConfigurations().get(0);
+	
+		tableConfig.fullLoad();
 		
-		/*conn = syncConfig.getMainApp().openConnection();
-		createRelatedSyncStageAreaTable(syncConfig.getTablesConfigurations().get(0), conn);
+		boolean sameDB = isSameDatabaseServer(srcConn, dstConn);
 		
-		conn.markAsSuccessifullyTerminected();
-		conn.finalizeConnection();
-		*/
+		System.out.println(sameDB ? "Same db server" : "Different DB Server");
 		
-		conn = syncConfig.getMainApp().openConnection();
+		System.out.println(tableConfig);
 		
-		
-		createRelatedSyncStageAreaUniqueKeysTable(syncConfig.getTablesConfigurations().get(0), conn);
-		
-		
-		conn.markAsSuccessifullyTerminected();
-		conn.finalizeConnection();
-		
-		//conn = syncConfig.getMainApp().openConnection();
-		//System.out.println("Schema " + determineSchemaName(conn));
-		
-		/*
-		try {
-			String resourceName = "test1_username_key";
-			String resourceType = RESOURCE_TYPE_INDEX;
-			String resourceTable = "test1";
-			String resourceSchema = "mozart2_test";
-			
-			
-			boolean b = isResourceExist(resourceSchema, resourceTable, resourceType, resourceName, conn);
-			
-			System.out.println(b ? resourceType + " " + resourceSchema + "." + resourceName + " exists" : "Resource does not exist");
-			
-			
-			
-		}
-		catch (SQLException e) {
-			System.out.println(e.getLocalizedMessage());
-		}
-		*/
 	}
 	
 	public static void enableForegnKeyChecks(Connection conn) throws DBException {
@@ -449,6 +384,9 @@ public class DBUtilities {
 	
 	public static boolean isTableColumnAllowNull(String tableName, String columnName, Connection conn) throws DBException {
 		try {
+			
+			tableName = tryToPutSchemaOnDatabaseObject(tableName, conn);
+			
 			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
 			
 			ResultSet rs = st.executeQuery();
@@ -473,6 +411,8 @@ public class DBUtilities {
 	
 	public static String determineColunType(String tableName, String columnName, Connection conn) throws DBException {
 		try {
+			tableName = tryToPutSchemaOnDatabaseObject(tableName, conn);
+			
 			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
 			
 			ResultSet rs = st.executeQuery();
@@ -506,7 +446,7 @@ public class DBUtilities {
 	
 	public static boolean isMySQLIndexExistsOnTable(String tableSchema, String tableName, String indexName, Connection conn)
 	        throws SQLException {
-		String fullTableName = tableSchema + "/" + tableName;
+		String fullTableName = tryToPutSchemaOnDatabaseObject(tableName, conn);
 		
 		String selectQuery = "";
 		
@@ -523,8 +463,8 @@ public class DBUtilities {
 		return result.next();
 	}
 	
-	public static boolean isResourceExist(String resourceSchema, String resourceTable, String resourceType, String resourceName, Connection conn)
-	        throws DBException {
+	public static boolean isResourceExist(String resourceSchema, String resourceTable, String resourceType,
+	        String resourceName, Connection conn) throws DBException {
 		if (isMySQLDB(conn)) {
 			return isMySQLResourceExist(resourceSchema, resourceTable, resourceType, resourceName, conn);
 		}
@@ -535,9 +475,13 @@ public class DBUtilities {
 		
 		throw new RuntimeException("Database not supported!");
 	}
-
-	private static boolean isPostgresResourceExist(String resourceSchema, String resourceTable, String resourceType, String resourceName,
-	        Connection conn) throws DBException {
+	
+	public static boolean isTableExists(String schema, String tableName, Connection conn) throws DBException {
+		return isResourceExist(schema, null, RESOURCE_TYPE_TABLE, tableName, conn);
+	}
+	
+	private static boolean isPostgresResourceExist(String resourceSchema, String resourceTable, String resourceType,
+	        String resourceName, Connection conn) throws DBException {
 		String resourceSchemaCondition = "1 = 1";
 		String resourceTableCondition = "1 = 1";
 		String resourceNameCondition = "1 = 1";
@@ -546,8 +490,8 @@ public class DBUtilities {
 		if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_INDEX)) {
 			fromClause = "pg_indexes";
 			resourceSchemaCondition = "schemaname = '" + resourceSchema + "'";
-			resourceTableCondition = "tablename = '" + resourceTable+ "'";
-			resourceNameCondition = "indexname = '" + resourceName  + "'";
+			resourceTableCondition = "tablename = '" + resourceTable + "'";
+			resourceNameCondition = "indexname = '" + resourceName + "'";
 		} else if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_TRIGGER)) {
 			fromClause = "INFORMATION_SCHEMA.TRIGGERS";
 			resourceNameCondition = "TRIGGER_NAME = '" + resourceName + "'";
@@ -585,8 +529,8 @@ public class DBUtilities {
 		}
 	}
 	
-	private static boolean isMySQLResourceExist(String resourceSchema, String resourceTable, String resourceType, String resourceName,
-	        Connection conn) throws DBException {
+	private static boolean isMySQLResourceExist(String resourceSchema, String resourceTable, String resourceType,
+	        String resourceName, Connection conn) throws DBException {
 		String resourceSchemaCondition = "";
 		String resourceNameCondition = "";
 		String fromClause = "";
@@ -634,6 +578,8 @@ public class DBUtilities {
 	}
 	
 	public static boolean isColumnExistOnTable(String tableName, String columnName, Connection conn) throws SQLException {
+		tableName = tryToPutSchemaOnDatabaseObject(tableName, conn);
+		
 		PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
 		
 		ResultSet rs = st.executeQuery();
@@ -650,7 +596,6 @@ public class DBUtilities {
 	}
 	
 	public static Field getPrimaryKey(String tableName, String schema, Connection conn) throws DBException {
-		
 		Field att = null;
 		
 		try {
@@ -795,7 +740,9 @@ public class DBUtilities {
 	}
 	
 	public static void dropTable(String schema, String tableName, Connection conn) throws DBException {
-		executeBatch(conn, "drop table " + schema + "." + tableName);
+		tableName = tryToPutSchemaOnDatabaseObject(tableName, conn);
+		
+		executeBatch(conn, "drop table " + tableName);
 	}
 	
 	public static void renameTable(String schema, String oldTableName, String newTableName, Connection conn)
@@ -839,45 +786,48 @@ public class DBUtilities {
 		}
 	}
 	
-	
 	public static String generateTableAutoIncrementField(String fieldName, Connection conn) throws DBException {
 		if (isMySQLDB(conn)) {
-			return fieldName + " bigint NOT NULL AUTO_INCREMENT"; 
-		}
-		else if (isPostgresDB(conn)) {
-			return fieldName + " serial NOT NULL"; 
+			return fieldName + " bigint NOT NULL AUTO_INCREMENT";
+		} else if (isPostgresDB(conn)) {
+			return fieldName + " serial NOT NULL";
+		} else if (isSqlServerDB(conn)) {
+			return fieldName + " IDENTITY(1,1)";
 		}
 		
-		throw new DatabaseNotSupportedException(conn); 	
-			
+		throw new DatabaseNotSupportedException(conn);
 	}
 	
-	public static String generateTablePrimaryKeyDefinition(String fieldName, String pkName, Connection conn) throws DBException {
-		return  " CONSTRAINT " + pkName + " PRIMARY KEY (" + fieldName + ")";  
+	public static String generateTablePrimaryKeyDefinition(String fieldName, String pkName, Connection conn)
+	        throws DBException {
+		return " CONSTRAINT " + pkName + " PRIMARY KEY (" + fieldName + ")";
 	}
 	
-	public static String generateTableVarcharField(String fieldName, int precision, String constraint, Connection conn) throws DBException {
-		return fieldName + " VARCHAR(" + precision + ") " + constraint; 
+	public static String generateTableVarcharField(String fieldName, int precision, String constraint, Connection conn)
+	        throws DBException {
+		return fieldName + " VARCHAR(" + precision + ") " + constraint;
 	}
-
+	
 	public static String generateTableTextField(String fieldName, String constraint, Connection conn) throws DBException {
-		return fieldName + " text " + constraint; 
+		return fieldName + " text " + constraint;
 	}
 	
 	public static String generateTableIntegerField(String fieldName, String constraint, Connection conn) throws DBException {
-		return fieldName + " INTEGER " + constraint; 
+		return fieldName + " INTEGER " + constraint;
 	}
 	
-	public static String generateTableNumericField(String fieldName, int precision, String constraint, Number defaultValue, Connection conn) throws DBException {
-		return fieldName + " NUMERIC (" + precision + ")" + constraint + " DEFAULT " + defaultValue; 
+	public static String generateTableNumericField(String fieldName, int precision, String constraint, Number defaultValue,
+	        Connection conn) throws DBException {
+		return fieldName + " NUMERIC (" + precision + ")" + constraint + " DEFAULT " + defaultValue;
 	}
 	
 	public static String generateTableBigIntField(String fieldName, String constraint, Connection conn) throws DBException {
-		return fieldName + " BIGINT " + constraint; 
+		return fieldName + " BIGINT " + constraint;
 	}
 	
-	public static String generateTableDateTimeField(String fieldName, String constraint, Connection conn) throws DBException {
-		return fieldName + " TIMESTAMP " + constraint; 
+	public static String generateTableDateTimeField(String fieldName, String constraint, Connection conn)
+	        throws DBException {
+		return fieldName + " TIMESTAMP " + constraint;
 	}
 	
 	public static String generateTableDateTimeFieldWithDefaultValue(String fieldName, Connection conn) throws DBException {
@@ -886,43 +836,44 @@ public class DBUtilities {
 		if (isMySQLDB(conn)) {
 			return definition += " DEFAULT CURRENT_TIMESTAMP";
 			
-		}
-		else if (isPostgresDB(conn)) {
+		} else if (isPostgresDB(conn)) {
 			return definition += " DEFAULT CURRENT_TIMESTAMP";
-		}
-		else if (isOracleDB(conn)) {
+		} else if (isOracleDB(conn)) {
 			return definition += " DEFAULT CURRENT_TIMESTAMP";
 		}
 		
-		throw new DatabaseNotSupportedException(conn); 	 
+		throw new DatabaseNotSupportedException(conn);
 	}
-
+	
 	public static String generateTableDateField(String fieldName, String constraint, Connection conn) throws DBException {
-		return fieldName + " DATE " + constraint; 
+		return fieldName + " DATE " + constraint;
 	}
 	
-	public static String generateTableUniqueKeyDefinition(String uniqueKeyName, String uniqueKeyFields, Connection conn) throws DBException {
+	public static String generateTableUniqueKeyDefinition(String uniqueKeyName, String uniqueKeyFields, Connection conn)
+	        throws DBException {
 		if (isMySQLDB(conn)) {
-			return "UNIQUE KEY " + uniqueKeyName  + "(" + uniqueKeyFields + ")";
+			return "UNIQUE KEY " + uniqueKeyName + "(" + uniqueKeyFields + ")";
 			
-		}
-		else if (isPostgresDB(conn)) {
-			return "CONSTRAINT " + uniqueKeyName  + " UNIQUE (" + uniqueKeyFields + ")";
-		}
-		else if (isOracleDB(conn)) {
-			return "CONSTRAINT " + uniqueKeyName  + " UNIQUE (" + uniqueKeyFields + ")";
+		} else if (isPostgresDB(conn)) {
+			return "CONSTRAINT " + uniqueKeyName + " UNIQUE (" + uniqueKeyFields + ")";
+		} else if (isOracleDB(conn)) {
+			return "CONSTRAINT " + uniqueKeyName + " UNIQUE (" + uniqueKeyFields + ")";
 		}
 		
-		throw new DatabaseNotSupportedException(conn); 	
-	}
-
-	public static String generateTableForeignKeyDefinition(String keyName, String field, String parentTableName, String parentField, Connection conn) throws DBException {
-		return "CONSTRAINT " + keyName + " FOREIGN KEY (" + field + ") REFERENCES " + parentTableName + " (" + parentField + ")";
+		throw new DatabaseNotSupportedException(conn);
 	}
 	
-
-	public static String generateTableCheckConstraintDefinition(String keyName, String checkCondition, Connection conn) throws DBException {
+	public static String generateTableForeignKeyDefinition(String keyName, String field, String parentTableName,
+	        String parentField, Connection conn) throws DBException {
+		return "CONSTRAINT " + keyName + " FOREIGN KEY (" + field + ") REFERENCES " + parentTableName + " (" + parentField
+		        + ")";
+	}
+	
+	public static String generateTableCheckConstraintDefinition(String keyName, String checkCondition, Connection conn)
+	        throws DBException {
 		return "CONSTRAINT " + keyName + " CHECK (" + checkCondition + ")";
 	}
-		
+
+
+	
 }

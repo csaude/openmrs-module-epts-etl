@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.utilities.tools;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -26,27 +27,40 @@ public class ExportMozatDBs {
 	
 	static DBConnectionService dbService;
 	
-	public static void main(String[] args) throws SQLException {
+	public static void main(String[] args) throws SQLException, IOException {
 		
-		DBConnectionInfo dbConnInfo = new DBConnectionInfo();
-		dbConnInfo.setConnectionURI(
-		    "jdbc:mysql://10.10.2.2:53301/mysql?autoReconnect=true&useSSL=false");
-		dbConnInfo.setDataBaseUserName("root");
-		dbConnInfo.setDataBaseUserPassword("root");
-		dbConnInfo.setDriveClassName("com.mysql.jdbc.Driver");
-		
-		dbService = DBConnectionService.init(dbConnInfo);
-	
-
 		List<Map<String, Object>> dataBaseNames = new ArrayList<>();
 		
-		if (args == null || args.length < 1) {
-			System.err.println("One o all params were not specified! Please specify to params 1. DB Export root directory");
+		if (args == null || args.length < 2) {
+			System.err.println(
+			    "One o all params were not specified! Please specify to params [1]. Db Conf file [2]. DB Export root directory");
 			
 			System.exit(1);
 		}
 		
-		String dbExportRootDirectoryPath = args[0];
+		String dbConnInfoFile = args[0];
+		
+		if (!new File(dbConnInfoFile).exists()) {
+			System.err.println("The path [" + dbConnInfoFile + "] for Sites file does not correspond existing file!");
+			System.exit(1);
+		}
+		
+		DBConnectionInfo dbConnInfo = DBConnectionInfo.loadFromFile(new File(dbConnInfoFile));
+		
+		dbService = DBConnectionService.init(dbConnInfo);
+		
+		OpenConnection conn = null;
+		
+		try {
+			conn = dbService.openConnection();
+		}
+		finally {
+			if (conn != null) {
+				conn.finalizeConnection();
+			}
+		}
+		
+		String dbExportRootDirectoryPath = args[1];
 		
 		if (!new File(dbExportRootDirectoryPath).exists()) {
 			System.err.println(
@@ -66,7 +80,8 @@ public class ExportMozatDBs {
 			
 			String dbName = siteName.toLowerCase();
 			
-			dataBaseNames.add(fastCreateMap("dbName", dbName, "typeIdLookupExists", false, "qtyRecordsOnTypeIdLookupTable", 0));
+			dataBaseNames
+			        .add(fastCreateMap("dbName", dbName, "typeIdLookupExists", false, "qtyRecordsOnTypeIdLookupTable", 0));
 			
 			String[] cmd = new String[] { "/bin/bash", dbExportRootDirectoryPath + "/db_import.sh", dbName,
 			        file.getAbsolutePath() };
@@ -82,13 +97,12 @@ public class ExportMozatDBs {
 			}
 		}
 		
-		
-		boolean exportRunning=true;
+		boolean exportRunning = true;
 		
 		while (exportRunning) {
 			TimeCountDown.sleep(20);
 			
-			OpenConnection conn = dbService.openConnection();
+			conn = dbService.openConnection();
 			
 			for (Map<String, Object> db : dataBaseNames) {
 				exportRunning = exportIsRunningOnDb(db, conn);
@@ -113,12 +127,12 @@ public class ExportMozatDBs {
 		int oldQtyRecordsOnTypeIdLookupTable = (int) db.get("qtyRecordsOnTypeIdLookupTable");
 		
 		if (!typeIdLookupExists) {
-			typeIdLookupExists = DBUtilities.isResourceExist(dbName, null, DBUtilities.RESOURCE_TYPE_TABLE, "type_id_lookup", conn);
+			typeIdLookupExists = DBUtilities.isResourceExist(dbName, null, DBUtilities.RESOURCE_TYPE_TABLE, "type_id_lookup",
+			    conn);
 			
 			if (!typeIdLookupExists) {
 				return true;
-			}
-			else {
+			} else {
 				db.put("typeIdLookupExists", true);
 			}
 		}
@@ -129,24 +143,23 @@ public class ExportMozatDBs {
 		
 		int qtyRecordsOnTypeIdLookupTable = result.intValue();
 		
-		if (qtyRecordsOnTypeIdLookupTable == 0) return true;
+		if (qtyRecordsOnTypeIdLookupTable == 0)
+			return true;
 		
 		if (oldQtyRecordsOnTypeIdLookupTable != qtyRecordsOnTypeIdLookupTable) {
 			db.put("qtyRecordsOnTypeIdLookupTable", qtyRecordsOnTypeIdLookupTable);
 			
 			return true;
-		}
-		else {
+		} else {
 			return false;
 		}
 	}
 	
-	
 	/**
 	 * Create a map populated with an initial entries passed by parameter
 	 * 
-	 * @param params the entries which will populate the map. It's an array which emulate a map entries
-	 *            in this format [key1, val1, key2, val2, key3, val3, ..]
+	 * @param params the entries which will populate the map. It's an array which emulate a map
+	 *            entries in this format [key1, val1, key2, val2, key3, val3, ..]
 	 * @return the generated map
 	 * @throws ForbiddenOperationException when the params array length is not odd
 	 */
@@ -166,7 +179,6 @@ public class ExportMozatDBs {
 		
 		return map;
 	}
-		
 	
 	private static String generateSiteName(String dumpName) {
 		String[] nameParts = dumpName.split("_");

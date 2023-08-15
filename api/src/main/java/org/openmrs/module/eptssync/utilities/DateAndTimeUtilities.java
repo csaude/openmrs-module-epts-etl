@@ -1379,7 +1379,7 @@ public class DateAndTimeUtilities {
 				return tryToGetOracleDate(conn);
 			}
 			
-			if (DBUtilities.determineDataBaseFromConnection(conn).equals(DBUtilities.POSTGRES_DATABASE)) {
+			if (DBUtilities.determineDataBaseFromConnection(conn).equals(DBUtilities.POSTGRESQL_DATABASE)) {
 				return tryToGetPostgresDate(conn);	
 			}
 			

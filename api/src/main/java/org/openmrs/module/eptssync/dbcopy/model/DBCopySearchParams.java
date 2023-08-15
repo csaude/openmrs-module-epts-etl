@@ -28,6 +28,8 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		Connection srcConn = conn;
+		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
@@ -45,28 +47,30 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 		}
 		
 		if (!forProgressMeter) {
-			OpenConnection destConn = null;
+			OpenConnection dstConn = null;
 			
 			try {
-				destConn = this.relatedController.openDestConnection();
+				dstConn = this.relatedController.openDestConnection();
 				
-				String destFullTableName = DBUtilities.determineSchemaName(destConn) + ".";
-				destFullTableName += tableInfo.getMappedTableInfo().getTableName();
-				
-				String srcPK = getTableInfo().getPrimaryKey();
-				String dstPK = tableInfo.getMappedTableInfo().getMappedField(srcPK);
-				
-				String excludeExisting = "";
-				
-				excludeExisting += "not exists (	select * ";
-				excludeExisting += "				from " + destFullTableName + " dest_";
-				excludeExisting += "				where dest_." + dstPK + " = src_." + srcPK + ")";
-				
-				searchClauses.addToClauses(excludeExisting);
+				if (DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
+					String destFullTableName = DBUtilities.determineSchemaName(dstConn) + ".";
+					destFullTableName += tableInfo.getMappedTableInfo().getTableName();
+					
+					String srcPK = getTableInfo().getPrimaryKey();
+					String dstPK = tableInfo.getMappedTableInfo().getMappedField(srcPK);
+					
+					String excludeExisting = "";
+					
+					excludeExisting += "not exists (	select * ";
+					excludeExisting += "				from " + destFullTableName + " dest_";
+					excludeExisting += "				where dest_." + dstPK + " = src_." + srcPK + ")";
+					
+					searchClauses.addToClauses(excludeExisting);
+				}
 			}
 			finally {
-				if (destConn != null) {
-					destConn.finalizeConnection();
+				if (dstConn != null) {
+					dstConn.finalizeConnection();
 				}
 			}
 			

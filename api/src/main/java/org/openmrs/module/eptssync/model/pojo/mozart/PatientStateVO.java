@@ -24,6 +24,7 @@ public class PatientStateVO extends AbstractDatabaseObject implements DatabaseOb
 	private java.util.Date stateDate;
 	private java.util.Date createdDate;
 	private String stateUuid;
+	private String sourceDatabase;
  
 	public PatientStateVO() { 
 		this.metadata = false;
@@ -128,11 +129,19 @@ public class PatientStateVO extends AbstractDatabaseObject implements DatabaseOb
 	public void setStateUuid(String stateUuid){ 
 	 	this.stateUuid = stateUuid;
 	}
-
-
  
 	public String getStateUuid(){ 
 		return this.stateUuid;
+	}
+ 
+	public void setSourceDatabase(String sourceDatabase){ 
+	 	this.sourceDatabase = sourceDatabase;
+	}
+
+
+ 
+	public String getSourceDatabase(){ 
+		return this.sourceDatabase;
 	}
  
 	public Integer getObjectId() { 
@@ -158,6 +167,7 @@ public class PatientStateVO extends AbstractDatabaseObject implements DatabaseOb
 		this.stateDate =  rs.getTimestamp("state_date") != null ? new java.util.Date( rs.getTimestamp("state_date").getTime() ) : null;
 		this.createdDate =  rs.getTimestamp("created_date") != null ? new java.util.Date( rs.getTimestamp("created_date").getTime() ) : null;
 		this.stateUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("state_uuid") != null ? rs.getString("state_uuid").trim() : null);
+		this.sourceDatabase = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("source_database") != null ? rs.getString("source_database").trim() : null);
 	} 
  
 	@JsonIgnore
@@ -167,37 +177,37 @@ public class PatientStateVO extends AbstractDatabaseObject implements DatabaseOb
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO patient_state(patient_uuid, program_id, program_enrollment_date, program_completed_date, location_uuid, enrollment_uuid, encounter_uuid, source_id, state_id, state_date, created_date, state_uuid) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_state(patient_uuid, program_id, program_enrollment_date, program_completed_date, location_uuid, enrollment_uuid, encounter_uuid, source_id, state_id, state_date, created_date, state_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientUuid, this.programId, this.programEnrollmentDate, this.programCompletedDate, this.locationUuid, this.enrollmentUuid, this.encounterUuid, this.sourceId, this.stateId, this.stateDate, this.createdDate, this.stateUuid};		return params; 
+ 		Object[] params = {this.patientUuid, this.programId, this.programEnrollmentDate, this.programCompletedDate, this.locationUuid, this.enrollmentUuid, this.encounterUuid, this.sourceId, this.stateId, this.stateDate, this.createdDate, this.stateUuid, this.sourceDatabase};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO patient_state(id, patient_uuid, program_id, program_enrollment_date, program_completed_date, location_uuid, enrollment_uuid, encounter_uuid, source_id, state_id, state_date, created_date, state_uuid) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_state(id, patient_uuid, program_id, program_enrollment_date, program_completed_date, location_uuid, enrollment_uuid, encounter_uuid, source_id, state_id, state_date, created_date, state_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientUuid, this.programId, this.programEnrollmentDate, this.programCompletedDate, this.locationUuid, this.enrollmentUuid, this.encounterUuid, this.sourceId, this.stateId, this.stateDate, this.createdDate, this.stateUuid};		return params; 
+ 		Object[] params = {this.id, this.patientUuid, this.programId, this.programEnrollmentDate, this.programCompletedDate, this.locationUuid, this.enrollmentUuid, this.encounterUuid, this.sourceId, this.stateId, this.stateDate, this.createdDate, this.stateUuid, this.sourceDatabase};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientUuid, this.programId, this.programEnrollmentDate, this.programCompletedDate, this.locationUuid, this.enrollmentUuid, this.encounterUuid, this.sourceId, this.stateId, this.stateDate, this.createdDate, this.stateUuid, this.id};		return params; 
+ 		Object[] params = {this.patientUuid, this.programId, this.programEnrollmentDate, this.programCompletedDate, this.locationUuid, this.enrollmentUuid, this.encounterUuid, this.sourceId, this.stateId, this.stateDate, this.createdDate, this.stateUuid, this.sourceDatabase, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient_state SET patient_uuid = ?, program_id = ?, program_enrollment_date = ?, program_completed_date = ?, location_uuid = ?, enrollment_uuid = ?, encounter_uuid = ?, source_id = ?, state_id = ?, state_date = ?, created_date = ?, state_uuid = ? WHERE id = ?;"; 
+ 		return "UPDATE patient_state SET patient_uuid = ?, program_id = ?, program_enrollment_date = ?, program_completed_date = ?, location_uuid = ?, enrollment_uuid = ?, encounter_uuid = ?, source_id = ?, state_id = ?, state_date = ?, created_date = ?, state_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientUuid != null ? "\""+ utilities.scapeQuotationMarks(patientUuid)  +"\"" : null) + "," + (this.programId) + "," + (this.programEnrollmentDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(programEnrollmentDate)  +"\"" : null) + "," + (this.programCompletedDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(programCompletedDate)  +"\"" : null) + "," + (this.locationUuid != null ? "\""+ utilities.scapeQuotationMarks(locationUuid)  +"\"" : null) + "," + (this.enrollmentUuid != null ? "\""+ utilities.scapeQuotationMarks(enrollmentUuid)  +"\"" : null) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.sourceId) + "," + (this.stateId) + "," + (this.stateDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(stateDate)  +"\"" : null) + "," + (this.createdDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(createdDate)  +"\"" : null) + "," + (this.stateUuid != null ? "\""+ utilities.scapeQuotationMarks(stateUuid)  +"\"" : null); 
+ 		return ""+(this.patientUuid != null ? "\""+ utilities.scapeQuotationMarks(patientUuid)  +"\"" : null) + "," + (this.programId) + "," + (this.programEnrollmentDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(programEnrollmentDate)  +"\"" : null) + "," + (this.programCompletedDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(programCompletedDate)  +"\"" : null) + "," + (this.locationUuid != null ? "\""+ utilities.scapeQuotationMarks(locationUuid)  +"\"" : null) + "," + (this.enrollmentUuid != null ? "\""+ utilities.scapeQuotationMarks(enrollmentUuid)  +"\"" : null) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.sourceId) + "," + (this.stateId) + "," + (this.stateDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(stateDate)  +"\"" : null) + "," + (this.createdDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(createdDate)  +"\"" : null) + "," + (this.stateUuid != null ? "\""+ utilities.scapeQuotationMarks(stateUuid)  +"\"" : null) + "," + (this.sourceDatabase != null ? "\""+ utilities.scapeQuotationMarks(sourceDatabase)  +"\"" : null); 
 	} 
  
 	@Override

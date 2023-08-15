@@ -18,6 +18,7 @@ import org.openmrs.module.eptssync.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.eptssync.dbquickexport.controller.DBQuickExportController;
 import org.openmrs.module.eptssync.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
+import org.openmrs.module.eptssync.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.export.controller.DBExportController;
@@ -349,7 +350,11 @@ public class SyncOperationConfig extends BaseConfiguration {
 	
 	public boolean isDbCopy() {
 		return this.operationType.isDbCopyOperation();
-	}	
+	}
+	
+	public boolean isDetectGapes() {
+		return this.operationType.isDetectGapesOperation();
+	}
 	
 	@JsonIgnore
 	public boolean isNewRecordsDetector() {
@@ -477,8 +482,9 @@ public class SyncOperationConfig extends BaseConfiguration {
 			return new GenericOperationController(parent, this);
 		} else if (isDbCopy()) {
 			return new DBCopyController(parent, this);
-		}
-		else
+		} else if (isDetectGapes()) {
+			return new DetectGapesController(parent, this);
+		} else
 			throw new ForbiddenOperationException("Operationtype [" + this.operationType + "]not supported!");
 	}
 	
@@ -537,7 +543,12 @@ public class SyncOperationConfig extends BaseConfiguration {
 			if (!this.canBeRunInDbCopyProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db copy process\n";
-		} else if (this.getRelatedSyncConfig().isResolveProblems()) {
+		} else if (this.getRelatedSyncConfig().isDetectGapesOnDbTables()) {
+			if (!this.canBeRunInDetectGapesOnDBTables())
+				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
+				        + "] Cannot be configured in detect gapes on db tables process\n";
+		}
+		else if (this.getRelatedSyncConfig().isResolveProblems()) {
 			if (!this.canBeRunInResolveProblemsProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db problems resolution process\n";
@@ -552,7 +563,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 					errorMsg += ++errNum + ". The engine class [" + this.getEngineFullClassName() + "] cannot be found\n";
 				} else if (!GenericEngine.class.isAssignableFrom(this.engineClazz)) {
 					errorMsg += ++errNum + ". The engine class [" + this.getEngineFullClassName()
-					        + "] is not any org.openmrs.module.eptssync.problems_solver.engine.ProblemsSolverEngine \n";
+					        + "] is not any org.openmrs.module.eptssync.problems_solver.engine.GenericEngine \n";
 				}
 			}
 		}
@@ -577,6 +588,14 @@ public class SyncOperationConfig extends BaseConfiguration {
 		return utilities.parseArrayToList(supported);
 	}
 	
+	public static List<SyncOperationType> getSupportedOperationsInDetectGapesOnDbTables() {
+		SyncOperationType[] supported = { SyncOperationType.DETECT_GAPES };
+		
+		return utilities.parseArrayToList(supported);
+	}
+		
+	
+	
 	@JsonIgnore
 	public boolean canBeRunInSourceSyncProcess() {
 		return utilities.existOnArray(getSupportedOperationsInSourceSyncProcess(), this.operationType);
@@ -599,6 +618,11 @@ public class SyncOperationConfig extends BaseConfiguration {
 	@JsonIgnore
 	public boolean canBeRunInDbCopyProcess() {
 		return utilities.existOnArray(getSupportedOperationsInDbCopyProcess(), this.operationType);
+	}
+	
+	@JsonIgnore
+	public boolean canBeRunInDetectGapesOnDBTables() {
+		return utilities.existOnArray(getSupportedOperationsInDetectGapesOnDbTables(), this.operationType);
 	}
 	
 	@JsonIgnore

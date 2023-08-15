@@ -14,17 +14,22 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
-public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
+import com.mysql.cj.x.protobuf.MysqlxCursor.Open;
+
+public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
+	
 	private DBQuickMergeController relatedController;
+	
 	private int savedCount;
-
-	public DBQuickMergeSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, DBQuickMergeController relatedController) {
+	
+	public DBQuickMergeSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits,
+	    DBQuickMergeController relatedController) {
 		super(tableInfo, limits);
-
+		
 		this.relatedController = relatedController;
 		setOrderByFields(tableInfo.getPrimaryKey());
 	}
-
+	
 	public boolean isForMergeMissingRecords() {
 		return this.relatedController.getMergeType().isMissing();
 	}
@@ -35,51 +40,51 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		OpenConnection srcConn = this.relatedController.openSrcConnection();
-			
-		String srcSchema;
-		String dstSchema = DBUtilities.determineSchemaName(conn);
-			
+		Connection srcConn = conn;
+		OpenConnection dstConn = this.relatedController.openDstConnection();
+		
+		String srcSchema = DBUtilities.determineSchemaName(conn);
+		
+		String dstSchema = DBUtilities.determineSchemaName(dstConn);
+		
 		try {
-			srcSchema = DBUtilities.determineSchemaName(srcConn);
-			 
 			SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 			
 			if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
-				searchClauses.addToClauseFrom(srcSchema + ".patient inner join " + srcSchema + ".person src_ on person_id = patient_id");
+				searchClauses.addToClauseFrom(
+				    srcSchema + ".patient inner join " + srcSchema + ".person src_ on person_id = patient_id");
 				searchClauses.addColumnToSelect("patient.*, src_.uuid");
-			}
-			else {
+			} else {
 				searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_");
 				
 				searchClauses.addColumnToSelect("src_.*");
 			}
-		
 			
-			String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
-			
-			srsFullTableName += tableInfo.getTableName();
+			String dstFullTableName = dstSchema + ".";
+			dstFullTableName += tableInfo.getTableName();
 			
 			String normalFromClause;
 			String patientFromClause;
 			
-			normalFromClause = srsFullTableName + " dest_";
+			normalFromClause = dstFullTableName + " dest_";
 			patientFromClause = dstSchema + ".patient inner join " + dstSchema + ".person dest_ on person_id = patient_id ";
-		
+			
 			this.extraCondition = "";
 			
 			this.extraCondition += "  (SELECT * ";
-			this.extraCondition += "   FROM    " + (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equals("patient") ? patientFromClause : normalFromClause); 		
+			this.extraCondition += "   FROM    "
+			        + (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equals("patient") ? patientFromClause
+			                : normalFromClause);
 			
-			
-			if (isForMergeExistingRecords()) {
+			if (isForMergeExistingRecords() && DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
 				
-				if (utilities.arrayHasElement(tableInfo.getUniqueKeys())){
+				if (utilities.arrayHasElement(tableInfo.getUniqueKeys())) {
 					String periodCondition = "";
 					
-					if (utilities.arrayHasElement(tableInfo.getObservationDateFields())) {
+					if (utilities.arrayHasElement(tableInfo.getObservationDateFields()) && getSyncStartDate() != null) {
 						for (int i = 0; i < tableInfo.getObservationDateFields().size(); i++) {
-							if (!periodCondition.isEmpty()) periodCondition += " or ";
+							if (!periodCondition.isEmpty())
+								periodCondition += " or ";
 							
 							periodCondition += "src_." + tableInfo.getObservationDateFields().get(i) + " >= ? ";
 							searchClauses.addToParameters(getSyncStartDate());
@@ -89,26 +94,25 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
 					}
 					
 					this.extraCondition += " WHERE " + this.tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
-				}
-				else {
+				} else {
 					//No joind field so nothing to query
 					this.extraCondition += " WHERE 1 != 1";
 				}
 				
 				this.extraCondition = " EXISTS " + this.extraCondition + ")";
-			}
-			if (isForMergeMissingRecords()) {
-				if (utilities.arrayHasElement(tableInfo.getUniqueKeys())){
-					this.extraCondition += " WHERE " + this.tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");	
-				}
-				else {
+			} else if (isForMergeMissingRecords() && DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
+				if (utilities.arrayHasElement(tableInfo.getUniqueKeys())) {
+					this.extraCondition += " WHERE " + this.tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
+				} else {
 					//No joind field so select all
 					this.extraCondition += " WHERE 1 != 1";
 				}
-			
+				
 				this.extraCondition = "NOT EXISTS " + this.extraCondition + ")";
 				
-			}			
+			} else {
+				this.extraCondition = "";
+			}
 			
 			if (limits != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
@@ -130,14 +134,15 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
 			throw new DBException(e);
 		}
 		finally {
-			srcConn.finalizeConnection();
+			dstConn.finalizeConnection();
 		}
 	}
-		
+	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		if (this.savedCount > 0) return this.savedCount; 
-			
+		if (this.savedCount > 0)
+			return this.savedCount;
+		
 		RecordLimits bkpLimits = this.limits;
 		
 		this.limits = null;
@@ -148,14 +153,14 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams{
 		
 		this.savedCount = count;
 		
-		return count;	
+		return count;
 	}
 	
 	@Override
 	public Class<DatabaseObject> getRecordClass() {
-		return this.getTableInfo().getSyncRecordClass(this.relatedController.getRemoteApp());
+		return this.getTableInfo().getSyncRecordClass(this.relatedController.getSrcApp());
 	}
-
+	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
 		return countAllRecords(conn);

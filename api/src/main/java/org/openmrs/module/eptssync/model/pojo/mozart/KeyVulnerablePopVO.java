@@ -16,6 +16,7 @@ public class KeyVulnerablePopVO extends AbstractDatabaseObject implements Databa
 	private Integer popType;
 	private Integer popId;
 	private String popOther;
+	private String keyVulnerablePopUuid;
  
 	public KeyVulnerablePopVO() { 
 		this.metadata = false;
@@ -56,11 +57,19 @@ public class KeyVulnerablePopVO extends AbstractDatabaseObject implements Databa
 	public void setPopOther(String popOther){ 
 	 	this.popOther = popOther;
 	}
-
-
  
 	public String getPopOther(){ 
 		return this.popOther;
+	}
+ 
+	public void setKeyVulnerablePopUuid(String keyVulnerablePopUuid){ 
+	 	this.keyVulnerablePopUuid = keyVulnerablePopUuid;
+	}
+
+
+ 
+	public String getKeyVulnerablePopUuid(){ 
+		return this.keyVulnerablePopUuid;
 	}
  
 	public Integer getObjectId() { 
@@ -78,6 +87,7 @@ public class KeyVulnerablePopVO extends AbstractDatabaseObject implements Databa
 		if (rs.getObject("pop_type") != null) this.popType = rs.getInt("pop_type");
 		if (rs.getObject("pop_id") != null) this.popId = rs.getInt("pop_id");
 		this.popOther = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("pop_other") != null ? rs.getString("pop_other").trim() : null);
+		this.keyVulnerablePopUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("key_vulnerable_pop_uuid") != null ? rs.getString("key_vulnerable_pop_uuid").trim() : null);
 	} 
  
 	@JsonIgnore
@@ -87,37 +97,37 @@ public class KeyVulnerablePopVO extends AbstractDatabaseObject implements Databa
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO key_vulnerable_pop(encounter_uuid, pop_type, pop_id, pop_other) VALUES( ?, ?, ?, ?);"; 
+ 		return "INSERT INTO key_vulnerable_pop(encounter_uuid, pop_type, pop_id, pop_other, key_vulnerable_pop_uuid) VALUES( ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.encounterUuid, this.popType, this.popId, this.popOther};		return params; 
+ 		Object[] params = {this.encounterUuid, this.popType, this.popId, this.popOther, this.keyVulnerablePopUuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO key_vulnerable_pop(id, encounter_uuid, pop_type, pop_id, pop_other) VALUES(?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO key_vulnerable_pop(id, encounter_uuid, pop_type, pop_id, pop_other, key_vulnerable_pop_uuid) VALUES(?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.encounterUuid, this.popType, this.popId, this.popOther};		return params; 
+ 		Object[] params = {this.id, this.encounterUuid, this.popType, this.popId, this.popOther, this.keyVulnerablePopUuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.encounterUuid, this.popType, this.popId, this.popOther, this.id};		return params; 
+ 		Object[] params = {this.encounterUuid, this.popType, this.popId, this.popOther, this.keyVulnerablePopUuid, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE key_vulnerable_pop SET encounter_uuid = ?, pop_type = ?, pop_id = ?, pop_other = ? WHERE id = ?;"; 
+ 		return "UPDATE key_vulnerable_pop SET encounter_uuid = ?, pop_type = ?, pop_id = ?, pop_other = ?, key_vulnerable_pop_uuid = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.popType) + "," + (this.popId) + "," + (this.popOther != null ? "\""+ utilities.scapeQuotationMarks(popOther)  +"\"" : null); 
+ 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.popType) + "," + (this.popId) + "," + (this.popOther != null ? "\""+ utilities.scapeQuotationMarks(popOther)  +"\"" : null) + "," + (this.keyVulnerablePopUuid != null ? "\""+ utilities.scapeQuotationMarks(keyVulnerablePopUuid)  +"\"" : null); 
 	} 
  
 	@Override

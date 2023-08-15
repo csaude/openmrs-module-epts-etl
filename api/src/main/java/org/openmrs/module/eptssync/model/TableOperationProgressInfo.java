@@ -77,7 +77,8 @@ public class TableOperationProgressInfo extends BaseVO {
 		        || controller.getOperationConfig().isDBMergeFromSourceDB()
 		        || controller.getOperationConfig().isDataBaseMergeFromJSONOperation()
 		        || controller.getConfiguration().isResolveProblems()
-		        || controller.getConfiguration().isDbCopy()
+		        || controller.getConfiguration().isDbCopy() 
+		        || controller.getConfiguration().isDetectGapesOnDbTables()
 		        )
 			return "central_site";
 		

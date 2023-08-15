@@ -15,6 +15,7 @@ import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 
 public class DatabaseObjectDAO extends BaseDAO {
 	
@@ -78,6 +79,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = record.getInsertParamsWithoutObjectId();
 		String sql = record.getInsertSQLWithoutObjectId();
 		
+		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn); 
+		
 		Integer objectId = executeQuery(sql, params, conn);
 		
 		record.setObjectId(objectId);
@@ -87,12 +90,16 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = record.getInsertParamsWithObjectId();
 		String sql = record.getInsertSQLWithObjectId();
 		
+		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn);
+		
 		executeQuery(sql, params, conn);
 	}
 	
 	public static void update(DatabaseObject record, Connection conn) throws DBException {
 		Object[] params = record.getUpdateParams();
 		String sql = record.getUpdateSQL();
+		
+		sql = DBUtilities.tryToPutSchemaOnUpdateScript(sql, conn);
 		
 		executeQuery(sql, params, conn);
 	}
@@ -137,7 +144,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	
 	public static <T extends DatabaseObject> List<T> getByUniqueKeys(SyncTableConfiguration tableConfiguration, T obj,
 	        Connection conn) throws DBException {
-		return getByUniqueKeys(tableConfiguration, null, obj, conn);
+		return getByUniqueKeys(tableConfiguration, DBUtilities.determineSchemaName(conn), obj, conn);
 	}
 	
 	public static <T extends DatabaseObject> T getByUniqueKeysOnSpecificSchema(SyncTableConfiguration tableConfiguration,
@@ -192,7 +199,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		String SCHEMA = schema != null ? schema + "." : "";
 		
-		sql += " SELECT " + SCHEMA + obj.generateTableName() + ".*"
+		sql += " SELECT " + obj.generateTableName() + ".*"
 		        + (tableConfiguration.isFromOpenMRSModel() && obj.generateTableName().equals("patient") ? ", uuid" : "")
 		        + "\n";
 		sql += " FROM     " + SCHEMA + obj.generateTableName()

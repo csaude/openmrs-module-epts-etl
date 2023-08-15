@@ -20,53 +20,60 @@ import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
- * This class is responsible for control the quick merge process. The quick merge process immediately merge records from the source to the destination db
- * This process assume that the source and destination are located in the same network
+ * This class is responsible for control the quick merge process. The quick merge process
+ * immediately merge records from the source to the destination db This process assume that the
+ * source and destination are located in the same network
  * 
  * @author jpboane
- *
  */
 public class DBQuickMergeController extends SiteOperationController {
-	private AppInfo mainApp;
-	private AppInfo remoteApp;
 	
-	public DBQuickMergeController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+	private AppInfo dstConn;
+	
+	private AppInfo srcApp;
+	
+	public DBQuickMergeController(ProcessController processController, SyncOperationConfig operationConfig,
+	    String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
 		
-		this.mainApp = getConfiguration().find(AppInfo.init("main"));
-		this.remoteApp = getConfiguration().find(AppInfo.init("remote"));
+		this.srcApp = getConfiguration().find(AppInfo.init("main"));
+		this.dstConn = getConfiguration().find(AppInfo.init("destination"));
 	}
 	
 	public MergeType getMergeType() {
-		if (getOperationConfig().isDBQuickMergeExistingRecords()) return MergeType.EXISTING;
-		if (getOperationConfig().isDBQuickMergeMissingRecords()) return MergeType.MISSING;
+		if (getOperationConfig().isDBQuickMergeExistingRecords())
+			return MergeType.EXISTING;
+		if (getOperationConfig().isDBQuickMergeMissingRecords())
+			return MergeType.MISSING;
 		
 		throw new ForbiddenOperationException("Not supported operation '" + getOperationConfig().getDesignation() + "'");
 	}
-		
-	public AppInfo getMainApp() {
-		return mainApp;
+	
+	public AppInfo getSrcApp() {
+		return srcApp;
 	}
 	
-	public AppInfo getRemoteApp() {
-		return remoteApp;
+	public AppInfo getDstApp() {
+		return dstConn;
 	}
 	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new DBQuickMergeEngine(monitor, limits);
 	}
-
+	
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
 			return getExtremeRecord(tableInfo, "min", conn);
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -75,14 +82,15 @@ public class DBQuickMergeController extends SiteOperationController {
 			conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
 			return getExtremeRecord(tableInfo, "max", conn);
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -92,19 +100,31 @@ public class DBQuickMergeController extends SiteOperationController {
 		}
 	}
 	
-	
 	private long getExtremeRecord(SyncTableConfiguration tableInfo, String function, Connection conn) throws DBException {
 		//Try to skip merge of existing records if there is no info for winning records
 		if (getOperationConfig().isDBQuickMergeExistingRecords()) {
+			
 			boolean existWinningRecInfo = utilities().arrayHasElement(tableInfo.getWinningRecordFieldsInfo());
 			boolean existObservationDateFields = utilities().arrayHasElement(tableInfo.getObservationDateFields());
 			
 			if (!existWinningRecInfo && !existObservationDateFields) {
 				return 0;
 			}
+			
+			Connection srcConn = conn;
+			OpenConnection dstConn = getDstApp().openConnection();
+			
+			try {
+				if (!DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
+					return 0;
+				}
+			}
+			finally {
+				dstConn.finalizeConnection();
+			}
+			
 		}
 		
-
 		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(tableInfo, null, this);
 		searchParams.setSyncStartDate(getConfiguration().getObservationDate());
 		
@@ -114,13 +134,13 @@ public class DBQuickMergeController extends SiteOperationController {
 		
 		searchClauses.setColumnsToSelect(function + "(" + tableInfo.getPrimaryKey() + ") as value");
 		
-		String sql =  searchClauses.generateSQL(conn);
-				
-		SimpleValue simpleValue =   BaseDAO.find(SimpleValue.class, sql, searchClauses.getParameters(), conn);
+		String sql = searchClauses.generateSQL(conn);
+		
+		SimpleValue simpleValue = BaseDAO.find(SimpleValue.class, sql, searchClauses.getParameters(), conn);
 		
 		searchClauses.getSearchParameters().setQtdRecordPerSelected(bkpQtyRecsPerSelect);
 		
-		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())){
+		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
 			return simpleValue.intValue();
 		}
 		
@@ -131,8 +151,8 @@ public class DBQuickMergeController extends SiteOperationController {
 	public boolean mustRestartInTheEnd() {
 		return false;
 	}
-
-	public OpenConnection openSrcConnection() {
-		return remoteApp.openConnection();
-	}	
+	
+	public OpenConnection openDstConnection() {
+		return dstConn.openConnection();
+	}
 }

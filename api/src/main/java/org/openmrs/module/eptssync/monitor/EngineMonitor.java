@@ -107,10 +107,8 @@ public class EngineMonitor implements MonitoredOperation{
 			
 			initEngine();
 			
-			//this.controller.getProgressInfo().updateProgressInfo(this);
-			
 			if (!utilities.arrayHasElement(ownEngines)) {
-				logDebug("NO ENGINE FOR '" + getController().getOperationType().name().toLowerCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
+				logWarn("NO ENGINE FOR '" + getController().getOperationType().name().toLowerCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
 				
 				this.operationStatus = MonitoredOperation.STATUS_FINISHED;
 			}
@@ -188,9 +186,7 @@ public class EngineMonitor implements MonitoredOperation{
 		
 		if (maxRecId == 0 && minRecId == 0) {
 			String msg = "NO RECORD TO PROCESS FOR TABLE '"+ getSyncTableInfo().getTableName().toUpperCase() + "' NO ENGINE WILL BE CRIETED BY NOW!";
-			
-			logWarn(msg);
-			
+		
 			if (mustRestartInTheEnd()) {
 				msg += " GOING SLEEP....";
 			}
@@ -516,7 +512,7 @@ public class EngineMonitor implements MonitoredOperation{
 	
 	@Override
 	public boolean stopRequested() {
-		return this.stopRequested;
+		return this.stopRequested || getRelatedOperationController().stopRequested();
 	}
 
 	public boolean isInitialized() {

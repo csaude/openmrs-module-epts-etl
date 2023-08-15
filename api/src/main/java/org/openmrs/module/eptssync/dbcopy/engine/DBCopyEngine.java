@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.dbcopy.engine;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.MappedTableInfo;
@@ -15,6 +16,7 @@ import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class DBCopyEngine extends Engine {
@@ -46,6 +48,16 @@ public class DBCopyEngine extends Engine {
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		OpenConnection destConn = getRelatedOperationController().openDestConnection();
 		
+		/*TmpSQLServerConnectionMonitor cm = new TmpSQLServerConnectionMonitor(destConn, this);
+		
+		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor("Conn Monitor " + destConn.getId());
+		executor.execute(cm);*/
+		
+		if (DBUtilities.isSqlServerDB(destConn)) {
+			String dstFullTableName = getSyncTableConfiguration().getMappedTableInfo().generateFullTableName(destConn);
+			DBUtilities.executeBatch(destConn, "SET IDENTITY_INSERT " + dstFullTableName + " ON");
+		}
+		
 		String tableName = getSyncTableConfiguration().getTableName();
 		try {
 			
@@ -61,16 +73,58 @@ public class DBCopyEngine extends Engine {
 				destObject = mappingInfo.generateMappedObject(rec, getRelatedOperationController().getDestAppInfo());
 				
 				try {
-					
 					DatabaseObjectDAO.insertWithObjectId(destObject, destConn);
 				}
 				catch (DBException e) {
-					if (e.isDuplicatePrimaryKeyException()) {
-						logWarn("Record " + rec.getObjectId() + " alredy on DB");
-					} else {
-						logError("Error while copying record [" + rec.toString() + "]");
+					try {
+						boolean connIsClosed = true;
 						
+						try {
+							connIsClosed = destConn.isClosed();
+						}
+						catch (SQLException e2) {
+							e2.printStackTrace();
+						}
+						
+						if (connIsClosed) {
+							destConn.finalizeConnection();
+							
+							logWarn("Connection is closed... the current work will be restarted...");
+							
+							performeSync(syncRecords, conn);
+						}
+						else
+						if (DBUtilities.isPostgresDB(destConn)) {
+							/*
+							 * PosgresSql fails when you continue to use a connection which previously encountered an exception
+							 * So we are committing before try to use the connection again
+							 * 
+							 * NOTE that we are taking risk if some other bug happen and the transaction need to be aborted
+							 */
+							try {
+								destConn.commit();
+							}
+							catch (SQLException e1) {
+								throw new DBException(e1);
+							}
+						}
+						
+						if (e.isDuplicatePrimaryOrUniqueKeyException()) {
+							logDebug("Record " + rec.getObjectId() + " alredy on DB");
+						} else {
+							logError("Error while copying record [" + rec.toString() + "]");
+							
+							throw e;
+						}
+					}
+					catch (DBException e1) {
+						logWarn("An error ocurred");
+						logError("----------------------------------------------------------------------------------------------------------------------------");
 						e.printStackTrace();
+						System.out.println();
+						logError("----------------------------------------------------------------------------------------------------------------------------");
+						logError("----------------------------------------------------------------------------------------------------------------------------");
+						e1.printStackTrace();
 					}
 				}
 			}
@@ -78,6 +132,11 @@ public class DBCopyEngine extends Engine {
 			logInfo("'" + syncRecords.size() + "' " + tableName + " COPIED TO DESTINATION DB");
 		}
 		finally {
+			if (DBUtilities.isSqlServerDB(destConn)) {
+				String dstFullTableName = getSyncTableConfiguration().getMappedTableInfo().generateFullTableName(destConn);
+				DBUtilities.executeBatch(destConn, "SET IDENTITY_INSERT " + dstFullTableName + " OFF");
+			}
+			
 			destConn.markAsSuccessifullyTerminected();
 			destConn.finalizeConnection();
 		}

@@ -115,7 +115,7 @@ public abstract class BaseDAO{
 		try{
 			Constructor<T> factory = voClass.getConstructor();
 			
-			st = conn.prepareStatement(sql);
+			st = conn.prepareStatement(sql.toLowerCase());
 			
 			loadParamsToStatment(st, params, conn);
 			
@@ -198,7 +198,7 @@ public abstract class BaseDAO{
 			Statement st = conn.createStatement();
 			
 			for (String batch : batches) {
-				st.addBatch(batch);
+				st.addBatch(batch.toLowerCase());
 			}
 			
 			st.executeBatch();
@@ -213,7 +213,7 @@ public abstract class BaseDAO{
 		PreparedStatement st = null;
 		
 		try{
-			st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+			st = connection.prepareStatement(sql.toLowerCase(), Statement.RETURN_GENERATED_KEYS);
 			
 			loadParamsToStatment(st, params, connection);
 			

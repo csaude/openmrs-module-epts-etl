@@ -40,7 +40,7 @@ public class MergingRecord {
 		
 		consolidateAndSaveData(srcConn, destConn);
 		
-		save(destConn);
+		save(srcConn);
 	}
 	
 	public SyncTableConfiguration getConfig() {
@@ -108,10 +108,13 @@ public class MergingRecord {
 	}
 	
 	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException {
-		DatabaseObject record = mergingRecord.record;
-		
 		SyncTableConfiguration config = mergingRecord.config;
 
+		if (!utilities.arrayHasElement(config.getParents())) return;
+		
+		DatabaseObject record = mergingRecord.record;
+		
+		
 		for (RefInfo refInfo: config.getParents()) {
 			if (refInfo.getRefTableConfiguration().isMetadata()) continue;
 			
@@ -150,8 +153,11 @@ public class MergingRecord {
 	 * @throws SQLException
 	 */
 	private static void determineMissingMetadataParent(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws MissingParentException, DBException{
-		DatabaseObject record = mergingRecord.record;
 		SyncTableConfiguration config = mergingRecord.config;
+		
+		if (!utilities.arrayHasElement(config.getParents())) return;
+		
+		DatabaseObject record = mergingRecord.record;
 		
 		for (RefInfo refInfo: config.getParents()) {
 			if (!refInfo.getRefTableConfiguration().isMetadata()) continue;

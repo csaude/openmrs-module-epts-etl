@@ -12,7 +12,7 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.eptssync.model.pojo.mozart.DsdVO;
+import org.openmrs.module.eptssync.model.pojo.mozart.old.DsdVO;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DatabaseEntityPOJOGenerator;
@@ -289,7 +289,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 					
 					this.primaryKeyType = DBUtilities.determineColunType(tableName, this.primaryKey, conn);
 					
-					this.primaryKeyType = AttDefinedElements.convertMySQLTypeTOJavaType(this.primaryKeyType);
+					this.primaryKeyType = AttDefinedElements.convertDatabaseTypeTOJavaType(this.primaryKeyType);
 				}
 			}
 			catch (SQLException e) {
@@ -384,47 +384,77 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		throw new ForbiddenOperationException("The att '" + parentAttName + "' doesn't represent any defined parent att");
 	}
 	
+	private int countChildren(Connection conn) throws SQLException {
+		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
+		
+		try {
+			if (DBUtilities.isMySQLDB(conn)) {
+				foreignKeyRS.last();
+			} else {
+				while (foreignKeyRS.next()) {}
+				;
+			}
+			
+			return foreignKeyRS.getRow();
+		}
+		finally {
+			foreignKeyRS.close();
+		}
+		
+	}
+	
 	protected synchronized void loadChildren(Connection conn) throws SQLException {
 		logDebug("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
 		
 		this.childred = new ArrayList<RefInfo>();
 		
-		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
+		int count = countChildren(conn);
 		
-		foreignKeyRS.last();
-		
-		logDebug("DISCOVERED '" + foreignKeyRS.getRow() + "' CHILDREN FOR TABLE '" + getTableName() + "'");
-		
-		foreignKeyRS.beforeFirst();
-		
-		while (foreignKeyRS.next()) {
-			logDebug(
-			    "CONFIGURING CHILD [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
+		if (count == 0) {
+			logDebug("NO CHILDREN FOUND FOR TABLE '" + getTableName() + "'");
+		} else {
+			ResultSet foreignKeyRS = null;
 			
-			RefInfo ref = new RefInfo();
-			
-			ref.setRefType(RefInfo.CHILD_REF_TYPE);
-			ref.setRefColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
-			ref.setRefTableConfiguration(
-			    SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"), this.relatedSyncTableInfoSource));
-			ref.setRefColumnType(AttDefinedElements.convertMySQLTypeTOJavaType(DBUtilities
-			        .determineColunType(ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(), conn)));
-			ref.setRelatedSyncTableConfiguration(this);
-			ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getRefTableConfiguration().getTableName(),
-			    ref.getRefColumnName(), conn));
-			
-			//Mark as metadata if there is no table info configured
-			if (getRelatedSynconfiguration().find(ref.getRefTableConfiguration()) == null) {
-				ref.getRefTableConfiguration().setMetadata(true);
+			try {
+				logDebug("DISCOVERED '" + count + "' CHILDREN FOR TABLE '" + getTableName() + "'");
+				
+				foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
+				
+				while (foreignKeyRS.next()) {
+					logDebug("CONFIGURING CHILD [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
+					        + getTableName() + "'");
+					
+					RefInfo ref = new RefInfo();
+					
+					ref.setRefType(RefInfo.CHILD_REF_TYPE);
+					ref.setRefColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
+					ref.setRefTableConfiguration(SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"),
+					    this.relatedSyncTableInfoSource));
+					ref.setRefColumnType(AttDefinedElements.convertDatabaseTypeTOJavaType(DBUtilities.determineColunType(
+					    ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(), conn)));
+					ref.setRelatedSyncTableConfiguration(this);
+					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getRefTableConfiguration().getTableName(),
+					    ref.getRefColumnName(), conn));
+					
+					//Mark as metadata if there is no table info configured
+					if (getRelatedSynconfiguration().find(ref.getRefTableConfiguration()) == null) {
+						ref.getRefTableConfiguration().setMetadata(true);
+					}
+					
+					this.childred.add(ref);
+					
+					logDebug("CHILDREN [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName()
+					        + "' CONFIGURED");
+				}
+				
+				logDebug("LOADED CHILDREN FOR TABLE '" + getTableName() + "'");
 			}
-			
-			this.childred.add(ref);
-			
-			logDebug(
-			    "CHILDREN [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
+			finally {
+				if (foreignKeyRS != null) {
+					foreignKeyRS.close();
+				}
+			}
 		}
-		
-		logDebug("LOADED CHILDREN FOR TABLE '" + getTableName() + "'");
 	}
 	
 	public void logInfo(String msg) {
@@ -443,71 +473,101 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		getRelatedSynconfiguration().logErr(msg);
 	}
 	
+	private int countParents(Connection conn) throws SQLException {
+		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(null, null, tableName);
+		
+		try {
+			if (DBUtilities.isMySQLDB(conn)) {
+				foreignKeyRS.last();
+			} else {
+				while (foreignKeyRS.next()) {}
+				;
+			}
+			
+			return foreignKeyRS.getRow();
+		}
+		finally {
+			foreignKeyRS.close();
+		}
+		
+	}
+	
 	protected synchronized void loadParents(Connection conn) throws SQLException {
 		logDebug("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
 		
-		List<RefInfo> auxRefInfo = new ArrayList<RefInfo>();
+		ResultSet foreignKeyRS = null;
 		
-		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(null, null, tableName);
+		int count = countParents(conn);
 		
-		foreignKeyRS.last();
-		
-		logDebug("DISCOVERED '" + foreignKeyRS.getRow() + "' PARENTS FOR TABLE '" + getTableName() + "'");
-		
-		foreignKeyRS.beforeFirst();
-		
-		while (foreignKeyRS.next()) {
-			logDebug(
-			    "CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "'");
-			
-			String refColumName = foreignKeyRS.getString("FKCOLUMN_NAME");
-			
-			SyncTableConfiguration refTableConfiguration = SyncTableConfiguration
-			        .init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource);
-			
-			RefInfo ref = generateRefInfo(refColumName, null, null, RefInfo.PARENT_REF_TYPE, refTableConfiguration, conn);
-			
-			if (utilities.existOnArray(auxRefInfo, ref)) {
-				logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName()
-				        + "' WAS ALREDY CONFIGURED! SKIPPING...");
-				continue;
-			}
-			
-			RefInfo configuredParent = findParent(ref);
-			
-			if (configuredParent != null) {
-				ref.setDefaultValueDueInconsistency(configuredParent.getDefaultValueDueInconsistency());
-				ref.setSetNullDueInconsistency(configuredParent.isSetNullDueInconsistency());
-			}
-			
-			logDebug(
-			    "PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName() + "' CONFIGURED");
-			
-			auxRefInfo.add(ref);
-		}
-		
-		//Check if there is a configured parent but not defined on the db schema
-		
-		if (utilities.arrayHasElement(this.parents)) {
-			for (RefInfo configuredParent : this.parents) {
-				if (configuredParent.getRefColumnName() == null)
-					continue;
+		if (count == 0) {
+			logDebug("NO PARENT FOUND FOR TABLE '" + getTableName() + "'");
+		} else
+			try {
 				
-				RefInfo autoGeneratedParent = utilities.findOnList(auxRefInfo, configuredParent);
+				List<RefInfo> auxRefInfo = new ArrayList<RefInfo>();
+				logDebug("DISCOVERED '" + count + "' PARENTS FOR TABLE '" + getTableName() + "'");
 				
-				if (autoGeneratedParent == null) {
-					configuredParent.setRefTableConfiguration(
-					    SyncTableConfiguration.init(configuredParent.getTableName(), this.relatedSyncTableInfoSource));
-					configuredParent.setRelatedSyncTableConfiguration(this);
+				foreignKeyRS = conn.getMetaData().getImportedKeys(null, null, tableName);
+				
+				while (foreignKeyRS.next()) {
+					logDebug("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '"
+					        + getTableName() + "'");
 					
-					auxRefInfo.add(configuredParent);
+					String refColumName = foreignKeyRS.getString("FKCOLUMN_NAME");
+					
+					SyncTableConfiguration refTableConfiguration = SyncTableConfiguration
+					        .init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource);
+					
+					RefInfo ref = generateRefInfo(refColumName, null, null, RefInfo.PARENT_REF_TYPE, refTableConfiguration,
+					    conn);
+					
+					if (utilities.existOnArray(auxRefInfo, ref)) {
+						logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName()
+						        + "' WAS ALREDY CONFIGURED! SKIPPING...");
+						continue;
+					}
+					
+					RefInfo configuredParent = findParent(ref);
+					
+					if (configuredParent != null) {
+						ref.setDefaultValueDueInconsistency(configuredParent.getDefaultValueDueInconsistency());
+						ref.setSetNullDueInconsistency(configuredParent.isSetNullDueInconsistency());
+					}
+					
+					logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName()
+					        + "' CONFIGURED");
+					
+					auxRefInfo.add(ref);
+				}
+				
+				//Check if there is a configured parent but not defined on the db schema
+				
+				if (utilities.arrayHasElement(this.parents)) {
+					for (RefInfo configuredParent : this.parents) {
+						if (configuredParent.getRefColumnName() == null)
+							continue;
+						
+						RefInfo autoGeneratedParent = utilities.findOnList(auxRefInfo, configuredParent);
+						
+						if (autoGeneratedParent == null) {
+							configuredParent.setRefTableConfiguration(SyncTableConfiguration
+							        .init(configuredParent.getTableName(), this.relatedSyncTableInfoSource));
+							configuredParent.setRelatedSyncTableConfiguration(this);
+							
+							auxRefInfo.add(configuredParent);
+						}
+					}
+				}
+				
+				this.parents = auxRefInfo;
+				
+				logDebug("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
+			}
+			finally {
+				if (foreignKeyRS != null) {
+					foreignKeyRS.close();
 				}
 			}
-		}
-		
-		this.parents = auxRefInfo;
-		
-		logDebug("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
 		
 	}
 	
@@ -527,7 +587,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	private RefInfo generateRefInfo(String refColumName, String conditionField, Integer conditionValue, String refType,
 	        SyncTableConfiguration refTableConfiguration, Connection conn) throws DBException {
 		String refColumnType = AttDefinedElements
-		        .convertMySQLTypeTOJavaType(DBUtilities.determineColunType(this.getTableName(), refColumName, conn));
+		        .convertDatabaseTypeTOJavaType(DBUtilities.determineColunType(this.getTableName(), refColumName, conn));
 		boolean ignorable = DBUtilities.isTableColumnAllowNull(this.tableName, refColumName, conn);
 		
 		RefInfo ref = new RefInfo();
@@ -734,6 +794,10 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		return getSyncStageSchema() + "." + generateRelatedStageTableName();
 	}
 	
+	public String generateFullTableName(Connection conn) throws DBException {
+		return DBUtilities.tryToPutSchemaOnDatabaseObject(getTableName(), conn);
+	}
+	
 	@JsonIgnore
 	public String generateFullStageUniqueKeysTableName() {
 		return getSyncStageSchema() + "." + generateRelatedStageUniqueKeysTableName();
@@ -786,6 +850,11 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	protected synchronized void fullLoad(Connection conn) {
 		try {
+			boolean exists = DBUtilities.isTableExists(conn.getSchema(), getTableName(), conn);
+			
+			if (!exists)
+				throw new ForbiddenOperationException("The table '" + getTableName() + "' does not exist!!!");
+			
 			getPrimaryKey(conn);
 			loadUniqueKeys(conn);
 			
@@ -800,9 +869,9 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			
 			if (mappedTableInfo == null) {
 				mappedTableInfo = MappedTableInfo.generateFromSyncTableConfiguration(this);
-			}else {
+			} else {
 				this.mappedTableInfo.setRelatedSyncTableInfoSource(relatedSyncTableInfoSource);
-			
+				
 				if (!utilities.arrayHasElement(this.mappedTableInfo.getFieldsMapping())) {
 					this.mappedTableInfo.generateMappingFields(this);
 				}
@@ -845,12 +914,14 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	public RefInfo getSharedKeyRefInfo(Connection conn) {
 		if (sharePkWith == null) {
 			return null;
-		} else
+		} else if (utilities.arrayHasElement(this.getParents())) {
+			
 			for (RefInfo refInfo : getParents()) {
 				if (refInfo.getRefTableConfiguration().getTableName().equalsIgnoreCase(this.sharePkWith)) {
 					return refInfo;
 				}
 			}
+		}
 		
 		throw new ForbiddenOperationException("The related table of shared pk " + sharePkWith + " of table "
 		        + this.getTableName() + " is not listed inparents!");

@@ -25,7 +25,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 			} catch (DBException e) {
 				e.printStackTrace();
 			
-				 if (e.isDuplicatePrimaryKeyException()) {
+				 if (e.isDuplicatePrimaryOrUniqueKeyException()) {
 					 SyncImportInfoVO recordOnDB = getByOriginIdAndLocation(tableInfo, record.getRecordOriginId(), record.getRecordOriginLocationCode(), conn);
 						
 					 updateByRecord(tableInfo, recordOnDB, conn);
@@ -75,7 +75,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 				} catch (DBException e) {
 					//e.printStackTrace();
 					
-					 if (e.isDuplicatePrimaryKeyException()) {
+					 if (e.isDuplicatePrimaryOrUniqueKeyException()) {
 						 	//Error Pather... Duplicate Entry 'objectId-origin_app' for bla bla 
 							/*
 						 	String[] s = (e.getLocalizedMessage().split("'")[1]).split("-");
@@ -188,7 +188,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 			insertUniqueKeyInfo(tableInfo, record, conn);
 			
 		} catch (DBException e) {
-			if (!e.isDuplicatePrimaryKeyException()) {
+			if (!e.isDuplicatePrimaryOrUniqueKeyException()) {
 				throw e;
 			}
 		}

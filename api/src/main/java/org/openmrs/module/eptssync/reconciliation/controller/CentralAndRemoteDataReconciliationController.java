@@ -161,7 +161,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		String tabName = "data_conciliation_info";
 
 		try {
-			return DBUtilities.isResourceExist(schema, resourceType, tabName, conn);
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 

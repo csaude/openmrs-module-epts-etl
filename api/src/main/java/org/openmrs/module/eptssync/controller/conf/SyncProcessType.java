@@ -15,7 +15,12 @@ public enum SyncProcessType {
 	QUICK_MERGE_WITH_ENTITY_GENERATION,
 	DB_INCONSISTENCY_CHECK,
 	GENERIC_PROCESS,
-	DB_COPY;
+	DB_COPY,
+	DETECT_GAPES_ON_DB_TABLES;
+	
+	public boolean isDetectGapesOnDbTables(){
+		return  this.equals(DETECT_GAPES_ON_DB_TABLES);
+	}
 	
 	public boolean isGenericProcess(){
 		return  this.equals(GENERIC_PROCESS);
@@ -125,6 +130,9 @@ public enum SyncProcessType {
 		return  SyncProcessType.valueOf(processType).isDbCopy();
 	}
 	
+	public static boolean isDetectGapesOnDbTables(String processType){
+		return  SyncProcessType.valueOf(processType).isDetectGapesOnDbTables();
+	}
 	
 	public static boolean isSupportedProcessType(String processType) {
 		return SyncProcessType.valueOf(processType).isSupportedProcessType();

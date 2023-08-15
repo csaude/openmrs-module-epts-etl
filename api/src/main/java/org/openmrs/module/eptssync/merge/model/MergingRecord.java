@@ -13,9 +13,12 @@ import org.openmrs.module.eptssync.exceptions.MissingParentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class MergingRecord {
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
+	
 	private DatabaseObject record;
 	private SyncTableConfiguration config;
 	private SyncImportInfoVO stageInfo;
@@ -73,9 +76,12 @@ public class MergingRecord {
 	}
 	
 	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection conn) throws ParentNotYetMigratedException, DBException {
+		SyncTableConfiguration config = mergingRecord.config;
+		
+		if (!utilities.arrayHasElement(config.getParents())) return;
+		
 		DatabaseObject record = mergingRecord.record;
 		SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
-		SyncTableConfiguration config = mergingRecord.config;
 		
 		for (RefInfo refInfo: config.getParents()) {
 			if (refInfo.getRefTableConfiguration().isMetadata()) continue;

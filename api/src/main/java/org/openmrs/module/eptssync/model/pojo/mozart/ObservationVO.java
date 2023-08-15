@@ -17,7 +17,7 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 	private java.util.Date observationDate;
 	private double valueNumeric;
 	private Integer valueConceptId;
-	private String valueText;
+	private byte[] valueText;
 	private java.util.Date valueDatetime;
 	private String obsUuid;
  
@@ -73,11 +73,11 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 		return this.valueConceptId;
 	}
  
-	public void setValueText(String valueText){ 
+	public void setValueText(byte[] valueText){ 
 	 	this.valueText = valueText;
 	}
  
-	public String getValueText(){ 
+	public byte[] getValueText(){ 
 		return this.valueText;
 	}
  
@@ -115,7 +115,7 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 		this.observationDate =  rs.getTimestamp("observation_date") != null ? new java.util.Date( rs.getTimestamp("observation_date").getTime() ) : null;
 		this.valueNumeric = rs.getDouble("value_numeric");
 		if (rs.getObject("value_concept_id") != null) this.valueConceptId = rs.getInt("value_concept_id");
-		this.valueText = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("value_text") != null ? rs.getString("value_text").trim() : null);
+		this.valueText = rs.getBytes("value_text");
 		this.valueDatetime =  rs.getTimestamp("value_datetime") != null ? new java.util.Date( rs.getTimestamp("value_datetime").getTime() ) : null;
 		this.obsUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("obs_uuid") != null ? rs.getString("obs_uuid").trim() : null);
 	} 
@@ -157,7 +157,7 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.conceptId) + "," + (this.observationDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(observationDate)  +"\"" : null) + "," + (this.valueNumeric) + "," + (this.valueConceptId) + "," + (this.valueText != null ? "\""+ utilities.scapeQuotationMarks(valueText)  +"\"" : null) + "," + (this.valueDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime)  +"\"" : null) + "," + (this.obsUuid != null ? "\""+ utilities.scapeQuotationMarks(obsUuid)  +"\"" : null); 
+ 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.conceptId) + "," + (this.observationDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(observationDate)  +"\"" : null) + "," + (this.valueNumeric) + "," + (this.valueConceptId) + "," + (this.valueText != null ? "\""+valueText+"\"" : null) + "," + (this.valueDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime)  +"\"" : null) + "," + (this.obsUuid != null ? "\""+ utilities.scapeQuotationMarks(obsUuid)  +"\"" : null); 
 	} 
  
 	@Override

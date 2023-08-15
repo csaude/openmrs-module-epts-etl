@@ -27,6 +27,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
@@ -70,7 +71,9 @@ public class DatabaseEntityPOJOGenerator {
 		ResultSetMetaData rsMetaData;
 		
 		try {
-			st = conn.prepareStatement("SELECT * FROM " + syncTableInfo.getTableName() + " WHERE 1 != 1");
+			String tableName = DBUtilities.tryToPutSchemaOnDatabaseObject(syncTableInfo.getTableName(), conn);
+			
+			st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
 			
 			rs = st.executeQuery();
 			rsMetaData = rs.getMetaData();
@@ -261,13 +264,15 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public boolean hasParents() {\n";
 		
-		for (RefInfo refInfo : syncTableInfo.getParents()) {
-			if (refInfo.isNumericRefColumn()) {
-				methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName()
-				        + " != 0) return true;\n\n";
-			} else {
-				methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName()
-				        + " != null) return true;\n\n";
+		if (utilities.arrayHasElement(syncTableInfo.getParents())) {
+			for (RefInfo refInfo : syncTableInfo.getParents()) {
+				if (refInfo.isNumericRefColumn()) {
+					methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName()
+					        + " != 0) return true;\n\n";
+				} else {
+					methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName()
+					        + " != null) return true;\n\n";
+				}
 			}
 		}
 		
@@ -278,13 +283,16 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public Integer getParentValue(String parentAttName) {";
 		
-		for (RefInfo refInfo : syncTableInfo.getParents()) {
-			if (refInfo.isNumericRefColumn()) {
-				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName()
-				        + "\")) return this." + refInfo.getRefColumnAsClassAttName() + ";";
-			} else {
-				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName()
-				        + "\")) return 0;";
+		if (utilities.arrayHasElement(syncTableInfo.getParents())) {
+			for (RefInfo refInfo : syncTableInfo.getParents()) {
+				if (refInfo.isNumericRefColumn()) {
+					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
+					        + refInfo.getRefColumnAsClassAttName() + "\")) return this."
+					        + refInfo.getRefColumnAsClassAttName() + ";";
+				} else {
+					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
+					        + refInfo.getRefColumnAsClassAttName() + "\")) return 0;";
+				}
 			}
 		}
 		
@@ -311,15 +319,19 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public void changeParentValue(String parentAttName, DatabaseObject newParent) {";
 		
-		for (RefInfo refInfo : syncTableInfo.getParents()) {
-			if (refInfo.isNumericRefColumn()) {
-				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName()
-				        + "\")) {\n			this." + refInfo.getRefColumnAsClassAttName()
-				        + " = newParent.getObjectId();\n			return;\n		}";
-			} else {
-				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName()
-				        + "\")) {\n			this." + refInfo.getRefColumnAsClassAttName()
-				        + " = \"\" + newParent.getObjectId();\n			return;\n		}";
+		if (utilities.arrayHasElement(syncTableInfo.getParents())) {
+			for (RefInfo refInfo : syncTableInfo.getParents()) {
+				if (refInfo.isNumericRefColumn()) {
+					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
+					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
+					        + refInfo.getRefColumnAsClassAttName()
+					        + " = newParent.getObjectId();\n			return;\n		}";
+				} else {
+					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
+					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
+					        + refInfo.getRefColumnAsClassAttName()
+					        + " = \"\" + newParent.getObjectId();\n			return;\n		}";
+				}
 			}
 		}
 		
@@ -348,10 +360,12 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public void setParentToNull(String parentAttName) {";
 		
-		for (RefInfo refInfo : syncTableInfo.getParents()) {
-			methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName()
-			        + "\")) {\n			this." + refInfo.getRefColumnAsClassAttName()
-			        + " = null;\n			return;\n		}";
+		if (utilities.arrayHasElement(syncTableInfo.getParents())) {
+			for (RefInfo refInfo : syncTableInfo.getParents()) {
+				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName()
+				        + "\")) {\n			this." + refInfo.getRefColumnAsClassAttName()
+				        + " = null;\n			return;\n		}";
+			}
 		}
 		
 		methodFromSuperClass += "\n\n";
