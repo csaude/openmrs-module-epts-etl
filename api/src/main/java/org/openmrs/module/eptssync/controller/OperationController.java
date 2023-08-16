@@ -164,7 +164,19 @@ public abstract class OperationController implements Controller {
 				logInfo(("Starting operation '" + getOperationType().name().toLowerCase() + "' On table '"
 				        + syncInfo.getTableName() + "'").toUpperCase());
 				
-				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
+				TableOperationProgressInfo progressInfo = null;
+				
+				try {
+					progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
+				}
+				catch (NullPointerException e) {
+					logErr("Error on thread " + this.getControllerId() + ": Progress meter not found for table [" + syncInfo.getTableName() + "]");
+					
+					
+					e.printStackTrace();
+					
+					throw e;
+				}
 				
 				if (this.progressInfo.getItemsProgressInfo() == null) {
 					progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
@@ -208,6 +220,10 @@ public abstract class OperationController implements Controller {
 					
 					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '"
 					        + syncInfo.getTableName() + "' is finished!").toUpperCase());
+					
+					if (getOperationConfig().isRunOnce()) {
+						break;
+					}
 				}
 			}
 		}

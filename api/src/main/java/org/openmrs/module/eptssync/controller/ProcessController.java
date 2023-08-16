@@ -64,6 +64,8 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	private boolean finalized;
 	
+	protected boolean selfTreadKilled;
+	
 	public ProcessController() {
 		this.progressInfo = new ProcessProgressInfo(this);
 	}
@@ -116,7 +118,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		if (!existInconsistenceInfoTable()) {
 			generateInconsistenceInfoTable();
 		}
-
+		
 		if (!existOperationProgressInfoTable()) {
 			generateTableOperationProgressInfo();
 		}
@@ -140,7 +142,6 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-	
 	public Level getLogLevel() {
 		return this.starter.getLogLevel();
 	}
@@ -151,15 +152,13 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	public boolean isFinalized() {
 		return finalized;
-	}	
+	}
 	
 	@Override
 	public void finalize(Controller c) {
 		setFinalized(true);
 		
-		//c.killSelfCreatedThreads();
-		
-		//ThreadPoolService.getInstance().terminateTread(logger, getLogLevel(), c.getControllerId(), c);
+		c.killSelfCreatedThreads();
 		
 		List<OperationController> nextOperation = ((OperationController) c).getChildren();
 		
@@ -417,24 +416,29 @@ public class ProcessController implements Controller, ControllerStarter {
 			}
 			
 			changeStatusToRunning();
-		}
-		
-		boolean running = true;
-		
-		while (running) {
-			TimeCountDown.sleep(getWaitTimeToCheckStatus());
 			
-			if (this.isFinished()) {
-				this.markAsFinished();
-				this.onFinish();
+			boolean running = true;
+			
+			while (running) {
+				logWarn("The process " + getControllerId() + " is still running...");
 				
-				running = false;
-			} else if (this.isStopped()) {
-				running = false;
+				TimeCountDown.sleep(getWaitTimeToCheckStatus());
 				
-				this.onStop();
-			}
+				if (this.isFinished()) {
+					this.markAsFinished();
+					this.onFinish();
+					
+					running = false;
+				} else if (this.isStopped()) {
+					running = false;
+					
+					this.onStop();
+				}
+			}		
+			
 		}
+		
+
 	}
 	
 	private void tryToRemoveOldStopRequested() {
@@ -481,6 +485,9 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	@Override
 	public void killSelfCreatedThreads() {
+		if (selfTreadKilled)
+			return;
+		
 		if (this.operationsControllers != null) {
 			for (OperationController operationController : this.operationsControllers) {
 				operationController.killSelfCreatedThreads();
@@ -489,6 +496,8 @@ public class ProcessController implements Controller, ControllerStarter {
 				    operationController);
 			}
 		}
+		
+		selfTreadKilled = true;
 	}
 	
 	public File generateProcessStatusFile() {
@@ -610,41 +619,43 @@ public class ProcessController implements Controller, ControllerStarter {
 	public boolean isResumable() {
 		return getConfiguration().isResumable();
 	}
-
+	
 	private void createStageSchema() {
 		OpenConnection conn = getDefaultApp().openConnection();
 		
 		try {
 			Statement st = conn.createStatement();
-
+			
 			if (DBUtilities.isMySQLDB(conn)) {
 				st.addBatch("CREATE DATABASE " + getConfiguration().getSyncStageSchema());
-			}
-			else {
+			} else {
 				st.addBatch("CREATE SCHEMA " + getConfiguration().getSyncStageSchema());
 			}
 			
 			st.executeBatch();
-
+			
 			st.close();
 			
 			conn.markAsSuccessifullyTerminected();
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-		
+			
 			throw new RuntimeException(e);
 		}
 		finally {
 			conn.finalizeConnection();
 		}
 	}
-
+	
 	private boolean isImportStageSchemaExists() {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DBUtilities.isResourceExist(null, null, DBUtilities.RESOURCE_TYPE_SCHEMA, getConfiguration().getSyncStageSchema(), conn);
-		} catch (SQLException e) {
+			return DBUtilities.isResourceExist(null, null, DBUtilities.RESOURCE_TYPE_SCHEMA,
+			    getConfiguration().getSyncStageSchema(), conn);
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -660,12 +671,13 @@ public class ProcessController implements Controller, ControllerStarter {
 		String schema = getConfiguration().getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = "inconsistence_info";
-
+		
 		try {
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
 		}
 		finally {
@@ -680,12 +692,13 @@ public class ProcessController implements Controller, ControllerStarter {
 		String schema = getConfiguration().getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = "table_operation_progress_info";
-
+		
 		try {
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
 		}
 		finally {
@@ -693,7 +706,6 @@ public class ProcessController implements Controller, ControllerStarter {
 			conn.finalizeConnection();
 		}
 	}
-	
 	
 	private void generateTableOperationProgressInfo() throws DBException {
 		
@@ -716,16 +728,16 @@ public class ProcessController implements Controller, ControllerStarter {
 			sql += DBUtilities.generateTableIntegerField("total_processed_records", "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableVarcharField("status", 50, "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + ",\n";
-			sql += DBUtilities.generateTableUniqueKeyDefinition(config.getSyncStageSchema() + "_UNQ_OPERATION_ID".toLowerCase(), "operation_id", conn) + ",\n";
+			sql += DBUtilities.generateTableUniqueKeyDefinition(
+			    config.getSyncStageSchema() + "_UNQ_OPERATION_ID".toLowerCase(), "operation_id", conn) + ",\n";
 			sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "table_operation_progress_info_pk", conn) + "\n";
-
+			
 			sql += ");\n";
-					
-
+			
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
 			st.executeBatch();
-
+			
 			st.close();
 			
 			conn.markAsSuccessifullyTerminected();
@@ -738,13 +750,11 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-	
 	private void generateInconsistenceInfoTable() throws DBException {
 		OpenConnection conn = openConnection();
 		
 		String notNullConstraint = "NOT NULL";
 		String endLineMarker = ",\n";
-		
 		
 		String sql = "";
 		
@@ -755,25 +765,27 @@ public class ProcessController implements Controller, ControllerStarter {
 		sql += DBUtilities.generateTableVarcharField("parent_table_name", 100, notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("parent_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("default_parent_id", notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
+		        + endLineMarker;
 		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
-		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "inconsistence_info_pk", conn) ;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "inconsistence_info_pk", conn);
 		sql += ");";
-				
+		
 		try {
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
 			st.executeBatch();
-
+			
 			st.close();
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
-		} 
+		}
 		finally {
 			conn.markAsSuccessifullyTerminected();
 			conn.finalizeConnection();
 		}
-	}	
+	}
 }

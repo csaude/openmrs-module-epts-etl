@@ -43,7 +43,7 @@ public class ThreadPoolService {
     }
     
     public void terminateTread(Log logger, Level logLevel, String threadId, Runnable runnable) {
-    	utilities.logDebug("TRYING TO TERMINATE THREAD [" + threadId + "]", logger, logLevel);
+    	utilities.logInfo("TRYING TO TERMINATE THREAD [" + threadId + "]", logger, logLevel);
     	
     	ExecutorServiceManager manager = retrieveExistingExecutor(threadId);
     	
@@ -56,7 +56,7 @@ public class ThreadPoolService {
     		
     		if (a != null && a.size() > 1) throw new ForbiddenOperationException("There were thread awating... " + a);
     	
-    		utilities.logDebug("THREAD [" + threadId + "] WAS TERMINATED SUCCESSIFULY!", logger, logLevel);
+    		utilities.logInfo("THREAD [" + threadId + "] WAS TERMINATED SUCCESSIFULY!", logger, logLevel);
     		
     		this.createdThreadPools.remove(manager);
        }
