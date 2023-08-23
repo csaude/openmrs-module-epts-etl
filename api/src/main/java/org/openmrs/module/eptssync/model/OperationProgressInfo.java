@@ -212,7 +212,7 @@ public class OperationProgressInfo {
 		try {
 			return OperationProgressInfo.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 		} catch (IOException e) {
-			throw new RuntimeException();
+			throw new RuntimeException(e);
 		}
 	}
 	

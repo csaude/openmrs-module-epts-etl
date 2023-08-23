@@ -392,13 +392,8 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public boolean isDBQuickMergeMissingRecords() {
-		return this.operationType.isDBQuickMergeMissingRecords();
-	}
-	
-	@JsonIgnore
-	public boolean isDBQuickMergeExistingRecords() {
-		return this.operationType.isDBQuickMergeExistingRecords();
+	public boolean isDBQuickMerge() {
+		return this.operationType.isDBQuickMerge();
 	}
 	
 	@JsonIgnore
@@ -476,7 +471,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 			return new DBQuickCopyController(parent, this, appOriginCode);
 		} else if (isDBMergeFromSourceDB()) {
 			return new DataBaseMergeFromSourceDBController(parent, this);
-		} else if (isDBQuickMergeMissingRecords() || isDBQuickMergeExistingRecords()) {
+		} else if (isDBQuickMerge()) {
 			return new DBQuickMergeController(parent, this, appOriginCode);
 		} else if (isResolveProblem()) {
 			return new GenericOperationController(parent, this);
@@ -547,8 +542,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 			if (!this.canBeRunInDetectGapesOnDBTables())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in detect gapes on db tables process\n";
-		}
-		else if (this.getRelatedSyncConfig().isResolveProblems()) {
+		} else if (this.getRelatedSyncConfig().isResolveProblems()) {
 			if (!this.canBeRunInResolveProblemsProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db problems resolution process\n";
@@ -593,8 +587,6 @@ public class SyncOperationConfig extends BaseConfiguration {
 		
 		return utilities.parseArrayToList(supported);
 	}
-		
-	
 	
 	@JsonIgnore
 	public boolean canBeRunInSourceSyncProcess() {
@@ -701,8 +693,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInQuickMergeUniformeDBProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE_EXISTING_RECORDS,
-		        SyncOperationType.DB_QUICK_MERGE_MISSING_RECORDS };
+		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -713,8 +704,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInQuickMergeNonUniformeDBProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE_EXISTING_RECORDS,
-		        SyncOperationType.DB_QUICK_MERGE_MISSING_RECORDS, SyncOperationType.DATABASE_PREPARATION,
+		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE, SyncOperationType.DATABASE_PREPARATION,
 		        SyncOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);

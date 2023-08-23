@@ -46,6 +46,21 @@ public class DBQuickMergeEngine extends Engine {
 		List<SyncRecord> records = new ArrayList<SyncRecord>();
 		
 		try {
+			DBQuickMergeSearchParams searchParams = (DBQuickMergeSearchParams) getSearchParams();
+			
+			if (getFinalCheckStatus().onGoing()) {
+				OpenConnection dstConn = this.dstApp.openConnection();
+				
+				try {
+					if (DBUtilities.isSameDatabaseServer(conn, dstConn)) {
+						this.searchParams.setExtraCondition(searchParams.generateDestinationExclusionClause(conn, dstConn));
+					}
+				}
+				finally {
+					dstConn.finalizeConnection();
+				}
+			}
+			
 			records = utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 		}
 		catch (DBException e) {
@@ -59,7 +74,23 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	protected boolean mustDoFinalCheck() {
-		return getRelatedOperationController().getMergeType().isMissing();
+		Connection srcConn = openConnection();
+		Connection dstConn = this.dstApp.openConnection();
+		
+		boolean sameDBSDerver;
+		
+		try {
+			sameDBSDerver = DBUtilities.isSameDatabaseServer(srcConn, dstConn);
+		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
+		}
+		
+		if (sameDBSDerver) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	@Override
@@ -73,7 +104,47 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logDebug("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		
+		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
+		Connection srcConn = conn;
+		
+		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
+		
+		List<MergingRecord> mergingRecs = new ArrayList<MergingRecord>(syncRecords.size());
+		
+		try {
+			for (SyncRecord record : syncRecords) {
+				DatabaseObject rec = (DatabaseObject) record;
+				
+				DatabaseObject destObject = null;
+				
+				MappedTableInfo mappingInfo = getSyncTableConfiguration().getMappedTableInfo();
+				
+				destObject = mappingInfo.generateMappedObject(rec, this.dstApp);
+				
+				mergingRecs.add(new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp));
+				
+			}
+			
+			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
+				logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
+				syncRecords.removeAll(recordsToIgnoreOnStatistics);
+			}
+			
+			MergingRecord.mergeAll(mergingRecs, srcConn, dstConn);
+			
+			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+			
+			dstConn.markAsSuccessifullyTerminected();
+		}
+		finally {
+			dstConn.finalizeConnection();
+		}
+	}
+	
+	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		int i = 1;
 		
@@ -100,7 +171,6 @@ public class DBQuickMergeEngine extends Engine {
 				
 				try {
 					process(data, startingStrLog, 0, conn, dstConn);
-					
 					wentWrong = false;
 				}
 				catch (MissingParentException e) {
@@ -119,11 +189,6 @@ public class DBQuickMergeEngine extends Engine {
 					        + e.getLocalizedMessage() + ". Skipping... ");
 				}
 				catch (DBException e) {
-					logError(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-					        + e.getLocalizedMessage() + ".");
-		
-					e.printStackTrace();
-					
 					if (e.isDuplicatePrimaryOrUniqueKeyException()) {
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
 						        + e.getLocalizedMessage() + ". Skipping... ");
@@ -142,7 +207,6 @@ public class DBQuickMergeEngine extends Engine {
 					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
 					        + e.getLocalizedMessage());
 					
-					
 					throw e;
 				}
 				finally {
@@ -156,14 +220,13 @@ public class DBQuickMergeEngine extends Engine {
 							 * NOTE that we are taking risk if some other bug happen and the transaction need to be aborted
 							 */
 							try {
-								
-								dstConn.commit();;
+								dstConn.commit();
 							}
 							catch (SQLException e) {
 								throw new DBException(e);
 							}
 						}
-							
+						
 						if (this.finalCheckStatus.notInitialized()) {
 							recordsToIgnoreOnStatistics.add(record);
 						}
@@ -178,7 +241,7 @@ public class DBQuickMergeEngine extends Engine {
 				syncRecords.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
 			
 			dstConn.markAsSuccessifullyTerminected();
 		}
@@ -194,11 +257,7 @@ public class DBQuickMergeEngine extends Engine {
 		
 		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + mergingData.getRecord() + "]");
 		
-		if (getRelatedOperationController().getMergeType().isMissing()) {
-			mergingData.merge(srcConn, destConn);
-		} else {
-			mergingData.resolveConflict(srcConn, destConn);
-		}
+		mergingData.merge(srcConn, destConn);
 	}
 	
 	@Override

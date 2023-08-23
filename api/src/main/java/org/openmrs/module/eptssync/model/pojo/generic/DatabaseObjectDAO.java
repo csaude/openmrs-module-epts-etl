@@ -79,7 +79,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = record.getInsertParamsWithoutObjectId();
 		String sql = record.getInsertSQLWithoutObjectId();
 		
-		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn); 
+		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn);
 		
 		Integer objectId = executeQuery(sql, params, conn);
 		
@@ -507,7 +507,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		    "concept", "person_attribute_type", "provider_attribute_type", "program", "program_workflow",
 		    "program_workflow_state", "encounter_type", "visit_type", "relationship_type", "patient_identifier_type");
 		
-		if (syncTableConfiguration.isMetadata() && !isInMetadata) {
+		if (syncTableConfiguration.getRelatedSynconfiguration().isOpenMRSModel() && syncTableConfiguration.isMetadata()
+		        && !isInMetadata) {
 			throw new ForbiddenOperationException(
 			        "The table " + syncTableConfiguration.getTableName() + " is been treated as metadata but it is not");
 		}
@@ -519,10 +520,11 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	private static void insertAllData(List<DatabaseObject> objects, SyncTableConfiguration syncTableConfiguration,
-	        String recordOriginLocationCode, Connection conn) throws DBException {
-		String sql = "";
-		sql += objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
+	private static void insertAllData(List<DatabaseObject> objects, SyncTableConfiguration conf, String originCode,
+	        Connection conn) throws DBException {
+		String sql = DBUtilities
+		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0], conn);
+		
 		sql += " VALUES";
 		
 		String values = "";
@@ -537,36 +539,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 		if (utilities.stringHasValue(values)) {
 			sql += utilities.removeLastChar(values);
 			
-			try {
-				executeBatch(conn, sql);
-				//updateDestinationRecordId(objects, syncTableConfiguration, conn);
-			}
-			catch (DBException e) {
-				insertAllDataOneByOne(objects, syncTableConfiguration, recordOriginLocationCode, conn);
-			}
-		}
-	}
-	
-	private static void insertAllDataOneByOne(List<DatabaseObject> objects, SyncTableConfiguration tableC,
-	        String recordOriginLocationCode, Connection conn) throws DBException {
-		for (DatabaseObject record : objects) {
-			try {
-				record.save(tableC, conn);
-			}
-			catch (DBException e) {
-				/*if (e.isDuplicatePrimaryKeyException()) {
-					OpenMRSObject problematicRecordOnDB = retrieveProblematicObjectFromExceptionInfo(syncTableConfiguration, e, conn);
-					
-					if (problematicRecordOnDB.getObjectId() == record.getObjectId()) {
-						update(problematicRecordOnDB, conn);
-						continue;
-					}
-				}*/
-				
-				SyncImportInfoVO source = record.retrieveRelatedSyncInfo(tableC, recordOriginLocationCode, conn);
-				
-				source.markAsSyncFailedToMigrate(tableC, e.getLocalizedMessage(), conn);
-			}
+			executeQuery(sql, null, conn);
+			
+			//executeBatch(conn, sql);
 		}
 	}
 	

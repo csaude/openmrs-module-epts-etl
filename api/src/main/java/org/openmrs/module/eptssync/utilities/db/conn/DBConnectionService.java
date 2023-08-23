@@ -39,16 +39,24 @@ public class DBConnectionService {
 		this.dataSource.setUrl(dbConnInfo.getConnectionURI());
 		this.dataSource.setUsername(dbConnInfo.getDataBaseUserName());
 		this.dataSource.setPassword(dbConnInfo.getDataBaseUserPassword());
-		this.dataSource.setInitialSize(20);
-		this.dataSource.setMaxActive(200);
+		this.dataSource.setInitialSize(32);
+		this.dataSource.setMaxActive(62);
 		this.dataSource.setMaxWait(30000);
 		this.dataSource.setDefaultAutoCommit(false);
-		this.dataSource.setMaxIdle(150);
-		this.dataSource.setMinIdle(20);
+		this.dataSource.setMaxIdle(32);
+		this.dataSource.setMinIdle(10);
 		this.dataSource.setMinEvictableIdleTimeMillis(15*60000);	
 		this.dataSource.getPoolProperties().getDbProperties().setProperty("connectRetryCount", ""+255);
 		this.dataSource.getPoolProperties().getDbProperties().setProperty("connectRetryInterval", ""+15);
-		
+	}
+	
+	public void finalize() {
+		try {
+			this.dataSource.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public static synchronized DBConnectionService init(String driveClassName, String connectionURI, String dataBaseUserName, String dataBaseUserPassword) {

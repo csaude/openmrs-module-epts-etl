@@ -25,13 +25,12 @@ public class ProcessStarter implements ControllerStarter {
 	
 	private String[] synConfigFilesPaths;
 	
-	private List<ProcessController> allController;
-	
 	private Level logLevel;
+	
+	private ProcessController currentController;
 	
 	public ProcessStarter(String[] synConfigFiles, Logger logger) {
 		this.synConfigFilesPaths = synConfigFiles;
-		this.allController = new ArrayList<ProcessController>();
 		
 		this.logLevel = SyncConfiguration.determineLogLevel();
 	}
@@ -43,7 +42,7 @@ public class ProcessStarter implements ControllerStarter {
 	public void run() throws IOException, DBException {
 		
 		if (getLogLevel().getName().equals(Level.FINE.getName())) {
-			TimeCountDown.sleep(10);
+			TimeCountDown.sleep(30);
 		}
 		
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(this.synConfigFilesPaths);
@@ -51,34 +50,29 @@ public class ProcessStarter implements ControllerStarter {
 		if (countQtyDestination(syncConfigs) > 1)
 			throw new ForbiddenOperationException("You must define only one destination file");
 		
+		if (syncConfigs.size() > 2) {
+			throw new ForbiddenOperationException("The system currently doesn't support parallely processing");
+		}
+		
 		for (SyncConfiguration conf : syncConfigs) {
 			if (!conf.isAutomaticStart())
 				continue;
 			
-			ProcessController controller = new ProcessController(this, conf);
+			this.currentController = new ProcessController(this, conf);
 			
-			ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId()).execute(controller);
-			
-			allController.add(controller);
-			
-			ProcessController childController = controller.getChildController();
-			
-			while (childController != null) {
-				allController.add(childController);
-				
-				childController = childController.getChildController();
-			}
+			ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.currentController.getControllerId())
+			        .execute(this.currentController);
 		}
 		
-		while (!isAllFinished(allController) && !isAllStopped(allController)) {
+		while (!this.currentController.isFinalized()) {
 			TimeCountDown.sleep(120);
 			
 			logger.info("THE APPLICATION IS STILL RUNING...");
 		}
 		
-		if (isAllFinished(allController)) {
+		if (this.currentController.isFinished()) {
 			logger.info("ALL JOBS ARE FINISHED");
-		} else if (isAllStopped(allController)) {
+		} else if (this.currentController.isStopped()) {
 			logger.info("ALL JOBS ARE STOPPED");
 		}
 		
@@ -88,23 +82,33 @@ public class ProcessStarter implements ControllerStarter {
 	@Override
 	public void finalize(Controller c) {
 		c.killSelfCreatedThreads();
-		ThreadPoolService.getInstance().terminateTread(logger, getLogLevel(), c.getControllerId(), c);
 		
 		ProcessController controller = (ProcessController) c;
 		
-		if (controller.getChildController() != null) {
-			ProcessController child = controller.getChildController();
-			
-			while (child != null && child.getConfiguration().isDisabled()) {
-				child = child.getChildController();
-			}
-			
-			if (child != null) {
+		if (controller.getConfiguration().getChildConfigFilePath() != null) {
+			try {
+				SyncConfiguration childConfig = SyncConfiguration
+				        .loadFromFile(new File(controller.getConfiguration().getChildConfigFilePath()));
+				
+				ProcessController child = new ProcessController(this, childConfig);
+				
 				ExecutorService executor = ThreadPoolService.getInstance()
 				        .createNewThreadPoolExecutor(child.getControllerId());
 				
 				executor.execute(child);
+				
+				ThreadPoolService.getInstance().terminateTread(logger, getLogLevel(), c.getControllerId(), c);
+				
+				this.currentController = child;
 			}
+			catch (DBException e) {
+				throw new RuntimeException(e);
+			}
+			catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		} else {
+			controller.finalize();
 		}
 	}
 	
@@ -165,25 +169,4 @@ public class ProcessStarter implements ControllerStarter {
 		
 		return i;
 	}
-	
-	public boolean isAllFinished(List<ProcessController> controllers) {
-		for (ProcessController c : controllers) {
-			if (!c.isFinished() || c.getChildController() != null && !c.getChildController().isFinished()) {
-				return false;
-			}
-		}
-		
-		return true;
-	}
-	
-	public boolean isAllStopped(List<ProcessController> controllers) {
-		for (ProcessController c : controllers) {
-			if (!c.isStopped() || c.getChildController() != null && !c.getChildController().isStopped()) {
-				return false;
-			}
-		}
-		
-		return true;
-	}
-	
 }

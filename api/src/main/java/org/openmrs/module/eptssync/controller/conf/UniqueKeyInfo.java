@@ -91,7 +91,7 @@ public class UniqueKeyInfo {
 		try {
 			String tableName = tableConfiguration.getTableName();
 			
-			rs = conn.getMetaData().getIndexInfo(conn.getSchema(), conn.getSchema(), tableName, true, true);
+			rs = conn.getMetaData().getIndexInfo(conn.getCatalog(), conn.getSchema(), tableName, true, true);
 			
 			String prevIndexName = null;
 			
@@ -223,11 +223,11 @@ public class UniqueKeyInfo {
 		SyncTableConfiguration config = syncConfig.find(SyncTableConfiguration.init("dsd", syncConfig));
 		config.fullLoad();
 		
-		Object[] params = { "e2b37662-1d5f-11e0-b929-000c29ad1d07" };
+		//Object[] params = { "e2b37662-1d5f-11e0-b929-000c29ad1d07" };
 		
 		OpenConnection conn = syncConfig.getMainApp().openConnection();
 		
-		List<UniqueKeyInfo> uks = loadUniqueKeysInfo(config, conn);
+		//List<UniqueKeyInfo> uks = loadUniqueKeysInfo(config, conn);
 		
 		List<UniqueKeyInfo> knownKeys = generateKnownUk(config);
 		UniqueKeyInfo keyInfo = knownKeys.get(0);

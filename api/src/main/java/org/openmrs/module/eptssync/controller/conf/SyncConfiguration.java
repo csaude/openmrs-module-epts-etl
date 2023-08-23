@@ -449,17 +449,7 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	public static SyncConfiguration loadFromJSON(File file, String json) {
 		try {
-			SyncConfiguration config = new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json,
-			    SyncConfiguration.class);
-			
-			if (config.getChildConfigFilePath() != null) {
-				config.logDebug(
-				    "FOUND THE CHILD [" + config.getChildConfigFilePath() + "] FOR [" + file.getAbsolutePath() + "]");
-				
-				config.setChildConfig(loadFromFile(new File(config.getChildConfigFilePath())));
-			}
-			
-			return config;
+			return new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json, SyncConfiguration.class);
 		}
 		catch (JsonParseException e) {
 			e.printStackTrace();
@@ -856,5 +846,11 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	public boolean isPerformedInTheSameDatabase() {
 		return this.isResolveProblems() || this.isDBInconsistencyCheckProcess();
+	}
+	
+	public void finalizeAllApps() {
+		for (AppInfo app : getAppsInfo()) {
+			app.finalize();
+		}
 	}
 }

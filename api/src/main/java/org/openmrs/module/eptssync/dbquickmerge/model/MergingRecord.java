@@ -16,19 +16,25 @@ import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class MergingRecord {
+	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private DatabaseObject record;
+	
 	private SyncTableConfiguration config;
-	private List<ParentInfo>  parentsWithDefaultValues;
+	
+	private List<ParentInfo> parentsWithDefaultValues;
+	
 	private AppInfo srcApp;
+	
 	private AppInfo destApp;
 	
 	public MergingRecord(DatabaseObject record, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp) {
 		this.record = record;
-		this.config = config;	
+		this.config = config;
 		this.srcApp = srcApp;
 		this.destApp = destApp;
 		
@@ -40,31 +46,42 @@ public class MergingRecord {
 		
 		consolidateAndSaveData(srcConn, destConn);
 		
-		save(srcConn);
+		//save(srcConn);
 	}
 	
 	public SyncTableConfiguration getConfig() {
 		return config;
 	}
-	private void consolidateAndSaveData(Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException{
-		if (!config.isFullLoaded()) config.fullLoad(); 
+	
+	private void consolidateAndSaveData(Connection srcConn, Connection destConn)
+	        throws ParentNotYetMigratedException, DBException {
+		if (!config.isFullLoaded())
+			config.fullLoad();
 		
-		try {
-			MergingRecord.loadDestParentInfo(this,  srcConn, destConn);
-			MergingRecord.loadDestConditionalParentInfo(this, srcConn, destConn);
-		}
-		catch (DBException e) {
-			throw new DBException(e);
-		}
-
+		MergingRecord.loadDestParentInfo(this, srcConn, destConn);
+		MergingRecord.loadDestConditionalParentInfo(this, srcConn, destConn);
+		
 		try {
 			record.save(config, destConn);
 		}
 		catch (DBException e) {
-			if (e.isIntegrityConstraintViolationException()) {
+			if (e.isDuplicatePrimaryOrUniqueKeyException()) {
+				
+				boolean existWinningRecInfo = utilities.arrayHasElement(config.getWinningRecordFieldsInfo());
+				boolean existObservationDateFields = utilities.arrayHasElement(config.getObservationDateFields());
+				
+				if (existObservationDateFields || existWinningRecInfo) {
+					List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
+					
+					DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+					
+					((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
+				}
+				
+			} else if (e.isIntegrityConstraintViolationException()) {
 				determineMissingMetadataParent(this, srcConn, destConn);
-			}
-			else throw e;
+			} else
+				throw e;
 		}
 		
 		if (!this.parentsWithDefaultValues.isEmpty()) {
@@ -72,10 +89,11 @@ public class MergingRecord {
 		}
 	}
 	
-	public void resolveConflict(Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException{
-		if (!config.isFullLoaded()) config.fullLoad(); 
+	public void resolveConflict(Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException {
+		if (!config.isFullLoaded())
+			config.fullLoad();
 		
-		MergingRecord.loadDestParentInfo(this,  srcConn, destConn);
+		MergingRecord.loadDestParentInfo(this, srcConn, destConn);
 		MergingRecord.loadDestConditionalParentInfo(this, srcConn, destConn);
 		
 		List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
@@ -89,45 +107,53 @@ public class MergingRecord {
 		}
 	}
 	
-	private void reloadParentsWithDefaultValues(Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException {
-		for (ParentInfo parentInfo: this.parentsWithDefaultValues) {
+	private void reloadParentsWithDefaultValues(Connection srcConn, Connection destConn)
+	        throws ParentNotYetMigratedException, DBException {
+		for (ParentInfo parentInfo : this.parentsWithDefaultValues) {
 			
 			RefInfo refInfo = parentInfo.getRefInfo();
 			
-			DatabaseObject parent= parentInfo.getParent();
+			DatabaseObject parent = parentInfo.getParent();
 			
-			MergingRecord parentData = new MergingRecord(parent, refInfo.getRefTableConfiguration(), this.srcApp, this.destApp);
+			MergingRecord parentData = new MergingRecord(parent, refInfo.getRefTableConfiguration(), this.srcApp,
+			        this.destApp);
 			parentData.merge(srcConn, destConn);
-				
-			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(), this.record, destConn);
+			
+			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(), this.record,
+			    destConn);
 			
 			parent = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 			
 			record.changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);
-		}		
+		}
 	}
 	
-	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException {
+	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn)
+	        throws ParentNotYetMigratedException, DBException {
 		SyncTableConfiguration config = mergingRecord.config;
-
-		if (!utilities.arrayHasElement(config.getParents())) return;
+		
+		if (!utilities.arrayHasElement(config.getParents()))
+			return;
 		
 		DatabaseObject record = mergingRecord.record;
 		
-		
-		for (RefInfo refInfo: config.getParents()) {
-			if (refInfo.getRefTableConfiguration().isMetadata()) continue;
+		for (RefInfo refInfo : config.getParents()) {
+			if (refInfo.getRefTableConfiguration().isMetadata())
+				continue;
 			
 			Integer parentIdInOrigin = record.getParentValue(refInfo.getRefColumnAsClassAttName());
-				 
+			
 			if (parentIdInOrigin != null) {
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp),
+				    parentIdInOrigin, srcConn);
 				
 				if (parentInOrigin == null) {
-					throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
+					throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(),
+					        mergingRecord.config.getOriginAppLocationCode(), refInfo);
 				}
 				
-				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(), parentInOrigin, destConn);
+				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(),
+				    parentInOrigin, destConn);
 				
 				DatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 				
@@ -142,64 +168,75 @@ public class MergingRecord {
 		}
 	}
 	
-	
 	/**
-	 * 
 	 * @param mergingRecord
 	 * @param srcConn
 	 * @param destConn
-	 * @throws DBException 
+	 * @throws DBException
 	 * @throws ParentNotYetMigratedException
 	 * @throws SQLException
 	 */
-	private static void determineMissingMetadataParent(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws MissingParentException, DBException{
+	private static void determineMissingMetadataParent(MergingRecord mergingRecord, Connection srcConn, Connection destConn)
+	        throws MissingParentException, DBException {
 		SyncTableConfiguration config = mergingRecord.config;
 		
-		if (!utilities.arrayHasElement(config.getParents())) return;
+		if (!utilities.arrayHasElement(config.getParents()))
+			return;
 		
 		DatabaseObject record = mergingRecord.record;
 		
-		for (RefInfo refInfo: config.getParents()) {
-			if (!refInfo.getRefTableConfiguration().isMetadata()) continue;
+		for (RefInfo refInfo : config.getParents()) {
+			if (!refInfo.getRefTableConfiguration().isMetadata())
+				continue;
 			
 			Integer parentId = record.getParentValue(refInfo.getRefColumnAsClassAttName());
-				 
+			
 			if (parentId != null) {
-				DatabaseObject parent = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.destApp), parentId, destConn);
+				DatabaseObject parent = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.destApp), parentId,
+				    destConn);
 				
-				if (parent == null) throw new MissingParentException(parentId, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
+				if (parent == null)
+					throw new MissingParentException(parentId, refInfo.getTableName(),
+					        mergingRecord.config.getOriginAppLocationCode(), refInfo);
 			}
 		}
 	}
 	
-	private static void loadDestConditionalParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException {
-		if (!utilities.arrayHasElement(mergingRecord.config.getConditionalParents())) return;
-			
+	private static void loadDestConditionalParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn)
+	        throws ParentNotYetMigratedException, DBException {
+		if (!utilities.arrayHasElement(mergingRecord.config.getConditionalParents()))
+			return;
+		
 		DatabaseObject record = mergingRecord.record;
 		SyncTableConfiguration config = mergingRecord.config;
 		
-		for (RefInfo refInfo: config.getConditionalParents()) {
-			if (refInfo.getRefTableConfiguration().isMetadata()) continue;
+		for (RefInfo refInfo : config.getConditionalParents()) {
+			if (refInfo.getRefTableConfiguration().isMetadata())
+				continue;
 			
 			Object conditionFieldValue = record.getFieldValues(refInfo.getRefConditionFieldAsClassAttName())[0];
 			
-			if (!conditionFieldValue.equals(refInfo.getConditionValue())) continue;
+			if (!conditionFieldValue.equals(refInfo.getConditionValue()))
+				continue;
 			
 			Integer parentIdInOrigin = null;
 			
 			try {
 				parentIdInOrigin = record.getParentValue(refInfo.getRefColumnAsClassAttName());
 			}
-			catch (NumberFormatException e) {
-			}
-				 
-			if (parentIdInOrigin != null) {
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp), parentIdInOrigin, srcConn);
-				
-				if (parentInOrigin == null) throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(), mergingRecord.config.getOriginAppLocationCode(), refInfo);
-				
-				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(), parentInOrigin, destConn); 
+			catch (NumberFormatException e) {}
 			
+			if (parentIdInOrigin != null) {
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp),
+				    parentIdInOrigin, srcConn);
+				
+				if (parentInOrigin == null)
+					throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(),
+					        mergingRecord.config.getOriginAppLocationCode(), refInfo);
+				
+				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(),
+				    parentInOrigin, destConn);
+				
 				DatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 				
 				if (parentInDest == null) {
@@ -214,7 +251,8 @@ public class MergingRecord {
 	}
 	
 	public void save(Connection conn) throws DBException {
-		SyncImportInfoVO syncInfo = SyncImportInfoVO.generateFromSyncRecord(getRecord(), getConfig().getOriginAppLocationCode(), false);
+		SyncImportInfoVO syncInfo = SyncImportInfoVO.generateFromSyncRecord(getRecord(),
+		    getConfig().getOriginAppLocationCode(), false);
 		
 		syncInfo.save(getConfig(), conn);
 	}
@@ -223,4 +261,35 @@ public class MergingRecord {
 		return record;
 	}
 	
+	public static void mergeAll(List<MergingRecord> mergingRecs, Connection srcConn, OpenConnection dstConn)
+	        throws ParentNotYetMigratedException, DBException {
+		if (!utilities.arrayHasElement(mergingRecs)) {
+			return;
+		}
+		
+		SyncTableConfiguration config = mergingRecs.get(0).config;
+		
+		if (!config.isFullLoaded()) {
+			config.fullLoad();
+		}
+		
+		List<DatabaseObject> objects = new ArrayList<DatabaseObject>(mergingRecs.size());
+		
+		for (MergingRecord mergingRecord : mergingRecs) {
+			mergingRecord.record.setUniqueKeysInfo(mergingRecord.config.getUniqueKeys());
+			
+			MergingRecord.loadDestParentInfo(mergingRecord, srcConn, dstConn);
+			MergingRecord.loadDestConditionalParentInfo(mergingRecord, srcConn, dstConn);
+			
+			objects.add(mergingRecord.record);
+		}
+		
+		DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn);
+		
+		for (MergingRecord mergingRecord : mergingRecs) {
+			if (!mergingRecord.parentsWithDefaultValues.isEmpty()) {
+				mergingRecord.reloadParentsWithDefaultValues(srcConn, dstConn);
+			}
+		}
+	}
 }

@@ -1,19 +1,13 @@
 package org.openmrs.module.eptssync.databasepreparation.controller;
 
-import java.sql.SQLException;
-import java.sql.Statement;
-
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.ProcessController;
-import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.databasepreparation.engine.DatabasePreparationEngine;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
-import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
  * This class is responsible for data base preparation

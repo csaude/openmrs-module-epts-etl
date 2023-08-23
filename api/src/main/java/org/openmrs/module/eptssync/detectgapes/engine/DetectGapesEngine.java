@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.eptssync.detectgapes.model.DetectGapesSearchParams;
+import org.openmrs.module.eptssync.detectgapes.model.GapeDAO;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
@@ -60,11 +61,9 @@ public class DetectGapesEngine extends Engine {
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		logDebug("DETECTING GAPES ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
-		if (this.prevRec == null ) {
+		if (this.prevRec == null) {
 			this.prevRec = (DatabaseObject) syncRecords.get(0);
 		}
-		
-		List<String> missing = new ArrayList<String>();
 		
 		for (SyncRecord record : syncRecords) {
 			DatabaseObject rec = (DatabaseObject) record;
@@ -75,14 +74,12 @@ public class DetectGapesEngine extends Engine {
 				logDebug("Found gape of " + diff + " between " + prevRec.getObjectId() + " and " + rec.getObjectId());
 				
 				for (int i = prevRec.getObjectId() + 1; i < rec.getObjectId(); i++) {
-					missing.add("" + i);
+					GapeDAO.insert(getSyncTableConfiguration(), i, conn);
 				}
 			}
 			
 			prevRec = rec;
 		}
-		
-		getRelatedOperationController().writeOnFile(missing);
 	}
 	
 	@Override

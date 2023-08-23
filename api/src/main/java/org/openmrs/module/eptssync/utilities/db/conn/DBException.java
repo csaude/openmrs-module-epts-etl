@@ -233,6 +233,10 @@ public class DBException extends SQLException {
 		
 		return false;
 	}
+
+	public boolean isTemporaryDBErrr(Connection conn) throws DBException {
+		return isDeadLock(conn) || isLockWaitTimeExceded(conn); 
+	}
 	
 	public boolean isDeadLock(Connection conn) throws DBException {
 		if (!CommonUtilities.getInstance().stringHasValue(getMessage()))
@@ -245,8 +249,20 @@ public class DBException extends SQLException {
 		} else
 			return false;
 	}
-
+	
 	public boolean isConnectionClosedException() {
 		return getMessage().contains("The connection is closed");
+	}
+	
+	public boolean isLockWaitTimeExceded(Connection conn) throws DBException {
+		
+		if (!CommonUtilities.getInstance().stringHasValue(getMessage()))
+			return false;
+		
+		if (DBUtilities.isMySQLDB(conn) && getMessage().toLowerCase().contains("lock wait timeout exceeded")) {
+			return true;
+		}
+		
+		return false;
 	}
 }

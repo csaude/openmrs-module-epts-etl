@@ -6,14 +6,19 @@ import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 
 public class DBOperation {
-
+	
 	public static Logger logger = Logger.getLogger(DBOperation.class);
 	
 	private String sql;
+	
 	private Object[] params;
+	
 	private Connection conn;
+	
 	private int qtyTry;
+	
 	private int maxTry;
+	
 	private DBException exception;
 	
 	public DBOperation(String sql, Object[] params, Connection conn, int maxTry) {
@@ -21,28 +26,34 @@ public class DBOperation {
 		this.params = params;
 		this.conn = conn;
 		this.maxTry = maxTry;
-		this.qtyTry= 0; 
+		this.qtyTry = 0;
 	}
 	
-	public void retryDueDeadLock() throws DBException {
-		if (qtyTry < maxTry){
+	public void retryDueTemporaryDBError(String error) throws DBException {
+		if (qtyTry < maxTry) {
 			qtyTry++;
-			logger.warn("DEADLOCK DETECTED");
-			logger.warn("RETRYING OPERATION [" +qtyTry+ "] OF ["+maxTry+"]");
+			logger.warn(error.toUpperCase() + " DETECTED");
+			logger.warn("RETRYING OPERATION [" + qtyTry + "] OF [" + maxTry + "]");
 			try {
 				BaseDAO.executeDBQuery(sql, params, conn);
-			} catch (DBException e) {
+				
+				logger.warn("RECOVERED AFTER " + error.toUpperCase());
+			}
+			catch (DBException e) {
 				this.exception = e;
 				
-				if (e.isDeadLock(conn)){
-					try {Thread.sleep(5000);} catch (InterruptedException e1) {}
+				if (e.isTemporaryDBErrr(conn)) {
+					try {
+						Thread.sleep(5000);
+					}
+					catch (InterruptedException e1) {}
 					
-					retryDueDeadLock();
-				}else {
+					retryDueTemporaryDBError(error);
+				} else {
 					throw e;
 				}
 			}
-		}else {
+		} else {
 			throw this.exception;
 		}
 	}
@@ -50,32 +61,39 @@ public class DBOperation {
 	public String getSql() {
 		return sql;
 	}
+	
 	public void setSql(String sql) {
 		this.sql = sql;
 	}
+	
 	public Object[] getParams() {
 		return params;
 	}
+	
 	public void setParams(Object[] params) {
 		this.params = params;
 	}
+	
 	public Connection getConn() {
 		return conn;
 	}
+	
 	public void setConn(Connection conn) {
 		this.conn = conn;
 	}
+	
 	public int getQtyTry() {
 		return qtyTry;
 	}
+	
 	public void setQtyTry(int qtyTry) {
 		this.qtyTry = qtyTry;
 	}
-
+	
 	public int getMaxTry() {
 		return maxTry;
 	}
-
+	
 	public void setMaxTry(int maxTry) {
 		this.maxTry = maxTry;
 	}

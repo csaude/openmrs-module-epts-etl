@@ -63,14 +63,14 @@ public class DBUtilities {
 	public static final String RESOURCE_TYPE_SCHEMA = "SCHEMA";
 	
 	private static String determineDataBaseFromString(String msg) {
-		if (msg.toUpperCase().contains("ORA")) {
-			return ORACLE_DATABASE;
-		} else if (msg.toUpperCase().contains("MYSQL")) {
+		if (msg.toUpperCase().contains("MYSQL")) {
 			return MYSQL_DATABASE;
 		} else if (msg.toUpperCase().contains("POSTGRESQL")) {
 			return POSTGRESQL_DATABASE;
 		} else if (msg.toUpperCase().contains("SQLSERVER")) {
 			return SQLSERVER_DATABASE;
+		} else if (msg.toUpperCase().contains("ORA-")) {
+			return ORACLE_DATABASE;
 		}
 		
 		return null;
@@ -164,12 +164,11 @@ public class DBUtilities {
 		throw new RuntimeException("Impossivel determinar a base de dados a partir da conexao");
 	}
 	
-	
 	public static boolean isSameDatabaseServer(Connection srcConn, Connection dstConn) throws DBException {
 		try {
 			String srcDatabaseType = DBUtilities.determineDataBaseFromConnection(srcConn);
 			String dstDatabaseType = DBUtilities.determineDataBaseFromConnection(dstConn);
-
+			
 			if (!srcDatabaseType.equals(dstDatabaseType)) {
 				return false;
 			}
@@ -180,11 +179,9 @@ public class DBUtilities {
 			String srcUrl = srcMetadata.getURL();
 			String dstUrl = dstMetadata.getURL();
 			
-			
 			if (isPostgresDB(srcConn)) {
 				return srcUrl.equals(dstUrl);
-			}
-			else if (isOracleDB(srcConn)) {
+			} else if (isOracleDB(srcConn)) {
 				return srcUrl.equals(dstUrl);
 			} else if (isMySQLDB(srcConn)) {
 				String srcHostAndPort = srcUrl.split("//")[1].split("/")[0];
@@ -199,7 +196,7 @@ public class DBUtilities {
 			throw new DBException(e);
 		}
 	}
-		
+	
 	public static Connection cloneConnetion(Connection conn) throws SQLException {
 		//DatabaseMetaData metadata = conn.getMetaData();
 		
@@ -213,7 +210,7 @@ public class DBUtilities {
 	}
 	
 	public static String tryToPutSchemaOnDatabaseObject(String tableName, Connection conn) throws DBException {
-	
+		
 		try {
 			String[] tableNameComposition = tableName.split("\\.");
 			
@@ -230,7 +227,6 @@ public class DBUtilities {
 	public static String tryToPutSchemaOnInsertScript(String sql, Connection conn) throws DBException {
 		String tableName = (sql.toUpperCase().split("INSERT INTO")[1]).split("\\(")[0];
 		
-	
 		String[] tableNameComposition = tableName.split("\\.");
 		
 		if (tableNameComposition != null && tableNameComposition.length > 1)
@@ -238,9 +234,16 @@ public class DBUtilities {
 		
 		String fullTableName = tryToPutSchemaOnDatabaseObject(utilities.removeAllEmptySpace(tableName), conn);
 		
-		return sql.toUpperCase().replaceFirst(tableName, " " +fullTableName);
+		return sql.toUpperCase().replaceFirst(tableName, " " + fullTableName);
 	}
-
+	
+	public static String addInsertIgnoreOnInsertScript(String sql, Connection conn) throws DBException {
+		if (!isMySQLDB(conn))
+			return sql;
+		
+		return sql.toUpperCase().replaceFirst("INSERT", "INSERT IGNORE");
+	}
+	
 	public static String tryToPutSchemaOnUpdateScript(String sql, Connection conn) throws DBException {
 		String tableName = (sql.toUpperCase().split("UPDATE ")[1]).split(" ")[0];
 		
@@ -251,7 +254,7 @@ public class DBUtilities {
 		
 		String fullTableName = tryToPutSchemaOnDatabaseObject(utilities.removeAllEmptySpace(tableName), conn);
 		
-		return sql.toUpperCase().replaceFirst(tableName, " " +fullTableName);
+		return sql.toUpperCase().replaceFirst(tableName, " " + fullTableName);
 	}
 	
 	public static String determineSchemaName(Connection conn) throws DBException {
@@ -342,15 +345,14 @@ public class DBUtilities {
 		
 		OpenConnection conn = service.openConnection();*/
 		
-		SyncConfiguration syncConfig = SyncConfiguration
-		        .loadFromFile(new File("D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\mozart\\db_copy_mozart_sqlserver_test.json"));
+		SyncConfiguration syncConfig = SyncConfiguration.loadFromFile(
+		    new File("D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\mozart\\db_copy_mozart_sqlserver_test.json"));
 		
 		OpenConnection srcConn = syncConfig.getMainApp().openConnection();
 		OpenConnection dstConn = syncConfig.getAppsInfo().get(1).openConnection();
 		
-		
 		SyncTableConfiguration tableConfig = syncConfig.getTablesConfigurations().get(0);
-	
+		
 		tableConfig.fullLoad();
 		
 		boolean sameDB = isSameDatabaseServer(srcConn, dstConn);
@@ -473,6 +475,10 @@ public class DBUtilities {
 			return isPostgresResourceExist(resourceSchema, resourceTable, resourceType, resourceName, conn);
 		}
 		
+		if (isSqlServerDB(conn)) {
+			return isSqlServerResourceExist(resourceSchema, resourceTable, resourceType, resourceName, conn);
+		}
+		
 		throw new RuntimeException("Database not supported!");
 	}
 	
@@ -505,6 +511,49 @@ public class DBUtilities {
 			fromClause = "INFORMATION_SCHEMA.SCHEMATA";
 			
 			resourceNameCondition = "SCHEMA_NAME = '" + resourceName + "'";
+		} else
+			throw new ForbiddenOperationException("Resource not supported");
+		
+		String selectQuery = "";
+		
+		selectQuery += " SELECT * \n";
+		selectQuery += " FROM " + fromClause + "\n";
+		selectQuery += " WHERE 	1 = 1\n";
+		selectQuery += " 		AND  " + resourceSchemaCondition + "\n";
+		selectQuery += " 		AND  " + resourceTableCondition + "\n";
+		selectQuery += "		AND  " + resourceNameCondition;
+		
+		try {
+			PreparedStatement statement = conn.prepareStatement(selectQuery);
+			
+			ResultSet result = statement.executeQuery();
+			
+			return result.next();
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+	}
+	
+	private static boolean isSqlServerResourceExist(String resourceSchema, String resourceTable, String resourceType,
+	        String resourceName, Connection conn) throws DBException {
+		String resourceSchemaCondition = "1 = 1";
+		String resourceTableCondition = "1 = 1";
+		String resourceNameCondition = "1 = 1";
+		String fromClause = "";
+		
+		if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_INDEX)) {
+			throw new ForbiddenOperationException("Resource not supported");
+		} else if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_TRIGGER)) {
+			throw new ForbiddenOperationException("Resource not supported");
+		} else if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_TABLE)) {
+			fromClause = "INFORMATION_SCHEMA.TABLES";
+			resourceNameCondition = "TABLE_NAME = '" + resourceName + "'";
+			resourceSchemaCondition = "TABLE_SCHEMA = '" + resourceSchema + "'";
+		} else if (resourceType.equalsIgnoreCase(DBUtilities.RESOURCE_TYPE_SCHEMA)) {
+			fromClause = "sys.schemas";
+			
+			resourceNameCondition = "name = '" + resourceName + "'";
 		} else
 			throw new ForbiddenOperationException("Resource not supported");
 		
@@ -792,7 +841,7 @@ public class DBUtilities {
 		} else if (isPostgresDB(conn)) {
 			return fieldName + " serial NOT NULL";
 		} else if (isSqlServerDB(conn)) {
-			return fieldName + " IDENTITY(1,1)";
+			return fieldName + " int IDENTITY(1,1)";
 		}
 		
 		throw new DatabaseNotSupportedException(conn);
@@ -827,7 +876,7 @@ public class DBUtilities {
 	
 	public static String generateTableDateTimeField(String fieldName, String constraint, Connection conn)
 	        throws DBException {
-		return fieldName + " TIMESTAMP " + constraint;
+		return fieldName + " datetime " + constraint;
 	}
 	
 	public static String generateTableDateTimeFieldWithDefaultValue(String fieldName, Connection conn) throws DBException {
@@ -840,6 +889,25 @@ public class DBUtilities {
 			return definition += " DEFAULT CURRENT_TIMESTAMP";
 		} else if (isOracleDB(conn)) {
 			return definition += " DEFAULT CURRENT_TIMESTAMP";
+		} else if (isSqlServerDB(conn)) {
+			return definition += " DEFAULT CURRENT_TIMESTAMP";
+		}
+		
+		throw new DatabaseNotSupportedException(conn);
+	}
+	
+	public static String generateTableTimeStampField(String fieldName, Connection conn) throws DBException {
+		String definition = fieldName + " TIMESTAMP ";
+		
+		if (isMySQLDB(conn)) {
+			return definition += " DEFAULT CURRENT_TIMESTAMP";
+			
+		} else if (isPostgresDB(conn)) {
+			return definition += " DEFAULT CURRENT_TIMESTAMP";
+		} else if (isOracleDB(conn)) {
+			return definition += " DEFAULT CURRENT_TIMESTAMP";
+		} else if (isSqlServerDB(conn)) {
+			return definition;
 		}
 		
 		throw new DatabaseNotSupportedException(conn);
@@ -858,6 +926,8 @@ public class DBUtilities {
 			return "CONSTRAINT " + uniqueKeyName + " UNIQUE (" + uniqueKeyFields + ")";
 		} else if (isOracleDB(conn)) {
 			return "CONSTRAINT " + uniqueKeyName + " UNIQUE (" + uniqueKeyFields + ")";
+		} else if (isSqlServerDB(conn)) {
+			return "CONSTRAINT " + uniqueKeyName + " UNIQUE (" + uniqueKeyFields + ")";
 		}
 		
 		throw new DatabaseNotSupportedException(conn);
@@ -873,7 +943,5 @@ public class DBUtilities {
 	        throws DBException {
 		return "CONSTRAINT " + keyName + " CHECK (" + checkCondition + ")";
 	}
-
-
 	
 }

@@ -23,6 +23,10 @@ public class AppInfo {
 	public AppInfo(){
 	}
 	
+	public void finalize() {
+		if (dbService != null) dbService.finalize();
+	}
+	
 	private DBConnectionService getRelatedDBConnectionService() {
 		if (this.dbService == null) initRelatedDBConnectionService();
 		

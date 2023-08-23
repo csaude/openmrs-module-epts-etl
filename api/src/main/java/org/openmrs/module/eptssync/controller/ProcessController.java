@@ -44,8 +44,6 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	private List<OperationController> operationsControllers;
 	
-	private ProcessController childController;
-	
 	private String controllerId;
 	
 	private ProcessProgressInfo progressInfo;
@@ -101,10 +99,6 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.configuration.setRelatedController(this);
 		this.appsInfo = configuration.getAppsInfo();
 		
-		if (configuration.getChildConfig() != null) {
-			this.childController = new ProcessController(this.starter, configuration.getChildConfig());
-		}
-		
 		this.controllerId = configuration.generateControllerId();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
@@ -154,10 +148,12 @@ public class ProcessController implements Controller, ControllerStarter {
 		return finalized;
 	}
 	
+	public void finalize() {
+		setFinalized(true);
+	}
+	
 	@Override
 	public void finalize(Controller c) {
-		setFinalized(true);
-		
 		c.killSelfCreatedThreads();
 		
 		List<OperationController> nextOperation = ((OperationController) c).getChildren();
@@ -192,6 +188,8 @@ public class ProcessController implements Controller, ControllerStarter {
 		} else {
 			logWarn("THERE IS NO MORE OPERATION TO EXECUTE... FINALIZING PROCESS... " + this.getControllerId());
 		}
+		
+		getConfiguration().finalizeAllApps();
 	}
 	
 	@JsonIgnore
@@ -208,10 +206,10 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.configuration = configuration;
 	}
 	
-	@JsonIgnore
+	/*@JsonIgnore
 	public ProcessController getChildController() {
 		return childController;
-	}
+	}*/
 	
 	@JsonIgnore
 	public AppInfo getDefaultApp() {
@@ -381,9 +379,9 @@ public class ProcessController implements Controller, ControllerStarter {
 			}
 		}
 		
-		if (getChildController() != null) {
+		/*if (getChildController() != null) {
 			getChildController().requestStop();
-		}
+		}*/
 	}
 	
 	@Override
@@ -398,9 +396,9 @@ public class ProcessController implements Controller, ControllerStarter {
 			
 			changeStatusToStopped();
 			
-			if (getChildController() != null) {
+			/*if (getChildController() != null) {
 				getChildController().requestStop();
-			}
+			}*/
 		} else if (processIsAlreadyFinished()) {
 			logWarn("THE PROCESS " + getControllerId().toUpperCase() + " WAS ALREADY FINISHED!!!");
 			onFinish();
@@ -434,11 +432,10 @@ public class ProcessController implements Controller, ControllerStarter {
 					
 					this.onStop();
 				}
-			}		
+			}
 			
 		}
 		
-
 	}
 	
 	private void tryToRemoveOldStopRequested() {
@@ -727,7 +724,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			sql += DBUtilities.generateTableIntegerField("total_records", "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableIntegerField("total_processed_records", "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableVarcharField("status", 50, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + ",\n";
+			sql += DBUtilities.generateTableTimeStampField("creation_date", conn) + ",\n";
 			sql += DBUtilities.generateTableUniqueKeyDefinition(
 			    config.getSyncStageSchema() + "_UNQ_OPERATION_ID".toLowerCase(), "operation_id", conn) + ",\n";
 			sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "table_operation_progress_info_pk", conn) + "\n";

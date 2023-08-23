@@ -3,8 +3,10 @@ package org.openmrs.module.eptssync.controller.conf;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -282,7 +284,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	public String getPrimaryKey(Connection conn) {
 		if (primaryKey == null) {
 			try {
-				ResultSet rs = conn.getMetaData().getPrimaryKeys(null, null, tableName);
+				ResultSet rs = conn.getMetaData().getPrimaryKeys(conn.getCatalog(), conn.getSchema(), tableName);
 				
 				if (rs.next()) {
 					this.primaryKey = rs.getString("COLUMN_NAME");
@@ -1040,6 +1042,10 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			joinCondition += "(" + uniqueKeyJoinField + ")";
 		}
 		
+		if (!utilities.stringHasValue(joinCondition) && this.isMetadata()) {
+			joinCondition = "dest_." + getPrimaryKey() + " = src_." + getPrimaryKey();
+		}
+		
 		return joinCondition;
 	}
 	
@@ -1145,7 +1151,45 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		return utilities.arrayHasElement(this.getUniqueKeys());
 	}
 	
-	public static void main(String[] args) throws DBException, IOException {
+	public static void main(String[] args) throws IOException, DBException {
+		SyncConfiguration syncConfig = SyncConfiguration
+		        .loadFromFile(new File("D:\\PRG\\JEE\\Workspace\\CSaude\\eptssync\\test\\test.json"));
+		
+		OpenConnection connection = syncConfig.getMainApp().openConnection();
+		
+		PreparedStatement st = null;
+		
+		try {
+			st = connection.prepareStatement("insert ", Statement.RETURN_GENERATED_KEYS);
+			
+			String sql = " insert ignore into test(code) values ";
+						sql += "('001')";
+						sql += ",('002')";
+						sql += ",('003')";
+						sql += ",('004')";
+						sql += ",('004')";
+						sql += ",('005')";
+						sql += ",('006')";
+						sql += ",('007')";
+			
+			st.addBatch(sql);
+			
+			st.executeBatch();
+			
+			
+			ResultSet rs = st.getGeneratedKeys();
+			
+			while (rs.next()) {
+				 System.out.println("Generated ID: " + rs.getInt(1));
+			} 
+			st.close();
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+	}
+	
+	public static void main_(String[] args) throws DBException, IOException {
 		SyncConfiguration syncConfig = SyncConfiguration
 		        .loadFromFile(new File("D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\mozart\\detect_problematic_dbs.json"));
 		

@@ -1,11 +1,11 @@
 package org.openmrs.module.eptssync.dbquickmerge.model;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
@@ -13,8 +13,6 @@ import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectSearchParams
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
-
-import com.mysql.cj.x.protobuf.MysqlxCursor.Open;
 
 public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	
@@ -30,112 +28,84 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		setOrderByFields(tableInfo.getPrimaryKey());
 	}
 	
-	public boolean isForMergeMissingRecords() {
-		return this.relatedController.getMergeType().isMissing();
-	}
-	
-	public boolean isForMergeExistingRecords() {
-		return this.relatedController.getMergeType().isExisting();
-	}
-	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		Connection srcConn = conn;
-		OpenConnection dstConn = this.relatedController.openDstConnection();
-		
 		String srcSchema = DBUtilities.determineSchemaName(conn);
 		
+		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+		
+		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
+			searchClauses.addToClauseFrom(
+			    srcSchema + ".patient inner join " + srcSchema + ".person src_ on person_id = patient_id");
+			searchClauses.addColumnToSelect("patient.*, src_.uuid");
+		} else {
+			searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_");
+			
+			searchClauses.addColumnToSelect("src_.*");
+		}
+		
+		if (limits != null) {
+			searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
+			searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
+			searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
+		}
+		
+		if (this.tableInfo.getExtraConditionForExport() != null) {
+			searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
+		}
+		
+		if (utilities.stringHasValue(getExtraCondition())) {
+			searchClauses.addToClauses(getExtraCondition());
+		}
+		
+		return searchClauses;
+	}
+	
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
+		
+		if (!DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
+			throw new ForbiddenOperationException("The database server must be the same to generate exlusion clause!!!");
+		}
+		
+		return " NOT EXISTS (" + generateDestinationJoinSubquery(dstConn) + ")";
+	}
+	
+	public String generateDestinationIntersetionClause(Connection srcConn, Connection dstConn) throws DBException {
+		
+		if (!DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
+			throw new ForbiddenOperationException("The database server must be the same to generate exlusion clause!!!");
+		}
+		
+		return " EXISTS (" + generateDestinationJoinSubquery(dstConn) + ")";
+	}
+	
+	private String generateDestinationJoinSubquery(Connection dstConn) throws DBException {
 		String dstSchema = DBUtilities.determineSchemaName(dstConn);
 		
-		try {
-			SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
-			
-			if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
-				searchClauses.addToClauseFrom(
-				    srcSchema + ".patient inner join " + srcSchema + ".person src_ on person_id = patient_id");
-				searchClauses.addColumnToSelect("patient.*, src_.uuid");
-			} else {
-				searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_");
-				
-				searchClauses.addColumnToSelect("src_.*");
-			}
-			
-			String dstFullTableName = dstSchema + ".";
-			dstFullTableName += tableInfo.getTableName();
-			
-			String normalFromClause;
-			String patientFromClause;
-			
-			normalFromClause = dstFullTableName + " dest_";
-			patientFromClause = dstSchema + ".patient inner join " + dstSchema + ".person dest_ on person_id = patient_id ";
-			
-			this.extraCondition = "";
-			
-			this.extraCondition += "  (SELECT * ";
-			this.extraCondition += "   FROM    "
-			        + (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equals("patient") ? patientFromClause
-			                : normalFromClause);
-			
-			if (isForMergeExistingRecords() && DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
-				
-				if (utilities.arrayHasElement(tableInfo.getUniqueKeys())) {
-					String periodCondition = "";
-					
-					if (utilities.arrayHasElement(tableInfo.getObservationDateFields()) && getSyncStartDate() != null) {
-						for (int i = 0; i < tableInfo.getObservationDateFields().size(); i++) {
-							if (!periodCondition.isEmpty())
-								periodCondition += " or ";
-							
-							periodCondition += "src_." + tableInfo.getObservationDateFields().get(i) + " >= ? ";
-							searchClauses.addToParameters(getSyncStartDate());
-						}
-						
-						searchClauses.addToClauses(periodCondition);
-					}
-					
-					this.extraCondition += " WHERE " + this.tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
-				} else {
-					//No joind field so nothing to query
-					this.extraCondition += " WHERE 1 != 1";
-				}
-				
-				this.extraCondition = " EXISTS " + this.extraCondition + ")";
-			} else if (isForMergeMissingRecords() && DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
-				if (utilities.arrayHasElement(tableInfo.getUniqueKeys())) {
-					this.extraCondition += " WHERE " + this.tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
-				} else {
-					//No joind field so select all
-					this.extraCondition += " WHERE 1 != 1";
-				}
-				
-				this.extraCondition = "NOT EXISTS " + this.extraCondition + ")";
-				
-			} else {
-				this.extraCondition = "";
-			}
-			
-			if (limits != null) {
-				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-				searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
-				searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
-			}
-			
-			if (this.tableInfo.getExtraConditionForExport() != null) {
-				searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
-			}
-			
-			if (utilities.stringHasValue(getExtraCondition())) {
-				searchClauses.addToClauses(getExtraCondition());
-			}
-			
-			return searchClauses;
+		String dstFullTableName = dstSchema + ".";
+		dstFullTableName += tableInfo.getTableName();
+		
+		String normalFromClause;
+		String patientFromClause;
+		String fromClause;
+		
+		normalFromClause = dstFullTableName + " dest_";
+		patientFromClause = dstSchema + ".patient inner join " + dstSchema + ".person dest_ on person_id = patient_id ";
+		
+		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equals("patient")) {
+			fromClause = patientFromClause;
+		} else {
+			fromClause = normalFromClause;
 		}
-		catch (SQLException e) {
-			throw new DBException(e);
-		}
-		finally {
-			dstConn.finalizeConnection();
-		}
+		
+		String dstJoinSubquery = "";
+		
+		dstJoinSubquery += " SELECT * ";
+		dstJoinSubquery += " FROM    " + fromClause;
+		dstJoinSubquery += " WHERE " + this.tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
+		
+		return dstJoinSubquery;
+		
 	}
 	
 	@Override
