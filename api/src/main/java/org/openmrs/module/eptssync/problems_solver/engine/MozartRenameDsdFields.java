@@ -224,7 +224,7 @@ public class MozartRenameDsdFields extends MozartProblemSolver {
 			
 			report.addResolvedProblem(resolvedProblem);
 			
-			BaseDAO.executeDBQuery(query, params, conn);
+			BaseDAO.executeQueryWithRetryOnError(query, params, conn);
 		}
 		
 		report.getReport().saveOnFile();

@@ -119,7 +119,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 				sql += " INSERT INTO " + tableName + "(record_id, key_name, column_name, key_value)";
 				sql += " 						values (?,?,?,?)";
 				
-				executeQuery(sql, params, conn);	
+				executeQueryWithRetryOnError(sql, params, conn);	
 			}
 		}
 	}
@@ -138,7 +138,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += " WHERE 	record_origin_id = ?  ";
 		sql += " 		AND record_origin_location_code = ? ";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static void insert(SyncImportInfoVO record, SyncTableConfiguration tableInfo, Connection conn) throws DBException{
@@ -181,7 +181,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 			sql += "		   ?,\n";
 			sql += "		   ?);";
 			
-			int id = executeQuery(sql, params, conn);
+			int id = executeQueryWithRetryOnError(sql, params, conn);
 			
 			record.setId(id);
 			
@@ -210,7 +210,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += " WHERE 	record_origin_id = ? \n";
 		sql += " 		AND record_origin_location_code = ? \n";
 			
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static SyncImportInfoVO getByOriginIdAndLocation(SyncTableConfiguration tableConfiguration, long originRecordId, String originAppLocationCode, Connection conn) throws DBException {
@@ -424,7 +424,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 			sql += "	   	last_sync_date = ? \n";
 			sql += "WHERE 	id = ?";
 	
-			executeQuery(sql, params, conn);
+			executeQueryWithRetryOnError(sql, params, conn);
 	}
 
 	public static void refreshLastMigrationTrySyncDate(SyncTableConfiguration tableInfo, List<SyncImportInfoVO> syncRecords, Connection conn) throws DBException{
@@ -439,7 +439,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += " SET    last_sync_date = ? ";
 		sql += " WHERE  id between ? and ? ";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	
@@ -457,7 +457,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += "		last_sync_date = ? ";
 		sql += " WHERE  id between ? and ? ";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	
@@ -473,7 +473,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += " SET    last_sync_date = ? ";
 		sql += " WHERE  id = ? ";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static void markAsConsistent(SyncTableConfiguration tableInfo, SyncImportInfoVO syncRecord, Connection conn) throws DBException {
@@ -492,7 +492,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 					 " SET    consistent = ? " +
 					 " WHERE  id =  ? ";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static void removeAll(List<SyncImportInfoVO> syncRecords, Connection conn) throws DBException{
@@ -507,7 +507,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += " DELETE FROM " + syncRecords.get(0).generateTableName();
 		sql += " WHERE  ID between ? and ? ";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	
@@ -521,7 +521,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += "FROM	" + tableInfo.generateFullStageTableName() + "\n";
 		sql += "WHERE 	id = ?";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 
 	public static void markAsToBeCompletedInFuture(SyncImportInfoVO record, SyncTableConfiguration tableInfo, Connection conn) throws DBException {
@@ -543,7 +543,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		sql += "	   	last_sync_date = ? \n";
 		sql += "WHERE 	id = ?";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 
 	public static void updateMigrationStatus(SyncTableConfiguration tableInfo, SyncImportInfoVO record, Connection conn) throws DBException {

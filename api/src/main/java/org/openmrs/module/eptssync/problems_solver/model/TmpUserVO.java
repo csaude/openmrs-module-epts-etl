@@ -62,7 +62,7 @@ public class TmpUserVO extends GenericDatabaseObject {
 	
 	@Override
 	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
-		BaseDAO.executeQuery("update tmp_user set deletable = " + this.deletable + " where user_id = " + getObjectId(), null, conn);
+		BaseDAO.executeQueryWithRetryOnError("update tmp_user set deletable = " + this.deletable + " where user_id = " + getObjectId(), null, conn);
 	}
 
 	public void harmonize(TmpUserVO dup, Connection conn) throws DBException{
@@ -74,7 +74,7 @@ public class TmpUserVO extends GenericDatabaseObject {
 			sql += " set 	" + child.getRefColumnName() + " = " + this.getObjectId();
 			sql += " where  " + child.getRefColumnName() + " = " + dup.getObjectId();
 			
-			BaseDAO.executeQuery(sql, null, conn);
+			BaseDAO.executeQueryWithRetryOnError(sql, null, conn);
 		}
 		
 		UsersVO user = new UsersVO();
@@ -89,7 +89,7 @@ public class TmpUserVO extends GenericDatabaseObject {
 	public void markAsHarmonized(Connection conn) throws DBException {
 		setHarmonized(1);
 		
-		BaseDAO.executeQuery("update tmp_user set harmonized = " + this.harmonized + " where user_id = " + getObjectId(), null, conn);
+		BaseDAO.executeQueryWithRetryOnError("update tmp_user set harmonized = " + this.harmonized + " where user_id = " + getObjectId(), null, conn);
 	}
 
 	public static TmpUserVO getWinningRecord(List<TmpUserVO> dups, Connection conn) throws DBException {
@@ -105,7 +105,7 @@ public class TmpUserVO extends GenericDatabaseObject {
 	public void markAsProcessed(Connection conn) throws DBException {
 		setProcessed(1);
 		
-		BaseDAO.executeQuery("update tmp_user set processed = " + this.processed + " where user_id = " + getObjectId(), null, conn);
+		BaseDAO.executeQueryWithRetryOnError("update tmp_user set processed = " + this.processed + " where user_id = " + getObjectId(), null, conn);
 	}
 	
 	

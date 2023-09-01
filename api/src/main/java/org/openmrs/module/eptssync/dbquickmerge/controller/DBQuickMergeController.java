@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.dbquickmerge.controller;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.controller.SiteOperationController;
@@ -11,10 +12,13 @@ import org.openmrs.module.eptssync.dbquickmerge.engine.DBQuickMergeEngine;
 import org.openmrs.module.eptssync.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
+import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchClauses;
 import org.openmrs.module.eptssync.model.SimpleValue;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
+import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -29,9 +33,19 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  */
 public class DBQuickMergeController extends SiteOperationController {
 	
+	private static final int DEFAULT_NEXT_TREAD_ID = -1;
+	
 	private AppInfo dstConn;
 	
 	private AppInfo srcApp;
+	
+	private int currThreadStartId;
+	
+	private int currQtyRecords;
+	
+	private final String stringLock = new String("LOCK_STRING");
+	
+	private SyncTableConfiguration currSyncTableConf;
 	
 	public DBQuickMergeController(ProcessController processController, SyncOperationConfig operationConfig,
 	    String appOriginLocationCode) {
@@ -39,6 +53,80 @@ public class DBQuickMergeController extends SiteOperationController {
 		
 		this.srcApp = getConfiguration().find(AppInfo.init("main"));
 		this.dstConn = getConfiguration().find(AppInfo.init("destination"));
+		
+		this.currThreadStartId = DEFAULT_NEXT_TREAD_ID;
+	}
+	
+	public int generateNextStartIdForThread(DBQuickMergeEngine engine, List<SyncRecord> syncRecords)
+	        throws DBException, ForbiddenOperationException {
+		
+		synchronized (stringLock) {
+			
+			if (this.currSyncTableConf == null) {
+				this.currSyncTableConf = engine.getSyncTableConfiguration();
+			}
+			
+			if (!this.currSyncTableConf.equals(engine.getSyncTableConfiguration())) {
+				this.currThreadStartId = DEFAULT_NEXT_TREAD_ID;
+				this.currSyncTableConf = engine.getSyncTableConfiguration();
+			}
+			
+			if (this.currThreadStartId == DEFAULT_NEXT_TREAD_ID) {
+				this.currQtyRecords = syncRecords.size();
+				
+				OpenConnection destConn = this.openDstConnection();
+				
+				this.currThreadStartId = DatabaseObjectDAO.getLastRecord(engine.getSyncTableConfiguration(), destConn);
+				
+				this.currThreadStartId = this.currThreadStartId - this.currQtyRecords + 1;
+			}
+			
+			this.currThreadStartId += this.currQtyRecords;
+			this.currQtyRecords = syncRecords.size();
+			
+			return this.currThreadStartId;
+		}
+	}
+	
+	public static synchronized int generateNextStartIdForThread(int dbCurrId, int currThreadStartId,
+	        int qtyRecordsPerProcessing) {
+		if (currThreadStartId == DEFAULT_NEXT_TREAD_ID) {
+			
+			currThreadStartId = dbCurrId;
+			
+			if (currThreadStartId == 0) {
+				currThreadStartId = 1 - qtyRecordsPerProcessing;
+			} else {
+				currThreadStartId = dbCurrId - qtyRecordsPerProcessing + 1;
+			}
+		}
+		
+		currThreadStartId += qtyRecordsPerProcessing;
+		
+		return currThreadStartId;
+	}
+	
+	public static void print(int startId, int qtyRecordsPerProcessing) {
+		for (int i = 0; i < qtyRecordsPerProcessing; i++) {
+			System.out.println("insert into tab1(id) values (" + (startId + i) + ")");
+		}
+	}
+	
+	public static void main(String[] args) {
+		int dbCurrId, currThreadStartId, next, qtyRecordsPerProcessing = 25;
+		
+		dbCurrId = 29;
+		currThreadStartId = DEFAULT_NEXT_TREAD_ID;
+		
+		next = generateNextStartIdForThread(dbCurrId, currThreadStartId, qtyRecordsPerProcessing);
+		
+		print(next, qtyRecordsPerProcessing);
+		
+		currThreadStartId = next;
+		
+		next = generateNextStartIdForThread(dbCurrId, currThreadStartId, qtyRecordsPerProcessing);
+		print(next, qtyRecordsPerProcessing);
+		
 	}
 	
 	public AppInfo getSrcApp() {

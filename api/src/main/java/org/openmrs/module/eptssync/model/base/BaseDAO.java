@@ -181,9 +181,9 @@ public abstract class BaseDAO{
 	 * @param connection to use
 	 * 
 	 */
-	public static Integer executeQuery(String sql, Object[] params, Connection connection) throws DBException{
+	public static Integer executeQueryWithRetryOnError(String sql, Object[] params, Connection connection) throws DBException{
 		try{
-			return executeDBQuery(sql, params, connection);
+			return executeQueryWithoutRetry(sql, params, connection);
 		}catch(DBException e){
 			if (!tryToSolveIssues(e, sql, params, connection)) {
 				throw e;
@@ -209,10 +209,7 @@ public abstract class BaseDAO{
 		}
 	}
 	
-	
-	
-	
-	public static Integer executeDBQuery(String sql, Object[] params, Connection connection) throws DBException{
+	public static Integer executeQueryWithoutRetry(String sql, Object[] params, Connection connection) throws DBException{
 		PreparedStatement st = null;
 		
 		try{
@@ -379,7 +376,7 @@ public abstract class BaseDAO{
 	public static void insert(BaseVO vo, String sql, Object[] params, Connection conn) throws DBException{
 	    //logger.trace("INSERTING RECORD ON ["+vo.generateTableName() + "]");
 				
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	private static void setParamsOnCallableStatement(CallableStatement call, int startFrom, Object... params) throws SQLException, IOException{

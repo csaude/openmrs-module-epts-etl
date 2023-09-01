@@ -44,7 +44,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO{
 			sql += "		   ?,\n";
 			sql += "		   ?);";
 			
-			executeQuery(sql, params, conn);
+			executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static void update(TableOperationProgressInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
@@ -66,7 +66,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO{
 		sql += "		status=?";
 		sql += " WHERE operation_id = ? ";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static TableOperationProgressInfo find(OperationController controller, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{

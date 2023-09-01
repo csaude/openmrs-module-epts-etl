@@ -7,36 +7,33 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
-import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Logger;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.Logger;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 public class ProcessStarter implements ControllerStarter {
 	
-	private static Log logger = LogFactory.getLog(ProcessController.class);
-	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String[] synConfigFilesPaths;
 	
-	private Level logLevel;
-	
 	private ProcessController currentController;
 	
-	public ProcessStarter(String[] synConfigFiles, Logger logger) {
+	private Logger logger;
+	
+	public ProcessStarter(String[] synConfigFiles) {
 		this.synConfigFilesPaths = synConfigFiles;
 		
-		this.logLevel = SyncConfiguration.determineLogLevel();
+		this.logger = new Logger(LogFactory.getLog(ProcessStarter.class), SyncConfiguration.determineLogLevel());
 	}
 	
 	public Level getLogLevel() {
-		return logLevel;
+		return this.logger.getLevel();
 	}
 	
 	public void run() throws IOException, DBException {
@@ -67,13 +64,13 @@ public class ProcessStarter implements ControllerStarter {
 		while (!this.currentController.isFinalized()) {
 			TimeCountDown.sleep(120);
 			
-			logger.info("THE APPLICATION IS STILL RUNING...");
+			logger.logWarn("THE APPLICATION IS STILL RUNING...", 60 * 15);
 		}
 		
 		if (this.currentController.isFinished()) {
-			logger.info("ALL JOBS ARE FINISHED");
+			logger.logWarn("ALL JOBS ARE FINISHED");
 		} else if (this.currentController.isStopped()) {
-			logger.info("ALL JOBS ARE STOPPED");
+			logger.logWarn("ALL JOBS ARE STOPPED");
 		}
 		
 		System.exit(0);
@@ -97,7 +94,7 @@ public class ProcessStarter implements ControllerStarter {
 				
 				executor.execute(child);
 				
-				ThreadPoolService.getInstance().terminateTread(logger, getLogLevel(), c.getControllerId(), c);
+				ThreadPoolService.getInstance().terminateTread(logger, c.getControllerId(), c);
 				
 				this.currentController = child;
 			}
@@ -144,8 +141,8 @@ public class ProcessStarter implements ControllerStarter {
 				conf.validate();
 				
 				if (!conf.existsOnArray(syncConfigs)) {
-					logger.info("USING CONFIGURATION FILE " + conf.getRelatedConfFile().getAbsolutePath() + " WITH PROCESS "
-					        + conf.getDesignation());
+					logger.logWarn("USING CONFIGURATION FILE " + conf.getRelatedConfFile().getAbsolutePath()
+					        + " WITH PROCESS " + conf.getDesignation());
 					syncConfigs.add(conf);
 				} else
 					throw new ForbiddenOperationException(

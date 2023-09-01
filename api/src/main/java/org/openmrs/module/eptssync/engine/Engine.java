@@ -578,12 +578,11 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		if (hasChild()) {
 			for (Engine child : this.children) {
 				ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(),
-				    getMonitor().getController().getProcessController().getLogLevel(), child.getEngineId(), this);
+				    child.getEngineId(), this);
 			}
 		}
 		
-		ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(),
-		    getMonitor().getController().getProcessController().getLogLevel(), getEngineId(), this);
+		ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(), getEngineId(), this);
 	}
 	
 	public void markAsFinished() {

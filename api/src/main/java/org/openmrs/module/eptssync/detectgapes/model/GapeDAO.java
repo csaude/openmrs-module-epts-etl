@@ -14,6 +14,6 @@ public class GapeDAO extends BaseDAO {
 		String sql = "INSERT INTO " + tableName + "(table_name, record_id) values (?, ?)";
 		Object[] params = { config.getTableName(), recordId };
 		
-		executeDBQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 }

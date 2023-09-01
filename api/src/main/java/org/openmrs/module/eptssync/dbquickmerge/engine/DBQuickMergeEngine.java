@@ -74,7 +74,9 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	protected boolean mustDoFinalCheck() {
-		Connection srcConn = openConnection();
+		return false;
+		
+		/*Connection srcConn = openConnection();
 		Connection dstConn = this.dstApp.openConnection();
 		
 		boolean sameDBSDerver;
@@ -90,7 +92,7 @@ public class DBQuickMergeEngine extends Engine {
 			return true;
 		} else {
 			return false;
-		}
+		}*/
 	}
 	
 	@Override
@@ -114,6 +116,8 @@ public class DBQuickMergeEngine extends Engine {
 		List<MergingRecord> mergingRecs = new ArrayList<MergingRecord>(syncRecords.size());
 		
 		try {
+			int currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
+			
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
@@ -123,8 +127,9 @@ public class DBQuickMergeEngine extends Engine {
 				
 				destObject = mappingInfo.generateMappedObject(rec, this.dstApp);
 				
-				mergingRecs.add(new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp));
+				destObject.setObjectId(currObjectId++);
 				
+				mergingRecs.add(new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp));
 			}
 			
 			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
@@ -143,6 +148,7 @@ public class DBQuickMergeEngine extends Engine {
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		

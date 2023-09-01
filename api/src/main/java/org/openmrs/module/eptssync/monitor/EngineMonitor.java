@@ -21,32 +21,39 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 /**
  * This class monitor all {@link Engine}s of an {@link OperationController}
- *  
+ * 
  * @author jpboane
  */
-public class EngineMonitor implements MonitoredOperation{
+public class EngineMonitor implements MonitoredOperation {
+	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private OperationController controller;
+	
 	private SyncTableConfiguration syncTableInfo;
 	
 	private List<Engine> ownEngines;
 	
 	private String engineMonitorId;
+	
 	private String engineId;
 	
 	private int operationStatus;
+	
 	private boolean stopRequested;
+	
 	protected TableOperationProgressInfo tableOperationProgressInfo;
 	
 	//private List<SyncRecord> recordsToBeReprocessed;
-
-	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo, TableOperationProgressInfo tableOperationProgressInfo) {
+	
+	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo,
+	    TableOperationProgressInfo tableOperationProgressInfo) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<Engine>();
 		this.syncTableInfo = syncTableInfo;
 		
-		this.engineMonitorId = (controller.getControllerId() + "_" + syncTableInfo.getTableName() + "_monitor").toLowerCase();
+		this.engineMonitorId = (controller.getControllerId() + "_" + syncTableInfo.getTableName() + "_monitor")
+		        .toLowerCase();
 		this.engineId = (getController().getControllerId() + "_" + syncTableInfo.getTableName()).toLowerCase();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
@@ -84,7 +91,7 @@ public class EngineMonitor implements MonitoredOperation{
 	}
 	
 	public Engine getMainEngine() {
-		for ( Engine engine : this.ownEngines) {
+		for (Engine engine : this.ownEngines) {
 			if (engine.getChildren() != null) {
 				return engine;
 			}
@@ -94,7 +101,6 @@ public class EngineMonitor implements MonitoredOperation{
 			return this.ownEngines.get(0);
 		}
 		
-		
 		return null;
 		
 		//throw new RuntimeException("No engine defined for this monitor "+getController().getControllerId() + "_" + getSyncTableInfo().getTableName());
@@ -103,21 +109,23 @@ public class EngineMonitor implements MonitoredOperation{
 	@Override
 	public void run() {
 		try {
-			if (!getSyncTableInfo().isFullLoaded()) getSyncTableInfo().fullLoad();
+			if (!getSyncTableInfo().isFullLoaded())
+				getSyncTableInfo().fullLoad();
 			
 			initEngine();
 			
 			if (!utilities.arrayHasElement(ownEngines)) {
-				logWarn("NO ENGINE FOR '" + getController().getOperationType().name().toLowerCase() + "' FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
+				logWarn("NO ENGINE FOR '" + getController().getOperationType().name().toLowerCase() + "' FOR TABLE '"
+				        + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
 				
 				this.operationStatus = MonitoredOperation.STATUS_FINISHED;
-			}
-			else {
+			} else {
 				onStart();
 				
-				logDebug("INITIALIZED '" + getController().getOperationType().name().toLowerCase() + "' ENGINE FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase() + "'");
+				logDebug("INITIALIZED '" + getController().getOperationType().name().toLowerCase() + "' ENGINE FOR TABLE '"
+				        + getSyncTableInfo().getTableName().toUpperCase() + "'");
 				
-				while(isRunning()) {
+				while (isRunning()) {
 					TimeCountDown.sleep(15);
 					
 					if (getMainEngine().isFinished()) {
@@ -125,31 +133,25 @@ public class EngineMonitor implements MonitoredOperation{
 						getMainEngine().onFinish();
 						
 						onFinish();
-					}
-					else
-					if(getMainEngine().isStopped()) {
+					} else if (getMainEngine().isStopped()) {
 						getMainEngine().onStop();
 						
 						onStop();
-					}
-					else
-					if (!isAllEnginesRequestedNewJob()) {
-					}
-					else {
+					} else if (!isAllEnginesRequestedNewJob()) {} else {
 						if (utilities.arrayHasElement(this.ownEngines)) {
 							for (Engine engine : this.ownEngines) {
 								engine.setNewJobRequested(false);
 							}
 							
 							this.realocateJobToEngines();
-						}
-						else {
+						} else {
 							initEngine();
 						}
 					}
 				}
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 			
 			getController().requestStopDueError(this, e);
@@ -165,7 +167,6 @@ public class EngineMonitor implements MonitoredOperation{
 		
 		logInfo("INITIALIZING ENGINE FOR TABLE [" + syncInfo.getTableName().toUpperCase() + "]");
 		
-		
 		logDebug("DETERMINING MIN RECORD FOR " + getSyncTableInfo().getTableName());
 		
 		long minRecId = getController().getMinRecordId(getSyncTableInfo());
@@ -176,54 +177,56 @@ public class EngineMonitor implements MonitoredOperation{
 		
 		if (minRecId != 0) {
 			logDebug("DETERMINING MAX RECORD FOR " + getSyncTableInfo().getTableName());
-	
-			maxRecId =  getController().getMaxRecordId(getSyncTableInfo());
+			
+			maxRecId = getController().getMaxRecordId(getSyncTableInfo());
 			logDebug("FOUND MAX RECORD " + getSyncTableInfo() + " = " + maxRecId);
-		}
-		else {
+		} else {
 			logDebug("MIN RECORD IS ZERO! SKIPING MAX RECORD VERIFICATION...");
 		}
 		
 		if (maxRecId == 0 && minRecId == 0) {
-			String msg = "NO RECORD TO PROCESS FOR TABLE '"+ getSyncTableInfo().getTableName().toUpperCase() + "' NO ENGINE WILL BE CRIETED BY NOW!";
-		
+			String msg = "NO RECORD TO PROCESS FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase()
+			        + "' NO ENGINE WILL BE CRIETED BY NOW!";
+			
 			if (mustRestartInTheEnd()) {
 				msg += " GOING SLEEP....";
-			}
-			else {
+			} else {
 				msg += " FINISHING....";
 			}
 			
 			logWarn(msg);
-		}
-		else {
+		} else {
 			long qtyRecords = maxRecId - minRecId + 1;
 			long qtyEngines = determineQtyEngines(qtyRecords);
 			long qtyRecordsPerEngine = 0;
 			
-			if (qtyEngines == 0) qtyEngines = 1;
+			if (qtyEngines == 0)
+				qtyEngines = 1;
 			
-			logInfo("STARTING PROCESS FOR TABLE [" + syncInfo.getTableName().toUpperCase() + "] WITH " + qtyEngines + " ENGINES [MIN REC: " + minRecId + ", MAX REC: " + maxRecId + "]");
+			logInfo("STARTING PROCESS FOR TABLE [" + syncInfo.getTableName().toUpperCase() + "] WITH " + qtyEngines
+			        + " ENGINES [MIN REC: " + minRecId + ", MAX REC: " + maxRecId + "]");
 			
 			qtyRecordsPerEngine = determineQtyRecordsPerEngine(qtyEngines, qtyRecords);
 			
 			long currMax = minRecId + qtyRecordsPerEngine - 1;
 			
-			if (qtyEngines == 1) currMax = maxRecId;
+			if (qtyEngines == 1)
+				currMax = maxRecId;
 			
-			RecordLimits limits = generateLimits(minRecId, currMax, null); 
+			RecordLimits limits = generateLimits(minRecId, currMax, null);
 			
 			Engine mainEngine = retrieveAndRemoveMainSleepingEngine();
 			
 			//If there was no main engine, retrieve onother engine and make it main
-			mainEngine =  mainEngine == null ? retrieveAndRemoveSleepingEngin() : mainEngine;
+			mainEngine = mainEngine == null ? retrieveAndRemoveSleepingEngin() : mainEngine;
 			
-			mainEngine = mainEngine == null ? controller.initRelatedEngine(this, limits) : mainEngine; 
+			mainEngine = mainEngine == null ? controller.initRelatedEngine(this, limits) : mainEngine;
 			mainEngine.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(0, 2));
 			
 			mainEngine.resetLimits(limits);
 			
-			logDebug("ALLOCATED RECORDS [" + mainEngine.getSearchParams().getLimits() + "] FOR ENGINE [" + mainEngine.getEngineId()  + "]");
+			logDebug("ALLOCATED RECORDS [" + mainEngine.getSearchParams().getLimits() + "] FOR ENGINE ["
+			        + mainEngine.getEngineId() + "]");
 			
 			if (mainEngine.getChildren() == null) {
 				mainEngine.setChildren(new ArrayList<Engine>());
@@ -232,29 +235,30 @@ public class EngineMonitor implements MonitoredOperation{
 			int i = 1;
 			
 			for (i = 1; i < qtyEngines; i++) {
-				 limits  = generateLimits(limits.getThreadMaxRecord() + 1, limits.getThreadMaxRecord() + qtyRecordsPerEngine, null);
-				 
-				 if (i == qtyEngines - 1) {
-					 limits.setThreadMaxRecord(maxRecId);
-					 limits.reset();
-				 }
-				 
-				 Engine engine = retrieveAndRemoveSleepingEngin();
-				 
-				 if (engine == null) {
-					 engine = getController().initRelatedEngine(this, limits);
-					 engine.resetLimits(limits);
-					 mainEngine.getChildren().add(engine);
-					 engine.setEngineId(getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
-					 engine.setParent(mainEngine);
-				 }
-				 else {
-					 engine.resetLimits(limits);
-				 }
-				 
-				 logDebug("REALOCATED NEW RECORDS [" + engine.getSearchParams().getLimits() + "] FOR ENGINE [" + engine.getEngineId()  + "]");
+				limits = generateLimits(limits.getThreadMaxRecord() + 1, limits.getThreadMaxRecord() + qtyRecordsPerEngine,
+				    null);
+				
+				if (i == qtyEngines - 1) {
+					limits.setThreadMaxRecord(maxRecId);
+					limits.reset();
+				}
+				
+				Engine engine = retrieveAndRemoveSleepingEngin();
+				
+				if (engine == null) {
+					engine = getController().initRelatedEngine(this, limits);
+					engine.resetLimits(limits);
+					mainEngine.getChildren().add(engine);
+					engine.setEngineId(getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
+					engine.setParent(mainEngine);
+				} else {
+					engine.resetLimits(limits);
+				}
+				
+				logDebug("REALOCATED NEW RECORDS [" + engine.getSearchParams().getLimits() + "] FOR ENGINE ["
+				        + engine.getEngineId() + "]");
 			}
-		
+			
 			//If this engine is new must be not initialized, otherwise must be on STOPPED STATE
 			if (mainEngine.isNotInitialized()) {
 				this.ownEngines.add(mainEngine);
@@ -270,19 +274,20 @@ public class EngineMonitor implements MonitoredOperation{
 				int remaining = getProgressMeter().getRemain();
 				int total = getProgressMeter().getTotal();
 				int processed = total - remaining;
-			
+				
 				if (total == 0) {
 					total = mainEngine.getSearchParams().countAllRecords(conn);
 					remaining = mainEngine.getSearchParams().countNotProcessedRecords(conn);
 					processed = total - remaining;
 				}
-
+				
 				this.getProgressMeter().refresh(this.getProgressMeter().getStatusMsg(), total, processed);
 				
 				this.getTableOperationProgressInfo().save(conn);
 				
 				conn.markAsSuccessifullyTerminected();
-			} catch (DBException e) {
+			}
+			catch (DBException e) {
 				getRelatedOperationController().requestStopDueError(this, e);
 				
 				e.printStackTrace();
@@ -292,7 +297,6 @@ public class EngineMonitor implements MonitoredOperation{
 			finally {
 				conn.finalizeConnection();
 			}
-
 			
 			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(mainEngine.getEngineId());
 			executor.execute(mainEngine);
@@ -302,7 +306,7 @@ public class EngineMonitor implements MonitoredOperation{
 					if (mainEngine.isNotInitialized()) {
 						this.ownEngines.add(mainEngine);
 					}
-			
+					
 					executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(childEngine.getEngineId());
 					executor.execute(childEngine);
 				}
@@ -313,29 +317,29 @@ public class EngineMonitor implements MonitoredOperation{
 	}
 	
 	protected RecordLimits generateLimits(long minRecId, long currMax, Engine engine) {
-		return new RecordLimits(minRecId, currMax, getQtyRecordsPerProcessing(),  engine);
+		return new RecordLimits(minRecId, currMax, getQtyRecordsPerProcessing(), engine);
 	}
-
+	
 	private long determineQtyRecordsPerEngine(long qtyEngines, long qtyRecords) {
-		return qtyRecords/qtyEngines;
+		return qtyRecords / qtyEngines;
 	}
-
+	
 	private long determineQtyEngines(long qtyRecords) {
-		long qtyRecordsPerEngine = qtyRecords/getController().getOperationConfig().getMaxSupportedEngines();
+		long qtyRecordsPerEngine = qtyRecords / getController().getOperationConfig().getMaxSupportedEngines();
 		
 		if (qtyRecordsPerEngine > getController().getOperationConfig().getMinRecordsPerEngine()) {
 			return getController().getOperationConfig().getMaxSupportedEngines();
 		}
 		
-		return qtyRecords/getController().getOperationConfig().getMinRecordsPerEngine();
+		return qtyRecords / getController().getOperationConfig().getMinRecordsPerEngine();
 	}
-
+	
 	public void realocateJobToEngines() {
 		logDebug("REALOCATING ENGINES FOR '" + getSyncTableInfo().getTableName() + "'");
 		
 		initEngine();
 	}
-
+	
 	public int getQtyRecordsPerProcessing() {
 		return getController().getOperationConfig().getMaxRecordPerProcessing();
 	}
@@ -343,7 +347,7 @@ public class EngineMonitor implements MonitoredOperation{
 	private Engine retrieveAndRemoveSleepingEngin() {
 		Engine sleepingEngine = null;
 		
-		for ( Engine engine : this.ownEngines) {
+		for (Engine engine : this.ownEngines) {
 			if (engine.isSleeping()) {
 				sleepingEngine = engine;
 			}
@@ -359,7 +363,7 @@ public class EngineMonitor implements MonitoredOperation{
 	private Engine retrieveAndRemoveMainSleepingEngine() {
 		Engine sleepingEngine = null;
 		
-		for ( Engine engine : this.ownEngines) {
+		for (Engine engine : this.ownEngines) {
 			if (engine.isSleeping() && engine.getChildren() != null) {
 				sleepingEngine = engine;
 				
@@ -367,7 +371,8 @@ public class EngineMonitor implements MonitoredOperation{
 			}
 		}
 		
-		if (sleepingEngine != null) this.ownEngines.remove(sleepingEngine);
+		if (sleepingEngine != null)
+			this.ownEngines.remove(sleepingEngine);
 		
 		return sleepingEngine;
 	}
@@ -375,7 +380,7 @@ public class EngineMonitor implements MonitoredOperation{
 	private boolean mustRestartInTheEnd() {
 		return getController().mustRestartInTheEnd();
 	}
-
+	
 	public void logErr(String msg) {
 		getRelatedOperationController().logErr(msg);
 	}
@@ -383,7 +388,7 @@ public class EngineMonitor implements MonitoredOperation{
 	public OperationController getRelatedOperationController() {
 		return controller;
 	}
-
+	
 	public void logInfo(String msg) {
 		getRelatedOperationController().logInfo(msg);
 	}
@@ -395,12 +400,13 @@ public class EngineMonitor implements MonitoredOperation{
 	public void logWarn(String msg) {
 		getRelatedOperationController().logWarn(msg);
 	}
-
+	
 	String generateEngineNewJobRequestStatus() {
 		String status = "";
 		
 		for (Engine engine : ownEngines) {
-			status += "[" + engine.getEngineId() + " > " + (engine.isNewJobRequested() ? "REQUESTED" : "NOT REQUESTED") + "] ";
+			status += "[" + engine.getEngineId() + " > " + (engine.isNewJobRequested() ? "REQUESTED" : "NOT REQUESTED")
+			        + "] ";
 		}
 		
 		return status;
@@ -410,6 +416,7 @@ public class EngineMonitor implements MonitoredOperation{
 	public String toString() {
 		return this.engineMonitorId;
 	}
+	
 	/**
 	 * Schedule new job for this job. This is controller by {@link EngineMonitor}
 	 * 
@@ -418,29 +425,31 @@ public class EngineMonitor implements MonitoredOperation{
 	public void scheduleNewJobForEngine(Engine syncEngine) {
 		syncEngine.setNewJobRequested(true);
 		syncEngine.changeStatusToSleeping();
-		logWarn("THE ENGINE '" + syncEngine.getEngineId() + "' HAS FINISHED ITS JOB AND NOW IS WATING FOR NEW ALOCATION WORK");	
+		logWarn(
+		    "THE ENGINE '" + syncEngine.getEngineId() + "' HAS FINISHED ITS JOB AND NOW IS WATING FOR NEW ALOCATION WORK");
 	}
 	
 	boolean isAllEnginesRequestedNewJob() {
 		for (Engine engine : ownEngines) {
-			if (!engine.isNewJobRequested() ) return false;
+			if (!engine.isNewJobRequested())
+				return false;
 		}
 		
 		return true;
 	}
-
+	
 	public void killSelfCreatedThreads() {
 		for (Engine engine : this.ownEngines) {
-			ThreadPoolService.getInstance().terminateTread(getController().getLogger(), getController().getProcessController().getLogLevel(), engine.getEngineId(), engine);
+			ThreadPoolService.getInstance().terminateTread(getController().getLogger(), engine.getEngineId(), engine);
 		}
 	}
-
-	public static EngineMonitor init(OperationController controller, SyncTableConfiguration syncTableInfo, TableOperationProgressInfo tableOperationProgressInfo) {
+	
+	public static EngineMonitor init(OperationController controller, SyncTableConfiguration syncTableInfo,
+	        TableOperationProgressInfo tableOperationProgressInfo) {
 		EngineMonitor monitor = new EngineMonitor(controller, syncTableInfo, tableOperationProgressInfo);
 		
 		return monitor;
 	}
-	
 	
 	@Override
 	public boolean isPaused() {
@@ -451,7 +460,7 @@ public class EngineMonitor implements MonitoredOperation{
 	public boolean isSleeping() {
 		return this.operationStatus == MonitoredOperation.STATUS_SLEEPING;
 	}
-
+	
 	@Override
 	public void changeStatusToSleeping() {
 		this.operationStatus = MonitoredOperation.STATUS_SLEEPING;
@@ -464,29 +473,29 @@ public class EngineMonitor implements MonitoredOperation{
 	
 	@Override
 	public void changeStatusToStopped() {
-		this.operationStatus = MonitoredOperation.STATUS_STOPPED;		
+		this.operationStatus = MonitoredOperation.STATUS_STOPPED;
 	}
 	
 	@Override
 	public void changeStatusToFinished() {
-		this.operationStatus = MonitoredOperation.STATUS_FINISHED;	
+		this.operationStatus = MonitoredOperation.STATUS_FINISHED;
 	}
 	
-	@Override	
+	@Override
 	public void changeStatusToPaused() {
-		this.operationStatus = MonitoredOperation.STATUS_PAUSED;	
+		this.operationStatus = MonitoredOperation.STATUS_PAUSED;
 	}
-
+	
 	@Override
 	public void onStart() {
 		this.operationStatus = MonitoredOperation.STATUS_RUNNING;
 	}
-
+	
 	@Override
 	public void onSleep() {
 		this.operationStatus = MonitoredOperation.STATUS_SLEEPING;
 	}
-
+	
 	@Override
 	public void onStop() {
 		getTimer().stop();
@@ -514,11 +523,11 @@ public class EngineMonitor implements MonitoredOperation{
 	public boolean stopRequested() {
 		return this.stopRequested || getRelatedOperationController().stopRequested();
 	}
-
+	
 	public boolean isInitialized() {
 		return this.operationStatus != MonitoredOperation.STATUS_NOT_INITIALIZED;
 	}
-
+	
 	@Override
 	public boolean isNotInitialized() {
 		return this.operationStatus == MonitoredOperation.STATUS_NOT_INITIALIZED;
@@ -531,36 +540,35 @@ public class EngineMonitor implements MonitoredOperation{
 	
 	@Override
 	public boolean isStopped() {
-		if (isNotInitialized()) return false;
-	
+		if (isNotInitialized())
+			return false;
+		
 		if (!utilities.arrayHasElement(this.ownEngines)) {
 			return this.operationStatus == MonitoredOperation.STATUS_STOPPED;
-		}
-		else
-		for (Engine engine : this.ownEngines ) {
-			if (!engine.isStopped()) {
-				return false;
+		} else
+			for (Engine engine : this.ownEngines) {
+				if (!engine.isStopped()) {
+					return false;
+				}
 			}
-		}
-			
+		
 		return true;
 	}
 	
 	@Override
 	public boolean isFinished() {
-		if(isNotInitialized()) {
+		if (isNotInitialized()) {
 			return false;
 		}
 		
 		if (!utilities.arrayHasElement(this.ownEngines)) {
 			return this.operationStatus == MonitoredOperation.STATUS_FINISHED;
-		}
-		else
-		for (Engine engine: this.ownEngines) {
-			if (!engine.isFinished()) {
-				return false;
+		} else
+			for (Engine engine : this.ownEngines) {
+				if (!engine.isFinished()) {
+					return false;
+				}
 			}
-		}
 		
 		return true;
 	}
@@ -570,34 +578,32 @@ public class EngineMonitor implements MonitoredOperation{
 		return 5;
 	}
 	
-
 	@Override
 	public synchronized void requestStop() {
 		if (isNotInitialized()) {
 			changeStatusToStopped();
-		}
-		else
-		if (!stopRequested()) {
-			if (getMainEngine() != null) getMainEngine().requestStop();
+		} else if (!stopRequested()) {
+			if (getMainEngine() != null)
+				getMainEngine().requestStop();
 			
 			this.stopRequested = true;
 		}
 	}
-
+	
 	public void requestStopDueError() {
 		if (getMainEngine() != null) {
 			getMainEngine().requestStopDueError();
-		}
-		else this.operationStatus = MonitoredOperation.STATUS_STOPPED;
-			
+		} else
+			this.operationStatus = MonitoredOperation.STATUS_STOPPED;
+		
 		this.stopRequested = true;
 	}
 	
-	
 	public synchronized void refreshProgressMeter(int newlyProcessedRecords, Connection conn) throws DBException {
 		logDebug("REFRESHING PROGRESS METER FOR MORE " + newlyProcessedRecords + " RECORDS.");
-		this.getProgressMeter().refresh("RUNNING", this.getProgressMeter().getTotal(), this.getProgressMeter().getProcessed() + newlyProcessedRecords);
-			
+		this.getProgressMeter().refresh("RUNNING", this.getProgressMeter().getTotal(),
+		    this.getProgressMeter().getProcessed() + newlyProcessedRecords);
+		
 		this.getTableOperationProgressInfo().save(conn);
 		
 		logDebug("PROGRESS METER REFRESHED");

@@ -5,12 +5,11 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.logging.Level;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.apache.commons.logging.Log;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
+import org.openmrs.module.eptssync.utilities.Logger;
 
 /**
  * @author jpboane
@@ -42,8 +41,8 @@ public class ThreadPoolService {
     	return ExecutorServiceManager.find(this.createdThreadPools, threadId);
     }
     
-    public void terminateTread(Log logger, Level logLevel, String threadId, Runnable runnable) {
-    	utilities.logInfo("TRYING TO TERMINATE THREAD [" + threadId + "]", logger, logLevel);
+    public void terminateTread(Logger logger, String threadId, Runnable runnable) {
+    	utilities.logInfo("TRYING TO TERMINATE THREAD [" + threadId + "]", logger.getLogger(), logger.getLevel());
     	
     	ExecutorServiceManager manager = retrieveExistingExecutor(threadId);
     	
@@ -56,12 +55,12 @@ public class ThreadPoolService {
     		
     		if (a != null && a.size() > 1) throw new ForbiddenOperationException("There were thread awating... " + a);
     	
-    		utilities.logInfo("THREAD [" + threadId + "] WAS TERMINATED SUCCESSIFULY!", logger, logLevel);
+    		utilities.logInfo("THREAD [" + threadId + "] WAS TERMINATED SUCCESSIFULY!", logger.getLogger(), logger.getLevel());
     		
     		this.createdThreadPools.remove(manager);
        }
     	else {
-    		utilities.logWarn("THREAD [" + threadId + "] WAS NOT FOUND  IN THREAD POOL!!!!", logger, logLevel);
+    		utilities.logWarn("THREAD [" + threadId + "] WAS NOT FOUND  IN THREAD POOL!!!!", logger.getLogger(), logger.getLevel());
      	}
     }
 	

@@ -35,7 +35,7 @@ public class DBOperation {
 			logger.warn(error.toUpperCase() + " DETECTED");
 			logger.warn("RETRYING OPERATION [" + qtyTry + "] OF [" + maxTry + "]");
 			try {
-				BaseDAO.executeDBQuery(sql, params, conn);
+				BaseDAO.executeQueryWithoutRetry(sql, params, conn);
 				
 				logger.warn("RECOVERED AFTER " + error.toUpperCase());
 			}

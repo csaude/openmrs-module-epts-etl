@@ -11,16 +11,12 @@ import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
-public class Main implements Runnable{
-
-	static Logger logger = Logger.getLogger(Main.class);
-
-	public static CommonUtilities utilities = CommonUtilities.getInstance();
+public class Main implements Runnable {
 	
 	public static void main(String[] synConfigFiles) throws IOException, DBException {
 		BasicConfigurator.configure();
 		
-		ProcessStarter p = new ProcessStarter(synConfigFiles, logger);
+		ProcessStarter p = new ProcessStarter(synConfigFiles);
 		
 		p.run();
 	}
@@ -29,7 +25,7 @@ public class Main implements Runnable{
 		ProcessController controller = new ProcessController(null, configuration);
 		ThreadPoolService.getInstance().createNewThreadPoolExecutor(controller.getControllerId()).execute(controller);
 	}
-
+	
 	@Override
 	public void run() {
 	}

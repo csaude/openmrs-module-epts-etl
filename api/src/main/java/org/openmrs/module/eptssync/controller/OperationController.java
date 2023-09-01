@@ -19,6 +19,7 @@ import org.openmrs.module.eptssync.model.TableOperationProgressInfo;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
+import org.openmrs.module.eptssync.utilities.Logger;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
@@ -37,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public abstract class OperationController implements Controller {
 	
-	protected Log logger;
+	protected Logger logger;
 	
 	protected ProcessController processController;
 	
@@ -66,7 +67,7 @@ public abstract class OperationController implements Controller {
 	protected OperationProgressInfo progressInfo;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
-		this.logger = LogFactory.getLog(this.getClass());
+		this.logger = new Logger(LogFactory.getLog(this.getClass()), processController.getLogLevel());
 		
 		this.processController = processController;
 		this.operationConfig = operationConfig;
@@ -96,7 +97,7 @@ public abstract class OperationController implements Controller {
 		return progressInfo;
 	}
 	
-	public Log getLogger() {
+	public Logger getLogger() {
 		return logger;
 	}
 	
@@ -170,8 +171,8 @@ public abstract class OperationController implements Controller {
 					progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				}
 				catch (NullPointerException e) {
-					logErr("Error on thread " + this.getControllerId() + ": Progress meter not found for table [" + syncInfo.getTableName() + "]");
-					
+					logErr("Error on thread " + this.getControllerId() + ": Progress meter not found for table ["
+					        + syncInfo.getTableName() + "]");
 					
 					e.printStackTrace();
 					
@@ -281,19 +282,19 @@ public abstract class OperationController implements Controller {
 			TableOperationProgressInfo tableOpPm = retrieveProgressInfo(tableConfiguration);
 			
 			if (tableOpPm == null) {
-				logWarn("No Table Operation Info found for [" + tableConfiguration.getTableName() + "]") ;
+				logWarn("No Table Operation Info found for [" + tableConfiguration.getTableName() + "]");
 			} else {
 				SyncProgressMeter sPm = tableOpPm.getProgressMeter();
 				
 				if (sPm == null) {
-					logWarn("The progress meter for table operation is not exists [" + tableConfiguration.getTableName() + "]");
-				}else {
+					logWarn(
+					    "The progress meter for table operation is not exists [" + tableConfiguration.getTableName() + "]");
+				} else {
 					return sPm.isFinished();
 				}
 			}
 		}
-		catch (Exception e) {
-		}
+		catch (Exception e) {}
 		
 		return false;
 	}
@@ -593,8 +594,7 @@ public abstract class OperationController implements Controller {
 			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
 				monitor.killSelfCreatedThreads();
 				
-				ThreadPoolService.getInstance().terminateTread(logger, getProcessController().getLogLevel(),
-				    monitor.getEngineMonitorId(), monitor);
+				ThreadPoolService.getInstance().terminateTread(logger, monitor.getEngineMonitorId(), monitor);
 			}
 		}
 		

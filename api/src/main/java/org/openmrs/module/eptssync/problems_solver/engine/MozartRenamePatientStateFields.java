@@ -147,7 +147,7 @@ public class MozartRenamePatientStateFields extends MozartProblemSolver {
 			
 			sql = "UPDATE " + table + " SET created_date = state_date WHERE created_date is NULL";
 			
-			BaseDAO.executeDBQuery(sql, null, conn);
+			BaseDAO.executeQueryWithRetryOnError(sql, null, conn);
 			
 		}
 		

@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
-import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
@@ -19,6 +18,7 @@ import org.openmrs.module.eptssync.model.OperationProgressInfo;
 import org.openmrs.module.eptssync.model.ProcessProgressInfo;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
+import org.openmrs.module.eptssync.utilities.Logger;
 import org.openmrs.module.eptssync.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.eptssync.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeController;
@@ -50,8 +50,6 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private static Log logger = LogFactory.getLog(ProcessController.class);
-	
 	private TimeController timer;
 	
 	private boolean progressInfoLoaded;
@@ -64,6 +62,8 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	protected boolean selfTreadKilled;
 	
+	private Logger logger;
+	
 	public ProcessController() {
 		this.progressInfo = new ProcessProgressInfo(this);
 	}
@@ -72,6 +72,8 @@ public class ProcessController implements Controller, ControllerStarter {
 		this();
 		
 		this.starter = starter;
+		
+		this.logger = new Logger(LogFactory.getLog(ProcessController.class), getLogLevel());
 		
 		init(configuration);
 	}
@@ -418,9 +420,9 @@ public class ProcessController implements Controller, ControllerStarter {
 			boolean running = true;
 			
 			while (running) {
-				logWarn("The process " + getControllerId() + " is still running...");
-				
 				TimeCountDown.sleep(getWaitTimeToCheckStatus());
+				
+				this.logger.logWarn("The process " + getControllerId() + " is still running...", 60 * 5);
 				
 				if (this.isFinished()) {
 					this.markAsFinished();
@@ -489,7 +491,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			for (OperationController operationController : this.operationsControllers) {
 				operationController.killSelfCreatedThreads();
 				
-				ThreadPoolService.getInstance().terminateTread(logger, getLogLevel(), operationController.getControllerId(),
+				ThreadPoolService.getInstance().terminateTread(logger, operationController.getControllerId(),
 				    operationController);
 			}
 		}
@@ -572,19 +574,19 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	public void logDebug(String msg) {
-		utilities.logDebug(msg, logger, getLogLevel());
+		logger.logDebug(msg);
 	}
 	
 	public void logInfo(String msg) {
-		utilities.logInfo(msg, logger, getLogLevel());
+		logger.logInfo(msg);
 	}
 	
 	public void logWarn(String msg) {
-		utilities.logWarn(msg, logger, getLogLevel());
+		logger.logWarn(msg);
 	}
 	
 	public void logErr(String msg) {
-		utilities.logErr(msg, logger, getLogLevel());
+		logger.logErr(msg);
 	}
 	
 	public boolean isProgressInfoLoaded() {

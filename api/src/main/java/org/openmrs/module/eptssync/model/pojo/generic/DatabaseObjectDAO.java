@@ -34,7 +34,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += " WHERE  record_origin_location_code = ? ";
 		sql += "		AND " + originDestin + " = ? ";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static void refreshLastSyncDateOnDestination(DatabaseObject syncRecord, SyncTableConfiguration tableConfiguration,
@@ -62,7 +62,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += " WHERE  record_origin_location_code = ? ";
 		sql += "		AND " + originDestin + " between ? and ? ";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static void refreshLastSyncDateOnDestination(List<DatabaseObject> syncRecords,
@@ -81,7 +81,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn);
 		
-		Integer objectId = executeQuery(sql, params, conn);
+		Integer objectId = executeQueryWithRetryOnError(sql, params, conn);
 		
 		record.setObjectId(objectId);
 	}
@@ -92,7 +92,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn);
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static void update(DatabaseObject record, Connection conn) throws DBException {
@@ -101,7 +101,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		sql = DBUtilities.tryToPutSchemaOnUpdateScript(sql, conn);
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	static Logger logger = Logger.getLogger(DatabaseObjectDAO.class);
@@ -413,7 +413,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = " DELETE" + " FROM " + record.generateTableName() + " WHERE  " + record.generateDBPrimaryKeyAtt()
 		        + " =  ? ";
 		
-		executeQuery(sql, params, conn);
+		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static int countAllOfOriginParentId(String parentField, Integer parentOriginId, String appOriginCode,
@@ -523,7 +523,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	private static void insertAllData(List<DatabaseObject> objects, SyncTableConfiguration conf, String originCode,
 	        Connection conn) throws DBException {
 		String sql = DBUtilities
-		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0], conn);
+		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0], conn);
 		
 		sql += " VALUES";
 		
@@ -533,13 +533,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			values += "(" + objects.get(i).generateInsertValues() + "),";
+			values += "(" + objects.get(i).getObjectId() + "," + objects.get(i).generateInsertValues() + "),";
 		}
 		
 		if (utilities.stringHasValue(values)) {
 			sql += utilities.removeLastChar(values);
 			
-			executeQuery(sql, null, conn);
+			executeQueryWithRetryOnError(sql, null, conn);
 			
 			//executeBatch(conn, sql);
 		}

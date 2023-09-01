@@ -122,7 +122,7 @@ public class MozartFillEmptyFields extends MozartProblemSolver {
 			
 			Object[] params = { value, record.integerValue() };
 			
-			BaseDAO.executeDBQuery(sql, params, conn);
+			BaseDAO.executeQueryWithRetryOnError(sql, params, conn);
 			
 			ResolvedProblem rp = ResolvedProblem.init(this.tableToFill);
 			rp.setColumnName(this.columnToFill);
