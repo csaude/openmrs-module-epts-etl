@@ -437,6 +437,30 @@ public class DBUtilities {
 		}
 	}
 	
+	public static boolean checkIfTableUseAutoIcrement(String tableName, Connection conn) throws DBException {
+		try {
+			tableName = tryToPutSchemaOnDatabaseObject(tableName, conn);
+			
+			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
+			
+			ResultSet rs = st.executeQuery();
+			ResultSetMetaData rsMetaData = rs.getMetaData();
+			
+			for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+				if (rsMetaData.isAutoIncrement(i)) {
+					return true;
+				}
+			}
+			
+			return false;
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new DBException(e);
+		}
+	}
+	
 	public static boolean isIndexExistsOnTable(String tableSchema, String tableName, String indexName, Connection conn)
 	        throws SQLException {
 		if (isMySQLDB(conn)) {

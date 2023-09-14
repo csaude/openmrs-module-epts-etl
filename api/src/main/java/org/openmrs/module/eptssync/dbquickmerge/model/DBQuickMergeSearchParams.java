@@ -12,7 +12,6 @@ import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
 
 public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	

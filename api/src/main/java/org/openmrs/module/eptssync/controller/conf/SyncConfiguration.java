@@ -710,7 +710,12 @@ public class SyncConfiguration extends BaseConfiguration {
 				
 				//Newly activated table
 				if (this.find(conf) == null) {
-					conf.fullLoad();
+					try {
+						conf.fullLoad();
+					}
+					catch (DBException e) {
+						throw new RuntimeException(e);
+					}
 				}
 			}
 		}

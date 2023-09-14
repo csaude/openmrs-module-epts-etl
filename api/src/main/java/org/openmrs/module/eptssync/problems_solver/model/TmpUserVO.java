@@ -9,9 +9,8 @@ import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
-import org.openmrs.module.eptssync.model.pojo.destination.UsersVO;
 import org.openmrs.module.eptssync.model.pojo.generic.GenericDatabaseObject;
-import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.openmrs._default.UsersVO;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
 

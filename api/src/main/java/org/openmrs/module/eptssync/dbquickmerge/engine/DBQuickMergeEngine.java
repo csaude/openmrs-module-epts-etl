@@ -74,25 +74,32 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	protected boolean mustDoFinalCheck() {
-		return false;
-		
-		/*Connection srcConn = openConnection();
-		Connection dstConn = this.dstApp.openConnection();
-		
-		boolean sameDBSDerver;
-		
-		try {
-			sameDBSDerver = DBUtilities.isSameDatabaseServer(srcConn, dstConn);
-		}
-		catch (DBException e) {
-			throw new RuntimeException(e);
-		}
-		
-		if (sameDBSDerver) {
-			return true;
-		} else {
+		if (getRelatedOperationController().getOperationConfig().skipFinalDataVerification()) {
 			return false;
-		}*/
+		} else {
+			
+			OpenConnection srcConn = openConnection();
+			OpenConnection dstConn = this.dstApp.openConnection();
+			
+			boolean sameDBSDerver;
+			
+			try {
+				sameDBSDerver = DBUtilities.isSameDatabaseServer(srcConn, dstConn);
+			}
+			catch (DBException e) {
+				throw new RuntimeException(e);
+			}
+			finally {
+				srcConn.finalizeConnection();
+				dstConn.finalizeConnection();
+			}
+			
+			if (sameDBSDerver) {
+				return true;
+			} else {
+				return false;
+			}
+		}
 	}
 	
 	@Override
@@ -106,7 +113,15 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		if (getRelatedSyncOperationConfig().writeOperationHistory()) {
+			performeSyncOneByOne(syncRecords, conn);
+		} else {
+			performeBatchSync(syncRecords, conn);
+		}
+	}
+	
+	public void performeBatchSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+		logInfo("PERFORMING BATCH MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		Connection srcConn = conn;
@@ -116,7 +131,11 @@ public class DBQuickMergeEngine extends Engine {
 		List<MergingRecord> mergingRecs = new ArrayList<MergingRecord>(syncRecords.size());
 		
 		try {
-			int currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
+			int currObjectId = 0;
+			
+			if (getSyncTableConfiguration().isManualIdGeneration()) {
+				currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
+			}
 			
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
@@ -127,7 +146,9 @@ public class DBQuickMergeEngine extends Engine {
 				
 				destObject = mappingInfo.generateMappedObject(rec, this.dstApp);
 				
-				destObject.setObjectId(currObjectId++);
+				if (getSyncTableConfiguration().isManualIdGeneration()) {
+					destObject.setObjectId(currObjectId++);
+				}
 				
 				mergingRecs.add(new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp));
 			}
@@ -148,15 +169,20 @@ public class DBQuickMergeEngine extends Engine {
 		}
 	}
 	
-	@SuppressWarnings("unused")
 	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "' ONE-BY-ONE");
 		
 		int i = 1;
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
 		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
+		
+		int currObjectId = 0;
+		
+		if (getSyncTableConfiguration().isManualIdGeneration()) {
+			currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
+		}
 		
 		try {
 			for (SyncRecord record : syncRecords) {
@@ -172,6 +198,10 @@ public class DBQuickMergeEngine extends Engine {
 				MappedTableInfo mappingInfo = getSyncTableConfiguration().getMappedTableInfo();
 				
 				destObject = mappingInfo.generateMappedObject(rec, this.dstApp);
+				
+				if (getSyncTableConfiguration().isManualIdGeneration()) {
+					destObject.setObjectId(currObjectId++);
+				}
 				
 				MergingRecord data = new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp);
 				

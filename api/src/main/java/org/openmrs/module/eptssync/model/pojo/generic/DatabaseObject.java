@@ -12,6 +12,7 @@ import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
+import org.openmrs.module.eptssync.exceptions.SyncExeption;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -79,8 +80,6 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract Integer getParentValue(String parentAttName);
 	
-	
-	
 	/**
 	 * Consolidate data for database consistency
 	 * <p>
@@ -147,7 +146,7 @@ public interface DatabaseObject extends SyncRecord {
 	public abstract Date getDateVoided();
 	
 	public abstract Date getDateCreated();
-		
+	
 	/**
 	 * Check if this record has exactily the same values in all fields with a given object
 	 * 
@@ -164,7 +163,6 @@ public interface DatabaseObject extends SyncRecord {
 	 */
 	public abstract Object[] getFieldValues(String... fieldName);
 	
-	
 	/**
 	 * Return a value of given field
 	 * 
@@ -172,7 +170,6 @@ public interface DatabaseObject extends SyncRecord {
 	 * @return Return a value of given field
 	 */
 	public abstract Object getFieldValue(String fieldName);
-	
 	
 	public abstract void setFieldValue(String fieldName, Object value);
 	
@@ -187,14 +184,23 @@ public interface DatabaseObject extends SyncRecord {
 	 */
 	public default Object[] getUniqueKeysFieldValues(SyncTableConfiguration tableConfiguration)
 	        throws ForbiddenOperationException {
-		if (!tableConfiguration.isFullLoaded())
-			tableConfiguration.fullLoad();
+		if (!tableConfiguration.isFullLoaded()) {
+			try {
+				tableConfiguration.fullLoad();
+			}
+			catch (DBException e) {
+				throw new SyncExeption(e) {
+					
+					private static final long serialVersionUID = 6237531946353999983L;
+				};
+			}
+		}
 		
 		List<Object> values = new ArrayList<Object>();
 		
 		for (UniqueKeyInfo uniqueKey : tableConfiguration.getUniqueKeys()) {
-			Object[] fieldValues = this.getFieldValues(
-			    AttDefinedElements.convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKey.generateListFromFieldsNames())));
+			Object[] fieldValues = this.getFieldValues(AttDefinedElements
+			        .convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKey.generateListFromFieldsNames())));
 			
 			if (fieldValues != null && fieldValues.length == uniqueKey.getFields().size()) {
 				values.addAll(utils.parseArrayToList(fieldValues));
@@ -213,8 +219,8 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws ForbiddenOperationException if one or more fields in any key have null value
 	 */
 	public default Object[] getUniqueKeysFieldValues(UniqueKeyInfo uniqueKey) throws ForbiddenOperationException {
-		Object[] fieldValues = this.getFieldValues(
-		    AttDefinedElements.convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKey.generateListFromFieldsNames())));
+		Object[] fieldValues = this.getFieldValues(AttDefinedElements
+		        .convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKey.generateListFromFieldsNames())));
 		
 		if (fieldValues != null && fieldValues.length == uniqueKey.getFields().size()) {
 			return fieldValues;

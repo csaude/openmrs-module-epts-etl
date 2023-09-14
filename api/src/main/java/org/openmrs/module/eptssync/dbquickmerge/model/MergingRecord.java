@@ -46,7 +46,7 @@ public class MergingRecord {
 		
 		consolidateAndSaveData(srcConn, destConn);
 		
-		//save(srcConn);
+		save(srcConn);
 	}
 	
 	public SyncTableConfiguration getConfig() {

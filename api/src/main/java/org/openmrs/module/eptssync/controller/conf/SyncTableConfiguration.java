@@ -74,6 +74,8 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	private MappedTableInfo mappedTableInfo;
 	
+	private boolean manualIdGeneration;
+	
 	public SyncTableConfiguration() {
 	}
 	
@@ -105,6 +107,10 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		this.fields = toCloneFrom.fields;
 		this.winningRecordFieldsInfo = toCloneFrom.winningRecordFieldsInfo;
 		this.mappedTableInfo = toCloneFrom.mappedTableInfo;
+	}
+	
+	public boolean isManualIdGeneration() {
+		return manualIdGeneration;
 	}
 	
 	public List<List<Field>> getWinningRecordFieldsInfo() {
@@ -387,7 +393,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	private int countChildren(Connection conn) throws SQLException {
-		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
+		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(conn.getCatalog(), conn.getSchema(), tableName);
 		
 		try {
 			if (DBUtilities.isMySQLDB(conn)) {
@@ -420,7 +426,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			try {
 				logDebug("DISCOVERED '" + count + "' CHILDREN FOR TABLE '" + getTableName() + "'");
 				
-				foreignKeyRS = conn.getMetaData().getExportedKeys(null, null, tableName);
+				foreignKeyRS = conn.getMetaData().getExportedKeys(conn.getCatalog(), conn.getSchema(), tableName);
 				
 				while (foreignKeyRS.next()) {
 					logDebug("CONFIGURING CHILD [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
@@ -476,7 +482,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	private int countParents(Connection conn) throws SQLException {
-		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(null, null, tableName);
+		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(conn.getCatalog(), conn.getSchema(), tableName);
 		
 		try {
 			if (DBUtilities.isMySQLDB(conn)) {
@@ -509,9 +515,10 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 				List<RefInfo> auxRefInfo = new ArrayList<RefInfo>();
 				logDebug("DISCOVERED '" + count + "' PARENTS FOR TABLE '" + getTableName() + "'");
 				
-				foreignKeyRS = conn.getMetaData().getImportedKeys(null, null, tableName);
+				foreignKeyRS = conn.getMetaData().getImportedKeys(conn.getCatalog(), conn.getSchema(), tableName);
 				
 				while (foreignKeyRS.next()) {
+					
 					logDebug("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '"
 					        + getTableName() + "'");
 					
@@ -888,7 +895,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		
 	}
 	
-	public synchronized void fullLoad() {
+	public synchronized void fullLoad() throws DBException {
 		OpenConnection mainConn = getRelatedSynconfiguration().getMainApp().openConnection();
 		
 		OpenConnection mappedConn = null;
@@ -902,6 +909,13 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 				mappedConn = otherApps.get(0).openConnection();
 				
 				this.mappedTableInfo.fullLoad(mappedConn);
+				
+				this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.mappedTableInfo.getTableName(),
+				    mappedConn);
+			}
+			else {
+				this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.getTableName(),
+				    mappedConn);		
 			}
 		}
 		finally {
@@ -1163,30 +1177,33 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			st = connection.prepareStatement("insert ", Statement.RETURN_GENERATED_KEYS);
 			
 			String sql = " insert ignore into test(code) values ";
-						sql += "('001')";
-						sql += ",('002')";
-						sql += ",('003')";
-						sql += ",('004')";
-						sql += ",('004')";
-						sql += ",('005')";
-						sql += ",('006')";
-						sql += ",('007')";
+			sql += "('001')";
+			sql += ",('002')";
+			sql += ",('003')";
+			sql += ",('004')";
+			sql += ",('004')";
+			sql += ",('005')";
+			sql += ",('006')";
+			sql += ",('007')";
 			
 			st.addBatch(sql);
 			
 			st.executeBatch();
 			
-			
 			ResultSet rs = st.getGeneratedKeys();
 			
 			while (rs.next()) {
-				 System.out.println("Generated ID: " + rs.getInt(1));
-			} 
+				System.out.println("Generated ID: " + rs.getInt(1));
+			}
 			st.close();
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
 		}
+	}
+	
+	public boolean useManualIdGeneration(Connection conn) throws DBException {
+		return DBUtilities.checkIfTableUseAutoIcrement(this.tableName, conn);
 	}
 	
 	public static void main_(String[] args) throws DBException, IOException {

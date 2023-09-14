@@ -58,7 +58,6 @@ public class OpenConnection implements Connection, Closeable {
 		return openDate;
 	}
 	
-	
 	public Date getCloseDate() {
 		return closeDate;
 	}
@@ -140,20 +139,17 @@ public class OpenConnection implements Connection, Closeable {
 		if (connection == null)
 			return;
 		
-		//if (isFinalized()) throw new ForbiddenOperationException("A conexao ja se encontra finalizada!");
-		
-		//this.closeDate = UtilitarioDeDatas.getCurrentSystemDate(connection);
-		
 		try {
-			if (this.operationTerminatedSuccessifully) {
-				commit();
-			} else {
-				rollback();
+			
+			if (!connection.getAutoCommit()) {
+				if (this.operationTerminatedSuccessifully) {
+					commit();
+				} else {
+					rollback();
+				}
 			}
 			
 			this.close();
-			
-			//DBConnectionService.increseClosedConnections();
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -162,8 +158,6 @@ public class OpenConnection implements Connection, Closeable {
 		}
 		
 		connection = null;
-		
-		//Ficheiro.write("D:\\connections.txt", "FINALIZED CONN ["+ this.id + "] ON [" +  CallerInfo.getStackInfo(3)+ "]");
 	}
 	
 	private void tryToReopen() throws SQLException {
@@ -265,7 +259,7 @@ public class OpenConnection implements Connection, Closeable {
 				connection.close();
 				
 				this.closeDate = new Date();
-			}	
+			}
 		}
 		catch (SQLException e) {
 			throw new RuntimeException();

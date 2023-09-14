@@ -172,7 +172,7 @@ public class EngineMonitor implements MonitoredOperation {
 		long minRecId = getController().getMinRecordId(getSyncTableInfo());
 		
 		logDebug("FOUND MIN RECORD " + getSyncTableInfo() + " = " + minRecId);
-		
+
 		long maxRecId = 0;
 		
 		if (minRecId != 0) {
@@ -399,6 +399,10 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	public void logWarn(String msg) {
 		getRelatedOperationController().logWarn(msg);
+	}
+	
+	public void logWarn(String msg, long interval) {
+		getRelatedOperationController().logWarn(msg, interval);
 	}
 	
 	String generateEngineNewJobRequestStatus() {

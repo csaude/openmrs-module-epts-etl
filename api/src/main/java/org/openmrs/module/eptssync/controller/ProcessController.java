@@ -380,10 +380,6 @@ public class ProcessController implements Controller, ControllerStarter {
 				controller.requestStop();
 			}
 		}
-		
-		/*if (getChildController() != null) {
-			getChildController().requestStop();
-		}*/
 	}
 	
 	@Override
@@ -397,10 +393,6 @@ public class ProcessController implements Controller, ControllerStarter {
 			logWarn("THE PROCESS COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
 			
 			changeStatusToStopped();
-			
-			/*if (getChildController() != null) {
-				getChildController().requestStop();
-			}*/
 		} else if (processIsAlreadyFinished()) {
 			logWarn("THE PROCESS " + getControllerId().toUpperCase() + " WAS ALREADY FINISHED!!!");
 			onFinish();
@@ -583,6 +575,10 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	public void logWarn(String msg) {
 		logger.logWarn(msg);
+	}
+	
+	public void logWarn(String msg, long interval) {
+		logger.logWarn(msg, interval);
 	}
 	
 	public void logErr(String msg) {

@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -104,6 +105,10 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return this.monitor.getController();
 	}
 	
+	public SyncOperationConfig getRelatedSyncOperationConfig() {
+		return getRelatedOperationController().getOperationConfig();
+	}
+	
 	public List<Engine> getChildren() {
 		return children;
 	}
@@ -166,13 +171,30 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		
 		while (isRunning()) {
 			if (stopRequested()) {
-				logWarn("STOP REQUESTED... STOPPING NOW");
+				logWarn("STOP REQUESTED... TRYING TO STOP NOW");
 				
 				if (this.hasChild()) {
-					for (Engine child : getChildren()) {
-						while (!child.isStopped() || !child.isFinished()) {
-							logWarn("WAITING FOR ALL CHILD ENGINES TO BE STOPPED");
-							TimeCountDown.sleep(15);
+					
+					boolean allStopped = false;
+					
+					while (!allStopped) {
+						
+						String runningThreads = "";
+						
+						for (Engine child : getChildren()) {
+							if (!child.isStopped() && !child.isFinished()) {
+								runningThreads = utilities.concatStringsWithSeparator(runningThreads, child.getEngineId(),
+								    ";");
+							}
+						}
+						
+						if (utilities.stringHasValue(runningThreads)) {
+							logWarn("WAITING FOR ALL CHILD ENGINES TO BE STOPPED", 60);
+							logDebug("STILL RUNNING THREADS: " + runningThreads);
+							
+							TimeCountDown.sleep(10);
+						} else {
+							allStopped = true;
 						}
 					}
 				}
@@ -279,7 +301,11 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	}
 	
 	protected boolean mustDoFinalCheck() {
-		return true;
+		if (getRelatedSyncOperationConfig().skipFinalDataVerification()) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 	
 	private void reportError(Exception e) {
@@ -636,6 +662,9 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	public void logWarn(String msg) {
 		monitor.logWarn(msg);
+	}
+	public void logWarn(String msg, long interval) {
+		monitor.logWarn(msg, interval);
 	}
 	
 	protected RecordLimits retriveSavedLimits() {

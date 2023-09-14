@@ -273,7 +273,7 @@ public abstract class BaseDAO{
 	private static boolean tryToSolveIssues(DBException e, String sql, Object[] params, Connection conn) throws DBException {
 		if (e.isDeadLock(conn)){
 			logger.warn("DEADLOCK DETECTED");
-			DBOperation dbOp = new DBOperation(sql, params, conn, 10);
+			DBOperation dbOp = new DBOperation(sql, params, conn, 50);
 			dbOp.retryDueTemporaryDBError("DEADLOCK");
 			
 			return true;
@@ -281,7 +281,7 @@ public abstract class BaseDAO{
 		else
 		if (e.isLockWaitTimeExceded(conn)){
 			logger.warn("LOCK WAIT TIME EXCEED...");
-			DBOperation dbOp = new DBOperation(sql, params, conn, 10);
+			DBOperation dbOp = new DBOperation(sql, params, conn, 50);
 			dbOp.retryDueTemporaryDBError("LOCK WAIT TIME EXCEED");
 			
 			return true;

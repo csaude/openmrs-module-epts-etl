@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -516,11 +515,40 @@ public class DatabaseObjectDAO extends BaseDAO {
 		if (syncTableConfiguration.isMetadata()) {
 			insertAllMetadata(objects, syncTableConfiguration, conn);
 		} else {
-			insertAllData(objects, syncTableConfiguration, recordOriginLocationCode, conn);
+			
+			if (syncTableConfiguration.isManualIdGeneration()) {
+				insertAllDataWithId(objects, syncTableConfiguration, recordOriginLocationCode, conn);
+			}
+			else {
+				insertAllDataWithoutId(objects, syncTableConfiguration, recordOriginLocationCode, conn);
+			}
 		}
 	}
 	
-	private static void insertAllData(List<DatabaseObject> objects, SyncTableConfiguration conf, String originCode,
+	private static void insertAllDataWithoutId(List<DatabaseObject> objects, SyncTableConfiguration conf, String originCode,
+	        Connection conn) throws DBException {
+		String sql = DBUtilities
+		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0], conn);
+		
+		sql += " VALUES";
+		
+		String values = "";
+		
+		for (int i = 0; i < objects.size(); i++) {
+			if (objects.get(i).isExcluded())
+				continue;
+			
+			values += "(" + objects.get(i).generateInsertValues() + "),";
+		}
+		
+		if (utilities.stringHasValue(values)) {
+			sql += utilities.removeLastChar(values);
+			
+			executeQueryWithRetryOnError(sql, null, conn);
+		}
+	}
+	
+	private static void insertAllDataWithId(List<DatabaseObject> objects, SyncTableConfiguration conf, String originCode,
 	        Connection conn) throws DBException {
 		String sql = DBUtilities
 		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0], conn);
@@ -540,8 +568,6 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql += utilities.removeLastChar(values);
 			
 			executeQueryWithRetryOnError(sql, null, conn);
-			
-			//executeBatch(conn, sql);
 		}
 	}
 	

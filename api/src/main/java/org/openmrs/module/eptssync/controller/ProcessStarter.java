@@ -39,7 +39,7 @@ public class ProcessStarter implements ControllerStarter {
 	public void run() throws IOException, DBException {
 		
 		if (getLogLevel().getName().equals(Level.FINE.getName())) {
-			TimeCountDown.sleep(30);
+			TimeCountDown.sleep(10);
 		}
 		
 		List<SyncConfiguration> syncConfigs = loadSyncConfig(this.synConfigFilesPaths);
@@ -62,7 +62,7 @@ public class ProcessStarter implements ControllerStarter {
 		}
 		
 		while (!this.currentController.isFinalized()) {
-			TimeCountDown.sleep(120);
+			TimeCountDown.sleep(60);
 			
 			logger.logWarn("THE APPLICATION IS STILL RUNING...", 60 * 15);
 		}
@@ -82,7 +82,10 @@ public class ProcessStarter implements ControllerStarter {
 		
 		ProcessController controller = (ProcessController) c;
 		
-		if (controller.getConfiguration().getChildConfigFilePath() != null) {
+		if (c.isStopped()) {
+			logger.logWarn("THE APPLICATION IS STOPPING DUE STOP REQUESTED!");
+			controller.finalize();
+		} else if (controller.getConfiguration().getChildConfigFilePath() != null) {
 			try {
 				SyncConfiguration childConfig = SyncConfiguration
 				        .loadFromFile(new File(controller.getConfiguration().getChildConfigFilePath()));

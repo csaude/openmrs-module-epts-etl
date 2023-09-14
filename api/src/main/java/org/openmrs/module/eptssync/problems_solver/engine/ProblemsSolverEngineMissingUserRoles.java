@@ -11,10 +11,10 @@ import org.openmrs.module.eptssync.engine.SyncSearchParams;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.SearchParamsDAO;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
-import org.openmrs.module.eptssync.model.pojo.destination.UserRoleVO;
-import org.openmrs.module.eptssync.model.pojo.destination.UsersVO;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.openmrs._default.UserRoleVO;
+import org.openmrs.module.eptssync.model.pojo.openmrs._default.UsersVO;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.eptssync.problems_solver.model.ProblemsSolverSearchParams;
@@ -115,7 +115,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 		for (String dbName : dbInfo.getDbNames()) {
 			logDebug("Retrieving user on [" + dbName + "]");
 			
-			org.openmrs.module.eptssync.model.pojo.destination.UsersVO userOnSrc = new UsersVO();
+			UsersVO userOnSrc = new UsersVO();
 			userOnSrc.setUuid(record.getUuid());
 			
 			userOnSrc = (UsersVO)DatabaseObjectDAO.getByUniqueKeysOnSpecificSchema(getSyncTableConfiguration(), userOnSrc, dbName, srcConn);

@@ -270,61 +270,49 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 				}
 			}
 		} else {
-			
-			boolean isPerformedInTheSameDatabase = tableConfiguration.getRelatedSynconfiguration()
-			        .isPerformedInTheSameDatabase();
-			
-			if (isPerformedInTheSameDatabase) {
-				DatabaseObject recordOnDB = DatabaseObjectDAO.getById(this.getClass(), this.getObjectId(), conn);
+			try {
 				
-				if (recordOnDB != null) {
-					this.setObjectId(recordOnDB.getObjectId());
-					
-					DatabaseObjectDAO.update(this, conn);
-				}
-			} else {
-				
-				try {
+				if (tableConfiguration.isManualIdGeneration()) {
+					DatabaseObjectDAO.insertWithObjectId(this, conn);
+				} else {
 					DatabaseObjectDAO.insert(this, conn);
 				}
-				catch (DBException e) {
+			}
+			catch (DBException e) {
+				
+				if (e.isDuplicatePrimaryOrUniqueKeyException()
+				        && tableConfiguration.getRelatedSynconfiguration().isSupposedToRunInDestination()
+				        && tableConfiguration.hasUniqueKeys()) {
 					
-					if (e.isDuplicatePrimaryOrUniqueKeyException()
-					        && tableConfiguration.getRelatedSynconfiguration().isSupposedToRunInDestination()
-					        && tableConfiguration.hasUniqueKeys()) {
-						
-						if (DBUtilities.isPostgresDB(conn)) {
-							/*
-							 * PosgresSql fails when you continue to use a connection which previously encontred an exception
-							 * So we are commiting before try to use the connection again
-							 * 
-							 * NOTE that we are taking risk if some othe bug happen and the transaction need to be aborted
-							 */
-							try {
-								
-								conn.commit();
-								;
-							}
-							catch (SQLException e1) {
-								throw new DBException(e);
-							}
+					if (DBUtilities.isPostgresDB(conn)) {
+						/*
+						 * PosgresSql fails when you continue to use a connection which previously encontred an exception
+						 * So we are commiting before try to use the connection again
+						 * 
+						 * NOTE that we are taking risk if some othe bug happen and the transaction need to be aborted
+						 */
+						try {
+							conn.commit();
 						}
-						
-						//Try to resolve conflict if it is destination operation
-						
-						List<DatabaseObject> recs = utilities.parseList(
-						    DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), DatabaseObject.class);
-						
-						DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
-						
-						if (recordOnDB != null) {
-							resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
-						} else {
-							throw new ConflictWithRecordNotYetAvaliableException(this);
+						catch (SQLException e1) {
+							throw new DBException(e);
 						}
-					} else
-						throw e;
-				}
+					}
+					
+					//Try to resolve conflict if it is destination operation
+					
+					List<DatabaseObject> recs = utilities.parseList(
+					    DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), DatabaseObject.class);
+					
+					DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+					
+					if (recordOnDB != null) {
+						resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
+					} else {
+						throw new ConflictWithRecordNotYetAvaliableException(this);
+					}
+				} else
+					throw e;
 			}
 		}
 	}

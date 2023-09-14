@@ -76,6 +76,10 @@ public class SyncOperationConfig extends BaseConfiguration {
 	
 	private Class<Engine> engineClazz;
 	
+	private boolean skipFinalDataVerification;
+	
+	private boolean writeOperationHistory;
+	
 	/**
 	 * Indicates whether this operation will executed over all tables configured under
 	 * {@link #relatedSyncConfig}. If true, the operation will be run only once (for the first
@@ -84,6 +88,22 @@ public class SyncOperationConfig extends BaseConfiguration {
 	private boolean runOnce;
 	
 	public SyncOperationConfig() {
+	}
+	
+	public boolean writeOperationHistory() {
+		return writeOperationHistory;
+	}
+	
+	public void setWriteOperationHistory(boolean writeOperationHistory) {
+		this.writeOperationHistory = writeOperationHistory;
+	}
+	
+	public boolean skipFinalDataVerification() {
+		return skipFinalDataVerification;
+	}
+	
+	public void setSkipFinalDataVerification(boolean skipFinalDataVerification) {
+		this.skipFinalDataVerification = skipFinalDataVerification;
 	}
 	
 	public boolean isRunOnce() {

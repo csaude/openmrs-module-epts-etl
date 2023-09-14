@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
@@ -654,7 +653,7 @@ public abstract class OperationController implements Controller {
 			}
 			
 			while (!isStopped()) {
-				logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
+				logger.logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED", 120);
 				TimeCountDown.sleep(5);
 			}
 		} else {
@@ -663,7 +662,7 @@ public abstract class OperationController implements Controller {
 				monitor.requestStopDueError();
 				
 				while (!monitor.isStopped() && !monitor.isNotInitialized()) {
-					logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED");
+					logger.logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED", 120);
 					TimeCountDown.sleep(5);
 				}
 			}
@@ -700,6 +699,10 @@ public abstract class OperationController implements Controller {
 	
 	public void logWarn(String msg) {
 		this.processController.logWarn(msg);
+	}
+	
+	public void logWarn(String msg, long interval) {
+		this.processController.logWarn(msg, interval);
 	}
 	
 	public void logInfo(String msg) {
