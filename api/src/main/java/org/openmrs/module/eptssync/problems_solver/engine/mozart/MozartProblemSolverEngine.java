@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.problems_solver.engine;
+package org.openmrs.module.eptssync.problems_solver.engine.mozart;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +14,8 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
+import org.openmrs.module.eptssync.problems_solver.engine.DatabasesInfo;
+import org.openmrs.module.eptssync.problems_solver.engine.GenericEngine;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.MozartReportType;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.MozartValidateInfoReport;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
@@ -23,7 +25,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.LongTransactionException;
 import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
-public abstract class MozartProblemSolver extends GenericEngine {
+public abstract class MozartProblemSolverEngine extends GenericEngine {
 	
 	public MozartValidateInfoReport reportOfProblematics;
 	
@@ -43,10 +45,8 @@ public abstract class MozartProblemSolver extends GenericEngine {
 	
 	protected String province;
 	
-	public MozartProblemSolver(EngineMonitor monitor, RecordLimits limits) {
+	public MozartProblemSolverEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
-		
-		
 		
 		try {
 			Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("databaseListFile");

@@ -759,7 +759,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		sql += DBUtilities.generateTableIntegerField("record_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("parent_table_name", 100, notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("parent_id", notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableBigIntField("default_parent_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("default_parent_id", "NULL", conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
 		        + endLineMarker;
 		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;

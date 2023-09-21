@@ -32,13 +32,17 @@ public class MergingRecord {
 	
 	private AppInfo destApp;
 	
-	public MergingRecord(DatabaseObject record, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp) {
+	private boolean writeOperationHistory;
+	
+	public MergingRecord(DatabaseObject record, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp, boolean writeOperationHistory) {
 		this.record = record;
 		this.config = config;
 		this.srcApp = srcApp;
 		this.destApp = destApp;
+		this.writeOperationHistory = writeOperationHistory;
 		
 		this.parentsWithDefaultValues = new ArrayList<ParentInfo>();
+		
 	}
 	
 	public void merge(Connection srcConn, Connection destConn) throws DBException {
@@ -46,7 +50,9 @@ public class MergingRecord {
 		
 		consolidateAndSaveData(srcConn, destConn);
 		
-		save(srcConn);
+		if (writeOperationHistory) {
+			save(srcConn);
+		}
 	}
 	
 	public SyncTableConfiguration getConfig() {
@@ -116,7 +122,7 @@ public class MergingRecord {
 			DatabaseObject parent = parentInfo.getParent();
 			
 			MergingRecord parentData = new MergingRecord(parent, refInfo.getRefTableConfiguration(), this.srcApp,
-			        this.destApp);
+			        this.destApp, this.writeOperationHistory);
 			parentData.merge(srcConn, destConn);
 			
 			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(), this.record,

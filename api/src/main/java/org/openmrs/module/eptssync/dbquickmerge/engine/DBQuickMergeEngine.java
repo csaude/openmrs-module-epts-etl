@@ -43,33 +43,23 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		List<SyncRecord> records = new ArrayList<SyncRecord>();
 		
-		try {
-			DBQuickMergeSearchParams searchParams = (DBQuickMergeSearchParams) getSearchParams();
+		DBQuickMergeSearchParams searchParams = (DBQuickMergeSearchParams) getSearchParams();
+		
+		if (getFinalCheckStatus().onGoing()) {
+			OpenConnection dstConn = this.dstApp.openConnection();
 			
-			if (getFinalCheckStatus().onGoing()) {
-				OpenConnection dstConn = this.dstApp.openConnection();
-				
-				try {
-					if (DBUtilities.isSameDatabaseServer(conn, dstConn)) {
-						this.searchParams.setExtraCondition(searchParams.generateDestinationExclusionClause(conn, dstConn));
-					}
-				}
-				finally {
-					dstConn.finalizeConnection();
+			try {
+				if (DBUtilities.isSameDatabaseServer(conn, dstConn)) {
+					this.searchParams.setExtraCondition(searchParams.generateDestinationExclusionClause(conn, dstConn));
 				}
 			}
-			
-			records = utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
-		}
-		catch (DBException e) {
-			logError("Error Searching on limits: " + getLimits());
-			
-			throw e;
+			finally {
+				dstConn.finalizeConnection();
+			}
 		}
 		
-		return records;
+		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override
@@ -150,7 +140,9 @@ public class DBQuickMergeEngine extends Engine {
 					destObject.setObjectId(currObjectId++);
 				}
 				
-				mergingRecs.add(new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp));
+				MergingRecord mr = new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp, false);
+				
+				mergingRecs.add(mr);
 			}
 			
 			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
@@ -170,7 +162,8 @@ public class DBQuickMergeEngine extends Engine {
 	}
 	
 	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "' ONE-BY-ONE");
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName()
+		        + "' ONE-BY-ONE");
 		
 		int i = 1;
 		
@@ -203,7 +196,9 @@ public class DBQuickMergeEngine extends Engine {
 					destObject.setObjectId(currObjectId++);
 				}
 				
-				MergingRecord data = new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp);
+				boolean wrt = writeOperationHistory();
+				
+				MergingRecord data = new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp, wrt);
 				
 				try {
 					process(data, startingStrLog, 0, conn, dstConn);

@@ -915,7 +915,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			}
 			else {
 				this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.getTableName(),
-				    mappedConn);		
+					mainConn);		
 			}
 		}
 		finally {

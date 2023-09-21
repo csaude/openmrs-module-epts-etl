@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationConfig;
 import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
@@ -107,6 +108,10 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	public SyncOperationConfig getRelatedSyncOperationConfig() {
 		return getRelatedOperationController().getOperationConfig();
+	}
+	
+	public SyncConfiguration getRelatedSyncConfiguration() {
+		return getRelatedOperationController().getConfiguration();
 	}
 	
 	public List<Engine> getChildren() {
@@ -682,6 +687,10 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		}
 		
 		return savedLimits;
+	}
+	
+	public boolean writeOperationHistory() {
+		return getRelatedSyncOperationConfig().writeOperationHistory();
 	}
 	
 	protected abstract void restart();

@@ -464,6 +464,10 @@ public abstract class OperationController implements Controller {
 		return this.getProcessController().getConfiguration();
 	}
 	
+	public List<SyncTableConfiguration> getTablesConfigurations() {
+		return getConfiguration().getTablesConfigurations();
+	}
+	
 	public File generateTableProcessStatusFile_(SyncTableConfiguration conf) {
 		String operationId = this.getControllerId() + "_" + conf.getTableName();
 		

@@ -207,7 +207,12 @@ public class ConfVM {
 		this.selectedTable = syncConfiguration.findSyncTableConfigurationOnAllTables(tableName);
 		
 		if (syncConfiguration.find(this.selectedTable) == null || !this.selectedTable.isFullLoaded()) {
-			this.selectedTable.fullLoad();
+			try {
+				this.selectedTable.fullLoad();
+			}
+			catch (DBException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 	

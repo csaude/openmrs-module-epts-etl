@@ -482,7 +482,7 @@ public class SyncConfiguration extends BaseConfiguration {
 		return utilities.findOnList(this.allTables, tableConfiguration);
 	}
 	
-	public AppInfo find(AppInfo appToFind) {
+	public AppInfo find(AppInfo appToFind) throws ForbiddenOperationException{
 		AppInfo app = utilities.findOnArray(this.appsInfo, appToFind);
 		
 		if (app == null)

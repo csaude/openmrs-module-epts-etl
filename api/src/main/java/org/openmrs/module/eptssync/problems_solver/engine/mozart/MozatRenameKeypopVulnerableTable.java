@@ -1,4 +1,4 @@
-package org.openmrs.module.eptssync.problems_solver.engine;
+package org.openmrs.module.eptssync.problems_solver.engine.mozart;
 
 import java.sql.Connection;
 import java.util.List;
@@ -10,6 +10,7 @@ import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.model.base.SyncRecord;
 import org.openmrs.module.eptssync.monitor.EngineMonitor;
 import org.openmrs.module.eptssync.problems_solver.controller.GenericOperationController;
+import org.openmrs.module.eptssync.problems_solver.engine.DatabasesInfo;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.DBValidateInfo;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.MozartProblemType;
 import org.openmrs.module.eptssync.problems_solver.model.mozart.MozartRuntaskWithTimeCheck;
@@ -23,7 +24,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
  * @author jpboane
  * @see DBQuickMergeController
  */
-public class MozatRenameKeypopVulnerableTable extends MozartProblemSolver {
+public class MozatRenameKeypopVulnerableTable extends MozartProblemSolverEngine {
 	
 	public MozatRenameKeypopVulnerableTable(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
