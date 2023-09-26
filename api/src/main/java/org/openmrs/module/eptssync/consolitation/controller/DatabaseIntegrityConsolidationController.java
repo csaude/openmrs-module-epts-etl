@@ -78,8 +78,6 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 			throw new RuntimeException(e);
 		}
 		
-		//}
-		
 		return conn;
 	}
 }
