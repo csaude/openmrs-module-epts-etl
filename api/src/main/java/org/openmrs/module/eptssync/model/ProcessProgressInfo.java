@@ -10,18 +10,29 @@ import org.openmrs.module.eptssync.controller.ProcessController;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class ProcessProgressInfo {
+	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private List<OperationProgressInfo> operationsProgressInfo;
-	//private ProcessController controller;
 	
-	public ProcessProgressInfo(ProcessController controller){
-		//this.controller = controller;
+	private ProcessController controller;
+	
+	public ProcessProgressInfo(ProcessController controller) {
 		this.operationsProgressInfo = new ArrayList<OperationProgressInfo>();
+		
+		this.controller = controller;
 	}
 	
-	public OperationProgressInfo initAndAddProgressMeterToList(OperationController operationController, Connection conn) throws DBException {
+	@JsonIgnore
+	public ProcessController getController() {
+		return controller;
+	}
+	
+	public OperationProgressInfo initAndAddProgressMeterToList(OperationController operationController, Connection conn)
+	        throws DBException {
 		OperationProgressInfo progressInfo;
 		
 		File operationStatusFile = operationController.generateOperationStatusFile();
@@ -29,8 +40,7 @@ public class ProcessProgressInfo {
 		if (operationController.isResumable() && operationStatusFile.exists()) {
 			progressInfo = OperationProgressInfo.loadFromFile(operationController.generateOperationStatusFile());
 			progressInfo.setController(operationController);
-		}
-		else {
+		} else {
 			progressInfo = new OperationProgressInfo(operationController);
 		}
 		

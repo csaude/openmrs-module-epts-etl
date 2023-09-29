@@ -93,7 +93,7 @@ public class MozartTryToSelectedFieldValueOnLocation extends MozartProblemSolver
 						mergingData.merge(srcConn, dstConn);
 					}
 					
-					dstConn.markAsSuccessifullyTerminected();
+					dstConn.markAsSuccessifullyTerminated();
 				}
 			}
 		}

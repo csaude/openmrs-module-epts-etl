@@ -111,7 +111,7 @@ public class DBExportEngine extends Engine {
 		try {
 			DatabaseObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSyncTableConfiguration(), getSyncTableConfiguration().getOriginAppLocationCode(), conn);
 			
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 		} 
 		catch (DBException e) {
 			e.printStackTrace();

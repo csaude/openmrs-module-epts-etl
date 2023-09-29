@@ -62,7 +62,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		
 		this.searchParams = initSearchParams(limits, conn);
 		
-		conn.markAsSuccessifullyTerminected();
+		conn.markAsSuccessifullyTerminated();
 		conn.finalizeConnection();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
@@ -222,7 +222,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 					
 					refreshProgressMeter(processedRecords_, conn);
 					
-					conn.markAsSuccessifullyTerminected();
+					conn.markAsSuccessifullyTerminated();
 					conn.finalizeConnection();
 					
 					reportProgress();

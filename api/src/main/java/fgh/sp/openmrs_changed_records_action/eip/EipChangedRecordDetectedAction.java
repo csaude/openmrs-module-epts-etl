@@ -54,7 +54,7 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 		try {
 			SenderRetryQueueItemDAO.insert(item, conn);
 			
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} 

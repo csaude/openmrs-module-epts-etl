@@ -285,7 +285,7 @@ public class EngineMonitor implements MonitoredOperation {
 				
 				this.getTableOperationProgressInfo().save(conn);
 				
-				conn.markAsSuccessifullyTerminected();
+				conn.markAsSuccessifullyTerminated();
 			}
 			catch (DBException e) {
 				getRelatedOperationController().requestStopDueError(this, e);

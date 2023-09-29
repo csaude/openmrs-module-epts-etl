@@ -154,7 +154,7 @@ public class DBQuickMergeEngine extends Engine {
 			
 			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
 			
-			dstConn.markAsSuccessifullyTerminected();
+			dstConn.markAsSuccessifullyTerminated();
 		}
 		finally {
 			dstConn.finalizeConnection();
@@ -274,7 +274,7 @@ public class DBQuickMergeEngine extends Engine {
 			
 			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
 			
-			dstConn.markAsSuccessifullyTerminected();
+			dstConn.markAsSuccessifullyTerminated();
 		}
 		finally {
 			dstConn.finalizeConnection();

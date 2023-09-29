@@ -91,7 +91,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 		
 		logDebug("Report saved");
 		
-		srcConn.markAsSuccessifullyTerminected();
+		srcConn.markAsSuccessifullyTerminated();
 		srcConn.finalizeConnection();
 	}
 	

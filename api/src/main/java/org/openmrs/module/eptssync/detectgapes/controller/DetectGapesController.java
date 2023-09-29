@@ -115,7 +115,7 @@ public class DetectGapesController extends OperationController {
 				createGapesTable(conn);
 			}
 			
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 		}
 		catch (DBException e) {
 			throw new RuntimeException(e);

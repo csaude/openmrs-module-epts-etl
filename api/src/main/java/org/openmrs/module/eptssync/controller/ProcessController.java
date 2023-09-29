@@ -62,6 +62,8 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	protected boolean selfTreadKilled;
 	
+	private ProcessInfo processInfo;
+	
 	private Logger logger;
 	
 	public ProcessController() {
@@ -82,6 +84,10 @@ public class ProcessController implements Controller, ControllerStarter {
 		return progressInfo;
 	}
 	
+	public ProcessInfo getProcessInfo() {
+		return processInfo;
+	}
+	
 	public OperationProgressInfo initOperationProgressMeter(OperationController operationController, Connection conn)
 	        throws DBException {
 		return this.progressInfo.initAndAddProgressMeterToList(operationController, conn);
@@ -100,6 +106,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.configuration = configuration;
 		this.configuration.setRelatedController(this);
 		this.appsInfo = configuration.getAppsInfo();
+		this.processInfo = new ProcessInfo(getConfiguration());
 		
 		this.controllerId = configuration.generateControllerId();
 		
@@ -131,7 +138,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			
 			this.progressInfoLoaded = true;
 			
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 		}
 		finally {
 			conn.finalizeConnection();
@@ -393,15 +400,26 @@ public class ProcessController implements Controller, ControllerStarter {
 			logWarn("THE PROCESS COULD NOT BE INITIALIZED DUE STOP REQUESTED!!!!");
 			
 			changeStatusToStopped();
-		} else if (processIsAlreadyFinished()) {
+			
+			return;
+		}
+		
+		boolean wasPreviouslyFinished = processIsAlreadyFinished();
+		
+		if (wasPreviouslyFinished && (!canBeReRun() || !reRunConditionsAreSatisfied())) {
 			logWarn("THE PROCESS " + getControllerId().toUpperCase() + " WAS ALREADY FINISHED!!!");
 			onFinish();
 		} else {
+			
+			if (wasPreviouslyFinished) {
+				performePreReRunActions();
+			}
+			
 			OpenConnection conn = getDefaultApp().openConnection();
 			
 			try {
 				initOperationsControllers(conn);
-				conn.markAsSuccessifullyTerminected();
+				conn.markAsSuccessifullyTerminated();
 			}
 			finally {
 				conn.finalizeConnection();
@@ -430,6 +448,58 @@ public class ProcessController implements Controller, ControllerStarter {
 			
 		}
 		
+	}
+	
+	private void performePreReRunActions() {
+		FileUtilities.removeFile(this.processInfo.generateProcessStatusFile());
+		
+		OpenConnection conn = openConnection();
+		
+		try {
+			this.progressInfo = new ProcessProgressInfo(this);
+			
+			for (OperationController controller : this.operationsControllers) {
+				controller.resetProgressInfo(conn);
+			}
+			
+			FileUtilities.removeFile(this.getProcessInfo().generateProcessStatusFile());
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+		
+	}
+	
+	/**
+	 * Check if the conditions for this process to be re-run are satisfied.
+	 * 
+	 * @return true if the re-run conditions are satisfied
+	 */
+	public boolean reRunConditionsAreSatisfied() {
+		if (!canBeReRun())
+			return false;
+		
+		if (isDBReSyncProcess()) {
+			ProcessInfo processInfoOnDB = this.processInfo.loadFromFile();
+			
+			return !this.processInfo.equals(processInfoOnDB);
+		}
+		
+		return false;
+		
+	}
+	
+	private boolean canBeReRun() {
+		return isDBReSyncProcess();
+	}
+	
+	public boolean isDBReSyncProcess() {
+		return getConfiguration().isDBReSyncProcess();
 	}
 	
 	private void tryToRemoveOldStopRequested() {
@@ -491,50 +561,15 @@ public class ProcessController implements Controller, ControllerStarter {
 		selfTreadKilled = true;
 	}
 	
-	public File generateProcessStatusFile() {
-		String operationId = this.getControllerId();
-		
-		String fileName = generateProcessStatusFolder() + FileUtilities.getPathSeparator() + operationId;
-		
-		return new File(fileName);
-	}
-	
-	public String generateProcessStatusFolder() {
-		String subFolder = "";
-		
-		if (getConfiguration().isSupposedToRunInOrigin()) {
-			subFolder = "source";
-		} else if (getConfiguration().isSupposedToRunInDestination()) {
-			subFolder = "destination";
-		}
-		
-		return getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() + "process_status"
-		        + FileUtilities.getPathSeparator() + subFolder + FileUtilities.getPathSeparator()
-		        + getConfiguration().getDesignation();
-	}
-	
 	@Override
 	public void markAsFinished() {
 		logDebug("FINISHING PROCESS...");
 		
-		if (!generateProcessStatusFile().exists()) {
-			logDebug("FINISHING PROCESS... WRITING PROCESS STATUS ON FILE [" + generateProcessStatusFile().getAbsolutePath()
-			        + "]");
+		if (!this.processInfo.generateProcessStatusFile().exists()) {
+			logDebug("FINISHING PROCESS... WRITING PROCESS STATUS ON FILE ["
+			        + this.processInfo.generateProcessStatusFile().getAbsolutePath() + "]");
 			
-			String desc = "";
-			
-			desc += "{\n";
-			desc += "	processName: \"" + this.getControllerId() + "\",\n";
-			desc += "	startTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(this.getTimer().getStartTime())
-			        + "\",\n";
-			desc += "	finishTime: \"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(DateAndTimeUtilities.getCurrentDate())
-			        + "\",\n";
-			desc += "	elapsedTime: \"" + this.getTimer().getDuration(TimeController.DURACAO_IN_HOURS) + "\"\n";
-			desc += "}";
-			
-			FileUtilities.tryToCreateDirectoryStructureForFile(generateProcessStatusFile().getAbsolutePath());
-			
-			FileUtilities.write(generateProcessStatusFile().getAbsolutePath(), desc);
+			this.processInfo.save();
 			
 			logDebug("FILE WROTE");
 		}
@@ -552,7 +587,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	@JsonIgnore
 	private boolean processIsAlreadyFinished() {
-		return isResumable() && generateProcessStatusFile().exists();
+		return isResumable() && this.processInfo.generateProcessStatusFile().exists();
 	}
 	
 	@Override
@@ -631,7 +666,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			
 			st.close();
 			
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -676,7 +711,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 			conn.finalizeConnection();
 		}
 	}
@@ -697,7 +732,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 			conn.finalizeConnection();
 		}
 	}
@@ -735,7 +770,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			
 			st.close();
 			
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
@@ -779,7 +814,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 			conn.finalizeConnection();
 		}
 	}

@@ -12,6 +12,7 @@ import org.openmrs.module.eptssync.controller.OperationController;
 import org.openmrs.module.eptssync.controller.conf.SyncConfiguration;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.engine.SyncProgressMeter;
+import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.ObjectMapperProvider;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
@@ -23,12 +24,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class OperationProgressInfo {
-	//private static CommonUtilities utilities = CommonUtilities.getInstance();
-
+	
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
+	
 	private String operationName;
+	
 	private Date startTime;
+	
 	private Date finishTime;
+	
 	private double elapsedTime;
+	
 	private String status;
 	
 	private OperationController controller;
@@ -47,19 +53,19 @@ public class OperationProgressInfo {
 	public String getOperationName() {
 		return operationName;
 	}
-
+	
 	public void setOperationName(String operationName) {
 		this.operationName = operationName;
 	}
-
+	
 	public Date getStartTime() {
 		return startTime;
 	}
-
+	
 	public void setStartTime(Date startTime) {
 		this.startTime = startTime;
 	}
-
+	
 	public Date getFinishTime() {
 		return finishTime;
 	}
@@ -67,19 +73,19 @@ public class OperationProgressInfo {
 	public void setFinishTime(Date finishTime) {
 		this.finishTime = finishTime;
 	}
-
+	
 	public double getElapsedTime() {
 		return elapsedTime;
 	}
-
+	
 	public void setElapsedTime(double elapsedTime) {
 		this.elapsedTime = elapsedTime;
 	}
-
+	
 	public String getStatus() {
 		return status;
 	}
-
+	
 	public void setStatus(String status) {
 		this.status = status;
 	}
@@ -88,19 +94,19 @@ public class OperationProgressInfo {
 	public OperationController getController() {
 		return controller;
 	}
-
+	
 	public void setController(OperationController controller) {
 		this.controller = controller;
 	}
-
+	
 	public void setItemsProgressInfo(List<TableOperationProgressInfo> itemsProgressInfo) {
 		this.itemsProgressInfo = itemsProgressInfo;
 	}
 	
-	public void initProgressMeter(Connection conn) throws DBException{
+	public void initProgressMeter(Connection conn) throws DBException {
 		this.itemsProgressInfo = new ArrayList<TableOperationProgressInfo>();
 		
-		for (SyncTableConfiguration tabConf: this.getConfiguration().getTablesConfigurations()) {
+		for (SyncTableConfiguration tabConf : this.getConfiguration().getTablesConfigurations()) {
 			TableOperationProgressInfo pm = null;
 			
 			try {
@@ -124,9 +130,9 @@ public class OperationProgressInfo {
 	private SyncConfiguration getConfiguration() {
 		return this.controller.getConfiguration();
 	}
-
+	
 	public void refreshProgressInfo() {
-		for (TableOperationProgressInfo tabConf: this.itemsProgressInfo) {
+		for (TableOperationProgressInfo tabConf : this.itemsProgressInfo) {
 			tabConf.refreshProgressMeter();
 		}
 	}
@@ -148,7 +154,7 @@ public class OperationProgressInfo {
 	public void refresh() {
 		this.status = determineStatus();
 	}
-
+	
 	public boolean isRunning() {
 		return this.status.equals(SyncProgressMeter.STATUS_RUNNING);
 	}
@@ -168,7 +174,7 @@ public class OperationProgressInfo {
 	public boolean isFinished() {
 		return this.status.equals(SyncProgressMeter.STATUS_FINISHED);
 	}
-
+	
 	public void changeStatusToSleeping() {
 		this.status = SyncProgressMeter.STATUS_SLEEPING;
 		
@@ -182,13 +188,13 @@ public class OperationProgressInfo {
 	}
 	
 	public void changeStatusToStopped() {
-		this.status = SyncProgressMeter.STATUS_STOPPED;	
+		this.status = SyncProgressMeter.STATUS_STOPPED;
 		
 		save();
 	}
 	
 	public void changeStatusToFinished() {
-		this.status = SyncProgressMeter.STATUS_FINISHED;	
+		this.status = SyncProgressMeter.STATUS_FINISHED;
 		this.finishTime = DateAndTimeUtilities.getCurrentDate();
 		
 		save();
@@ -200,54 +206,62 @@ public class OperationProgressInfo {
 	}
 	
 	@JsonIgnore
-	public String parseToJSON(){
+	public String parseToJSON() {
 		try {
 			return new ObjectMapperProvider().getContext(OperationProgressInfo.class).writeValueAsString(this);
-		} catch (JsonProcessingException e) {
+		}
+		catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	public static OperationProgressInfo loadFromFile(File file) {
 		try {
 			return OperationProgressInfo.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 	
-	public static OperationProgressInfo loadFromJSON (String json) {
+	public static OperationProgressInfo loadFromJSON(String json) {
 		try {
-			OperationProgressInfo config = new ObjectMapperProvider().getContext(OperationProgressInfo.class).readValue(json, OperationProgressInfo.class);
-		
+			OperationProgressInfo config = new ObjectMapperProvider().getContext(OperationProgressInfo.class).readValue(json,
+			    OperationProgressInfo.class);
+			
 			return config;
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-		
-			throw new RuntimeException(e);
-		} catch (JsonMappingException e) {
-			e.printStackTrace();
-		
-			throw new RuntimeException(e);
-		} catch (IOException e) {
+		}
+		catch (JsonParseException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
-		} 
-	}	
+		}
+		catch (JsonMappingException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+	}
 	
 	public void save() {
- 		String fileName = this.controller.generateOperationStatusFile().getAbsolutePath();
+		String fileName = this.controller.generateOperationStatusFile().getAbsolutePath();
 		
 		if (new File(fileName).exists()) {
 			FileUtilities.removeFile(fileName);
-		}	
+		}
 		
-		this.elapsedTime = this.elapsedTime + DateAndTimeUtilities.dateDiff(DateAndTimeUtilities.getCurrentDate(), this.startTime, DateAndTimeUtilities.MINUTE_FORMAT);
+		this.elapsedTime = this.elapsedTime + DateAndTimeUtilities.dateDiff(DateAndTimeUtilities.getCurrentDate(),
+		    this.startTime, DateAndTimeUtilities.MINUTE_FORMAT);
 		
 		List<TableOperationProgressInfo> bkpItems = this.itemsProgressInfo;
 		
-		//To avoid the items yt
+		//To avoid the items to saved. NOTE that intentionally the JsonIgron is not used on getItemsProgressInfo()
+		//Because its needed on the UI
 		this.itemsProgressInfo = null;
 		
 		String desc = this.parseToJSON();
@@ -257,5 +271,15 @@ public class OperationProgressInfo {
 		FileUtilities.write(fileName, desc);
 		
 		this.itemsProgressInfo = bkpItems;
+	}
+	
+	public void reset(Connection conn) throws DBException {
+		if (utilities.arrayHasElement(this.itemsProgressInfo)) {
+			for (TableOperationProgressInfo progress : this.itemsProgressInfo) {
+				progress.clear(conn);
+			}
+		}
+		
+		FileUtilities.removeFile(this.controller.generateOperationStatusFile());
 	}
 }

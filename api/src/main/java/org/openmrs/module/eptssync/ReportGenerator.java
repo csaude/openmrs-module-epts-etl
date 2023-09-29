@@ -29,7 +29,7 @@ public class ReportGenerator {
 		
 		generateDataInconsistencyRepor(syncConfigs.get(0), conn);
 	
-		conn.markAsSuccessifullyTerminected();
+		conn.markAsSuccessifullyTerminated();
 		conn.finalizeConnection();
 	}
 	

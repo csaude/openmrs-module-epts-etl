@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.controller;
 
 import java.io.File;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,7 +82,7 @@ public abstract class OperationController implements Controller {
 		try {
 			this.progressInfo = this.processController.initOperationProgressMeter(this, conn);
 			
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 		}
 		catch (DBException e) {
 			throw new RuntimeException(e);
@@ -90,6 +91,14 @@ public abstract class OperationController implements Controller {
 			conn.finalizeConnection();
 		}
 		
+	}
+	
+	public void resetProgressInfo(Connection conn) throws DBException {
+		if (this.progressInfo != null) {
+			this.progressInfo.reset(conn);
+		}
+		
+		this.progressInfo = this.processController.initOperationProgressMeter(this, conn);
 	}
 	
 	public OperationProgressInfo getProgressInfo() {
@@ -190,7 +199,7 @@ public abstract class OperationController implements Controller {
 					if (getProcessController().isResumable()) {
 						progressInfo.save(conn);
 					}
-					conn.markAsSuccessifullyTerminected();
+					conn.markAsSuccessifullyTerminated();
 				}
 				catch (DBException e) {
 					e.printStackTrace();
@@ -260,7 +269,7 @@ public abstract class OperationController implements Controller {
 				
 				try {
 					progressInfo.save(conn);
-					conn.markAsSuccessifullyTerminected();
+					conn.markAsSuccessifullyTerminated();
 				}
 				catch (DBException e) {
 					throw new RuntimeException(e);
@@ -450,7 +459,7 @@ public abstract class OperationController implements Controller {
 		
 		try {
 			progressInfo.save(conn);
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 		}
 		catch (DBException e) {
 			throw new RuntimeException(e);
@@ -481,7 +490,7 @@ public abstract class OperationController implements Controller {
 	}
 	
 	public String generateOperationStatusFolder() {
-		String rootFolder = getProcessController().generateProcessStatusFolder();
+		String rootFolder = getProcessController().getProcessInfo().generateProcessStatusFolder();
 		
 		String subFolder = "";
 		

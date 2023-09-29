@@ -140,7 +140,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 			conn.finalizeConnection();
 		}
 	}
@@ -183,7 +183,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 			throw new RuntimeException(e);
 		} 
 		finally {
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 			conn.finalizeConnection();
 		}
 	}

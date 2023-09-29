@@ -655,8 +655,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInDBReSyncProcess() {
-		SyncOperationType[] supported = { SyncOperationType.NEW_RECORDS_DETECTOR, SyncOperationType.CHANGED_RECORDS_DETECTOR,
-		        SyncOperationType.DATABASE_PREPARATION };
+		SyncOperationType[] supported = { SyncOperationType.NEW_RECORDS_DETECTOR, SyncOperationType.CHANGED_RECORDS_DETECTOR};
 		
 		return utilities.parseArrayToList(supported);
 	}

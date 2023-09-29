@@ -190,5 +190,9 @@ public class TableOperationProgressInfo extends BaseVO {
 	public void refreshProgressMeter() {
 		
 	}
+
+	public void clear(Connection conn) throws DBException {
+		TableOperationProgressInfoDAO.delete(this, this.tableConfiguration, conn);
+	}
 	
 }

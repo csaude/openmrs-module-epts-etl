@@ -97,7 +97,7 @@ public class MozartFillEmptyFields extends MozartProblemSolverEngine {
 		
 		this.reportOfResolvedProblems.saveOnFile();
 		
-		srcConn.markAsSuccessifullyTerminected();
+		srcConn.markAsSuccessifullyTerminated();
 		srcConn.finalizeConnection();
 	}
 	

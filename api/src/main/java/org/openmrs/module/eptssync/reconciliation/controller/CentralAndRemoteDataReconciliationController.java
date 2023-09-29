@@ -168,7 +168,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 			conn.finalizeConnection();
 		}
 	}
@@ -200,7 +200,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			throw new RuntimeException(e);
 		} 
 		finally {
-			conn.markAsSuccessifullyTerminected();
+			conn.markAsSuccessifullyTerminated();
 			conn.finalizeConnection();
 		}	
 	}

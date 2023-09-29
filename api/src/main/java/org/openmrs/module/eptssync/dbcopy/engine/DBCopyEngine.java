@@ -137,7 +137,7 @@ public class DBCopyEngine extends Engine {
 				DBUtilities.executeBatch(destConn, "SET IDENTITY_INSERT " + dstFullTableName + " OFF");
 			}
 			
-			destConn.markAsSuccessifullyTerminected();
+			destConn.markAsSuccessifullyTerminated();
 			destConn.finalizeConnection();
 		}
 	}
