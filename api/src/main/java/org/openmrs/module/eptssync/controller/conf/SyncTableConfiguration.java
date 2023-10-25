@@ -14,6 +14,7 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.eptssync.model.pojo.mozart.MedicationVO;
 import org.openmrs.module.eptssync.model.pojo.mozart.old.DsdVO;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
@@ -908,15 +909,18 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			if (utilities.arrayHasElement(otherApps)) {
 				mappedConn = otherApps.get(0).openConnection();
 				
-				this.mappedTableInfo.fullLoad(mappedConn);
-				
-				this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.mappedTableInfo.getTableName(),
-				    mappedConn);
+				if (DBUtilities.isTableExists(mappedConn.getSchema(), this.mappedTableInfo.getTableName(), mappedConn)) {
+					this.mappedTableInfo.fullLoad(mappedConn);
+					
+					this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.mappedTableInfo.getTableName(),
+					    mappedConn);
+				}
+			} else {
+				this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.getTableName(), mainConn);
 			}
-			else {
-				this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.getTableName(),
-					mainConn);		
-			}
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
 		}
 		finally {
 			mainConn.finalizeConnection();
@@ -1166,36 +1170,23 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	public static void main(String[] args) throws IOException, DBException {
+		System.out.println("AAAAAAAAAAAAAAAA");
+		
 		SyncConfiguration syncConfig = SyncConfiguration
-		        .loadFromFile(new File("D:\\PRG\\JEE\\Workspace\\CSaude\\eptssync\\test\\test.json"));
+		        .loadFromFile(new File("D:\\PRG\\JEE\\Workspace\\CSaude\\eptssync\\mozart\\test\\db_quick_merge_mozart_without_pojo_generation.json"));
 		
 		OpenConnection connection = syncConfig.getMainApp().openConnection();
 		
-		PreparedStatement st = null;
-		
 		try {
-			st = connection.prepareStatement("insert ", Statement.RETURN_GENERATED_KEYS);
+			MedicationVO m = DatabaseObjectDAO.getById(MedicationVO.class, 33248, connection);
 			
-			String sql = " insert ignore into test(code) values ";
-			sql += "('001')";
-			sql += ",('002')";
-			sql += ",('003')";
-			sql += ",('004')";
-			sql += ",('004')";
-			sql += ",('005')";
-			sql += ",('006')";
-			sql += ",('007')";
+			System.out.println(m.getDosage());
 			
-			st.addBatch(sql);
+			String s = new String(m.getDosage(), "UTF-8");
 			
-			st.executeBatch();
 			
-			ResultSet rs = st.getGeneratedKeys();
+			System.out.println(s.toString());
 			
-			while (rs.next()) {
-				System.out.println("Generated ID: " + rs.getInt(1));
-			}
-			st.close();
 		}
 		catch (SQLException e) {
 			throw new DBException(e);

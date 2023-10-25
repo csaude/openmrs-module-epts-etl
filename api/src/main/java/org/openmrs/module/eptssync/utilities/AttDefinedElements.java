@@ -350,9 +350,9 @@ public class AttDefinedElements {
 			return "double";
 		if (utilities.isStringIn(databaseType, "FLOAT", "NUMERIC", "SMALLINT"))
 			return "float";
-		if (utilities.isStringIn(databaseType, "VARCHAR", "CHAR"))
+		if (utilities.isStringIn(databaseType, "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT"))
 			return "String";
-		if (utilities.isStringIn(databaseType, "VARBINARY", "BLOB", "TEXT", "LONGBLOB", "MEDIUMTEXT"))
+		if (utilities.isStringIn(databaseType, "VARBINARY", "BLOB", "LONGBLOB"))
 			return "byte[]";
 		if (utilities.isStringIn(databaseType, "DATE", "DATETIME", "TIME", "TIMESTAMP"))
 			return "java.util.Date";

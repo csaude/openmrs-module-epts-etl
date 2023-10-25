@@ -2,6 +2,7 @@ package org.openmrs.module.eptssync.changedrecordsdetector.model;
 
 import java.sql.Connection;
 import java.util.Date;
+import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.SyncOperationType;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
@@ -66,9 +67,16 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 	
 	public static int getChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, String function, SyncOperationType type, Connection conn) throws DBException, ForbiddenOperationException {
 		
+		List<String> excludedtablesOnVoided =  utilities.parseToList("users", "provider", "location", "orders", "note");
+		
 		String dateCreatedCondition = type.equals(SyncOperationType.NEW_RECORDS_DETECTOR) ? "date_created >= ?" : ""; 
 		String dateChangedCondition = type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !tableConf.getTableName().equalsIgnoreCase("obs") ? "date_changed >= ?" : "";
-		String dateVoidedCondition  = type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !tableConf.isMetadata() && !tableConf.getTableName().equalsIgnoreCase("users") ? "date_voided >= ?" : "";
+		
+		String dateVoidedCondition  = ""; 
+		
+		if (type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !tableConf.isMetadata() && !excludedtablesOnVoided.contains(tableConf.getTableName())) {
+			dateVoidedCondition = "date_voided >= ?";
+		}
 		
 		String extraCondition = "";
 			

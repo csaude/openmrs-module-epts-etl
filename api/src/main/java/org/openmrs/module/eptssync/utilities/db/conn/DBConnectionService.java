@@ -13,6 +13,8 @@ import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.base.BaseDAO;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * @author jpboane
  *
@@ -39,7 +41,7 @@ public class DBConnectionService {
 		this.dataSource.setUrl(dbConnInfo.getConnectionURI());
 		this.dataSource.setUsername(dbConnInfo.getDataBaseUserName());
 		this.dataSource.setPassword(dbConnInfo.getDataBaseUserPassword());
-		this.dataSource.setInitialSize(62);
+		this.dataSource.setInitialSize(10);
 		this.dataSource.setMaxActive(120);
 		this.dataSource.setMaxWait(30000);
 		this.dataSource.setDefaultAutoCommit(false);
@@ -125,6 +127,7 @@ public class DBConnectionService {
 		return service;
 	}*/
 	
+	@JsonIgnore
 	public OpenConnection openConnection() {
 		OpenConnection conn = new OpenConnection(openConnection(50), this);
 		

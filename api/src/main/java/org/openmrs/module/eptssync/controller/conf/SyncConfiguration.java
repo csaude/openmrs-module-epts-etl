@@ -339,19 +339,23 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	public String getSyncStageSchema() {
+		String schema;
+		
 		if (utilities.stringHasValue(this.syncStageSchema)) {
-			return this.syncStageSchema;
+			schema = this.syncStageSchema;
 		}
 		
 		if (isSupposedToRunInOrigin()) {
-			return this.originAppLocationCode + "_sync_stage_area";
+			schema = this.originAppLocationCode + "_sync_stage_area";
 		}
 		if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDBQuickCopyProcess()
 		        || isDataBaseMergeFromSourceDBProcess()) {
-			return "minimal_db_info";
+			schema = "minimal_db_info";
 		} else {
-			return "sync_stage_area";
+			schema = "sync_stage_area";
 		}
+		
+		return schema.toLowerCase();
 	}
 	
 	public String getOriginAppLocationCode() {
