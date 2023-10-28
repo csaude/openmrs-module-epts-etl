@@ -281,7 +281,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			catch (DBException e) {
 				
 				if (e.isDuplicatePrimaryOrUniqueKeyException()
-				        && tableConfiguration.getRelatedSynconfiguration().isSupposedToRunInDestination()
+				        && tableConfiguration.getRelatedSyncConfiguration().isSupposedToRunInDestination()
 				        && tableConfiguration.hasUniqueKeys()) {
 					
 					if (DBUtilities.isPostgresDB(conn)) {
@@ -563,7 +563,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	
 	public void resolveChildrenInconsistences(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents,
 	        Connection conn) throws DBException {
-		if (!syncTableInfo.getRelatedSynconfiguration().isSourceSyncProcess())
+		if (!syncTableInfo.getRelatedSyncConfiguration().isSourceSyncProcess())
 			throw new SyncExeption("You cannot move record to stage area in a installation different to source") {
 				
 				private static final long serialVersionUID = 1L;
@@ -653,8 +653,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	@Override
 	public void loadDestParentInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
-		if (!tableInfo.getRelatedSynconfiguration().isDataBaseMergeFromJSONProcess()
-		        && !tableInfo.getRelatedSynconfiguration().isDataReconciliationProcess())
+		if (!tableInfo.getRelatedSyncConfiguration().isDataBaseMergeFromJSONProcess()
+		        && !tableInfo.getRelatedSyncConfiguration().isDataReconciliationProcess())
 			throw new ForbiddenOperationException("You can only load destination parent in a destination installation");
 		
 		if (!utilities.arrayHasElement(tableInfo.getParents()))
@@ -791,7 +791,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 						    refInfo.getRefTableConfiguration().getPrimaryKey(), parentId, conn);
 					} else {
 						
-						if (tableInfo.getRelatedSynconfiguration().isDataBaseMergeFromJSONProcess()) {
+						if (tableInfo.getRelatedSyncConfiguration().isDataBaseMergeFromJSONProcess()) {
 							parent = retrieveParentInDestination(parentId,
 							    this.getRelatedSyncInfo().getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),
 							    refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);

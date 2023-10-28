@@ -506,7 +506,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		    "concept", "person_attribute_type", "provider_attribute_type", "program", "program_workflow",
 		    "program_workflow_state", "encounter_type", "visit_type", "relationship_type", "patient_identifier_type");
 		
-		if (syncTableConfiguration.getRelatedSynconfiguration().isOpenMRSModel() && syncTableConfiguration.isMetadata()
+		if (syncTableConfiguration.getRelatedSyncConfiguration().isOpenMRSModel() && syncTableConfiguration.isMetadata()
 		        && !isInMetadata) {
 			throw new ForbiddenOperationException(
 			        "The table " + syncTableConfiguration.getTableName() + " is been treated as metadata but it is not");

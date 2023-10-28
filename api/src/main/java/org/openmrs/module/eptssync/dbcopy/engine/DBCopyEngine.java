@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.MappedTableInfo;
+import org.openmrs.module.eptssync.controller.conf.tablemapping.MappedTableInfo;
 import org.openmrs.module.eptssync.dbcopy.controller.DBCopyController;
 import org.openmrs.module.eptssync.dbcopy.model.DBCopySearchParams;
 import org.openmrs.module.eptssync.engine.Engine;
@@ -54,8 +54,11 @@ public class DBCopyEngine extends Engine {
 		executor.execute(cm);*/
 		
 		if (DBUtilities.isSqlServerDB(destConn)) {
-			String dstFullTableName = getSyncTableConfiguration().getMappedTableInfo().generateFullTableName(destConn);
-			DBUtilities.executeBatch(destConn, "SET IDENTITY_INSERT " + dstFullTableName + " ON");
+			
+			for (MappedTableInfo map : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+				String dstFullTableName = map.generateFullTableName(destConn);
+				DBUtilities.executeBatch(destConn, "SET IDENTITY_INSERT " + dstFullTableName + " ON");
+			}
 		}
 		
 		String tableName = getSyncTableConfiguration().getTableName();
@@ -66,65 +69,60 @@ public class DBCopyEngine extends Engine {
 			List<DatabaseObject> records = utilities.parseList(syncRecords, DatabaseObject.class);
 			
 			for (DatabaseObject rec : records) {
-				DatabaseObject destObject = null;
 				
-				MappedTableInfo mappingInfo = getSyncTableConfiguration().getMappedTableInfo();
-				
-				destObject = mappingInfo.generateMappedObject(rec, getRelatedOperationController().getDestAppInfo());
-				
-				try {
-					DatabaseObjectDAO.insertWithObjectId(destObject, destConn);
-				}
-				catch (DBException e) {
+				for (MappedTableInfo mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+					
+					DatabaseObject destObject = null;
+					
+					destObject = mappingInfo.generateMappedObject(rec, getRelatedOperationController().getDestAppInfo(),
+					    conn);
+					
 					try {
-						boolean connIsClosed = true;
-						
-						try {
-							connIsClosed = destConn.isClosed();
-						}
-						catch (SQLException e2) {
-							e2.printStackTrace();
-						}
-						
-						if (connIsClosed) {
-							destConn.finalizeConnection();
-							
-							logWarn("Connection is closed... the current work will be restarted...");
-							
-							performeSync(syncRecords, conn);
-						}
-						else
-						if (DBUtilities.isPostgresDB(destConn)) {
-							/*
-							 * PosgresSql fails when you continue to use a connection which previously encountered an exception
-							 * So we are committing before try to use the connection again
-							 * 
-							 * NOTE that we are taking risk if some other bug happen and the transaction need to be aborted
-							 */
-							try {
-								destConn.commit();
-							}
-							catch (SQLException e1) {
-								throw new DBException(e1);
-							}
-						}
-						
-						if (e.isDuplicatePrimaryOrUniqueKeyException()) {
-							logDebug("Record " + rec.getObjectId() + " alredy on DB");
-						} else {
-							logError("Error while copying record [" + rec.toString() + "]");
-							
-							throw e;
-						}
+						DatabaseObjectDAO.insertWithObjectId(destObject, destConn);
 					}
-					catch (DBException e1) {
-						logWarn("An error ocurred");
-						logError("----------------------------------------------------------------------------------------------------------------------------");
-						e.printStackTrace();
-						System.out.println();
-						logError("----------------------------------------------------------------------------------------------------------------------------");
-						logError("----------------------------------------------------------------------------------------------------------------------------");
-						e1.printStackTrace();
+					catch (DBException e) {
+						try {
+							boolean connIsClosed = true;
+							
+							try {
+								connIsClosed = destConn.isClosed();
+							}
+							catch (SQLException e2) {
+								e2.printStackTrace();
+							}
+							
+							if (connIsClosed) {
+								destConn.finalizeConnection();
+								
+								logWarn("Connection is closed... the current work will be restarted...");
+								
+								performeSync(syncRecords, conn);
+							} else if (DBUtilities.isPostgresDB(destConn)) {
+								/*
+								 * PosgresSql fails when you continue to use a connection which previously encountered an exception
+								 * So we are committing before try to use the connection again
+								 * 
+								 * NOTE that we are taking risk if some other bug happen and the transaction need to be aborted
+								 */
+								try {
+									destConn.commit();
+								}
+								catch (SQLException e1) {
+									throw new DBException(e1);
+								}
+							}
+							
+							if (e.isDuplicatePrimaryOrUniqueKeyException()) {
+								logDebug("Record " + rec.getObjectId() + " alredy on DB");
+							} else {
+								logError("Error while copying record [" + rec.toString() + "]");
+								
+								throw e;
+							}
+						}
+						catch (DBException e1) {
+							throw e1;
+						}
 					}
 				}
 			}
@@ -133,8 +131,10 @@ public class DBCopyEngine extends Engine {
 		}
 		finally {
 			if (DBUtilities.isSqlServerDB(destConn)) {
-				String dstFullTableName = getSyncTableConfiguration().getMappedTableInfo().generateFullTableName(destConn);
-				DBUtilities.executeBatch(destConn, "SET IDENTITY_INSERT " + dstFullTableName + " OFF");
+				for (MappedTableInfo map : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+					String dstFullTableName = map.generateFullTableName(destConn);
+					DBUtilities.executeBatch(destConn, "SET IDENTITY_INSERT " + dstFullTableName + " OFF");
+				}
 			}
 			
 			destConn.markAsSuccessifullyTerminated();
@@ -151,7 +151,7 @@ public class DBCopyEngine extends Engine {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DBCopySearchParams(this.getSyncTableConfiguration(),
 		        limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
 		
 		return searchParams;
 	}

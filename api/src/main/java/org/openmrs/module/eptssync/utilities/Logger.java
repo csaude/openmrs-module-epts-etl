@@ -4,9 +4,6 @@ import java.util.Date;
 import java.util.logging.Level;
 
 import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.BasicConfigurator;
-import org.openmrs.module.eptssync.controller.ProcessController;
 
 public class Logger {
 	
@@ -48,7 +45,9 @@ public class Logger {
 	
 	public void logWarn(String msg) {
 		if (level.intValue() <= Level.WARNING.intValue()) {
-			logger.warn(msg + " At: " + utilities.formatDateToDDMMYYYY_HHMISS(utilities.getCurrentDate()));
+			msg = putAdditionalInfoOnLog(msg);
+			
+			logger.warn(msg);
 			
 			updateLastLogDate();
 		}
@@ -56,7 +55,10 @@ public class Logger {
 	
 	public void logInfo(String msg) {
 		if (level.intValue() <= Level.INFO.intValue()) {
-			logger.info(msg + " At: " + utilities.formatDateToDDMMYYYY_HHMISS(utilities.getCurrentDate()));
+			msg = putAdditionalInfoOnLog(msg);
+			
+			logger.info(msg);
+			//logger.error(msg);
 			
 			updateLastLogDate();
 		}
@@ -64,7 +66,9 @@ public class Logger {
 	
 	public void logErr(String msg) {
 		if (level.intValue() <= Level.SEVERE.intValue()) {
-			logger.error(msg + " At: " + utilities.formatDateToDDMMYYYY_HHMISS(utilities.getCurrentDate()));
+			msg = putAdditionalInfoOnLog(msg);
+			
+			logger.error(msg);
 			
 			updateLastLogDate();
 		}
@@ -72,10 +76,17 @@ public class Logger {
 	
 	public void logDebug(String msg) {
 		if (level.intValue() <= Level.FINE.intValue()) {
-			logger.debug(msg + " At: " + utilities.formatDateToDDMMYYYY_HHMISS(utilities.getCurrentDate()));
+			msg = putAdditionalInfoOnLog(msg);
 			
+			logger.debug(msg);
+			//logger.error(msg);
+
 			updateLastLogDate();
 		}
+	}
+	
+	String putAdditionalInfoOnLog(String msg) {
+		return msg += " At: " + utilities.formatDateToDDMMYYYY_HHMISS(utilities.getCurrentDate());	
 	}
 	
 	void updateLastLogDate() {

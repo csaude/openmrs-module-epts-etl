@@ -49,7 +49,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	public ProblemsSolverEngineMissingUserRoles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
-		this.userRoleTableConf = SyncTableConfiguration.init("user_role", getSyncTableConfiguration().getRelatedSynconfiguration());
+		this.userRoleTableConf = SyncTableConfiguration.init("user_role", getSyncTableConfiguration().getRelatedSyncConfiguration());
 		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());
 		this.userRecordClass = getSyncTableConfiguration().getSyncRecordClass(getDefaultApp());
 	}
@@ -202,7 +202,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getSyncTableConfiguration(), null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
 		
 		return searchParams;
 	}

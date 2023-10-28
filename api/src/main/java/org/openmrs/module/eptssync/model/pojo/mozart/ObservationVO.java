@@ -1,13 +1,13 @@
 package org.openmrs.module.eptssync.model.pojo.mozart;
 
-import org.openmrs.module.eptssync.model.pojo.generic.*; 
- 
-import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities; 
- 
-import org.openmrs.module.eptssync.utilities.AttDefinedElements; 
-import java.sql.SQLException; 
-import java.sql.ResultSet; 
- 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.openmrs.module.eptssync.model.pojo.generic.AbstractDatabaseObject;
+import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.utilities.AttDefinedElements;
+import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
+
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class ObservationVO extends AbstractDatabaseObject implements DatabaseObject { 
@@ -17,7 +17,7 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 	private java.util.Date observationDate;
 	private double valueNumeric;
 	private Integer valueConceptId;
-	private byte[] valueText;
+	private String valueText;
 	private java.util.Date valueDatetime;
 	private String obsUuid;
  
@@ -73,11 +73,11 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 		return this.valueConceptId;
 	}
  
-	public void setValueText(byte[] valueText){ 
+	public void setValueText(String valueText){ 
 	 	this.valueText = valueText;
 	}
  
-	public byte[] getValueText(){ 
+	public String getValueText(){ 
 		return this.valueText;
 	}
  
@@ -115,7 +115,7 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 		this.observationDate =  rs.getTimestamp("observation_date") != null ? new java.util.Date( rs.getTimestamp("observation_date").getTime() ) : null;
 		this.valueNumeric = rs.getDouble("value_numeric");
 		if (rs.getObject("value_concept_id") != null) this.valueConceptId = rs.getInt("value_concept_id");
-		this.valueText = rs.getBytes("value_text");
+		this.valueText = rs.getString("value_text");
 		this.valueDatetime =  rs.getTimestamp("value_datetime") != null ? new java.util.Date( rs.getTimestamp("value_datetime").getTime() ) : null;
 		this.obsUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("obs_uuid") != null ? rs.getString("obs_uuid").trim() : null);
 	} 

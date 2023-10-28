@@ -9,7 +9,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 public class InconsistenceInfoDAO extends BaseDAO{
 	public static void insert(InconsistenceInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
 		try {
-			String syncStageSchema = tableConfiguration.getRelatedSynconfiguration().getSyncStageSchema();
+			String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
 			
 			Object[] params = {record.getTableName(),
 							   record.getRecordId(),

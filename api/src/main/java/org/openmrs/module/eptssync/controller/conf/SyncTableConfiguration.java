@@ -3,13 +3,12 @@ package org.openmrs.module.eptssync.controller.conf;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.conf.tablemapping.MappedTableInfo;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
@@ -27,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class SyncTableConfiguration extends BaseConfiguration implements Comparable<SyncTableConfiguration> {
 	
-	static CommonUtilities utilities = CommonUtilities.getInstance();
+	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String tableName;
 	
@@ -39,7 +38,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	private Class<DatabaseObject> syncRecordClass;
 	
-	private SyncConfiguration relatedSyncTableInfoSource;
+	private SyncConfiguration relatedSyncConfiguration;
 	
 	private String primaryKey;
 	
@@ -73,19 +72,19 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	 */
 	private List<List<Field>> winningRecordFieldsInfo;
 	
-	private MappedTableInfo mappedTableInfo;
+	private List<MappedTableInfo> destinationTableMappingInfo;
 	
 	private boolean manualIdGeneration;
 	
 	public SyncTableConfiguration() {
 	}
 	
-	public MappedTableInfo getMappedTableInfo() {
-		return mappedTableInfo;
+	public List<MappedTableInfo> getDestinationTableMappingInfo() {
+		return destinationTableMappingInfo;
 	}
 	
-	public void setMappedTableInfo(MappedTableInfo mappedTableInfo) {
-		this.mappedTableInfo = mappedTableInfo;
+	public void setDestinationTableMappingInfo(List<MappedTableInfo> destinationTableMappingInfo) {
+		this.destinationTableMappingInfo = destinationTableMappingInfo;
 	}
 	
 	public void clone(SyncTableConfiguration toCloneFrom) {
@@ -94,7 +93,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		this.childred = toCloneFrom.childred;
 		this.conditionalParents = toCloneFrom.conditionalParents;
 		this.syncRecordClass = toCloneFrom.syncRecordClass;
-		this.relatedSyncTableInfoSource = toCloneFrom.relatedSyncTableInfoSource;
+		this.relatedSyncConfiguration = toCloneFrom.relatedSyncConfiguration;
 		this.primaryKey = toCloneFrom.primaryKey;
 		this.primaryKeyType = toCloneFrom.primaryKeyType;
 		this.sharePkWith = toCloneFrom.sharePkWith;
@@ -107,7 +106,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		this.uniqueKeys = toCloneFrom.uniqueKeys;
 		this.fields = toCloneFrom.fields;
 		this.winningRecordFieldsInfo = toCloneFrom.winningRecordFieldsInfo;
-		this.mappedTableInfo = toCloneFrom.mappedTableInfo;
+		this.destinationTableMappingInfo = toCloneFrom.destinationTableMappingInfo;
 	}
 	
 	public boolean isManualIdGeneration() {
@@ -120,6 +119,10 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	public void setWinningRecordFieldsInfo(List<List<Field>> winningRecordFieldsInfo) {
 		this.winningRecordFieldsInfo = winningRecordFieldsInfo;
+	}
+	
+	public boolean hasWinningRecordsInfo() {
+		return this.winningRecordFieldsInfo != null;
 	}
 	
 	public List<Field> getFields() {
@@ -156,7 +159,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public boolean isFromOpenMRSModel() {
-		return this.getRelatedSynconfiguration().isOpenMRSModel();
+		return this.getRelatedSyncConfiguration().isOpenMRSModel();
 	}
 	
 	public boolean isRemoveForbidden() {
@@ -185,7 +188,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	public AppInfo getMainApp() {
-		return getRelatedSynconfiguration().getMainApp();
+		return getRelatedSyncConfiguration().getMainApp();
 	}
 	
 	@JsonIgnore
@@ -194,12 +197,12 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	public boolean isDoIntegrityCheckInTheEnd(SyncOperationType operationType) {
-		return getRelatedSynconfiguration().isDoIntegrityCheckInTheEnd(operationType);
+		return getRelatedSyncConfiguration().isDoIntegrityCheckInTheEnd(operationType);
 	}
 	
 	@JsonIgnore
 	public String getId() {
-		return this.getRelatedSynconfiguration().getDesignation() + "_" + this.tableName;
+		return this.getRelatedSyncConfiguration().getDesignation() + "_" + this.tableName;
 	}
 	
 	@JsonIgnore
@@ -249,12 +252,13 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	@JsonIgnore
-	public SyncConfiguration getRelatedSynconfiguration() {
-		return relatedSyncTableInfoSource;
+	public SyncConfiguration getRelatedSyncConfiguration() {
+		return relatedSyncConfiguration;
 	}
 	
-	public void setRelatedSyncTableInfoSource(SyncConfiguration relatedSyncTableInfoSource) {
-		this.relatedSyncTableInfoSource = relatedSyncTableInfoSource;
+	
+	public void setRelatedSyncConfiguration(SyncConfiguration relatedSyncConfiguration) {
+		this.relatedSyncConfiguration = relatedSyncConfiguration;
 	}
 	
 	public String getTableName() {
@@ -277,7 +281,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public String getPrimaryKey() {
-		OpenConnection conn = relatedSyncTableInfoSource.getMainApp().openConnection();
+		OpenConnection conn = relatedSyncConfiguration.getMainApp().openConnection();
 		
 		try {
 			return getPrimaryKey(conn);
@@ -314,7 +318,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public void loadUniqueKeys() {
-		OpenConnection conn = getRelatedSynconfiguration().getMainApp().openConnection();
+		OpenConnection conn = getRelatedSyncConfiguration().getMainApp().openConnection();
 		
 		try {
 			loadUniqueKeys(conn);
@@ -438,7 +442,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 					ref.setRefType(RefInfo.CHILD_REF_TYPE);
 					ref.setRefColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
 					ref.setRefTableConfiguration(SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"),
-					    this.relatedSyncTableInfoSource));
+					    this.relatedSyncConfiguration));
 					ref.setRefColumnType(AttDefinedElements.convertDatabaseTypeTOJavaType(DBUtilities.determineColunType(
 					    ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(), conn)));
 					ref.setRelatedSyncTableConfiguration(this);
@@ -446,7 +450,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 					    ref.getRefColumnName(), conn));
 					
 					//Mark as metadata if there is no table info configured
-					if (getRelatedSynconfiguration().find(ref.getRefTableConfiguration()) == null) {
+					if (getRelatedSyncConfiguration().find(ref.getRefTableConfiguration()) == null) {
 						ref.getRefTableConfiguration().setMetadata(true);
 					}
 					
@@ -467,19 +471,19 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	public void logInfo(String msg) {
-		getRelatedSynconfiguration().logInfo(msg);
+		getRelatedSyncConfiguration().logInfo(msg);
 	}
 	
 	public void logDebug(String msg) {
-		getRelatedSynconfiguration().logDebug(msg);
+		getRelatedSyncConfiguration().logDebug(msg);
 	}
 	
 	public void logWarn(String msg) {
-		getRelatedSynconfiguration().logWarn(msg);
+		getRelatedSyncConfiguration().logWarn(msg);
 	}
 	
 	public void logErr(String msg) {
-		getRelatedSynconfiguration().logErr(msg);
+		getRelatedSyncConfiguration().logErr(msg);
 	}
 	
 	private int countParents(Connection conn) throws SQLException {
@@ -526,7 +530,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 					String refColumName = foreignKeyRS.getString("FKCOLUMN_NAME");
 					
 					SyncTableConfiguration refTableConfiguration = SyncTableConfiguration
-					        .init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncTableInfoSource);
+					        .init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncConfiguration);
 					
 					RefInfo ref = generateRefInfo(refColumName, null, null, RefInfo.PARENT_REF_TYPE, refTableConfiguration,
 					    conn);
@@ -561,7 +565,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 						
 						if (autoGeneratedParent == null) {
 							configuredParent.setRefTableConfiguration(SyncTableConfiguration
-							        .init(configuredParent.getTableName(), this.relatedSyncTableInfoSource));
+							        .init(configuredParent.getTableName(), this.relatedSyncConfiguration));
 							configuredParent.setRelatedSyncTableConfiguration(this);
 							
 							auxRefInfo.add(configuredParent);
@@ -590,7 +594,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			
 			this.conditionalParents.set(i,
 			    generateRefInfo(refInfo.getRefColumnName(), refInfo.getConditionField(), refInfo.getConditionValue(),
-			        RefInfo.PARENT_REF_TYPE, init(refInfo.getTableName(), this.getRelatedSynconfiguration()), conn));
+			        RefInfo.PARENT_REF_TYPE, init(refInfo.getTableName(), this.getRelatedSyncConfiguration()), conn));
 		}
 	}
 	
@@ -625,7 +629,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		if (tableInfo == null) {
 			tableInfo = new SyncTableConfiguration();
 			tableInfo.setTableName(tableName);
-			tableInfo.setRelatedSyncTableInfoSource(sourceInfo);
+			tableInfo.setRelatedSyncConfiguration(sourceInfo);
 			
 			sourceInfo.addToTableConfigurationPull(tableInfo);
 		}
@@ -637,7 +641,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		if (syncRecordClass == null)
 			this.syncRecordClass = DatabaseEntityPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application),
-			    getRelatedSynconfiguration());
+			    getRelatedSyncConfiguration());
 		
 		if (syncRecordClass == null) {
 			OpenConnection conn = application.openConnection();
@@ -708,7 +712,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public String getOriginAppLocationCode() {
-		return getRelatedSynconfiguration().getOriginAppLocationCode();
+		return getRelatedSyncConfiguration().getOriginAppLocationCode();
 	}
 	
 	public void generateRecordClass(AppInfo application, boolean fullClass) {
@@ -796,7 +800,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public String getSyncStageSchema() {
-		return getRelatedSynconfiguration().getSyncStageSchema();
+		return getRelatedSyncConfiguration().getSyncStageSchema();
 	}
 	
 	@JsonIgnore
@@ -850,7 +854,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public boolean isConfigured() {
-		for (SyncTableConfiguration tabConf : getRelatedSynconfiguration().getTablesConfigurations()) {
+		for (SyncTableConfiguration tabConf : getRelatedSyncConfiguration().getTablesConfigurations()) {
 			if (tabConf.equals(this))
 				return true;
 		}
@@ -858,7 +862,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		return false;
 	}
 	
-	protected synchronized void fullLoad(Connection conn) {
+	public synchronized void fullLoad(Connection conn) {
 		try {
 			boolean exists = DBUtilities.isTableExists(conn.getSchema(), getTableName(), conn);
 			
@@ -877,13 +881,19 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			
 			this.fullLoaded = true;
 			
-			if (mappedTableInfo == null) {
-				mappedTableInfo = MappedTableInfo.generateFromSyncTableConfiguration(this);
-			} else {
-				this.mappedTableInfo.setRelatedSyncTableInfoSource(relatedSyncTableInfoSource);
+			if (destinationTableMappingInfo == null) {
+				destinationTableMappingInfo = MappedTableInfo.generateFromSyncTableConfiguration(this);
 				
-				if (!utilities.arrayHasElement(this.mappedTableInfo.getFieldsMapping())) {
-					this.mappedTableInfo.generateMappingFields(this);
+			} else {
+				
+				for (MappedTableInfo map : this.destinationTableMappingInfo) {
+					map.setRelatedSyncConfiguration(relatedSyncConfiguration);
+					map.setRelatedTableConfiguration(this);
+					if (!utilities.arrayHasElement(map.getFieldsMapping())) {
+						map.generateMappingFields(this);
+					}
+					
+					map.loadAdditionalFieldsInfo();
 				}
 			}
 			
@@ -897,23 +907,26 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	public synchronized void fullLoad() throws DBException {
-		OpenConnection mainConn = getRelatedSynconfiguration().getMainApp().openConnection();
+		OpenConnection mainConn = getRelatedSyncConfiguration().getMainApp().openConnection();
 		
 		OpenConnection mappedConn = null;
 		
 		try {
 			fullLoad(mainConn);
 			
-			List<AppInfo> otherApps = getRelatedSynconfiguration().exposeAllAppsNotMain();
+			List<AppInfo> otherApps = getRelatedSyncConfiguration().exposeAllAppsNotMain();
 			
 			if (utilities.arrayHasElement(otherApps)) {
 				mappedConn = otherApps.get(0).openConnection();
 				
-				if (DBUtilities.isTableExists(mappedConn.getSchema(), this.mappedTableInfo.getTableName(), mappedConn)) {
-					this.mappedTableInfo.fullLoad(mappedConn);
+				for (MappedTableInfo map : this.destinationTableMappingInfo) {
 					
-					this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.mappedTableInfo.getTableName(),
-					    mappedConn);
+					if (DBUtilities.isTableExists(mappedConn.getSchema(), map.getTableName(), mappedConn)) {
+						map.fullLoad(mappedConn);
+						
+						this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(map.getTableName(), mappedConn);
+					}
+					
 				}
 			} else {
 				this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.getTableName(), mainConn);
@@ -965,12 +978,12 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public File getPOJOCopiledFilesDirectory() {
-		return getRelatedSynconfiguration().getPOJOCompiledFilesDirectory();
+		return getRelatedSyncConfiguration().getPOJOCompiledFilesDirectory();
 	}
 	
 	@JsonIgnore
 	public File getPOJOSourceFilesDirectory() {
-		return getRelatedSynconfiguration().getPOJOSourceFilesDirectory();
+		return getRelatedSyncConfiguration().getPOJOSourceFilesDirectory();
 	}
 	
 	public RefInfo findParent(RefInfo parent) {
@@ -995,37 +1008,37 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public File getClassPath() {
-		return new File(relatedSyncTableInfoSource.getClassPath());
+		return new File(relatedSyncConfiguration.getClassPath());
 	}
 	
 	@JsonIgnore
 	public boolean isDestinationInstallationType() {
-		return getRelatedSynconfiguration().isDataBaseMergeFromJSONProcess();
+		return getRelatedSyncConfiguration().isDataBaseMergeFromJSONProcess();
 	}
 	
 	@JsonIgnore
 	public boolean isDataReconciliationProcess() {
-		return getRelatedSynconfiguration().isDataReconciliationProcess();
+		return getRelatedSyncConfiguration().isDataReconciliationProcess();
 	}
 	
 	@JsonIgnore
 	public boolean isDBQuickLoad() {
-		return getRelatedSynconfiguration().isDBQuickLoadProcess();
+		return getRelatedSyncConfiguration().isDBQuickLoadProcess();
 	}
 	
 	@JsonIgnore
 	public boolean isDBQuickCopy() {
-		return getRelatedSynconfiguration().isDbCopy();
+		return getRelatedSyncConfiguration().isDbCopy();
 	}
 	
 	@JsonIgnore
 	public boolean isDbCopy() {
-		return getRelatedSynconfiguration().isDBQuickCopyProcess();
+		return getRelatedSyncConfiguration().isDBQuickCopyProcess();
 	}
 	
 	@JsonIgnore
 	public boolean isDataBasesMergeFromSourceDBProcess() {
-		return getRelatedSynconfiguration().isDataBaseMergeFromSourceDBProcess();
+		return getRelatedSyncConfiguration().isDataBaseMergeFromSourceDBProcess();
 	}
 	
 	@JsonIgnore
@@ -1172,8 +1185,8 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	public static void main(String[] args) throws IOException, DBException {
 		System.out.println("AAAAAAAAAAAAAAAA");
 		
-		SyncConfiguration syncConfig = SyncConfiguration
-		        .loadFromFile(new File("D:\\PRG\\JEE\\Workspace\\CSaude\\eptssync\\mozart\\test\\db_quick_merge_mozart_without_pojo_generation.json"));
+		SyncConfiguration syncConfig = SyncConfiguration.loadFromFile(new File(
+		        "D:\\PRG\\JEE\\Workspace\\CSaude\\eptssync\\mozart\\test\\db_quick_merge_mozart_without_pojo_generation.json"));
 		
 		OpenConnection connection = syncConfig.getMainApp().openConnection();
 		
@@ -1182,10 +1195,9 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			
 			System.out.println(m.getDosage());
 			
-			String s = new String(m.getDosage(), "UTF-8");
+			//String s = new String(m.getDosage(), "UTF-8");
 			
-			
-			System.out.println(s.toString());
+			//System.out.println(s.toString());
 			
 		}
 		catch (SQLException e) {

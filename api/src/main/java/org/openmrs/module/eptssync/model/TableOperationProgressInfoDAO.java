@@ -12,7 +12,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 	
 	public static void insert(TableOperationProgressInfo record, SyncTableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
-		String syncStageSchema = tableConfiguration.getRelatedSynconfiguration().getSyncStageSchema();
+		String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
 		
 		Object[] params = { record.getOperationId(), record.getOperationName(), record.getOperationTable(),
 		        record.getOriginAppLocationCode(), DateAndTimeUtilities.getCurrentSystemDate(conn),
@@ -45,7 +45,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 	
 	public static void update(TableOperationProgressInfo record, SyncTableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
-		String syncStageSchema = tableConfiguration.getRelatedSynconfiguration().getSyncStageSchema();
+		String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
 		
 		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), record.getProgressMeter().getTotal(),
 		        record.getProgressMeter().getProcessed(), record.getProgressMeter().getStatus(), record.getOperationId() };
@@ -64,7 +64,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 	
 	public static TableOperationProgressInfo find(OperationController controller, SyncTableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
-		String syncStageSchema = tableConfiguration.getRelatedSynconfiguration().getSyncStageSchema();
+		String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
 		
 		Object[] params = { TableOperationProgressInfo.generateOperationId(controller, tableConfiguration) };
 		
@@ -83,7 +83,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 	
 	public static void delete(TableOperationProgressInfo record, SyncTableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
-		String syncStageSchema = tableConfiguration.getRelatedSynconfiguration().getSyncStageSchema();
+		String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
 		
 		Object[] params = { record.getOperationId() };
 		

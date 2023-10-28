@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.controller.conf.tablemapping.MappedTableInfo;
 import org.openmrs.module.eptssync.engine.Engine;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.engine.SyncSearchParams;
@@ -53,14 +54,16 @@ public class PojoGenerationEngine extends Engine {
 		
 		generate(mainApp, getSyncTableConfiguration());
 		
-		List<AppInfo> otherApps = getSyncTableConfiguration().getRelatedSynconfiguration().exposeAllAppsNotMain();
+		List<AppInfo> otherApps = getSyncTableConfiguration().getRelatedSyncConfiguration().exposeAllAppsNotMain();
 		
 		AppInfo mappingAppInfo = null;
 		
 		if (utilities.arrayHasElement(otherApps)) {
 			mappingAppInfo = otherApps.get(0);
 			
-			generate(mappingAppInfo, getSyncTableConfiguration().getMappedTableInfo());
+			for (MappedTableInfo map : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+				generate(mappingAppInfo, map);
+			}
 		}
 	}
 	

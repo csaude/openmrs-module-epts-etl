@@ -69,9 +69,9 @@ public class TransportController extends OperationController {
     public File getSyncDirectory(SyncTableConfiguration syncInfo) {
     	String fileName = "";
 
-		fileName += syncInfo.getRelatedSynconfiguration().getSyncRootDirectory();
+		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		fileName += syncInfo.getRelatedSynconfiguration().getOriginAppLocationCode().toLowerCase();
+		fileName += syncInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += "export";
 		fileName += FileUtilities.getPathSeparator();
@@ -83,9 +83,9 @@ public class TransportController extends OperationController {
     public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
      	String fileName = "";
 
-		fileName += syncInfo.getRelatedSynconfiguration().getSyncRootDirectory();
+		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		fileName += syncInfo.getRelatedSynconfiguration().getOriginAppLocationCode().toLowerCase();
+		fileName += syncInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += "export_bkp";
 		fileName += FileUtilities.getPathSeparator();
@@ -105,11 +105,11 @@ public class TransportController extends OperationController {
     public File getSyncDestinationDirectory(SyncTableConfiguration syncInfo) throws IOException {
      	String fileName = "";
 
-		fileName += syncInfo.getRelatedSynconfiguration().getSyncRootDirectory();
+		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += "import";
 		fileName += FileUtilities.getPathSeparator();
-		fileName += syncInfo.getRelatedSynconfiguration().getOriginAppLocationCode().toLowerCase();
+		fileName += syncInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += syncInfo.getTableName();
  

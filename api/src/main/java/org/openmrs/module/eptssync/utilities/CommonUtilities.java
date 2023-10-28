@@ -358,6 +358,11 @@ public class  CommonUtilities implements Serializable{
 		return FuncoesGenericas.getFirstRecordOnArray(list);
 	}
 
+	public  <T> T getLastRecordOnArray(List<T> list){
+		return FuncoesGenericas.getLastRecordOnArray(list);
+	}
+
+	
 	/**
 	 * Fun��o auxiliar usada para gerar o id do checkbox na tag listcheckbox.tag
 	 * @return 
@@ -1034,5 +1039,5 @@ public class  CommonUtilities implements Serializable{
 		return map;
 	}
 	
-	
+		
 }

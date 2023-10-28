@@ -3,10 +3,12 @@ package org.openmrs.module.eptssync.dbquickmerge.engine;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
-import org.openmrs.module.eptssync.controller.conf.MappedTableInfo;
+import org.openmrs.module.eptssync.controller.conf.tablemapping.MappedTableInfo;
 import org.openmrs.module.eptssync.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.eptssync.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.eptssync.dbquickmerge.model.MergingRecord;
@@ -103,7 +105,7 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		if (getRelatedSyncOperationConfig().writeOperationHistory()) {
+		if (getRelatedSyncOperationConfig().writeOperationHistory() || getSyncTableConfiguration().hasWinningRecordsInfo()) {
 			performeSyncOneByOne(syncRecords, conn);
 		} else {
 			performeBatchSync(syncRecords, conn);
@@ -118,7 +120,9 @@ public class DBQuickMergeEngine extends Engine {
 		
 		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
 		
-		List<MergingRecord> mergingRecs = new ArrayList<MergingRecord>(syncRecords.size());
+		Map<String, List<MergingRecord>> mergingRecs = new HashMap<>();
+		
+		//(syncRecords.size());
 		
 		try {
 			int currObjectId = 0;
@@ -130,19 +134,25 @@ public class DBQuickMergeEngine extends Engine {
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				DatabaseObject destObject = null;
-				
-				MappedTableInfo mappingInfo = getSyncTableConfiguration().getMappedTableInfo();
-				
-				destObject = mappingInfo.generateMappedObject(rec, this.dstApp);
-				
-				if (getSyncTableConfiguration().isManualIdGeneration()) {
-					destObject.setObjectId(currObjectId++);
+				for (MappedTableInfo mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+					
+					DatabaseObject destObject = null;
+					
+					destObject = mappingInfo.generateMappedObject(rec, this.dstApp, conn);
+					
+					if (getSyncTableConfiguration().isManualIdGeneration()) {
+						destObject.setObjectId(currObjectId++);
+					}
+					
+					MergingRecord mr = new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp,
+					        false);
+					
+					if (mergingRecs.get(mappingInfo.getTableName()) == null) {
+						mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
+					}
+					
+					mergingRecs.get(mappingInfo.getTableName()).add(mr);
 				}
-				
-				MergingRecord mr = new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp, false);
-				
-				mergingRecs.add(mr);
 			}
 			
 			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
@@ -186,85 +196,88 @@ public class DBQuickMergeEngine extends Engine {
 				
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				DatabaseObject destObject = null;
-				
-				MappedTableInfo mappingInfo = getSyncTableConfiguration().getMappedTableInfo();
-				
-				destObject = mappingInfo.generateMappedObject(rec, this.dstApp);
-				
-				if (getSyncTableConfiguration().isManualIdGeneration()) {
-					destObject.setObjectId(currObjectId++);
-				}
-				
-				boolean wrt = writeOperationHistory();
-				
-				MergingRecord data = new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp, wrt);
-				
-				try {
-					process(data, startingStrLog, 0, conn, dstConn);
-					wentWrong = false;
-				}
-				catch (MissingParentException e) {
-					logWarn(
-					    startingStrLog + "." + data.getRecord() + " - " + e.getMessage() + " The record will be skipped");
+				for (MappedTableInfo mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
 					
-					InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
-					    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
+					DatabaseObject destObject = null;
 					
-					inconsistenceInfo.save(getSyncTableConfiguration(), conn);
+					destObject = mappingInfo.generateMappedObject(rec, this.dstApp, conn);
 					
-					wentWrong = false;
-				}
-				catch (ConflictWithRecordNotYetAvaliableException e) {
-					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-					        + e.getLocalizedMessage() + ". Skipping... ");
-				}
-				catch (DBException e) {
-					if (e.isDuplicatePrimaryOrUniqueKeyException()) {
+					if (getSyncTableConfiguration().isManualIdGeneration()) {
+						destObject.setObjectId(currObjectId++);
+					}
+					
+					boolean wrt = writeOperationHistory();
+					
+					MergingRecord data = new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp,
+					        wrt);
+					
+					try {
+						process(data, startingStrLog, 0, conn, dstConn);
+						wentWrong = false;
+					}
+					catch (MissingParentException e) {
+						logWarn(startingStrLog + "." + data.getRecord() + " - " + e.getMessage()
+						        + " The record will be skipped");
+						
+						InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
+						    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
+						
+						inconsistenceInfo.save(getSyncTableConfiguration(), conn);
+						
+						wentWrong = false;
+					}
+					catch (ConflictWithRecordNotYetAvaliableException e) {
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
 						        + e.getLocalizedMessage() + ". Skipping... ");
-					} else if (e.isIntegrityConstraintViolationException()) {
+					}
+					catch (DBException e) {
+						if (e.isDuplicatePrimaryOrUniqueKeyException()) {
+							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+							        + e.getLocalizedMessage() + ". Skipping... ");
+						} else if (e.isIntegrityConstraintViolationException()) {
+							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+							        + e.getLocalizedMessage() + ". Skipping... ");
+						} else {
+							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+							        + e.getLocalizedMessage() + ". Skipping... ");
+							
+							throw e;
+						}
+					}
+					catch (Exception e) {
+						e.printStackTrace();
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-						        + e.getLocalizedMessage() + ". Skipping... ");
-					} else {
-						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-						        + e.getLocalizedMessage() + ". Skipping... ");
+						        + e.getLocalizedMessage());
 						
 						throw e;
 					}
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-					        + e.getLocalizedMessage());
-					
-					throw e;
-				}
-				finally {
-					
-					if (wentWrong) {
-						if (DBUtilities.isPostgresDB(dstConn)) {
-							/*
-							 * PosgresSql fails when you continue to use a connection which previously encountered an exception
-							 * So we are committing before try to use the connection again
-							 * 
-							 * NOTE that we are taking risk if some other bug happen and the transaction need to be aborted
-							 */
-							try {
-								dstConn.commit();
-							}
-							catch (SQLException e) {
-								throw new DBException(e);
-							}
-						}
+					finally {
 						
-						if (this.finalCheckStatus.notInitialized()) {
-							recordsToIgnoreOnStatistics.add(record);
+						if (wentWrong) {
+							if (DBUtilities.isPostgresDB(dstConn)) {
+								/*
+								 * PosgresSql fails when you continue to use a connection which previously encountered an exception
+								 * So we are committing before try to use the connection again
+								 * 
+								 * NOTE that we are taking risk if some other bug happen and the transaction need to be aborted
+								 */
+								try {
+									dstConn.commit();
+								}
+								catch (SQLException e) {
+									throw new DBException(e);
+								}
+							}
+							
+							if (this.finalCheckStatus.notInitialized()) {
+								recordsToIgnoreOnStatistics.add(record);
+							}
 						}
 					}
+					
+					i++;
+					
 				}
-				
-				i++;
 			}
 			
 			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
@@ -300,7 +313,7 @@ public class DBQuickMergeEngine extends Engine {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickMergeSearchParams(this.getSyncTableConfiguration(),
 		        limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
 		
 		return searchParams;
 	}

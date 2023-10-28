@@ -321,7 +321,7 @@ public class SyncConfiguration extends BaseConfiguration {
 	public void setTablesConfigurations(List<SyncTableConfiguration> tablesConfigurations) {
 		if (tablesConfigurations != null) {
 			for (SyncTableConfiguration config : tablesConfigurations) {
-				config.setRelatedSyncTableInfoSource(this);
+				config.setRelatedSyncConfiguration(this);
 				
 				addToTableConfigurationPull(config);
 			}
@@ -343,12 +343,9 @@ public class SyncConfiguration extends BaseConfiguration {
 		
 		if (utilities.stringHasValue(this.syncStageSchema)) {
 			schema = this.syncStageSchema;
-		}
-		
-		if (isSupposedToRunInOrigin()) {
+		} else if (isSupposedToRunInOrigin()) {
 			schema = this.originAppLocationCode + "_sync_stage_area";
-		}
-		if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDBQuickCopyProcess()
+		} else if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDBQuickCopyProcess()
 		        || isDataBaseMergeFromSourceDBProcess()) {
 			schema = "minimal_db_info";
 		} else {
@@ -486,7 +483,7 @@ public class SyncConfiguration extends BaseConfiguration {
 		return utilities.findOnList(this.allTables, tableConfiguration);
 	}
 	
-	public AppInfo find(AppInfo appToFind) throws ForbiddenOperationException{
+	public AppInfo find(AppInfo appToFind) throws ForbiddenOperationException {
 		AppInfo app = utilities.findOnArray(this.appsInfo, appToFind);
 		
 		if (app == null)

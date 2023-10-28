@@ -82,7 +82,7 @@ public class MozatRenameKeypopVulnerableTable extends MozartProblemSolverEngine 
 				DBUtilities.renameTable(dbName, "keypop_vulnerable", "key_vulnerable_pop", srcConn);
 			}
 			
-			SyncTableConfiguration configuredTable = getSyncTableConfiguration().getRelatedSynconfiguration().findSyncTableConfiguration("key_vulnerable_pop");
+			SyncTableConfiguration configuredTable = getSyncTableConfiguration().getRelatedSyncConfiguration().findSyncTableConfiguration("key_vulnerable_pop");
 			
 			List<UniqueKeyInfo> missingKeys = generateMissingUniqueKeys(dbName, configuredTable , srcConn);
 			

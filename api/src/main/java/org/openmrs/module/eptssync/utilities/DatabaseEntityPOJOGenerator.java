@@ -52,7 +52,7 @@ public class DatabaseEntityPOJOGenerator {
 		String fullClassName = syncTableInfo.generateFullClassName(application);
 		
 		Class<DatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName,
-		    syncTableInfo.getRelatedSynconfiguration());
+		    syncTableInfo.getRelatedSyncConfiguration());
 		
 		if (existingCLass != null) {
 			if (!Modifier.isAbstract(existingCLass.getModifiers())) {
@@ -407,7 +407,7 @@ public class DatabaseEntityPOJOGenerator {
 		st.close();
 		rs.close();
 		
-		existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
+		existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSyncConfiguration());
 		
 		if (existingCLass == null)
 			throw new SyncExeption("The class for " + syncTableInfo.getTableName() + " was not created!") {
@@ -449,7 +449,7 @@ public class DatabaseEntityPOJOGenerator {
 		        + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
 		
 		Class<DatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName,
-		    syncTableInfo.getRelatedSynconfiguration());
+		    syncTableInfo.getRelatedSyncConfiguration());
 		
 		if (existingCLass != null)
 			return existingCLass;
@@ -478,7 +478,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		compile(sourceFile, syncTableInfo, application);
 		
-		return tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSynconfiguration());
+		return tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSyncConfiguration());
 	}
 	
 	static Logger logger = Logger.getLogger(DatabaseEntityPOJOGenerator.class);

@@ -91,7 +91,7 @@ public class DetectGapesEngine extends Engine {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DetectGapesSearchParams(this.getSyncTableConfiguration(),
 		        limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
 		
 		return searchParams;
 	}

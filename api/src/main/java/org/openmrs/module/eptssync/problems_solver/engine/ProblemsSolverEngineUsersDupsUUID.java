@@ -60,7 +60,7 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 			
 			DatabaseObject rec = (DatabaseObject)record;
 			
-			SyncTableConfiguration syncTableInfo = SyncTableConfiguration.init("tmp_user", getSyncTableConfiguration().getRelatedSynconfiguration());
+			SyncTableConfiguration syncTableInfo = SyncTableConfiguration.init("tmp_user", getSyncTableConfiguration().getRelatedSyncConfiguration());
 			
 			List<TmpUserVO> dups = DatabaseObjectDAO.getByField(TmpUserVO.class, "user_uuid", rec.getUuid(), conn);
 				
@@ -165,7 +165,7 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getSyncTableConfiguration(), null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSynconfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
 		
 		return searchParams;
 	}

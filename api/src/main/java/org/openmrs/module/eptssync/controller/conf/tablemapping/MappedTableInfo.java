@@ -1,13 +1,16 @@
-package org.openmrs.module.eptssync.controller.conf;
+package org.openmrs.module.eptssync.controller.conf.tablemapping;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.eptssync.controller.conf.AppInfo;
+import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 import org.openmrs.module.eptssync.model.Field;
 import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
 
 public class MappedTableInfo extends SyncTableConfiguration {
@@ -16,12 +19,23 @@ public class MappedTableInfo extends SyncTableConfiguration {
 	
 	private SyncTableConfiguration relatedTableConfiguration;
 	
+	private List<MappingSrcData> additionalMappingDataSrc;
+	
 	public MappedTableInfo() {
+	}
+	
+	public List<MappingSrcData> getAdditionalMappingDataSrc() {
+		return additionalMappingDataSrc;
+	}
+	
+	public void setAdditionalMappingDataSrc(List<MappingSrcData> additionalMappingDataSrc) {
+		this.additionalMappingDataSrc = additionalMappingDataSrc;
 	}
 	
 	public void setRelatedTableConfiguration(SyncTableConfiguration relatedTableConfiguration) {
 		this.relatedTableConfiguration = relatedTableConfiguration;
 	}
+	
 	
 	public SyncTableConfiguration getRelatedTableConfiguration() {
 		return relatedTableConfiguration;
@@ -40,7 +54,7 @@ public class MappedTableInfo extends SyncTableConfiguration {
 			this.fieldsMapping = new ArrayList<FieldsMapping>();
 		}
 		
-		FieldsMapping fm = new FieldsMapping(srcField, destField);
+		FieldsMapping fm = new FieldsMapping(srcField, this.getTableName(), destField);
 		
 		if (this.fieldsMapping.contains(fm))
 			throw new ForbiddenOperationException("The field [" + fm + "] already exists on mapping");
@@ -48,7 +62,7 @@ public class MappedTableInfo extends SyncTableConfiguration {
 		this.fieldsMapping.add(fm);
 	}
 	
-	public static MappedTableInfo generateFromSyncTableConfiguration(SyncTableConfiguration tableConfiguration) {
+	public static List<MappedTableInfo> generateFromSyncTableConfiguration(SyncTableConfiguration tableConfiguration) {
 		if (!tableConfiguration.isFullLoaded())
 			throw new ForbiddenOperationException("The tableInfo is not full loaded!");
 		
@@ -58,13 +72,17 @@ public class MappedTableInfo extends SyncTableConfiguration {
 		
 		mappedTableInfo.generateMappingFields(tableConfiguration);
 		
-		return mappedTableInfo;
+		mappedTableInfo.loadAdditionalFieldsInfo();
+		
+		mappedTableInfo.setRelatedTableConfiguration(tableConfiguration);
+		
+		return utilities.parseObjectToList(mappedTableInfo, MappedTableInfo.class);
 	}
 	
 	public void generateMappingFields(SyncTableConfiguration tableConfiguration) {
 		for (Field field : tableConfiguration.getFields()) {
 			this.addMapping(field.getName(), field.getName());
-		}		
+		}
 	}
 	
 	public String getMappedField(String srcField) {
@@ -89,7 +107,7 @@ public class MappedTableInfo extends SyncTableConfiguration {
 	}
 	
 	@Override
-	protected synchronized void fullLoad(Connection conn) {
+	public synchronized void fullLoad(Connection conn) {
 		try {
 			getPrimaryKey(conn);
 			loadUniqueKeys(conn);
@@ -100,7 +118,6 @@ public class MappedTableInfo extends SyncTableConfiguration {
 			loadConditionalParents(conn);
 			
 			setFields(DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn));
-			org.postgresql.Driver d;
 			
 			this.fullLoaded = true;
 			
@@ -112,13 +129,28 @@ public class MappedTableInfo extends SyncTableConfiguration {
 		}
 	}
 	
-	public DatabaseObject generateMappedObject(DatabaseObject srcObject, AppInfo application) {
+	public MappingSrcData findAdditionalDataSrc(String tableName) {
+		if (!utilities.arrayHasElement(this.additionalMappingDataSrc)) {
+			return null;
+		}
+		
+		for (MappingSrcData src : this.additionalMappingDataSrc) {
+			if (src.getTableName().equals(tableName)) {
+				return src;
+			}
+		}
+		
+		throw new ForbiddenOperationException("The table '" + tableName + "'cannot be foud on the mapping src tables");
+	}
+	
+	public DatabaseObject generateMappedObject(DatabaseObject srcObject, AppInfo appInfo, Connection conn)
+	        throws DBException, ForbiddenOperationException {
 		try {
-			DatabaseObject mappedObject = getSyncRecordClass(application).newInstance();
+			DatabaseObject mappedObject = getSyncRecordClass(appInfo).newInstance();
 			
 			for (FieldsMapping fieldsMapping : this.getFieldsMapping()) {
 				
-				Object srcValue = srcObject.getFieldValue(fieldsMapping.getSrcFieldAsClassField());
+				Object srcValue = fieldsMapping.retrieveValue(this, srcObject, appInfo, conn);
 				
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
 			}
@@ -132,5 +164,17 @@ public class MappedTableInfo extends SyncTableConfiguration {
 			throw new RuntimeException(e);
 		}
 		
+	}
+
+	public void loadAdditionalFieldsInfo() {
+		if (!utilities.arrayHasElement(this.fieldsMapping)) {
+			throw new ForbiddenOperationException("The mapping fields was not loaded yet");
+		}
+		
+		for (FieldsMapping field: this.fieldsMapping) {
+			if (!utilities.stringHasValue(field.getSrcTable())){
+				field.setSrcTable(this.relatedTableConfiguration.getTableName());
+			}
+		}
 	}
 }

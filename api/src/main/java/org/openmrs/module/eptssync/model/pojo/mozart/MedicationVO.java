@@ -16,7 +16,7 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 	private Integer regimenId;
 	private Integer formulationId;
 	private double quantityPrescribed;
-	private byte[] dosage;
+	private String dosage;
 	private java.util.Date medicationPickupDate;
 	private java.util.Date nextPickupDate;
 	private Integer modeDispensationId;
@@ -72,11 +72,11 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 		return this.quantityPrescribed;
 	}
  
-	public void setDosage(byte[] dosage){ 
+	public void setDosage(String dosage){ 
 	 	this.dosage = dosage;
 	}
  
-	public byte[] getDosage(){ 
+	public String getDosage(){ 
 		return this.dosage;
 	}
  
@@ -177,7 +177,7 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 		if (rs.getObject("regimen_id") != null) this.regimenId = rs.getInt("regimen_id");
 		if (rs.getObject("formulation_id") != null) this.formulationId = rs.getInt("formulation_id");
 		this.quantityPrescribed = rs.getDouble("quantity_prescribed");
-		this.dosage = rs.getBytes("dosage");
+		this.dosage = rs.getString("dosage");
 		this.medicationPickupDate =  rs.getTimestamp("medication_pickup_date") != null ? new java.util.Date( rs.getTimestamp("medication_pickup_date").getTime() ) : null;
 		this.nextPickupDate =  rs.getTimestamp("next_pickup_date") != null ? new java.util.Date( rs.getTimestamp("next_pickup_date").getTime() ) : null;
 		if (rs.getObject("mode_dispensation_id") != null) this.modeDispensationId = rs.getInt("mode_dispensation_id");

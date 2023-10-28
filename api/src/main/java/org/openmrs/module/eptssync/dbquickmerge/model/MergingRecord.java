@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
@@ -296,6 +297,12 @@ public class MergingRecord {
 			if (!mergingRecord.parentsWithDefaultValues.isEmpty()) {
 				mergingRecord.reloadParentsWithDefaultValues(srcConn, dstConn);
 			}
+		}
+	}
+
+	public static void mergeAll(Map<String, List<MergingRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn) throws ParentNotYetMigratedException, DBException {
+		for (String key: mergingRecs.keySet()) {
+			mergeAll(mergingRecs.get(key), srcConn, dstConn);
 		}
 	}
 }

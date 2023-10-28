@@ -65,7 +65,7 @@ public abstract class MozartProblemSolverEngine extends GenericEngine {
 			
 			this.dbsInfo = new DatabasesInfo(partner, dbsName, connInfo);
 			
-			String reportDirectoryPath = getSyncTableConfiguration().getRelatedSynconfiguration().getSyncRootDirectory();
+			String reportDirectoryPath = getSyncTableConfiguration().getRelatedSyncConfiguration().getSyncRootDirectory();
 			reportDirectoryPath += FileUtilities.getPathSeparator() + "mozart" + FileUtilities.getPathSeparator() + partner
 			        + FileUtilities.getPathSeparator() + province;
 			

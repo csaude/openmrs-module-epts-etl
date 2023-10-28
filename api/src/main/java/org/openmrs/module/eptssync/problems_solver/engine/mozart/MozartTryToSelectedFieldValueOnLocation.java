@@ -4,8 +4,8 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
-import org.openmrs.module.eptssync.controller.conf.MappedTableInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.controller.conf.tablemapping.MappedTableInfo;
 import org.openmrs.module.eptssync.dbquickmerge.model.MergingRecord;
 import org.openmrs.module.eptssync.engine.RecordLimits;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -83,9 +83,9 @@ public class MozartTryToSelectedFieldValueOnLocation extends MozartProblemSolver
 					    LocationVO.class);
 					
 					for (LocationVO syncRecord : syncRecords) {
-						MappedTableInfo mappingInfo = configuredTable.getMappedTableInfo();
+						MappedTableInfo mappingInfo = utilities.getFirstRecordOnArray(configuredTable.getDestinationTableMappingInfo());
 						
-						DatabaseObject destObject = mappingInfo.generateMappedObject(syncRecord, this.dstApp);
+						DatabaseObject destObject = mappingInfo.generateMappedObject(syncRecord, this.dstApp, conn);
 						
 						MergingRecord mergingData = new MergingRecord(destObject, configuredTable, getDefaultApp(),
 						        this.dstApp, false);

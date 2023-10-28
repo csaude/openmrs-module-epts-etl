@@ -75,7 +75,7 @@ public class DBQuickLoadController extends SiteOperationController{
     public File getSyncDirectory(SyncTableConfiguration syncInfo) {
     	String fileName = "";
 
-		fileName += syncInfo.getRelatedSynconfiguration().getSyncRootDirectory();
+		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += "import";
@@ -92,7 +92,7 @@ public class DBQuickLoadController extends SiteOperationController{
     public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
      	String fileName = "";
 
-		fileName += syncInfo.getRelatedSynconfiguration().getSyncRootDirectory();
+		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += "import_bkp";

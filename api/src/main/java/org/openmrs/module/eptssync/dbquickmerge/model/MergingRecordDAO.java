@@ -7,7 +7,7 @@ import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 public class MergingRecordDAO {
 	
 	public static void insert(MergingRecord record, Connection conn) throws DBException {
-		String syncStageSchema = record.getConfig().getRelatedSynconfiguration().getSyncStageSchema();
+		String syncStageSchema = record.getConfig().getRelatedSyncConfiguration().getSyncStageSchema();
 		
 		Object[] params = { record.getRecord().getUuid(),
 				/*record.getOperationName(),

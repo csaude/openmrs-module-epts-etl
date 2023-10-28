@@ -499,6 +499,11 @@ public class FuncoesGenericas {
 	public static <T> T getFirstRecordOnArray(List<T> list){
 		return  list != null && !list.isEmpty() ? list.get(0) : null;
 	}
+	
+	public static <T> T getLastRecordOnArray(List<T> list){
+		return  list != null && !list.isEmpty() ? list.get(list.size()-1) : null;
+	}
+
 
 	/**
 	 * Fun��o auxiliar usada para gerar o id do checkbox na tag listcheckbox.tag

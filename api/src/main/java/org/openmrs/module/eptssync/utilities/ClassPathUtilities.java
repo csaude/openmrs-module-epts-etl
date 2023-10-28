@@ -227,12 +227,12 @@ public class ClassPathUtilities {
 	}
 
 	public static void addClassToClassPath(SyncTableConfiguration tableConfiguration, AppInfo app){
-		String pojoPackageDir = tableConfiguration.getRelatedSynconfiguration().getPojoPackageAsDirectory(app).getAbsolutePath();
+		String pojoPackageDir = tableConfiguration.getRelatedSyncConfiguration().getPojoPackageAsDirectory(app).getAbsolutePath();
 		
 		File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class");
 		
 		if (clazzFile.exists()) {
-			addClassToClassPath(utilities.parseObjectToArray(clazzFile), tableConfiguration.getRelatedSynconfiguration().getPojoPackageRelativePath(app), tableConfiguration.getRelatedSynconfiguration());
+			addClassToClassPath(utilities.parseObjectToArray(clazzFile), tableConfiguration.getRelatedSyncConfiguration().getPojoPackageRelativePath(app), tableConfiguration.getRelatedSyncConfiguration());
 		}
 	}
 	

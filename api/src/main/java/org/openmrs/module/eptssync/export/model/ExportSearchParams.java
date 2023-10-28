@@ -55,7 +55,7 @@ public class ExportSearchParams extends SyncSearchParams<DatabaseObject>{
 	
 	@Override
 	public Class<DatabaseObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass(tableInfo.getRelatedSynconfiguration().getMainApp());
+		return this.tableInfo.getSyncRecordClass(tableInfo.getRelatedSyncConfiguration().getMainApp());
 	}
 
 	@Override
