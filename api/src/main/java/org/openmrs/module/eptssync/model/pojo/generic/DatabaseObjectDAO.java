@@ -15,6 +15,7 @@ import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 import org.openmrs.module.eptssync.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
 import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
+import org.openmrs.module.eptssync.utilities.io.FileUtilities;
 
 public class DatabaseObjectDAO extends BaseDAO {
 	
@@ -518,8 +519,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			
 			if (syncTableConfiguration.isManualIdGeneration()) {
 				insertAllDataWithId(objects, syncTableConfiguration, recordOriginLocationCode, conn);
-			}
-			else {
+			} else {
 				insertAllDataWithoutId(objects, syncTableConfiguration, recordOriginLocationCode, conn);
 			}
 		}
@@ -538,7 +538,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			values += "(" + objects.get(i).generateInsertValues() + "),";
+			values += "(" + utilities.resolveScapeCharacter(objects.get(i).generateInsertValues()) + "),";
 		}
 		
 		if (utilities.stringHasValue(values)) {
@@ -550,8 +550,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 	
 	private static void insertAllDataWithId(List<DatabaseObject> objects, SyncTableConfiguration conf, String originCode,
 	        Connection conn) throws DBException {
-		String sql = DBUtilities
-		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0], conn);
+		String sql = DBUtilities.addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0],
+		    conn);
 		
 		sql += " VALUES";
 		
@@ -561,7 +561,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			values += "(" + objects.get(i).getObjectId() + "," + objects.get(i).generateInsertValues() + "),";
+			values += "(" + objects.get(i).getObjectId() + "," + utilities.resolveScapeCharacter(objects.get(i).generateInsertValues()) + "),";
 		}
 		
 		if (utilities.stringHasValue(values)) {

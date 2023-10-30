@@ -22,8 +22,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
 import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.BasicConfigurator;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -989,23 +987,23 @@ public class  CommonUtilities implements Serializable{
 		
 		return -1;
 	}
-
-	
-	private static Log logger = LogFactory.getLog(CommonUtilities.class);
 	
 	public static void main(String[] args) {
-		BasicConfigurator.configure();
-		
 		CommonUtilities utilities = CommonUtilities.getInstance();
 		
-
-		Level l = Level.FINE;
 		
-		utilities.logDebug("DEBUG", logger, l);
-		utilities.logErr("ERROR", logger, l);
-		utilities.logInfo("INFO", logger, l);
-		utilities.logWarn("WARN", logger, l);
-			
+		String encounterUuid = "yt7erwui67-7623has-764334we";
+		Integer conceptId=12;
+		Date observationDate = DateAndTimeUtilities.createDate("2023-10-10");
+		Integer valueNumeric = 11;
+		Date valueDatetime  = DateAndTimeUtilities.createDate("2023-10-10"); ;
+		String valueText = "Abcds\\300\\300\\";
+		Integer valueConceptId = 12;
+		String obsUuid = "5623g-gysd6743-87643jhgsd";
+		
+		String str = ""+(encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (conceptId) + "," + (observationDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(observationDate)  +"\"" : null) + "," + (valueNumeric) + "," + (valueConceptId) + "," + (valueText != null ? "\""+valueText+"\"" : null) + "," + (valueDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime)  +"\"" : null) + "," + (obsUuid != null ? "\""+ utilities.scapeQuotationMarks(obsUuid)  +"\"" : null);
+		
+		System.out.println(utilities.resolveScapeCharacter(str));
 	}
 
 	public  String quote(String strToQuote) {
@@ -1037,7 +1035,4 @@ public class  CommonUtilities implements Serializable{
 		}
 		
 		return map;
-	}
-	
-		
-}
+	}}

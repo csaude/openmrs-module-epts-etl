@@ -1,6 +1,7 @@
 package org.openmrs.module.eptssync.controller.conf.tablemapping;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
@@ -80,17 +81,16 @@ public class FieldsMapping {
 		return "[srcField: " + srcField + ", destField: " + destField + "]";
 	}
 	
-	public Object retrieveValue(MappedTableInfo mappingInfo, DatabaseObject srcObject, AppInfo appInfo, Connection conn)
+	public Object retrieveValue(MappedTableInfo mappingInfo, List<DatabaseObject> srcObjects, AppInfo appInfo, Connection conn)
 	        throws DBException, ForbiddenOperationException {
-		if (this.getSrcTable().equals(mappingInfo.getRelatedTableConfiguration().getTableName())) {
-			return srcObject.getFieldValue(this.getSrcFieldAsClassField());
-		} else {
-			MappingSrcData src = mappingInfo.findAdditionalDataSrc(this.getSrcTable());
-			
-			DatabaseObject relatedSrcObject = src.loadRelatedSrcObject(srcObject, appInfo, conn);
-			
-			return relatedSrcObject != null ? relatedSrcObject.getFieldValue(this.getSrcFieldAsClassField()) : null;
+		
+		for (DatabaseObject srcObject : srcObjects) {
+			if(this.getSrcTable().equals( srcObject.generateTableName())){
+				return srcObject.getFieldValue(this.getSrcFieldAsClassField());
+			}
 		}
+		
+		throw new ForbiddenOperationException("The field '" + this.srcField + " does not belong to any configured source table");
 	}
 	
 }

@@ -36,7 +36,6 @@ public class MappedTableInfo extends SyncTableConfiguration {
 		this.relatedTableConfiguration = relatedTableConfiguration;
 	}
 	
-	
 	public SyncTableConfiguration getRelatedTableConfiguration() {
 		return relatedTableConfiguration;
 	}
@@ -146,11 +145,29 @@ public class MappedTableInfo extends SyncTableConfiguration {
 	public DatabaseObject generateMappedObject(DatabaseObject srcObject, AppInfo appInfo, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		try {
+			
+			List<DatabaseObject> srcObjects = new ArrayList<>();
+			
+			srcObjects.add(srcObject);
+			
+			if (utilities.arrayHasElement(this.additionalMappingDataSrc)) {
+				for (MappingSrcData mappingInfo : this.additionalMappingDataSrc) {
+					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, appInfo, conn);
+					
+					if (relatedSrcObject == null) {
+						relatedSrcObject = mappingInfo.getSyncRecordClass(appInfo).newInstance();
+					}
+					
+					srcObjects.add(relatedSrcObject);
+					
+				}
+			}
+			
 			DatabaseObject mappedObject = getSyncRecordClass(appInfo).newInstance();
 			
 			for (FieldsMapping fieldsMapping : this.getFieldsMapping()) {
 				
-				Object srcValue = fieldsMapping.retrieveValue(this, srcObject, appInfo, conn);
+				Object srcValue = fieldsMapping.retrieveValue(this, srcObjects, appInfo, conn);
 				
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
 			}
@@ -165,14 +182,14 @@ public class MappedTableInfo extends SyncTableConfiguration {
 		}
 		
 	}
-
+	
 	public void loadAdditionalFieldsInfo() {
 		if (!utilities.arrayHasElement(this.fieldsMapping)) {
 			throw new ForbiddenOperationException("The mapping fields was not loaded yet");
 		}
 		
-		for (FieldsMapping field: this.fieldsMapping) {
-			if (!utilities.stringHasValue(field.getSrcTable())){
+		for (FieldsMapping field : this.fieldsMapping) {
+			if (!utilities.stringHasValue(field.getSrcTable())) {
 				field.setSrcTable(this.relatedTableConfiguration.getTableName());
 			}
 		}

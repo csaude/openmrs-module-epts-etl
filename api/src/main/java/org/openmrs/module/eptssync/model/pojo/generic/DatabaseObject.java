@@ -80,6 +80,9 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract Integer getParentValue(String parentAttName);
 	
+	
+	public abstract String generateTableName();
+		
 	/**
 	 * Consolidate data for database consistency
 	 * <p>
