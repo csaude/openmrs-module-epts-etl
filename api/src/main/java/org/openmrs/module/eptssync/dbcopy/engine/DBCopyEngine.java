@@ -48,11 +48,6 @@ public class DBCopyEngine extends Engine {
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		OpenConnection destConn = getRelatedOperationController().openDestConnection();
 		
-		/*TmpSQLServerConnectionMonitor cm = new TmpSQLServerConnectionMonitor(destConn, this);
-		
-		ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor("Conn Monitor " + destConn.getId());
-		executor.execute(cm);*/
-		
 		if (DBUtilities.isSqlServerDB(destConn)) {
 			
 			for (MappedTableInfo map : getSyncTableConfiguration().getDestinationTableMappingInfo()) {

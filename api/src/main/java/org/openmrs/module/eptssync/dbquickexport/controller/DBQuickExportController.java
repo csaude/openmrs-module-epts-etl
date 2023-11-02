@@ -22,9 +22,10 @@ import org.openmrs.module.eptssync.utilities.io.FileUtilities;
  * This class is responsible for control record changes process
  * 
  * @author jpboane
- *
  */
-public class DBQuickExportController extends  OperationController {
+public class DBQuickExportController extends OperationController {
+	private final String stringLock = new String("LOCK_STRING");
+	
 	public DBQuickExportController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
@@ -33,14 +34,15 @@ public class DBQuickExportController extends  OperationController {
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new DBQuickExportEngine(monitor, limits);
 	}
-
+	
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
 			return DatabaseObjectDAO.getFirstRecord(tableInfo, conn);
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -49,14 +51,15 @@ public class DBQuickExportController extends  OperationController {
 			conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
 			return DatabaseObjectDAO.getLastRecord(tableInfo, conn);
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -74,11 +77,12 @@ public class DBQuickExportController extends  OperationController {
 	@Override
 	public OpenConnection openConnection() {
 		OpenConnection conn = super.openConnection();
-	
+		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
 			try {
 				DBUtilities.disableForegnKeyChecks(conn);
-			} catch (DBException e) {
+			}
+			catch (DBException e) {
 				e.printStackTrace();
 				
 				throw new RuntimeException(e);
@@ -86,39 +90,44 @@ public class DBQuickExportController extends  OperationController {
 		}
 		
 		return conn;
-	}	
+	}
 	
-	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, Integer startRecord, Integer lastRecord) throws IOException {
-		String fileName = "";
+	public File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, Integer startRecord,
+	        Integer lastRecord) throws IOException {
 		
-		fileName += tableInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
-		fileName += FileUtilities.getPathSeparator();
-		fileName += tableInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
-		fileName += FileUtilities.getPathSeparator();
-		fileName += "export";
-		fileName += FileUtilities.getPathSeparator();
-		fileName += tableInfo.getTableName();
-		fileName += FileUtilities.getPathSeparator();
-		fileName += tableInfo.getTableName();
-		
-		fileName += "_" + utilities().garantirXCaracterOnNumber(startRecord, 10);
-		fileName += "_" + utilities().garantirXCaracterOnNumber(lastRecord, 10);
-	
-		if(new File(fileName).exists() ) {
-			logInfo("The file '" + fileName + "' is already exists!!! Removing it...");
-			new File(fileName).delete();
+		synchronized (stringLock) {
+			
+			String fileName = "";
+			
+			fileName += tableInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
+			fileName += FileUtilities.getPathSeparator();
+			fileName += tableInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
+			fileName += FileUtilities.getPathSeparator();
+			fileName += "export";
+			fileName += FileUtilities.getPathSeparator();
+			fileName += tableInfo.getTableName();
+			fileName += FileUtilities.getPathSeparator();
+			fileName += tableInfo.getTableName();
+			
+			fileName += "_" + utilities().garantirXCaracterOnNumber(startRecord, 10);
+			fileName += "_" + utilities().garantirXCaracterOnNumber(lastRecord, 10);
+			
+			if (new File(fileName).exists()) {
+				logInfo("The file '" + fileName + "' is already exists!!! Removing it...");
+				new File(fileName).delete();
+			}
+			
+			if (new File(fileName + ".json").exists()) {
+				logInfo("The file '" + fileName + ".json' is already exists!!! Removing it...");
+				new File(fileName + ".json").delete();
+			}
+			
+			FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
+			
+			File file = new File(fileName);
+			file.createNewFile();
+			
+			return file;
 		}
-		
-		if(new File(fileName+".json").exists() ) {
-			logInfo("The file '" + fileName  + ".json' is already exists!!! Removing it...");
-			new File(fileName+".json").delete();
-		}
-		
-		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
-		
-		File file = new File(fileName);
-		file.createNewFile();
-		
-		return file;
 	}
 }

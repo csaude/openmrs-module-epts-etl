@@ -10,6 +10,7 @@ import org.openmrs.module.eptssync.common.model.SyncImportInfoVO;
 import org.openmrs.module.eptssync.controller.conf.AppInfo;
 import org.openmrs.module.eptssync.controller.conf.RefInfo;
 import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.eptssync.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.eptssync.exceptions.MissingParentException;
 import org.openmrs.module.eptssync.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.eptssync.model.pojo.generic.AbstractDatabaseObject;
@@ -47,7 +48,7 @@ public class MergingRecord {
 	}
 	
 	public void merge(Connection srcConn, Connection destConn) throws DBException {
-		this.record.setUniqueKeysInfo(this.config.getUniqueKeys());
+		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(this.config.getUniqueKeys()));
 		
 		consolidateAndSaveData(srcConn, destConn);
 		
@@ -283,7 +284,7 @@ public class MergingRecord {
 		List<DatabaseObject> objects = new ArrayList<DatabaseObject>(mergingRecs.size());
 		
 		for (MergingRecord mergingRecord : mergingRecs) {
-			mergingRecord.record.setUniqueKeysInfo(mergingRecord.config.getUniqueKeys());
+			mergingRecord.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(mergingRecord.config.getUniqueKeys()));
 			
 			MergingRecord.loadDestParentInfo(mergingRecord, srcConn, dstConn);
 			MergingRecord.loadDestConditionalParentInfo(mergingRecord, srcConn, dstConn);

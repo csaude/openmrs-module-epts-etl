@@ -7,6 +7,8 @@ import java.util.List;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.DateAndTimeUtilities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Esta classe representa o field de um formulário. ATENCAO que o formField pode representar também
  * o file.
@@ -72,6 +74,7 @@ public class Field implements Serializable {
 	}
 	
 	@Override
+	@JsonIgnore
 	public String toString() {
 		return "[Name: " + getName() + ", Value " + value + "]";
 	}

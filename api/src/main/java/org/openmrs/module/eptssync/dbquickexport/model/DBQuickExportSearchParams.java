@@ -56,7 +56,7 @@ public class DBQuickExportSearchParams extends SyncSearchParams<DatabaseObject>{
 	
 	@Override
 	public Class<DatabaseObject> getRecordClass() {
-		 return DatabaseEntityPOJOGenerator.tryToGetExistingCLass("org.openmrs.module.eptssync.model.pojo.generic.GenericOpenMRSObject");
+		 return DatabaseEntityPOJOGenerator.tryToGetExistingCLass("org.openmrs.module.eptssync.model.pojo.generic.GenericDatabaseObject");
 	}
 
 	@Override

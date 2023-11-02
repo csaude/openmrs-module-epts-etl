@@ -1,7 +1,5 @@
 package org.openmrs.module.eptssync.controller.conf;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,8 +12,8 @@ import org.openmrs.module.eptssync.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.eptssync.utilities.AttDefinedElements;
 import org.openmrs.module.eptssync.utilities.CommonUtilities;
 import org.openmrs.module.eptssync.utilities.db.conn.DBException;
-import org.openmrs.module.eptssync.utilities.db.conn.DBUtilities;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Define the refencial information betwen a {@link SyncTableConfiguration} and its main parent;
@@ -40,6 +38,7 @@ public class UniqueKeyInfo {
 		return uk;
 	}
 	
+	@JsonIgnore
 	public List<String> generateListFromFieldsNames() {
 		List<String> fieldsAsName = new ArrayList<String>();
 		
@@ -196,6 +195,7 @@ public class UniqueKeyInfo {
 	}
 	
 	@Override
+	@JsonIgnore
 	public String toString() {
 		String toString = keyName + "[";
 		int i = 0;
@@ -214,39 +214,6 @@ public class UniqueKeyInfo {
 		toString += "]";
 		
 		return toString;
-	}
-	
-	public static void main(String[] args) throws IOException, SQLException {
-		SyncConfiguration syncConfig = SyncConfiguration
-		        .loadFromFile(new File("D:\\JEE\\Workspace\\FGH\\eptssync\\conf\\mozart\\detect_problematic_dbs.json"));
-		
-		SyncTableConfiguration config = syncConfig.find(SyncTableConfiguration.init("dsd", syncConfig));
-		config.fullLoad();
-		
-		//Object[] params = { "e2b37662-1d5f-11e0-b929-000c29ad1d07" };
-		
-		OpenConnection conn = syncConfig.getMainApp().openConnection();
-		
-		//List<UniqueKeyInfo> uks = loadUniqueKeysInfo(config, conn);
-		
-		List<UniqueKeyInfo> knownKeys = generateKnownUk(config);
-		UniqueKeyInfo keyInfo = knownKeys.get(0);
-		
-		List<UniqueKeyInfo> uniqueKeys = DBUtilities.getUniqueKeys(config.getTableName(), conn.getCatalog(), conn);
-		
-		for (UniqueKeyInfo uk : uniqueKeys) {
-			if (keyInfo.hasSameFields(uk)) {
-				System.out.println("The key exists");
-			}
-		}
-		
-		/*for (UniqueKeyInfo uk : uks) {
-			uk.loadValuesToFields(dbObject);
-			
-			System.out.println(uk.toString());
-		}*/
-		
-		conn.finalizeConnection();
 	}
 	
 	public void addField(Field field) {
@@ -271,27 +238,27 @@ public class UniqueKeyInfo {
 		return uk;
 	}
 	
-	private static List<UniqueKeyInfo> generateKnownUk(SyncTableConfiguration configuredTable) {
-		try {
-			List<UniqueKeyInfo> knownKeys_ = new ArrayList<UniqueKeyInfo>();
-			
-			Extension knownKeys = configuredTable.findExtension("knownKeys");
-			
-			for (Extension keyInfo : knownKeys.getExtension()) {
-				UniqueKeyInfo uk = new UniqueKeyInfo();
-				
-				for (Extension keyPart : keyInfo.getExtension()) {
-					uk.addField(new Field(keyPart.getValueString()));
-				}
-				
-				knownKeys_.add(uk);
-			}
-			
-			return knownKeys_;
+	protected UniqueKeyInfo cloneMe() {
+		UniqueKeyInfo uk = UniqueKeyInfo.init(keyName);
+		
+		for (Field field : fields) {
+			uk.addField(new Field(field.getName()));
 		}
-		catch (ForbiddenOperationException e1) {
-			return null;
-		}
+		return uk;
 	}
 	
+	public static List<UniqueKeyInfo> cloneAll(List<UniqueKeyInfo> uniqueKeysInfo) {
+		
+		if (uniqueKeysInfo == null) {
+			return null;
+		}
+		
+		List<UniqueKeyInfo> cloned = new ArrayList<>(uniqueKeysInfo.size());
+		
+		for (UniqueKeyInfo uk : uniqueKeysInfo) {
+			cloned.add(uk.cloneMe());
+		}
+		
+		return cloned;
+	}
 }

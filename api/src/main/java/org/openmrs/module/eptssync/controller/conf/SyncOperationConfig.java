@@ -677,7 +677,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInDBQuickExportProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_EXPORT, SyncOperationType.TRANSPORT };
+		SyncOperationType[] supported = {SyncOperationType.DB_QUICK_EXPORT};
 		
 		return utilities.parseArrayToList(supported);
 	}
