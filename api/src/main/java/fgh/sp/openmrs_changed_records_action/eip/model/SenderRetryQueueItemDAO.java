@@ -2,8 +2,8 @@ package fgh.sp.openmrs_changed_records_action.eip.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.eptssync.model.base.BaseDAO;
-import org.openmrs.module.eptssync.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.model.base.BaseDAO;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class SenderRetryQueueItemDAO extends BaseDAO{
 	

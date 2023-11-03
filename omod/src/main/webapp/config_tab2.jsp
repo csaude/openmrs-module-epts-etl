@@ -9,7 +9,7 @@
 						<table style="width: 100%">		
 							<tr>
 								<td style="width: 25%;">
-									<spring:message code="eptssync.config.operation.operationType" />
+									<spring:message code="epts.etl.config.operation.operationType" />
 								</td>
 								<td style="width: 100%;">
 									<input type="text" name="operationType" value="${vm.selectedOperation.operationType}" size="100" disabled="disabled"/>
@@ -17,7 +17,7 @@
 							</tr>
 							<tr>
 								<td>
-									<spring:message code="eptssync.config.operation.processingMode" />
+									<spring:message code="epts.etl.config.operation.processingMode" />
 								</td>
 								<td>
 									<input type="text" name="processingMode" value="${vm.selectedOperation.processingMode}" size="100" disabled="disabled"/>
@@ -25,7 +25,7 @@
 							</tr>
 							<tr>
 								<td>
-									<spring:message code="eptssync.config.operation.maxSupportedEngines" />
+									<spring:message code="epts.etl.config.operation.maxSupportedEngines" />
 								</td>
 								<td>
 									<spring:bind path="vm.selectedOperation.maxSupportedEngines">
@@ -35,7 +35,7 @@
 							</tr>
 							<tr>
 								<td>
-									<spring:message code="eptssync.config.operation.maxRecordPerProcessing" />
+									<spring:message code="epts.etl.config.operation.maxRecordPerProcessing" />
 								</td>
 								<td>
 									<spring:bind path="vm.selectedOperation.maxRecordPerProcessing">
@@ -45,7 +45,7 @@
 							</tr>	
 							<tr>
 								<td>
-									<spring:message code="eptssync.config.operation.minRecordsPerEngine" />
+									<spring:message code="epts.etl.config.operation.minRecordsPerEngine" />
 								</td>
 								<td>
 									<spring:bind path="vm.selectedOperation.minRecordsPerEngine">
@@ -55,7 +55,7 @@
 							</tr>
 							<tr>
 								<td>
-									<spring:message code="eptssync.config.operation.sourceFolders" />
+									<spring:message code="epts.etl.config.operation.sourceFolders" />
 								</td>
 								<td>
 									<spring:bind path="vm.selectedOperation.sourceFoldersAsString">
@@ -66,7 +66,7 @@
 							
 							<tr>
 								<td>
-									<spring:message code="eptssync.config.operation.doIntegrityCheckInTheEnd" />
+									<spring:message code="epts.etl.config.operation.doIntegrityCheckInTheEnd" />
 								</td>
 								<td>
 									<input type="text" name="doIntegrityCheckInTheEnd" value="${vm.selectedOperation.doIntegrityCheckInTheEnd ? 'Sim' : 'Nao'}" size="100" disabled="disabled"/>
@@ -74,7 +74,7 @@
 							</tr>
 							<tr>
 								<td>
-									<spring:message code="eptssync.config.operation.disabled" />
+									<spring:message code="epts.etl.config.operation.disabled" />
 								</td>
 								<td>
 									<input type="text" name="disabled" value="${vm.selectedOperation.disabled ? 'Inativo' : 'Activo'}" size="100" disabled="disabled" />
@@ -85,9 +85,9 @@
 				</tr>
 				<tr>
 					<td>
-						<input type="submit" value='<spring:message code="eptssync.config.operation.save"/>' name="saveConfig"/>
+						<input type="submit" value='<spring:message code="epts.etl.config.operation.save"/>' name="saveConfig"/>
 						
-						<input type="button" value='<spring:message code="eptssync.config.operation.close"/>' name="closeOperation" onclick="window.location='loadOperation.form?operationType='" />
+						<input type="button" value='<spring:message code="epts.etl.config.operation.close"/>' name="closeOperation" onclick="window.location='loadOperation.form?operationType='" />
 					</td>
 				</tr>
 			
@@ -98,14 +98,14 @@
 						<thead>
 							<tr>
 								<th>Sel.</th>
-								<th><spring:message code="eptssync.config.operation.operationType" /></th>
-								<th><spring:message code="eptssync.config.operation.processingMode" /></th>
-								<th><spring:message code="eptssync.config.operation.maxSupportedEngines" /></th>
-								<th><spring:message code="eptssync.config.operation.maxRecordPerProcessing" /></th>
-								<th><spring:message code="eptssync.config.operation.minRecordsPerEngine" /></th>
-								<th><spring:message code="eptssync.config.operation.doIntegrityCheckInTheEnd" /></th>
-								<th><spring:message code="eptssync.config.operation.disabled" /></th>
-								<th><spring:message code="eptssync.config.operation.sourceFolders" /></th>
+								<th><spring:message code="epts.etl.config.operation.operationType" /></th>
+								<th><spring:message code="epts.etl.config.operation.processingMode" /></th>
+								<th><spring:message code="epts.etl.config.operation.maxSupportedEngines" /></th>
+								<th><spring:message code="epts.etl.config.operation.maxRecordPerProcessing" /></th>
+								<th><spring:message code="epts.etl.config.operation.minRecordsPerEngine" /></th>
+								<th><spring:message code="epts.etl.config.operation.doIntegrityCheckInTheEnd" /></th>
+								<th><spring:message code="epts.etl.config.operation.disabled" /></th>
+								<th><spring:message code="epts.etl.config.operation.sourceFolders" /></th>
 							</tr>
 						</thead>
 			

@@ -3,7 +3,7 @@ package fgh.sp.openmrs_changed_records_action.eip.model;
 import java.io.Serializable;
 import java.util.Date;
 
-import org.openmrs.module.eptssync.model.base.BaseVO;
+import org.openmrs.module.epts.etl.model.base.BaseVO;
 
 public abstract class AbstractEntity extends BaseVO implements Serializable{
 	private static final long serialVersionUID = 1L;

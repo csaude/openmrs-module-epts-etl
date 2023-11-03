@@ -4,7 +4,7 @@
 			<table>		
 				<tr>
 					<td style="width: 25%;">
-						<spring:message code="eptssync.config.installationType.label" />
+						<spring:message code="epts.etl.config.installationType.label" />
 					</td>
 					<td style="width: 100%;">
 						<input type="text" name="installationType" value="${vm.syncConfiguration.installationType}" size="100" disabled="disabled"/>
@@ -12,7 +12,7 @@
 				</tr>
 				<tr>
 					<td>
-						<spring:message code="eptssync.config.syncRootDirectory.label" />
+						<spring:message code="epts.etl.config.syncRootDirectory.label" />
 					</td>
 					<td>
 						<spring:bind path="vm.syncConfiguration.syncRootDirectory">
@@ -22,7 +22,7 @@
 				</tr>
 				<tr>
 					<td>
-						<spring:message code="eptssync.config.classPath.label" />
+						<spring:message code="epts.etl.config.classPath.label" />
 					</td>
 					<td>
 						<spring:bind path="vm.syncConfiguration.classPath">
@@ -33,7 +33,7 @@
 				
 				<tr>
 					<td>
-						<spring:message code="eptssync.config.originAppLocationCode.label" />
+						<spring:message code="epts.etl.config.originAppLocationCode.label" />
 					</td>
 					<td>	
 						<spring:bind path="vm.syncConfiguration.originAppLocationCode">
@@ -44,7 +44,7 @@
 				
 				<tr>
 					<td>
-						<spring:message code="eptssync.config.dataBaseUserName.label" />
+						<spring:message code="epts.etl.config.dataBaseUserName.label" />
 					</td>
 					<td>
 						<spring:bind path="vm.syncConfiguration.connInfo.dataBaseUserName">
@@ -54,7 +54,7 @@
 				</tr>	
 				<tr>
 					<td>
-						<spring:message code="eptssync.config.dataBaseUserPassword.label" />
+						<spring:message code="epts.etl.config.dataBaseUserPassword.label" />
 					</td>
 					<td>
 						<spring:bind path="vm.syncConfiguration.connInfo.dataBaseUserPassword">
@@ -64,7 +64,7 @@
 				</tr>
 				<tr>
 					<td>
-						<spring:message code="eptssync.config.connectionURI.label" />
+						<spring:message code="epts.etl.config.connectionURI.label" />
 					</td>
 					<td>
 						<spring:bind path="vm.syncConfiguration.connInfo.connectionURI">
@@ -74,7 +74,7 @@
 				</tr>
 				<tr>
 					<td>
-						<spring:message code="eptssync.config.driveClassName.label" />
+						<spring:message code="epts.etl.config.driveClassName.label" />
 					</td>
 					<td>
 						<spring:bind path="vm.syncConfiguration.connInfo.driveClassName">
@@ -84,6 +84,6 @@
 				</tr>
 			</table>
 			<br>		
-			<input type="submit" value='<spring:message code="eptssync.config.button.save"/>' name="saveConfig"/>
+			<input type="submit" value='<spring:message code="epts.etl.config.button.save"/>' name="saveConfig"/>
 		</fieldset>
 </c:if>

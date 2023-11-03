@@ -2,8 +2,8 @@ package fgh.spi.changedrecordsdetector;
 
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
+import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 
 /**
  * @author jpboane

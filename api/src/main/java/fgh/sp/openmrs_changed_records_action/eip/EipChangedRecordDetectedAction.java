@@ -3,11 +3,11 @@ package fgh.sp.openmrs_changed_records_action.eip;
 
 import java.util.List;
 
-import org.openmrs.module.eptssync.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.eptssync.exceptions.ForbiddenOperationException;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionInfo;
-import org.openmrs.module.eptssync.utilities.db.conn.DBConnectionService;
-import org.openmrs.module.eptssync.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
+import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import fgh.sp.openmrs_changed_records_action.eip.model.Event;
 import fgh.sp.openmrs_changed_records_action.eip.model.SenderRetryQueueItem;

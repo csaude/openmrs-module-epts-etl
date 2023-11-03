@@ -7,12 +7,12 @@
 	<li
 		<c:if test='<%= request.getRequestURI().contains("/manage") %>'>class="active"</c:if>>
 		<a
-		href="${pageContext.request.contextPath}/module/eptssync/manage.form"><spring:message
-				code="eptssync.manage" /></a>
+		href="${pageContext.request.contextPath}/module/epts-etl/manage.form"><spring:message
+				code="epts.etl.manage" /></a>
 	</li>
 	
 	<!-- Add further links here -->
 </ul>
 <h2>
-	<spring:message code="eptssync.title" />
+	<spring:message code="epts.etl.title" />
 </h2>

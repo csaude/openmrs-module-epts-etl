@@ -3,28 +3,28 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.openmrs.module</groupId>
-	<artifactId>eptssync</artifactId>
-	<version>1.0-SNAPSHOT</version>
+	<artifactId>epts-etl</artifactId>
+	<version>1.0</version>
 	<packaging>pom</packaging>
-	<name>Epts Synchronize Module</name>
-	<description>Synchronize data between a parent and multiple child servers</description>
-	<url>https://wiki.openmrs.org/display/docs/Epts+Synchronize+Module+Module</url>
+	<name>Epts ETL Module</name>
+	<description>An ETL tool with multiple capabilities</description>
+	<url>https://wiki.openmrs.org/display/docs/Epts+ETL+Module</url>
 	
 	<developers>
 		<developer>
-			<name>FGH</name>
+			<name>CSaude</name>
 		</developer>
 	</developers>
 	
 	<organization>
-		<name>OpenMRS</name>
-		<url>http://openmrs.org</url>
+		<name>CSaude</name>
+		<url>http://csaude.org.mz</url>
 	</organization>
 
 	<scm>
-		<connection>scm:svn:https://svn.openmrs.org/openmrs-modules/eptssync/trunk/</connection>
-		<developerConnection>scm:svn:https://svn.openmrs.org/openmrs-modules/eptssync/trunk/</developerConnection>
-		<url>https://svn.openmrs.org/openmrs-modules/eptssync/trunk/</url>
+		<connection>scm:svn:https://svn.openmrs.org/openmrs-modules/epts-etl/trunk/</connection>
+		<developerConnection>scm:svn:https://svn.openmrs.org/openmrs-modules/epts-etl/trunk/</developerConnection>
+		<url>https://svn.openmrs.org/openmrs-modules/epts-etl/trunk/</url>
 	</scm>
 
 	<modules>

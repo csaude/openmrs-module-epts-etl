@@ -1,7 +1,7 @@
 <%@ include file="/WEB-INF/template/include.jsp"%>
 
-<openmrs:htmlInclude file="${pageContext.request.contextPath}/moduleResources/eptssync/css/eptssync.css" />
-<openmrs:require privilege="Manage Visit Types" otherwise="/login.htm" redirect="module/eptssync/config.form" />
+<openmrs:htmlInclude file="${pageContext.request.contextPath}/moduleResources/epts-etl/css/epts-etl.css" />
+<openmrs:require privilege="Manage Visit Types" otherwise="/login.htm" redirect="module/epts-etl/config.form" />
 
 <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
 
@@ -40,7 +40,7 @@
 		var data = new FormData();
 
 			jQuery.ajax({
-		       url: '${pageContext.request.contextPath}/module/eptssync/refreshStatus.form',
+		       url: '${pageContext.request.contextPath}/module/epts-etl/refreshStatus.form',
 		       type: 'GET',
 		       dataType: 'json',
 		       processData: false, 
@@ -141,7 +141,7 @@
 </script>
 
 <h2>
-	<spring:message code="eptssync.config.header" />
+	<spring:message code="epts.etl.config.header" />
 </h2>
 
 <br />
@@ -153,7 +153,7 @@
 <form:form id="syncStatusForm" modelAttribute="syncVm" method="get" action="syncStatus.form">
 	 
 	<c:forEach items="${syncVm.activeConfiguration.operationsAsList}" var="item" varStatus="itemsRow">
-		<input type="button" ${syncVm.isActivatedOperationTab(item) ? 'disabled' : ''} style="height: ${syncVm.isActivatedOperationTab(item) ? '60px' : '55px'}; width: ${syncVm.isActivatedOperationTab(item) ? '125px' : '120px'}" value='<spring:message code="eptssync.config.operation.${item.operationType}"/>' name="${item.operationType}" onclick="window.location='activeteOperationTab.form?tab=${item.operationType}'" />
+		<input type="button" ${syncVm.isActivatedOperationTab(item) ? 'disabled' : ''} style="height: ${syncVm.isActivatedOperationTab(item) ? '60px' : '55px'}; width: ${syncVm.isActivatedOperationTab(item) ? '125px' : '120px'}" value='<spring:message code="epts.etl.config.operation.${item.operationType}"/>' name="${item.operationType}" onclick="window.location='activeteOperationTab.form?tab=${item.operationType}'" />
 	</c:forEach>
 	
 	<br/>
@@ -168,9 +168,9 @@
 				<table style="width: 100%">		
 					<thead>
 						<tr>
-							<th style="width: 20%"><spring:message code="eptssync.config.table.tableName"/></th>
-							<th style="width: 60%"><spring:message code="eptssync.sync.progress.bar" /></th>
-							<th style="width: 20%"><spring:message code="eptssync.sync.progress.summary"/></th>
+							<th style="width: 20%"><spring:message code="epts.etl.config.table.tableName"/></th>
+							<th style="width: 60%"><spring:message code="epts.etl.sync.progress.bar" /></th>
+							<th style="width: 20%"><spring:message code="epts.etl.sync.progress.summary"/></th>
 						</tr>
 					</thead>
 		
