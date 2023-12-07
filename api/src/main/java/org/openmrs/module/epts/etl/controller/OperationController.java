@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
@@ -27,6 +26,7 @@ import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -67,7 +67,7 @@ public abstract class OperationController implements Controller {
 	protected OperationProgressInfo progressInfo;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
-		this.logger = new Logger(LogFactory.getLog(this.getClass()), processController.getLogLevel());
+		this.logger = new Logger(LoggerFactory.getLogger(this.getClass()), processController.getLogLevel());
 		
 		this.processController = processController;
 		this.operationConfig = operationConfig;
@@ -162,6 +162,8 @@ public abstract class OperationController implements Controller {
 		
 		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
 		
+		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
+		
 		for (SyncTableConfiguration syncInfo : allSync) {
 			if (operationTableIsAlreadyFinished(syncInfo)) {
 				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On table '"
@@ -196,7 +198,7 @@ public abstract class OperationController implements Controller {
 				OpenConnection conn = getDefaultApp().openConnection();
 				
 				try {
-					if (getProcessController().isResumable()) {
+					if (isResumable()) {
 						progressInfo.save(conn);
 					}
 					conn.markAsSuccessifullyTerminated();
@@ -208,6 +210,8 @@ public abstract class OperationController implements Controller {
 				finally {
 					conn.finalizeConnection();
 				}
+				
+				this.enginesActivititieMonitor.add(engineMonitor);
 				
 				engineMonitor.run();
 				
@@ -268,8 +272,11 @@ public abstract class OperationController implements Controller {
 				OpenConnection conn = getDefaultApp().openConnection();
 				
 				try {
-					progressInfo.save(conn);
-					conn.markAsSuccessifullyTerminated();
+					
+					if (isResumable()) {
+						progressInfo.save(conn);
+						conn.markAsSuccessifullyTerminated();
+					}
 				}
 				catch (DBException e) {
 					throw new RuntimeException(e);
@@ -393,7 +400,7 @@ public abstract class OperationController implements Controller {
 	
 	@Override
 	public boolean stopRequested() {
-		return this.stopRequested || this.getProcessController().stopRequested();
+		return this.stopRequested;
 	}
 	
 	public boolean isInitialized() {
@@ -614,24 +621,28 @@ public abstract class OperationController implements Controller {
 	}
 	
 	@Override
-	public synchronized void requestStop() {
-		if (isNotInitialized()) {
-			changeStatusToStopped();
-		} else if (!stopRequested()) {
-			if (this.enginesActivititieMonitor != null) {
-				for (EngineMonitor monitor : this.enginesActivititieMonitor) {
-					monitor.requestStop();
+	public void requestStop() {
+		
+		synchronized (this.getControllerId()) {
+			if (isNotInitialized()) {
+				changeStatusToStopped();
+			} else if (!stopRequested() && !isFinished() && !isStopped()) {
+				if (this.enginesActivititieMonitor != null) {
+					for (EngineMonitor monitor : this.enginesActivititieMonitor) {
+						monitor.requestStop();
+					}
 				}
+				
+				this.stopRequested = true;
 			}
 			
-			this.stopRequested = true;
-		}
-		
-		if (getChildren() != null) {
-			for (OperationController child : getChildren()) {
-				child.requestStop();
+			if (getChildren() != null) {
+				for (OperationController child : getChildren()) {
+					child.requestStop();
+				}
 			}
 		}
+		
 	}
 	
 	@Override
@@ -657,6 +668,8 @@ public abstract class OperationController implements Controller {
 	}
 	
 	public void requestStopDueError(EngineMonitor monitor, Exception e) {
+		e.printStackTrace();
+		
 		lastException = e;
 		this.stopRequested = true;
 		
@@ -731,7 +744,9 @@ public abstract class OperationController implements Controller {
 	}
 	
 	public boolean isResumable() {
-		return getProcessController().isResumable();
+		return !getOperationConfig().isNonResumable();
 	}
+	
+	public abstract boolean canBeRunInMultipleEngines();
 	
 }

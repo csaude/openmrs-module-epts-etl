@@ -19,24 +19,24 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  * This class is responsible for control the transpor of sync files from origin to destination site
  * 
  * @author jpboane
- *
  */
 public class TransportController extends OperationController {
 	
 	public TransportController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
-
+	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new TransportEngine(monitor, limits);
 	}
-
+	
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncSearchParams(this, tableInfo, null));
-	    
-		if (files == null || files.length == 0) return 0;
+		
+		if (files == null || files.length == 0)
+			return 0;
 		
 		Arrays.sort(files);
 		
@@ -46,29 +46,30 @@ public class TransportController extends OperationController {
 		
 		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(firstFile.getName()).split("_");
 		
-		return Long.parseLong(pats[pats.length-2]);
+		return Long.parseLong(pats[pats.length - 2]);
 	}
-
+	
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncSearchParams(this, tableInfo, null));
-	    
-		if (files == null || files.length == 0) return 0;
+		
+		if (files == null || files.length == 0)
+			return 0;
 		
 		Arrays.sort(files);
 		
-		File lastFile = files[files.length -1];
+		File lastFile = files[files.length - 1];
 		
 		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_MINRECORD_MAXRECORD.JSON
 		
 		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(lastFile.getName()).split("_");
 		
-		return Long.parseLong(pats[pats.length -1]);
+		return Long.parseLong(pats[pats.length - 1]);
 	}
 	
-    public File getSyncDirectory(SyncTableConfiguration syncInfo) {
-    	String fileName = "";
-
+	public File getSyncDirectory(SyncTableConfiguration syncInfo) {
+		String fileName = "";
+		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += syncInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
@@ -76,13 +77,13 @@ public class TransportController extends OperationController {
 		fileName += "export";
 		fileName += FileUtilities.getPathSeparator();
 		fileName += syncInfo.getTableName();
- 
+		
 		return new File(fileName);
-    }
-    
-    public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
-     	String fileName = "";
-
+	}
+	
+	public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
+		String fileName = "";
+		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += syncInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
@@ -91,20 +92,19 @@ public class TransportController extends OperationController {
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += syncInfo.getTableName();
- 
+		
 		File bkpDirectory = new File(fileName);
-    	
 		
 		if (!bkpDirectory.exists()) {
 			FileUtilities.tryToCreateDirectoryStructure(bkpDirectory.getAbsolutePath());
 		}
 		
 		return bkpDirectory;
-    }
-    
-    public File getSyncDestinationDirectory(SyncTableConfiguration syncInfo) throws IOException {
-     	String fileName = "";
-
+	}
+	
+	public File getSyncDestinationDirectory(SyncTableConfiguration syncInfo) throws IOException {
+		String fileName = "";
+		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += "import";
@@ -112,18 +112,23 @@ public class TransportController extends OperationController {
 		fileName += syncInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += syncInfo.getTableName();
- 
+		
 		File bkpDirectory = new File(fileName);
-    	
+		
 		if (!bkpDirectory.exists()) {
 			FileUtilities.tryToCreateDirectoryStructure(bkpDirectory.getAbsolutePath());
 		}
 		
 		return bkpDirectory;
-    }
-    
+	}
+	
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return hasNestedController() ? false : true;
+	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return false;
 	}
 }

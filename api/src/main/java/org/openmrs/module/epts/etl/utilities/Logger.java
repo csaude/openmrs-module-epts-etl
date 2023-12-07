@@ -3,19 +3,17 @@ package org.openmrs.module.epts.etl.utilities;
 import java.util.Date;
 import java.util.logging.Level;
 
-import org.apache.commons.logging.Log;
-
 public class Logger {
 	
 	CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private Date lastLogDate;
 	
-	private Log logger;
+	private org.slf4j.Logger logger;
 	
 	private Level level;
 	
-	public Logger(Log logger, Level level) {
+	public Logger(org.slf4j.Logger logger, Level level) {
 		this.logger = logger;
 		this.level = level;
 	}
@@ -24,7 +22,7 @@ public class Logger {
 		return level;
 	}
 	
-	public Log getLogger() {
+	public org.slf4j.Logger getLogger() {
 		return logger;
 	}
 	

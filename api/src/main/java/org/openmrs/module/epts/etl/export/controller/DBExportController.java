@@ -84,6 +84,7 @@ public class DBExportController extends OperationController {
 		fileName += FileUtilities.getPathSeparator();
 		fileName += "export";
 		fileName += FileUtilities.getPathSeparator();
+		fileName += tableInfo.getRelatedSyncConfiguration().getOriginAppLocationCode() + "_";
 		fileName += tableInfo.getTableName();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += tableInfo.getTableName();
@@ -114,4 +115,8 @@ public class DBExportController extends OperationController {
 		return false;
 	}
 
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return true;
+	}
 }

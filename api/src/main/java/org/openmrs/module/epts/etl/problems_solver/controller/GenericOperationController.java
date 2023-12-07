@@ -51,4 +51,8 @@ public class GenericOperationController extends OperationController {
 		return false;
 	}
 		
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return false;
+	}
 }

@@ -48,7 +48,7 @@ public class DBExportEngine extends Engine {
 			
 			logDebug("GENERATING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE");
 			
-			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(syncRecordsAsOpenMRSObjects, getSyncTableConfiguration().getOriginAppLocationCode(), true);
+			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getSyncTableConfiguration().getTableName(), syncRecordsAsOpenMRSObjects, getSyncTableConfiguration().getOriginAppLocationCode(), true);
 		
 			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(), syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
 			

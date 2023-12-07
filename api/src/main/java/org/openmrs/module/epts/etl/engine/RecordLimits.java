@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class RecordLimits {
 	
-	static CommonUtilities utilities = CommonUtilities.getInstance();
+	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	protected long currentFirstRecordId;
 	
@@ -193,27 +193,49 @@ public class RecordLimits {
 		return Engine.utilities.stringHasValue(this.getThreadCode());
 	}
 	
-	public static RecordLimits loadFromFile(File file, Engine engine) {
+	/**
+	 * Tries to load data for this engine from file.
+	 * 
+	 * If there is no saved limits then will keeped the current limits info
+	 * 
+	 * 
+	 * @param file
+	 * @param engine
+	 */
+	public void tryToLoadFromFile(File file, Engine engine) {
 		try {
-			RecordLimits limits = RecordLimits.loadFromJSON(new String(Files.readAllBytes(file.toPath())));
+			RecordLimits limits = loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 			
 			if (limits != null && limits.hasSameEngineInfo(engine.getLimits())) {
-				limits.loadedFromFile = true;
-				limits.engine = engine;
-				limits.threadCode = engine.getEngineId();
-				return limits;
-			} else
-				return null;
+				
+				copy(limits);
+				
+				this.loadedFromFile = true;
+			}
+			
+			this.engine = engine;
+			this.threadCode = engine.getEngineId();
 		}
 		catch (NoSuchFileException e) {
-			return null;
 		}
 		catch (IOException e) {
 			throw new RuntimeException();
 		}
 	}
 	
-	public static RecordLimits loadFromJSON(String json) {
+	public void copy(RecordLimits copyFrom) {
+		this.currentFirstRecordId = copyFrom.currentFirstRecordId;
+		this.currentLastRecordId = copyFrom.currentLastRecordId;
+		this.threadCode = copyFrom.threadCode;
+		this.threadMinRecord = copyFrom.threadMinRecord;
+		this.threadMaxRecord = copyFrom.threadMaxRecord;
+		this.engine = copyFrom.engine;
+		this.loadedFromFile = copyFrom.loadedFromFile;
+		this.lastSavedOn = copyFrom.lastSavedOn;
+		this.qtyRecordsPerProcessing = copyFrom.qtyRecordsPerProcessing;		
+	}
+	
+	private static RecordLimits loadFromJSON(String json) {
 		return utilities.loadObjectFormJSON(RecordLimits.class, json);
 	}
 	

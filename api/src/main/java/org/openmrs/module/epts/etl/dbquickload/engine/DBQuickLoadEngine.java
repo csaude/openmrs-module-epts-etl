@@ -21,14 +21,14 @@ import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
-public class DBQuickLoadEngine extends Engine{
+public class DBQuickLoadEngine extends Engine {
+	
 	private File currJSONSourceFile;
 	
 	/*
 	 * The current json info which is being processed
 	 */
 	private SyncJSONInfo currJSONInfo;
-	
 	
 	public DBQuickLoadEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
@@ -42,23 +42,26 @@ public class DBQuickLoadEngine extends Engine{
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
 		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
 		
-		for (SyncImportInfoVO rec : migrationRecordAsSyncInfo) rec.setConsistent(1);
+		for (SyncImportInfoVO rec : migrationRecordAsSyncInfo)
+			rec.setConsistent(1);
 		
-		this.logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO STAGING TABLE");
+		this.logInfo("WRITING  '" + migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName()
+		        + " TO STAGING TABLE");
 		
 		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSyncTableConfiguration(), conn);
 		
-		this.logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " WROTE TO STAGING TABLE");
+		this.logInfo(
+		    "'" + migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " WROTE TO STAGING TABLE");
 		
-		this.logDebug("MOVING SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] TO BACKUP AREA.");
+		this.logDebug("MOVING SOURCE JSON [" + this.currJSONSourceFile.getAbsolutePath() + "] TO BACKUP AREA.");
 		
 		BaseDAO.commit(conn);
 		
 		moveSoureJSONFileToBackup();
 		
-		logDebug("SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] MOVED TO BACKUP AREA.");
+		logDebug("SOURCE JSON [" + this.currJSONSourceFile.getAbsolutePath() + "] MOVED TO BACKUP AREA.");
 	}
-
+	
 	private void moveSoureJSONFileToBackup() {
 		try {
 			
@@ -66,22 +69,11 @@ public class DBQuickLoadEngine extends Engine{
 			
 			pathToBkpFile += getSyncBkpDirectory().getAbsolutePath();
 			pathToBkpFile += FileUtilities.getPathSeparator();
-			pathToBkpFile +=  FileUtilities.generateFileNameFromRealPath(this.currJSONSourceFile.getAbsolutePath());
+			pathToBkpFile += FileUtilities.generateFileNameFromRealPath(this.currJSONSourceFile.getAbsolutePath());
 			
 			FileUtilities.renameTo(this.currJSONSourceFile.getAbsolutePath(), pathToBkpFile);
-			
-			//NOW, MOVE MINIMAL FILE
-			
-			String[] parts = this.currJSONSourceFile.getAbsolutePath().split(".json");
-			String minimalFile = parts[0] + "_minimal.json";
-			
-			String pathToBkpMinimalFile = "";
-			pathToBkpMinimalFile += getSyncBkpDirectory().getAbsolutePath();
-			pathToBkpMinimalFile += FileUtilities.getPathSeparator();
-			pathToBkpMinimalFile +=  FileUtilities.generateFileNameFromRealPath(minimalFile);
-			
-			FileUtilities.renameTo(minimalFile, pathToBkpMinimalFile);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -92,9 +84,10 @@ public class DBQuickLoadEngine extends Engine{
 	public List<SyncRecord> searchNextRecords(Connection conn) {
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
-		if (this.currJSONSourceFile == null) return null;
+		if (this.currJSONSourceFile == null)
+			return null;
 		
-		getRelatedOperationController().logInfo("Loading content on JSON File "+ this.currJSONSourceFile.getAbsolutePath());
+		getRelatedOperationController().logInfo("Loading content on JSON File " + this.currJSONSourceFile.getAbsolutePath());
 		
 		try {
 			String json = new String(Files.readAllBytes(Paths.get(currJSONSourceFile.getAbsolutePath())));
@@ -102,10 +95,15 @@ public class DBQuickLoadEngine extends Engine{
 			this.currJSONInfo = SyncJSONInfo.loadFromJSON(json);
 			this.currJSONInfo.setFileName(currJSONSourceFile.getAbsolutePath());
 			
+			for (SyncImportInfoVO rec : this.currJSONInfo.getSyncInfo()) {
+				rec.setRecordOriginLocationCode(this.currJSONInfo.getOriginAppLocationCode());
+			}
+			
 			return utilities.parseList(this.currJSONInfo.getSyncInfo(), SyncRecord.class);
 			
-		} catch (Exception e) {
-			getRelatedOperationController().logInfo("Error performing "+ this.currJSONSourceFile.getAbsolutePath());
+		}
+		catch (Exception e) {
+			getRelatedOperationController().logInfo("Error performing " + this.currJSONSourceFile.getAbsolutePath());
 			
 			e.printStackTrace();
 			
@@ -113,47 +111,60 @@ public class DBQuickLoadEngine extends Engine{
 		}
 	}
 	
-    private File getNextJSONFileToLoad(){
-    	File[] files = getSyncDirectory().listFiles(this.getSearchParams());
-    	
-    	if (files != null && files.length >0){
-    		return files[0];
-    	}
-    	
-    	return null;
-    }
-    
+	private File getNextJSONFileToLoad() {
+		File[] files = getSyncDirectory().listFiles(this.getSearchParams());
+		
+		if (files != null && files.length > 0) {
+			return files[0];
+		}
+		
+		return null;
+	}
+	
 	@Override
 	public DBQuickLoadSearchParams getSearchParams() {
 		return (DBQuickLoadSearchParams) super.getSearchParams();
 	}
 	
+	private int countAvaliableSyncFiles() {
+		File[] files = getSyncDirectory().listFiles(this.getSearchParams());
+		
+		if (files != null && files.length > 0) {
+			return files.length;
+		}
+		
+		return 0;
+	}
+	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new  DBQuickLoadSearchParams(getRelatedOperationController(), this.getSyncTableConfiguration(), limits);
-		searchParams.setQtdRecordPerSelected(2500);
+		QuickLoadLimits loadLimits = new QuickLoadLimits(countAvaliableSyncFiles());
+		loadLimits.copy(limits);
+		
+		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickLoadSearchParams(getRelatedOperationController(),
+		        this.getSyncTableConfiguration(), loadLimits);
+		
+		searchParams.setQtdRecordPerSelected(1);
 		
 		return searchParams;
 	}
-    
-    private File getSyncBkpDirectory() throws IOException {
-    	String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSyncTableConfiguration()).getAbsolutePath();
-    	
-    	return new File(baseDirectory);
-    }
-    
-    @Override
-    public DBQuickLoadController getRelatedOperationController() {
-    	return (DBQuickLoadController) super.getRelatedOperationController();
-    }
-    
-    private File getSyncDirectory() {
-    	String baseDirectory = getRelatedOperationController().getSyncDirectory(getSyncTableConfiguration()).getAbsolutePath();
-    	
-    	return new File(baseDirectory);
-    }
-
+	
+	private File getSyncBkpDirectory() throws IOException {
+		String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSyncTableConfiguration())
+		        .getAbsolutePath();
+		
+		return new File(baseDirectory);
+	}
+	
 	@Override
-	public void requestStop() {
+	public DBQuickLoadController getRelatedOperationController() {
+		return (DBQuickLoadController) super.getRelatedOperationController();
+	}
+	
+	private File getSyncDirectory() {
+		String baseDirectory = getRelatedOperationController().getSyncDirectory(getSyncTableConfiguration())
+		        .getAbsolutePath();
+		
+		return new File(baseDirectory);
 	}
 }

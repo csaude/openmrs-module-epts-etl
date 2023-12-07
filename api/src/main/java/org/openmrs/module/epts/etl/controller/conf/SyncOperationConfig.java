@@ -87,7 +87,17 @@ public class SyncOperationConfig extends BaseConfiguration {
 	 */
 	private boolean runOnce;
 	
+	private boolean nonResumable;
+	
 	public SyncOperationConfig() {
+	}
+	
+	public boolean isNonResumable() {
+		return nonResumable;
+	}
+	
+	public void setNonResumable(boolean nonResumable) {
+		this.nonResumable = nonResumable;
 	}
 	
 	public boolean writeOperationHistory() {
@@ -438,10 +448,11 @@ public class SyncOperationConfig extends BaseConfiguration {
 		
 		if (getSourceFolders() == null) {
 			this.relatedControllers.add(generateSingle(parent, appOriginCode_, conn));
-		} else
+		} else {
 			for (String appOriginCode : getSourceFolders()) {
 				this.relatedControllers.add(generateSingle(parent, appOriginCode, conn));
 			}
+		}
 		
 		if (this.getChild() != null) {
 			for (OperationController controller : this.relatedControllers) {
@@ -655,7 +666,8 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInDBReSyncProcess() {
-		SyncOperationType[] supported = { SyncOperationType.NEW_RECORDS_DETECTOR, SyncOperationType.CHANGED_RECORDS_DETECTOR};
+		SyncOperationType[] supported = { SyncOperationType.NEW_RECORDS_DETECTOR,
+		        SyncOperationType.CHANGED_RECORDS_DETECTOR };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -666,7 +678,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInDBQuickLoadProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DATABASE_PREPARATION, SyncOperationType.DB_QUICK_LOAD };
+		SyncOperationType[] supported = { SyncOperationType.DATABASE_PREPARATION, SyncOperationType.QUICK_LOAD };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -677,7 +689,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInDBQuickExportProcess() {
-		SyncOperationType[] supported = {SyncOperationType.DB_QUICK_EXPORT};
+		SyncOperationType[] supported = { SyncOperationType.QUICK_EXPORT };
 		
 		return utilities.parseArrayToList(supported);
 	}

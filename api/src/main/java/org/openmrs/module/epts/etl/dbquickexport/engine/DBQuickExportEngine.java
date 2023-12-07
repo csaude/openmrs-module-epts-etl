@@ -57,9 +57,12 @@ public class DBQuickExportEngine extends Engine {
 				rec.setUniqueKeysInfo( UniqueKeyInfo.cloneAll(getSyncTableConfiguration().getUniqueKeys()));
 			}
 			
-			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(syncRecordsAsOpenMRSObjects,
+			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getSyncTableConfiguration().getTableName(), syncRecordsAsOpenMRSObjects,
 				getSyncTableConfiguration().getOriginAppLocationCode(), false);
 			
+			jsonInfo.clearOriginApplicationCodeForAllChildren();
+			
+			//Generates the File to store the tmp json file
 			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(),
 			    syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
 			
@@ -69,14 +72,10 @@ public class DBQuickExportEngine extends Engine {
 			//Try to remove not terminate files
 			{
 				FileUtilities.removeFile(jsonFIle.getAbsolutePath());
-				FileUtilities.removeFile(generateTmpMinimalJSONInfoFileName(jsonFIle));
 				FileUtilities.removeFile(jsonFIle.getAbsolutePath() + ".json");
-				FileUtilities.removeFile(generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json");
 			}
 			
 			FileUtilities.write(jsonFIle.getAbsolutePath(), jsonInfo.parseToJSON());
-			
-			FileUtilities.write(generateTmpMinimalJSONInfoFileName(jsonFIle), jsonInfo.generateMinimalInfo().parseToJSON());
 			
 			this.logDebug("JSON [" + jsonFIle + ".json] CREATED!");
 			
@@ -88,8 +87,6 @@ public class DBQuickExportEngine extends Engine {
 			
 			this.logDebug("MAKING FILES AVALIABLE");
 			
-			FileUtilities.renameTo(generateTmpMinimalJSONInfoFileName(jsonFIle),
-			    generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json");
 			FileUtilities.renameTo(jsonFIle.getAbsolutePath(), jsonFIle.getAbsolutePath() + ".json");
 			
 			logInfo("WRITEN FILE " + jsonFIle.getPath() + ".json" + " WITH SIZE "
@@ -97,7 +94,6 @@ public class DBQuickExportEngine extends Engine {
 			
 			if (new File(jsonFIle.getAbsolutePath() + ".json").length() == 0) {
 				new File(jsonFIle.getAbsolutePath() + ".json").delete();
-				new File(generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json").delete();
 				
 				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
 			}
@@ -126,10 +122,6 @@ public class DBQuickExportEngine extends Engine {
 		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
 		
 		return searchParams;
-	}
-	
-	private String generateTmpMinimalJSONInfoFileName(File mainTempJSONInfoFile) {
-		return mainTempJSONInfoFile.getAbsolutePath() + "_minimal";
 	}
 	
 	private File generateJSONTempFile(SyncJSONInfo jsonInfo, Integer startRecord, Integer lastRecord) throws IOException {

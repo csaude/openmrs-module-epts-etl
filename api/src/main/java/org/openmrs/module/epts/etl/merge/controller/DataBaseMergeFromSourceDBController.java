@@ -17,14 +17,12 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 /**
  * This class is responsible for control the process of data bases merge
  * 
- * 
- * 
  * @author jpboane
- *
  */
 public class DataBaseMergeFromSourceDBController extends OperationController {
-		
+	
 	private AppInfo mainApp;
+	
 	private AppInfo remoteApp;
 	
 	public DataBaseMergeFromSourceDBController(ProcessController processController, SyncOperationConfig operationConfig) {
@@ -48,18 +46,19 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {	
+	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		Integer id = Integer.valueOf(0);
-			
+		
 		try {
 			SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(tableInfo, conn);
 			
 			id = record != null ? record.getId() : 0;
 			
 			return id;
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -68,9 +67,9 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 			conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {	
+	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		Integer id = Integer.valueOf(0);
@@ -79,9 +78,10 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 			SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(tableInfo, conn);
 			
 			id = record != null ? record.getId() : 0;
-		
+			
 			return id;
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -94,5 +94,10 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return false;
+	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return true;
 	}
 }

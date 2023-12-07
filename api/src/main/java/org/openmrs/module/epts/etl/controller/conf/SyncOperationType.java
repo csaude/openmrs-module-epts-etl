@@ -20,8 +20,8 @@ public enum SyncOperationType {
 	INCONSISTENCY_SOLVER,
 	CHANGED_RECORDS_DETECTOR,
 	NEW_RECORDS_DETECTOR,
-	DB_QUICK_EXPORT,
-	DB_QUICK_LOAD,
+	QUICK_EXPORT,
+	QUICK_LOAD,
 	MISSING_RECORDS_DETECTOR,
 	OUTDATED_RECORDS_DETECTOR,
 	PHANTOM_RECORDS_DETECTOR,
@@ -94,11 +94,11 @@ public enum SyncOperationType {
 	}
 	
 	public static boolean isDbQuickExport(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(DB_QUICK_EXPORT);
+		return SyncOperationType.valueOf(operationType).equals(QUICK_EXPORT);
 	}
 	
 	public static boolean isDbQuickLoad(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(DB_QUICK_LOAD);
+		return SyncOperationType.valueOf(operationType).equals(QUICK_LOAD);
 	}
 	
 	public static boolean isResolveConflicts(String operationType) {
@@ -167,11 +167,11 @@ public enum SyncOperationType {
 	}
 	
 	public boolean isDbQuickExport() {
-		return this.equals(DB_QUICK_EXPORT);
+		return this.equals(QUICK_EXPORT);
 	}
 	
 	public boolean isDbQuickLoad() {
-		return this.equals(DB_QUICK_LOAD);
+		return this.equals(QUICK_LOAD);
 	}
 	
 	public boolean isResolveConflicts() {

@@ -19,10 +19,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 public class FileUtilities {
 	
@@ -453,6 +456,14 @@ public class FileUtilities {
 	 * @param gera o nome do ficheiro a partir do path real do ficheiro
 	 * @return
 	 */
+	public static String generateFileName(File realPath) {
+		return generateFileNameFromRealPath(realPath.getAbsolutePath());
+	}
+	
+	/**
+	 * @param gera o nome do ficheiro a partir do path real do ficheiro
+	 * @return
+	 */
 	public static String generateFileNameFromRealPath(String realPath) {
 		
 		String[] folderHierarchy = null;
@@ -503,7 +514,27 @@ public class FileUtilities {
 		FileUtils.copyFile(source, destination);
 	}
 	
+	public static void copyDirectory(File source, File destination) throws IOException {
+		tryToCreateDirectoryStructureForFile(destination.getAbsolutePath());
+		
+		FileUtils.copyDirectory(source, destination);
+	}
+	
 	public static File getParent(File f) {
 		return f.getParentFile();
+	}
+	
+	
+	public static void replaceAllInFile(File file, String toFind, String replacement) {
+		try {
+			Charset charset = StandardCharsets.UTF_8;
+
+			String content = IOUtils.toString(new FileInputStream(file), charset);
+			content = content.replaceAll(toFind, replacement);
+			IOUtils.write(content, new FileOutputStream(file), charset);
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

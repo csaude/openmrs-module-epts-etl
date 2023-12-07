@@ -161,11 +161,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		} else {
 			
 			if (getLimits() != null && !getLimits().isLoadedFromFile()) {
-				RecordLimits saveLimits = retriveSavedLimits();
-				
-				if (saveLimits != null) {
-					this.searchParams.setLimits(saveLimits);
-				}
+				retriveSavedLimits();
 			}
 			
 			doRun();
@@ -400,8 +396,6 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	@Override
 	public boolean isStopped() {
-		//if (isFinished()) return true;
-		
 		if (utilities.arrayHasElement(this.children)) {
 			for (Engine engine : this.children) {
 				if (!engine.isStopped())
@@ -532,7 +526,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	public synchronized void requestStop() {
 		if (isNotInitialized()) {
 			changeStatusToStopped();
-		} else if (!stopRequested()) {
+		} else if (!stopRequested() && !isFinished() && !isStopped()) {
 			if (this.hasChild()) {
 				for (Engine engine : this.getChildren()) {
 					engine.requestStop();
@@ -668,36 +662,44 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	public void logWarn(String msg) {
 		monitor.logWarn(msg);
 	}
+	
 	public void logWarn(String msg, long interval) {
 		monitor.logWarn(msg, interval);
 	}
 	
-	protected RecordLimits retriveSavedLimits() {
+	protected void retriveSavedLimits() {
 		if (!getLimits().hasThreadCode())
 			getLimits().setThreadCode(this.getEngineId());
 		
 		logDebug("Retrieving saved limits for " + getLimits());
 		
-		RecordLimits savedLimits = RecordLimits.loadFromFile(new File(getLimits().generateFilePath()), this);
+		getLimits().tryToLoadFromFile(new File(getLimits().generateFilePath()), this);
 		
-		if (savedLimits != null) {
-			logDebug("Saved limits found [" + savedLimits + "]");
+		if (getLimits().isLoadedFromFile()) {
+			logDebug("Saved limits found [" + getLimits() + "]");
 		} else {
 			logDebug("No saved limits found for [" + getLimits() + "]");
 		}
-		
-		return savedLimits;
 	}
 	
 	public boolean writeOperationHistory() {
 		return getRelatedSyncOperationConfig().writeOperationHistory();
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null || !(obj instanceof Engine)) {
+			return false;
+		}
+		
+		Engine e = (Engine) obj;
+		
+		return this.getEngineId().equals(e.getEngineId());
+	}
+	
 	protected abstract void restart();
 	
 	protected abstract SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn);
-	
-	//protected abstract SyncSearchParams<? extends SyncRecord> initSearchParams(Connection conn);
 	
 	public abstract void performeSync(List<SyncRecord> searchNextRecords, Connection conn) throws DBException;
 	

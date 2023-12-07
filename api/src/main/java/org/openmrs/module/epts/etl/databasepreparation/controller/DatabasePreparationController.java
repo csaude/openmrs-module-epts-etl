@@ -40,4 +40,9 @@ public class DatabasePreparationController extends OperationController {
 		return false;
 	}
 	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return false;
+	}
+	
 }

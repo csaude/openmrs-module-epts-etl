@@ -2,7 +2,6 @@ package org.openmrs.module.epts.etl.dbquickload.controller;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
@@ -18,14 +17,15 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 /**
  * This class is responsible for control the loading of sync data to stage area.
  * <p>
- * This load consist on readding the JSON content from the sync directory and load them to temp tables on sync stage.
+ * This load consist on readding the JSON content from the sync directory and load them to temp
+ * tables on sync stage.
  * 
  * @author jpboane
- *
  */
-public class DBQuickLoadController extends SiteOperationController{
-
-	public DBQuickLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+public class DBQuickLoadController extends SiteOperationController {
+	
+	public DBQuickLoadController(ProcessController processController, SyncOperationConfig operationConfig,
+	    String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
 	}
 	
@@ -33,48 +33,36 @@ public class DBQuickLoadController extends SiteOperationController{
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new DBQuickLoadEngine(monitor, limits);
 	}
-
+	
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, tableInfo, null);
 		
 		File[] files = getSyncDirectory(tableInfo).listFiles(searchParams);
-	    
-		if (files == null || files.length == 0) return 0;
 		
-		Arrays.sort(files);
-		
-		File firstFile = files[0];
-		
-		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_FIRSTRECORDID_LASTRECORDID.JSON
-		
-		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(firstFile.getName()).split("_");
-		
-		return Long.parseLong(pats[pats.length - 2]);
+		if (files == null || files.length == 0) {
+			return 0;
+		} else {
+			return 1;
+		}
 	}
-
+	
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, tableInfo, null);
 		
 		File[] files = getSyncDirectory(tableInfo).listFiles(searchParams);
-	    
-		if (files == null || files.length == 0) return 0;
 		
-		Arrays.sort(files);
-		
-		File lastFile = files[files.length -1];
-		
-		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_FIRSTRECORDID_LASTRECORDID.JSON
-		
-		String[] pats = FileUtilities.generateFileNameFromRealPathWithoutExtension(lastFile.getName()).split("_");
-		
-		return Long.parseLong(pats[pats.length - 1]);
+		if (files == null || files.length == 0) {
+			return 0;
+		} else {
+			return files.length;
+		}
 	}
 	
-    public File getSyncDirectory(SyncTableConfiguration syncInfo) {
-    	String fileName = "";
-
+	public File getSyncDirectory(SyncTableConfiguration syncInfo) {
+		String fileName = "";
+		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		
@@ -85,13 +73,13 @@ public class DBQuickLoadController extends SiteOperationController{
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += syncInfo.getTableName();
- 
+		
 		return new File(fileName);
-    }
-    
-    public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
-     	String fileName = "";
-
+	}
+	
+	public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
+		String fileName = "";
+		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		
@@ -102,18 +90,23 @@ public class DBQuickLoadController extends SiteOperationController{
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += syncInfo.getTableName();
- 
+		
 		File bkpDirectory = new File(fileName);
-    	
+		
 		if (!bkpDirectory.exists()) {
 			FileUtilities.tryToCreateDirectoryStructure(bkpDirectory.getAbsolutePath());
 		}
 		
 		return bkpDirectory;
-    }
-
+	}
+	
 	@Override
 	public boolean mustRestartInTheEnd() {
-		return hasNestedController() ? false : true;
+		return hasChild() ? false : true;
+	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return false;
 	}
 }

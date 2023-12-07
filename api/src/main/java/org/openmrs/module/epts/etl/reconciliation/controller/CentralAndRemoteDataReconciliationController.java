@@ -205,4 +205,8 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		}	
 	}
 	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return false;
+	}
 }

@@ -21,8 +21,8 @@ import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
-import org.apache.commons.logging.Log;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.slf4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -448,6 +448,10 @@ public class  CommonUtilities implements Serializable{
 	public  boolean arrayHasElement(List<?> list){
 		return FuncoesGenericas.arrayHasElement(list);
 	}
+	
+	public  boolean arrayHasNoElement(List<?> list){
+		return !arrayHasElement(list);
+	}	
 	
 	public  boolean arrayHasElement(ArrayList<?> list){
 		return FuncoesGenericas.arrayHasElement(list);
@@ -893,19 +897,19 @@ public class  CommonUtilities implements Serializable{
 	}
 	
 
-	public void logWarn(String msg, Log logger, Level level) {
+	public void logWarn(String msg, Logger logger, Level level) {
 		if (level.intValue() <= Level.WARNING.intValue()) logger.warn(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
-	public void logInfo(String msg, Log logger, Level level) {
+	public void logInfo(String msg, Logger logger, Level level) {
 		if (level.intValue() <= Level.INFO.intValue())  logger.info(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
-	public void logErr(String msg, Log logger, Level level) {
+	public void logErr(String msg, Logger logger, Level level) {
 		if (level.intValue() <= Level.SEVERE.intValue() )  logger.error(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 	
-	public void logDebug(String msg, Log logger, Level level) {
+	public void logDebug(String msg, Logger logger, Level level) {
 		if (level.intValue() <= Level.FINE.intValue())    logger.debug(msg + " At: " + formatDateToDDMMYYYY_HHMISS(this.getCurrentDate()));
 	}
 
@@ -927,6 +931,11 @@ public class  CommonUtilities implements Serializable{
 		
 		return str;
 	}
+	
+
+	public String delemeterWithCotationMarks(String str) {
+		return quote(str);
+	}	
 	
 	public String removeLastChar(String str) {
 		return str.substring(0, str.length() -1);

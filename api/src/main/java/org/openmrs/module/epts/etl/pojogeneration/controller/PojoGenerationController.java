@@ -14,7 +14,6 @@ import org.openmrs.module.epts.etl.pojogeneration.engine.PojoGenerationEngine;
  * This class is responsible for data base preparation
  * 
  * @author jpboane
- *
  */
 public class PojoGenerationController extends OperationController {
 	
@@ -26,12 +25,12 @@ public class PojoGenerationController extends OperationController {
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new PojoGenerationEngine(monitor, limits);
 	}
-
+	
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		return 1;
 	}
-
+	
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		return 1;
@@ -44,5 +43,10 @@ public class PojoGenerationController extends OperationController {
 	
 	public SyncConfiguration getConfiguration() {
 		return getProcessController().getConfiguration();
+	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return false;
 	}
 }

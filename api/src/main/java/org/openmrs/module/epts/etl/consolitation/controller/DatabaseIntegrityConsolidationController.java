@@ -80,4 +80,9 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		
 		return conn;
 	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return false;
+	}
 }

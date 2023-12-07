@@ -95,4 +95,9 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 		
 		return conn;
 	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return false;
+	}
 }

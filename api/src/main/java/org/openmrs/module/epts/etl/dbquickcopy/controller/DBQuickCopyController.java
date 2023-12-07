@@ -23,7 +23,6 @@ public class DBQuickCopyController extends SiteOperationController {
 	
 	private DBConnectionService srcDBService;
 	
-	
 	public DBQuickCopyController(ProcessController processController, SyncOperationConfig operationConfig,
 	    String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
@@ -79,5 +78,10 @@ public class DBQuickCopyController extends SiteOperationController {
 	
 	public OpenConnection openSrcConnection() {
 		return srcDBService.openConnection();
+	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return true;
 	}
 }

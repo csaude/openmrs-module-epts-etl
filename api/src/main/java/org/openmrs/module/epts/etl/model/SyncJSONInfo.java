@@ -19,17 +19,21 @@ import com.fasterxml.jackson.databind.JsonMappingException;
  * This class aggregate the information needed for synchronization json file
  * 
  * @author jpboane
- *
  */
 public class SyncJSONInfo {
-
+	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
-
+	
 	private int qtyRecords;
+	
 	private Date dateGenerated;
+	
 	private String originAppLocationCode;
 	
+	private String tableName;
+	
 	private List<SyncImportInfoVO> syncInfo;
+	
 	/**
 	 * The minimal info of this object
 	 */
@@ -38,11 +42,27 @@ public class SyncJSONInfo {
 	public SyncJSONInfo() {
 	}
 	
-	public SyncJSONInfo(List<DatabaseObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
+	public SyncJSONInfo(String tableName, List<DatabaseObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON)
+	        throws DBException {
 		this.qtyRecords = utilities.arraySize(syncRecords);
 		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(syncRecords, recordOriginLocationCode, generateRecordJSON);
 		this.dateGenerated = DateAndTimeUtilities.getCurrentDate();
 		this.originAppLocationCode = recordOriginLocationCode;
+		this.tableName = tableName;
+	}
+	
+	public SyncJSONInfo(String recordOriginLocationCode)
+	        throws DBException {
+		this.dateGenerated = DateAndTimeUtilities.getCurrentDate();
+		this.originAppLocationCode = recordOriginLocationCode;
+	}
+	
+	public String getTableName() {
+		return tableName;
+	}
+	
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
 	}
 	
 	public List<SyncImportInfoVO> getSyncInfo() {
@@ -56,33 +76,40 @@ public class SyncJSONInfo {
 	public String getOriginAppLocationCode() {
 		return originAppLocationCode;
 	}
-
+	
 	public void setOriginAppLocationCode(String originAppLocationCode) {
 		this.originAppLocationCode = originAppLocationCode;
 	}
-
+	
 	public int getQtyRecords() {
 		return qtyRecords;
 	}
-
+	
 	public void setQtyRecords(int qtyRecords) {
 		this.qtyRecords = qtyRecords;
 	}
-
+	
 	public Date getDateGenerated() {
 		return dateGenerated;
 	}
-
+	
 	public void setDateGenerated(Date dateGenerated) {
 		this.dateGenerated = dateGenerated;
 	}
-
-	public static SyncJSONInfo generate(List<DatabaseObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
-		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(syncRecords, recordOriginLocationCode, generateRecordJSON);
-
+	
+	public static SyncJSONInfo generate(String tableName, List<DatabaseObject> syncRecords, String recordOriginLocationCode,
+	        boolean generateRecordJSON) throws DBException {
+		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(tableName, syncRecords, recordOriginLocationCode, generateRecordJSON);
+		
 		return syncJSONInfo;
 	}
-
+	
+	public static SyncJSONInfo generate(String recordOriginLocationCode) throws DBException {
+		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(recordOriginLocationCode);
+		
+		return syncJSONInfo;
+	}	
+	
 	@JsonIgnore
 	public String parseToJSON() {
 		return utilities.parseToJSON(this);
@@ -97,19 +124,22 @@ public class SyncJSONInfo {
 			SyncJSONInfo synJsonInfo = mapper.getContext(SyncJSONInfo.class).readValue(json, SyncJSONInfo.class);
 			
 			return synJsonInfo;
-		} catch (JsonParseException e) {
+		}
+		catch (JsonParseException e) {
 			e.printStackTrace();
-		
+			
 			ex = e;
 			
 			throw new RuntimeException(e);
-		} catch (JsonMappingException e) {
+		}
+		catch (JsonMappingException e) {
 			e.printStackTrace();
-		
+			
 			ex = e;
 			
 			throw new RuntimeException(e);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 			
 			ex = e;
@@ -122,7 +152,7 @@ public class SyncJSONInfo {
 			}
 		}
 		
-	}	
+	}
 	
 	public SyncJSONInfo generateMinimalInfo() {
 		this.minimalJSONInfo = new SyncJSONInfo();
@@ -132,14 +162,24 @@ public class SyncJSONInfo {
 		
 		return this.minimalJSONInfo;
 	}
-
+	
 	private String fileName;
 	
 	public void setFileName(String fileName) {
 		this.fileName = fileName;
 	}
-
+	
 	public String getFileName() {
 		return fileName;
+	}
+	
+	public void clearOriginApplicationCodeForAllChildren() {
+		if (utilities.arrayHasNoElement(this.syncInfo))
+			return;
+		
+		for (SyncImportInfoVO info : this.syncInfo) {
+			info.setRecordOriginLocationCode(null);
+		}
+		
 	}
 }

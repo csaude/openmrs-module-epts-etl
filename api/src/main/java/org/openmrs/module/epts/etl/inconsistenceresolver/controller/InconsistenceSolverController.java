@@ -91,4 +91,9 @@ public class InconsistenceSolverController extends OperationController {
 		
 		return conn;
 	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return true;
+	}
 }

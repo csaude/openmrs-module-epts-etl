@@ -2,6 +2,9 @@ package org.openmrs.module.epts.etl.controller.conf;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -16,9 +19,9 @@ import java.util.regex.Matcher;
 
 import javax.ws.rs.ForbiddenException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.io.IOUtils;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -28,6 +31,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -78,13 +83,18 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private List<SyncTableConfiguration> allTables;
 	
-	private static Log logger = LogFactory.getLog(SyncConfiguration.class);
+	private static Logger logger = LoggerFactory.getLogger(SyncConfiguration.class);
 	
 	private ModelType modelType;
 	
-	private boolean resumable;
-	
 	private String syncStageSchema;
+	
+	/**
+	 * The finalizer class
+	 */
+	private String finalizerFullClassName;
+	
+	private Class<? extends ProcessFinalizer> finalizerClazz;
 	
 	public SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
@@ -93,14 +103,6 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	public void setSyncStageSchema(String syncStageSchema) {
 		this.syncStageSchema = syncStageSchema;
-	}
-	
-	public boolean isResumable() {
-		return resumable;
-	}
-	
-	public void setResumable(boolean resumable) {
-		this.resumable = resumable;
 	}
 	
 	public ModelType getModelType() {
@@ -216,6 +218,10 @@ public class SyncConfiguration extends BaseConfiguration {
 		this.processType = processType;
 	}
 	
+	public Class<? extends ProcessFinalizer> getFinalizerClazz() {
+		return finalizerClazz;
+	}
+	
 	@JsonIgnore
 	public boolean isDataBaseMergeFromJSONProcess() {
 		return processType.isDataBaseMergeFromJSON();
@@ -310,12 +316,37 @@ public class SyncConfiguration extends BaseConfiguration {
 		return tablesConfigurations;
 	}
 	
+	public List<String> parteTableConfigurationsToString() {
+		List<String> tableConfigurationsAsString = new ArrayList<>();
+		
+		if (utilities.arrayHasElement(getTablesConfigurations())) {
+			for (SyncTableConfiguration tc : getTablesConfigurations()) {
+				tableConfigurationsAsString.add(tc.getTableName());
+			}
+		}
+		
+		return tableConfigurationsAsString;
+	}
+	
 	public String getSyncRootDirectory() {
 		return syncRootDirectory;
 	}
 	
 	public void setSyncRootDirectory(String syncRootDirectory) {
 		this.syncRootDirectory = syncRootDirectory;
+	}
+	
+	public String generateProcessStatusFolder() {
+		String subFolder = "";
+		
+		if (this.isSupposedToRunInOrigin()) {
+			subFolder = "source";
+		} else if (this.isSupposedToRunInDestination()) {
+			subFolder = "destination";
+		}
+		
+		return this.getSyncRootDirectory() + FileUtilities.getPathSeparator() + "process_status"
+		        + FileUtilities.getPathSeparator() + subFolder + FileUtilities.getPathSeparator() + this.getDesignation();
 	}
 	
 	public void setTablesConfigurations(List<SyncTableConfiguration> tablesConfigurations) {
@@ -373,9 +404,26 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	public static SyncConfiguration loadFromFile(File file) throws IOException {
-		SyncConfiguration conf = SyncConfiguration.loadFromJSON(file, new String(Files.readAllBytes(file.toPath())));
 		
-		conf.setRelatedConfFile(file);
+		SyncConfiguration conf;
+		InputStream b = null;
+		
+		try {
+			
+			b = Files.newInputStream(file.toPath());
+			
+			conf = SyncConfiguration.loadFromJSON(new String(IOUtils.toByteArray(b)));
+			
+			conf.setRelatedConfFile(file);
+		}
+		finally {
+			if (b != null) {
+				try {
+					b.close();
+				}
+				catch (IOException e) {}
+			}
+		}
 		
 		return conf;
 	}
@@ -448,7 +496,7 @@ public class SyncConfiguration extends BaseConfiguration {
 		
 	}
 	
-	public static SyncConfiguration loadFromJSON(File file, String json) {
+	public static SyncConfiguration loadFromJSON(String json) {
 		try {
 			return new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json, SyncConfiguration.class);
 		}
@@ -593,6 +641,14 @@ public class SyncConfiguration extends BaseConfiguration {
 			operation.validate();
 		}
 		
+		if (utilities.stringHasValue(this.getFinalizerFullClassName())) {
+			loadFinalizer();
+			
+			if (this.finalizerClazz == null) {
+				errorMsg += ++errNum + ". The Finalizer class [" + this.getFinalizerFullClassName() + "] cannot be found\n";
+			}
+		}
+		
 		List<SyncOperationType> supportedOperations = null;
 		
 		if (isSourceSyncProcess()) {
@@ -646,6 +702,32 @@ public class SyncConfiguration extends BaseConfiguration {
 			this.childConfig.validate();
 		}
 		
+	}
+	
+	public String getFinalizerFullClassName() {
+		return finalizerFullClassName;
+	}
+	
+	public void setFinalizerFullClassName(String finalizerFullClassName) {
+		this.finalizerFullClassName = finalizerFullClassName;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T extends ProcessFinalizer> void loadFinalizer() {
+		
+		try {
+			URL[] classPaths = new URL[] { getClassPathAsFile().toURI().toURL() };
+			
+			URLClassLoader loader = URLClassLoader.newInstance(classPaths);
+			
+			Class<T> c = (Class<T>) loader.loadClass(this.getFinalizerFullClassName());
+			
+			loader.close();
+			
+			this.finalizerClazz = (Class<T>) c;
+		}
+		catch (ClassNotFoundException e) {}
+		catch (IOException e) {}
 	}
 	
 	private boolean isOperationConfigured(SyncOperationType operationType) {
@@ -836,7 +918,7 @@ public class SyncConfiguration extends BaseConfiguration {
 		String log = System.getProperty("log.level");
 		
 		if (!utilities.stringHasValue(log))
-			return Level.INFO;
+			return Level.FINE;
 		
 		if (log.equals("DEBUG"))
 			return Level.FINE;

@@ -158,4 +158,8 @@ public class DetectGapesController extends OperationController {
 		}
 	}
 	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return true;
+	}
 }

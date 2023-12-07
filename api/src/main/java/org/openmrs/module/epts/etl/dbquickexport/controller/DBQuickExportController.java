@@ -24,6 +24,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  * @author jpboane
  */
 public class DBQuickExportController extends OperationController {
+	
 	private final String stringLock = new String("LOCK_STRING");
 	
 	public DBQuickExportController(ProcessController processController, SyncOperationConfig operationConfig) {
@@ -99,16 +100,19 @@ public class DBQuickExportController extends OperationController {
 			
 			String fileName = "";
 			
-			fileName += tableInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
+						fileName += tableInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 			fileName += FileUtilities.getPathSeparator();
-			fileName += tableInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
+			
+			//Use "_" at begining of folder name to avoid situation were the starting character cause escape (ex: 't' on '\t')
+			
+			fileName += "_" + tableInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
 			fileName += FileUtilities.getPathSeparator();
 			fileName += "export";
 			fileName += FileUtilities.getPathSeparator();
 			fileName += tableInfo.getTableName();
 			fileName += FileUtilities.getPathSeparator();
+			fileName += "_" + tableInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase() + "_";
 			fileName += tableInfo.getTableName();
-			
 			fileName += "_" + utilities().garantirXCaracterOnNumber(startRecord, 10);
 			fileName += "_" + utilities().garantirXCaracterOnNumber(lastRecord, 10);
 			
@@ -130,4 +134,10 @@ public class DBQuickExportController extends OperationController {
 			return file;
 		}
 	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return true;
+	}
+	
 }

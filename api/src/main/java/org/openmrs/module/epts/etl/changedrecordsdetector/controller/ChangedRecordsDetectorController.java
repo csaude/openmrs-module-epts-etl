@@ -1,7 +1,5 @@
 package org.openmrs.module.epts.etl.changedrecordsdetector.controller;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -15,28 +13,25 @@ import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
-import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 /**
  * This class is responsible for control record changes process
  * 
  * @author jpboane
- *
  */
 public class ChangedRecordsDetectorController extends OperationController {
+	
 	private AppInfo actionPerformeApp;
-
 	
 	public ChangedRecordsDetectorController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
-	
+		
 		//We assume that there is only one application listed in appConf
-		this.actionPerformeApp = getConfiguration().exposeAllAppsNotMain().get(0); 
+		this.actionPerformeApp = getConfiguration().exposeAllAppsNotMain().get(0);
 	}
 	
 	public AppInfo getActionPerformeApp() {
@@ -56,7 +51,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new ChangedRecordsDetectorEngine(monitor, limits);
 	}
-
+	
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
@@ -64,14 +59,16 @@ public class ChangedRecordsDetectorController extends OperationController {
 		try {
 			
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstChangedRecord(tableInfo, this.getActionPerformeApp().getApplicationCode(), getConfiguration().getObservationDate(), conn);
-			}
-			else 
-			if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstNewRecord(tableInfo, this.getActionPerformeApp().getApplicationCode(), getConfiguration().getObservationDate(), conn);
-			}
-			else throw new ForbiddenOperationException("The operation '" + getOperationType() + "' is not supported in this controller!");
-		} catch (DBException e) {
+				return DetectedRecordInfoDAO.getFirstChangedRecord(tableInfo,
+				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+			} else if (operationConfig.isNewRecordsDetector()) {
+				return DetectedRecordInfoDAO.getFirstNewRecord(tableInfo, this.getActionPerformeApp().getApplicationCode(),
+				    getConfiguration().getObservationDate(), conn);
+			} else
+				throw new ForbiddenOperationException(
+				        "The operation '" + getOperationType() + "' is not supported in this controller!");
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -80,21 +77,23 @@ public class ChangedRecordsDetectorController extends OperationController {
 			conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastChangedRecord(tableInfo, this.getActionPerformeApp().getApplicationCode(), getConfiguration().getObservationDate(), conn);
-			}
-			else 
-			if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastNewRecord(tableInfo, this.getActionPerformeApp().getApplicationCode(), getConfiguration().getObservationDate(), conn);
-			}
-			else throw new ForbiddenOperationException("The operation '" + getOperationType() + "' is not supported in this controller!");
-		} catch (DBException e) {
+				return DetectedRecordInfoDAO.getLastChangedRecord(tableInfo,
+				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+			} else if (operationConfig.isNewRecordsDetector()) {
+				return DetectedRecordInfoDAO.getLastNewRecord(tableInfo, this.getActionPerformeApp().getApplicationCode(),
+				    getConfiguration().getObservationDate(), conn);
+			} else
+				throw new ForbiddenOperationException(
+				        "The operation '" + getOperationType() + "' is not supported in this controller!");
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -108,14 +107,15 @@ public class ChangedRecordsDetectorController extends OperationController {
 	public boolean mustRestartInTheEnd() {
 		return false;
 	}
-
+	
 	public OpenConnection openConnection() {
 		OpenConnection conn = getDefaultApp().openConnection();
-	
+		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
 			try {
 				DBUtilities.disableForegnKeyChecks(conn);
-			} catch (DBException e) {
+			}
+			catch (DBException e) {
 				e.printStackTrace();
 				
 				throw new RuntimeException(e);
@@ -127,16 +127,17 @@ public class ChangedRecordsDetectorController extends OperationController {
 	
 	public boolean existDetectedRecordInfoTable() {
 		OpenConnection conn = openConnection();
-
+		
 		try {
 			String schema = conn.getCatalog();
 			String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 			String tabName = "detected_record_info";
 			
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
 		}
 		finally {
@@ -169,56 +170,29 @@ public class ChangedRecordsDetectorController extends OperationController {
 			st.addBatch(sql);
 			st.addBatch("CREATE INDEX d_rec_info_app_idx ON detected_record_info (app_code);");
 			st.addBatch("CREATE INDEX d_rec_info_origin_idx ON detected_record_info (record_origin_location_code);");
-			st.addBatch("CREATE INDEX d_rec_info_table_app_origin_idx ON detected_record_info (table_name, app_code, record_origin_location_code);");
+			st.addBatch(
+			    "CREATE INDEX d_rec_info_table_app_origin_idx ON detected_record_info (table_name, app_code, record_origin_location_code);");
 			st.addBatch("CREATE INDEX d_rec_info_table_idx ON detected_record_info (table_name);");
 			
 			st.executeBatch();
-
+			
 			st.close();
 			
-			
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
-		} 
+		}
 		finally {
 			conn.markAsSuccessifullyTerminated();
 			conn.finalizeConnection();
 		}
 	}
-
-	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, int startRecord, int lastRecord) throws IOException {
-		String fileName = "";
-		
-		fileName += tableInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
-		fileName += FileUtilities.getPathSeparator();
-		fileName += tableInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
-		fileName += FileUtilities.getPathSeparator();
-		fileName += "export";
-		fileName += FileUtilities.getPathSeparator();
-		fileName += tableInfo.getTableName();
-		fileName += FileUtilities.getPathSeparator();
-		fileName += tableInfo.getTableName();
-		
-		fileName += "_" + utilities().garantirXCaracterOnNumber(startRecord, 10);
-		fileName += "_" + utilities().garantirXCaracterOnNumber(lastRecord, 10);
 	
-		if(new File(fileName).exists() ) {
-			logInfo("The file '" + fileName + "' is already exists!!! Removing it...");
-			new File(fileName).delete();
-		}
-		
-		if(new File(fileName+".json").exists() ) {
-			logInfo("The file '" + fileName  + ".json' is already exists!!! Removing it...");
-			new File(fileName+".json").delete();
-		}
-		
-		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
-		
-		File file = new File(fileName);
-		file.createNewFile();
-		
-		return file;
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return true;
 	}
+	
 }

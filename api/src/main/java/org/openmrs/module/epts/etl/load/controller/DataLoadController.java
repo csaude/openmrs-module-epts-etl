@@ -115,5 +115,10 @@ public class DataLoadController extends SiteOperationController{
 	public boolean mustRestartInTheEnd() {
 		return hasNestedController() ? false : true;
 	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return false;
+	}
 
 }

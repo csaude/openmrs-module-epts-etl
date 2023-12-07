@@ -95,4 +95,9 @@ public class DBCopyController extends OperationController {
 	public OpenConnection openDestConnection() {
 		return destAppInfo.openConnection();
 	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return true;
+	}
 }

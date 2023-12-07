@@ -207,4 +207,9 @@ public class DBQuickMergeController extends SiteOperationController {
 	public OpenConnection openDstConnection() {
 		return dstConn.openConnection();
 	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return true;
+	}
 }

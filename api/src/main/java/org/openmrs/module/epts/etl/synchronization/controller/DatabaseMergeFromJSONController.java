@@ -16,32 +16,30 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
- * This class is responsible for control the synchronization processs between
- * tables
+ * This class is responsible for control the synchronization processs between tables
  * 
  * @author jpboane
- *
  */
-public class DatabaseMergeFromJSONController extends OperationController{	
+public class DatabaseMergeFromJSONController extends OperationController {
 	
 	public DatabaseMergeFromJSONController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
-
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new DataBaseMergeFromJSONEngine(monitor, limits);
 	}
-
+	
 	@Override
 	public OpenConnection openConnection() {
 		OpenConnection conn = super.openConnection();
-	
+		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
 			try {
 				DBUtilities.disableForegnKeyChecks(conn);
-			} catch (DBException e) {
+			}
+			catch (DBException e) {
 				e.printStackTrace();
 				
 				throw new RuntimeException(e);
@@ -60,11 +58,13 @@ public class DatabaseMergeFromJSONController extends OperationController{
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
-		
-			if (obj != null) return obj.getId();
+			
+			if (obj != null)
+				return obj.getId();
 			
 			return 0;
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -73,7 +73,7 @@ public class DatabaseMergeFromJSONController extends OperationController{
 			conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
@@ -83,11 +83,13 @@ public class DatabaseMergeFromJSONController extends OperationController{
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getLastRecord(searchParams, conn);
-		
-			if (obj != null) return obj.getId();
+			
+			if (obj != null)
+				return obj.getId();
 			
 			return 0;
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -96,9 +98,14 @@ public class DatabaseMergeFromJSONController extends OperationController{
 			conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return hasNestedController() ? false : true;
+	}
+	
+	@Override
+	public boolean canBeRunInMultipleEngines() {
+		return true;
 	}
 }

@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -10,10 +11,10 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
-import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.ProcessProgressInfo;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -27,6 +28,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -75,9 +77,14 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		this.starter = starter;
 		
-		this.logger = new Logger(LogFactory.getLog(ProcessController.class), getLogLevel());
+		this.logger = new Logger(LoggerFactory.getLogger(ProcessController.class), getLogLevel());
 		
 		init(configuration);
+	}
+	
+	@JsonIgnore
+	public List<OperationController> getOperationsControllers() {
+		return operationsControllers;
 	}
 	
 	public ProcessProgressInfo getProgressInfo() {
@@ -260,7 +267,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			for (OperationController controller : this.operationsControllers) {
 				if (controller.getOperationConfig().isDisabled()) {
 					continue;
-				} else if (!controller.isStopped()) {
+				} else if (!controller.isStopped() && !controller.isFinished()) {
 					return false;
 				} else {
 					List<OperationController> children = controller.getChildren();
@@ -269,7 +276,7 @@ public class ProcessController implements Controller, ControllerStarter {
 						List<OperationController> grandChildren = null;
 						
 						for (OperationController child : children) {
-							if (!child.isStopped()) {
+							if (!child.isStopped() && !child.isFinished()) {
 								return false;
 							}
 							
@@ -387,7 +394,8 @@ public class ProcessController implements Controller, ControllerStarter {
 				controller.requestStop();
 			}
 		}
-	}
+		
+	}	
 	
 	@Override
 	public void run() {
@@ -484,7 +492,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		if (!canBeReRun())
 			return false;
 		
-		if (isDBReSyncProcess()) {
+		if (isDBReSyncProcess() || isDBQuickExportProcess()) {
 			ProcessInfo processInfoOnDB = this.processInfo.loadFromFile();
 			
 			return !this.processInfo.equals(processInfoOnDB);
@@ -495,11 +503,19 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	private boolean canBeReRun() {
-		return isDBReSyncProcess();
+		return isDBReSyncProcess() || isDBQuickExportProcess();
 	}
 	
 	public boolean isDBReSyncProcess() {
 		return getConfiguration().isDBReSyncProcess();
+	}
+	
+	public boolean isDBQuickExportProcess() {
+		return getConfiguration().isDBQuickExportProcess();
+	}
+	
+	public boolean isDBQuickLoadProcess() {
+		return getConfiguration().isDBQuickLoadProcess();
 	}
 	
 	private void tryToRemoveOldStopRequested() {
@@ -537,9 +553,26 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.starter.finalize(this);
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@Override
 	public void onFinish() {
 		markAsFinished();
+		
+		if (getConfiguration().getFinalizerClazz() != null) {
+			Class[] parameterTypes = { ProcessController.class };
+			
+			try {
+				Constructor<? extends ProcessFinalizer> a = getConfiguration().getFinalizerClazz()
+				        .getConstructor(parameterTypes);
+				
+				ProcessFinalizer finalizer = a.newInstance(this);
+				
+				finalizer.performeFinalizationTasks();
+			}
+			catch (Exception e) {
+				throw new ForbiddenOperationException(e);
+			}
+		}
 		
 		starter.finalize(this);
 	}
@@ -586,8 +619,8 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	@JsonIgnore
-	private boolean processIsAlreadyFinished() {
-		return isResumable() && this.processInfo.generateProcessStatusFile().exists();
+	public boolean processIsAlreadyFinished() {
+		return this.processInfo.generateProcessStatusFile().exists();
 	}
 	
 	@Override
@@ -644,10 +677,6 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	public OpenConnection openConnection() {
 		return getDefaultApp().openConnection();
-	}
-	
-	public boolean isResumable() {
-		return getConfiguration().isResumable();
 	}
 	
 	private void createStageSchema() {
