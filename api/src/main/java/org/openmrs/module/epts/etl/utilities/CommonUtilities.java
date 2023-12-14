@@ -336,6 +336,10 @@ public class  CommonUtilities implements Serializable{
 		return FuncoesGenericas.findOnArray(list, obj) != null;
 	}
 
+	public  <T> boolean existOnArray(T[] array, T obj){
+		return FuncoesGenericas.findOnArray(array, obj) != null;
+	}
+	
 	public  <T> int countQtdOcorrenciaDoRegistoOnList(List<T> list, T obj){
 		return FuncoesGenericas.countQtdOcorrenciaDoRegistoOnList(list, obj);
 	}

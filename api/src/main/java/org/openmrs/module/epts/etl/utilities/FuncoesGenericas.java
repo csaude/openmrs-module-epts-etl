@@ -473,6 +473,26 @@ public class FuncoesGenericas {
 		return null;
 	}
 
+	/**
+	 * Localiza um objecto de uma {@link List}
+	 * 
+	 * @param list
+	 *            da qual se pretende recuperar o registo
+	 * @param toFind
+	 *            registo a recuperar
+	 * @return registo recuperado
+	 */
+	public static <T> T findOnArray(T[] list, Object toFind) {
+		if (list == null || toFind == null)
+			return null;
+
+		for (T current : list)
+			if (toFind.equals(current))
+				return current;
+
+		return null;
+	}	
+	
 	public static <T> int countQtdOcorrenciaDoRegistoOnList(List<T> list, T obj){
 		if (!arrayHasElement(list)) return 0;
 		

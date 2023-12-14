@@ -134,7 +134,14 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	void doWait() {
 		while (isRunning()) {
-			TimeCountDown.sleep(15);
+			
+			if (mustRestartInTheEnd()) {
+				//Sleep more time if must restart in the end is one to prevent
+				//Repeatedly retries when there is no more data to process
+				TimeCountDown.sleep(5*60);
+			} else {
+				TimeCountDown.sleep(15);		
+			}
 			
 			if (!utilities.arrayHasElement(this.ownEngines)) {
 				initEngine();

@@ -400,14 +400,14 @@ public class FileUtilities {
 		return java.io.File.separator;
 	}
 	
-	public static void renameTo(String sourceFileName, String destinationFileName) {
+	public static boolean renameTo(String sourceFileName, String destinationFileName) {
 		java.io.File sourceFile = new java.io.File(sourceFileName);
 		java.io.File destinationFile = new java.io.File(destinationFileName);
 		
-		sourceFile.renameTo(destinationFile);
+		return sourceFile.renameTo(destinationFile);
 	}
 	
-	public static void removeFile(File sourceFile) {
+	public static boolean removeFile(File sourceFile) {
 		if (sourceFile.isDirectory()) {
 			String[] entries = sourceFile.list();
 			for (String s : entries) {
@@ -416,11 +416,11 @@ public class FileUtilities {
 			}
 		}
 		
-		sourceFile.delete();
+		return sourceFile.delete();
 	}
 	
-	public static void removeFile(String sourceFileName) {
-		removeFile(new java.io.File(sourceFileName));
+	public static boolean removeFile(String sourceFileName) {
+		return removeFile(new java.io.File(sourceFileName));
 	}
 	
 	/*public static void cloneStream() throws IOException{

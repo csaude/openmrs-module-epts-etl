@@ -161,7 +161,7 @@ public class ConfVM {
 		} else {
 			String json = this.syncConfiguration.getProcessType().isSourceSync() ? ConfigData.generateDefaultSourcetConfig() : ConfigData.generateDefaultDestinationConfig();
 		
-			reloadedSyncConfiguration = SyncConfiguration.loadFromJSON(null, json);
+			reloadedSyncConfiguration = SyncConfiguration.loadFromJSON(json);
 			
 			reloadedSyncConfiguration.setSyncRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "data");
 			reloadedSyncConfiguration.setRelatedConfFile(this.configFile);

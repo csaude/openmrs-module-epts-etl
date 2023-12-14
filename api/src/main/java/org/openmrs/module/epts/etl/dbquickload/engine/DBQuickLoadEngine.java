@@ -14,6 +14,7 @@ import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
@@ -71,7 +72,18 @@ public class DBQuickLoadEngine extends Engine {
 			pathToBkpFile += FileUtilities.getPathSeparator();
 			pathToBkpFile += FileUtilities.generateFileNameFromRealPath(this.currJSONSourceFile.getAbsolutePath());
 			
+			if (new File(pathToBkpFile).exists()) {
+				FileUtilities.removeFile(pathToBkpFile);
+			}
+			
 			FileUtilities.renameTo(this.currJSONSourceFile.getAbsolutePath(), pathToBkpFile);
+			
+			//FileUtilities.removeFile(this.currJSONSourceFile.getAbsolutePath());
+			
+			if (this.currJSONSourceFile.exists()) {
+				throw new ForbiddenOperationException(
+				        "The file " + this.currJSONSourceFile.getAbsolutePath() + " Could not removed");
+			}
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -126,25 +138,17 @@ public class DBQuickLoadEngine extends Engine {
 		return (DBQuickLoadSearchParams) super.getSearchParams();
 	}
 	
-	private int countAvaliableSyncFiles() {
-		File[] files = getSyncDirectory().listFiles(this.getSearchParams());
-		
-		if (files != null && files.length > 0) {
-			return files.length;
-		}
-		
-		return 0;
-	}
-	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		QuickLoadLimits loadLimits = new QuickLoadLimits(countAvaliableSyncFiles());
+		QuickLoadLimits loadLimits = new QuickLoadLimits();
 		loadLimits.copy(limits);
 		
 		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickLoadSearchParams(getRelatedOperationController(),
 		        this.getSyncTableConfiguration(), loadLimits);
 		
 		searchParams.setQtdRecordPerSelected(1);
+		
+		loadLimits.setRelatedSearchParams((DBQuickLoadSearchParams) searchParams);
 		
 		return searchParams;
 	}
