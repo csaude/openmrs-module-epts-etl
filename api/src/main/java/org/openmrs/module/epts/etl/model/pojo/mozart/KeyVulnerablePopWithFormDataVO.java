@@ -20,9 +20,9 @@ public class KeyVulnerablePopWithFormDataVO extends AbstractDatabaseObject imple
 	private Integer formId;
 	private Integer encounterType;
 	private String patientUuid;
-	private java.util.Date formCreatedDate;
+	private java.util.Date createdDate;
 	private java.util.Date encounterDate;
-	private java.util.Date formChangeDate;
+	private java.util.Date changeDate;
 	private String locationUuid;
 	private String sourceDatabase;
  
@@ -103,11 +103,11 @@ public class KeyVulnerablePopWithFormDataVO extends AbstractDatabaseObject imple
 	}
  
 	public void setFormCreatedDate(java.util.Date formCreatedDate){ 
-	 	this.formCreatedDate = formCreatedDate;
+	 	this.createdDate = formCreatedDate;
 	}
  
 	public java.util.Date getFormCreatedDate(){ 
-		return this.formCreatedDate;
+		return this.createdDate;
 	}
  
 	public void setEncounterDate(java.util.Date encounterDate){ 
@@ -119,11 +119,11 @@ public class KeyVulnerablePopWithFormDataVO extends AbstractDatabaseObject imple
 	}
  
 	public void setFormChangeDate(java.util.Date formChangeDate){ 
-	 	this.formChangeDate = formChangeDate;
+	 	this.changeDate = formChangeDate;
 	}
  
 	public java.util.Date getFormChangeDate(){ 
-		return this.formChangeDate;
+		return this.changeDate;
 	}
  
 	public void setLocationUuid(String locationUuid){ 
@@ -163,9 +163,9 @@ public class KeyVulnerablePopWithFormDataVO extends AbstractDatabaseObject imple
 		if (rs.getObject("form_id") != null) this.formId = rs.getInt("form_id");
 		if (rs.getObject("encounter_type") != null) this.encounterType = rs.getInt("encounter_type");
 		this.patientUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("patient_uuid") != null ? rs.getString("patient_uuid").trim() : null);
-		this.formCreatedDate =  rs.getTimestamp("form_created_date") != null ? new java.util.Date( rs.getTimestamp("form_created_date").getTime() ) : null;
+		this.createdDate =  rs.getTimestamp("created_date") != null ? new java.util.Date( rs.getTimestamp("created_date").getTime() ) : null;
 		this.encounterDate =  rs.getTimestamp("encounter_date") != null ? new java.util.Date( rs.getTimestamp("encounter_date").getTime() ) : null;
-		this.formChangeDate =  rs.getTimestamp("form_change_date") != null ? new java.util.Date( rs.getTimestamp("form_change_date").getTime() ) : null;
+		this.changeDate =  rs.getTimestamp("change_date") != null ? new java.util.Date( rs.getTimestamp("change_date").getTime() ) : null;
 		this.locationUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("location_uuid") != null ? rs.getString("location_uuid").trim() : null);
 		this.sourceDatabase = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("source_database") != null ? rs.getString("source_database").trim() : null);
 	} 
@@ -177,37 +177,37 @@ public class KeyVulnerablePopWithFormDataVO extends AbstractDatabaseObject imple
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO key_vulnerable_pop_with_form_data(encounter_uuid, pop_type, pop_id, pop_other, key_vulnerable_pop_uuid, form_id, encounter_type, patient_uuid, form_created_date, encounter_date, form_change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO key_vulnerable_pop_with_form_data(encounter_uuid, pop_type, pop_id, pop_other, key_vulnerable_pop_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.encounterUuid, this.popType, this.popId, this.popOther, this.keyVulnerablePopUuid, this.formId, this.encounterType, this.patientUuid, this.formCreatedDate, this.encounterDate, this.formChangeDate, this.locationUuid, this.sourceDatabase};		return params; 
+ 		Object[] params = {this.encounterUuid, this.popType, this.popId, this.popOther, this.keyVulnerablePopUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO key_vulnerable_pop_with_form_data(id, encounter_uuid, pop_type, pop_id, pop_other, key_vulnerable_pop_uuid, form_id, encounter_type, patient_uuid, form_created_date, encounter_date, form_change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO key_vulnerable_pop_with_form_data(id, encounter_uuid, pop_type, pop_id, pop_other, key_vulnerable_pop_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.encounterUuid, this.popType, this.popId, this.popOther, this.keyVulnerablePopUuid, this.formId, this.encounterType, this.patientUuid, this.formCreatedDate, this.encounterDate, this.formChangeDate, this.locationUuid, this.sourceDatabase};		return params; 
+ 		Object[] params = {this.id, this.encounterUuid, this.popType, this.popId, this.popOther, this.keyVulnerablePopUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.encounterUuid, this.popType, this.popId, this.popOther, this.keyVulnerablePopUuid, this.formId, this.encounterType, this.patientUuid, this.formCreatedDate, this.encounterDate, this.formChangeDate, this.locationUuid, this.sourceDatabase, this.id};		return params; 
+ 		Object[] params = {this.encounterUuid, this.popType, this.popId, this.popOther, this.keyVulnerablePopUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE key_vulnerable_pop_with_form_data SET encounter_uuid = ?, pop_type = ?, pop_id = ?, pop_other = ?, key_vulnerable_pop_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, form_created_date = ?, encounter_date = ?, form_change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
+ 		return "UPDATE key_vulnerable_pop_with_form_data SET encounter_uuid = ?, pop_type = ?, pop_id = ?, pop_other = ?, key_vulnerable_pop_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.popType) + "," + (this.popId) + "," + (this.popOther != null ? "\""+ utilities.scapeQuotationMarks(popOther)  +"\"" : null) + "," + (this.keyVulnerablePopUuid != null ? "\""+ utilities.scapeQuotationMarks(keyVulnerablePopUuid)  +"\"" : null) + "," + (this.formId) + "," + (this.encounterType) + "," + (this.patientUuid != null ? "\""+ utilities.scapeQuotationMarks(patientUuid)  +"\"" : null) + "," + (this.formCreatedDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(formCreatedDate)  +"\"" : null) + "," + (this.encounterDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(encounterDate)  +"\"" : null) + "," + (this.formChangeDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(formChangeDate)  +"\"" : null) + "," + (this.locationUuid != null ? "\""+ utilities.scapeQuotationMarks(locationUuid)  +"\"" : null) + "," + (this.sourceDatabase != null ? "\""+ utilities.scapeQuotationMarks(sourceDatabase)  +"\"" : null); 
+ 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.popType) + "," + (this.popId) + "," + (this.popOther != null ? "\""+ utilities.scapeQuotationMarks(popOther)  +"\"" : null) + "," + (this.keyVulnerablePopUuid != null ? "\""+ utilities.scapeQuotationMarks(keyVulnerablePopUuid)  +"\"" : null) + "," + (this.formId) + "," + (this.encounterType) + "," + (this.patientUuid != null ? "\""+ utilities.scapeQuotationMarks(patientUuid)  +"\"" : null) + "," + (this.createdDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(createdDate)  +"\"" : null) + "," + (this.encounterDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(encounterDate)  +"\"" : null) + "," + (this.changeDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(changeDate)  +"\"" : null) + "," + (this.locationUuid != null ? "\""+ utilities.scapeQuotationMarks(locationUuid)  +"\"" : null) + "," + (this.sourceDatabase != null ? "\""+ utilities.scapeQuotationMarks(sourceDatabase)  +"\"" : null); 
 	} 
  
 	@Override
