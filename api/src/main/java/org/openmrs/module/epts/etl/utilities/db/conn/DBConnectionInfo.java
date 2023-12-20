@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 public class DBConnectionInfo {
+	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String dataBaseUserName;
@@ -19,20 +20,52 @@ public class DBConnectionInfo {
 	
 	private String schema;
 	
+	private int maxActiveConnections;
+	
+	private int maxIdleConnections;
+	
+	private int minIdleConnections;
+	
 	public DBConnectionInfo() {
 	}
 	
-	public DBConnectionInfo(String dataBaseUserName, String dataBaseUserPassword, String connectionURI, String driveClassName) {
+	public DBConnectionInfo(String dataBaseUserName, String dataBaseUserPassword, String connectionURI,
+	    String driveClassName) {
 		this.dataBaseUserName = dataBaseUserName;
 		this.dataBaseUserPassword = dataBaseUserPassword;
 		this.connectionURI = connectionURI;
 		this.driveClassName = driveClassName;
 	}
 	
-	public DBConnectionInfo(String dataBaseUserName, String dataBaseUserPassword, String connectionURI, String schema, String driveClassName) {
+	public DBConnectionInfo(String dataBaseUserName, String dataBaseUserPassword, String connectionURI, String schema,
+	    String driveClassName) {
 		this(dataBaseUserName, dataBaseUserPassword, connectionURI, driveClassName);
 		
 		this.schema = schema;
+	}
+	
+	public int getMaxActiveConnections() {
+		return maxActiveConnections;
+	}
+	
+	public void setMaxActiveConnections(int maxActiveConnections) {
+		this.maxActiveConnections = maxActiveConnections;
+	}
+	
+	public int getMaxIdleConnections() {
+		return maxIdleConnections;
+	}
+	
+	public void setMaxIdleConnections(int maxIdleConnections) {
+		this.maxIdleConnections = maxIdleConnections;
+	}
+	
+	public int getMinIdleConnections() {
+		return minIdleConnections;
+	}
+	
+	public void setMinIdleConnections(int minIdleConnections) {
+		this.minIdleConnections = minIdleConnections;
 	}
 	
 	public String getSchema() {
@@ -77,9 +110,10 @@ public class DBConnectionInfo {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof DBConnectionInfo)) return false;
+		if (!(obj instanceof DBConnectionInfo))
+			return false;
 		
-		DBConnectionInfo dbConn = (DBConnectionInfo)obj;
+		DBConnectionInfo dbConn = (DBConnectionInfo) obj;
 		
 		return this.connectionURI.equals(dbConn.connectionURI);
 	}
@@ -91,7 +125,8 @@ public class DBConnectionInfo {
 	}
 	
 	public static DBConnectionInfo loadFromFile(File file) throws IOException {
-		DBConnectionInfo conf =  utilities.loadObjectFormJSON(DBConnectionInfo.class, new String(Files.readAllBytes(file.toPath())));
+		DBConnectionInfo conf = utilities.loadObjectFormJSON(DBConnectionInfo.class,
+		    new String(Files.readAllBytes(file.toPath())));
 		
 		return conf;
 	}
