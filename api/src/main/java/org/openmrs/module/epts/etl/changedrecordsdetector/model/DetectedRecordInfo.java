@@ -164,8 +164,8 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		return info;
 	}
 	
-	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
-		DetectedRecordInfoDAO.insert(this, tableConfiguration, conn);
+	public long save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		return DetectedRecordInfoDAO.insert(this, tableConfiguration, conn);
 	}
 	
 	@Override

@@ -15,7 +15,6 @@ import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DatabaseObjectDAO extends BaseDAO {
 	
@@ -75,15 +74,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		refreshLastSyncDate(syncRecords, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
-	public static void insert(DatabaseObject record, Connection conn) throws DBException {
+	public static long insert(DatabaseObject record, Connection conn) throws DBException {
 		Object[] params = record.getInsertParamsWithoutObjectId();
 		String sql = record.getInsertSQLWithoutObjectId();
 		
 		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn);
 		
-		Integer objectId = executeQueryWithRetryOnError(sql, params, conn);
-		
-		record.setObjectId(objectId);
+		return executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
 	public static void insertWithObjectId(DatabaseObject record, Connection conn) throws DBException {

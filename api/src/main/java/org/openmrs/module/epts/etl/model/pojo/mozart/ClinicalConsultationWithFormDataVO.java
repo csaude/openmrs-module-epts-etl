@@ -1,11 +1,11 @@
 package org.openmrs.module.epts.etl.model.pojo.mozart;
 
-import java.sql.SQLException;
-
-import org.openmrs.module.epts.etl.model.pojo.generic.*;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
-
+import org.openmrs.module.epts.etl.model.pojo.generic.*; 
+ 
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
+ 
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
@@ -84,11 +84,11 @@ public class ClinicalConsultationWithFormDataVO extends AbstractDatabaseObject i
 		return this.patientUuid;
 	}
  
-	public void setFormCreatedDate(java.util.Date formCreatedDate){ 
-	 	this.createdDate = formCreatedDate;
+	public void setCreatedDate(java.util.Date createdDate){ 
+	 	this.createdDate = createdDate;
 	}
  
-	public java.util.Date getFormCreatedDate(){ 
+	public java.util.Date getCreatedDate(){ 
 		return this.createdDate;
 	}
  
@@ -100,11 +100,11 @@ public class ClinicalConsultationWithFormDataVO extends AbstractDatabaseObject i
 		return this.encounterDate;
 	}
  
-	public void setFormChangeDate(java.util.Date formChangeDate){ 
-	 	this.changeDate = formChangeDate;
+	public void setChangeDate(java.util.Date changeDate){ 
+	 	this.changeDate = changeDate;
 	}
  
-	public java.util.Date getFormChangeDate(){ 
+	public java.util.Date getChangeDate(){ 
 		return this.changeDate;
 	}
  
@@ -143,9 +143,9 @@ public class ClinicalConsultationWithFormDataVO extends AbstractDatabaseObject i
 		if (rs.getObject("form_id") != null) this.formId = rs.getInt("form_id");
 		if (rs.getObject("encounter_type") != null) this.encounterType = rs.getInt("encounter_type");
 		this.patientUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("patient_uuid") != null ? rs.getString("patient_uuid").trim() : null);
-		this.createdDate =  rs.getTimestamp("form_created_date") != null ? new java.util.Date( rs.getTimestamp("form_created_date").getTime() ) : null;
+		this.createdDate =  rs.getTimestamp("created_date") != null ? new java.util.Date( rs.getTimestamp("created_date").getTime() ) : null;
 		this.encounterDate =  rs.getTimestamp("encounter_date") != null ? new java.util.Date( rs.getTimestamp("encounter_date").getTime() ) : null;
-		this.changeDate =  rs.getTimestamp("form_change_date") != null ? new java.util.Date( rs.getTimestamp("form_change_date").getTime() ) : null;
+		this.changeDate =  rs.getTimestamp("change_date") != null ? new java.util.Date( rs.getTimestamp("change_date").getTime() ) : null;
 		this.locationUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("location_uuid") != null ? rs.getString("location_uuid").trim() : null);
 		this.sourceDatabase = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("source_database") != null ? rs.getString("source_database").trim() : null);
 	} 

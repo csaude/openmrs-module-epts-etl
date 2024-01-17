@@ -1,13 +1,13 @@
 package org.openmrs.module.epts.etl.model.pojo.mozart;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
-
+import org.openmrs.module.epts.etl.model.pojo.generic.*; 
+ 
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
+ 
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
+ 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class ObservationVO extends AbstractDatabaseObject implements DatabaseObject { 
@@ -115,7 +115,7 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 		this.observationDate =  rs.getTimestamp("observation_date") != null ? new java.util.Date( rs.getTimestamp("observation_date").getTime() ) : null;
 		this.valueNumeric = rs.getDouble("value_numeric");
 		if (rs.getObject("value_concept_id") != null) this.valueConceptId = rs.getInt("value_concept_id");
-		this.valueText = rs.getString("value_text");
+		this.valueText = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("value_text") != null ? rs.getString("value_text").trim() : null);
 		this.valueDatetime =  rs.getTimestamp("value_datetime") != null ? new java.util.Date( rs.getTimestamp("value_datetime").getTime() ) : null;
 		this.obsUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("obs_uuid") != null ? rs.getString("obs_uuid").trim() : null);
 	} 
@@ -157,7 +157,7 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.conceptId) + "," + (this.observationDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(observationDate)  +"\"" : null) + "," + (this.valueNumeric) + "," + (this.valueConceptId) + "," + (this.valueText != null ? "\""+valueText+"\"" : null) + "," + (this.valueDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime)  +"\"" : null) + "," + (this.obsUuid != null ? "\""+ utilities.scapeQuotationMarks(obsUuid)  +"\"" : null); 
+ 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.conceptId) + "," + (this.observationDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(observationDate)  +"\"" : null) + "," + (this.valueNumeric) + "," + (this.valueConceptId) + "," + (this.valueText != null ? "\""+ utilities.scapeQuotationMarks(valueText)  +"\"" : null) + "," + (this.valueDatetime != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime)  +"\"" : null) + "," + (this.obsUuid != null ? "\""+ utilities.scapeQuotationMarks(obsUuid)  +"\"" : null); 
 	} 
  
 	@Override

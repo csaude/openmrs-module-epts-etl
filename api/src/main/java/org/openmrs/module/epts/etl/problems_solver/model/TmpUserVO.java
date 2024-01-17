@@ -60,8 +60,8 @@ public class TmpUserVO extends GenericDatabaseObject {
 	}
 	
 	@Override
-	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
-		BaseDAO.executeQueryWithRetryOnError("update tmp_user set deletable = " + this.deletable + " where user_id = " + getObjectId(), null, conn);
+	public long save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		return BaseDAO.executeQueryWithRetryOnError("update tmp_user set deletable = " + this.deletable + " where user_id = " + getObjectId(), null, conn);
 	}
 
 	public void harmonize(TmpUserVO dup, Connection conn) throws DBException{

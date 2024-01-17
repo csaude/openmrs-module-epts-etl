@@ -2,7 +2,6 @@ package org.openmrs.module.epts.etl;
 
 import java.io.IOException;
 
-import org.apache.log4j.BasicConfigurator;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.ProcessStarter;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
@@ -10,10 +9,7 @@ import org.openmrs.module.epts.etl.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class Main implements Runnable {
-	
 	public static void main(String[] synConfigFiles) throws IOException, DBException {
-		BasicConfigurator.configure();
-		
 		ProcessStarter p = new ProcessStarter(synConfigFiles);
 		
 		p.run();

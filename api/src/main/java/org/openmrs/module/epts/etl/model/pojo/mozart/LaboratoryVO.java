@@ -1,11 +1,11 @@
 package org.openmrs.module.epts.etl.model.pojo.mozart;
 
-import java.sql.SQLException;
-
-import org.openmrs.module.epts.etl.model.pojo.generic.*;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
-
+import org.openmrs.module.epts.etl.model.pojo.generic.*; 
+ 
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
+ 
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 

@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DetectedRecordInfoDAO extends BaseDAO{
-	public static void insert(DetectedRecordInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
+	public static long insert(DetectedRecordInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
 		try {
 			Object[] params = {record.getTableName(),
 							   record.getObjectId(),
@@ -41,10 +41,12 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 			sql += "		   ?,\n";
 			sql += "		   ?);";
 			
-			executeQueryWithRetryOnError(sql, params, conn);
+			return executeQueryWithRetryOnError(sql, params, conn);
 		} catch (DBException e) {
 			if (!e.isDuplicatePrimaryOrUniqueKeyException()) {
 				throw e;
+			} else {
+				return record.getObjectId();
 			}
 		}
 	}

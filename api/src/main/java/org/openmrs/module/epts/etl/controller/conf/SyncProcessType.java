@@ -11,8 +11,9 @@ public enum SyncProcessType {
 	DATA_RECONCILIATION,
 	DB_QUICK_COPY,
 	DATABASE_MERGE_FROM_SOURCE_DB,
-	QUICK_MERGE_WITHOUT_ENTITY_GENERATION,
-	QUICK_MERGE_WITH_ENTITY_GENERATION,
+	DB_QUICK_MERGE,
+	DB_QUICK_MERGE_WITH_ENTITY_GENERATION,
+	DB_QUICK_MERGE_WITH_DATABASE_GENERATION,
 	DB_INCONSISTENCY_CHECK,
 	GENERIC_PROCESS,
 	DB_COPY,
@@ -34,14 +35,18 @@ public enum SyncProcessType {
 		return  this.equals(DB_INCONSISTENCY_CHECK);
 	}
 	
-	public boolean isQuickMergeWithoutEntityGeneration(){
-		return  this.equals(QUICK_MERGE_WITHOUT_ENTITY_GENERATION);
+	public boolean isDBQuickMerge(){
+		return  this.equals(DB_QUICK_MERGE);
 	}
 	
 	public boolean isQuickMergeWithEntityGeneration(){
-		return  this.equals(QUICK_MERGE_WITH_ENTITY_GENERATION);
+		return  this.equals(DB_QUICK_MERGE_WITH_ENTITY_GENERATION);
 	}
 	
+	public boolean isQuickMergeWithDatabaseGeneration(){
+		return  this.equals(DB_QUICK_MERGE_WITH_DATABASE_GENERATION);
+	}
+		
 	public boolean isDBQuickCopy(){
 		return  this.equals(DB_QUICK_COPY);
 	}
@@ -111,7 +116,7 @@ public enum SyncProcessType {
 	}
 	
 	public static boolean isQuickMergeWithoutEntityGeneration(String processType){
-		return  SyncProcessType.valueOf(processType).isQuickMergeWithoutEntityGeneration();
+		return  SyncProcessType.valueOf(processType).isDBQuickMerge();
 	}
 	
 	public static boolean isQuickMergeWithEntityGeneration(String processType){

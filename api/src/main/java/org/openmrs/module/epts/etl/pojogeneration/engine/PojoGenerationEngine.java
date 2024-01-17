@@ -62,6 +62,8 @@ public class PojoGenerationEngine extends Engine {
 			mappingAppInfo = otherApps.get(0);
 			
 			for (MappedTableInfo map : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+				map.setRelatedAppInfo(mappingAppInfo);
+				
 				generate(mappingAppInfo, map);
 			}
 		}

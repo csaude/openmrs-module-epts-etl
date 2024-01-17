@@ -14,25 +14,24 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 
 import javax.ws.rs.ForbiddenException;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Level;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.Logger;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -83,7 +82,7 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private List<SyncTableConfiguration> allTables;
 	
-	private static Logger logger = LoggerFactory.getLogger(SyncConfiguration.class);
+	private Logger logger;
 	
 	private ModelType modelType;
 	
@@ -253,13 +252,18 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public boolean isQuickMergeUniformeDBProcess() {
-		return processType.isQuickMergeWithoutEntityGeneration();
+	public boolean isDBQuickMergeProcess() {
+		return processType.isDBQuickMerge();
 	}
 	
 	@JsonIgnore
-	public boolean isQuickMergeNonUniformeDBProcess() {
+	public boolean isDBQuickMergeWithEntityGenerationDBProcess() {
 		return processType.isQuickMergeWithEntityGeneration();
+	}
+	
+	@JsonIgnore
+	public boolean isDBQuickMergeWithDatabaseGenerationDBProcess() {
+		return processType.isQuickMergeWithDatabaseGeneration();
 	}
 	
 	@JsonIgnore
@@ -428,25 +432,57 @@ public class SyncConfiguration extends BaseConfiguration {
 		return conf;
 	}
 	
+	static final String STRING_LOCK = new String("LOCK_STRING");
+	
+	void initLogger() {
+		if (this.logger != null)
+			return;
+		
+		synchronized (STRING_LOCK) {
+			
+			if (this.logger != null)
+				return;
+			
+			org.apache.log4j.Logger log4jLogger = org.apache.log4j.Logger.getLogger(SyncConfiguration.class);
+			
+			this.logger = new Logger(log4jLogger, SyncConfiguration.determineLogLevel());
+		}
+		
+	}
+	
 	public void logDebug(String msg) {
-		utilities.logDebug(msg, logger, determineLogLevel());
+		if (logger == null)
+			initLogger();
+		
+		this.logger.logDebug(msg);
 	}
 	
 	public void logInfo(String msg) {
-		utilities.logInfo(msg, logger, determineLogLevel());
+		if (logger == null)
+			initLogger();
+		
+		logger.logInfo(msg);
 	}
 	
 	public void logWarn(String msg) {
-		utilities.logWarn(msg, logger, determineLogLevel());
+		if (logger == null)
+			initLogger();
+		
+		logger.logWarn(msg);
 	}
 	
 	public void logErr(String msg) {
-		utilities.logErr(msg, logger, determineLogLevel());
+		if (logger == null)
+			initLogger();
+		
+		logger.logErr(msg);
 	}
 	
 	public void fullLoad() {
 		if (this.fullLoaded)
 			return;
+		
+		initLogger();
 		
 		try {
 			for (SyncTableConfiguration conf : this.getTablesConfigurations()) {
@@ -667,10 +703,12 @@ public class SyncConfiguration extends BaseConfiguration {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickCopyProcess();
 		} else if (isDataBaseMergeFromSourceDBProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDataBasesMergeFromSourceDBProcess();
-		} else if (isQuickMergeUniformeDBProcess()) {
-			supportedOperations = SyncOperationConfig.getSupportedOperationsInQuickMergeUniformeDBProcess();
-		} else if (isQuickMergeNonUniformeDBProcess()) {
-			supportedOperations = SyncOperationConfig.getSupportedOperationsInQuickMergeNonUniformeDBProcess();
+		} else if (isDBQuickMergeProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickMergeProcess();
+		} else if (isDBQuickMergeWithEntityGenerationDBProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickMergeWithEntityGenerationProcess();
+		} else if (isDBQuickMergeWithDatabaseGenerationDBProcess()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBQuickMergeWithDatabaseGenerationProcess();
 		} else if (isDBInconsistencyCheckProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDBInconsistencyCheckProcess();
 		} else if (isResolveProblems()) {
@@ -898,15 +936,16 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	public boolean isSupposedToHaveOriginAppCode() {
-		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isQuickMergeUniformeDBProcess()
-		        || this.isQuickMergeNonUniformeDBProcess() || this.isDBInconsistencyCheckProcess();
+		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isDBQuickMergeProcess()
+		        || this.isDBQuickMergeWithEntityGenerationDBProcess() || this.isDBInconsistencyCheckProcess()
+		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess();
 	}
 	
 	public boolean isSupposedToRunInDestination() {
 		return this.isDataBaseMergeFromJSONProcess() || this.isDBQuickLoadProcess() || this.isDataReconciliationProcess()
-		        || this.isDBQuickCopyProcess() || this.isDataBaseMergeFromSourceDBProcess()
-		        || this.isQuickMergeUniformeDBProcess() || this.isResolveProblems()
-		        || this.isQuickMergeNonUniformeDBProcess();
+		        || this.isDBQuickCopyProcess() || this.isDataBaseMergeFromSourceDBProcess() || this.isDBQuickMergeProcess()
+		        || this.isResolveProblems() || this.isDBQuickMergeWithEntityGenerationDBProcess()
+		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess();
 	}
 	
 	public boolean isSupposedToRunInOrigin() {
@@ -914,23 +953,22 @@ public class SyncConfiguration extends BaseConfiguration {
 		        || this.isDBInconsistencyCheckProcess();
 	}
 	
-	public static Level determineLogLevel() {
+	public static org.apache.log4j.Level determineLogLevel() {
 		String log = System.getProperty("log.level");
 		
 		if (!utilities.stringHasValue(log))
-			return Level.FINE;
+			return Level.INFO;
 		
 		if (log.equals("DEBUG"))
-			return Level.FINE;
+			return Level.DEBUG;
 		if (log.equals("INFO"))
 			return Level.INFO;
 		if (log.equals("WARN"))
-			return Level.WARNING;
+			return Level.WARN;
 		if (log.equals("ERROR"))
-			return Level.SEVERE;
+			return Level.ERROR;
 		
 		throw new ForbiddenOperationException("Unsupported Log Level [" + log + "]");
-		
 	}
 	
 	public boolean isPerformedInTheSameDatabase() {

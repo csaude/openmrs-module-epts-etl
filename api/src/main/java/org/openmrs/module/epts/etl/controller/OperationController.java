@@ -26,7 +26,6 @@ import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -67,7 +66,9 @@ public abstract class OperationController implements Controller {
 	protected OperationProgressInfo progressInfo;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
-		this.logger = new Logger(LoggerFactory.getLogger(this.getClass()), processController.getLogLevel());
+		org.apache.log4j.Logger log4jLogger = org.apache.log4j.Logger.getLogger(ProcessStarter.class);
+		
+		this.logger = new Logger(log4jLogger, SyncConfiguration.determineLogLevel());
 		
 		this.processController = processController;
 		this.operationConfig = operationConfig;

@@ -27,7 +27,7 @@ public class ReportGenerator {
 		
 		OpenConnection conn = controller.getDefaultApp().openConnection();
 		
-		generateDataInconsistencyRepor(syncConfigs.get(0), conn);
+		generateDataInconsistencyReport(syncConfigs.get(0), conn);
 	
 		conn.markAsSuccessifullyTerminated();
 		conn.finalizeConnection();
@@ -36,7 +36,7 @@ public class ReportGenerator {
 	
 	
 	
-	private static void generateDataInconsistencyRepor(SyncConfiguration syncConfiguration, Connection conn) throws DBException {
+	private static void generateDataInconsistencyReport(SyncConfiguration syncConfiguration, Connection conn) throws DBException {
 		syncConfiguration.fullLoad();
 		
 		for (SyncTableConfiguration config : syncConfiguration.getTablesConfigurations()) {

@@ -13,7 +13,6 @@ import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
-import org.openmrs.module.epts.etl.model.pojo.mozart.LocationVO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.engine.DatabasesInfo;
@@ -78,7 +77,7 @@ public class MozartTryToSelectedFieldValueOnLocation extends MozartProblemSolver
 					}
 					
 					DatabaseObjectSearchParams searchParams = new DatabaseObjectSearchParams(configuredTable, null);
-					
+					/*
 					List<LocationVO> syncRecords = utilities.parseList(SearchParamsDAO.search(searchParams, conn),
 					    LocationVO.class);
 					
@@ -92,7 +91,7 @@ public class MozartTryToSelectedFieldValueOnLocation extends MozartProblemSolver
 						
 						mergingData.merge(srcConn, dstConn);
 					}
-					
+					*/
 					dstConn.markAsSuccessifullyTerminated();
 				}
 			}

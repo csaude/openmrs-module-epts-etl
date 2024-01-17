@@ -1,11 +1,11 @@
 package org.openmrs.module.epts.etl.model.pojo.mozart;
 
-import java.sql.SQLException;
-
-import org.openmrs.module.epts.etl.model.pojo.generic.*;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
-
+import org.openmrs.module.epts.etl.model.pojo.generic.*; 
+ 
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
+ 
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
@@ -177,7 +177,7 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 		if (rs.getObject("regimen_id") != null) this.regimenId = rs.getInt("regimen_id");
 		if (rs.getObject("formulation_id") != null) this.formulationId = rs.getInt("formulation_id");
 		this.quantityPrescribed = rs.getDouble("quantity_prescribed");
-		this.dosage = rs.getString("dosage");
+		this.dosage = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("dosage") != null ? rs.getString("dosage").trim() : null);
 		this.medicationPickupDate =  rs.getTimestamp("medication_pickup_date") != null ? new java.util.Date( rs.getTimestamp("medication_pickup_date").getTime() ) : null;
 		this.nextPickupDate =  rs.getTimestamp("next_pickup_date") != null ? new java.util.Date( rs.getTimestamp("next_pickup_date").getTime() ) : null;
 		if (rs.getObject("mode_dispensation_id") != null) this.modeDispensationId = rs.getInt("mode_dispensation_id");
@@ -227,7 +227,7 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.regimenId) + "," + (this.formulationId) + "," + (this.quantityPrescribed) + "," + (this.dosage != null ? "\""+dosage+"\"" : null) + "," + (this.medicationPickupDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(medicationPickupDate)  +"\"" : null) + "," + (this.nextPickupDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(nextPickupDate)  +"\"" : null) + "," + (this.modeDispensationId) + "," + (this.medSequenceId) + "," + (this.typeDispensationId) + "," + (this.alternativeLineId) + "," + (this.reasonChangeRegimenId) + "," + (this.medSideEffectsId) + "," + (this.adherenceId) + "," + (this.medicationUuid != null ? "\""+ utilities.scapeQuotationMarks(medicationUuid)  +"\"" : null); 
+ 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.regimenId) + "," + (this.formulationId) + "," + (this.quantityPrescribed) + "," + (this.dosage != null ? "\""+ utilities.scapeQuotationMarks(dosage)  +"\"" : null) + "," + (this.medicationPickupDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(medicationPickupDate)  +"\"" : null) + "," + (this.nextPickupDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(nextPickupDate)  +"\"" : null) + "," + (this.modeDispensationId) + "," + (this.medSequenceId) + "," + (this.typeDispensationId) + "," + (this.alternativeLineId) + "," + (this.reasonChangeRegimenId) + "," + (this.medSideEffectsId) + "," + (this.adherenceId) + "," + (this.medicationUuid != null ? "\""+ utilities.scapeQuotationMarks(medicationUuid)  +"\"" : null); 
 	} 
  
 	@Override

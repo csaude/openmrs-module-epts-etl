@@ -12,6 +12,7 @@ import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class MappedTableInfo extends SyncTableConfiguration {
 	
@@ -20,6 +21,8 @@ public class MappedTableInfo extends SyncTableConfiguration {
 	private SyncTableConfiguration relatedTableConfiguration;
 	
 	private List<MappingSrcData> additionalMappingDataSrc;
+	
+	private AppInfo relatedAppInfo;
 	
 	public MappedTableInfo() {
 	}
@@ -105,6 +108,14 @@ public class MappedTableInfo extends SyncTableConfiguration {
 		return machedFields.get(0).getDestField();
 	}
 	
+	public AppInfo getRelatedAppInfo() {
+		return relatedAppInfo;
+	}
+	
+	public void setRelatedAppInfo(AppInfo relatedAppInfo) {
+		this.relatedAppInfo = relatedAppInfo;
+	}
+	
 	@Override
 	public synchronized void fullLoad(Connection conn) {
 		try {
@@ -125,6 +136,18 @@ public class MappedTableInfo extends SyncTableConfiguration {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
+		}
+	}
+	
+	@Override
+	public synchronized void fullLoad() throws DBException {
+		OpenConnection conn = this.relatedAppInfo.openConnection();
+		
+		try {
+			this.fullLoad(conn);
+		}
+		finally {
+			conn.finalizeConnection();
 		}
 	}
 	

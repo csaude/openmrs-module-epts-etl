@@ -70,7 +70,7 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract boolean hasIgnoredParent();
 	
-	public abstract void save(SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
+	public abstract long save(SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	
 	public abstract String getUuid();
 	

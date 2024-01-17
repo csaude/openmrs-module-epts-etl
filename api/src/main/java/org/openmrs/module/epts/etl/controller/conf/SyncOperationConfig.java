@@ -553,14 +553,19 @@ public class SyncOperationConfig extends BaseConfiguration {
 			if (!this.canBeRunInDataBasesMergeFromSourceDBProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in data reconciliation process\n";
-		} else if (this.getRelatedSyncConfig().isQuickMergeUniformeDBProcess()) {
-			if (!this.canBeRunInQuickMergeUniformeDBProcess())
+		} else if (this.getRelatedSyncConfig().isDBQuickMergeProcess()) {
+			if (!this.canBeRunInDBQuickMergeProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db quick merge process\n";
-		} else if (this.getRelatedSyncConfig().isQuickMergeNonUniformeDBProcess()) {
-			if (!this.canBeRunInQuickMergeNonUniformeDBProcess())
+		} else if (this.getRelatedSyncConfig().isDBQuickMergeWithDatabaseGenerationDBProcess()) {
+			if (!this.canBeRunInDBQuickMergeWithDatabaseGenerationProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
-				        + "] Cannot be configured in db quick merge process\n";
+				        + "] Cannot be configured in db quick merge with database generation process\n";
+		}
+		else if (this.getRelatedSyncConfig().isDBQuickMergeWithEntityGenerationDBProcess()) {
+			if (!this.canBeRunInDBQuickMergeWithEntityGenerationProcess())
+				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
+				        + "] Cannot be configured in db quick merge with entity generation process\n";
 		} else if (this.getRelatedSyncConfig().isDBInconsistencyCheckProcess()) {
 			if (!this.canBeRunInDBInconsistencyCheckProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
@@ -719,26 +724,38 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public boolean canBeRunInQuickMergeUniformeDBProcess() {
-		return utilities.existOnArray(getSupportedOperationsInQuickMergeUniformeDBProcess(), this.operationType);
+	public boolean canBeRunInDBQuickMergeProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDBQuickMergeProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInQuickMergeUniformeDBProcess() {
+	public static List<SyncOperationType> getSupportedOperationsInDBQuickMergeProcess() {
 		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE };
 		
 		return utilities.parseArrayToList(supported);
 	}
 	
 	@JsonIgnore
-	public boolean canBeRunInQuickMergeNonUniformeDBProcess() {
-		return utilities.existOnArray(getSupportedOperationsInQuickMergeNonUniformeDBProcess(), this.operationType);
+	public boolean canBeRunInDBQuickMergeWithEntityGenerationProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDBQuickMergeWithEntityGenerationProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInQuickMergeNonUniformeDBProcess() {
+	public static List<SyncOperationType> getSupportedOperationsInDBQuickMergeWithEntityGenerationProcess() {
 		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE, SyncOperationType.DATABASE_PREPARATION,
 		        SyncOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);
+	}
+	
+	public static List<SyncOperationType> getSupportedOperationsInDBQuickMergeWithDatabaseGenerationProcess() {
+		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE, SyncOperationType.DATABASE_PREPARATION };
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
+	@JsonIgnore
+	public boolean canBeRunInDBQuickMergeWithDatabaseGenerationProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDBQuickMergeWithDatabaseGenerationProcess(),
+		    this.operationType);
 	}
 	
 	@JsonIgnore

@@ -1,13 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="INFO">
-    <Appenders>
-        <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level - %msg%n"/>
-        </Console>
-    </Appenders>
-    <Loggers>
-        <Root level="info">
-            <AppenderRef ref="Console"/>
-        </Root>
-    </Loggers>
-</Configuration>
+
+<configuration>
+    <springProperty name="base.dir" source="eip.home" defaultValue="/home/eip" />
+
+    <property name="LOGS_PATTERN" value="%-5level %date [%thread] %logger{8}:%line %msg%n" />
+    <property name="LOGS_DIR" value="${base.dir}${file.separator}logs${file.separator}eip" />
+    <property name="LOGS_FILE_NAME" value="openmrs-eip" />
+    <property name="LOGS_FILE_NAME_EXT" value="log" />
+    <property name="LOGS_FILE" value="${LOGS_DIR}${file.separator}${LOGS_FILE_NAME}.${LOGS_FILE_NAME_EXT}" />
+    <property name="LOGS_MAX_FILE_SIZE" value="2MB" />
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+		<pattern>${LOGS_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+	<!--  
+	 <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+	        <file>${LOGS_FILE}</file>
+	        <encoder>
+	            <pattern>${LOGS_PATTERN}</pattern>
+	        </encoder>
+	        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+	            <fileNamePattern>${LOGS_DIR}${file.separator}%d{yyyy-MM}${file.separator}%d{dd}${file.separator}${LOGS_FILE_NAME}_%i.${LOGS_FILE_NAME_EXT}.gz</fileNamePattern>
+	            <maxFileSize>${LOGS_MAX_FILE_SIZE}</maxFileSize>
+	        </rollingPolicy>
+	    </appender>
+	-->
+	
+    <root level="debug">
+        <!-- <appender-ref ref="file" />  -->
+        <appender-ref ref="console" />
+    </root>
+    
+    
+</configuration>

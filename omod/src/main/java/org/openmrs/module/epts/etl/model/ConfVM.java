@@ -4,14 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
-import javax.ws.rs.ForbiddenException;
-
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
 import org.openmrs.module.epts.etl.controller.conf.SyncProcessType;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.ClassPathUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -140,7 +139,7 @@ public class ConfVM {
 			try {
 				this.otherSyncConfiguration = ConfVM.getInstance(this.syncConfiguration.getProcessType().isDataBaseMergeFromJSON() ? "destination" : "source").getSyncConfiguration();
 			} catch (IOException e) {
-				throw new ForbiddenException(e);
+				throw new ForbiddenOperationException(e);
 			}
 		}
 	}

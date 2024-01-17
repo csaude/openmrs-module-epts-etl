@@ -254,7 +254,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public long save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		if (tableConfiguration.isMetadata()) {
 			List<DatabaseObject> recs = utilities
 			        .parseList(DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), DatabaseObject.class);
@@ -269,13 +269,17 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					DatabaseObjectDAO.insertWithObjectId(this, conn);
 				}
 			}
+			
+			return this.getObjectId();
 		} else {
 			try {
 				
 				if (tableConfiguration.isManualIdGeneration()) {
 					DatabaseObjectDAO.insertWithObjectId(this, conn);
+					
+					return this.getObjectId();
 				} else {
-					DatabaseObjectDAO.insert(this, conn);
+					return DatabaseObjectDAO.insert(this, conn);
 				}
 			}
 			catch (DBException e) {
@@ -307,7 +311,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 					
 					if (recordOnDB != null) {
-						resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
+						return resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
 					} else {
 						throw new ConflictWithRecordNotYetAvaliableException(this);
 					}
@@ -317,7 +321,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		}
 	}
 	
-	public void resolveConflictWithExistingRecord(DatabaseObject recordOnDB, SyncTableConfiguration tableConfiguration,
+	public long resolveConflictWithExistingRecord(DatabaseObject recordOnDB, SyncTableConfiguration tableConfiguration,
 	        Connection conn) throws DBException, ForbiddenOperationException {
 		boolean existingRecordIsOutdated = false;
 		
@@ -377,6 +381,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		} else
 			this.setObjectId(recordOnDB.getObjectId());
 		
+		return this.getObjectId();
 	}
 	
 	/**

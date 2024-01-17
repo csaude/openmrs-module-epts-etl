@@ -1,7 +1,9 @@
 package org.openmrs.module.epts.etl.utilities;
 
 import java.util.Date;
-import java.util.logging.Level;
+
+import org.apache.log4j.Level;
+import org.openmrs.module.epts.etl.Main;
 
 public class Logger {
 	
@@ -9,20 +11,22 @@ public class Logger {
 	
 	private Date lastLogDate;
 	
-	private org.slf4j.Logger logger;
+	org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
 	
 	private Level level;
 	
-	public Logger(org.slf4j.Logger logger, Level level) {
+	public Logger(org.apache.log4j.Logger logger, Level level) {
 		this.logger = logger;
 		this.level = level;
+		
+		logger.setLevel(level);
 	}
 	
 	public Level getLevel() {
 		return level;
 	}
 	
-	public org.slf4j.Logger getLogger() {
+	public org.apache.log4j.Logger getLogger() {
 		return logger;
 	}
 	
@@ -42,7 +46,7 @@ public class Logger {
 	}
 	
 	public void logWarn(String msg) {
-		if (level.intValue() <= Level.WARNING.intValue()) {
+		if (Level.WARN.isGreaterOrEqual(level)) {
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.warn(msg);
@@ -52,7 +56,7 @@ public class Logger {
 	}
 	
 	public void logInfo(String msg) {
-		if (level.intValue() <= Level.INFO.intValue()) {
+		if (Level.INFO.isGreaterOrEqual(level)) {
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.info(msg);
@@ -63,7 +67,8 @@ public class Logger {
 	}
 	
 	public void logErr(String msg) {
-		if (level.intValue() <= Level.SEVERE.intValue()) {
+		if (Level.FATAL.isGreaterOrEqual(level)) {
+			
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.error(msg);
@@ -73,18 +78,19 @@ public class Logger {
 	}
 	
 	public void logDebug(String msg) {
-		if (level.intValue() <= Level.FINE.intValue()) {
+		if (Level.DEBUG.isGreaterOrEqual(level)) {
+			
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.debug(msg);
 			//logger.error(msg);
-
+			
 			updateLastLogDate();
 		}
 	}
 	
 	String putAdditionalInfoOnLog(String msg) {
-		return msg += " At: " + utilities.formatDateToDDMMYYYY_HHMISS(utilities.getCurrentDate());	
+		return msg += " At: " + utilities.formatDateToDDMMYYYY_HHMISS(utilities.getCurrentDate());
 	}
 	
 	void updateLastLogDate() {

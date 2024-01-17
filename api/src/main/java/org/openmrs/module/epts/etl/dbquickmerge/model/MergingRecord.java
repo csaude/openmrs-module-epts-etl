@@ -35,6 +35,8 @@ public class MergingRecord {
 	private AppInfo destApp;
 	
 	private boolean writeOperationHistory;
+
+	private long destinationRecordId;
 	
 	public MergingRecord(DatabaseObject record, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp, boolean writeOperationHistory) {
 		this.record = record;
@@ -51,7 +53,7 @@ public class MergingRecord {
 		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(this.config.getUniqueKeys()));
 		
 		consolidateAndSaveData(srcConn, destConn);
-		
+	
 		if (writeOperationHistory) {
 			save(srcConn);
 		}
@@ -70,7 +72,7 @@ public class MergingRecord {
 		MergingRecord.loadDestConditionalParentInfo(this, srcConn, destConn);
 		
 		try {
-			record.save(config, destConn);
+			this.destinationRecordId = record.save(config, destConn);
 		}
 		catch (DBException e) {
 			if (e.isDuplicatePrimaryOrUniqueKeyException()) {
@@ -83,7 +85,7 @@ public class MergingRecord {
 					
 					DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 					
-					((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
+					this.destinationRecordId = ((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 				}
 				
 			} else if (e.isIntegrityConstraintViolationException()) {
@@ -261,6 +263,8 @@ public class MergingRecord {
 	public void save(Connection conn) throws DBException {
 		SyncImportInfoVO syncInfo = SyncImportInfoVO.generateFromSyncRecord(getRecord(),
 		    getConfig().getOriginAppLocationCode(), false);
+		
+		syncInfo.setDestinationId((int) this.destinationRecordId);
 		
 		syncInfo.save(getConfig(), conn);
 	}
