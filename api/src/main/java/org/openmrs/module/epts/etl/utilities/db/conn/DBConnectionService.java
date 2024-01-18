@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -24,7 +24,7 @@ public class DBConnectionService {
 	
 	static int closedConnections;
 	
-	private static final org.apache.log4j.Logger logger = Logger.getLogger(DBConnectionService.class);
+	private static final org.slf4j.Logger logger = LoggerFactory.getLogger(DBConnectionService.class);
 	
 	private static List<DBConnectionService> services = new ArrayList<DBConnectionService>();
 	

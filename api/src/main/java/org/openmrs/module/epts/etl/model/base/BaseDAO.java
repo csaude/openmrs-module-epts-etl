@@ -19,10 +19,11 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.fileupload.FileItem;
-import org.apache.log4j.Logger;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Base DAO This class provides the base datasource & common functionaloty for all DAO's in the
@@ -32,7 +33,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBOperation;
  */
 public abstract class BaseDAO {
 	
-	public static Logger logger = Logger.getLogger(BaseDAO.class);
+	public static Logger logger = LoggerFactory.getLogger(BaseDAO.class);
 	
 	public static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	

@@ -2,12 +2,13 @@ package org.openmrs.module.epts.etl.utilities.db.conn;
 
 import java.sql.Connection;
 
-import org.apache.log4j.Logger;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DBOperation {
 	
-	public static Logger logger = Logger.getLogger(DBOperation.class);
+	public static Logger logger = LoggerFactory.getLogger(DBOperation.class);
 	
 	private String sql;
 	

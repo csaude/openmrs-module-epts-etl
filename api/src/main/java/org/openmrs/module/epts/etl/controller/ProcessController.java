@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.log4j.Level;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
@@ -28,6 +27,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
+import org.slf4j.event.Level;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -76,7 +76,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		this.starter = starter;
 		
-		org.apache.log4j.Logger log4jLogger = org.apache.log4j.Logger.getLogger(ProcessStarter.class);
+		org.slf4j.Logger log4jLogger = org.slf4j.LoggerFactory.getLogger(ProcessStarter.class);
 		
 		this.logger = new Logger(log4jLogger, SyncConfiguration.determineLogLevel());
 		

@@ -20,7 +20,6 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
-import org.apache.log4j.Logger;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
@@ -480,9 +479,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		return tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSyncConfiguration());
 	}
-	
-	static Logger logger = Logger.getLogger(DatabaseEntityPOJOGenerator.class);
-	
+
 	public static Class<DatabaseObject> tryToGetExistingCLass(String fullClassName, SyncConfiguration syncConfiguration) {
 		Class<DatabaseObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
 		

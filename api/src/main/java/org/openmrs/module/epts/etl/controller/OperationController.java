@@ -66,7 +66,7 @@ public abstract class OperationController implements Controller {
 	protected OperationProgressInfo progressInfo;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
-		org.apache.log4j.Logger log4jLogger = org.apache.log4j.Logger.getLogger(ProcessStarter.class);
+		org.slf4j.Logger log4jLogger = org.slf4j.LoggerFactory.getLogger(ProcessStarter.class);
 		
 		this.logger = new Logger(log4jLogger, SyncConfiguration.determineLogLevel());
 		

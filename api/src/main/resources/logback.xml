@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+    <springProperty name="base.dir" source="eip.home" defaultValue="/home/eip" />
+
+    <property name="LOGS_PATTERN" value="%-5level %date [%thread] %logger{8}:%line %msg%n" />
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+		<pattern>${LOGS_PATTERN}</pattern>
+        </encoder>
+    </appender>
+	
+    <root level="debug">
+        <appender-ref ref="console" />
+    </root>
+    
+    
+</configuration>

@@ -2,8 +2,8 @@ package org.openmrs.module.epts.etl.utilities;
 
 import java.util.Date;
 
-import org.apache.log4j.Level;
 import org.openmrs.module.epts.etl.Main;
+import org.slf4j.event.Level;
 
 public class Logger {
 	
@@ -11,22 +11,20 @@ public class Logger {
 	
 	private Date lastLogDate;
 	
-	org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
+	org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Main.class);
 	
 	private Level level;
 	
-	public Logger(org.apache.log4j.Logger logger, Level level) {
+	public Logger(org.slf4j.Logger logger, Level level) {
 		this.logger = logger;
 		this.level = level;
-		
-		logger.setLevel(level);
 	}
 	
 	public Level getLevel() {
 		return level;
 	}
 	
-	public org.apache.log4j.Logger getLogger() {
+	public org.slf4j.Logger getLogger() {
 		return logger;
 	}
 	
@@ -46,7 +44,7 @@ public class Logger {
 	}
 	
 	public void logWarn(String msg) {
-		if (Level.WARN.isGreaterOrEqual(level)) {
+		if (Level.WARN.compareTo(level) > 0) {
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.warn(msg);
@@ -56,7 +54,7 @@ public class Logger {
 	}
 	
 	public void logInfo(String msg) {
-		if (Level.INFO.isGreaterOrEqual(level)) {
+		if (Level.INFO.compareTo(level) > 0) {
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.info(msg);
@@ -67,7 +65,7 @@ public class Logger {
 	}
 	
 	public void logErr(String msg) {
-		if (Level.FATAL.isGreaterOrEqual(level)) {
+		if (Level.ERROR.compareTo(level) > 0) {
 			
 			msg = putAdditionalInfoOnLog(msg);
 			
@@ -78,7 +76,7 @@ public class Logger {
 	}
 	
 	public void logDebug(String msg) {
-		if (Level.DEBUG.isGreaterOrEqual(level)) {
+		if (Level.DEBUG.compareTo(level) > 0) {
 			
 			msg = putAdditionalInfoOnLog(msg);
 			

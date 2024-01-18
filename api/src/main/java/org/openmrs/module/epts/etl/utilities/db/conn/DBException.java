@@ -3,10 +3,11 @@ package org.openmrs.module.epts.etl.utilities.db.conn;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Exception is thrown when any DB error occurs.
@@ -17,7 +18,7 @@ public class DBException extends SQLException {
 	
 	public static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	public static Logger logger = Logger.getLogger(DBException.class);
+	public static Logger logger = LoggerFactory.getLogger(DBException.class);
 	
 	/**
 	 * Os atributos abaixo só se aplicam no caso de

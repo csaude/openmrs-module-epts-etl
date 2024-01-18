@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.log4j.Level;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -14,6 +13,7 @@ import org.openmrs.module.epts.etl.utilities.Logger;
 import org.openmrs.module.epts.etl.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.slf4j.event.Level;
 
 public class ProcessStarter implements ControllerStarter {
 	
@@ -32,7 +32,7 @@ public class ProcessStarter implements ControllerStarter {
 	public ProcessStarter(String[] synConfigFiles) {
 		this.synConfigFilesPaths = synConfigFiles;
 		
-		org.apache.log4j.Logger log4jLogger = org.apache.log4j.Logger.getLogger(ProcessStarter.class);
+		org.slf4j.Logger log4jLogger = org.slf4j.LoggerFactory.getLogger(ProcessStarter.class);
 		
 		this.logger = new Logger(log4jLogger, SyncConfiguration.determineLogLevel());
 	}
@@ -41,7 +41,7 @@ public class ProcessStarter implements ControllerStarter {
 		return currentController;
 	}
 	
-	public ProcessStarter(String[] synConfigFiles, org.apache.log4j.Logger logger) {
+	public ProcessStarter(String[] synConfigFiles, org.slf4j.Logger logger) {
 		this.synConfigFilesPaths = synConfigFiles;
 		
 		this.logger = new Logger(logger, SyncConfiguration.determineLogLevel());

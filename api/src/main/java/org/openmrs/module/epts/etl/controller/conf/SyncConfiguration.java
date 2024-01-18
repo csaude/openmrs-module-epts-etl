@@ -19,7 +19,6 @@ import java.util.regex.Matcher;
 import javax.ws.rs.ForbiddenException;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Level;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -32,6 +31,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
+import org.slf4j.event.Level;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -443,7 +443,7 @@ public class SyncConfiguration extends BaseConfiguration {
 			if (this.logger != null)
 				return;
 			
-			org.apache.log4j.Logger log4jLogger = org.apache.log4j.Logger.getLogger(SyncConfiguration.class);
+			org.slf4j.Logger log4jLogger = org.slf4j.LoggerFactory.getLogger(SyncConfiguration.class);
 			
 			this.logger = new Logger(log4jLogger, SyncConfiguration.determineLogLevel());
 		}
@@ -953,7 +953,7 @@ public class SyncConfiguration extends BaseConfiguration {
 		        || this.isDBInconsistencyCheckProcess();
 	}
 	
-	public static org.apache.log4j.Level determineLogLevel() {
+	public static Level determineLogLevel() {
 		String log = System.getProperty("log.level");
 		
 		if (!utilities.stringHasValue(log))

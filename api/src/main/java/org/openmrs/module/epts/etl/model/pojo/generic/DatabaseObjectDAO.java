@@ -3,7 +3,6 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 import java.sql.Connection;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -100,8 +99,6 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
-	
-	static Logger logger = Logger.getLogger(DatabaseObjectDAO.class);
 	
 	public static DatabaseObject thinGetByRecordOrigin(Integer recordOriginId, String recordOriginLocationCode,
 	        SyncTableConfiguration parentTableConfiguration, Connection conn) throws DBException {

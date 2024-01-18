@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.log4j.Logger;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
@@ -95,9 +94,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			    parentTableConfiguration, conn);
 		}
 		catch (DBException e) {
-			logger.info("NEW ERROR PERFORMING LOAD OF "
-			        + parentTableConfiguration.getSyncRecordClass(parentTableConfiguration.getMainApp()).getName());
-			
 			e.printStackTrace();
 			
 			TimeCountDown.sleep(2000);
@@ -768,8 +764,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	public void remove(Connection conn) throws DBException {
 		DatabaseObjectDAO.remove(this, conn);
 	}
-	
-	Logger logger = Logger.getLogger(AbstractDatabaseObject.class);
 	
 	public Map<RefInfo, Integer> loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
 		Map<RefInfo, Integer> missingParents = new HashMap<RefInfo, Integer>();
