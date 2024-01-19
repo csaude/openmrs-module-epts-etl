@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.utilities;
 
 import java.util.Date;
 
+import org.apache.log4j.ConsoleAppender;
 import org.openmrs.module.epts.etl.Main;
 import org.slf4j.event.Level;
 
@@ -44,7 +45,7 @@ public class Logger {
 	}
 	
 	public void logWarn(String msg) {
-		if (Level.WARN.compareTo(level) > 0) {
+		if (Level.WARN.compareTo(level) <= 0) {
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.warn(msg);
@@ -54,7 +55,7 @@ public class Logger {
 	}
 	
 	public void logInfo(String msg) {
-		if (Level.INFO.compareTo(level) > 0) {
+		if (Level.INFO.compareTo(level) <= 0) {
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.info(msg);
@@ -65,7 +66,7 @@ public class Logger {
 	}
 	
 	public void logErr(String msg) {
-		if (Level.ERROR.compareTo(level) > 0) {
+		if (Level.ERROR.compareTo(level) <= 0) {
 			
 			msg = putAdditionalInfoOnLog(msg);
 			
@@ -76,7 +77,7 @@ public class Logger {
 	}
 	
 	public void logDebug(String msg) {
-		if (Level.DEBUG.compareTo(level) > 0) {
+		if (Level.DEBUG.compareTo(level) <= 0) {
 			
 			msg = putAdditionalInfoOnLog(msg);
 			
