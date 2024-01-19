@@ -10,7 +10,7 @@ import java.sql.ResultSet;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class LaboratoryWithFormDataVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class LaboratoryWfdVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private String encounterUuid;
 	private Integer labTestId;
@@ -33,7 +33,7 @@ public class LaboratoryWithFormDataVO extends AbstractDatabaseObject implements 
 	private String locationUuid;
 	private String sourceDatabase;
  
-	public LaboratoryWithFormDataVO() { 
+	public LaboratoryWfdVO() { 
 		this.metadata = false;
 	} 
  

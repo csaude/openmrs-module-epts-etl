@@ -10,7 +10,7 @@ import java.sql.ResultSet;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class KeyVulnerablePopWithFormDataVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class KeyVulnerablePopWfdVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private String encounterUuid;
 	private Integer popType;
@@ -26,7 +26,7 @@ public class KeyVulnerablePopWithFormDataVO extends AbstractDatabaseObject imple
 	private String locationUuid;
 	private String sourceDatabase;
  
-	public KeyVulnerablePopWithFormDataVO() { 
+	public KeyVulnerablePopWfdVO() { 
 		this.metadata = false;
 	} 
  

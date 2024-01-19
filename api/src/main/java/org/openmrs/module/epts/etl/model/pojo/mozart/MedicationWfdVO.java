@@ -10,7 +10,7 @@ import java.sql.ResultSet;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class MedicationWithFormDataVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class MedicationWfdVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private String encounterUuid;
 	private Integer regimenId;
@@ -36,7 +36,7 @@ public class MedicationWithFormDataVO extends AbstractDatabaseObject implements 
 	private String locationUuid;
 	private String sourceDatabase;
  
-	public MedicationWithFormDataVO() { 
+	public MedicationWfdVO() { 
 		this.metadata = false;
 	} 
  

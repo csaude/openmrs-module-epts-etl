@@ -10,7 +10,7 @@ import java.sql.ResultSet;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class ObservationWithFormDataVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class ObservationWfdVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private String encounterUuid;
 	private Integer conceptId;
@@ -29,7 +29,7 @@ public class ObservationWithFormDataVO extends AbstractDatabaseObject implements
 	private String locationUuid;
 	private String sourceDatabase;
  
-	public ObservationWithFormDataVO() { 
+	public ObservationWfdVO() { 
 		this.metadata = false;
 	} 
  
