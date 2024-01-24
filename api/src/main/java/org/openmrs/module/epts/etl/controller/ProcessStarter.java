@@ -9,10 +9,11 @@ import java.util.concurrent.ExecutorService;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
-import org.openmrs.module.epts.etl.utilities.Logger;
+import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
 public class ProcessStarter implements ControllerStarter {
@@ -25,33 +26,27 @@ public class ProcessStarter implements ControllerStarter {
 	
 	private ProcessController currentController;
 	
-	private Logger logger;
+	private EptsEtlLogger logger;
 	
 	private static final String stringLock = new String("LOCK_STRING");
 	
 	public ProcessStarter(String[] synConfigFiles) {
 		this.synConfigFilesPaths = synConfigFiles;
 		
-		org.slf4j.Logger log4jLogger = org.slf4j.LoggerFactory.getLogger(ProcessStarter.class);
-		
-		this.logger = new Logger(log4jLogger, SyncConfiguration.determineLogLevel());
+		this.logger = new EptsEtlLogger(ProcessStarter.class);
 	}
 	
 	public ProcessController getCurrentController() {
 		return currentController;
 	}
 	
-	public ProcessStarter(String[] synConfigFiles, org.slf4j.Logger logger) {
+	public ProcessStarter(String[] synConfigFiles, Logger logger) {
 		this.synConfigFilesPaths = synConfigFiles;
 		
-		this.logger = new Logger(logger, SyncConfiguration.determineLogLevel());
+		this.logger = new EptsEtlLogger(logger);
 	}
 	
-	public Level getLogLevel() {
-		return this.logger.getLevel();
-	}
-	
-	public Logger getLogger() {
+	public EptsEtlLogger getLogger() {
 		return logger;
 	}
 	
@@ -102,7 +97,7 @@ public class ProcessStarter implements ControllerStarter {
 	public void run() {
 		
 		try {
-			if (getLogLevel().equals(Level.DEBUG)) {
+			if (EptsEtlLogger.determineLogLevel().equals(Level.DEBUG)) {
 				TimeCountDown.sleep(10);
 			}
 			
@@ -114,13 +109,13 @@ public class ProcessStarter implements ControllerStarter {
 			while (!this.currentController.isFinalized()) {
 				TimeCountDown.sleep(60);
 				
-				logger.logWarn("THE APPLICATION IS STILL RUNING...", 60 * 15);
+				logger.warn("THE APPLICATION IS STILL RUNING...", 60 * 15);
 			}
 			
 			if (this.currentController.isFinished()) {
-				logger.logWarn("ALL JOBS ARE FINISHED");
+				logger.warn("ALL JOBS ARE FINISHED");
 			} else if (this.currentController.isStopped()) {
-				logger.logWarn("ALL JOBS ARE STOPPED");
+				logger.warn("ALL JOBS ARE STOPPED");
 			}
 		}
 		catch (ForbiddenOperationException e) {
@@ -137,34 +132,37 @@ public class ProcessStarter implements ControllerStarter {
 		
 		ProcessController controller = (ProcessController) c;
 		
-		if (c.isStopped()) {
-			logger.logWarn("THE APPLICATION IS STOPPING DUE STOP REQUESTED!");
-			controller.finalize();
-		} else if (controller.getConfiguration().getChildConfigFilePath() != null) {
-			try {
-				SyncConfiguration childConfig = SyncConfiguration
-				        .loadFromFile(new File(controller.getConfiguration().getChildConfigFilePath()));
-				
-				ProcessController child = new ProcessController(this, childConfig);
-				
-				ExecutorService executor = ThreadPoolService.getInstance()
-				        .createNewThreadPoolExecutor(child.getControllerId());
-				
-				executor.execute(child);
-				
-				ThreadPoolService.getInstance().terminateTread(logger, c.getControllerId(), c);
-				
-				this.currentController = child;
+		if (c.isFinished()) {
+			if (controller.getConfiguration().getChildConfigFilePath() != null) {
+				try {
+					SyncConfiguration childConfig = SyncConfiguration
+					        .loadFromFile(new File(controller.getConfiguration().getChildConfigFilePath()));
+					
+					ProcessController child = new ProcessController(this, childConfig);
+					
+					ExecutorService executor = ThreadPoolService.getInstance()
+					        .createNewThreadPoolExecutor(child.getControllerId());
+					
+					executor.execute(child);
+					
+					ThreadPoolService.getInstance().terminateTread(logger, c.getControllerId(), c);
+					
+					this.currentController = child;
+				}
+				catch (DBException e) {
+					throw new RuntimeException(e);
+				}
+				catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			} else {
+				controller.finalize();
 			}
-			catch (DBException e) {
-				throw new RuntimeException(e);
-			}
-			catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		} else {
+		} else if (c.isStopped()) {
+			logger.warn("THE APPLICATION IS STOPPING DUE STOP REQUESTED!");
 			controller.finalize();
 		}
+		
 	}
 	
 	public List<SyncConfiguration> loadSyncConfig(File[] syncConfigFiles) throws ForbiddenOperationException, IOException {
@@ -202,7 +200,7 @@ public class ProcessStarter implements ControllerStarter {
 					conf.validate();
 					
 					if (!conf.existsOnArray(syncConfigs)) {
-						logger.logWarn("USING CONFIGURATION FILE " + conf.getRelatedConfFile().getAbsolutePath()
+						logger.warn("USING CONFIGURATION FILE " + conf.getRelatedConfFile().getAbsolutePath()
 						        + " WITH PROCESS " + conf.getDesignation());
 						syncConfigs.add(conf);
 					} else

@@ -18,7 +18,7 @@ import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.ProcessProgressInfo;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
-import org.openmrs.module.epts.etl.utilities.Logger;
+import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.epts.etl.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeController;
@@ -27,7 +27,6 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
-import org.slf4j.event.Level;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -65,7 +64,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	private ProcessInfo processInfo;
 	
-	private Logger logger;
+	private EptsEtlLogger logger;
 	
 	public ProcessController() {
 		this.progressInfo = new ProcessProgressInfo(this);
@@ -76,9 +75,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		this.starter = starter;
 		
-		org.slf4j.Logger log4jLogger = org.slf4j.LoggerFactory.getLogger(ProcessStarter.class);
-		
-		this.logger = new Logger(log4jLogger, SyncConfiguration.determineLogLevel());
+		this.logger = new EptsEtlLogger(ProcessController.class);
 		
 		init(configuration);
 	}
@@ -151,10 +148,6 @@ public class ProcessController implements Controller, ControllerStarter {
 		finally {
 			conn.finalizeConnection();
 		}
-	}
-	
-	public Level getLogLevel() {
-		return this.logger.getLevel();
 	}
 	
 	public void setFinalized(boolean finalized) {
@@ -441,7 +434,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			while (running) {
 				TimeCountDown.sleep(getWaitTimeToCheckStatus());
 				
-				this.logger.logWarn("The process " + getControllerId() + " is still running...", 60 * 5);
+				this.logger.warn("The process " + getControllerId() + " is still running...", 60 * 5);
 				
 				if (this.isFinished()) {
 					this.markAsFinished();
@@ -635,23 +628,23 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	public void logDebug(String msg) {
-		logger.logDebug(msg);
+		logger.debug(msg);
 	}
 	
 	public void logInfo(String msg) {
-		logger.logInfo(msg);
+		logger.info(msg);
 	}
 	
 	public void logWarn(String msg) {
-		logger.logWarn(msg);
+		logger.warn(msg);
 	}
 	
 	public void logWarn(String msg, long interval) {
-		logger.logWarn(msg, interval);
+		logger.warn(msg, interval);
 	}
 	
 	public void logErr(String msg) {
-		logger.logErr(msg);
+		logger.error(msg);
 	}
 	
 	public boolean isProgressInfoLoaded() {

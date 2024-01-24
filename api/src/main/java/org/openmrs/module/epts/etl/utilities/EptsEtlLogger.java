@@ -2,31 +2,60 @@ package org.openmrs.module.epts.etl.utilities;
 
 import java.util.Date;
 
-import org.apache.log4j.ConsoleAppender;
 import org.openmrs.module.epts.etl.Main;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
-public class Logger {
+public class EptsEtlLogger {
 	
-	CommonUtilities utilities = CommonUtilities.getInstance();
+	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private Date lastLogDate;
 	
-	org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Main.class);
+	Logger logger = LoggerFactory.getLogger(Main.class);
 	
 	private Level level;
 	
-	public Logger(org.slf4j.Logger logger, Level level) {
+	public <T> EptsEtlLogger(Class<T> clazz) {
+		this.logger = LoggerFactory.getLogger(clazz);
+		this.level = determineLogLevel();
+	}
+	
+	public <T> EptsEtlLogger(Logger logger) {
 		this.logger = logger;
-		this.level = level;
+		this.level = determineLogLevel();
+	}
+	
+	public  static <T>   EptsEtlLogger getLogger(Class<T> clazz) {
+		return new EptsEtlLogger(clazz);
 	}
 	
 	public Level getLevel() {
 		return level;
 	}
 	
-	public org.slf4j.Logger getLogger() {
+	public Logger getLogger() {
 		return logger;
+	}
+	
+	public static Level determineLogLevel() {
+		String log = System.getProperty("log.level");
+		
+		if (!utilities.stringHasValue(log))
+			return Level.INFO;
+		
+		if (log.equals("DEBUG"))
+			return Level.DEBUG;
+		if (log.equals("INFO"))
+			return Level.INFO;
+		if (log.equals("WARN"))
+			return Level.WARN;
+		if (log.equals("ERROR"))
+			return Level.ERROR;
+		
+		throw new ForbiddenOperationException("Unsupported Log Level [" + log + "]");
 	}
 	
 	/**
@@ -36,15 +65,15 @@ public class Logger {
 	 * @param msg the message to log
 	 * @param logInterval the max log interval permited fore repited logs
 	 */
-	public void logWarn(String msg, double logInterval) {
+	public void warn(String msg, double logInterval) {
 		double elapsedTime = getLastLogElapsedTime();
 		
 		if (elapsedTime < 0 || elapsedTime >= logInterval) {
-			logWarn(msg);
+			warn(msg);
 		}
 	}
 	
-	public void logWarn(String msg) {
+	public void warn(String msg) {
 		if (Level.WARN.compareTo(level) <= 0) {
 			msg = putAdditionalInfoOnLog(msg);
 			
@@ -54,7 +83,7 @@ public class Logger {
 		}
 	}
 	
-	public void logInfo(String msg) {
+	public void info(String msg) {
 		if (Level.INFO.compareTo(level) <= 0) {
 			msg = putAdditionalInfoOnLog(msg);
 			
@@ -65,7 +94,7 @@ public class Logger {
 		}
 	}
 	
-	public void logErr(String msg) {
+	public void error(String msg) {
 		if (Level.ERROR.compareTo(level) <= 0) {
 			
 			msg = putAdditionalInfoOnLog(msg);
@@ -76,7 +105,7 @@ public class Logger {
 		}
 	}
 	
-	public void logDebug(String msg) {
+	public void debug(String msg) {
 		if (Level.DEBUG.compareTo(level) <= 0) {
 			
 			msg = putAdditionalInfoOnLog(msg);

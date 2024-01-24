@@ -51,7 +51,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 			OpenConnection dstConn = null;
 			
 			try {
-				dstConn = this.relatedController.openDestConnection();
+				dstConn = this.relatedController.openDstConnection();
 				
 				if (DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
 					String destFullTableName = DBUtilities.determineSchemaName(dstConn) + ".";
@@ -113,7 +113,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
 		
-		OpenConnection destConn = relatedController.openDestConnection();
+		OpenConnection destConn = relatedController.openDstConnection();
 		
 		try {
 			

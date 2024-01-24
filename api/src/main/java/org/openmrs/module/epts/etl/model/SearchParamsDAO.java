@@ -3,7 +3,6 @@ package org.openmrs.module.epts.etl.model;
 import java.sql.Connection;
 import java.util.List;
 
-import org.slf4j.Logger;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.VO;

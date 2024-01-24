@@ -23,21 +23,21 @@ public class DBCopyController extends OperationController {
 	
 	private AppInfo srcAppInfo;
 	
-	private AppInfo destAppInfo;
+	private AppInfo dstAppInfo;
 	
 	public DBCopyController(ProcessController processController, SyncOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.srcAppInfo = getConfiguration().getMainApp();
-		this.destAppInfo = getConfiguration().exposeAllAppsNotMain().get(0);
+		this.dstAppInfo = getConfiguration().exposeAllAppsNotMain().get(0);
 	}
 	
 	public AppInfo getSrcAppInfo() {
 		return srcAppInfo;
 	}
 	
-	public AppInfo getDestAppInfo() {
-		return destAppInfo;
+	public AppInfo getDstAppInfo() {
+		return dstAppInfo;
 	}
 	
 	@Override
@@ -92,8 +92,8 @@ public class DBCopyController extends OperationController {
 		return srcAppInfo.openConnection();
 	}
 	
-	public OpenConnection openDestConnection() {
-		return destAppInfo.openConnection();
+	public OpenConnection openDstConnection() {
+		return dstAppInfo.openConnection();
 	}
 	
 	@Override

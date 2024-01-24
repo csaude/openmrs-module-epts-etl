@@ -120,6 +120,7 @@ public class MappedTableInfo extends SyncTableConfiguration {
 	public synchronized void fullLoad(Connection conn) {
 		try {
 			getPrimaryKey(conn);
+			
 			loadUniqueKeys(conn);
 			
 			loadParents(conn);

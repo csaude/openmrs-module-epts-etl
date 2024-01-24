@@ -32,15 +32,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class DBQuickMergeEngine extends Engine {
 	
-	private AppInfo srcApp;
-	
-	private AppInfo dstApp;
-	
 	public DBQuickMergeEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
-		
-		this.srcApp = getRelatedOperationController().getConfiguration().find(AppInfo.init("main"));
-		this.dstApp = getRelatedOperationController().getConfiguration().find(AppInfo.init("destination"));
 	}
 	
 	@Override
@@ -49,7 +42,7 @@ public class DBQuickMergeEngine extends Engine {
 		DBQuickMergeSearchParams searchParams = (DBQuickMergeSearchParams) getSearchParams();
 		
 		if (getFinalCheckStatus().onGoing()) {
-			OpenConnection dstConn = this.dstApp.openConnection();
+			OpenConnection dstConn = this.getDstApp().openConnection();
 			
 			try {
 				if (DBUtilities.isSameDatabaseServer(conn, dstConn)) {
@@ -64,6 +57,14 @@ public class DBQuickMergeEngine extends Engine {
 		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
+	public AppInfo getDstApp() {
+		return this.getRelatedOperationController().getDstApp();
+	}
+	
+	public AppInfo getSrcApp() {
+		return this.getRelatedOperationController().getSrcApp();
+	}
+	
 	@Override
 	protected boolean mustDoFinalCheck() {
 		if (getRelatedOperationController().getOperationConfig().skipFinalDataVerification()) {
@@ -71,7 +72,7 @@ public class DBQuickMergeEngine extends Engine {
 		} else {
 			
 			OpenConnection srcConn = openConnection();
-			OpenConnection dstConn = this.dstApp.openConnection();
+			OpenConnection dstConn = this.getDstApp().openConnection();
 			
 			boolean sameDBSDerver;
 			
@@ -138,13 +139,13 @@ public class DBQuickMergeEngine extends Engine {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, this.dstApp, conn);
+					destObject = mappingInfo.generateMappedObject(rec, this.getDstApp(), conn);
 					
 					if (getSyncTableConfiguration().isManualIdGeneration()) {
 						destObject.setObjectId(currObjectId++);
 					}
 					
-					MergingRecord mr = new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp,
+					MergingRecord mr = new MergingRecord(destObject, getSyncTableConfiguration(), this.getSrcApp(), this.getDstApp(),
 					        false);
 					
 					if (mergingRecs.get(mappingInfo.getTableName()) == null) {
@@ -200,7 +201,7 @@ public class DBQuickMergeEngine extends Engine {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, this.dstApp, conn);
+					destObject = mappingInfo.generateMappedObject(rec, this.getDstApp(), conn);
 					
 					if (getSyncTableConfiguration().isManualIdGeneration()) {
 						destObject.setObjectId(currObjectId++);
@@ -208,7 +209,7 @@ public class DBQuickMergeEngine extends Engine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					MergingRecord data = new MergingRecord(destObject, getSyncTableConfiguration(), this.srcApp, this.dstApp,
+					MergingRecord data = new MergingRecord(destObject, getSyncTableConfiguration(), this.getSrcApp(), this.getDstApp(),
 					        wrt);
 					
 					try {

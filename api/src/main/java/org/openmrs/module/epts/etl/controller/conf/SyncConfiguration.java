@@ -25,13 +25,12 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
-import org.openmrs.module.epts.etl.utilities.Logger;
+import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
-import org.slf4j.event.Level;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -82,7 +81,7 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private List<SyncTableConfiguration> allTables;
 	
-	private Logger logger;
+	private EptsEtlLogger logger;
 	
 	private ModelType modelType;
 	
@@ -443,9 +442,7 @@ public class SyncConfiguration extends BaseConfiguration {
 			if (this.logger != null)
 				return;
 			
-			org.slf4j.Logger log4jLogger = org.slf4j.LoggerFactory.getLogger(SyncConfiguration.class);
-			
-			this.logger = new Logger(log4jLogger, SyncConfiguration.determineLogLevel());
+			this.logger = new EptsEtlLogger(SyncConfiguration.class);
 		}
 		
 	}
@@ -454,28 +451,28 @@ public class SyncConfiguration extends BaseConfiguration {
 		if (logger == null)
 			initLogger();
 		
-		this.logger.logDebug(msg);
+		this.logger.debug(msg);
 	}
 	
 	public void logInfo(String msg) {
 		if (logger == null)
 			initLogger();
 		
-		logger.logInfo(msg);
+		logger.info(msg);
 	}
 	
 	public void logWarn(String msg) {
 		if (logger == null)
 			initLogger();
 		
-		logger.logWarn(msg);
+		logger.warn(msg);
 	}
 	
 	public void logErr(String msg) {
 		if (logger == null)
 			initLogger();
 		
-		logger.logErr(msg);
+		logger.error(msg);
 	}
 	
 	public void fullLoad() {
@@ -951,24 +948,6 @@ public class SyncConfiguration extends BaseConfiguration {
 	public boolean isSupposedToRunInOrigin() {
 		return this.isSourceSyncProcess() || this.isDBReSyncProcess() || this.isDBQuickExportProcess()
 		        || this.isDBInconsistencyCheckProcess();
-	}
-	
-	public static Level determineLogLevel() {
-		String log = System.getProperty("log.level");
-		
-		if (!utilities.stringHasValue(log))
-			return Level.INFO;
-		
-		if (log.equals("DEBUG"))
-			return Level.DEBUG;
-		if (log.equals("INFO"))
-			return Level.INFO;
-		if (log.equals("WARN"))
-			return Level.WARN;
-		if (log.equals("ERROR"))
-			return Level.ERROR;
-		
-		throw new ForbiddenOperationException("Unsupported Log Level [" + log + "]");
 	}
 	
 	public boolean isPerformedInTheSameDatabase() {

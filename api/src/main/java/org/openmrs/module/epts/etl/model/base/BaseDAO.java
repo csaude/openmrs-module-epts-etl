@@ -20,11 +20,9 @@ import java.util.List;
 
 import org.apache.commons.fileupload.FileItem;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBOperation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Base DAO This class provides the base datasource & common functionaloty for all DAO's in the
  * application. All DAO's must extend this class to get access to the datasource.
@@ -33,7 +31,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class BaseDAO {
 	
-	public static Logger logger = LoggerFactory.getLogger(BaseDAO.class);
+	public static EptsEtlLogger logger = EptsEtlLogger.getLogger(BaseDAO.class);
 	
 	public static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	
@@ -313,6 +311,7 @@ public abstract class BaseDAO {
 	private static boolean tryToSolveIssues(DBException e, String sql, Object[] params, Connection conn) throws DBException {
 		if (e.isDeadLock(conn)) {
 			logger.warn("DEADLOCK DETECTED");
+			
 			DBOperation dbOp = new DBOperation(sql, params, conn, 50);
 			dbOp.retryDueTemporaryDBError("DEADLOCK");
 			
@@ -420,8 +419,8 @@ public abstract class BaseDAO {
 	
 	/**
 	 * Insere na BD o registo em vo. NOTE: > O método irá tentar gerar o selfId se este for igual a
-	 * zero. > O id da reparticao é obrigatório caso o selfId não tenha sido definido. Se este n�o
-	 * for especificado, uma excep��o ser� lan�ada.
+	 * zero. > O id da reparticao é obrigatório caso o selfId não tenha sido definido. Se este nao
+	 * for especificado, uma excepcao sera lancada.
 	 * 
 	 * @param vo
 	 * @param sql

@@ -35,7 +35,7 @@ public class DBQuickMergeController extends SiteOperationController {
 	
 	private static final int DEFAULT_NEXT_TREAD_ID = -1;
 	
-	private AppInfo dstConn;
+	private AppInfo dstApp;
 	
 	private AppInfo srcApp;
 	
@@ -52,7 +52,7 @@ public class DBQuickMergeController extends SiteOperationController {
 		super(processController, operationConfig, appOriginLocationCode);
 		
 		this.srcApp = getConfiguration().find(AppInfo.init("main"));
-		this.dstConn = getConfiguration().find(AppInfo.init("destination"));
+		this.dstApp = getConfiguration().find(AppInfo.init("destination"));
 		
 		this.currThreadStartId = DEFAULT_NEXT_TREAD_ID;
 	}
@@ -134,7 +134,7 @@ public class DBQuickMergeController extends SiteOperationController {
 	}
 	
 	public AppInfo getDstApp() {
-		return dstConn;
+		return dstApp;
 	}
 	
 	@Override
@@ -204,8 +204,12 @@ public class DBQuickMergeController extends SiteOperationController {
 		return false;
 	}
 	
+	public OpenConnection openSrcConnection() {
+		return srcApp.openConnection();
+	}
+	
 	public OpenConnection openDstConnection() {
-		return dstConn.openConnection();
+		return dstApp.openConnection();
 	}
 	
 	@Override

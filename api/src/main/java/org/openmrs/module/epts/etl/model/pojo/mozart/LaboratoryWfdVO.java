@@ -247,7 +247,7 @@ public class LaboratoryWfdVO extends AbstractDatabaseObject implements DatabaseO
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO laboratory_with_form_data(encounter_uuid, lab_test_id, request, order_date, sample_collection_date, result_report_date, result_qualitative_id, result_numeric, result_units, result_comment, specimen_type_id, labtest_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO laboratory_wfd(encounter_uuid, lab_test_id, request, order_date, sample_collection_date, result_report_date, result_qualitative_id, result_numeric, result_units, result_comment, specimen_type_id, labtest_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -257,7 +257,7 @@ public class LaboratoryWfdVO extends AbstractDatabaseObject implements DatabaseO
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO laboratory_with_form_data(id, encounter_uuid, lab_test_id, request, order_date, sample_collection_date, result_report_date, result_qualitative_id, result_numeric, result_units, result_comment, specimen_type_id, labtest_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO laboratory_wfd(id, encounter_uuid, lab_test_id, request, order_date, sample_collection_date, result_report_date, result_qualitative_id, result_numeric, result_units, result_comment, specimen_type_id, labtest_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -272,7 +272,7 @@ public class LaboratoryWfdVO extends AbstractDatabaseObject implements DatabaseO
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE laboratory_with_form_data SET encounter_uuid = ?, lab_test_id = ?, request = ?, order_date = ?, sample_collection_date = ?, result_report_date = ?, result_qualitative_id = ?, result_numeric = ?, result_units = ?, result_comment = ?, specimen_type_id = ?, labtest_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
+ 		return "UPDATE laboratory_wfd SET encounter_uuid = ?, lab_test_id = ?, request = ?, order_date = ?, sample_collection_date = ?, result_report_date = ?, result_qualitative_id = ?, result_numeric = ?, result_units = ?, result_comment = ?, specimen_type_id = ?, labtest_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore

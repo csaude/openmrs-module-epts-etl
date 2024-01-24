@@ -1,19 +1,16 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
+<!-- logback.xml -->
 <configuration>
-    <springProperty name="base.dir" source="eip.home" defaultValue="/home/eip" />
 
-    <property name="LOGS_PATTERN" value="%-5level %date [%thread] %logger{8}:%line %msg%n" />
-
-    <appender name="console" class="org.apache.log4j.ConsoleAppender">
+    <!-- Console Appender -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-		<pattern>${LOGS_PATTERN}</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-	
+
+    <!-- Root Logger -->
     <root level="debug">
         <appender-ref ref="console" />
     </root>
-    
-    
+
 </configuration>

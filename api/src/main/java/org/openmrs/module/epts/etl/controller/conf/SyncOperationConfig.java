@@ -561,8 +561,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 			if (!this.canBeRunInDBQuickMergeWithDatabaseGenerationProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db quick merge with database generation process\n";
-		}
-		else if (this.getRelatedSyncConfig().isDBQuickMergeWithEntityGenerationDBProcess()) {
+		} else if (this.getRelatedSyncConfig().isDBQuickMergeWithEntityGenerationDBProcess()) {
 			if (!this.canBeRunInDBQuickMergeWithEntityGenerationProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db quick merge with entity generation process\n";
@@ -638,7 +637,8 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInDbCopyProcess() {
-		SyncOperationType[] supported = { SyncOperationType.POJO_GENERATION, SyncOperationType.DB_COPY };
+		SyncOperationType[] supported = { SyncOperationType.DATABASE_PREPARATION, SyncOperationType.POJO_GENERATION,
+		        SyncOperationType.DB_COPY };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -705,7 +705,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInDBQuickCopyProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DATABASE_PREPARATION, SyncOperationType.DB_QUICK_COPY };
+		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_COPY };
 		
 		return utilities.parseArrayToList(supported);
 	}

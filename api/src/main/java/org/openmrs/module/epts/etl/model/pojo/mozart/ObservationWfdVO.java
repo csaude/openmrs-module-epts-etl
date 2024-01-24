@@ -207,7 +207,7 @@ public class ObservationWfdVO extends AbstractDatabaseObject implements Database
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO observation_with_form_data(encounter_uuid, concept_id, observation_date, value_numeric, value_concept_id, value_text, value_datetime, obs_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO observation_wfd(encounter_uuid, concept_id, observation_date, value_numeric, value_concept_id, value_text, value_datetime, obs_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -217,7 +217,7 @@ public class ObservationWfdVO extends AbstractDatabaseObject implements Database
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO observation_with_form_data(id, encounter_uuid, concept_id, observation_date, value_numeric, value_concept_id, value_text, value_datetime, obs_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO observation_wfd(id, encounter_uuid, concept_id, observation_date, value_numeric, value_concept_id, value_text, value_datetime, obs_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -232,7 +232,7 @@ public class ObservationWfdVO extends AbstractDatabaseObject implements Database
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE observation_with_form_data SET encounter_uuid = ?, concept_id = ?, observation_date = ?, value_numeric = ?, value_concept_id = ?, value_text = ?, value_datetime = ?, obs_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
+ 		return "UPDATE observation_wfd SET encounter_uuid = ?, concept_id = ?, observation_date = ?, value_numeric = ?, value_concept_id = ?, value_text = ?, value_datetime = ?, obs_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore

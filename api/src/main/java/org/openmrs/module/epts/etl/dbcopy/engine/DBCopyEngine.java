@@ -1,9 +1,12 @@
 package org.openmrs.module.epts.etl.dbcopy.engine;
 
 import java.sql.Connection;
-import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.MappedTableInfo;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.dbcopy.model.DBCopySearchParams;
@@ -16,7 +19,6 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class DBCopyEngine extends Engine {
@@ -46,99 +48,61 @@ public class DBCopyEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		OpenConnection destConn = getRelatedOperationController().openDestConnection();
+		logInfo("PERFORMING BATCH COPY ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
-		if (DBUtilities.isSqlServerDB(destConn)) {
-			
-			for (MappedTableInfo map : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
-				String dstFullTableName = map.generateFullTableName(destConn);
-				DBUtilities.executeBatch(destConn, "SET IDENTITY_INSERT " + dstFullTableName + " ON");
-			}
-		}
+		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
-		String tableName = getSyncTableConfiguration().getTableName();
+		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
+		
+		Map<String, List<DatabaseObject>> mergingRecs = new HashMap<>();
+		
 		try {
 			
-			logInfo("COPYING  '" + syncRecords.size() + "' " + tableName + " TO DESTINATION DB");
-			
-			List<DatabaseObject> records = utilities.parseList(syncRecords, DatabaseObject.class);
-			
-			for (DatabaseObject rec : records) {
+			for (SyncRecord record : syncRecords) {
+				DatabaseObject rec = (DatabaseObject) record;
 				
 				for (MappedTableInfo mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, getRelatedOperationController().getDestAppInfo(),
-					    conn);
+					destObject = mappingInfo.generateMappedObject(rec, this.getDstApp(), conn);
 					
-					try {
-						DatabaseObjectDAO.insertWithObjectId(destObject, destConn);
+					if (mergingRecs.get(mappingInfo.getTableName()) == null) {
+						mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
 					}
-					catch (DBException e) {
-						try {
-							boolean connIsClosed = true;
-							
-							try {
-								connIsClosed = destConn.isClosed();
-							}
-							catch (SQLException e2) {
-								e2.printStackTrace();
-							}
-							
-							if (connIsClosed) {
-								destConn.finalizeConnection();
-								
-								logWarn("Connection is closed... the current work will be restarted...");
-								
-								performeSync(syncRecords, conn);
-							} else if (DBUtilities.isPostgresDB(destConn)) {
-								/*
-								 * PosgresSql fails when you continue to use a connection which previously encountered an exception
-								 * So we are committing before try to use the connection again
-								 * 
-								 * NOTE that we are taking risk if some other bug happen and the transaction need to be aborted
-								 */
-								try {
-									destConn.commit();
-								}
-								catch (SQLException e1) {
-									throw new DBException(e1);
-								}
-							}
-							
-							if (e.isDuplicatePrimaryOrUniqueKeyException()) {
-								logDebug("Record " + rec.getObjectId() + " alredy on DB");
-							} else {
-								logError("Error while copying record [" + rec.toString() + "]");
-								
-								throw e;
-							}
-						}
-						catch (DBException e1) {
-							throw e1;
-						}
-					}
+					
+					mergingRecs.get(mappingInfo.getTableName()).add(destObject);
 				}
 			}
 			
-			logInfo("'" + syncRecords.size() + "' " + tableName + " COPIED TO DESTINATION DB");
+			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
+				logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
+				syncRecords.removeAll(recordsToIgnoreOnStatistics);
+			}
+			
+			for (String key : mergingRecs.keySet()) {
+				DatabaseObjectDAO.insertAllDataWithoutId(mergingRecs.get(key), dstConn);
+			}
+			
+			logInfo("COPY DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+			
+			dstConn.markAsSuccessifullyTerminated();
 		}
 		finally {
-			if (DBUtilities.isSqlServerDB(destConn)) {
-				for (MappedTableInfo map : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
-					String dstFullTableName = map.generateFullTableName(destConn);
-					DBUtilities.executeBatch(destConn, "SET IDENTITY_INSERT " + dstFullTableName + " OFF");
-				}
-			}
-			
-			destConn.markAsSuccessifullyTerminated();
-			destConn.finalizeConnection();
+			dstConn.finalizeConnection();
 		}
 	}
 	
 	@Override
 	public void requestStop() {
+	}
+	
+	public AppInfo getDstApp() {
+		return this.getRelatedOperationController().getDstAppInfo();
+	}
+	
+	public AppInfo getSrcApp() {
+		return this.getRelatedOperationController().getSrcAppInfo();
 	}
 	
 	@Override

@@ -157,7 +157,7 @@ public class ClinicalConsultationWfdVO extends AbstractDatabaseObject implements
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO clinical_consultation_with_form_data(encounter_uuid, consultation_date, scheduled_date, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO clinical_consultation_wfd(encounter_uuid, consultation_date, scheduled_date, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -167,7 +167,7 @@ public class ClinicalConsultationWfdVO extends AbstractDatabaseObject implements
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO clinical_consultation_with_form_data(id, encounter_uuid, consultation_date, scheduled_date, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO clinical_consultation_wfd(id, encounter_uuid, consultation_date, scheduled_date, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -182,7 +182,7 @@ public class ClinicalConsultationWfdVO extends AbstractDatabaseObject implements
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE clinical_consultation_with_form_data SET encounter_uuid = ?, consultation_date = ?, scheduled_date = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
+ 		return "UPDATE clinical_consultation_wfd SET encounter_uuid = ?, consultation_date = ?, scheduled_date = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore

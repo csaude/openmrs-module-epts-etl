@@ -512,15 +512,14 @@ public class DatabaseObjectDAO extends BaseDAO {
 		} else {
 			
 			if (syncTableConfiguration.isManualIdGeneration()) {
-				insertAllDataWithId(objects, syncTableConfiguration, recordOriginLocationCode, conn);
+				insertAllDataWithId(objects, conn);
 			} else {
-				insertAllDataWithoutId(objects, syncTableConfiguration, recordOriginLocationCode, conn);
+				insertAllDataWithoutId(objects, conn);
 			}
 		}
 	}
 	
-	private static void insertAllDataWithoutId(List<DatabaseObject> objects, SyncTableConfiguration conf, String originCode,
-	        Connection conn) throws DBException {
+	public static void insertAllDataWithoutId(List<DatabaseObject> objects, Connection conn) throws DBException {
 		String sql = DBUtilities
 		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0], conn);
 		
@@ -542,8 +541,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	private static void insertAllDataWithId(List<DatabaseObject> objects, SyncTableConfiguration conf, String originCode,
-	        Connection conn) throws DBException {
+	public static void insertAllDataWithId(List<DatabaseObject> objects, Connection conn) throws DBException {
 		String sql = DBUtilities.addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0],
 		    conn);
 		
@@ -555,7 +553,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			values += "(" + objects.get(i).getObjectId() + "," + utilities.resolveScapeCharacter(objects.get(i).generateInsertValues()) + "),";
+			values += "(" + objects.get(i).getObjectId() + ","
+			        + utilities.resolveScapeCharacter(objects.get(i).generateInsertValues()) + "),";
 		}
 		
 		if (utilities.stringHasValue(values)) {

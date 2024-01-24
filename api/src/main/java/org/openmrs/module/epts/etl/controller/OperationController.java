@@ -18,7 +18,7 @@ import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
-import org.openmrs.module.epts.etl.utilities.Logger;
+import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.epts.etl.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeController;
@@ -37,7 +37,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public abstract class OperationController implements Controller {
 	
-	protected Logger logger;
+	protected EptsEtlLogger logger;
 	
 	protected ProcessController processController;
 	
@@ -66,9 +66,7 @@ public abstract class OperationController implements Controller {
 	protected OperationProgressInfo progressInfo;
 	
 	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
-		org.slf4j.Logger log4jLogger = org.slf4j.LoggerFactory.getLogger(ProcessStarter.class);
-		
-		this.logger = new Logger(log4jLogger, SyncConfiguration.determineLogLevel());
+		this.logger = new EptsEtlLogger(OperationController.class);
 		
 		this.processController = processController;
 		this.operationConfig = operationConfig;
@@ -106,7 +104,7 @@ public abstract class OperationController implements Controller {
 		return progressInfo;
 	}
 	
-	public Logger getLogger() {
+	public EptsEtlLogger getLogger() {
 		return logger;
 	}
 	
@@ -680,7 +678,7 @@ public abstract class OperationController implements Controller {
 			}
 			
 			while (!isStopped()) {
-				logger.logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED", 120);
+				logger.warn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED", 120);
 				TimeCountDown.sleep(5);
 			}
 		} else {
@@ -689,7 +687,7 @@ public abstract class OperationController implements Controller {
 				monitor.requestStopDueError();
 				
 				while (!monitor.isStopped() && !monitor.isNotInitialized()) {
-					logger.logWarn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED", 120);
+					logger.warn("STOP REQUESTED DUE AN ERROR AND WAITING FOR ALL ENGINES TO BE STOPPED", 120);
 					TimeCountDown.sleep(5);
 				}
 			}

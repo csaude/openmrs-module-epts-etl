@@ -13,14 +13,15 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject>{
+public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
+	
 	private DBQuickCopyController relatedController;
 	
-	public DBQuickCopySearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, DBQuickCopyController relatedController) {
+	public DBQuickCopySearchParams(SyncTableConfiguration tableInfo, RecordLimits limits,
+	    DBQuickCopyController relatedController) {
 		super(tableInfo, limits);
-
+		
 		this.relatedController = relatedController;
 		setOrderByFields(tableInfo.getPrimaryKey());
 	}
@@ -30,19 +31,18 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject>{
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
-			
+		
 		srsFullTableName += tableInfo.getTableName();
-			
+		
 		searchClauses.addToClauseFrom(srsFullTableName);
-	
+		
 		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addColumnToSelect("patient.*, person.uuid");
 			searchClauses.addToClauseFrom("inner join person on person.person_id = patient_id");
-		}
-		else {
+		} else {
 			searchClauses.addColumnToSelect("*");
 		}
-			
+		
 		if (limits != null) {
 			searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
 			searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
@@ -58,29 +58,27 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject>{
 	
 	@Override
 	public Class<DatabaseObject> getRecordClass() {
-		 return DatabaseEntityPOJOGenerator.tryToGetExistingCLass("org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject");
+		return DatabaseEntityPOJOGenerator
+		        .tryToGetExistingCLass("org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject");
 	}
-
+	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		OpenConnection srcConn = this.relatedController.openSrcConnection();
-		
 		RecordLimits bkpLimits = this.limits;
 		
 		this.limits = null;
 		
-		int count = SearchParamsDAO.countAll(this, srcConn);
+		int count = SearchParamsDAO.countAll(this, conn);
 		
 		this.limits = bkpLimits;
 		
-		srcConn.finalizeConnection();
-		
 		return count;
 	}
-
+	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(tableInfo, null, relatedController.getAppOriginLocationCode());
+		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(tableInfo, null,
+		        relatedController.getAppOriginLocationCode());
 		
 		int processed = syncSearchParams.countAllRecords(conn);
 		

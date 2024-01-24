@@ -10,7 +10,6 @@ import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -21,15 +20,16 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class DBQuickCopyController extends SiteOperationController {
 	
-	private DBConnectionService srcDBService;
+	private AppInfo dstConn;
+	
+	private AppInfo srcApp;
 	
 	public DBQuickCopyController(ProcessController processController, SyncOperationConfig operationConfig,
 	    String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
 		
-		AppInfo srcApp = getConfiguration().exposeAllAppsNotMain().get(0);
-		
-		this.srcDBService = DBConnectionService.init(srcApp.getConnInfo());
+		this.srcApp = getConfiguration().find(AppInfo.init("main"));
+		this.dstConn = getConfiguration().find(AppInfo.init("destination"));
 	}
 	
 	@Override
@@ -39,7 +39,7 @@ public class DBQuickCopyController extends SiteOperationController {
 	
 	@Override
 	public long getMinRecordId(SyncTableConfiguration tableInfo) {
-		OpenConnection conn = openSrcConnection();
+		OpenConnection conn = openConnection();
 		
 		try {
 			return DatabaseObjectDAO.getFirstRecord(tableInfo, conn);
@@ -56,7 +56,7 @@ public class DBQuickCopyController extends SiteOperationController {
 	
 	@Override
 	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
-		OpenConnection conn = openSrcConnection();
+		OpenConnection conn = openConnection();
 		
 		try {
 			return DatabaseObjectDAO.getLastRecord(tableInfo, conn);
@@ -76,8 +76,16 @@ public class DBQuickCopyController extends SiteOperationController {
 		return false;
 	}
 	
-	public OpenConnection openSrcConnection() {
-		return srcDBService.openConnection();
+	public OpenConnection openDstConnection() {
+		return dstConn.openConnection();
+	}
+	
+	public AppInfo getDstApp() {
+		return dstConn;
+	}
+	
+	public AppInfo getSrcApp() {
+		return srcApp;
 	}
 	
 	@Override

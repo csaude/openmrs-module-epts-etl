@@ -167,7 +167,7 @@ public class DsdWfdVO extends AbstractDatabaseObject implements DatabaseObject {
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO dsd_with_form_data(encounter_uuid, dsd_id, dsd_state_id, dsd_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO dsd_wfd(encounter_uuid, dsd_id, dsd_state_id, dsd_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -177,7 +177,7 @@ public class DsdWfdVO extends AbstractDatabaseObject implements DatabaseObject {
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO dsd_with_form_data(id, encounter_uuid, dsd_id, dsd_state_id, dsd_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO dsd_wfd(id, encounter_uuid, dsd_id, dsd_state_id, dsd_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -192,7 +192,7 @@ public class DsdWfdVO extends AbstractDatabaseObject implements DatabaseObject {
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE dsd_with_form_data SET encounter_uuid = ?, dsd_id = ?, dsd_state_id = ?, dsd_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
+ 		return "UPDATE dsd_wfd SET encounter_uuid = ?, dsd_id = ?, dsd_state_id = ?, dsd_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
