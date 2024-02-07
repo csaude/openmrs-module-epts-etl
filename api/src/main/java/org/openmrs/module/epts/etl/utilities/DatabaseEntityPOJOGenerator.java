@@ -7,9 +7,6 @@ import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,11 +20,10 @@ import javax.tools.ToolProvider;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.SyncExeption;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DatabaseEntityPOJOGenerator {
@@ -36,22 +32,21 @@ public class DatabaseEntityPOJOGenerator {
 	
 	static final String[] ignorableFields = { "date_changed", "date_created", "uuid" };
 	
-	public static Class<DatabaseObject> generate(SyncTableConfiguration syncTableInfo, AppInfo application)
+	public static Class<DatabaseObject> generate(PojobleDatabaseObject pojoble, AppInfo application)
 	        throws IOException, SQLException, ClassNotFoundException {
-		if (!syncTableInfo.isFullLoaded())
-			syncTableInfo.fullLoad();
+		if (!pojoble.isFullLoaded())
+			pojoble.fullLoad();
 		
-		String pojoRootFolder = syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath();
+		String pojoRootFolder = pojoble.getPOJOSourceFilesDirectory().getAbsolutePath();
 		
 		pojoRootFolder += "/org/openmrs/module/epts.etl/model/pojo/";
 		
-		File sourceFile = new File(pojoRootFolder + syncTableInfo.getClasspackage(application) + "/"
-		        + syncTableInfo.generateClassName() + ".java");
+		File sourceFile = new File(
+		        pojoRootFolder + pojoble.getClasspackage(application) + "/" + pojoble.generateClassName() + ".java");
 		
-		String fullClassName = syncTableInfo.generateFullClassName(application);
+		String fullClassName = pojoble.generateFullClassName(application);
 		
-		Class<DatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName,
-		    syncTableInfo.getRelatedSyncConfiguration());
+		Class<DatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName, pojoble.getRelatedSyncConfiguration());
 		
 		if (existingCLass != null) {
 			if (!Modifier.isAbstract(existingCLass.getModifiers())) {
@@ -63,28 +58,10 @@ public class DatabaseEntityPOJOGenerator {
 		String getttersAndSetterDefinition = "";
 		String resultSetLoadDefinition = "		";
 		
-		OpenConnection conn = application.openConnection();
-		
-		PreparedStatement st;
-		ResultSet rs;
-		ResultSetMetaData rsMetaData;
-		
-		try {
-			String tableName = DBUtilities.tryToPutSchemaOnDatabaseObject(syncTableInfo.getTableName(), conn);
-			
-			st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
-			
-			rs = st.executeQuery();
-			rsMetaData = rs.getMetaData();
-		}
-		finally {
-			conn.finalizeConnection();
-		}
-		
 		String insertSQLFieldsWithoutObjectId = "";
 		String insertSQLQuestionMarksWithoutObjectId = "";
 		
-		String updateSQLDefinition = "UPDATE " + syncTableInfo.getTableName() + " SET ";
+		String updateSQLDefinition = "UPDATE " + pojoble.getObjectName() + " SET ";
 		
 		String insertParamsWithoutObjectId = "";
 		String updateParamsDefinition = "Object[] params = {";
@@ -93,13 +70,14 @@ public class DatabaseEntityPOJOGenerator {
 		
 		AttDefinedElements attElements;
 		
-		int qtyAttrs = rsMetaData.getColumnCount();
+		int qtyAttrs = pojoble.getFields().size();
 		
-		for (int i = 1; i <= qtyAttrs - 1; i++) {
-			attElements = AttDefinedElements.define(rsMetaData.getColumnName(i), rsMetaData.getColumnTypeName(i), false,
-			    syncTableInfo);
+		for (int i = 0; i < qtyAttrs - 1; i++) {
+			Field field = pojoble.getFields().get(i);
 			
-			if (!isIgnorableField(rsMetaData.getColumnName(i))) {
+			attElements = AttDefinedElements.define(field.getName(), field.getType(), false, pojoble);
+			
+			if (!isIgnorableField(field.getName())) {
 				attsDefinition = utilities.concatStringsWithSeparator(attsDefinition, attElements.getAttDefinition(), "\n");
 				getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition,
 				    attElements.getSetterDefinition());
@@ -131,10 +109,11 @@ public class DatabaseEntityPOJOGenerator {
 			resultSetLoadDefinition += "\n		";
 		}
 		
-		attElements = AttDefinedElements.define(rsMetaData.getColumnName(qtyAttrs), rsMetaData.getColumnTypeName(qtyAttrs),
-		    true, syncTableInfo);
+		Field field = pojoble.getFields().get(qtyAttrs - 1);
 		
-		if (!isIgnorableField(rsMetaData.getColumnName(qtyAttrs))) {
+		attElements = AttDefinedElements.define(field.getName(), field.getType(), true, pojoble);
+		
+		if (!isIgnorableField(field.getName())) {
 			attsDefinition = utilities.concatStringsWithSeparator(attsDefinition, attElements.getAttDefinition(), "\n");
 			getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition,
 			    attElements.getSetterDefinition());
@@ -146,7 +125,7 @@ public class DatabaseEntityPOJOGenerator {
 			    attElements.getGetterDefinition());
 		}
 		
-		updateSQLDefinition += attElements.getSqlUpdateDefinition() + " WHERE " + syncTableInfo.getPrimaryKey() + " = ?;";
+		updateSQLDefinition += attElements.getSqlUpdateDefinition() + " WHERE " + pojoble.getPrimaryKey() + " = ?;";
 		
 		updateParamsDefinition += attElements.getSqlUpdateParamDefinifion();
 		
@@ -160,55 +139,36 @@ public class DatabaseEntityPOJOGenerator {
 		insertSQLQuestionMarksWithoutObjectId = utilities.concatStrings(insertSQLQuestionMarksWithoutObjectId,
 		    attElements.getSqlInsertLastEndPartDefinition());
 		
-		if (syncTableInfo.getPrimaryKey() != null) {
-			updateParamsDefinition += ", this." + syncTableInfo.getPrimaryKeyAsClassAtt() + "};";
+		if (pojoble.getPrimaryKey() != null) {
+			updateParamsDefinition += ", this." + pojoble.getPrimaryKeyAsClassAtt() + "};";
 		} else {
 			updateParamsDefinition += ", null};";
 		}
 		
-		String insertSQLDefinitionWithoutObjectId = "INSERT INTO " + syncTableInfo.getTableName() + "("
+		String insertSQLDefinitionWithoutObjectId = "INSERT INTO " + pojoble.getObjectName() + "("
 		        + insertSQLFieldsWithoutObjectId + ") VALUES( " + insertSQLQuestionMarksWithoutObjectId + ");";
 		String insertParamsWithoutObjectIdDefinition = "Object[] params = {" + insertParamsWithoutObjectId + "};";
 		
-		String insertSQLDefinitionWithObjectId = "INSERT INTO " + syncTableInfo.getTableName() + "("
-		        + syncTableInfo.getPrimaryKey() + ", " + insertSQLFieldsWithoutObjectId + ") VALUES(?, "
-		        + insertSQLQuestionMarksWithoutObjectId + ");";
-		String insertParamsWithObjectIdDefinition = "Object[] params = {this." + syncTableInfo.getPrimaryKeyAsClassAtt()
-		        + ", " + insertParamsWithoutObjectId + "};";
+		String insertSQLDefinitionWithObjectId = "INSERT INTO " + pojoble.getObjectName() + "(" + pojoble.getPrimaryKey()
+		        + ", " + insertSQLFieldsWithoutObjectId + ") VALUES(?, " + insertSQLQuestionMarksWithoutObjectId + ");";
+		String insertParamsWithObjectIdDefinition = "Object[] params = {this." + pojoble.getPrimaryKeyAsClassAtt() + ", "
+		        + insertParamsWithoutObjectId + "};";
 		
 		insertValuesDefinition += attElements.getSqlInsertValues();
 		
-		//GENERATE INFO FOR UNAVALIABLE COLUMNS
-		//if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "uuid", conn)) {
-		//	getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("uuid", "String");
-		//}
-		
-		/*
-		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "origin_record_id", conn)) {
-			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("originRecordId", "int");
-		}
-		
-		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "origin_app_location_code", conn)) {
-			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("originAppLocationCode", "String");
-		}
-		
-		if (!DBUtilities.isColumnExistOnTable(syncTableInfo.getTableName(), "consistent", conn)) {
-			getttersAndSetterDefinition += generateDefaultGetterAndSetterDefinition("consistent", "int");
-		}*/
-		
 		String methodFromSuperClass = "";
 		
-		String primaryKeyAtt = syncTableInfo.hasPK() ? syncTableInfo.getPrimaryKeyAsClassAtt() : null;
+		String primaryKeyAtt = pojoble.hasPK() ? pojoble.getPrimaryKeyAsClassAtt() : null;
 		
 		methodFromSuperClass += "	public Integer getObjectId() { \n ";
-		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK())
+		if (pojoble.isNumericColumnType() && pojoble.hasPK())
 			methodFromSuperClass += "		return this." + primaryKeyAtt + "; \n";
 		else
 			methodFromSuperClass += "		return 0; \n";
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	public void setObjectId(Integer selfId){ \n";
-		if (syncTableInfo.isNumericColumnType() && syncTableInfo.hasPK())
+		if (pojoble.isNumericColumnType() && pojoble.hasPK())
 			methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
 		methodFromSuperClass += "	} \n \n";
 		
@@ -219,7 +179,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
 		methodFromSuperClass += "	public String generateDBPrimaryKeyAtt(){ \n ";
-		methodFromSuperClass += "		return \"" + syncTableInfo.getPrimaryKey() + "\"; \n";
+		methodFromSuperClass += "		return \"" + pojoble.getPrimaryKey() + "\"; \n";
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
@@ -263,8 +223,8 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public boolean hasParents() {\n";
 		
-		if (utilities.arrayHasElement(syncTableInfo.getParents())) {
-			for (RefInfo refInfo : syncTableInfo.getParents()) {
+		if (utilities.arrayHasElement(pojoble.getParents())) {
+			for (RefInfo refInfo : pojoble.getParents()) {
 				if (refInfo.isNumericRefColumn()) {
 					methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName()
 					        + " != 0) return true;\n\n";
@@ -282,8 +242,8 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public Integer getParentValue(String parentAttName) {";
 		
-		if (utilities.arrayHasElement(syncTableInfo.getParents())) {
-			for (RefInfo refInfo : syncTableInfo.getParents()) {
+		if (utilities.arrayHasElement(pojoble.getParents())) {
+			for (RefInfo refInfo : pojoble.getParents()) {
 				if (refInfo.isNumericRefColumn()) {
 					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
 					        + refInfo.getRefColumnAsClassAttName() + "\")) return this."
@@ -295,8 +255,8 @@ public class DatabaseEntityPOJOGenerator {
 			}
 		}
 		
-		if (utilities.arrayHasElement(syncTableInfo.getConditionalParents())) {
-			for (RefInfo refInfo : syncTableInfo.getConditionalParents()) {
+		if (utilities.arrayHasElement(pojoble.getConditionalParents())) {
+			for (RefInfo refInfo : pojoble.getConditionalParents()) {
 				if (refInfo.isNumericRefColumn()) {
 					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
 					        + refInfo.getRefColumnAsClassAttName() + "\")) return this."
@@ -318,8 +278,8 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public void changeParentValue(String parentAttName, DatabaseObject newParent) {";
 		
-		if (utilities.arrayHasElement(syncTableInfo.getParents())) {
-			for (RefInfo refInfo : syncTableInfo.getParents()) {
+		if (utilities.arrayHasElement(pojoble.getParents())) {
+			for (RefInfo refInfo : pojoble.getParents()) {
 				if (refInfo.isNumericRefColumn()) {
 					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
 					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
@@ -334,8 +294,8 @@ public class DatabaseEntityPOJOGenerator {
 			}
 		}
 		
-		if (utilities.arrayHasElement(syncTableInfo.getConditionalParents())) {
-			for (RefInfo refInfo : syncTableInfo.getConditionalParents()) {
+		if (utilities.arrayHasElement(pojoble.getConditionalParents())) {
+			for (RefInfo refInfo : pojoble.getConditionalParents()) {
 				if (refInfo.isNumericRefColumn()) {
 					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
 					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
@@ -359,8 +319,8 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public void setParentToNull(String parentAttName) {";
 		
-		if (utilities.arrayHasElement(syncTableInfo.getParents())) {
-			for (RefInfo refInfo : syncTableInfo.getParents()) {
+		if (utilities.arrayHasElement(pojoble.getParents())) {
+			for (RefInfo refInfo : pojoble.getParents()) {
 				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName()
 				        + "\")) {\n			this." + refInfo.getRefColumnAsClassAttName()
 				        + " = null;\n			return;\n		}";
@@ -373,7 +333,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		methodFromSuperClass += "	}\n\n";
 		
-		String classDefinition = "package " + syncTableInfo.generateFullPackageName(application) + ";\n\n";
+		String classDefinition = "package " + pojoble.generateFullPackageName(application) + ";\n\n";
 		
 		classDefinition += "import org.openmrs.module.epts.etl.model.pojo.generic.*; \n \n";
 		classDefinition += "import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; \n \n";
@@ -382,11 +342,11 @@ public class DatabaseEntityPOJOGenerator {
 		classDefinition += "import java.sql.ResultSet; \n \n";
 		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";
 		
-		classDefinition += "public class " + syncTableInfo.generateClassName()
+		classDefinition += "public class " + pojoble.generateClassName()
 		        + " extends AbstractDatabaseObject implements DatabaseObject { \n";
 		classDefinition += attsDefinition + "\n \n";
-		classDefinition += "	public " + syncTableInfo.generateClassName() + "() { \n";
-		classDefinition += "		this.metadata = " + syncTableInfo.isMetadata() + ";\n";
+		classDefinition += "	public " + pojoble.generateClassName() + "() { \n";
+		classDefinition += "		this.metadata = " + pojoble.isMetadata() + ";\n";
 		classDefinition += "	} \n \n";
 		classDefinition += getttersAndSetterDefinition + "\n \n";
 		classDefinition += methodFromSuperClass + "\n";
@@ -401,15 +361,12 @@ public class DatabaseEntityPOJOGenerator {
 		
 		writer.close();
 		
-		compile(sourceFile, syncTableInfo, application);
+		compile(sourceFile, pojoble, application);
 		
-		st.close();
-		rs.close();
-		
-		existingCLass = tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSyncConfiguration());
+		existingCLass = tryToGetExistingCLass(fullClassName, pojoble.getRelatedSyncConfiguration());
 		
 		if (existingCLass == null)
-			throw new SyncExeption("The class for " + syncTableInfo.getTableName() + " was not created!") {
+			throw new SyncExeption("The class for " + pojoble.getObjectName() + " was not created!") {
 				
 				private static final long serialVersionUID = 1L;
 			};
@@ -427,43 +384,42 @@ public class DatabaseEntityPOJOGenerator {
 		return false;
 	}
 	
-	public static Class<DatabaseObject> generateSkeleton(SyncTableConfiguration syncTableInfo, AppInfo application)
+	public static Class<DatabaseObject> generateSkeleton(PojobleDatabaseObject pojoable, AppInfo application)
 	        throws IOException, SQLException, ClassNotFoundException {
-		if (!syncTableInfo.isFullLoaded())
-			syncTableInfo.fullLoad();
+		if (!pojoable.isFullLoaded())
+			pojoable.fullLoad();
 		
-		String pojoRootPackage = syncTableInfo.getPOJOSourceFilesDirectory().getAbsolutePath();
+		String pojoRootPackage = pojoable.getPOJOSourceFilesDirectory().getAbsolutePath();
 		
-		pojoRootPackage += syncTableInfo.isDestinationInstallationType() ? "/org/openmrs/module/epts.etl/model/pojo/"
+		pojoRootPackage += pojoable.isDestinationInstallationType() ? "/org/openmrs/module/epts.etl/model/pojo/"
 		        : "/org/openmrs/module/epts.etl/model/pojo/source/";
 		
-		File sourceFile = new File(pojoRootPackage + syncTableInfo.getClasspackage(application) + "/"
-		        + syncTableInfo.generateClassName() + ".java");
+		File sourceFile = new File(
+		        pojoRootPackage + pojoable.getClasspackage(application) + "/" + pojoable.generateClassName() + ".java");
 		
 		String fullClassName = "org.openmrs.module.epts.etl.model.pojo";
 		
-		fullClassName += syncTableInfo.isDestinationInstallationType() ? "." : fullClassName + "source.";
+		fullClassName += pojoable.isDestinationInstallationType() ? "." : fullClassName + "source.";
 		
-		fullClassName += syncTableInfo.getClasspackage(application) + "."
+		fullClassName += pojoable.getClasspackage(application) + "."
 		        + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
 		
-		Class<DatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName,
-		    syncTableInfo.getRelatedSyncConfiguration());
+		Class<DatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName, pojoable.getRelatedSyncConfiguration());
 		
 		if (existingCLass != null)
 			return existingCLass;
 		
 		String classDefinition = "package org.openmrs.module.epts.etl.model.pojo.";
 		
-		classDefinition += syncTableInfo.isDestinationInstallationType() ? "" : "source.";
+		classDefinition += pojoable.isDestinationInstallationType() ? "" : "source.";
 		
-		classDefinition += syncTableInfo.getClasspackage(application) + "; \n \n";
+		classDefinition += pojoable.getClasspackage(application) + "; \n \n";
 		
 		classDefinition += "import org.openmrs.module.epts.etl.model.pojo.generic.*; \n \n";
 		
-		classDefinition += "public abstract class " + syncTableInfo.generateClassName()
+		classDefinition += "public abstract class " + pojoable.generateClassName()
 		        + " extends AbstractDatabaseObject implements DatabaseObject { \n";
-		classDefinition += "	public " + syncTableInfo.generateClassName() + "() { \n";
+		classDefinition += "	public " + pojoable.generateClassName() + "() { \n";
 		classDefinition += "	} \n \n";
 		classDefinition += "}";
 		
@@ -475,11 +431,11 @@ public class DatabaseEntityPOJOGenerator {
 		
 		writer.close();
 		
-		compile(sourceFile, syncTableInfo, application);
+		compile(sourceFile, pojoable, application);
 		
-		return tryToGetExistingCLass(fullClassName, syncTableInfo.getRelatedSyncConfiguration());
+		return tryToGetExistingCLass(fullClassName, pojoable.getRelatedSyncConfiguration());
 	}
-
+	
 	public static Class<DatabaseObject> tryToGetExistingCLass(String fullClassName, SyncConfiguration syncConfiguration) {
 		Class<DatabaseObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
 		
@@ -489,6 +445,10 @@ public class DatabaseEntityPOJOGenerator {
 			
 			if (clazz == null) {
 				clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getClassPathAsFile());
+			}
+			
+			if (clazz == null) {
+				clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getPOJOCompiledFilesDirectory());
 			}
 		}
 		
@@ -545,8 +505,8 @@ public class DatabaseEntityPOJOGenerator {
 		}
 	}
 	
-	public static void compile(File sourceFile, SyncTableConfiguration tableConfiguration, AppInfo app) throws IOException {
-		File destinationFile = tableConfiguration.getPOJOCopiledFilesDirectory();
+	public static void compile(File sourceFile, PojobleDatabaseObject pojoble, AppInfo app) throws IOException {
+		File destinationFile = pojoble.getPOJOCopiledFilesDirectory();
 		
 		if (!destinationFile.exists())
 			FileUtilities.tryToCreateDirectoryStructure(destinationFile.getAbsolutePath());
@@ -560,7 +520,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		classPathFiles.add(destinationFile);
 		
-		addAllToClassPath(classPathFiles, tableConfiguration.getClassPath());
+		addAllToClassPath(classPathFiles, pojoble.getClassPath());
 		
 		fileManager.setLocation(StandardLocation.CLASS_PATH, classPathFiles);
 		
@@ -569,7 +529,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		fileManager.close();
 		
-		ClassPathUtilities.addClassToClassPath(tableConfiguration, app);
+		ClassPathUtilities.addClassToClassPath(pojoble, app);
 	}
 	
 }

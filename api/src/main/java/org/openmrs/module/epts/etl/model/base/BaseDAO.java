@@ -288,7 +288,7 @@ public abstract class BaseDAO {
 		}
 	}
 	
-	private static void loadParamsToStatment(PreparedStatement st, Object[] params, Connection conn)
+	public static void loadParamsToStatment(PreparedStatement st, Object[] params, Connection conn)
 	        throws SQLException, IOException {
 		if (params == null)
 			return;

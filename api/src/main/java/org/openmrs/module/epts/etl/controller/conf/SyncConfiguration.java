@@ -231,6 +231,11 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
+	public boolean isPojoGeneration() {
+		return processType.isPojoGeneration();
+	}
+	
+	@JsonIgnore
 	public boolean isDBReSyncProcess() {
 		return processType.isDBResync();
 	}
@@ -684,7 +689,9 @@ public class SyncConfiguration extends BaseConfiguration {
 		
 		List<SyncOperationType> supportedOperations = null;
 		
-		if (isSourceSyncProcess()) {
+		if (isPojoGeneration()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInPojoGenerationProcess();
+		} else if (isSourceSyncProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInSourceSyncProcess();
 		} else if (isDataBaseMergeFromJSONProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInDestinationSyncProcess();

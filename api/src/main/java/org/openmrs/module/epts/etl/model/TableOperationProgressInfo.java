@@ -36,6 +36,7 @@ public class TableOperationProgressInfo extends BaseVO {
 	private String originAppLocationCode;
 	
 	public TableOperationProgressInfo() {
+		this.originAppLocationCode = "";
 	}
 	
 	@Override

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
@@ -21,16 +22,16 @@ public class FieldsMapping {
 	
 	private String srcField;
 	
-	private String srcTable;
+	private String srcName;
 	
 	private String destField;
 	
 	public FieldsMapping() {
 	}
 	
-	public FieldsMapping(String srcField, String srcTable, String destField) {
+	public FieldsMapping(String srcField, String srcName, String destField) {
 		this.srcField = srcField;
-		this.srcTable = srcTable;
+		this.srcName = srcName;
 		this.destField = destField;
 	}
 	
@@ -58,12 +59,12 @@ public class FieldsMapping {
 		this.srcField = srcField;
 	}
 	
-	public String getSrcTable() {
-		return srcTable;
+	public String getSrcName() {
+		return srcName;
 	}
 	
-	public void setSrcTable(String srcTable) {
-		this.srcTable = srcTable;
+	public void setSrcName(String srcName) {
+		this.srcName = srcName;
 	}
 	
 	@Override
@@ -81,16 +82,17 @@ public class FieldsMapping {
 		return "[srcField: " + srcField + ", destField: " + destField + "]";
 	}
 	
-	public Object retrieveValue(MappedTableInfo mappingInfo, List<DatabaseObject> srcObjects, AppInfo appInfo, Connection conn)
-	        throws DBException, ForbiddenOperationException {
+	public Object retrieveValue(SyncDestinationTableConfiguration mappingInfo, List<DatabaseObject> srcObjects, AppInfo appInfo,
+	        Connection conn) throws DBException, ForbiddenOperationException {
 		
 		for (DatabaseObject srcObject : srcObjects) {
-			if(this.getSrcTable().equals( srcObject.generateTableName())){
+			if (this.getSrcName().equals(srcObject.generateTableName())) {
 				return srcObject.getFieldValue(this.getSrcFieldAsClassField());
 			}
 		}
 		
-		throw new ForbiddenOperationException("The field '" + this.srcField + " does not belong to any configured source table");
+		throw new ForbiddenOperationException(
+		        "The field '" + this.srcField + " does not belong to any configured source table");
 	}
 	
 }

@@ -8,12 +8,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.MappedTableInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -21,9 +20,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SyncTableConfiguration extends BaseConfiguration implements Comparable<SyncTableConfiguration> {
-	
-	protected static CommonUtilities utilities = CommonUtilities.getInstance();
+public class SyncTableConfiguration extends BaseConfiguration implements Comparable<SyncTableConfiguration>, PojobleDatabaseObject {
 	
 	private String tableName;
 	
@@ -69,18 +66,18 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	 */
 	private List<List<Field>> winningRecordFieldsInfo;
 	
-	private List<MappedTableInfo> destinationTableMappingInfo;
+	private List<SyncDestinationTableConfiguration> destinationTableMappingInfo;
 	
 	private boolean manualIdGeneration;
 	
 	public SyncTableConfiguration() {
 	}
 	
-	public List<MappedTableInfo> getDestinationTableMappingInfo() {
+	public List<SyncDestinationTableConfiguration> getDestinationTableMappingInfo() {
 		return destinationTableMappingInfo;
 	}
 	
-	public void setDestinationTableMappingInfo(List<MappedTableInfo> destinationTableMappingInfo) {
+	public void setDestinationTableMappingInfo(List<SyncDestinationTableConfiguration> destinationTableMappingInfo) {
 		this.destinationTableMappingInfo = destinationTableMappingInfo;
 	}
 	
@@ -263,6 +260,12 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
+	}
+	
+	@Override
+	@JsonIgnore
+	public String getObjectName() {
+		return getTableName();
 	}
 	
 	@JsonIgnore
@@ -895,13 +898,13 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			this.fullLoaded = true;
 			
 			if (destinationTableMappingInfo == null) {
-				destinationTableMappingInfo = MappedTableInfo.generateFromSyncTableConfiguration(this);
+				destinationTableMappingInfo = SyncDestinationTableConfiguration.generateFromSyncTableConfiguration(this);
 				
 			} else {
 				
-				for (MappedTableInfo map : this.destinationTableMappingInfo) {
+				for (SyncDestinationTableConfiguration map : this.destinationTableMappingInfo) {
 					map.setRelatedSyncConfiguration(relatedSyncConfiguration);
-					map.setRelatedTableConfiguration(this);
+					map.setSrcTableConfiguration(this);
 					if (!utilities.arrayHasElement(map.getFieldsMapping())) {
 						map.generateMappingFields(this);
 					}
@@ -932,14 +935,14 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			if (utilities.arrayHasElement(otherApps)) {
 				mappedConn = otherApps.get(0).openConnection();
 				
-				for (MappedTableInfo map : this.destinationTableMappingInfo) {
+				for (SyncDestinationTableConfiguration map : this.destinationTableMappingInfo) {
+					map.setRelatedAppInfo(otherApps.get(0));
 					
 					if (DBUtilities.isTableExists(mappedConn.getSchema(), map.getTableName(), mappedConn)) {
 						map.fullLoad(mappedConn);
 						
 						this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(map.getTableName(), mappedConn);
 					}
-					
 				}
 			} else {
 				this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.getTableName(), mainConn);

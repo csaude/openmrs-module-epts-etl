@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.MappedTableInfo;
+import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.dbcopy.model.DBCopySearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -61,7 +61,7 @@ public class DBCopyEngine extends Engine {
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (MappedTableInfo mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+				for (SyncDestinationTableConfiguration mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
 					
 					DatabaseObject destObject = null;
 					

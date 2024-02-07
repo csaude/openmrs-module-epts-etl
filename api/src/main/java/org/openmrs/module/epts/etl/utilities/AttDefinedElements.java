@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 
 /**
  * Utilitie class which help to define att elements for class like Att definition, getter and setter
@@ -51,16 +51,16 @@ public class AttDefinedElements {
 	
 	private boolean isLast;
 	
-	private SyncTableConfiguration syncTableInfo;
+	private PojobleDatabaseObject pojoble;
 	
-	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, SyncTableConfiguration syncTableInfo) {
+	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, PojobleDatabaseObject pojoble) {
 		this.dbAttName = dbAttName;
 		this.dbAttType = dbAttType;
 		
-		this.isObjectId = dbAttName.equalsIgnoreCase(syncTableInfo.getPrimaryKey());
+		this.isObjectId = dbAttName.equalsIgnoreCase(pojoble.getPrimaryKey());
 		
 		this.isLast = isLast;
-		this.syncTableInfo = syncTableInfo;
+		this.pojoble = pojoble;
 	}
 	
 	public String getAttDefinition() {
@@ -272,14 +272,14 @@ public class AttDefinedElements {
 	}
 	
 	private boolean isPK() {
-		return syncTableInfo.getPrimaryKeyAsClassAtt().equals(this.attName);
+		return pojoble.getPrimaryKeyAsClassAtt().equals(this.attName);
 	}
 	
 	private boolean isSharedKey() {
 		if (!isPK())
 			return false;
 		
-		if (syncTableInfo.getSharePkWith() != null) {
+		if (pojoble.getSharePkWith() != null) {
 			return true;
 		}
 		
@@ -287,8 +287,8 @@ public class AttDefinedElements {
 	}
 	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,
-	        SyncTableConfiguration syncTableInfo) {
-		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, syncTableInfo);
+	        PojobleDatabaseObject pojoble) {
+		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, pojoble);
 		elements.generateElemets();
 		
 		return elements;

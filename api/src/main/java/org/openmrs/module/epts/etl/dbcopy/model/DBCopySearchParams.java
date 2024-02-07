@@ -2,8 +2,8 @@ package org.openmrs.module.epts.etl.dbcopy.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.MappedTableInfo;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -56,7 +56,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 				if (DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
 					String destFullTableName = DBUtilities.determineSchemaName(dstConn) + ".";
 					
-					MappedTableInfo lastMappedTable = utilities.getLastRecordOnArray(tableInfo.getDestinationTableMappingInfo());
+					SyncDestinationTableConfiguration lastMappedTable = utilities.getLastRecordOnArray(tableInfo.getDestinationTableMappingInfo());
 					
 					destFullTableName += lastMappedTable.getTableName();
 					
@@ -117,7 +117,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 		
 		try {
 			
-			MappedTableInfo lastMappedTable = utilities.getLastRecordOnArray(tableInfo.getDestinationTableMappingInfo());
+			SyncDestinationTableConfiguration lastMappedTable = utilities.getLastRecordOnArray(tableInfo.getDestinationTableMappingInfo());
 			
 			SyncTableConfiguration destTableInfo = lastMappedTable;
 			

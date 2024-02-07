@@ -4,8 +4,8 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.MappedTableInfo;
 import org.openmrs.module.epts.etl.dbquickmerge.model.MergingRecord;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;

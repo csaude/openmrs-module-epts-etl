@@ -1,12 +1,12 @@
-package org.openmrs.module.epts.etl.controller.conf.tablemapping;
+package org.openmrs.module.epts.etl.controller.conf;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.SyncExtraDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -14,33 +14,33 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class MappedTableInfo extends SyncTableConfiguration {
+public class SyncDestinationTableConfiguration extends SyncTableConfiguration {
 	
 	private List<FieldsMapping> fieldsMapping;
 	
-	private SyncTableConfiguration relatedTableConfiguration;
-	
-	private List<MappingSrcData> additionalMappingDataSrc;
+	private List<SyncExtraDataSource> extraDataSource;
 	
 	private AppInfo relatedAppInfo;
 	
-	public MappedTableInfo() {
+	private SyncTableConfiguration srcTableConfiguration;
+	
+	public SyncDestinationTableConfiguration() {
 	}
 	
-	public List<MappingSrcData> getAdditionalMappingDataSrc() {
-		return additionalMappingDataSrc;
+	public SyncTableConfiguration getSrcTableConfiguration() {
+		return srcTableConfiguration;
 	}
 	
-	public void setAdditionalMappingDataSrc(List<MappingSrcData> additionalMappingDataSrc) {
-		this.additionalMappingDataSrc = additionalMappingDataSrc;
+	public void setSrcTableConfiguration(SyncTableConfiguration srcTableConfiguration) {
+		this.srcTableConfiguration = srcTableConfiguration;
 	}
 	
-	public void setRelatedTableConfiguration(SyncTableConfiguration relatedTableConfiguration) {
-		this.relatedTableConfiguration = relatedTableConfiguration;
+	public List<SyncExtraDataSource> getExtraDataSource() {
+		return extraDataSource;
 	}
 	
-	public SyncTableConfiguration getRelatedTableConfiguration() {
-		return relatedTableConfiguration;
+	public void setExtraDataSource(List<SyncExtraDataSource> extraDataSource) {
+		this.extraDataSource = extraDataSource;
 	}
 	
 	public List<FieldsMapping> getFieldsMapping() {
@@ -64,11 +64,12 @@ public class MappedTableInfo extends SyncTableConfiguration {
 		this.fieldsMapping.add(fm);
 	}
 	
-	public static List<MappedTableInfo> generateFromSyncTableConfiguration(SyncTableConfiguration tableConfiguration) {
+	public static List<SyncDestinationTableConfiguration> generateFromSyncTableConfiguration(
+	        SyncTableConfiguration tableConfiguration) {
 		if (!tableConfiguration.isFullLoaded())
 			throw new ForbiddenOperationException("The tableInfo is not full loaded!");
 		
-		MappedTableInfo mappedTableInfo = new MappedTableInfo();
+		SyncDestinationTableConfiguration mappedTableInfo = new SyncDestinationTableConfiguration();
 		
 		mappedTableInfo.clone(tableConfiguration);
 		
@@ -76,9 +77,9 @@ public class MappedTableInfo extends SyncTableConfiguration {
 		
 		mappedTableInfo.loadAdditionalFieldsInfo();
 		
-		mappedTableInfo.setRelatedTableConfiguration(tableConfiguration);
+		mappedTableInfo.setSrcTableConfiguration(tableConfiguration);
 		
-		return utilities.parseObjectToList(mappedTableInfo, MappedTableInfo.class);
+		return utilities.parseObjectToList(mappedTableInfo, SyncDestinationTableConfiguration.class);
 	}
 	
 	public void generateMappingFields(SyncTableConfiguration tableConfiguration) {
@@ -132,6 +133,10 @@ public class MappedTableInfo extends SyncTableConfiguration {
 			
 			this.fullLoaded = true;
 			
+			for (SyncExtraDataSource src : this.getExtraDataSource()) {
+				src.setRelatedMappedTable(this);
+			}
+			
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -152,13 +157,13 @@ public class MappedTableInfo extends SyncTableConfiguration {
 		}
 	}
 	
-	public MappingSrcData findAdditionalDataSrc(String tableName) {
-		if (!utilities.arrayHasElement(this.additionalMappingDataSrc)) {
+	public SyncExtraDataSource findAdditionalDataSrc(String tableName) {
+		if (!utilities.arrayHasElement(this.extraDataSource)) {
 			return null;
 		}
 		
-		for (MappingSrcData src : this.additionalMappingDataSrc) {
-			if (src.getTableName().equals(tableName)) {
+		for (SyncExtraDataSource src : this.extraDataSource) {
+			if (src.getName().equals(tableName)) {
 				return src;
 			}
 		}
@@ -174,8 +179,8 @@ public class MappedTableInfo extends SyncTableConfiguration {
 			
 			srcObjects.add(srcObject);
 			
-			if (utilities.arrayHasElement(this.additionalMappingDataSrc)) {
-				for (MappingSrcData mappingInfo : this.additionalMappingDataSrc) {
+			if (utilities.arrayHasElement(this.extraDataSource)) {
+				for (SyncExtraDataSource mappingInfo : this.extraDataSource) {
 					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, appInfo, conn);
 					
 					if (relatedSrcObject == null) {
@@ -213,8 +218,8 @@ public class MappedTableInfo extends SyncTableConfiguration {
 		}
 		
 		for (FieldsMapping field : this.fieldsMapping) {
-			if (!utilities.stringHasValue(field.getSrcTable())) {
-				field.setSrcTable(this.relatedTableConfiguration.getTableName());
+			if (!utilities.stringHasValue(field.getSrcName())) {
+				field.setSrcName(this.getSrcTableConfiguration().getTableName());
 			}
 		}
 	}

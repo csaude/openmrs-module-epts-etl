@@ -573,7 +573,13 @@ public class SyncOperationConfig extends BaseConfiguration {
 			if (!this.canBeRunInDbCopyProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db copy process\n";
-		} else if (this.getRelatedSyncConfig().isDetectGapesOnDbTables()) {
+		} else if (this.getRelatedSyncConfig().isPojoGeneration()) {
+			if (!this.canBeRunInDbPojoGenerationProcess())
+				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
+				        + "] Cannot be configured in pojo generation process\n";
+		}
+		
+		else if (this.getRelatedSyncConfig().isDetectGapesOnDbTables()) {
 			if (!this.canBeRunInDetectGapesOnDBTables())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in detect gapes on db tables process\n";
@@ -636,6 +642,12 @@ public class SyncOperationConfig extends BaseConfiguration {
 		return utilities.parseArrayToList(supported);
 	}
 	
+	public static List<SyncOperationType> getSupportedOperationsInPojoGenerationProcess() {
+		SyncOperationType[] supported = { SyncOperationType.POJO_GENERATION };
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
 	public static List<SyncOperationType> getSupportedOperationsInDbCopyProcess() {
 		SyncOperationType[] supported = { SyncOperationType.DATABASE_PREPARATION, SyncOperationType.POJO_GENERATION,
 		        SyncOperationType.DB_COPY };
@@ -646,6 +658,11 @@ public class SyncOperationConfig extends BaseConfiguration {
 	@JsonIgnore
 	public boolean canBeRunInDbCopyProcess() {
 		return utilities.existOnArray(getSupportedOperationsInDbCopyProcess(), this.operationType);
+	}
+	
+	@JsonIgnore
+	public boolean canBeRunInDbPojoGenerationProcess() {
+		return utilities.existOnArray(getSupportedOperationsInPojoGenerationProcess(), this.operationType);
 	}
 	
 	@JsonIgnore

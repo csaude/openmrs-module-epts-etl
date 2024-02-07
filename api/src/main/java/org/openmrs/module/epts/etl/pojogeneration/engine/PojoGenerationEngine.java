@@ -5,13 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.MappedTableInfo;
+import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.SyncExtraDataSource;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
@@ -52,6 +53,10 @@ public class PojoGenerationEngine extends Engine {
 		
 		AppInfo mainApp = getSyncTableConfiguration().getMainApp();
 		
+		if (!getSyncTableConfiguration().isFullLoaded()) {
+			getSyncTableConfiguration().fullLoad();
+		}
+		
 		generate(mainApp, getSyncTableConfiguration());
 		
 		List<AppInfo> otherApps = getSyncTableConfiguration().getRelatedSyncConfiguration().exposeAllAppsNotMain();
@@ -61,15 +66,19 @@ public class PojoGenerationEngine extends Engine {
 		if (utilities.arrayHasElement(otherApps)) {
 			mappingAppInfo = otherApps.get(0);
 			
-			for (MappedTableInfo map : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+			for (SyncDestinationTableConfiguration map : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
 				map.setRelatedAppInfo(mappingAppInfo);
 				
 				generate(mappingAppInfo, map);
+				
+				for (SyncExtraDataSource src : map.getExtraDataSource()) {
+					generate(mappingAppInfo, src.getAvaliableSrc());
+				}
 			}
 		}
 	}
 	
-	private void generate(AppInfo app, SyncTableConfiguration tableConfiguration) {
+	private void generate(AppInfo app, PojobleDatabaseObject tableConfiguration) {
 		if (!utilities.stringHasValue(app.getPojoPackageName())) {
 			throw new ForbiddenOperationException("The app " + app.getApplicationCode() + " has no package name!");
 		}

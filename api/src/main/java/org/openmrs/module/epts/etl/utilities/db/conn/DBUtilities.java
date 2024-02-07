@@ -1,6 +1,5 @@
 package org.openmrs.module.epts.etl.utilities.db.conn;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -12,12 +11,11 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
@@ -710,6 +708,110 @@ public class DBUtilities {
 		uniqueKeys.add(uk);
 		
 		return true;
+	}
+	
+	public static int getQtyQuestionMarksOnQuery(String query) {
+		String[] parts = query.trim().split("\\?");
+		
+		if (query.endsWith("?")) {
+			return parts.length;
+		} else {
+			return parts.length - 1;
+		}
+	}
+	
+	public static List<Field> determineFieldsFromQuery(String query, Connection conn) throws DBException {
+		List<Field> fields = new ArrayList<Field>();
+		
+		PreparedStatement st;
+		ResultSet rs;
+		ResultSetMetaData rsMetaData;
+		
+		try {
+			st = conn.prepareStatement(query);
+			
+			int qtyQuestionMarksOnQuery = getQtyQuestionMarksOnQuery(query);
+			
+			if (qtyQuestionMarksOnQuery > 0) {
+				Object[] params = new Object[qtyQuestionMarksOnQuery];
+				
+				for (int i = 0; i < qtyQuestionMarksOnQuery; i++) {
+					params[i] = null;
+				}
+				
+				BaseDAO.loadParamsToStatment(st, params, conn);
+			}
+			
+			rs = st.executeQuery();
+			rsMetaData = rs.getMetaData();
+			
+			int qtyAttrs = rsMetaData.getColumnCount();
+			
+			for (int i = 1; i <= qtyAttrs; i++) {
+				Field field = new Field(rsMetaData.getColumnName(i));
+				field.setType(rsMetaData.getColumnTypeName(i));
+				
+				fields.add(field);
+			}
+			
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new DBException(e);
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		
+		return fields;
+	}
+	
+	public static void main(String[] args) throws DBException {
+		DBConnectionInfo connInfo = new DBConnectionInfo("root", "root", "jdbc:mysql://localhost:3306/tmp_qlm_hgq",
+		        "com.mysql.cj.jdbc.Driver");
+		
+		DBConnectionService service = DBConnectionService.init(connInfo);
+		
+		OpenConnection conn = service.openConnection();
+		
+		String query = "select encounter_datetime, patient_id from encounter where patient_id = ?";
+		
+		List<Field> a = determineFieldsFromQuery(query, conn);
+		
+		System.out.println(a);
+	}
+	
+	public static List<Field> determineFieldsFromQuery(String query) {
+		
+		String sqlFields = (query.toLowerCase().split("select")[1]).split("from")[0];
+		
+		String[] fieldsName = sqlFields.split(",");
+		
+		List<Field> fields = new ArrayList<>();
+		
+		for (String s : fieldsName) {
+			if (s.contains("*")) {
+				throw new ForbiddenOperationException("Unable to determine field from '*'");
+			}
+			
+			s = utilities.removeDuplicatedEmptySpace(s.trim());
+			
+			String fieldName = null;
+			
+			if (s.split(" as ").length > 1) {
+				fieldName = s.split(" as ")[1];
+			} else if (s.split("\\.").length > 1) {
+				fieldName = s.split("\\.")[1];
+			} else {
+				fieldName = s;
+			}
+			
+			fields.add(new Field(fieldName.trim()));
+			
+		}
+		
+		return fields;
 	}
 	
 	public static List<Field> getTableFields(String tableName, String schema, Connection conn) throws DBException {

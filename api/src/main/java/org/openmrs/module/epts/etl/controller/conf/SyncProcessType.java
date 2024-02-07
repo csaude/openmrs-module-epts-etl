@@ -18,7 +18,12 @@ public enum SyncProcessType {
 	DB_INCONSISTENCY_CHECK,
 	GENERIC_PROCESS,
 	DB_COPY,
-	DETECT_GAPES_ON_DB_TABLES;
+	DETECT_GAPES_ON_DB_TABLES,
+	POJO_GENERATION;
+	
+	public boolean isPojoGeneration() {
+		return this.equals(POJO_GENERATION);
+	}
 	
 	public boolean isDetectGapesOnDbTables() {
 		return this.equals(DETECT_GAPES_ON_DB_TABLES);

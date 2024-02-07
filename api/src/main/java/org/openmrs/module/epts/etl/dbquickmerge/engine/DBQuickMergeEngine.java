@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.MappedTableInfo;
+import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.dbquickmerge.model.MergingRecord;
@@ -123,8 +123,6 @@ public class DBQuickMergeEngine extends Engine {
 		
 		Map<String, List<MergingRecord>> mergingRecs = new HashMap<>();
 		
-		//(syncRecords.size());
-		
 		try {
 			int currObjectId = 0;
 			
@@ -135,7 +133,7 @@ public class DBQuickMergeEngine extends Engine {
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (MappedTableInfo mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+				for (SyncDestinationTableConfiguration mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
 					
 					DatabaseObject destObject = null;
 					
@@ -145,8 +143,8 @@ public class DBQuickMergeEngine extends Engine {
 						destObject.setObjectId(currObjectId++);
 					}
 					
-					MergingRecord mr = new MergingRecord(destObject, getSyncTableConfiguration(), this.getSrcApp(), this.getDstApp(),
-					        false);
+					MergingRecord mr = new MergingRecord(destObject, getSyncTableConfiguration(), this.getSrcApp(),
+					        this.getDstApp(), false);
 					
 					if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 						mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
@@ -166,6 +164,12 @@ public class DBQuickMergeEngine extends Engine {
 			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
 			
 			dstConn.markAsSuccessifullyTerminated();
+		}
+		catch (Exception e) {
+			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits()
+			        + "]... \n Try to performe merge record by record...");
+			
+			performeSyncOneByOne(syncRecords, srcConn);
 		}
 		finally {
 			dstConn.finalizeConnection();
@@ -197,7 +201,7 @@ public class DBQuickMergeEngine extends Engine {
 				
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (MappedTableInfo mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+				for (SyncDestinationTableConfiguration mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
 					
 					DatabaseObject destObject = null;
 					
@@ -209,8 +213,8 @@ public class DBQuickMergeEngine extends Engine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					MergingRecord data = new MergingRecord(destObject, getSyncTableConfiguration(), this.getSrcApp(), this.getDstApp(),
-					        wrt);
+					MergingRecord data = new MergingRecord(destObject, getSyncTableConfiguration(), this.getSrcApp(),
+					        this.getDstApp(), wrt);
 					
 					try {
 						process(data, startingStrLog, 0, conn, dstConn);

@@ -20,6 +20,7 @@ import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsClassLoader;
 
@@ -194,13 +195,13 @@ public class ClassPathUtilities {
 		}
 	}
 
-	public static void addClassToClassPath(SyncTableConfiguration tableConfiguration, AppInfo app){
-		String pojoPackageDir = tableConfiguration.getRelatedSyncConfiguration().getPojoPackageAsDirectory(app).getAbsolutePath();
+	public static void addClassToClassPath(PojobleDatabaseObject pojoble, AppInfo app){
+		String pojoPackageDir = pojoble.getRelatedSyncConfiguration().getPojoPackageAsDirectory(app).getAbsolutePath();
 		
-		File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + tableConfiguration.generateClassName() + ".class");
+		File clazzFile = new File(pojoPackageDir + FileUtilities.getPathSeparator() + pojoble.generateClassName() + ".class");
 		
 		if (clazzFile.exists()) {
-			addClassToClassPath(utilities.parseObjectToArray(clazzFile), tableConfiguration.getRelatedSyncConfiguration().getPojoPackageRelativePath(app), tableConfiguration.getRelatedSyncConfiguration());
+			addClassToClassPath(utilities.parseObjectToArray(clazzFile), pojoble.getRelatedSyncConfiguration().getPojoPackageRelativePath(app), pojoble.getRelatedSyncConfiguration());
 		}
 	}
 	
