@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.utilities;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -21,6 +22,7 @@ import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.base.BaseVO;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1045,5 +1047,44 @@ public class CommonUtilities implements Serializable {
 		}
 		
 		return map;
+	}
+	
+	public Object getFieldValue(Object obj, String fieldsName) {
+		Object[] values = getFieldValues(obj, fieldsName);
+		
+		if (utilities.arrayHasElement(values)) {
+			return values[0];
+		}
+		
+		return null;
+	}
+	
+	public Object[] getFieldValues(Object obj, String... fieldsName) {
+		List<Object> values = new ArrayList<Object>();
+		
+		Object[] fields = BaseVO.getFields(obj);
+		
+		for (String fieldName : fieldsName) {
+			for (int i = 0; i < fields.length; i++) {
+				Field field = (Field) fields[i];
+				
+				if (!field.getName().equals(fieldName))
+					continue;
+				
+				try {
+					if (field.get(obj) != null)
+						values.add(field.get(obj));
+				}
+				catch (IllegalArgumentException e) {
+					throw new RuntimeException(e);
+				}
+				catch (IllegalAccessException e) {
+					throw new RuntimeException(e);
+				}
+			}
+			
+		}
+		
+		return values != null ? utilities.parseListToArray(values) : null;
 	}
 }

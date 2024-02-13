@@ -60,10 +60,10 @@ public class ChangedRecordsDetectorController extends OperationController {
 			
 			if (operationConfig.isChangedRecordsDetector()) {
 				return DetectedRecordInfoDAO.getFirstChangedRecord(tableInfo,
-				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
 				return DetectedRecordInfoDAO.getFirstNewRecord(tableInfo, this.getActionPerformeApp().getApplicationCode(),
-				    getConfiguration().getObservationDate(), conn);
+				    getConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(
 				        "The operation '" + getOperationType() + "' is not supported in this controller!");
@@ -85,10 +85,10 @@ public class ChangedRecordsDetectorController extends OperationController {
 		try {
 			if (operationConfig.isChangedRecordsDetector()) {
 				return DetectedRecordInfoDAO.getLastChangedRecord(tableInfo,
-				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getObservationDate(), conn);
+				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
 				return DetectedRecordInfoDAO.getLastNewRecord(tableInfo, this.getActionPerformeApp().getApplicationCode(),
-				    getConfiguration().getObservationDate(), conn);
+				    getConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(
 				        "The operation '" + getOperationType() + "' is not supported in this controller!");

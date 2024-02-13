@@ -47,7 +47,7 @@ public class DBCopyEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	public void performeSync(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
 		logInfo("PERFORMING BATCH COPY ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
@@ -65,7 +65,7 @@ public class DBCopyEngine extends Engine {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, this.getDstApp(), conn);
+					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 						mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
@@ -110,7 +110,7 @@ public class DBCopyEngine extends Engine {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DBCopySearchParams(this.getSyncTableConfiguration(),
 		        limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

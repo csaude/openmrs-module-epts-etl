@@ -2,6 +2,8 @@ package org.openmrs.module.epts.etl.controller.conf;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -12,6 +14,7 @@ import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -29,7 +32,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	
 	private String query;
 	
-	private String pathToQuery;
+	private String script;
 	
 	private List<Field> fields;
 	
@@ -57,12 +60,12 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		this.relatedSrcExtraDataSrc = relatedSrcExtraDataSrc;
 	}
 	
-	public String getPathToQuery() {
-		return pathToQuery;
+	public String getScript() {
+		return script;
 	}
 	
-	public void setPathToQuery(String pathToQuery) {
-		this.pathToQuery = pathToQuery;
+	public void setScript(String script) {
+		this.script = script;
 	}
 	
 	public List<Field> getFields() {
@@ -82,7 +85,27 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	}
 	
 	public String getQuery() {
+		if (!utilities.stringHasValue(query) && utilities.stringHasValue(this.script)) {
+			loadQueryFromFile();
+		}
+		
+		if (!utilities.stringHasValue(query)) {
+			throw new ForbiddenOperationException("No query was defined!");
+		}
+		
 		return query;
+	}
+	
+	private void loadQueryFromFile() {
+		String pathToScript = getRelatedSyncConfiguration().getSqlScriptsDirectory().getAbsolutePath() + File.separator
+		        + this.script;
+		
+		try {
+			this.query = new String(Files.readAllBytes(Paths.get(pathToScript)));
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	public void setQuery(String query) {
@@ -93,15 +116,27 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		return fullLoaded;
 	}
 	
-	public synchronized void fullLoad() throws DBException {
-		OpenConnection conn = relatedSrcExtraDataSrc.getRelatedDestinationTableConf().getRelatedAppInfo().openConnection();
+	@Override
+	public void fullLoad() throws DBException {
+		OpenConnection conn = getRelatedSrcExtraDataSrc().getRelatedDestinationTableConf().getMainApp().openConnection();
 		
-		setFields(DBUtilities.determineFieldsFromQuery(this.query, conn));
+		try {
+			fullLoad(conn);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	@Override
+	public synchronized void fullLoad(Connection conn) throws DBException {
+		setFields(DBUtilities.determineFieldsFromQuery(this.getQuery(), conn));
 		
 		this.fullLoaded = true;
 	}
 	
 	@JsonIgnore
+	@Override
 	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		if (syncRecordClass == null)
 			this.syncRecordClass = DatabaseEntityPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application),
@@ -218,8 +253,9 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	}
 	
 	@JsonIgnore
+	@Override
 	public String generateClassName() {
-		return generateClassName(this.name);
+		return generateClassName(this.name + "_query_result");
 	}
 	
 	private String generateClassName(String tableName) {
@@ -246,12 +282,12 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	
 	@Override
 	public String getPrimaryKey() {
-		return "fictitious_pk";
+		return null;
 	}
 	
 	@Override
 	public String getPrimaryKeyAsClassAtt() {
-		return "fictitiousPk";
+		return null;
 	}
 	
 	@Override
@@ -299,15 +335,79 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		return false;
 	}
 	
-	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, AppInfo appInfo, Connection conn)
+	@Override
+	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
 	        throws DBException {
 		
 		Object[] params = generateParams(mainObject);
 		
-		return DatabaseObjectDAO.find(this.getSyncRecordClass(appInfo), getQuery(), params, conn);
+		return DatabaseObjectDAO.find(this.getSyncRecordClass(srcAppInfo), getQuery(), params, srcConn);
 	}
 	
 	Object[] generateParams(DatabaseObject mainObject) {
-		return null;
+		Object[] params = null;
+		
+		if (utilities.arrayHasElement(this.params)) {
+			params = new Object[this.params.size()];
+			
+			for (int i = 0; i < this.params.size(); i++) {
+				Field field = this.params.get(i);
+				
+				String[] fieldsParts = field.getName().split("\\.");
+				
+				Object paramValue = null;
+				
+				String paramName;
+				
+				/*
+				 * The params values could be from the main source object or from configuration file.
+				 * 
+				 *  If the param is from the configuration file then its name will start with 'config.' followed by the name of param 
+				 */
+				if (fieldsParts.length > 1) {
+					//This mean that the param value is from the configuration file
+					if (fieldsParts[0].toLowerCase().equals("config")) {
+						paramName = fieldsParts[1];
+						
+						paramValue = getParamValueFromSyncConfiguration(paramName);
+					} else if (fieldsParts[0].toLowerCase().equals(mainObject.generateTableName())) {
+						paramName = AttDefinedElements.convertTableAttNameToClassAttName(field.getName());
+						
+						paramValue = getParamValueFromSourceMainObject(mainObject, paramName);
+					}
+				} else {
+					paramName = AttDefinedElements.convertTableAttNameToClassAttName(field.getName());
+					
+					paramValue = getParamValueFromSourceMainObject(mainObject, paramName);
+				}
+				
+				params[i] = paramValue;
+			}
+		}
+		
+		return params;
 	}
+	
+	Object getParamValueFromSyncConfiguration(String param) {
+		Object paramValue = utilities.getFieldValue(getRelatedSyncConfiguration(), param);
+		
+		if (paramValue == null) {
+			throw new ForbiddenOperationException("The configuration param '" + param + "' is needed to load source object");
+		}
+		
+		return paramValue;
+	}
+	
+	Object getParamValueFromSourceMainObject(DatabaseObject mainObject, String paramName) {
+		
+		Object paramValue = mainObject.getFieldValue(paramName);
+		
+		if (paramValue == null) {
+			throw new ForbiddenOperationException(
+			        "The field '" + paramName + "' has no value and it is needed to load source object");
+		}
+		
+		return paramValue;
+	}
+	
 }

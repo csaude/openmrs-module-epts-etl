@@ -3,9 +3,9 @@ package org.openmrs.module.epts.etl.controller.conf.tablemapping;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncDataSource;
 import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.controller.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -28,6 +28,22 @@ public class SyncExtraDataSource {
 	public SyncExtraDataSource() {
 	}
 	
+	public QueryDataSourceConfig getQuerySrc() {
+		return querySrc;
+	}
+	
+	public void setQuerySrc(QueryDataSourceConfig querySrc) {
+		this.querySrc = querySrc;
+	}
+	
+	public TableDataSourceConfig getTableSrc() {
+		return tableSrc;
+	}
+	
+	public void setTableSrc(TableDataSourceConfig tableSrc) {
+		this.tableSrc = tableSrc;
+	}
+	
 	public SyncDestinationTableConfiguration getRelatedDestinationTableConf() {
 		return relatedDestinationTableConf;
 	}
@@ -48,10 +64,10 @@ public class SyncExtraDataSource {
 		}
 	}
 	
-	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, AppInfo appInfo, Connection conn)
+	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, Connection srcConn,  AppInfo srcAppInfo)
 	        throws DBException {
 		
-		return getAvaliableSrc().loadRelatedSrcObject(mainObject, appInfo, conn);
+		return getAvaliableSrc().loadRelatedSrcObject(mainObject, srcConn, srcAppInfo);
 	}
 	
 	public SyncDataSource getAvaliableSrc() {
@@ -77,6 +93,12 @@ public class SyncExtraDataSource {
 	
 	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		return getAvaliableSrc().getSyncRecordClass(application);
+	}
+
+	public void fullLoad(Connection conn) throws DBException {
+		if (!getAvaliableSrc().isFullLoaded()) {
+			getAvaliableSrc().fullLoad(conn);
+		}
 	}
 	
 }

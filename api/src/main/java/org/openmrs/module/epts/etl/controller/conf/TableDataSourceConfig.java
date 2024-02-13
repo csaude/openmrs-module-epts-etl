@@ -47,11 +47,12 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 		this.relatedSrcExtraDataSrc = relatedSrcExtraDataSrc;
 	}
 	
-	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, AppInfo appInfo, Connection conn)
+	@Override
+	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
 	        throws DBException {
 		String condition = generateConditionsFields(mainObject);
 		
-		return DatabaseObjectDAO.find(this.getSyncRecordClass(appInfo), condition, conn);
+		return DatabaseObjectDAO.find(this.getSyncRecordClass(srcAppInfo), condition, srcConn);
 	}
 	
 	private String generateConditionsFields(DatabaseObject dbObject) {
@@ -74,7 +75,7 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 		
 		return conditionFields;
 	}
-
+	
 	@Override
 	public String getName() {
 		return super.getTableName();

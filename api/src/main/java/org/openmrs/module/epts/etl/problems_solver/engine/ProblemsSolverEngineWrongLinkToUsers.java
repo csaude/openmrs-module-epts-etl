@@ -182,7 +182,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(
 		        this.getSyncTableConfiguration(), null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

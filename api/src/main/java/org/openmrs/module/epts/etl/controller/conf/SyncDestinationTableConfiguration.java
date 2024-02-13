@@ -22,17 +22,17 @@ public class SyncDestinationTableConfiguration extends SyncTableConfiguration {
 	
 	private AppInfo relatedAppInfo;
 	
-	private SyncTableConfiguration srcTableConfiguration;
+	private SyncTableConfiguration sourceTableConfiguration;
 	
 	public SyncDestinationTableConfiguration() {
 	}
 	
-	public SyncTableConfiguration getSrcTableConfiguration() {
-		return srcTableConfiguration;
+	public SyncTableConfiguration getSourceTableConfiguration() {
+		return sourceTableConfiguration;
 	}
 	
-	public void setSrcTableConfiguration(SyncTableConfiguration srcTableConfiguration) {
-		this.srcTableConfiguration = srcTableConfiguration;
+	public void setSourceTableConfiguration(SyncTableConfiguration sourceTableConfiguration) {
+		this.sourceTableConfiguration = sourceTableConfiguration;
 	}
 	
 	public List<SyncExtraDataSource> getExtraDataSource() {
@@ -77,7 +77,7 @@ public class SyncDestinationTableConfiguration extends SyncTableConfiguration {
 		
 		mappedTableInfo.loadAdditionalFieldsInfo();
 		
-		mappedTableInfo.setSrcTableConfiguration(tableConfiguration);
+		mappedTableInfo.setSourceTableConfiguration(tableConfiguration);
 		
 		return utilities.parseObjectToList(mappedTableInfo, SyncDestinationTableConfiguration.class);
 	}
@@ -133,8 +133,17 @@ public class SyncDestinationTableConfiguration extends SyncTableConfiguration {
 			
 			this.fullLoaded = true;
 			
-			for (SyncExtraDataSource src : this.getExtraDataSource()) {
-				src.setRelatedMappedTable(this);
+			OpenConnection srcConn = getSourceTableConfiguration().getMainApp().openConnection();
+			
+			try {
+				for (SyncExtraDataSource src : this.getExtraDataSource()) {
+					src.setRelatedMappedTable(this);
+					
+					src.fullLoad(srcConn);
+				}
+			}
+			catch (Exception e) {
+				srcConn.finalizeConnection();
 			}
 			
 		}
@@ -171,8 +180,8 @@ public class SyncDestinationTableConfiguration extends SyncTableConfiguration {
 		throw new ForbiddenOperationException("The table '" + tableName + "'cannot be foud on the mapping src tables");
 	}
 	
-	public DatabaseObject generateMappedObject(DatabaseObject srcObject, AppInfo appInfo, Connection conn)
-	        throws DBException, ForbiddenOperationException {
+	public DatabaseObject generateMappedObject(DatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
+	        AppInfo dstAppInfo) throws DBException, ForbiddenOperationException {
 		try {
 			
 			List<DatabaseObject> srcObjects = new ArrayList<>();
@@ -181,10 +190,10 @@ public class SyncDestinationTableConfiguration extends SyncTableConfiguration {
 			
 			if (utilities.arrayHasElement(this.extraDataSource)) {
 				for (SyncExtraDataSource mappingInfo : this.extraDataSource) {
-					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, appInfo, conn);
+					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
 					
 					if (relatedSrcObject == null) {
-						relatedSrcObject = mappingInfo.getSyncRecordClass(appInfo).newInstance();
+						relatedSrcObject = mappingInfo.getSyncRecordClass(srcAppInfo).newInstance();
 					}
 					
 					srcObjects.add(relatedSrcObject);
@@ -192,11 +201,11 @@ public class SyncDestinationTableConfiguration extends SyncTableConfiguration {
 				}
 			}
 			
-			DatabaseObject mappedObject = getSyncRecordClass(appInfo).newInstance();
+			DatabaseObject mappedObject = getSyncRecordClass(dstAppInfo).newInstance();
 			
 			for (FieldsMapping fieldsMapping : this.getFieldsMapping()) {
 				
-				Object srcValue = fieldsMapping.retrieveValue(this, srcObjects, appInfo, conn);
+				Object srcValue = fieldsMapping.retrieveValue(this, srcObjects, dstAppInfo, srcConn);
 				
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
 			}
@@ -218,8 +227,8 @@ public class SyncDestinationTableConfiguration extends SyncTableConfiguration {
 		}
 		
 		for (FieldsMapping field : this.fieldsMapping) {
-			if (!utilities.stringHasValue(field.getSrcName())) {
-				field.setSrcName(this.getSrcTableConfiguration().getTableName());
+			if (!utilities.stringHasValue(field.getDataSourceName())) {
+				field.setDataSourceName(this.getSourceTableConfiguration().getTableName());
 			}
 		}
 	}

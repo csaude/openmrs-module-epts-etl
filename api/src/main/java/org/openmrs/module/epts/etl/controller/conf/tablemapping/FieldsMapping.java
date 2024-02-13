@@ -22,16 +22,16 @@ public class FieldsMapping {
 	
 	private String srcField;
 	
-	private String srcName;
+	private String dataSourceName;
 	
 	private String destField;
 	
 	public FieldsMapping() {
 	}
 	
-	public FieldsMapping(String srcField, String srcName, String destField) {
+	public FieldsMapping(String srcField, String dataSourceName, String destField) {
 		this.srcField = srcField;
-		this.srcName = srcName;
+		this.dataSourceName = dataSourceName;
 		this.destField = destField;
 	}
 	
@@ -59,12 +59,12 @@ public class FieldsMapping {
 		this.srcField = srcField;
 	}
 	
-	public String getSrcName() {
-		return srcName;
+	public String getDataSourceName() {
+		return dataSourceName;
 	}
 	
-	public void setSrcName(String srcName) {
-		this.srcName = srcName;
+	public void setDataSourceName(String dataSourceName) {
+		this.dataSourceName = dataSourceName;
 	}
 	
 	@Override
@@ -82,11 +82,11 @@ public class FieldsMapping {
 		return "[srcField: " + srcField + ", destField: " + destField + "]";
 	}
 	
-	public Object retrieveValue(SyncDestinationTableConfiguration mappingInfo, List<DatabaseObject> srcObjects, AppInfo appInfo,
-	        Connection conn) throws DBException, ForbiddenOperationException {
+	public Object retrieveValue(SyncDestinationTableConfiguration mappingInfo, List<DatabaseObject> srcObjects,
+	        AppInfo appInfo, Connection conn) throws DBException, ForbiddenOperationException {
 		
 		for (DatabaseObject srcObject : srcObjects) {
-			if (this.getSrcName().equals(srcObject.generateTableName())) {
+			if (this.getDataSourceName().equals(srcObject.generateTableName())) {
 				return srcObject.getFieldValue(this.getSrcFieldAsClassField());
 			}
 		}

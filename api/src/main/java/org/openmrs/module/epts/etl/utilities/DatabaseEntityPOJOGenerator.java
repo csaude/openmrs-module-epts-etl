@@ -147,12 +147,19 @@ public class DatabaseEntityPOJOGenerator {
 		
 		String insertSQLDefinitionWithoutObjectId = "INSERT INTO " + pojoble.getObjectName() + "("
 		        + insertSQLFieldsWithoutObjectId + ") VALUES( " + insertSQLQuestionMarksWithoutObjectId + ");";
+		
 		String insertParamsWithoutObjectIdDefinition = "Object[] params = {" + insertParamsWithoutObjectId + "};";
 		
 		String insertSQLDefinitionWithObjectId = "INSERT INTO " + pojoble.getObjectName() + "(" + pojoble.getPrimaryKey()
 		        + ", " + insertSQLFieldsWithoutObjectId + ") VALUES(?, " + insertSQLQuestionMarksWithoutObjectId + ");";
+		
 		String insertParamsWithObjectIdDefinition = "Object[] params = {this." + pojoble.getPrimaryKeyAsClassAtt() + ", "
 		        + insertParamsWithoutObjectId + "};";
+		
+		if (!pojoble.hasPK()) {
+			insertSQLDefinitionWithObjectId = insertSQLDefinitionWithoutObjectId;
+			insertParamsWithObjectIdDefinition = insertParamsWithoutObjectIdDefinition;
+		}
 		
 		insertValuesDefinition += attElements.getSqlInsertValues();
 		
@@ -168,8 +175,11 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	public void setObjectId(Integer selfId){ \n";
-		if (pojoble.isNumericColumnType() && pojoble.hasPK())
+		
+		if (pojoble.isNumericColumnType() && pojoble.hasPK()) {
 			methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
+		}
+		
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	public void load(ResultSet rs) throws SQLException{ \n";
@@ -179,7 +189,12 @@ public class DatabaseEntityPOJOGenerator {
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
 		methodFromSuperClass += "	public String generateDBPrimaryKeyAtt(){ \n ";
-		methodFromSuperClass += "		return \"" + pojoble.getPrimaryKey() + "\"; \n";
+		
+		if (pojoble.hasPK()) {
+			methodFromSuperClass += "		return \"" + pojoble.getPrimaryKey() + "\"; \n";
+		} else {
+			methodFromSuperClass += "		return null; \n";
+		}
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
@@ -333,11 +348,17 @@ public class DatabaseEntityPOJOGenerator {
 		
 		methodFromSuperClass += "	}\n\n";
 		
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public String generateTableName() {\n";
+		methodFromSuperClass += "		return " + utilities.quote(pojoble.getObjectName()) + ";\n";
+		methodFromSuperClass += "	}\n\n";
+		
 		String classDefinition = "package " + pojoble.generateFullPackageName(application) + ";\n\n";
 		
 		classDefinition += "import org.openmrs.module.epts.etl.model.pojo.generic.*; \n \n";
 		classDefinition += "import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; \n \n";
-		classDefinition += "import org.openmrs.module.epts.etl.utilities.AttDefinedElements; \n";
+		classDefinition += "import org.openmrs.module.epts.etl.utilities.AttDefinedElements; \n \n";
+		
 		classDefinition += "import java.sql.SQLException; \n";
 		classDefinition += "import java.sql.ResultSet; \n \n";
 		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";

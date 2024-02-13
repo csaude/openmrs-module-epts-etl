@@ -113,11 +113,10 @@ public class DBQuickMergeEngine extends Engine {
 		}
 	}
 	
-	public void performeBatchSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	public void performeBatchSync(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
 		logInfo("PERFORMING BATCH MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
-		Connection srcConn = conn;
 		
 		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
 		
@@ -133,11 +132,12 @@ public class DBQuickMergeEngine extends Engine {
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+				for (SyncDestinationTableConfiguration mappingInfo : getSyncTableConfiguration()
+				        .getDestinationTableMappingInfo()) {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, this.getDstApp(), conn);
+					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (getSyncTableConfiguration().isManualIdGeneration()) {
 						destObject.setObjectId(currObjectId++);
@@ -176,7 +176,7 @@ public class DBQuickMergeEngine extends Engine {
 		}
 	}
 	
-	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
 		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName()
 		        + "' ONE-BY-ONE");
 		
@@ -201,11 +201,12 @@ public class DBQuickMergeEngine extends Engine {
 				
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+				for (SyncDestinationTableConfiguration mappingInfo : getSyncTableConfiguration()
+				        .getDestinationTableMappingInfo()) {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, this.getDstApp(), conn);
+					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (getSyncTableConfiguration().isManualIdGeneration()) {
 						destObject.setObjectId(currObjectId++);
@@ -217,7 +218,7 @@ public class DBQuickMergeEngine extends Engine {
 					        this.getDstApp(), wrt);
 					
 					try {
-						process(data, startingStrLog, 0, conn, dstConn);
+						process(data, startingStrLog, 0, srcConn, dstConn);
 						wentWrong = false;
 					}
 					catch (MissingParentException e) {
@@ -227,7 +228,7 @@ public class DBQuickMergeEngine extends Engine {
 						InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
 						    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
 						
-						inconsistenceInfo.save(getSyncTableConfiguration(), conn);
+						inconsistenceInfo.save(getSyncTableConfiguration(), srcConn);
 						
 						wentWrong = false;
 					}
@@ -318,7 +319,7 @@ public class DBQuickMergeEngine extends Engine {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickMergeSearchParams(this.getSyncTableConfiguration(),
 		        limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

@@ -34,7 +34,7 @@ public class ProcessInfo {
 	public ProcessInfo(SyncConfiguration configuration) {
 		this.configuration = configuration;
 		this.processId = this.configuration.generateControllerId();
-		this.observationDate = this.configuration.getObservationDate();
+		this.observationDate = this.configuration.getStartDate();
 	}
 	
 	public String getStartTime() {

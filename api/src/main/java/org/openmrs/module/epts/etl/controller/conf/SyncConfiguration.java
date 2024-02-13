@@ -42,7 +42,9 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private String originAppLocationCode;
 	
-	private Date observationDate;
+	private Date startDate;
+	
+	private Date endDate;
 	
 	private Map<String, SyncTableConfiguration> syncTableConfigurationPull;
 	
@@ -170,12 +172,20 @@ public class SyncConfiguration extends BaseConfiguration {
 		this.disabled = disabled;
 	}
 	
-	public Date getObservationDate() {
-		return observationDate;
+	public Date getStartDate() {
+		return startDate;
 	}
 	
-	public void setObservationDate(Date observationDate) {
-		this.observationDate = observationDate;
+	public void setStartDate(Date startDate) {
+		this.startDate = startDate;
+	}
+	
+	public Date getEndDate() {
+		return endDate;
+	}
+	
+	public void setEndDate(Date endDate) {
+		this.endDate = endDate;
 	}
 	
 	@JsonIgnore
@@ -826,6 +836,13 @@ public class SyncConfiguration extends BaseConfiguration {
 		return new File(packageDir + FileUtilities.getPathSeparator() + "src");
 	}
 	
+	@JsonIgnore
+	public File getSqlScriptsDirectory() {
+		String scriptsDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "sql-scripts";
+		
+		return new File(scriptsDir);
+	}
+	
 	public void refreshTables() {
 		List<SyncTableConfiguration> tablesConfigurations = new ArrayList<SyncTableConfiguration>();
 		
@@ -966,4 +983,5 @@ public class SyncConfiguration extends BaseConfiguration {
 			app.finalize();
 		}
 	}
+	
 }

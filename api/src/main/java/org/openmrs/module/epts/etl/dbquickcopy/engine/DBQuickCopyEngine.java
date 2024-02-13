@@ -75,7 +75,7 @@ public class DBQuickCopyEngine extends Engine {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickCopySearchParams(this.getSyncTableConfiguration(),
 		        limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

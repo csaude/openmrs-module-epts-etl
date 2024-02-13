@@ -119,7 +119,7 @@ public class DBQuickExportEngine extends Engine {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickExportSearchParams(this.getSyncTableConfiguration(),
 		        limits);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

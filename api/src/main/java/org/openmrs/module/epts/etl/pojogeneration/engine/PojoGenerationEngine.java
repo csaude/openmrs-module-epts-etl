@@ -71,8 +71,10 @@ public class PojoGenerationEngine extends Engine {
 				
 				generate(mappingAppInfo, map);
 				
-				for (SyncExtraDataSource src : map.getExtraDataSource()) {
-					generate(mappingAppInfo, src.getAvaliableSrc());
+				if (map.getExtraDataSource() != null) {
+					for (SyncExtraDataSource src : map.getExtraDataSource()) {
+						generate(mappingAppInfo, src.getAvaliableSrc());
+					}
 				}
 			}
 		}

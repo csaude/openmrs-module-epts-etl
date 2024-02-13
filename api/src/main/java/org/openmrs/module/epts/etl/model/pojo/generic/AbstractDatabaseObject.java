@@ -8,7 +8,6 @@ import java.net.URLClassLoader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -165,43 +164,12 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	
 	@Override
 	public Object[] getFieldValues(String... fieldsName) {
-		List<Object> values = new ArrayList<Object>();
-		
-		Object[] fields = getFields();
-		
-		for (String fieldName : fieldsName) {
-			for (int i = 0; i < fields.length; i++) {
-				Field field = (Field) fields[i];
-				
-				if (!field.getName().equals(fieldName))
-					continue;
-				
-				try {
-					if (field.get(this) != null)
-						values.add(field.get(this));
-				}
-				catch (IllegalArgumentException e) {
-					throw new RuntimeException(e);
-				}
-				catch (IllegalAccessException e) {
-					throw new RuntimeException(e);
-				}
-			}
-			
-		}
-		
-		return values != null ? utilities.parseListToArray(values) : null;
+		return utilities.getFieldValues(this, fieldsName);
 	}
 	
 	@Override
 	public Object getFieldValue(String fieldsName) {
-		Object[] values = getFieldValues(fieldsName);
-		
-		if (utilities.arrayHasElement(values)) {
-			return values[0];
-		}
-		
-		return null;
+		return utilities.getFieldValue(this, fieldsName);
 	}
 	
 	@Override

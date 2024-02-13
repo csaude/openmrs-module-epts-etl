@@ -31,6 +31,10 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 		this.type = type;
 	}
 	
+	public String getAppCode() {
+		return appCode;
+	}
+	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);

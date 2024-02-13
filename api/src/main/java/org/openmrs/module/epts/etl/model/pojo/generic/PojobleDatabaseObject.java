@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.model.pojo.generic;
 
 import java.io.File;
+import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
@@ -19,6 +20,8 @@ public interface PojobleDatabaseObject {
 	boolean isFullLoaded();
 	
 	void fullLoad() throws DBException;
+	
+	void fullLoad(Connection conn) throws DBException;
 	
 	File getPOJOSourceFilesDirectory();
 	

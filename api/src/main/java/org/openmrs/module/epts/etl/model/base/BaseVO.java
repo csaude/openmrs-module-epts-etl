@@ -118,8 +118,8 @@ public abstract class BaseVO implements VO {
 	/**
 	 * Retorna o nome da tabela correspodente a esta classe. Por exemplo: Se o nome da classe For
 	 * PedidoPareceVO retornará pedido_parecer Note que se a classe VO tiver um nome cujo nome da
-	 * tabela nao concide com o nome gerado por este m�todo, ent�o a classe em causa dever�
-	 * reescrever o seu pr�prio m�todo
+	 * tabela nao concide com o nome gerado por este metodo, entao a classe em causa devera
+	 * reescrever o seu proprio metodo
 	 * 
 	 * @author JPBOANE
 	 */

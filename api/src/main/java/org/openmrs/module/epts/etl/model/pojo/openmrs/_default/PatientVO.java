@@ -1,11 +1,11 @@
-package org.openmrs.module.epts.etl.model.pojo.openmrs.community_data_extraction;
+package org.openmrs.module.epts.etl.model.pojo.openmrs._default;
 
-import org.openmrs.module.epts.etl.model.pojo.generic.*; 
- 
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
- 
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
-import java.sql.SQLException; 
+import java.sql.SQLException;
+
+import org.openmrs.module.epts.etl.model.pojo.generic.*;
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
+
 import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
@@ -119,37 +119,37 @@ public class PatientVO extends AbstractDatabaseObject implements DatabaseObject 
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO patient(creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, allergy_status) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient(patient_id, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, allergy_status) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.creator, this.dateCreated, this.changedBy, this.dateChanged, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.allergyStatus};		return params; 
-	} 
- 
-	@JsonIgnore
-	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO patient(patient_id, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, allergy_status) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
-	} 
- 
-	@JsonIgnore
-	public Object[]  getInsertParamsWithObjectId(){ 
  		Object[] params = {this.patientId, this.creator, this.dateCreated, this.changedBy, this.dateChanged, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.allergyStatus};		return params; 
 	} 
  
 	@JsonIgnore
+	public String getInsertSQLWithObjectId(){ 
+ 		return "INSERT INTO patient(patient_id, patient_id, creator, date_created, changed_by, date_changed, voided, voided_by, date_voided, void_reason, allergy_status) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+	} 
+ 
+	@JsonIgnore
+	public Object[]  getInsertParamsWithObjectId(){ 
+ 		Object[] params = {this.patientId, this.patientId, this.creator, this.dateCreated, this.changedBy, this.dateChanged, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.allergyStatus};		return params; 
+	} 
+ 
+	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.creator, this.dateCreated, this.changedBy, this.dateChanged, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.allergyStatus, this.patientId};		return params; 
+ 		Object[] params = {this.patientId, this.creator, this.dateCreated, this.changedBy, this.dateChanged, this.voided, this.voidedBy, this.dateVoided, this.voidReason, this.allergyStatus, this.patientId};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient SET creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, allergy_status = ? WHERE patient_id = ?;"; 
+ 		return "UPDATE patient SET patient_id = ?, creator = ?, date_created = ?, changed_by = ?, date_changed = ?, voided = ?, voided_by = ?, date_voided = ?, void_reason = ?, allergy_status = ? WHERE patient_id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.allergyStatus != null ? "\""+ utilities.scapeQuotationMarks(allergyStatus)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.creator) + "," + (this.dateCreated != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateCreated)  +"\"" : null) + "," + (this.changedBy) + "," + (this.dateChanged != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateChanged)  +"\"" : null) + "," + (this.voided) + "," + (this.voidedBy) + "," + (this.dateVoided != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateVoided)  +"\"" : null) + "," + (this.voidReason != null ? "\""+ utilities.scapeQuotationMarks(voidReason)  +"\"" : null) + "," + (this.allergyStatus != null ? "\""+ utilities.scapeQuotationMarks(allergyStatus)  +"\"" : null); 
 	} 
  
 	@Override

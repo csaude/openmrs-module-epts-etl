@@ -904,7 +904,8 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 				
 				for (SyncDestinationTableConfiguration map : this.destinationTableMappingInfo) {
 					map.setRelatedSyncConfiguration(relatedSyncConfiguration);
-					map.setSrcTableConfiguration(this);
+					map.setSourceTableConfiguration(this);
+					
 					if (!utilities.arrayHasElement(map.getFieldsMapping())) {
 						map.generateMappingFields(this);
 					}
@@ -925,7 +926,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	public synchronized void fullLoad() throws DBException {
 		OpenConnection mainConn = getRelatedSyncConfiguration().getMainApp().openConnection();
 		
-		OpenConnection mappedConn = null;
+		OpenConnection dstConn = null;
 		
 		try {
 			fullLoad(mainConn);
@@ -933,15 +934,15 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			List<AppInfo> otherApps = getRelatedSyncConfiguration().exposeAllAppsNotMain();
 			
 			if (utilities.arrayHasElement(otherApps)) {
-				mappedConn = otherApps.get(0).openConnection();
+				dstConn = otherApps.get(0).openConnection();
 				
 				for (SyncDestinationTableConfiguration map : this.destinationTableMappingInfo) {
 					map.setRelatedAppInfo(otherApps.get(0));
 					
-					if (DBUtilities.isTableExists(mappedConn.getSchema(), map.getTableName(), mappedConn)) {
-						map.fullLoad(mappedConn);
+					if (DBUtilities.isTableExists(dstConn.getSchema(), map.getTableName(), dstConn)) {
+						map.fullLoad(dstConn);
 						
-						this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(map.getTableName(), mappedConn);
+						this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(map.getTableName(), dstConn);
 					}
 				}
 			} else {
@@ -954,8 +955,8 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		finally {
 			mainConn.finalizeConnection();
 			
-			if (mappedConn != null) {
-				mappedConn.finalizeConnection();
+			if (dstConn != null) {
+				dstConn.finalizeConnection();
 			}
 		}
 	}

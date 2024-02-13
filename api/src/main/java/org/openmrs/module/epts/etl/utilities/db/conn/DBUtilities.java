@@ -748,7 +748,7 @@ public class DBUtilities {
 			int qtyAttrs = rsMetaData.getColumnCount();
 			
 			for (int i = 1; i <= qtyAttrs; i++) {
-				Field field = new Field(rsMetaData.getColumnName(i));
+				Field field = new Field(rsMetaData.getColumnLabel(i));
 				field.setType(rsMetaData.getColumnTypeName(i));
 				
 				fields.add(field);

@@ -78,7 +78,7 @@ public class DetectGapesController extends OperationController {
 	
 	private long getExtremeRecord(SyncTableConfiguration tableInfo, String function, Connection conn) throws DBException {
 		DetectGapesSearchParams searchParams = new DetectGapesSearchParams(tableInfo, null, this);
-		searchParams.setSyncStartDate(getConfiguration().getObservationDate());
+		searchParams.setSyncStartDate(getConfiguration().getStartDate());
 		
 		SearchClauses<DatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
 		
