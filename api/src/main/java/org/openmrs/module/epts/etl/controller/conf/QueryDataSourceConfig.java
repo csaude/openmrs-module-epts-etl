@@ -42,13 +42,13 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	
 	private Class<DatabaseObject> syncRecordClass;
 	
-	private List<Field> params;
+	private List<QueryParameter> params;
 	
-	public List<Field> getParams() {
+	public List<QueryParameter> getParams() {
 		return params;
 	}
 	
-	public void setParams(List<Field> params) {
+	public void setParams(List<QueryParameter> params) {
 		this.params = params;
 	}
 	
@@ -130,7 +130,9 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
-		setFields(DBUtilities.determineFieldsFromQuery(this.getQuery(), conn));
+		String query = DBUtilities.replaceSqlParametersWithQuestionMarks(this.getQuery());
+		
+		setFields(DBUtilities.determineFieldsFromQuery(query, conn));
 		
 		this.fullLoaded = true;
 	}
@@ -341,7 +343,9 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		
 		Object[] params = generateParams(mainObject);
 		
-		return DatabaseObjectDAO.find(this.getSyncRecordClass(srcAppInfo), getQuery(), params, srcConn);
+		String query = DBUtilities.replaceSqlParametersWithQuestionMarks(this.getQuery());
+		
+		return DatabaseObjectDAO.find(this.getSyncRecordClass(srcAppInfo), query, params, srcConn);
 	}
 	
 	Object[] generateParams(DatabaseObject mainObject) {
@@ -351,34 +355,18 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 			params = new Object[this.params.size()];
 			
 			for (int i = 0; i < this.params.size(); i++) {
-				Field field = this.params.get(i);
-				
-				String[] fieldsParts = field.getName().split("\\.");
+				QueryParameter field = this.params.get(i);
 				
 				Object paramValue = null;
 				
-				String paramName;
-				
-				/*
-				 * The params values could be from the main source object or from configuration file.
-				 * 
-				 *  If the param is from the configuration file then its name will start with 'config.' followed by the name of param 
-				 */
-				if (fieldsParts.length > 1) {
-					//This mean that the param value is from the configuration file
-					if (fieldsParts[0].toLowerCase().equals("config")) {
-						paramName = fieldsParts[1];
-						
-						paramValue = getParamValueFromSyncConfiguration(paramName);
-					} else if (fieldsParts[0].toLowerCase().equals(mainObject.generateTableName())) {
-						paramName = AttDefinedElements.convertTableAttNameToClassAttName(field.getName());
-						
-						paramValue = getParamValueFromSourceMainObject(mainObject, paramName);
-					}
-				} else {
-					paramName = AttDefinedElements.convertTableAttNameToClassAttName(field.getName());
+				if (field.getValueType().isConfiguration()) {
+					paramValue = getParamValueFromSyncConfiguration(field.getValue().toString());
+				} else if (field.getValueType().isMainObject()) {
+					String paramName = AttDefinedElements.convertTableAttNameToClassAttName(field.getValue().toString());
 					
 					paramValue = getParamValueFromSourceMainObject(mainObject, paramName);
+				} else if (field.getValueType().isConstant()) {
+					paramValue = field.getValue();
 				}
 				
 				params[i] = paramValue;

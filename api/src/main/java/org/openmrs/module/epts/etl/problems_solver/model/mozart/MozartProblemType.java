@@ -11,7 +11,8 @@ public enum MozartProblemType {
 	MISSING_UNIQUE_KEY,
 	WRONG_FIELD_NAME,
 	WRONG_TABLE_NAME,
-	NOT_FULL_MERGED_DB;
+	NOT_FULL_MERGED_DB,
+	CONFIGURED_lOCATIONS;
 	
 	public boolean isOldStructure() {
 		return this.equals(OLD_STRUCTURE);

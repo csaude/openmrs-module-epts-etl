@@ -10,6 +10,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
@@ -205,6 +207,27 @@ public class DBUtilities {
 		//return BaseDAO.openConnection(className, url, userName, metadata.getPa);
 		
 		return null;
+	}
+	
+	/**
+	 * Replaces all sql parameters with a question mark. It assumes that the parameters will have format '@paramName'
+	 * @param sqlQuery
+	 * @return
+	 */
+	public static String replaceSqlParametersWithQuestionMarks(String sqlQuery) {
+		// Regular expression to match parameters starting with @, considering optional spaces or newlines
+		String parameterRegex = "@\\s*\\w+";
+		Pattern pattern = Pattern.compile(parameterRegex);
+		Matcher matcher = pattern.matcher(sqlQuery);
+		
+		// Replace each parameter with a question mark
+		StringBuffer replacedQuery = new StringBuffer();
+		while (matcher.find()) {
+			matcher.appendReplacement(replacedQuery, "?");
+		}
+		matcher.appendTail(replacedQuery);
+		
+		return replacedQuery.toString();
 	}
 	
 	public static String tryToPutSchemaOnDatabaseObject(String tableName, Connection conn) throws DBException {
