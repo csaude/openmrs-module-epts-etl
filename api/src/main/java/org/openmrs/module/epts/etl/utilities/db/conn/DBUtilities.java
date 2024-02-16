@@ -210,7 +210,9 @@ public class DBUtilities {
 	}
 	
 	/**
-	 * Replaces all sql parameters with a question mark. It assumes that the parameters will have format '@paramName'
+	 * Replaces all sql parameters with a question mark. It assumes that the parameters will have
+	 * format '@paramName'
+	 * 
 	 * @param sqlQuery
 	 * @return
 	 */
@@ -790,7 +792,30 @@ public class DBUtilities {
 		return fields;
 	}
 	
-	public static void main(String[] args) throws DBException {
+	/**
+	 * Extract all the parameters presents in a sql query. This assume that the parameter will start
+	 * with @
+	 * 
+	 * @param sqlQuery the query to extract from
+	 * @return the list of extracted parameters name
+	 */
+	public static List<Field> extractAllParamNamesOnQuery(String sqlQuery) {
+		List<Field> parameters = new ArrayList<>();
+		
+		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
+		String parameterRegex = "@\\s*(\\w+)";
+		Pattern pattern = Pattern.compile(parameterRegex);
+		Matcher matcher = pattern.matcher(sqlQuery);
+		
+		// Find all matches and add only the parameter names to the list
+		while (matcher.find()) {
+			parameters.add(new Field(matcher.group(1)));
+		}
+		
+		return parameters;
+	}
+	
+	public static void main_(String[] args) throws DBException {
 		DBConnectionInfo connInfo = new DBConnectionInfo("root", "root", "jdbc:mysql://localhost:3306/tmp_qlm_hgq",
 		        "com.mysql.cj.jdbc.Driver");
 		

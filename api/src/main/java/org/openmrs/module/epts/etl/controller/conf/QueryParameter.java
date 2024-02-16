@@ -14,6 +14,13 @@ public class QueryParameter extends Field {
 	
 	private ParameterValueType valueType;
 	
+	public QueryParameter() {
+	}
+	
+	public QueryParameter(String paramName, Object paramValue) {
+		super(paramName, paramValue);
+	}
+	
 	public ParameterValueType getValueType() {
 		return valueType;
 	}
