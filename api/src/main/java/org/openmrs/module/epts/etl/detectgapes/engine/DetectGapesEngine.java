@@ -59,7 +59,7 @@ public class DetectGapesEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logDebug("DETECTING GAPES ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logDebug("DETECTING GAPES ON " + syncRecords.size() + "' " + getSrcTableName());
 		
 		if (this.prevRec == null) {
 			this.prevRec = (DatabaseObject) syncRecords.get(0);
@@ -74,7 +74,7 @@ public class DetectGapesEngine extends Engine {
 				logDebug("Found gape of " + diff + " between " + prevRec.getObjectId() + " and " + rec.getObjectId());
 				
 				for (int i = prevRec.getObjectId() + 1; i < rec.getObjectId(); i++) {
-					GapeDAO.insert(getSyncTableConfiguration(), i, conn);
+					GapeDAO.insert(getSrcTableConfiguration(), i, conn);
 				}
 			}
 			
@@ -88,10 +88,10 @@ public class DetectGapesEngine extends Engine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DetectGapesSearchParams(this.getSyncTableConfiguration(),
-		        limits, getRelatedOperationController());
+		SyncSearchParams<? extends SyncRecord> searchParams = new DetectGapesSearchParams(this.getEtlConfiguration(), limits,
+		        getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

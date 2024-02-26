@@ -30,8 +30,6 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	
 	public static String[] DB_NAMES = DatabasesInfo.ARIEL_DB_NAMES_MAPUTO;
 	
-	private AppInfo mainApp;
-	
 	private AppInfo remoteApp;
 	
 	public ProblemsSolverEngineWrongLinkToUsers(EngineMonitor monitor, RecordLimits limits) {
@@ -54,9 +52,10 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	protected void restart() {
 	}
 	
+	@SuppressWarnings({ "null", "unused" })
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + this.getSrcTableName());
 		
 		OpenConnection srcConn = remoteApp.openConnection();
 		
@@ -70,9 +69,9 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					
 					logDebug(startingStrLog + " STARTING RESOLVE PROBLEMS OF RECORD [" + record + "]");
 					
-					Class<DatabaseObject> syncRecordClass = getSyncTableConfiguration().getSyncRecordClass(getDefaultApp());
+					Class<DatabaseObject> syncRecordClass = getSrcTableConfiguration().getSyncRecordClass(getDefaultApp());
 					Class<DatabaseObject> prsonRecordClass = SyncTableConfiguration
-					        .init("person", getSyncTableConfiguration().getRelatedSyncConfiguration())
+					        .init("person", getEtlConfiguration().getRelatedSyncConfiguration())
 					        .getSyncRecordClass(getDefaultApp());
 					
 					DatabaseObject userOnDestDB = DatabaseObjectDAO.getById(syncRecordClass,
@@ -111,7 +110,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 							List<DatabaseObject> relatedPersonOnDestDB = null;//DatabaseObjectDAO.getByUuid(prsonRecordClass, relatedPersonOnSrcDB.getUuid(), conn);
 							
 							userOnDestDB.changeParentValue("personId", relatedPersonOnDestDB.get(0));
-							userOnDestDB.save(getSyncTableConfiguration(), conn);
+							userOnDestDB.save(getSrcTableConfiguration(), conn);
 							
 							found = true;
 							
@@ -136,9 +135,10 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 		}
 	}
 	
+	@SuppressWarnings("null")
 	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)
 	        throws DBException, ForbiddenOperationException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
 		
 		int i = 1;
 		
@@ -159,7 +159,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
-				dup.save(getSyncTableConfiguration(), conn);
+				dup.save(getSrcTableConfiguration(), conn);
 			}
 			
 			i++;
@@ -170,7 +170,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 			syncRecords.removeAll(recordsToIgnoreOnStatistics);
 		}
 		
-		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSrcTableName() + "!");
 	}
 	
 	@Override
@@ -179,10 +179,10 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(
-		        this.getSyncTableConfiguration(), null);
+		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getEtlConfiguration(),
+		        null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

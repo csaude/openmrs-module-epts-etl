@@ -46,13 +46,11 @@ public class DBQuickLoadEngine extends Engine {
 		for (SyncImportInfoVO rec : migrationRecordAsSyncInfo)
 			rec.setConsistent(1);
 		
-		this.logInfo("WRITING  '" + migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName()
-		        + " TO STAGING TABLE");
+		this.logInfo("WRITING  '" + migrationRecords.size() + "' " + getSrcTableName() + " TO STAGING TABLE");
 		
-		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSyncTableConfiguration(), conn);
+		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSrcTableConfiguration(), conn);
 		
-		this.logInfo(
-		    "'" + migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " WROTE TO STAGING TABLE");
+		this.logInfo("'" + migrationRecords.size() + "' " + getSrcTableName() + " WROTE TO STAGING TABLE");
 		
 		this.logDebug("MOVING SOURCE JSON [" + this.currJSONSourceFile.getAbsolutePath() + "] TO BACKUP AREA.");
 		
@@ -144,7 +142,7 @@ public class DBQuickLoadEngine extends Engine {
 		loadLimits.copy(limits);
 		
 		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickLoadSearchParams(getRelatedOperationController(),
-		        this.getSyncTableConfiguration(), loadLimits);
+		        this.getEtlConfiguration(), loadLimits);
 		
 		searchParams.setQtdRecordPerSelected(1);
 		
@@ -154,7 +152,7 @@ public class DBQuickLoadEngine extends Engine {
 	}
 	
 	private File getSyncBkpDirectory() throws IOException {
-		String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSyncTableConfiguration())
+		String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSrcTableConfiguration())
 		        .getAbsolutePath();
 		
 		return new File(baseDirectory);
@@ -166,7 +164,7 @@ public class DBQuickLoadEngine extends Engine {
 	}
 	
 	private File getSyncDirectory() {
-		String baseDirectory = getRelatedOperationController().getSyncDirectory(getSyncTableConfiguration())
+		String baseDirectory = getRelatedOperationController().getSyncDirectory(getSrcTableConfiguration())
 		        .getAbsolutePath();
 		
 		return new File(baseDirectory);

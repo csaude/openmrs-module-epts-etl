@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.model.pojo.openmrs._default;
+package org.openmrs.module.epts.etl.model.pojo.openmrs._default._query_result;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
@@ -11,21 +11,30 @@ import java.sql.ResultSet;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class WomenStatusInfoQueryResultVO extends AbstractDatabaseObject implements DatabaseObject { 
-	private String womenStatus;
+public class ArvCd4AbsoluteInfoQueryResultVO extends AbstractDatabaseObject implements DatabaseObject { 
+	private double cd4;
+	private java.util.Date cd4Date;
  
-	public WomenStatusInfoQueryResultVO() { 
+	public ArvCd4AbsoluteInfoQueryResultVO() { 
 		this.metadata = false;
 	} 
  
-	public void setWomenStatus(String womenStatus){ 
-	 	this.womenStatus = womenStatus;
+	public void setCd4(double cd4){ 
+	 	this.cd4 = cd4;
+	}
+ 
+	public double getCd4(){ 
+		return this.cd4;
+	}
+ 
+	public void setCd4Date(java.util.Date cd4Date){ 
+	 	this.cd4Date = cd4Date;
 	}
 
 
  
-	public String getWomenStatus(){ 
-		return this.womenStatus;
+	public java.util.Date getCd4Date(){ 
+		return this.cd4Date;
 	}
  
 	public Integer getObjectId() { 
@@ -37,7 +46,8 @@ public class WomenStatusInfoQueryResultVO extends AbstractDatabaseObject impleme
  
 	public void load(ResultSet rs) throws SQLException{ 
 		super.load(rs);
-		this.womenStatus = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("women_status") != null ? rs.getString("women_status").trim() : null);
+		this.cd4 = rs.getDouble("cd4");
+		this.cd4Date =  rs.getTimestamp("cd4_date") != null ? new java.util.Date( rs.getTimestamp("cd4_date").getTime() ) : null;
 	} 
  
 	@JsonIgnore
@@ -47,37 +57,37 @@ public class WomenStatusInfoQueryResultVO extends AbstractDatabaseObject impleme
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO women_status_info(women_status) VALUES( ?);"; 
+ 		return "INSERT INTO arv_cd4_absolute_info(cd4, cd4_date) VALUES( ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.womenStatus};		return params; 
+ 		Object[] params = {this.cd4, this.cd4Date};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO women_status_info(women_status) VALUES( ?);"; 
+ 		return "INSERT INTO arv_cd4_absolute_info(cd4, cd4_date) VALUES( ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.womenStatus};		return params; 
+ 		Object[] params = {this.cd4, this.cd4Date};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.womenStatus, null};		return params; 
+ 		Object[] params = {this.cd4, this.cd4Date, null};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE women_status_info SET women_status = ? WHERE null = ?;"; 
+ 		return "UPDATE arv_cd4_absolute_info SET cd4 = ?, cd4_date = ? WHERE null = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.womenStatus != null ? "\""+ utilities.scapeQuotationMarks(womenStatus)  +"\"" : null); 
+ 		return ""+(this.cd4) + "," + (this.cd4Date != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(cd4Date)  +"\"" : null); 
 	} 
  
 	@Override
@@ -104,7 +114,7 @@ public class WomenStatusInfoQueryResultVO extends AbstractDatabaseObject impleme
 
 	@Override
 	public String generateTableName() {
-		return "women_status_info";
+		return "arv_cd4_absolute_info";
 	}
 
 

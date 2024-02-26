@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.dbquickmerge.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -15,21 +16,18 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	
-	private DBQuickMergeController relatedController;
-	
 	private int savedCount;
 	
-	public DBQuickMergeSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits,
-	    DBQuickMergeController relatedController) {
-		super(tableInfo, limits);
+	public DBQuickMergeSearchParams(EtlConfiguration config, RecordLimits limits, DBQuickMergeController relatedController) {
+		super(config, limits);
 		
-		this.relatedController = relatedController;
-		setOrderByFields(tableInfo.getPrimaryKey());
+		setOrderByFields(getSrcTableConfiguration().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		String srcSchema = DBUtilities.determineSchemaName(conn);
+		SyncTableConfiguration tableInfo = getSrcTableConfiguration();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
@@ -43,15 +41,9 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 			searchClauses.addColumnToSelect("src_.*");
 		}
 		
-		if (limits != null) {
-			searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-			searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
-			searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
-		}
+		tryToAddLimits(searchClauses);
 		
-		if (this.tableInfo.getExtraConditionForExport() != null) {
-			searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
-		}
+		tryToAddExtraConditionForExport(searchClauses);
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());
@@ -81,6 +73,8 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	private String generateDestinationJoinSubquery(Connection dstConn) throws DBException {
 		String dstSchema = DBUtilities.determineSchemaName(dstConn);
 		
+		SyncTableConfiguration tableInfo = getSrcTableConfiguration();
+		
 		String dstFullTableName = dstSchema + ".";
 		dstFullTableName += tableInfo.getTableName();
 		
@@ -101,7 +95,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		
 		dstJoinSubquery += " SELECT * ";
 		dstJoinSubquery += " FROM    " + fromClause;
-		dstJoinSubquery += " WHERE " + this.tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
+		dstJoinSubquery += " WHERE " + tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
 		
 		return dstJoinSubquery;
 		
@@ -112,22 +106,18 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		if (this.savedCount > 0)
 			return this.savedCount;
 		
-		RecordLimits bkpLimits = this.limits;
+		RecordLimits bkpLimits = this.getLimits();
 		
-		this.limits = null;
+		this.removeLimits();
+		;
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.limits = bkpLimits;
+		this.setLimits(bkpLimits);
 		
 		this.savedCount = count;
 		
 		return count;
-	}
-	
-	@Override
-	public Class<DatabaseObject> getRecordClass() {
-		return this.getTableInfo().getSyncRecordClass(this.relatedController.getSrcApp());
 	}
 	
 	@Override

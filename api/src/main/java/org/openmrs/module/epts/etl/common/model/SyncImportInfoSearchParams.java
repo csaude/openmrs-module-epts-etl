@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.common.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -11,12 +11,12 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 public abstract class SyncImportInfoSearchParams extends SyncSearchParams<SyncImportInfoVO>{
 	private String appOriginLocationCode;
 	
-	public SyncImportInfoSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits) {
-		super(tableInfo, limits);
+	public SyncImportInfoSearchParams(EtlConfiguration config, RecordLimits limits) {
+		super(config, limits);
 	}
 	
-	public SyncImportInfoSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String appOriginLocationCode) {
-		super(tableInfo, limits);
+	public SyncImportInfoSearchParams(EtlConfiguration config, RecordLimits limits, String appOriginLocationCode) {
+		super(config, limits);
 	
 		this.appOriginLocationCode = appOriginLocationCode;
 	}

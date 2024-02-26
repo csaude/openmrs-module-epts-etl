@@ -3,18 +3,18 @@ package org.openmrs.module.epts.etl.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class TableOperationProgressInfoDAO extends BaseDAO {
 	
-	public static void insert(TableOperationProgressInfo record, SyncTableConfiguration tableConfiguration, Connection conn)
+	public static void insert(TableOperationProgressInfo record, EtlConfiguration config, Connection conn)
 	        throws DBException {
-		String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
+		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		
-		Object[] params = { record.getOperationId(), record.getOperationName(), record.getOperationTable(),
+		Object[] params = { record.getOperationId(), record.getOperationName(), record.getEtlConfiguration().getConfigCode(),
 		        record.getOriginAppLocationCode(), DateAndTimeUtilities.getCurrentSystemDate(conn),
 		        DateAndTimeUtilities.getCurrentSystemDate(conn), record.getProgressMeter().getTotal(),
 		        record.getProgressMeter().getProcessed(), record.getProgressMeter().getStatus() };
@@ -43,9 +43,9 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void update(TableOperationProgressInfo record, SyncTableConfiguration tableConfiguration, Connection conn)
+	public static void update(TableOperationProgressInfo record, EtlConfiguration config, Connection conn)
 	        throws DBException {
-		String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
+		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		
 		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), record.getProgressMeter().getTotal(),
 		        record.getProgressMeter().getProcessed(), record.getProgressMeter().getStatus(), record.getOperationId() };
@@ -62,18 +62,18 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static TableOperationProgressInfo find(OperationController controller, SyncTableConfiguration tableConfiguration,
-	        Connection conn) throws DBException {
-		String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
+	public static TableOperationProgressInfo find(OperationController controller, EtlConfiguration config, Connection conn)
+	        throws DBException {
+		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		
-		Object[] params = { TableOperationProgressInfo.generateOperationId(controller, tableConfiguration) };
+		Object[] params = { TableOperationProgressInfo.generateOperationId(controller, config) };
 		
 		String sql = "SELECT * FROM " + syncStageSchema + ".table_operation_progress_info WHERE operation_id = ?";
 		
 		TableOperationProgressInfo vo = BaseDAO.find(TableOperationProgressInfo.class, sql, params, conn);
 		
 		if (vo != null) {
-			vo.setTableConfiguration(tableConfiguration);
+			vo.setEtlConfiguration(config);
 			vo.setController(controller);
 		}
 		
@@ -81,9 +81,9 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 		
 	}
 	
-	public static void delete(TableOperationProgressInfo record, SyncTableConfiguration tableConfiguration, Connection conn)
+	public static void delete(TableOperationProgressInfo record, EtlConfiguration config, Connection conn)
 	        throws DBException {
-		String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
+		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		
 		Object[] params = { record.getOperationId() };
 		

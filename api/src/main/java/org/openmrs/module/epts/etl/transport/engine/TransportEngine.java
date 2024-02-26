@@ -17,31 +17,33 @@ import org.openmrs.module.epts.etl.transport.model.TransportRecord;
 import org.openmrs.module.epts.etl.transport.model.TransportSyncSearchParams;
 
 /**
- * The engine responsible for transport synchronization files from origin to
- * destination site
+ * The engine responsible for transport synchronization files from origin to destination site
  * <p>
- * This is temporariy transportation method which suppose that the origin and
- * destination are in the same matchine, so the transport process consist on
- * moving files from export directory to import directory
+ * This is temporariy transportation method which suppose that the origin and destination are in the
+ * same matchine, so the transport process consist on moving files from export directory to import
+ * directory
  * <p>
  * In the future a propery transportation method should be implemented.
  * 
  * @author jpboane
  */
 public class TransportEngine extends Engine {
-
+	
 	public TransportEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
-
+	
 	@Override
 	protected void restart() {
 	}
+	
 	@Override
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) {
-		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords, TransportRecord.class);
-	
-		this.getMonitor().logInfo("COPYING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " SOURCE FILES TO IMPORT AREA");
+		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords,
+		    TransportRecord.class);
+		
+		this.getMonitor()
+		        .logInfo("COPYING  '" + migrationRecords.size() + "' " + getSrcTableName() + " SOURCE FILES TO IMPORT AREA");
 		
 		for (TransportRecord t : migrationRecordAsTransportRecord) {
 			t.transport();
@@ -50,17 +52,20 @@ public class TransportEngine extends Engine {
 				t.getDestinationFile().delete();
 				t.getMinimalDestinationFile().delete();
 				
-				throw new ForbiddenOperationException("FILE " + t.getDestinationFile().getAbsolutePath() +  " NOT TRANSPORTED!");
+				throw new ForbiddenOperationException(
+				        "FILE " + t.getDestinationFile().getAbsolutePath() + " NOT TRANSPORTED!");
 			}
-		
+			
 			t.moveToBackUpDirectory();
-		
-			logInfo("TRANSPORTED FILE " + t.getDestinationFile().getPath() + " WITH SIZE " + t.getDestinationFile().length());
+			
+			logInfo(
+			    "TRANSPORTED FILE " + t.getDestinationFile().getPath() + " WITH SIZE " + t.getDestinationFile().length());
 		}
-	
-		this.getMonitor().logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " SOURCE FILES COPIED TO IMPORT AREA");
+		
+		this.getMonitor()
+		        .logInfo("'" + migrationRecords.size() + "' " + getSrcTableName() + " SOURCE FILES COPIED TO IMPORT AREA");
 	}
-
+	
 	@Override
 	protected List<SyncRecord> searchNextRecords(Connection conn) {
 		try {
@@ -73,9 +78,10 @@ public class TransportEngine extends Engine {
 			}
 			
 			return syncRecords;
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
-		
+			
 			throw new RuntimeException(e);
 		}
 	}
@@ -84,35 +90,36 @@ public class TransportEngine extends Engine {
 	public TransportSyncSearchParams getSearchParams() {
 		return (TransportSyncSearchParams) super.getSearchParams();
 	}
-
+	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new TransportSyncSearchParams(getRelatedOperationController(), this.getSyncTableConfiguration(), limits);
+		SyncSearchParams<? extends SyncRecord> searchParams = new TransportSyncSearchParams(getRelatedOperationController(),
+		        this.getEtlConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
-
+		
 		return searchParams;
 	}
-
+	
 	private File getSyncBkpDirectory() throws IOException {
-		return getRelatedOperationController().getSyncBkpDirectory(getSyncTableConfiguration());
+		return getRelatedOperationController().getSyncBkpDirectory(getSrcTableConfiguration());
 	}
-
+	
 	private File getSyncDestinationDirectory() throws IOException {
-		return getRelatedOperationController().getSyncDestinationDirectory(getSyncTableConfiguration());
+		return getRelatedOperationController().getSyncDestinationDirectory(getSrcTableConfiguration());
 	}
-
+	
 	@Override
 	public TransportController getRelatedOperationController() {
 		return (TransportController) super.getRelatedOperationController();
 	}
-
+	
 	private File getSyncDirectory() {
-		return getRelatedOperationController().getSyncDirectory(getSyncTableConfiguration());
+		return getRelatedOperationController().getSyncDirectory(getSrcTableConfiguration());
 	}
-
+	
 	@Override
 	public void requestStop() {
 		// TODO Auto-generated method stub
-
+		
 	}
 }

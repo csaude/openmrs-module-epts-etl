@@ -23,6 +23,17 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 	
 	private String joinExtraCondition;
 	
+	private boolean required;
+	
+	@Override
+	public boolean isRequired() {
+		return this.required;
+	}
+	
+	public void setRequired(boolean required) {
+		this.required = required;
+	}
+	
 	public String getJoinExtraCondition() {
 		return joinExtraCondition;
 	}

@@ -40,15 +40,11 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	private String sharePkWith;
 	
-	private String extraConditionForExport;
-	
 	private boolean metadata;
 	
 	protected boolean fullLoaded;
 	
 	private boolean removeForbidden;
-	
-	private boolean disabled;
 	
 	/**
 	 * List the field to observe when sync by date (ex: date_created, date_update, etc)
@@ -66,19 +62,11 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	 */
 	private List<List<Field>> winningRecordFieldsInfo;
 	
-	private List<SyncDestinationTableConfiguration> destinationTableMappingInfo;
-	
 	private boolean manualIdGeneration;
 	
+	private boolean disabled;
+	
 	public SyncTableConfiguration() {
-	}
-	
-	public List<SyncDestinationTableConfiguration> getDestinationTableMappingInfo() {
-		return destinationTableMappingInfo;
-	}
-	
-	public void setDestinationTableMappingInfo(List<SyncDestinationTableConfiguration> destinationTableMappingInfo) {
-		this.destinationTableMappingInfo = destinationTableMappingInfo;
 	}
 	
 	public void clone(SyncTableConfiguration toCloneFrom) {
@@ -91,16 +79,13 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		this.primaryKey = toCloneFrom.primaryKey;
 		this.primaryKeyType = toCloneFrom.primaryKeyType;
 		this.sharePkWith = toCloneFrom.sharePkWith;
-		this.extraConditionForExport = toCloneFrom.extraConditionForExport;
 		this.metadata = toCloneFrom.metadata;
 		this.fullLoaded = toCloneFrom.fullLoaded;
 		this.removeForbidden = toCloneFrom.removeForbidden;
-		this.disabled = toCloneFrom.disabled;
 		this.observationDateFields = toCloneFrom.observationDateFields;
 		this.uniqueKeys = toCloneFrom.uniqueKeys;
 		this.fields = toCloneFrom.fields;
 		this.winningRecordFieldsInfo = toCloneFrom.winningRecordFieldsInfo;
-		this.destinationTableMappingInfo = toCloneFrom.destinationTableMappingInfo;
 	}
 	
 	public boolean isManualIdGeneration() {
@@ -141,14 +126,6 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	public void setObservationDateFields(List<String> observationDateFields) {
 		this.observationDateFields = observationDateFields;
-	}
-	
-	public boolean isDisabled() {
-		return disabled;
-	}
-	
-	public void setDisabled(boolean disabled) {
-		this.disabled = disabled;
 	}
 	
 	@JsonIgnore
@@ -202,8 +179,6 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	@JsonIgnore
 	public boolean isUuidColumnNotExists() {
 		return this.isFromOpenMRSModel() && this.tableName.equals("patient") ? true : false;
-		
-		//return uuidColumnNotExists;
 	}
 	
 	@JsonIgnore
@@ -227,14 +202,6 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	public void setParents(List<RefInfo> parents) {
 		this.parents = parents;
-	}
-	
-	public String getExtraConditionForExport() {
-		return extraConditionForExport;
-	}
-	
-	public void setExtraConditionForExport(String extraConditionForExport) {
-		this.extraConditionForExport = extraConditionForExport;
 	}
 	
 	public String getSharePkWith() {
@@ -867,9 +834,17 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		return fullLoaded;
 	}
 	
+	public boolean isDisabled() {
+		return disabled;
+	}
+	
+	public void setDisabled(boolean disabled) {
+		this.disabled = disabled;
+	}
+	
 	@JsonIgnore
 	public boolean isConfigured() {
-		for (SyncTableConfiguration tabConf : getRelatedSyncConfiguration().getTablesConfigurations()) {
+		for (SyncTableConfiguration tabConf : getRelatedSyncConfiguration().getConfiguredTables()) {
 			if (tabConf.equals(this))
 				return true;
 		}
@@ -879,6 +854,11 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	public synchronized void fullLoad(Connection conn) {
 		try {
+			
+			if (this.fullLoaded) {
+				return;
+			}
+			
 			boolean exists = DBUtilities.isTableExists(conn.getSchema(), getTableName(), conn);
 			
 			if (!exists)
@@ -896,31 +876,12 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 			setFields(DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn));
 			
 			this.fullLoaded = true;
-			
-			if (destinationTableMappingInfo == null) {
-				destinationTableMappingInfo = SyncDestinationTableConfiguration.generateFromSyncTableConfiguration(this);
-				
-			} else {
-				
-				for (SyncDestinationTableConfiguration map : this.destinationTableMappingInfo) {
-					map.setRelatedSyncConfiguration(relatedSyncConfiguration);
-					map.setSourceTableConfiguration(this);
-					
-					if (!utilities.arrayHasElement(map.getFieldsMapping())) {
-						map.generateMappingFields(this);
-					}
-					
-					map.loadAdditionalFieldsInfo();
-				}
-			}
-			
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
 		}
-		
 	}
 	
 	public synchronized void fullLoad() throws DBException {
@@ -930,27 +891,6 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		
 		try {
 			fullLoad(mainConn);
-			
-			List<AppInfo> otherApps = getRelatedSyncConfiguration().exposeAllAppsNotMain();
-			
-			if (utilities.arrayHasElement(otherApps)) {
-				dstConn = otherApps.get(0).openConnection();
-				
-				for (SyncDestinationTableConfiguration map : this.destinationTableMappingInfo) {
-					map.setRelatedAppInfo(otherApps.get(0));
-					
-					if (DBUtilities.isTableExists(dstConn.getSchema(), map.getTableName(), dstConn)) {
-						map.fullLoad(dstConn);
-						
-						this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(map.getTableName(), dstConn);
-					}
-				}
-			} else {
-				this.manualIdGeneration = !DBUtilities.checkIfTableUseAutoIcrement(this.getTableName(), mainConn);
-			}
-		}
-		catch (SQLException e) {
-			throw new DBException(e);
 		}
 		finally {
 			mainConn.finalizeConnection();

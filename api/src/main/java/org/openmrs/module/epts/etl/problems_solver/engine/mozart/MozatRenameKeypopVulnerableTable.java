@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
@@ -52,8 +51,9 @@ public class MozatRenameKeypopVulnerableTable extends MozartProblemSolverEngine 
 		
 		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
-			logDebug("Trying to rename KeypopVulnerable Table " + ++i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
-				
+			logDebug(
+			    "Trying to rename KeypopVulnerable Table " + ++i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
+			
 			DBValidateInfo report = this.reportOfResolvedProblems.initDBValidatedInfo(dbName);
 			
 			if (!DBUtilities.isResourceExist(dbName, null, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
@@ -82,7 +82,7 @@ public class MozatRenameKeypopVulnerableTable extends MozartProblemSolverEngine 
 				DBUtilities.renameTable(dbName, "keypop_vulnerable", "key_vulnerable_pop", srcConn);
 			}
 			
-			SyncTableConfiguration configuredTable = getSyncTableConfiguration().getRelatedSyncConfiguration().findSyncTableConfiguration("key_vulnerable_pop");
+			/*SyncTableConfiguration configuredTable = getEtlConfiguration().getRelatedSyncConfiguration().findSyncTableConfiguration("key_vulnerable_pop");
 			
 			List<UniqueKeyInfo> missingKeys = generateMissingUniqueKeys(dbName, configuredTable , srcConn);
 			
@@ -90,13 +90,11 @@ public class MozatRenameKeypopVulnerableTable extends MozartProblemSolverEngine 
 				logDebug("There are some missing UKs " + missingKeys);
 				
 				addUniqueKey(dbName, configuredTable, srcConn);
-			}
+			}*/
 		}
 	}
 	
-	
-	private void addUniqueKey(String dbName, SyncTableConfiguration configuredTable, Connection conn)
-	        throws DBException {
+	private void addUniqueKey(String dbName, SyncTableConfiguration configuredTable, Connection conn) throws DBException {
 		
 		String table = dbName + ".key_vulnerable_pop";
 		

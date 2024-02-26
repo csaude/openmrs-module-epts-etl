@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 
 import javax.ws.rs.ForbiddenException;
@@ -48,7 +49,7 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private Map<String, SyncTableConfiguration> syncTableConfigurationPull;
 	
-	private List<SyncTableConfiguration> tablesConfigurations;
+	private List<EtlConfiguration> etlConfiguration;
 	
 	private List<AppInfo> appsInfo;
 	
@@ -59,6 +60,8 @@ public class SyncConfiguration extends BaseConfiguration {
 	private File relatedConfFile;
 	
 	private List<SyncOperationConfig> operations;
+	
+	private List<SyncTableConfiguration> configuredTables;
 	
 	//If true, all operations defined within this conf won't run on start. But may run if this sync configuration is nested to another configuration
 	private boolean automaticStart;
@@ -89,6 +92,8 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private String syncStageSchema;
 	
+	private final String stringLock = new String("LOCK_STRING");
+	
 	/**
 	 * The finalizer class
 	 */
@@ -96,9 +101,42 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private Class<? extends ProcessFinalizer> finalizerClazz;
 	
+	private Map<String, Integer> qtyLoadedTables;
+	
+	private boolean etlCodesLoaded;
+	
 	public SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
 		this.allTables = new ArrayList<SyncTableConfiguration>();
+		
+		this.etlCodesLoaded = false;
+		
+		this.qtyLoadedTables = new HashMap<>();
+		
+		this.configuredTables = new ArrayList<>();
+	}
+	
+	public List<SyncTableConfiguration> getConfiguredTables() {
+		return configuredTables;
+	}
+	
+	public void setConfiguredTables(List<SyncTableConfiguration> configuredTables) {
+		this.configuredTables = configuredTables;
+	}
+	
+	public int increaseQtyLoadedTables(String tableName) {
+		synchronized (stringLock) {
+			
+			if (this.qtyLoadedTables.containsKey(tableName)) {
+				int currentValue = this.qtyLoadedTables.get(tableName);
+				
+				this.qtyLoadedTables.put(tableName, currentValue + 1);
+			} else {
+				this.qtyLoadedTables.put(tableName, 1);
+			}
+			
+			return this.qtyLoadedTables.get(tableName);
+		}
 	}
 	
 	public void setSyncStageSchema(String syncStageSchema) {
@@ -330,16 +368,16 @@ public class SyncConfiguration extends BaseConfiguration {
 		return op.isDoIntegrityCheckInTheEnd();
 	}
 	
-	public List<SyncTableConfiguration> getTablesConfigurations() {
-		return tablesConfigurations;
+	public List<EtlConfiguration> getEtlConfiguration() {
+		return etlConfiguration;
 	}
 	
-	public List<String> parteTableConfigurationsToString() {
+	public List<String> parseEtlConfigurationsToString_() {
 		List<String> tableConfigurationsAsString = new ArrayList<>();
 		
-		if (utilities.arrayHasElement(getTablesConfigurations())) {
-			for (SyncTableConfiguration tc : getTablesConfigurations()) {
-				tableConfigurationsAsString.add(tc.getTableName());
+		if (utilities.arrayHasElement(getEtlConfiguration())) {
+			for (EtlConfiguration tc : getEtlConfiguration()) {
+				tableConfigurationsAsString.add(tc.getConfigCode());
 			}
 		}
 		
@@ -367,16 +405,16 @@ public class SyncConfiguration extends BaseConfiguration {
 		        + FileUtilities.getPathSeparator() + subFolder + FileUtilities.getPathSeparator() + this.getDesignation();
 	}
 	
-	public void setTablesConfigurations(List<SyncTableConfiguration> tablesConfigurations) {
-		if (tablesConfigurations != null) {
-			for (SyncTableConfiguration config : tablesConfigurations) {
+	public void setEtlConfigurations(List<EtlConfiguration> etlConfiguration) {
+		if (etlConfiguration != null) {
+			for (EtlConfiguration config : etlConfiguration) {
 				config.setRelatedSyncConfiguration(this);
 				
-				addToTableConfigurationPull(config);
+				addToTableConfigurationPull(config.getSrcTableConfiguration());
 			}
 		}
 		
-		this.tablesConfigurations = tablesConfigurations;
+		this.etlConfiguration = etlConfiguration;
 	}
 	
 	public void addToTableConfigurationPull(SyncTableConfiguration tableConfiguration) {
@@ -490,6 +528,44 @@ public class SyncConfiguration extends BaseConfiguration {
 		logger.error(msg);
 	}
 	
+	/**
+	 * Loads the code for each
+	 */
+	public void loadEtlConfigCodes() {
+		if (etlCodesLoaded) {
+			return;
+		}
+		
+		synchronized (STRING_LOCK) {
+			for (EtlConfiguration tc : this.etlConfiguration) {
+				tc.setRelatedSyncConfiguration(this);
+				addConfiguredTable(tc.getSrcTableConfiguration());
+				
+				if (countOnTablesOnEtlConfiguration(tc.getSrcTableConfiguration().getTableName()) == 1) {
+					tc.setConfigCode(tc.getSrcTableConfiguration().getTableName());
+				} else {
+					int nextCode = increaseQtyLoadedTables(tc.getSrcTableConfiguration().getTableName());
+					
+					tc.setConfigCode(
+					    tc.getSrcTableConfiguration().getTableName() + "_" + utilities.garantirXCaracterOnNumber(nextCode, 3));
+				}
+			}
+		}
+	}
+	
+	private void addConfiguredTable(SyncTableConfiguration tableConfiguration) {
+		if (this.configuredTables.contains(tableConfiguration)) {
+			return;
+		}
+		
+		this.configuredTables.add(tableConfiguration);	
+	}
+	
+	private long countOnTablesOnEtlConfiguration(String tableName) {
+		return this.etlConfiguration.stream().filter(str -> str.getSrcTableConfiguration().getTableName().equals(tableName))
+		        .count();
+	}
+	
 	public void fullLoad() {
 		if (this.fullLoaded)
 			return;
@@ -497,13 +573,15 @@ public class SyncConfiguration extends BaseConfiguration {
 		initLogger();
 		
 		try {
-			for (SyncTableConfiguration conf : this.getTablesConfigurations()) {
+			for (EtlConfiguration conf : this.getEtlConfiguration()) {
 				if (!conf.isFullLoaded()) {
-					logDebug("PERFORMING FULL CONFIGURATION LOAD ON TABLE '" + conf.getTableName() + "'");
+					logDebug(
+					    "PERFORMING FULL CONFIGURATION LOAD ON TABLE '" + conf.getSrcTableConfiguration().getTableName() + "'");
 					conf.fullLoad();
 				}
 				
-				logDebug("THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '" + conf.getTableName() + "'");
+				logDebug(
+				    "THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '" + conf.getSrcTableConfiguration().getTableName() + "'");
 			}
 			
 			this.fullLoaded = true;
@@ -528,10 +606,6 @@ public class SyncConfiguration extends BaseConfiguration {
 				if (tab.getTableName().startsWith("_"))
 					continue;
 				
-				if (find(tab) == null) {
-					tab.setDisabled(true);
-				}
-				
 				this.allTables.add(tab);
 			}
 		}
@@ -546,7 +620,12 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	public static SyncConfiguration loadFromJSON(String json) {
 		try {
-			return new ObjectMapperProvider().getContext(SyncConfiguration.class).readValue(json, SyncConfiguration.class);
+			SyncConfiguration syncConfiguration = new ObjectMapperProvider().getContext(SyncConfiguration.class)
+			        .readValue(json, SyncConfiguration.class);
+			
+			syncConfiguration.loadEtlConfigCodes();
+			
+			return syncConfiguration;
 		}
 		catch (JsonParseException e) {
 			e.printStackTrace();
@@ -565,9 +644,9 @@ public class SyncConfiguration extends BaseConfiguration {
 		}
 	}
 	
-	public SyncTableConfiguration findSyncTableConfiguration(String tableName) {
-		SyncTableConfiguration tableConfiguration = new SyncTableConfiguration();
-		tableConfiguration.setTableName(tableName);
+	public EtlConfiguration findSyncEtlConfiguration(String configCode) {
+		EtlConfiguration tableConfiguration = new EtlConfiguration();
+		tableConfiguration.setConfigCode(configCode);
 		
 		return find(tableConfiguration);
 	}
@@ -589,14 +668,17 @@ public class SyncConfiguration extends BaseConfiguration {
 		return app;
 	}
 	
-	public SyncTableConfiguration find(SyncTableConfiguration tableConfiguration) {
-		return utilities.findOnList(this.tablesConfigurations, tableConfiguration);
+	public EtlConfiguration find(EtlConfiguration config) {
+		return utilities.findOnList(this.etlConfiguration, config);
+	}
+	
+	public SyncTableConfiguration find(SyncTableConfiguration config) {
+		return utilities.findOnList(this.allTables, config);
 	}
 	
 	@JsonIgnore
 	public String getDesignation() {
 		return this.processType.name().toLowerCase();
-		//+ (utilities.stringHasValue(this.originAppLocationCode) ?  "_" + this.originAppLocationCode : "");
 	}
 	
 	public List<SyncOperationConfig> getOperations() {
@@ -844,6 +926,11 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	public void refreshTables() {
+		
+		if (UUID.randomUUID() != null) {
+			throw new ForbiddenOperationException("Please revier this mathod");
+		}
+		
 		List<SyncTableConfiguration> tablesConfigurations = new ArrayList<SyncTableConfiguration>();
 		
 		for (SyncTableConfiguration conf : this.allTables) {
@@ -862,7 +949,7 @@ public class SyncConfiguration extends BaseConfiguration {
 			}
 		}
 		
-		this.tablesConfigurations = tablesConfigurations;
+		//this.etlConfiguration = tablesConfigurations;
 	}
 	
 	@JsonIgnore
@@ -983,5 +1070,4 @@ public class SyncConfiguration extends BaseConfiguration {
 			app.finalize();
 		}
 	}
-	
 }

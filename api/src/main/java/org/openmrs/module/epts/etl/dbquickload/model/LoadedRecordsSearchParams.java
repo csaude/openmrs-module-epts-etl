@@ -3,18 +3,19 @@ package org.openmrs.module.epts.etl.dbquickload.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class LoadedRecordsSearchParams extends SyncSearchParams<SyncImportInfoVO>{
+public class LoadedRecordsSearchParams extends SyncSearchParams<SyncImportInfoVO> {
+	
 	private String appOriginLocationCode;
 	
-	public LoadedRecordsSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, String appOriginLocationCode) {
-		super(tableInfo, limits);
+	public LoadedRecordsSearchParams(EtlConfiguration config, RecordLimits limits, String appOriginLocationCode) {
+		super(config, limits);
 		
 		setOrderByFields("id");
 		
@@ -25,9 +26,9 @@ public class LoadedRecordsSearchParams extends SyncSearchParams<SyncImportInfoVO
 	public SearchClauses<SyncImportInfoVO> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
 		
-		searchClauses.addColumnToSelect(tableInfo.generateFullStageTableName() + ".*");
+		searchClauses.addColumnToSelect(getSrcTableConfiguration().generateFullStageTableName() + ".*");
 		
-		searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName());    
+		searchClauses.addToClauseFrom(getSrcTableConfiguration().generateFullStageTableName());
 		
 		searchClauses.addToClauses("record_origin_location_code = ?");
 		searchClauses.addToParameters(this.appOriginLocationCode);
@@ -37,7 +38,7 @@ public class LoadedRecordsSearchParams extends SyncSearchParams<SyncImportInfoVO
 		}
 		
 		return searchClauses;
-	}	
+	}
 	
 	@Override
 	public Class<SyncImportInfoVO> getRecordClass() {
@@ -48,7 +49,7 @@ public class LoadedRecordsSearchParams extends SyncSearchParams<SyncImportInfoVO
 	public int countAllRecords(Connection conn) throws DBException {
 		return SearchParamsDAO.countAll(this, conn);
 	}
-
+	
 	@Override
 	public int countNotProcessedRecords(Connection conn) throws DBException {
 		return 0;

@@ -146,9 +146,22 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	@Override
 	public void setFieldValue(String fieldName, Object value) {
 		try {
+			
 			for (Field field : getFields()) {
 				if (field.getName().equals(fieldName)) {
-					field.set(this, value);
+					if (field.getType().equals(Integer.class) && value instanceof Double) {
+						/*
+						 * Cast value to int if the field type is Integer.
+						 * 
+						 * This was added to resolve some issues when using generic etl where some field from query come
+						 * with double value to be inserted in int fields
+						 */
+						String str = utilities.displayDoubleOnIntegerFormat((Double) value);
+						
+						field.set(this, Integer.parseInt(str));
+					} else {
+						field.set(this, value);
+					}
 					
 					break;
 				}

@@ -46,8 +46,8 @@ public class DBQuickCopyEngine extends Engine {
 		try {
 			List<DatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, DatabaseObject.class);
 			
-			logInfo("LOADING  '" + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName()
-			        + " TO DESTINATION DB");
+			logInfo(
+			    "LOADING  '" + syncRecords.size() + "' " + getSrcTableConfiguration().getTableName() + " TO DESTINATION DB");
 			
 			List<SyncImportInfoVO> records = SyncImportInfoVO.generateFromSyncRecord(syncRecordsAsOpenMRSObjects,
 			    getRelatedOperationController().getAppOriginLocationCode(), false);
@@ -56,7 +56,7 @@ public class DBQuickCopyEngine extends Engine {
 				rec.setConsistent(1);
 			}
 			
-			SyncImportInfoDAO.insertAllBatch(records, getSyncTableConfiguration(), conn);
+			SyncImportInfoDAO.insertAllBatch(records, getSrcTableConfiguration(), conn);
 			
 		}
 		catch (DBException e) {
@@ -72,10 +72,10 @@ public class DBQuickCopyEngine extends Engine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickCopySearchParams(this.getSyncTableConfiguration(),
-		        limits, getRelatedOperationController());
+		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickCopySearchParams(this.getEtlConfiguration(), limits,
+		        getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

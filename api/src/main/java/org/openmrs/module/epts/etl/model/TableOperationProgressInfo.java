@@ -10,7 +10,7 @@ import java.util.Date;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.engine.SyncProgressMeter;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
@@ -24,14 +24,14 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class TableOperationProgressInfo extends BaseVO {
 	
-	private SyncTableConfiguration tableConfiguration;
+	private EtlConfiguration etlConfiguration;
 	
 	private SyncProgressMeter progressMeter;
 	
 	private OperationController controller;
 	
 	/*
-	 * Since in destination site the tableConfiguration is aplayed to all sites, then it is needed to fix it to allow manual specification
+	 * Since in destination site the etlConfiguration is aplayed to all sites, then it is needed to fix it to allow manual specification
 	 */
 	private String originAppLocationCode;
 	
@@ -52,9 +52,9 @@ public class TableOperationProgressInfo extends BaseVO {
 		this.progressMeter = SyncProgressMeter.fullInit(status, startTime, lastRefreshAt, total, processed);
 	}
 	
-	public TableOperationProgressInfo(OperationController controller, SyncTableConfiguration tableConfiguration) {
+	public TableOperationProgressInfo(OperationController controller, EtlConfiguration etlConfiguration) {
 		this.controller = controller;
-		this.tableConfiguration = tableConfiguration;
+		this.etlConfiguration = etlConfiguration;
 		this.originAppLocationCode = determineAppLocationCode(controller);
 		this.progressMeter = SyncProgressMeter.defaultProgressMeter(getOperationId());
 	}
@@ -77,10 +77,8 @@ public class TableOperationProgressInfo extends BaseVO {
 		        || controller.getOperationConfig().isPhantomRecordsDetector()
 		        || controller.getOperationConfig().isDBMergeFromSourceDB()
 		        || controller.getOperationConfig().isDataBaseMergeFromJSONOperation()
-		        || controller.getConfiguration().isResolveProblems()
-		        || controller.getConfiguration().isDbCopy() 
-		        || controller.getConfiguration().isDetectGapesOnDbTables()
-		        )
+		        || controller.getConfiguration().isResolveProblems() || controller.getConfiguration().isDbCopy()
+		        || controller.getConfiguration().isDetectGapesOnDbTables())
 			return "central_site";
 		
 		throw new ForbiddenOperationException("The originAppCode cannot be determined for "
@@ -92,24 +90,24 @@ public class TableOperationProgressInfo extends BaseVO {
 	}
 	
 	@JsonIgnore
-	public SyncTableConfiguration getTableConfiguration() {
-		return tableConfiguration;
+	public EtlConfiguration getEtlConfiguration() {
+		return etlConfiguration;
 	}
 	
-	public void setTableConfiguration(SyncTableConfiguration tableConfiguration) {
-		this.tableConfiguration = tableConfiguration;
+	public void setEtlConfiguration(EtlConfiguration etlConfiguration) {
+		this.etlConfiguration = etlConfiguration;
 	}
 	
 	public String getOperationId() {
-		return generateOperationId(controller, tableConfiguration);
+		return generateOperationId(controller, etlConfiguration);
 	}
 	
 	public String getOperationName() {
 		return this.controller.getControllerId();
 	}
 	
-	public String getOperationTable() {
-		return this.tableConfiguration.getTableName();
+	public String getOperationConfigCode() {
+		return this.etlConfiguration.getConfigCode();
 	}
 	
 	public SyncProgressMeter getProgressMeter() {
@@ -124,19 +122,18 @@ public class TableOperationProgressInfo extends BaseVO {
 		this.originAppLocationCode = originAppLocationCode;
 	}
 	
-	public static String generateOperationId(OperationController operationController,
-	        SyncTableConfiguration tableConfiguration) {
-		return operationController.getControllerId() + "_" + tableConfiguration.getTableName();
+	public static String generateOperationId(OperationController operationController, EtlConfiguration config) {
+		return operationController.getControllerId() + "_" + config.getConfigCode();
 	}
 	
 	public synchronized void save(Connection conn) throws DBException {
-		TableOperationProgressInfo recordOnDB = TableOperationProgressInfoDAO.find(this.controller, getTableConfiguration(),
+		TableOperationProgressInfo recordOnDB = TableOperationProgressInfoDAO.find(this.controller, getEtlConfiguration(),
 		    conn);
 		
 		if (recordOnDB != null) {
-			TableOperationProgressInfoDAO.update(this, getTableConfiguration(), conn);
+			TableOperationProgressInfoDAO.update(this, getEtlConfiguration(), conn);
 		} else {
-			TableOperationProgressInfoDAO.insert(this, getTableConfiguration(), conn);
+			TableOperationProgressInfoDAO.insert(this, getEtlConfiguration(), conn);
 		}
 	}
 	
@@ -191,9 +188,9 @@ public class TableOperationProgressInfo extends BaseVO {
 	public void refreshProgressMeter() {
 		
 	}
-
+	
 	public void clear(Connection conn) throws DBException {
-		TableOperationProgressInfoDAO.delete(this, this.tableConfiguration, conn);
+		TableOperationProgressInfoDAO.delete(this, this.etlConfiguration, conn);
 	}
 	
 }

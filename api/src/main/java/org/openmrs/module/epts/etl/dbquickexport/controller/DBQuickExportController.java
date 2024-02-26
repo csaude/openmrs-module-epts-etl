@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickexport.engine.DBQuickExportEngine;
@@ -37,11 +38,11 @@ public class DBQuickExportController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+	public long getMinRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DatabaseObjectDAO.getFirstRecord(tableInfo, conn);
+			return DatabaseObjectDAO.getFirstRecord(config.getSrcTableConfiguration(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -54,11 +55,11 @@ public class DBQuickExportController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+	public long getMaxRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DatabaseObjectDAO.getLastRecord(tableInfo, conn);
+			return DatabaseObjectDAO.getLastRecord(config.getSrcTableConfiguration(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();

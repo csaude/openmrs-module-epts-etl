@@ -43,9 +43,9 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		if (getSyncTableConfiguration().getTableName().equalsIgnoreCase("users")) return;
+		if (getSrcTableName().equalsIgnoreCase("users")) return;
 		
-		this.getMonitor().logInfo("PERFORMING DATA RECONCILIATION ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		this.getMonitor().logInfo("PERFORMING DATA RECONCILIATION ON " + syncRecords.size() + "' " + this.getSrcTableName());
 		
 		if (getRelatedOperationController().isMissingRecordsDetector()) {
 			performeMissingRecordsCreation(syncRecords, conn);
@@ -59,7 +59,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			performePhantomRecordsRemotion(syncRecords, conn);
 		}
 		
-		this.getMonitor().logInfo("RECONCILIATION DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+		this.getMonitor().logInfo("RECONCILIATION DONE ON " + syncRecords.size() + " " + getSrcTableName() + "!");
 	}
 	
 	private void performeMissingRecordsCreation(List<SyncRecord> syncRecords, Connection conn) throws DBException{
@@ -70,7 +70,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		
 			logInfo(startingStrLog  +": Restoring record: [" + record + "]");
 			
-			DataReconciliationRecord data = new DataReconciliationRecord((DatabaseObject) record , getSyncTableConfiguration(), ConciliationReasonType.MISSING);
+			DataReconciliationRecord data = new DataReconciliationRecord((DatabaseObject) record , getSrcTableConfiguration(), ConciliationReasonType.MISSING);
 			
 			data.reloadRelatedRecordDataFromRemote(conn);
 			
@@ -90,7 +90,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			
 			logInfo(startingStrLog + ": Updating record: [" + record + "]");
 			
-			DataReconciliationRecord.tryToReconciliate((DatabaseObject) record, getSyncTableConfiguration(), conn);
+			DataReconciliationRecord.tryToReconciliate((DatabaseObject) record, getSrcTableConfiguration(), conn);
 			
 			i++;
 		}	
@@ -104,7 +104,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			
 			logInfo(startingStrLog + ": Removing record: [" + record + "]");
 			
-			DataReconciliationRecord data = new DataReconciliationRecord(((DatabaseObject)record).getUuid() , getSyncTableConfiguration(), ConciliationReasonType.PHANTOM);
+			DataReconciliationRecord data = new DataReconciliationRecord(((DatabaseObject)record).getUuid() , getSrcTableConfiguration(), ConciliationReasonType.PHANTOM);
 			data.reloadRelatedRecordDataFromDestination(conn);
 			data.removeRelatedRecord(conn);
 			data.save(conn);
@@ -119,9 +119,9 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new CentralAndRemoteDataReconciliationSearchParams(this.getSyncTableConfiguration(), limits, getRelatedOperationController().getOperationType(), conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new CentralAndRemoteDataReconciliationSearchParams(this.getEtlConfiguration(), limits, getRelatedOperationController().getOperationType(), conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

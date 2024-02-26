@@ -4,8 +4,8 @@ import java.lang.reflect.Constructor;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -37,12 +37,12 @@ public class GenericOperationController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+	public long getMinRecordId(EtlConfiguration config) {
 		return 1;
 	}
 	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+	public long getMaxRecordId(EtlConfiguration config) {
 		return 1;
 	}
 	

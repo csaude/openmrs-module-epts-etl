@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.model.pojo.openmrs._default;
+package org.openmrs.module.epts.etl.model.pojo.openmrs._default._query_result;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
@@ -17,6 +17,8 @@ public class PatientDataInfoQueryResultVO extends AbstractDatabaseObject impleme
 	private java.util.Date enrollmentDate;
 	private Integer locationId;
 	private String healthFacility;
+	private String district;
+	private String urban;
 	private double ageEnrollment;
 	private double openmrsCurrentAge;
 	private String maritalStatusAtEnrollment;
@@ -82,6 +84,22 @@ public class PatientDataInfoQueryResultVO extends AbstractDatabaseObject impleme
  
 	public String getHealthFacility(){ 
 		return this.healthFacility;
+	}
+ 
+	public void setDistrict(String district){ 
+	 	this.district = district;
+	}
+ 
+	public String getDistrict(){ 
+		return this.district;
+	}
+ 
+	public void setUrban(String urban){ 
+	 	this.urban = urban;
+	}
+ 
+	public String getUrban(){ 
+		return this.urban;
 	}
  
 	public void setAgeEnrollment(double ageEnrollment){ 
@@ -276,6 +294,8 @@ public class PatientDataInfoQueryResultVO extends AbstractDatabaseObject impleme
 		this.enrollmentDate =  rs.getTimestamp("enrollment_date") != null ? new java.util.Date( rs.getTimestamp("enrollment_date").getTime() ) : null;
 		if (rs.getObject("location_id") != null) this.locationId = rs.getInt("location_id");
 		this.healthFacility = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("health_facility") != null ? rs.getString("health_facility").trim() : null);
+		this.district = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("district") != null ? rs.getString("district").trim() : null);
+		this.urban = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("urban") != null ? rs.getString("urban").trim() : null);
 		this.ageEnrollment = rs.getDouble("age_enrollment");
 		this.openmrsCurrentAge = rs.getDouble("openmrs_current_age");
 		this.maritalStatusAtEnrollment = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("marital_status_at_enrollment") != null ? rs.getString("marital_status_at_enrollment").trim() : null);
@@ -307,37 +327,37 @@ public class PatientDataInfoQueryResultVO extends AbstractDatabaseObject impleme
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO patient_data_info(birthdate, gender, enrollment_date, location_id, health_facility, age_enrollment, openmrs_current_age, marital_status_at_enrollment, pregnancy_status_at_enrollment, education_at_enrollment, occupation_at_enrollment, partner_status_at_enrollment, who_clinical_stage_at_enrollment_date, who_clinical_stage_at_enrollment, weight_date, weight_enrollment, height_enrollment, height_date, art_initiation_date, art_regimen_code, patient_status_date, patient_status_code, tb_at_screening, tb_co_infection_status, pmtct_entry_date, pmtct_exit_date, current_status_in_dmc) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_data_info(birthdate, gender, enrollment_date, location_id, health_facility, district, urban, age_enrollment, openmrs_current_age, marital_status_at_enrollment, pregnancy_status_at_enrollment, education_at_enrollment, occupation_at_enrollment, partner_status_at_enrollment, who_clinical_stage_at_enrollment_date, who_clinical_stage_at_enrollment, weight_date, weight_enrollment, height_enrollment, height_date, art_initiation_date, art_regimen_code, patient_status_date, patient_status_code, tb_at_screening, tb_co_infection_status, pmtct_entry_date, pmtct_exit_date, current_status_in_dmc) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.birthdate, this.gender, this.enrollmentDate, this.locationId, this.healthFacility, this.ageEnrollment, this.openmrsCurrentAge, this.maritalStatusAtEnrollment, this.pregnancyStatusAtEnrollment, this.educationAtEnrollment, this.occupationAtEnrollment, this.partnerStatusAtEnrollment, this.whoClinicalStageAtEnrollmentDate, this.whoClinicalStageAtEnrollment, this.weightDate, this.weightEnrollment, this.heightEnrollment, this.heightDate, this.artInitiationDate, this.artRegimenCode, this.patientStatusDate, this.patientStatusCode, this.tbAtScreening, this.tbCoInfectionStatus, this.pmtctEntryDate, this.pmtctExitDate, this.currentStatusInDmc};		return params; 
+ 		Object[] params = {this.birthdate, this.gender, this.enrollmentDate, this.locationId, this.healthFacility, this.district, this.urban, this.ageEnrollment, this.openmrsCurrentAge, this.maritalStatusAtEnrollment, this.pregnancyStatusAtEnrollment, this.educationAtEnrollment, this.occupationAtEnrollment, this.partnerStatusAtEnrollment, this.whoClinicalStageAtEnrollmentDate, this.whoClinicalStageAtEnrollment, this.weightDate, this.weightEnrollment, this.heightEnrollment, this.heightDate, this.artInitiationDate, this.artRegimenCode, this.patientStatusDate, this.patientStatusCode, this.tbAtScreening, this.tbCoInfectionStatus, this.pmtctEntryDate, this.pmtctExitDate, this.currentStatusInDmc};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO patient_data_info(birthdate, gender, enrollment_date, location_id, health_facility, age_enrollment, openmrs_current_age, marital_status_at_enrollment, pregnancy_status_at_enrollment, education_at_enrollment, occupation_at_enrollment, partner_status_at_enrollment, who_clinical_stage_at_enrollment_date, who_clinical_stage_at_enrollment, weight_date, weight_enrollment, height_enrollment, height_date, art_initiation_date, art_regimen_code, patient_status_date, patient_status_code, tb_at_screening, tb_co_infection_status, pmtct_entry_date, pmtct_exit_date, current_status_in_dmc) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_data_info(birthdate, gender, enrollment_date, location_id, health_facility, district, urban, age_enrollment, openmrs_current_age, marital_status_at_enrollment, pregnancy_status_at_enrollment, education_at_enrollment, occupation_at_enrollment, partner_status_at_enrollment, who_clinical_stage_at_enrollment_date, who_clinical_stage_at_enrollment, weight_date, weight_enrollment, height_enrollment, height_date, art_initiation_date, art_regimen_code, patient_status_date, patient_status_code, tb_at_screening, tb_co_infection_status, pmtct_entry_date, pmtct_exit_date, current_status_in_dmc) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.birthdate, this.gender, this.enrollmentDate, this.locationId, this.healthFacility, this.ageEnrollment, this.openmrsCurrentAge, this.maritalStatusAtEnrollment, this.pregnancyStatusAtEnrollment, this.educationAtEnrollment, this.occupationAtEnrollment, this.partnerStatusAtEnrollment, this.whoClinicalStageAtEnrollmentDate, this.whoClinicalStageAtEnrollment, this.weightDate, this.weightEnrollment, this.heightEnrollment, this.heightDate, this.artInitiationDate, this.artRegimenCode, this.patientStatusDate, this.patientStatusCode, this.tbAtScreening, this.tbCoInfectionStatus, this.pmtctEntryDate, this.pmtctExitDate, this.currentStatusInDmc};		return params; 
+ 		Object[] params = {this.birthdate, this.gender, this.enrollmentDate, this.locationId, this.healthFacility, this.district, this.urban, this.ageEnrollment, this.openmrsCurrentAge, this.maritalStatusAtEnrollment, this.pregnancyStatusAtEnrollment, this.educationAtEnrollment, this.occupationAtEnrollment, this.partnerStatusAtEnrollment, this.whoClinicalStageAtEnrollmentDate, this.whoClinicalStageAtEnrollment, this.weightDate, this.weightEnrollment, this.heightEnrollment, this.heightDate, this.artInitiationDate, this.artRegimenCode, this.patientStatusDate, this.patientStatusCode, this.tbAtScreening, this.tbCoInfectionStatus, this.pmtctEntryDate, this.pmtctExitDate, this.currentStatusInDmc};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.birthdate, this.gender, this.enrollmentDate, this.locationId, this.healthFacility, this.ageEnrollment, this.openmrsCurrentAge, this.maritalStatusAtEnrollment, this.pregnancyStatusAtEnrollment, this.educationAtEnrollment, this.occupationAtEnrollment, this.partnerStatusAtEnrollment, this.whoClinicalStageAtEnrollmentDate, this.whoClinicalStageAtEnrollment, this.weightDate, this.weightEnrollment, this.heightEnrollment, this.heightDate, this.artInitiationDate, this.artRegimenCode, this.patientStatusDate, this.patientStatusCode, this.tbAtScreening, this.tbCoInfectionStatus, this.pmtctEntryDate, this.pmtctExitDate, this.currentStatusInDmc, null};		return params; 
+ 		Object[] params = {this.birthdate, this.gender, this.enrollmentDate, this.locationId, this.healthFacility, this.district, this.urban, this.ageEnrollment, this.openmrsCurrentAge, this.maritalStatusAtEnrollment, this.pregnancyStatusAtEnrollment, this.educationAtEnrollment, this.occupationAtEnrollment, this.partnerStatusAtEnrollment, this.whoClinicalStageAtEnrollmentDate, this.whoClinicalStageAtEnrollment, this.weightDate, this.weightEnrollment, this.heightEnrollment, this.heightDate, this.artInitiationDate, this.artRegimenCode, this.patientStatusDate, this.patientStatusCode, this.tbAtScreening, this.tbCoInfectionStatus, this.pmtctEntryDate, this.pmtctExitDate, this.currentStatusInDmc, null};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient_data_info SET birthdate = ?, gender = ?, enrollment_date = ?, location_id = ?, health_facility = ?, age_enrollment = ?, openmrs_current_age = ?, marital_status_at_enrollment = ?, pregnancy_status_at_enrollment = ?, education_at_enrollment = ?, occupation_at_enrollment = ?, partner_status_at_enrollment = ?, who_clinical_stage_at_enrollment_date = ?, who_clinical_stage_at_enrollment = ?, weight_date = ?, weight_enrollment = ?, height_enrollment = ?, height_date = ?, art_initiation_date = ?, art_regimen_code = ?, patient_status_date = ?, patient_status_code = ?, tb_at_screening = ?, tb_co_infection_status = ?, pmtct_entry_date = ?, pmtct_exit_date = ?, current_status_in_dmc = ? WHERE null = ?;"; 
+ 		return "UPDATE patient_data_info SET birthdate = ?, gender = ?, enrollment_date = ?, location_id = ?, health_facility = ?, district = ?, urban = ?, age_enrollment = ?, openmrs_current_age = ?, marital_status_at_enrollment = ?, pregnancy_status_at_enrollment = ?, education_at_enrollment = ?, occupation_at_enrollment = ?, partner_status_at_enrollment = ?, who_clinical_stage_at_enrollment_date = ?, who_clinical_stage_at_enrollment = ?, weight_date = ?, weight_enrollment = ?, height_enrollment = ?, height_date = ?, art_initiation_date = ?, art_regimen_code = ?, patient_status_date = ?, patient_status_code = ?, tb_at_screening = ?, tb_co_infection_status = ?, pmtct_entry_date = ?, pmtct_exit_date = ?, current_status_in_dmc = ? WHERE null = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.birthdate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(birthdate)  +"\"" : null) + "," + (this.gender != null ? "\""+ utilities.scapeQuotationMarks(gender)  +"\"" : null) + "," + (this.enrollmentDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(enrollmentDate)  +"\"" : null) + "," + (this.locationId) + "," + (this.healthFacility != null ? "\""+ utilities.scapeQuotationMarks(healthFacility)  +"\"" : null) + "," + (this.ageEnrollment) + "," + (this.openmrsCurrentAge) + "," + (this.maritalStatusAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(maritalStatusAtEnrollment)  +"\"" : null) + "," + (this.pregnancyStatusAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(pregnancyStatusAtEnrollment)  +"\"" : null) + "," + (this.educationAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(educationAtEnrollment)  +"\"" : null) + "," + (this.occupationAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(occupationAtEnrollment)  +"\"" : null) + "," + (this.partnerStatusAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(partnerStatusAtEnrollment)  +"\"" : null) + "," + (this.whoClinicalStageAtEnrollmentDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(whoClinicalStageAtEnrollmentDate)  +"\"" : null) + "," + (this.whoClinicalStageAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(whoClinicalStageAtEnrollment)  +"\"" : null) + "," + (this.weightDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(weightDate)  +"\"" : null) + "," + (this.weightEnrollment) + "," + (this.heightEnrollment) + "," + (this.heightDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(heightDate)  +"\"" : null) + "," + (this.artInitiationDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(artInitiationDate)  +"\"" : null) + "," + (this.artRegimenCode != null ? "\""+ utilities.scapeQuotationMarks(artRegimenCode)  +"\"" : null) + "," + (this.patientStatusDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(patientStatusDate)  +"\"" : null) + "," + (this.patientStatusCode != null ? "\""+ utilities.scapeQuotationMarks(patientStatusCode)  +"\"" : null) + "," + (this.tbAtScreening != null ? "\""+ utilities.scapeQuotationMarks(tbAtScreening)  +"\"" : null) + "," + (this.tbCoInfectionStatus != null ? "\""+ utilities.scapeQuotationMarks(tbCoInfectionStatus)  +"\"" : null) + "," + (this.pmtctEntryDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(pmtctEntryDate)  +"\"" : null) + "," + (this.pmtctExitDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(pmtctExitDate)  +"\"" : null) + "," + (this.currentStatusInDmc != null ? "\""+ utilities.scapeQuotationMarks(currentStatusInDmc)  +"\"" : null); 
+ 		return ""+(this.birthdate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(birthdate)  +"\"" : null) + "," + (this.gender != null ? "\""+ utilities.scapeQuotationMarks(gender)  +"\"" : null) + "," + (this.enrollmentDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(enrollmentDate)  +"\"" : null) + "," + (this.locationId) + "," + (this.healthFacility != null ? "\""+ utilities.scapeQuotationMarks(healthFacility)  +"\"" : null) + "," + (this.district != null ? "\""+ utilities.scapeQuotationMarks(district)  +"\"" : null) + "," + (this.urban != null ? "\""+ utilities.scapeQuotationMarks(urban)  +"\"" : null) + "," + (this.ageEnrollment) + "," + (this.openmrsCurrentAge) + "," + (this.maritalStatusAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(maritalStatusAtEnrollment)  +"\"" : null) + "," + (this.pregnancyStatusAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(pregnancyStatusAtEnrollment)  +"\"" : null) + "," + (this.educationAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(educationAtEnrollment)  +"\"" : null) + "," + (this.occupationAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(occupationAtEnrollment)  +"\"" : null) + "," + (this.partnerStatusAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(partnerStatusAtEnrollment)  +"\"" : null) + "," + (this.whoClinicalStageAtEnrollmentDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(whoClinicalStageAtEnrollmentDate)  +"\"" : null) + "," + (this.whoClinicalStageAtEnrollment != null ? "\""+ utilities.scapeQuotationMarks(whoClinicalStageAtEnrollment)  +"\"" : null) + "," + (this.weightDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(weightDate)  +"\"" : null) + "," + (this.weightEnrollment) + "," + (this.heightEnrollment) + "," + (this.heightDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(heightDate)  +"\"" : null) + "," + (this.artInitiationDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(artInitiationDate)  +"\"" : null) + "," + (this.artRegimenCode != null ? "\""+ utilities.scapeQuotationMarks(artRegimenCode)  +"\"" : null) + "," + (this.patientStatusDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(patientStatusDate)  +"\"" : null) + "," + (this.patientStatusCode != null ? "\""+ utilities.scapeQuotationMarks(patientStatusCode)  +"\"" : null) + "," + (this.tbAtScreening != null ? "\""+ utilities.scapeQuotationMarks(tbAtScreening)  +"\"" : null) + "," + (this.tbCoInfectionStatus != null ? "\""+ utilities.scapeQuotationMarks(tbCoInfectionStatus)  +"\"" : null) + "," + (this.pmtctEntryDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(pmtctEntryDate)  +"\"" : null) + "," + (this.pmtctExitDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(pmtctExitDate)  +"\"" : null) + "," + (this.currentStatusInDmc != null ? "\""+ utilities.scapeQuotationMarks(currentStatusInDmc)  +"\"" : null); 
 	} 
  
 	@Override

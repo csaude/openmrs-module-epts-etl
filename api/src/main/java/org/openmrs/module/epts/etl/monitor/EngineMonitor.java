@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -31,7 +32,7 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	private OperationController controller;
 	
-	private SyncTableConfiguration syncTableInfo;
+	private EtlConfiguration etlConfiguration;
 	
 	private List<Engine> ownEngines;
 	
@@ -47,18 +48,21 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	//private List<SyncRecord> recordsToBeReprocessed;
 	
-	public EngineMonitor(OperationController controller, SyncTableConfiguration syncTableInfo,
+	public EngineMonitor(OperationController controller, EtlConfiguration etlConfiguration,
 	    TableOperationProgressInfo tableOperationProgressInfo) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<Engine>();
-		this.syncTableInfo = syncTableInfo;
+		this.etlConfiguration = etlConfiguration;
 		
-		this.engineMonitorId = (controller.getControllerId() + "_" + syncTableInfo.getTableName() + "_monitor")
-		        .toLowerCase();
-		this.engineId = (getController().getControllerId() + "_" + syncTableInfo.getTableName()).toLowerCase();
+		this.engineMonitorId = (controller.getControllerId() + "_" + this.getEtlConfigCode() + "_monitor").toLowerCase();
+		this.engineId = (getController().getControllerId() + "_" + this.getEtlConfigCode()).toLowerCase();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
+	}
+	
+	public SyncTableConfiguration getSrcTableConfiguration() {
+		return this.getEtlConfiguration().getSrcTableConfiguration();
 	}
 	
 	public List<Engine> getOwnEngines() {
@@ -73,8 +77,12 @@ public class EngineMonitor implements MonitoredOperation {
 		return engineMonitorId;
 	}
 	
-	public SyncTableConfiguration getSyncTableInfo() {
-		return syncTableInfo;
+	public EtlConfiguration getEtlConfiguration() {
+		return this.etlConfiguration;
+	}
+	
+	public String getEtlConfigCode() {
+		return this.getEtlConfiguration().getConfigCode();
 	}
 	
 	public SyncProgressMeter getProgressMeter() {
@@ -93,22 +101,21 @@ public class EngineMonitor implements MonitoredOperation {
 		}
 		
 		return null;
-		
-		//throw new RuntimeException("No engine defined for this monitor "+getController().getControllerId() + "_" + getSyncTableInfo().getTableName());
 	}
 	
 	@Override
 	public void run() {
 		try {
-			if (!getSyncTableInfo().isFullLoaded())
-				getSyncTableInfo().fullLoad();
+			if (!getEtlConfiguration().isFullLoaded())
+				getEtlConfiguration().fullLoad();
 			
 			initEngine();
 			
 			if (!utilities.arrayHasElement(ownEngines)) {
 				if (!mustRestartInTheEnd()) {
-					logWarn("NO ENGINE FOR '" + getController().getOperationType().name().toLowerCase() + "' FOR TABLE '"
-					        + getSyncTableInfo().getTableName().toUpperCase() + "' WAS CREATED...");
+					logWarn(
+					    "NO ENGINE FOR '" + getController().getOperationType().name().toLowerCase() + "' FOR ETL CONFIG '"
+					            + getEtlConfiguration().getConfigCode().toUpperCase() + "' WAS CREATED...");
 					
 					this.operationStatus = MonitoredOperation.STATUS_FINISHED;
 				} else {
@@ -119,8 +126,8 @@ public class EngineMonitor implements MonitoredOperation {
 			} else {
 				onStart();
 				
-				logDebug("INITIALIZED '" + getController().getOperationType().name().toLowerCase() + "' ENGINE FOR TABLE '"
-				        + getSyncTableInfo().getTableName().toUpperCase() + "'");
+				logDebug("INITIALIZED '" + getController().getOperationType().name().toLowerCase()
+				        + "' ENGINE FOR ETL CONFIG'" + getEtlConfiguration().getConfigCode().toUpperCase() + "'");
 				
 				doWait();
 			}
@@ -138,9 +145,9 @@ public class EngineMonitor implements MonitoredOperation {
 			if (mustRestartInTheEnd()) {
 				//Sleep more time if must restart in the end is one to prevent
 				//Repeatedly retries when there is no more data to process
-				TimeCountDown.sleep(5*60);
+				TimeCountDown.sleep(5 * 60);
 			} else {
-				TimeCountDown.sleep(15);		
+				TimeCountDown.sleep(15);
 			}
 			
 			if (!utilities.arrayHasElement(this.ownEngines)) {
@@ -164,29 +171,27 @@ public class EngineMonitor implements MonitoredOperation {
 	}
 	
 	private void initEngine() {
-		SyncTableConfiguration syncInfo = getSyncTableInfo();
+		logInfo("INITIALIZING ENGINE FOR ETL CONFIG [" + getEtlConfiguration().getConfigCode().toUpperCase() + "]");
 		
-		logInfo("INITIALIZING ENGINE FOR TABLE [" + syncInfo.getTableName().toUpperCase() + "]");
+		logDebug("DETERMINING MIN RECORD FOR " + getSrcTableConfiguration().getTableName());
 		
-		logDebug("DETERMINING MIN RECORD FOR " + getSyncTableInfo().getTableName());
+		long minRecId = getController().getMinRecordId(getEtlConfiguration());
 		
-		long minRecId = getController().getMinRecordId(getSyncTableInfo());
-		
-		logDebug("FOUND MIN RECORD " + getSyncTableInfo() + " = " + minRecId);
+		logDebug("FOUND MIN RECORD " + getEtlConfiguration() + " = " + minRecId);
 		
 		long maxRecId = 0;
 		
 		if (minRecId != 0) {
-			logDebug("DETERMINING MAX RECORD FOR " + getSyncTableInfo().getTableName());
+			logDebug("DETERMINING MAX RECORD FOR CONFIG" + getEtlConfiguration().getConfigCode());
 			
-			maxRecId = getController().getMaxRecordId(getSyncTableInfo());
-			logDebug("FOUND MAX RECORD " + getSyncTableInfo() + " = " + maxRecId);
+			maxRecId = getController().getMaxRecordId(getEtlConfiguration());
+			logDebug("FOUND MAX RECORD " + getEtlConfiguration() + " = " + maxRecId);
 		} else {
 			logDebug("MIN RECORD IS ZERO! SKIPING MAX RECORD VERIFICATION...");
 		}
 		
 		if (maxRecId == 0 && minRecId == 0) {
-			String msg = "NO RECORD TO PROCESS FOR TABLE '" + getSyncTableInfo().getTableName().toUpperCase()
+			String msg = "NO RECORD TO PROCESS FOR ETL CONFIG '" + getSrcTableConfiguration().getTableName().toUpperCase()
 			        + "' NO ENGINE WILL BE CRIETED BY NOW!";
 			
 			if (mustRestartInTheEnd()) {
@@ -210,8 +215,8 @@ public class EngineMonitor implements MonitoredOperation {
 				        + " Cannot be run in multiple engines! Please manual set the engines to '1'");
 			}
 			
-			logInfo("STARTING PROCESS FOR TABLE [" + syncInfo.getTableName().toUpperCase() + "] WITH " + qtyEngines
-			        + " ENGINES [MIN REC: " + minRecId + ", MAX REC: " + maxRecId + "]");
+			logInfo("STARTING PROCESS FOR TABLE CONFIG [" + getEtlConfiguration().getConfigCode().toUpperCase() + "] WITH "
+			        + qtyEngines + " ENGINES [MIN REC: " + minRecId + ", MAX REC: " + maxRecId + "]");
 			
 			qtyRecordsPerEngine = determineQtyRecordsPerEngine(qtyEngines, qtyRecords);
 			
@@ -318,7 +323,7 @@ public class EngineMonitor implements MonitoredOperation {
 				}
 			}
 			
-			logInfo("ENGINE FOR TABLE [" + syncInfo.getTableName().toUpperCase() + "] INITIALIZED!");
+			logInfo("ENGINE FOR TABLE CONFIG [" + getEtlConfiguration().getConfigCode().toUpperCase() + "] INITIALIZED!");
 		}
 	}
 	
@@ -347,7 +352,7 @@ public class EngineMonitor implements MonitoredOperation {
 	}
 	
 	public void realocateJobToEngines() {
-		logDebug("REALOCATING ENGINES FOR '" + getSyncTableInfo().getTableName() + "'");
+		logDebug("REALOCATING ENGINES FOR '" + getEtlConfigCode().toUpperCase() + "'");
 		
 		killSelfCreatedThreads();
 		
@@ -463,9 +468,9 @@ public class EngineMonitor implements MonitoredOperation {
 		}
 	}
 	
-	public static EngineMonitor init(OperationController controller, SyncTableConfiguration syncTableInfo,
+	public static EngineMonitor init(OperationController controller, EtlConfiguration etlConfiguration,
 	        TableOperationProgressInfo tableOperationProgressInfo) {
-		EngineMonitor monitor = new EngineMonitor(controller, syncTableInfo, tableOperationProgressInfo);
+		EngineMonitor monitor = new EngineMonitor(controller, etlConfiguration, tableOperationProgressInfo);
 		
 		return monitor;
 	}
@@ -635,7 +640,7 @@ public class EngineMonitor implements MonitoredOperation {
 		
 		String log = "";
 		
-		log += this.syncTableInfo.getTableName() + " PROGRESS: ";
+		log += this.getEtlConfigCode().toUpperCase() + " PROGRESS: ";
 		log += "[TOTAL RECS: " + utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotal()) + ", ";
 		log += "PROCESSED: " + globalProgressMeter.getDetailedProgress() + ", ";
 		log += "REMAINING: " + globalProgressMeter.getDetailedRemaining() + ",";

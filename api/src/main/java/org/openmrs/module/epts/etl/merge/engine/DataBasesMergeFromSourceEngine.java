@@ -22,16 +22,16 @@ import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DataBasesMergeFromSourceEngine extends Engine {
-		
+	
 	public DataBasesMergeFromSourceEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
-	@Override	
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
-		return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+	@Override
+	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
+		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
-
+	
 	@Override
 	protected boolean mustDoFinalCheck() {
 		return false;
@@ -47,17 +47,19 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
 		
 		int i = 1;
 		
-		for (SyncRecord record: syncRecords) {
-			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
-		
-			logDebug(startingStrLog  +": Merging Record: [" + record + "]");
+		for (SyncRecord record : syncRecords) {
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 			
-			MergingRecord data = new MergingRecord((SyncImportInfoVO) record , getSyncTableConfiguration(), getRelatedOperationController().getRemoteApp(), getRelatedOperationController().getMainApp());
+			logDebug(startingStrLog + ": Merging Record: [" + record + "]");
+			
+			MergingRecord data = new MergingRecord((SyncImportInfoVO) record, getSrcTableConfiguration(),
+			        getRelatedOperationController().getRemoteApp(), getRelatedOperationController().getMainApp());
 			
 			try {
 				data.merge(conn);
@@ -73,12 +75,13 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	@Override
 	public void requestStop() {
 	}
-
+	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DataBaseMergeFromSourceDBSearchParams(this.getSyncTableConfiguration(), limits, conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new DataBaseMergeFromSourceDBSearchParams(
+		        this.getEtlConfiguration(), limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

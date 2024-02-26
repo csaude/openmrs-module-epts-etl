@@ -8,6 +8,7 @@ import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordIn
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -53,17 +54,17 @@ public class ChangedRecordsDetectorController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+	public long getMinRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
 			
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstChangedRecord(tableInfo,
+				return DetectedRecordInfoDAO.getFirstChangedRecord(config.getSrcTableConfiguration(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstNewRecord(tableInfo, this.getActionPerformeApp().getApplicationCode(),
-				    getConfiguration().getStartDate(), conn);
+				return DetectedRecordInfoDAO.getFirstNewRecord(config.getSrcTableConfiguration(),
+				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(
 				        "The operation '" + getOperationType() + "' is not supported in this controller!");
@@ -79,16 +80,16 @@ public class ChangedRecordsDetectorController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+	public long getMaxRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastChangedRecord(tableInfo,
+				return DetectedRecordInfoDAO.getLastChangedRecord(config.getSrcTableConfiguration(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastNewRecord(tableInfo, this.getActionPerformeApp().getApplicationCode(),
-				    getConfiguration().getStartDate(), conn);
+				return DetectedRecordInfoDAO.getLastNewRecord(config.getSrcTableConfiguration(),
+				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(
 				        "The operation '" + getOperationType() + "' is not supported in this controller!");

@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.engine.mozart;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -32,7 +33,7 @@ public class MozartRenamePatientStateFields extends MozartProblemSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING PROBLEMS ON TABLE '" + getSyncTableConfiguration().getTableName() + "'");
+		logInfo("DETECTING PROBLEMS ON TABLE '" + getSrcTableName() + "'");
 		
 		performeOnServer(this.dbsInfo, conn);
 		
@@ -42,15 +43,15 @@ public class MozartRenamePatientStateFields extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<SyncTableConfiguration> configuredTables = getRelatedOperationController().getConfiguration()
-		        .getTablesConfigurations();
+		List<EtlConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
-			logDebug("Trying to rename fields on Patient_State on DB " + ++i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
+			logDebug("Trying to rename fields on Patient_State on DB " + ++i + "/" + dbInfo.getDbNames().size() + " ["
+			        + dbName + "]");
 			
 			DBValidateInfo report = this.reportOfResolvedProblems.initDBValidatedInfo(dbName);
-				
+			
 			if (!DBUtilities.isResourceExist(dbName, null, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
 				logWarn("DB '" + dbName + "' is missing!");
 				
@@ -58,8 +59,8 @@ public class MozartRenamePatientStateFields extends MozartProblemSolverEngine {
 				
 				continue;
 			}
-			
-			for (SyncTableConfiguration configuredTable : configuredTables) {
+			for (EtlConfiguration config : configs) {
+				SyncTableConfiguration configuredTable = config.getSrcTableConfiguration();
 				
 				if (!configuredTable.getTableName().equals("patient_state"))
 					continue;

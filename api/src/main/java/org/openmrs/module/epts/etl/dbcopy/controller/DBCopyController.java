@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.dbcopy.controller;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbcopy.engine.DBCopyEngine;
 import org.openmrs.module.epts.etl.dbcopy.model.DBCopySearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -46,11 +46,11 @@ public class DBCopyController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+	public long getMinRecordId(EtlConfiguration config) {
 		OpenConnection conn = openSrcConnection();
 		
 		try {
-			DBCopySearchParams searchParams = new DBCopySearchParams(tableInfo, null, this);
+			DBCopySearchParams searchParams = new DBCopySearchParams(config, null, this);
 			
 			return DatabaseObjectDAO.getFirstRecord(searchParams, conn);
 		}
@@ -65,10 +65,10 @@ public class DBCopyController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+	public long getMaxRecordId(EtlConfiguration config) {
 		OpenConnection conn = openSrcConnection();
 		
-		DBCopySearchParams searchParams = new DBCopySearchParams(tableInfo, null, this);
+		DBCopySearchParams searchParams = new DBCopySearchParams(config, null, this);
 		
 		try {
 			return DatabaseObjectDAO.getLastRecord(searchParams, conn);

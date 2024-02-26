@@ -19,10 +19,10 @@ public class InconsistenceSolverEngine extends Engine {
 	public InconsistenceSolverEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
-
-	@Override	
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
-		return  utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+	
+	@Override
+	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
+		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override
@@ -35,31 +35,34 @@ public class InconsistenceSolverEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
+	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		List<DatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, DatabaseObject.class);
 		
-		logInfo("DOING INCONSISTENCE SOLVER FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logInfo("DOING INCONSISTENCE SOLVER FOR '" + syncRecords.size() + "' " + getSrcTableName());
 		
 		for (DatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
-				obj.resolveInconsistence(getSyncTableConfiguration(), conn);
-			} catch (Exception e) {
-				logError("Any error occurred processing record [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");
+				obj.resolveInconsistence(getSrcTableConfiguration(), conn);
+			}
+			catch (Exception e) {
+				logError(
+				    "Any error occurred processing record [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");
 				
 				throw new RuntimeException(e);
 			}
 		}
 		
-		logInfo("INCONSISTENCE SOLVED FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
+		logInfo("INCONSISTENCE SOLVED FOR '" + syncRecords.size() + "' " + getSrcTableName() + "!");
 	}
 	
 	@Override
 	public void requestStop() {
 	}
-
+	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new InconsistenceSolverSearchParams(this.getSyncTableConfiguration(), limits, conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new InconsistenceSolverSearchParams(this.getEtlConfiguration(),
+		        limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
 		

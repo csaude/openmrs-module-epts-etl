@@ -8,7 +8,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.dbquickload.engine.QuickLoadLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
@@ -21,8 +21,8 @@ public class DBQuickLoadSearchParams extends SyncSearchParams<DatabaseObject> im
 	
 	private DBQuickLoadController controller;
 	
-	public DBQuickLoadSearchParams(DBQuickLoadController controller, SyncTableConfiguration tableInfo, QuickLoadLimits limits) {
-		super(tableInfo, limits);
+	public DBQuickLoadSearchParams(DBQuickLoadController controller, EtlConfiguration config, QuickLoadLimits limits) {
+		super(config, limits);
 		
 		this.controller = controller;
 	}
@@ -33,18 +33,13 @@ public class DBQuickLoadSearchParams extends SyncSearchParams<DatabaseObject> im
 	}
 	
 	@Override
-	public Class<DatabaseObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass(this.controller.getDefaultApp());
-	}
-	
-	@Override
 	public boolean accept(File dir, String name) {
 		return name.toLowerCase().endsWith("json");
 	}
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(tableInfo, null,
+		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(getConfig(), null,
 		        controller.getAppOriginLocationCode());
 		
 		int processed = syncSearchParams.countAllRecords(conn);
@@ -89,6 +84,6 @@ public class DBQuickLoadSearchParams extends SyncSearchParams<DatabaseObject> im
 	}
 	
 	private File getSyncDirectory() {
-		return this.controller.getSyncDirectory(tableInfo);
+		return this.controller.getSyncDirectory(getSrcTableConfiguration());
 	}
 }

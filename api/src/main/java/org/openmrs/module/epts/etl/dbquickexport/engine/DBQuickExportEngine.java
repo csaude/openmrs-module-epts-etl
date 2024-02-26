@@ -50,15 +50,14 @@ public class DBQuickExportEngine extends Engine {
 		try {
 			List<DatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, DatabaseObject.class);
 			
-			this.getMonitor().logInfo(
-			    "GENERATING '" + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE");
+			this.getMonitor().logInfo("GENERATING '" + syncRecords.size() + "' " + getSrcTableName() + " TO JSON FILE");
 			
 			for (DatabaseObject rec : syncRecordsAsOpenMRSObjects) {
-				rec.setUniqueKeysInfo( UniqueKeyInfo.cloneAll(getSyncTableConfiguration().getUniqueKeys()));
+				rec.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(getSrcTableConfiguration().getUniqueKeys()));
 			}
 			
-			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getSyncTableConfiguration().getTableName(), syncRecordsAsOpenMRSObjects,
-				getSyncTableConfiguration().getOriginAppLocationCode(), false);
+			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getSrcTableName(), syncRecordsAsOpenMRSObjects,
+			    getEtlConfiguration().getOriginAppLocationCode(), false);
 			
 			jsonInfo.clearOriginApplicationCodeForAllChildren();
 			
@@ -66,8 +65,8 @@ public class DBQuickExportEngine extends Engine {
 			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(),
 			    syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
 			
-			this.getMonitor().logInfo("WRITING '" + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName()
-			        + " TO JSON FILE [" + jsonFIle.getAbsolutePath() + ".json]");
+			this.getMonitor().logInfo("WRITING '" + syncRecords.size() + "' " + getSrcTableName() + " TO JSON FILE ["
+			        + jsonFIle.getAbsolutePath() + ".json]");
 			
 			//Try to remove not terminate files
 			{
@@ -79,11 +78,9 @@ public class DBQuickExportEngine extends Engine {
 			
 			this.logDebug("JSON [" + jsonFIle + ".json] CREATED!");
 			
-			this.logDebug(
-			    "MARKING '" + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED");
+			this.logDebug("MARKING '" + syncRecords.size() + "' " + getSrcTableName() + " AS SYNCHRONIZED");
 			
-			this.logDebug("MARKING '" + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName()
-			        + " AS SYNCHRONIZED FINISHED");
+			this.logDebug("MARKING '" + syncRecords.size() + "' " + getSrcTableName() + " AS SYNCHRONIZED FINISHED");
 			
 			this.logDebug("MAKING FILES AVALIABLE");
 			
@@ -116,16 +113,16 @@ public class DBQuickExportEngine extends Engine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickExportSearchParams(this.getSyncTableConfiguration(),
+		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickExportSearchParams(this.getEtlConfiguration(),
 		        limits);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}
 	
 	private File generateJSONTempFile(SyncJSONInfo jsonInfo, Integer startRecord, Integer lastRecord) throws IOException {
-		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSyncTableConfiguration(), startRecord,
+		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcTableConfiguration(), startRecord,
 		    lastRecord);
 	}
 }

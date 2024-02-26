@@ -7,9 +7,6 @@ import org.openmrs.module.epts.etl.model.Field;
  */
 public class QueryParameter extends Field {
 	
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 6278318760048730611L;
 	
 	private ParameterValueType valueType;

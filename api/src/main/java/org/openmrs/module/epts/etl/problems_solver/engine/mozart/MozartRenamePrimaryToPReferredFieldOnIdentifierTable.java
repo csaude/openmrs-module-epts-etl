@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.engine.mozart;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -47,15 +48,15 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Mozart
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<SyncTableConfiguration> configuredTables = getRelatedOperationController().getConfiguration()
-		        .getTablesConfigurations();
+		List<EtlConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
-			logDebug("Trying to rename Prefered Field on Identifier table on  " + ++i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
+			logDebug("Trying to rename Prefered Field on Identifier table on  " + ++i + "/" + dbInfo.getDbNames().size()
+			        + " [" + dbName + "]");
 			
 			DBValidateInfo report = this.reportOfResolvedProblems.initDBValidatedInfo(dbName);
-					
+			
 			if (!DBUtilities.isResourceExist(dbName, null, DBUtilities.RESOURCE_TYPE_SCHEMA, dbName, srcConn)) {
 				logWarn("DB '" + dbName + "' is missing!");
 				
@@ -64,7 +65,8 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Mozart
 				continue;
 			}
 			
-			for (SyncTableConfiguration configuredTable : configuredTables) {
+			for (EtlConfiguration config : configs) {
+				SyncTableConfiguration configuredTable = config.getSrcTableConfiguration();
 				
 				if (!configuredTable.getTableName().equals("identifier"))
 					continue;

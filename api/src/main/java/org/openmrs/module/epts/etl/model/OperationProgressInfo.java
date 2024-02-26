@@ -9,8 +9,8 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.SyncProgressMeter;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
@@ -106,7 +106,7 @@ public class OperationProgressInfo {
 	public void initProgressMeter(Connection conn) throws DBException {
 		this.itemsProgressInfo = new ArrayList<TableOperationProgressInfo>();
 		
-		for (SyncTableConfiguration tabConf : this.getConfiguration().getTablesConfigurations()) {
+		for (EtlConfiguration tabConf : this.getConfiguration().getEtlConfiguration()) {
 			TableOperationProgressInfo pm = null;
 			
 			try {
@@ -137,9 +137,9 @@ public class OperationProgressInfo {
 		}
 	}
 	
-	public TableOperationProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
+	public TableOperationProgressInfo retrieveProgressInfo(EtlConfiguration config) {
 		for (TableOperationProgressInfo progressInfo : this.itemsProgressInfo) {
-			if (progressInfo.getOperationTable().equals(tableConfiguration.getTableName())) {
+			if (progressInfo.getOperationConfigCode().equals(config.getConfigCode())) {
 				return progressInfo;
 			}
 		}

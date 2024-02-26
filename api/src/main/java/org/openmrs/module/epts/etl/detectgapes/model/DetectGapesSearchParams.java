@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.detectgapes.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -18,32 +19,26 @@ public class DetectGapesSearchParams extends DatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public DetectGapesSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits,
-	    DetectGapesController relatedController) {
-		super(tableInfo, limits);
+	public DetectGapesSearchParams(EtlConfiguration config, RecordLimits limits, DetectGapesController relatedController) {
+		super(config, limits);
 		
 		this.relatedController = relatedController;
-		setOrderByFields(tableInfo.getPrimaryKey());
+		setOrderByFields(getSrcTableConfiguration().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		String srcSchema = DBUtilities.determineSchemaName(conn);
+		SyncTableConfiguration tableInfo = getSrcTableConfiguration();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_");
 		searchClauses.addColumnToSelect("src_.*");
 		
-		if (limits != null) {
-			searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-			searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
-			searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
-		}
+		tryToAddLimits(searchClauses);
 		
-		if (this.tableInfo.getExtraConditionForExport() != null) {
-			searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
-		}
+		tryToAddExtraConditionForExport(searchClauses);
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());
@@ -58,22 +53,17 @@ public class DetectGapesSearchParams extends DatabaseObjectSearchParams {
 		if (this.savedCount > 0)
 			return this.savedCount;
 		
-		RecordLimits bkpLimits = this.limits;
+		RecordLimits bkpLimits = this.getLimits();
 		
-		this.limits = null;
+		this.removeLimits();
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.limits = bkpLimits;
+		this.setLimits(bkpLimits);
 		
 		this.savedCount = count;
 		
 		return count;
-	}
-	
-	@Override
-	public Class<DatabaseObject> getRecordClass() {
-		return this.getTableInfo().getSyncRecordClass(this.relatedController.getDefaultApp());
 	}
 	
 	@Override

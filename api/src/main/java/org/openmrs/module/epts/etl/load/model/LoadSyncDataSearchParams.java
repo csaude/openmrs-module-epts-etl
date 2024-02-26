@@ -8,7 +8,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
@@ -18,24 +18,26 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class LoadSyncDataSearchParams extends SyncSearchParams<DatabaseObject> implements FilenameFilter{
+public class LoadSyncDataSearchParams extends SyncSearchParams<DatabaseObject> implements FilenameFilter {
 	
 	private String firstFileName;
+	
 	private String lastFileName;
 	
 	private String fileNamePathern;
 	
 	private DataLoadController controller;
 	
-	public LoadSyncDataSearchParams(DataLoadController controller, SyncTableConfiguration tableInfo, RecordLimits limits) {
-		super(tableInfo, limits);
+	public LoadSyncDataSearchParams(DataLoadController controller, EtlConfiguration config, RecordLimits limits) {
+		super(config, limits);
 		
 		this.controller = controller;
-	
 		
 		if (limits != null) {
-			this.firstFileName = tableInfo.getTableName() + "_" + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + ".json"; 
-			this.lastFileName = tableInfo.getTableName() + "_" +  utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json"; 
+			this.firstFileName = getSrcTableConfiguration().getTableName() + "_"
+			        + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + ".json";
+			this.lastFileName = getSrcTableConfiguration().getTableName() + "_"
+			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json";
 		}
 	}
 	
@@ -50,11 +52,6 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<DatabaseObject> i
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		return null;
-	}	
-	
-	@Override
-	public Class<DatabaseObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass(this.tableInfo.getMainApp());
 	}
 	
 	@Override
@@ -76,54 +73,58 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<DatabaseObject> i
 			pathernOk = name.contains(this.fileNamePathern);
 		}
 		
-		return  isJSON && isNotMinimal && isInInterval && pathernOk;
+		return isJSON && isNotMinimal && isInInterval && pathernOk;
 	}
-
+	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		DataBaseMergeFromJSONSearchParams syncSearchParams = new DataBaseMergeFromJSONSearchParams(tableInfo, null, controller.getAppOriginLocationCode());
+		DataBaseMergeFromJSONSearchParams syncSearchParams = new DataBaseMergeFromJSONSearchParams(getConfig(), null,
+		        controller.getAppOriginLocationCode());
 		
 		int processed = syncSearchParams.countAllRecords(conn);
 		int notProcessed = countNotProcessedRecords(conn);
 		
 		return processed + notProcessed;
 	}
-
+	
 	@Override
 	public int countNotProcessedRecords(Connection conn) throws DBException {
 		try {
 			File[] files = getSyncDirectory().listFiles(new FilenameFilter() {
+				
 				@Override
 				public boolean accept(File dir, String name) {
 					boolean isJSON = name.toLowerCase().endsWith("json");
 					boolean isMinimal = name.toLowerCase().contains("minimal");
-				
+					
 					return isJSON && isMinimal;
 				}
 			});
 			
 			int notYetProcessed = 0;
 			
-			if (files == null) return 0;
+			if (files == null)
+				return 0;
 			
 			for (File file : files) {
 				try {
 					String json = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
 					
 					notYetProcessed += SyncJSONInfo.loadFromJSON(json).getQtyRecords();
-				} catch (NoSuchFileException e) {
 				}
+				catch (NoSuchFileException e) {}
 			}
 			
 			return notYetProcessed;
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	private File getSyncDirectory() {
-		return this.controller.getSyncDirectory(tableInfo);
+		return this.controller.getSyncDirectory(getSrcTableConfiguration());
 	}
 }

@@ -5,8 +5,8 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.merge.engine.DataBasesMergeFromSourceEngine;
@@ -46,13 +46,13 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+	public long getMinRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		Integer id = Integer.valueOf(0);
 		
 		try {
-			SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(tableInfo, conn);
+			SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(config.getSrcTableConfiguration(), conn);
 			
 			id = record != null ? record.getId() : 0;
 			
@@ -69,13 +69,13 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+	public long getMaxRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		Integer id = Integer.valueOf(0);
 		
 		try {
-			SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(tableInfo, conn);
+			SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(config.getSrcTableConfiguration(), conn);
 			
 			id = record != null ? record.getId() : 0;
 			

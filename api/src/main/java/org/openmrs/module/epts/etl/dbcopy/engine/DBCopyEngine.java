@@ -48,7 +48,7 @@ public class DBCopyEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING BATCH COPY ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logInfo("PERFORMING BATCH COPY ON " + syncRecords.size() + "' " + getSrcTableConfiguration().getTableName());
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
@@ -61,7 +61,8 @@ public class DBCopyEngine extends Engine {
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+				for (SyncDestinationTableConfiguration mappingInfo : getEtlConfiguration()
+				        .getDstTableConfiguration()) {
 					
 					DatabaseObject destObject = null;
 					
@@ -84,7 +85,7 @@ public class DBCopyEngine extends Engine {
 				DatabaseObjectDAO.insertAllDataWithoutId(mergingRecs.get(key), dstConn);
 			}
 			
-			logInfo("COPY DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+			logInfo("COPY DONE ON " + syncRecords.size() + " " + getSrcTableConfiguration().getTableName() + "!");
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}
@@ -107,10 +108,10 @@ public class DBCopyEngine extends Engine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DBCopySearchParams(this.getSyncTableConfiguration(),
-		        limits, getRelatedOperationController());
+		SyncSearchParams<? extends SyncRecord> searchParams = new DBCopySearchParams(this.getEtlConfiguration(), limits,
+		        getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

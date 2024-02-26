@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -32,8 +33,8 @@ public class TransportController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
-		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncSearchParams(this, tableInfo, null));
+	public long getMinRecordId(EtlConfiguration config) {
+		File[] files = getSyncDirectory(config.getSrcTableConfiguration()).listFiles(new TransportSyncSearchParams(this, config, null));
 		
 		if (files == null || files.length == 0)
 			return 0;
@@ -50,8 +51,9 @@ public class TransportController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
-		File[] files = getSyncDirectory(tableInfo).listFiles(new TransportSyncSearchParams(this, tableInfo, null));
+	public long getMaxRecordId(EtlConfiguration config) {
+		File[] files = getSyncDirectory(config.getSrcTableConfiguration())
+		        .listFiles(new TransportSyncSearchParams(this, config, null));
 		
 		if (files == null || files.length == 0)
 			return 0;

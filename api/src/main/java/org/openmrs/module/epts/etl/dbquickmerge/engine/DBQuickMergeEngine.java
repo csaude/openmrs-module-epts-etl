@@ -106,7 +106,8 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		if (getRelatedSyncOperationConfig().writeOperationHistory() || getSyncTableConfiguration().hasWinningRecordsInfo()) {
+		if (getRelatedSyncOperationConfig().writeOperationHistory()
+		        || getEtlConfiguration().getSrcTableConfiguration().hasWinningRecordsInfo()) {
 			performeSyncOneByOne(syncRecords, conn);
 		} else {
 			performeBatchSync(syncRecords, conn);
@@ -114,7 +115,8 @@ public class DBQuickMergeEngine extends Engine {
 	}
 	
 	public void performeBatchSync(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING BATCH MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+		logInfo("PERFORMING ETL OPERATION ON " + syncRecords.size() + "' " + getSrcTableName() + ". DEST: ["
+		        + getEtlConfiguration().parseDstTableToString() + "]");
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
@@ -125,32 +127,33 @@ public class DBQuickMergeEngine extends Engine {
 		try {
 			int currObjectId = 0;
 			
-			if (getSyncTableConfiguration().isManualIdGeneration()) {
+			if (getSrcTableConfiguration().isManualIdGeneration()) {
 				currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
 			}
 			
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getSyncTableConfiguration()
-				        .getDestinationTableMappingInfo()) {
+				for (SyncDestinationTableConfiguration mappingInfo : getEtlConfiguration().getDstTableConfiguration()) {
 					
 					DatabaseObject destObject = null;
 					
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
-					if (getSyncTableConfiguration().isManualIdGeneration()) {
-						destObject.setObjectId(currObjectId++);
+					if (destObject != null) {
+						if (getSrcTableConfiguration().isManualIdGeneration()) {
+							destObject.setObjectId(currObjectId++);
+						}
+						
+						MergingRecord mr = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
+						        false);
+						
+						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
+							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
+						}
+						
+						mergingRecs.get(mappingInfo.getTableName()).add(mr);
 					}
-					
-					MergingRecord mr = new MergingRecord(destObject, getSyncTableConfiguration(), this.getSrcApp(),
-					        this.getDstApp(), false);
-					
-					if (mergingRecs.get(mappingInfo.getTableName()) == null) {
-						mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
-					}
-					
-					mergingRecs.get(mappingInfo.getTableName()).add(mr);
 				}
 			}
 			
@@ -161,7 +164,8 @@ public class DBQuickMergeEngine extends Engine {
 			
 			MergingRecord.mergeAll(mergingRecs, srcConn, dstConn);
 			
-			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+			logInfo("ETL DONE ON " + syncRecords.size() + " " + getSrcTableName() + "! DEST: ["
+			        + getEtlConfiguration().parseDstTableToString() + "]");
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}
@@ -177,8 +181,8 @@ public class DBQuickMergeEngine extends Engine {
 	}
 	
 	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName()
-		        + "' ONE-BY-ONE");
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSrcTableName() + "' ONE-BY-ONE" + ". DEST: ["
+		        + getEtlConfiguration().parseDstTableToString() + "]");
 		
 		int i = 1;
 		
@@ -188,7 +192,7 @@ public class DBQuickMergeEngine extends Engine {
 		
 		int currObjectId = 0;
 		
-		if (getSyncTableConfiguration().isManualIdGeneration()) {
+		if (getSrcTableConfiguration().isManualIdGeneration()) {
 			currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
 		}
 		
@@ -201,21 +205,23 @@ public class DBQuickMergeEngine extends Engine {
 				
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getSyncTableConfiguration()
-				        .getDestinationTableMappingInfo()) {
+				for (SyncDestinationTableConfiguration mappingInfo : getEtlConfiguration().getDstTableConfiguration()) {
 					
 					DatabaseObject destObject = null;
 					
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
-					if (getSyncTableConfiguration().isManualIdGeneration()) {
+					if (destObject == null) {
+						continue;
+					}
+					
+					if (getSrcTableConfiguration().isManualIdGeneration()) {
 						destObject.setObjectId(currObjectId++);
 					}
 					
 					boolean wrt = writeOperationHistory();
 					
-					MergingRecord data = new MergingRecord(destObject, getSyncTableConfiguration(), this.getSrcApp(),
-					        this.getDstApp(), wrt);
+					MergingRecord data = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(), wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -228,7 +234,7 @@ public class DBQuickMergeEngine extends Engine {
 						InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
 						    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
 						
-						inconsistenceInfo.save(getSyncTableConfiguration(), srcConn);
+						inconsistenceInfo.save(mappingInfo, srcConn);
 						
 						wentWrong = false;
 					}
@@ -291,7 +297,8 @@ public class DBQuickMergeEngine extends Engine {
 				syncRecords.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");
+			logInfo("ETL DONE ON " + syncRecords.size() + " " + getSrcTableName() + "!" + ". DEST: ["
+			        + getEtlConfiguration().parseDstTableToString() + "]");
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}
@@ -316,10 +323,10 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickMergeSearchParams(this.getSyncTableConfiguration(),
+		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickMergeSearchParams(this.getEtlConfiguration(),
 		        limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}

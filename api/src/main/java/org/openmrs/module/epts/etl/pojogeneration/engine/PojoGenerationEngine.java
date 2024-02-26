@@ -51,22 +51,22 @@ public class PojoGenerationEngine extends Engine {
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
 		this.pojoGenerated = true;
 		
-		AppInfo mainApp = getSyncTableConfiguration().getMainApp();
+		AppInfo mainApp = getEtlConfiguration().getMainApp();
 		
-		if (!getSyncTableConfiguration().isFullLoaded()) {
-			getSyncTableConfiguration().fullLoad();
+		if (!getEtlConfiguration().isFullLoaded()) {
+			getEtlConfiguration().fullLoad();
 		}
 		
-		generate(mainApp, getSyncTableConfiguration());
+		generate(mainApp, getSrcTableConfiguration());
 		
-		List<AppInfo> otherApps = getSyncTableConfiguration().getRelatedSyncConfiguration().exposeAllAppsNotMain();
+		List<AppInfo> otherApps = getEtlConfiguration().getRelatedSyncConfiguration().exposeAllAppsNotMain();
 		
 		AppInfo mappingAppInfo = null;
 		
 		if (utilities.arrayHasElement(otherApps)) {
 			mappingAppInfo = otherApps.get(0);
 			
-			for (SyncDestinationTableConfiguration map : getSyncTableConfiguration().getDestinationTableMappingInfo()) {
+			for (SyncDestinationTableConfiguration map : getEtlConfiguration().getDstTableConfiguration()) {
 				map.setRelatedAppInfo(mappingAppInfo);
 				
 				generate(mappingAppInfo, map);
@@ -116,7 +116,7 @@ public class PojoGenerationEngine extends Engine {
 		
 		List<SyncRecord> records = new ArrayList<SyncRecord>();
 		
-		records.add(new PojoGenerationRecord(getSyncTableConfiguration()));
+		records.add(new PojoGenerationRecord(getSrcTableConfiguration()));
 		
 		return records;
 	}

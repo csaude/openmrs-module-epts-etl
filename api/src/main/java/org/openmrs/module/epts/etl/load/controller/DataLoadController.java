@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -18,28 +19,32 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 /**
  * This class is responsible for control the loading of sync data to stage area.
  * <p>
- * This load consist on readding the JSON content from the sync directory and load them to temp tables on sync stage.
+ * This load consist on readding the JSON content from the sync directory and load them to temp
+ * tables on sync stage.
  * 
  * @author jpboane
- *
  */
-public class DataLoadController extends SiteOperationController{
-	public DataLoadController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+public class DataLoadController extends SiteOperationController {
+	
+	public DataLoadController(ProcessController processController, SyncOperationConfig operationConfig,
+	    String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
 	}
-
+	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new DataLoadEngine(monitor, limits);
 	}
-
+	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
-		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, tableInfo, null);
+	public long getMinRecordId(EtlConfiguration config) {
+		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, config,
+		        null);
 		
-		File[] files = getSyncDirectory(tableInfo).listFiles(searchParams);
-	    
-		if (files == null || files.length == 0) return 0;
+		File[] files = getSyncDirectory(config.getSrcTableConfiguration()).listFiles(searchParams);
+		
+		if (files == null || files.length == 0)
+			return 0;
 		
 		Arrays.sort(files);
 		
@@ -51,18 +56,20 @@ public class DataLoadController extends SiteOperationController{
 		
 		return Long.parseLong(pats[pats.length - 2]);
 	}
-
+	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
-		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, tableInfo, null);
+	public long getMaxRecordId(EtlConfiguration config) {
+		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, config,
+		        null);
 		
-		File[] files = getSyncDirectory(tableInfo).listFiles(searchParams);
-	    
-		if (files == null || files.length == 0) return 0;
+		File[] files = getSyncDirectory(config.getSrcTableConfiguration()).listFiles(searchParams);
+		
+		if (files == null || files.length == 0)
+			return 0;
 		
 		Arrays.sort(files);
 		
-		File lastFile = files[files.length -1];
+		File lastFile = files[files.length - 1];
 		
 		//THIS ASSUME THAT THE FILE NAME USE THIS PATHERN TABLENAME_FIRSTRECORDID_LASTRECORDID.JSON
 		
@@ -71,9 +78,9 @@ public class DataLoadController extends SiteOperationController{
 		return Long.parseLong(pats[pats.length - 1]);
 	}
 	
-    public File getSyncDirectory(SyncTableConfiguration syncInfo) {
-    	String fileName = "";
-
+	public File getSyncDirectory(SyncTableConfiguration syncInfo) {
+		String fileName = "";
+		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		
@@ -84,13 +91,13 @@ public class DataLoadController extends SiteOperationController{
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += syncInfo.getTableName();
- 
+		
 		return new File(fileName);
-    }
-    
-    public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
-     	String fileName = "";
-
+	}
+	
+	public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
+		String fileName = "";
+		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		
@@ -101,16 +108,16 @@ public class DataLoadController extends SiteOperationController{
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += syncInfo.getTableName();
- 
+		
 		File bkpDirectory = new File(fileName);
-    	
+		
 		if (!bkpDirectory.exists()) {
 			FileUtilities.tryToCreateDirectoryStructure(bkpDirectory.getAbsolutePath());
 		}
 		
 		return bkpDirectory;
-    }
-
+	}
+	
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return hasNestedController() ? false : true;
@@ -120,5 +127,5 @@ public class DataLoadController extends SiteOperationController{
 	public boolean canBeRunInMultipleEngines() {
 		return false;
 	}
-
+	
 }

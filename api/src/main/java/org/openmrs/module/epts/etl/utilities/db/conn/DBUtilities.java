@@ -13,11 +13,16 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openmrs.module.epts.etl.controller.conf.ParameterValueType;
+import org.openmrs.module.epts.etl.controller.conf.QueryParameter;
+import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
@@ -195,18 +200,6 @@ public class DBUtilities {
 		catch (SQLException e) {
 			throw new DBException(e);
 		}
-	}
-	
-	public static Connection cloneConnetion(Connection conn) throws SQLException {
-		//DatabaseMetaData metadata = conn.getMetaData();
-		
-		//String userName = metadata.getUserName();
-		//String url = metadata.getURL();
-		//String className = metadata.getDriverName();
-		
-		//return BaseDAO.openConnection(className, url, userName, metadata.getPa);
-		
-		return null;
 	}
 	
 	/**
@@ -815,21 +808,6 @@ public class DBUtilities {
 		return parameters;
 	}
 	
-	public static void main_(String[] args) throws DBException {
-		DBConnectionInfo connInfo = new DBConnectionInfo("root", "root", "jdbc:mysql://localhost:3306/tmp_qlm_hgq",
-		        "com.mysql.cj.jdbc.Driver");
-		
-		DBConnectionService service = DBConnectionService.init(connInfo);
-		
-		OpenConnection conn = service.openConnection();
-		
-		String query = "select encounter_datetime, patient_id from encounter where patient_id = ?";
-		
-		List<Field> a = determineFieldsFromQuery(query, conn);
-		
-		System.out.println(a);
-	}
-	
 	public static List<Field> determineFieldsFromQuery(String query) {
 		
 		String sqlFields = (query.toLowerCase().split("select")[1]).split("from")[0];
@@ -1071,6 +1049,135 @@ public class DBUtilities {
 	public static String generateTableCheckConstraintDefinition(String keyName, String checkCondition, Connection conn)
 	        throws DBException {
 		return "CONSTRAINT " + keyName + " CHECK (" + checkCondition + ")";
+	}
+	
+	public static Object[] loadParamsValues(String query, SyncConfiguration relatedSyncConfiguration) {
+		List<QueryParameter> paramConfig = new ArrayList<>();
+		
+		List<Field> params = extractAllParamNamesOnQuery(query);
+		
+		for (Field param : params) {
+			QueryParameter qp = new QueryParameter(param.getName(), null);
+			qp.setValueType(ParameterValueType.CONFIGURATION_PARAM);
+			
+			paramConfig.add(qp);
+		}
+		
+		DatabaseObject srcObject = null;
+		
+		return loadParamsValues(query, paramConfig, srcObject, relatedSyncConfiguration);
+	}
+	
+	/**
+	 * Load values to given query parameters
+	 * 
+	 * @param queryParameters
+	 * @param srcObject
+	 * @return
+	 */
+	public static Object[] loadParamsValues(String query, List<QueryParameter> paramConfig, DatabaseObject srcObject,
+	        SyncConfiguration configuration) {
+		List<Field> queryParameters = null;
+		
+		if (utilities.arrayHasElement(paramConfig)) {
+			queryParameters = DBUtilities.extractAllParamNamesOnQuery(query);
+		}
+		
+		if (!utilities.arrayHasElement(queryParameters)) {
+			return null;
+		}
+		
+		List<QueryParameter> paramConfigValues = loadParamConfigValue(paramConfig, srcObject, configuration);
+		
+		Object[] params = new Object[queryParameters.size()];
+		
+		for (int i = 0; i < queryParameters.size(); i++) {
+			Field param = queryParameters.get(i);
+			
+			params[i] = retrieveParamValue(paramConfigValues, param.getName());
+		}
+		
+		return params;
+	}
+	
+	/*
+	 * Retrieves the parameter value from configured parameters
+	 */
+	static Object retrieveParamValue(List<QueryParameter> queryParameters, String paramName) {
+		for (QueryParameter param : queryParameters) {
+			if (param.getName().equals(paramName)) {
+				return param.getValue();
+			}
+		}
+		
+		throw new ForbiddenOperationException("Not found param '" + paramName + "' on configured parameters!");
+	}
+	
+	/**
+	 * Loads the values given paramConfig
+	 * 
+	 * @param paramConfig the Parameters Configuration where the values will be loades
+	 * @param srcObject the object holding the source object parameters values
+	 * @param configuration the configuration holding configuration values
+	 * @return the configuration parameters loaded with values
+	 */
+	public static List<QueryParameter> loadParamConfigValue(List<QueryParameter> paramConfig, DatabaseObject srcObject,
+	        SyncConfiguration configuration) {
+		List<QueryParameter> params = null;
+		
+		if (utilities.arrayHasElement(paramConfig)) {
+			params = new ArrayList<>(paramConfig.size());
+			
+			for (int i = 0; i < paramConfig.size(); i++) {
+				QueryParameter field = paramConfig.get(i);
+				
+				Object paramValue = null;
+				String paramName = null;
+				
+				String fieldValueName = field.getValue() != null ? field.getValue().toString() : field.getName();
+				
+				if (field.getValueType().isConfiguration()) {
+					paramName = field.getName();
+					
+					paramValue = getParamValueFromSyncConfiguration(configuration, fieldValueName);
+				} else if (field.getValueType().isMainObject()) {
+					if (srcObject == null)
+						throw new ForbiddenOperationException("The source object is null!");
+					
+					paramName = AttDefinedElements.convertTableAttNameToClassAttName(fieldValueName);
+					
+					paramValue = getParamValueFromSourceMainObject(srcObject, paramName);
+				} else if (field.getValueType().isConstant()) {
+					paramValue = field.getValue();
+				}
+				
+				params.add(new QueryParameter(paramName, paramValue));
+			}
+		}
+		
+		return params;
+	}
+	
+	static Object getParamValueFromSyncConfiguration(SyncConfiguration configuration, String param) {
+		Object paramValue = utilities.getFieldValue(configuration, param);
+		
+		if (paramValue == null) {
+			throw new ForbiddenOperationException("The configuration param '" + param + "' is needed to load source object");
+		}
+		
+		return paramValue;
+	}
+	
+	static Object getParamValueFromSourceMainObject(DatabaseObject mainObject, String paramName) {
+		
+		Object paramValue = mainObject.getFieldValue(paramName);
+		
+		if (paramValue == null) {
+			throw new ForbiddenOperationException(
+			        "The field '" + paramName + "' has no value and it is needed to load source object");
+		}
+		
+		return paramValue;
 	}
 	
 }

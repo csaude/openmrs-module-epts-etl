@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.dbquickcopy.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickload.model.LoadedRecordsSearchParams;
@@ -18,17 +19,18 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 	
 	private DBQuickCopyController relatedController;
 	
-	public DBQuickCopySearchParams(SyncTableConfiguration tableInfo, RecordLimits limits,
-	    DBQuickCopyController relatedController) {
-		super(tableInfo, limits);
+	public DBQuickCopySearchParams(EtlConfiguration config, RecordLimits limits, DBQuickCopyController relatedController) {
+		super(config, limits);
 		
 		this.relatedController = relatedController;
-		setOrderByFields(tableInfo.getPrimaryKey());
+		setOrderByFields(getSrcTableConfiguration().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+		
+		SyncTableConfiguration tableInfo = getSrcTableConfiguration();
 		
 		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
 		
@@ -43,15 +45,9 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 			searchClauses.addColumnToSelect("*");
 		}
 		
-		if (limits != null) {
-			searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-			searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
-			searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
-		}
+		tryToAddLimits(searchClauses);
 		
-		if (this.tableInfo.getExtraConditionForExport() != null) {
-			searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
-		}
+		tryToAddExtraConditionForExport(searchClauses);
 		
 		return searchClauses;
 	}
@@ -64,20 +60,20 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		RecordLimits bkpLimits = this.limits;
+		RecordLimits bkpLimits = super.getLimits();
 		
-		this.limits = null;
+		super.removeLimits();
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.limits = bkpLimits;
+		super.setLimits(bkpLimits);
 		
 		return count;
 	}
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(tableInfo, null,
+		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(getConfig(), null,
 		        relatedController.getAppOriginLocationCode());
 		
 		int processed = syncSearchParams.countAllRecords(conn);

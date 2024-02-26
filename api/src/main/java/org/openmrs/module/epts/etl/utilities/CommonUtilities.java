@@ -47,6 +47,10 @@ public class CommonUtilities implements Serializable {
 		return utilities;
 	}
 	
+	public String removeNewline(String str) {
+		return str.replaceAll("[\\r\\n]+$", "");
+	}
+	
 	public String garantirXCaracterOnNumber(long number, int x) {
 		return FuncoesGenericas.garantirXCaracterOnNumber(number, x);
 	}

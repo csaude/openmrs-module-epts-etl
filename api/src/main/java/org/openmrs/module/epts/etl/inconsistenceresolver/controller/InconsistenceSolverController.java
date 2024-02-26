@@ -2,8 +2,8 @@ package org.openmrs.module.epts.etl.inconsistenceresolver.controller;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.inconsistenceresolver.engine.InconsistenceSolverEngine;
@@ -31,11 +31,11 @@ public class InconsistenceSolverController extends OperationController {
 	}
 
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+	public long getMinRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObject obj = DatabaseObjectDAO.getFirstNeverProcessedRecordOnOrigin(tableInfo, conn);
+			DatabaseObject obj = DatabaseObjectDAO.getFirstNeverProcessedRecordOnOrigin(config.getSrcTableConfiguration(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -51,11 +51,11 @@ public class InconsistenceSolverController extends OperationController {
 	}
 
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+	public long getMaxRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObject obj = DatabaseObjectDAO.getLastNeverProcessedRecordOnOrigin(tableInfo, conn);
+			DatabaseObject obj = DatabaseObjectDAO.getLastNeverProcessedRecordOnOrigin(config.getSrcTableConfiguration(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			

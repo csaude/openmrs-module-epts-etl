@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.consolitation.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -10,69 +10,62 @@ import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams<DatabaseObject>{
+public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams<DatabaseObject> {
+	
 	private boolean selectAllRecords;
 	
-	public DatabaseIntegrityConsolidationSearchParams(SyncTableConfiguration tableInfo, RecordLimits limits, Connection conn) {
-		super(tableInfo, limits);
+	public DatabaseIntegrityConsolidationSearchParams(EtlConfiguration config, RecordLimits limits, Connection conn) {
+		super(config, limits);
 		
-		setOrderByFields(tableInfo.getPrimaryKey());
+		setOrderByFields(config.getSrcTableConfiguration().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		searchClauses.addColumnToSelect(tableInfo.getTableName() +".*");
-		searchClauses.addToClauseFrom(tableInfo.getTableName());
+		searchClauses.addColumnToSelect(getSrcTableConfiguration().getTableName() + ".*");
+		searchClauses.addToClauseFrom(getSrcTableConfiguration().getTableName());
 		
-		if (tableInfo.isFromOpenMRSModel() && getTableInfo().getTableName().equalsIgnoreCase("patient")) {
+		if (getSrcTableConfiguration().isFromOpenMRSModel()
+		        && getSrcTableConfiguration().getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addToClauseFrom("INNER JOIN person ON person.person_id = patient.patient_id");
 		}
-
-		searchClauses.addToClauseFrom("INNER JOIN " + getTableInfo().generateFullStageTableName() + " ON record_uuid = uuid");
+		
+		searchClauses.addToClauseFrom(
+		    "INNER JOIN " + getSrcTableConfiguration().generateFullStageTableName() + " ON record_uuid = uuid");
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("consistent = -1");
 			searchClauses.addToClauses("last_sync_date is null or last_sync_date < ?");
 			searchClauses.addToParameters(this.getSyncStartDate());
-		
-			if (limits != null) {
-				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-				searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
-				searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
-			}
-		
-			if (this.tableInfo.getExtraConditionForExport() != null) {
-				searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
-			}
+			
+			tryToAddLimits(searchClauses);
+			
+			tryToAddExtraConditionForExport(searchClauses);
 		}
 		
 		return searchClauses;
-	}	
+	}
 	
 	@Override
-	public Class<DatabaseObject> getRecordClass() {
-		return this.tableInfo.getSyncRecordClass(tableInfo.getMainApp());
-	}
-
-	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		DatabaseIntegrityConsolidationSearchParams auxSearchParams = new DatabaseIntegrityConsolidationSearchParams(this.tableInfo, this.limits, conn);
+		DatabaseIntegrityConsolidationSearchParams auxSearchParams = new DatabaseIntegrityConsolidationSearchParams(
+		        this.getConfig(), this.getLimits(), conn);
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);
 	}
-
+	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		RecordLimits bkpLimits = this.limits;
+		RecordLimits bkpLimits = this.getLimits();
 		
-		this.limits = null;
+		this.setLimits(null);
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.limits = bkpLimits;
+		this.setLimits(bkpLimits);
 		
 		return count;
 	}

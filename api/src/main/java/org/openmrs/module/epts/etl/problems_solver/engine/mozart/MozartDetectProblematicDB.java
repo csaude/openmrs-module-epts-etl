@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.Extension;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
@@ -46,7 +47,7 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING PROBLEMS ON TABLE '" + getSyncTableConfiguration().getTableName() + "'");
+		logInfo("DETECTING PROBLEMS ON TABLE '" + this.getSrcTableName() + "'");
 		
 		performeOnServer(this.dbsInfo, conn);
 		
@@ -56,8 +57,7 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<SyncTableConfiguration> configuredTables = getRelatedOperationController().getConfiguration()
-		        .getTablesConfigurations();
+		List<EtlConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		int i = 0;
 		
@@ -74,7 +74,9 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 				continue;
 			}
 			
-			for (SyncTableConfiguration configuredTable : configuredTables) {
+			for (EtlConfiguration conf : configs) {
+				
+				SyncTableConfiguration configuredTable = conf.getSrcTableConfiguration();
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();
 				}
@@ -147,7 +149,8 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 						List<String> emptyFields = new ArrayList<String>();
 						
 						for (Extension field : fieldsNotAllowingEmptyValue.getExtension()) {
-							if (utilities.existOnArray(missingField, field.getValueString())) continue;  
+							if (utilities.existOnArray(missingField, field.getValueString()))
+								continue;
 							
 							String sql = "select count(*) as value from  " + dbName + "." + configuredTable.getTableName();
 							sql += " where " + field.getValueString() + " is null";
@@ -155,10 +158,11 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 							SimpleValue result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
 							
 							if (result.intValue() > 0) {
-								logDebug("The table " + dbName + "." + configuredTable.getTableName() + " Contains empty data on field " + field.getValueString());
+								logDebug("The table " + dbName + "." + configuredTable.getTableName()
+								        + " Contains empty data on field " + field.getValueString());
 								
 								emptyFields.add(field.getValueString());
-							}			
+							}
 						}
 						
 						if (utilities.arrayHasElement(emptyFields)) {
@@ -166,7 +170,7 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 							report.addEmptyFields(configuredTable.getTableName(), emptyFields);
 						}
 					}
-					catch (ForbiddenOperationException e) {}				
+					catch (ForbiddenOperationException e) {}
 				}
 			}
 			
@@ -178,5 +182,4 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 		}
 	}
 	
-
 }

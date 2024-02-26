@@ -1,13 +1,14 @@
-package org.openmrs.module.epts.etl.model.pojo.openmrs._default;
+package org.openmrs.module.epts.etl.model.pojo.openmrs.community_data_extraction;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
-
+import org.openmrs.module.epts.etl.model.pojo.generic.*; 
+ 
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
+ 
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
+ 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class CommunityArvPatientVO extends AbstractDatabaseObject implements DatabaseObject { 
@@ -420,6 +421,11 @@ public class CommunityArvPatientVO extends AbstractDatabaseObject implements Dat
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "community_arv_patient";
 	}
 
 

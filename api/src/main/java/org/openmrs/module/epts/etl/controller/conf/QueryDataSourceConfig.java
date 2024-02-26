@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.SyncExtraDataSource;
@@ -15,7 +14,6 @@ import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -45,14 +43,15 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	
 	private List<QueryParameter> paramConfig;
 	
-	private List<Field> queryParams;
+	private boolean required;
 	
-	public List<Field> getQueryParams() {
-		return queryParams;
+	@Override
+	public boolean isRequired() {
+		return this.required;
 	}
 	
-	public void setQueryParams(List<Field> queryParams) {
-		this.queryParams = queryParams;
+	public void setRequired(boolean required) {
+		this.required = required;
 	}
 	
 	public List<QueryParameter> getParamConfig() {
@@ -104,7 +103,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 			throw new ForbiddenOperationException("No query was defined!");
 		}
 		
-		return query;
+		return utilities.removeNewline(query);
 	}
 	
 	private void loadQueryFromFile() {
@@ -144,10 +143,6 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		String query = DBUtilities.replaceSqlParametersWithQuestionMarks(this.getQuery());
 		
 		setFields(DBUtilities.determineFieldsFromQuery(query, conn));
-		
-		if (utilities.arrayHasElement(this.paramConfig)) {
-			this.queryParams = DBUtilities.extractAllParamNamesOnQuery(this.getQuery());
-		}
 		
 		this.fullLoaded = true;
 	}
@@ -198,7 +193,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	
 	@JsonIgnore
 	public String getClasspackage(AppInfo application) {
-		return application.getPojoPackageName();
+		return application.getPojoPackageName() + "._query_result";
 	}
 	
 	@JsonIgnore
@@ -356,102 +351,14 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
 	        throws DBException {
 		
-		Object[] params = loadParamsValues(mainObject);
+		//@formatter:off
+		Object[] params = DBUtilities.loadParamsValues(this.getQuery(), this.paramConfig, mainObject, getRelatedSyncConfiguration());
 		
 		String query = DBUtilities.replaceSqlParametersWithQuestionMarks(this.getQuery());
 		
 		return DatabaseObjectDAO.find(this.getSyncRecordClass(srcAppInfo), query, params, srcConn);
 	}
 	
-	Object[] loadParamsValues(DatabaseObject mainObject) {
-		
-		if (!utilities.arrayHasElement(this.queryParams)) {
-			return null;
-		}
-		
-		List<QueryParameter> paramConfigValues = loadParamConfigValue(mainObject);
-		
-		Object[] params = new Object[this.queryParams.size()];
-		
-		for (int i = 0; i < this.queryParams.size(); i++) {
-			Field param = this.queryParams.get(i);
-			
-			params[i] = retrieveParamValue(paramConfigValues, param.getName());
-		}
-		
-		return params;
-	}
-	
-	/*
-	 * Retrieves the parameter value from configured parameters
-	 */
-	Object retrieveParamValue(List<QueryParameter> queryParameters, String paramName) {
-		for (QueryParameter param : queryParameters) {
-			if (param.getName().equals(paramName)) {
-				return param.getValue();
-			}
-		}
-		
-		throw new ForbiddenOperationException("Not found param '" + paramName + "' on configured parameters!");
-	}
-	
-	/**
-	 * Loads the {@link #paramConfig} values
-	 * 
-	 * @param mainObject
-	 * @return
-	 */
-	List<QueryParameter> loadParamConfigValue(DatabaseObject mainObject) {
-		List<QueryParameter> params = null;
-		
-		if (utilities.arrayHasElement(this.paramConfig)) {
-			params = new ArrayList<>(this.paramConfig.size());
-			
-			for (int i = 0; i < this.paramConfig.size(); i++) {
-				QueryParameter field = this.paramConfig.get(i);
-				
-				Object paramValue = null;
-				String paramName = null;
-				
-				if (field.getValueType().isConfiguration()) {
-					paramName = field.getName();
-					
-					paramValue = getParamValueFromSyncConfiguration(field.getValue().toString());
-				} else if (field.getValueType().isMainObject()) {
-					paramName = AttDefinedElements.convertTableAttNameToClassAttName(field.getValue().toString());
-					
-					paramValue = getParamValueFromSourceMainObject(mainObject, paramName);
-				} else if (field.getValueType().isConstant()) {
-					paramValue = field.getValue();
-				}
-				
-				params.add(new QueryParameter(paramName, paramValue));
-			}
-		}
-		
-		return params;
-	}
-	
-	Object getParamValueFromSyncConfiguration(String param) {
-		Object paramValue = utilities.getFieldValue(getRelatedSyncConfiguration(), param);
-		
-		if (paramValue == null) {
-			throw new ForbiddenOperationException("The configuration param '" + param + "' is needed to load source object");
-		}
-		
-		return paramValue;
-	}
-	
-	Object getParamValueFromSourceMainObject(DatabaseObject mainObject, String paramName) {
-		
-		Object paramValue = mainObject.getFieldValue(paramName);
-		
-		if (paramValue == null) {
-			throw new ForbiddenOperationException(
-			        "The field '" + paramName + "' has no value and it is needed to load source object");
-		}
-		
-		return paramValue;
-	}
+
 	
 }

@@ -26,9 +26,9 @@ public class DBExportEngine extends Engine {
 	public DBExportEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
-
-	@Override	
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
+	
+	@Override
+	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(SearchParamsDAO.search(this, conn), SyncRecord.class);
 	}
 	
@@ -46,14 +46,16 @@ public class DBExportEngine extends Engine {
 		try {
 			List<DatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, DatabaseObject.class);
 			
-			logDebug("GENERATING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE");
+			logDebug("GENERATING '" + syncRecords.size() + "' " + getSrcTableName() + " TO JSON FILE");
 			
-			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getSyncTableConfiguration().getTableName(), syncRecordsAsOpenMRSObjects, getSyncTableConfiguration().getOriginAppLocationCode(), true);
-		
-			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(), syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
+			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getSrcTableName(), syncRecordsAsOpenMRSObjects,
+			    getEtlConfiguration().getOriginAppLocationCode(), true);
 			
-			logInfo("WRITING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO JSON FILE [" + jsonFIle.getAbsolutePath() + ".json]");
+			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(),
+			    syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
 			
+			logInfo("WRITING '" + syncRecords.size() + "' " + getSrcTableName() + " TO JSON FILE ["
+			        + jsonFIle.getAbsolutePath() + ".json]");
 			
 			//Try to remove not terminate files
 			{
@@ -69,17 +71,18 @@ public class DBExportEngine extends Engine {
 			
 			this.getMonitor().logInfo("JSON [" + jsonFIle + ".json] CREATED!");
 			
-			logDebug("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED");
+			logDebug("MARKING '" + syncRecords.size() + "' " + getSrcTableName() + " AS SYNCHRONIZED");
 			
-			logDebug("MARKING '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " AS SYNCHRONIZED FINISHED");
+			logDebug("MARKING '" + syncRecords.size() + "' " + getSrcTableName() + " AS SYNCHRONIZED FINISHED");
 			
 			logDebug("MAKING FILES AVALIABLE");
 			
-			
-			FileUtilities.renameTo(generateTmpMinimalJSONInfoFileName(jsonFIle), generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json");
+			FileUtilities.renameTo(generateTmpMinimalJSONInfoFileName(jsonFIle),
+			    generateTmpMinimalJSONInfoFileName(jsonFIle) + ".json");
 			FileUtilities.renameTo(jsonFIle.getAbsolutePath(), jsonFIle.getAbsolutePath() + ".json");
 			
-			logInfo("WRITEN FILE " + jsonFIle.getPath() + ".json" + " WITH SIZE " + new File(jsonFIle.getAbsolutePath() + ".json").length());
+			logInfo("WRITEN FILE " + jsonFIle.getPath() + ".json" + " WITH SIZE "
+			        + new File(jsonFIle.getAbsolutePath() + ".json").length());
 			
 			if (new File(jsonFIle.getAbsolutePath() + ".json").length() == 0) {
 				new File(jsonFIle.getAbsolutePath() + ".json").delete();
@@ -88,8 +91,9 @@ public class DBExportEngine extends Engine {
 				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
 			}
 			
-			markAllAsSynchronized(utilities.parseList(syncRecords, DatabaseObject.class));		
-		} catch (IOException e) {
+			markAllAsSynchronized(utilities.parseList(syncRecords, DatabaseObject.class));
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -100,19 +104,20 @@ public class DBExportEngine extends Engine {
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	private String generateTmpMinimalJSONInfoFileName(File mainTempJSONInfoFile) {
 		return mainTempJSONInfoFile.getAbsolutePath() + "_minimal";
 	}
-
+	
 	private void markAllAsSynchronized(List<DatabaseObject> syncRecords) {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSyncTableConfiguration(), getSyncTableConfiguration().getOriginAppLocationCode(), conn);
+			DatabaseObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSrcTableConfiguration(),
+			    getEtlConfiguration().getOriginAppLocationCode(), conn);
 			
 			conn.markAsSuccessifullyTerminated();
-		} 
+		}
 		catch (DBException e) {
 			e.printStackTrace();
 			
@@ -122,18 +127,20 @@ public class DBExportEngine extends Engine {
 			conn.finalizeConnection();
 		}
 	}
-
+	
 	private File generateJSONTempFile(SyncJSONInfo jsonInfo, Integer startRecord, Integer lastRecord) throws IOException {
-		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSyncTableConfiguration(), startRecord, lastRecord);
+		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcTableConfiguration(), startRecord,
+		    lastRecord);
 	}
 	
 	@Override
 	public void requestStop() {
 	}
-
+	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ExportSearchParams(this.getSyncTableConfiguration(), limits, conn);
+		SyncSearchParams<? extends SyncRecord> searchParams = new ExportSearchParams(this.getEtlConfiguration(), limits,
+		        conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
 		

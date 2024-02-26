@@ -23,40 +23,36 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
- * 
  * @author jpboane
- *
  * @see DBQuickMergeController
  */
 public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	
-	
-	DatabasesInfo[] fghDBInfo = {   
-								/*new DatabasesInfo("Server 24", DatabasesInfo.DB_NAMES_24, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-								new DatabasesInfo("Server 23", DatabasesInfo.DB_NAMES_23, new DBConnectionInfo("root", "0pen10mrs4FGh", "jdbc:mysql://10.0.0.23:3307/export_db_lugela_mulide?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-								new DatabasesInfo("Server 22", DatabasesInfo.DB_NAMES_22, new DBConnectionInfo("root", "Fgh397$@Wy$Q7", "jdbc:mysql://10.0.0.22:3307/openmrs_derre?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) ,
-								new DatabasesInfo("Server 21", DatabasesInfo.DB_NAMES_21, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.21:3307/openmrs_ile_mugulama?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver"))
-							  */};
-
-	DatabasesInfo[] DBsInfo = {   
-								//new DatabasesInfo("Echo Central Server", DatabasesInfo.DB_NAMES_ECHO, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
-							  };
+	DatabasesInfo[] fghDBInfo = {
+			/*new DatabasesInfo("Server 24", DatabasesInfo.DB_NAMES_24, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
+			new DatabasesInfo("Server 23", DatabasesInfo.DB_NAMES_23, new DBConnectionInfo("root", "0pen10mrs4FGh", "jdbc:mysql://10.0.0.23:3307/export_db_lugela_mulide?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
+			new DatabasesInfo("Server 22", DatabasesInfo.DB_NAMES_22, new DBConnectionInfo("root", "Fgh397$@Wy$Q7", "jdbc:mysql://10.0.0.22:3307/openmrs_derre?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")) ,
+			new DatabasesInfo("Server 21", DatabasesInfo.DB_NAMES_21, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.21:3307/openmrs_ile_mugulama?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver"))
+			*/ };
+			
+	DatabasesInfo[] DBsInfo = {
+			//new DatabasesInfo("Echo Central Server", DatabasesInfo.DB_NAMES_ECHO, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
+	};
 	
 	private SyncTableConfiguration userRoleTableConf;
+	
 	private Class<DatabaseObject> userRoleRecordClass;
-	private Class<DatabaseObject> userRecordClass;
 	
 	public ProblemsSolverEngineMissingUserRoles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
-		this.userRoleTableConf = SyncTableConfiguration.init("user_role", getSyncTableConfiguration().getRelatedSyncConfiguration());
+		this.userRoleTableConf = SyncTableConfiguration.init("user_role",
+		    getEtlConfiguration().getRelatedSyncConfiguration());
 		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());
-		this.userRecordClass = getSyncTableConfiguration().getSyncRecordClass(getDefaultApp());
 	}
-
 	
-	@Override	
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
+	@Override
+	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
@@ -70,9 +66,9 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		logInfo("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
-	
+	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+		logInfo("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
+		
 		int i = 1;
 		
 		for (TmpUserVO record : utilities.parseList(syncRecords, TmpUserVO.class)) {
@@ -80,13 +76,16 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 			
 			try {
 				for (DatabasesInfo dbsInfo : DBsInfo) {
-					String startingStrLog = utilities.garantirXCaracterOnNumber(i, ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+					String startingStrLog = utilities.garantirXCaracterOnNumber(i,
+					    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 					
-					logInfo(startingStrLog + " TRYING TO RETRIVE DATA FOR RECORD [" + record + "] ON SERVER "+dbsInfo.getServerName());
+					logInfo(startingStrLog + " TRYING TO RETRIVE DATA FOR RECORD [" + record + "] ON SERVER "
+					        + dbsInfo.getServerName());
 					
 					found = performeOnServer(record, dbsInfo, conn);
 					
-					if (found) break;
+					if (found)
+						break;
 				}
 			}
 			catch (Exception e) {
@@ -97,17 +96,16 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 				record.markAsProcessed(conn);
 				if (found) {
 					((TmpUserVO) record).markAsHarmonized(conn);
-				}
-				else {
+				} else {
 					logError("Not found [" + record + "]");
 					
 					//throw new ForbiddenOperationException("Not found");
 				}
 			}
-		} 
+		}
 	}
-
-	private boolean performeOnServer(TmpUserVO record,  DatabasesInfo dbInfo, Connection conn) throws DBException {
+	
+	private boolean performeOnServer(TmpUserVO record, DatabasesInfo dbInfo, Connection conn) throws DBException {
 		boolean found = false;
 		
 		OpenConnection srcConn = dbInfo.acquireConnection();
@@ -118,15 +116,17 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 			UsersVO userOnSrc = new UsersVO();
 			userOnSrc.setUuid(record.getUuid());
 			
-			userOnSrc = (UsersVO)DatabaseObjectDAO.getByUniqueKeysOnSpecificSchema(getSyncTableConfiguration(), userOnSrc, dbName, srcConn);
+			userOnSrc = (UsersVO) DatabaseObjectDAO.getByUniqueKeysOnSpecificSchema(getSrcTableConfiguration(), userOnSrc,
+			    dbName, srcConn);
 			
 			if (userOnSrc == null) {
 				logDebug("The user was not found on [" + dbName + "], Skipping role check");
 				continue;
 			}
 			
-			List<DatabaseObject> roles = DatabaseObjectDAO.getByParentIdOnSpecificSchema(this.userRoleRecordClass, "user_id", userOnSrc.getObjectId(), dbName, srcConn);
-		
+			List<DatabaseObject> roles = DatabaseObjectDAO.getByParentIdOnSpecificSchema(this.userRoleRecordClass, "user_id",
+			    userOnSrc.getObjectId(), dbName, srcConn);
+			
 			if (utilities.arrayHasElement(roles)) {
 				
 				logInfo("RESOLVING USER PROBLEM USING DATA FROM [" + dbName + "]");
@@ -156,22 +156,22 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 		return found;
 	}
 	
-	
-	
-	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn) throws DBException, ForbiddenOperationException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)
+	        throws DBException, ForbiddenOperationException {
+		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
 		
 		int i = 1;
 		
 		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
 		
-		for (SyncRecord record: syncRecords) {
-			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+		for (SyncRecord record : syncRecords) {
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 			
-			DatabaseObject rec = (DatabaseObject)record;
+			DatabaseObject rec = (DatabaseObject) record;
 			
 			List<DatabaseObject> dups = new ArrayList<DatabaseObject>();//DatabaseObjectDAO.getByUuid(getSyncTableConfiguration().getSyncRecordClass(getDefaultApp()), rec.getUuid(), conn);
-				
+			
 			logDebug(startingStrLog + " RESOLVING..." + rec);
 			
 			for (int j = 1; j < dups.size(); j++) {
@@ -179,9 +179,8 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
-				dup.save(getSyncTableConfiguration(), conn);
+				dup.save(getSrcTableConfiguration(), conn);
 			}
-			
 			
 			i++;
 		}
@@ -191,20 +190,21 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 			syncRecords.removeAll(recordsToIgnoreOnStatistics);
 		}
 		
-		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");		
+		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSrcTableName() + "!");
 	}
 	
 	@Override
 	public void requestStop() {
 	}
-
+	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getSyncTableConfiguration(), null);
+		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getEtlConfiguration(),
+		        null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}
-
+	
 }

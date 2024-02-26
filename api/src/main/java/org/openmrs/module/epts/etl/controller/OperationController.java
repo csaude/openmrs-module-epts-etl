@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
@@ -159,20 +160,20 @@ public abstract class OperationController implements Controller {
 	private synchronized void runInSequencialMode() {
 		changeStatusToRunning();
 		
-		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
+		List<EtlConfiguration> allSync = getProcessController().getConfiguration().getEtlConfiguration();
 		
 		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
 		
-		for (SyncTableConfiguration syncInfo : allSync) {
+		for (EtlConfiguration syncInfo : allSync) {
 			if (operationTableIsAlreadyFinished(syncInfo)) {
-				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On table '"
-				        + syncInfo.getTableName() + "' was already finished!").toUpperCase());
+				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Confinguration '"
+				        + syncInfo.getConfigCode() + "' was already finished!").toUpperCase());
 			} else if (stopRequested()) {
 				logWarn("ABORTING THE ENGINE PROCESS DUE STOP REQUESTED!");
 				break;
 			} else {
-				logInfo(("Starting operation '" + getOperationType().name().toLowerCase() + "' On table '"
-				        + syncInfo.getTableName() + "'").toUpperCase());
+				logInfo(("Starting operation '" + getOperationType().name().toLowerCase() + "' On Etl Confinguration '"
+				        + syncInfo.getConfigCode() + "'").toUpperCase());
 				
 				TableOperationProgressInfo progressInfo = null;
 				
@@ -180,8 +181,8 @@ public abstract class OperationController implements Controller {
 					progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				}
 				catch (NullPointerException e) {
-					logErr("Error on thread " + this.getControllerId() + ": Progress meter not found for table ["
-					        + syncInfo.getTableName() + "]");
+					logErr("Error on thread " + this.getControllerId()
+					        + ": Progress meter not found for Etl Confinguration [" + syncInfo.getConfigCode() + "]");
 					
 					e.printStackTrace();
 					
@@ -215,8 +216,8 @@ public abstract class OperationController implements Controller {
 				engineMonitor.run();
 				
 				if (stopRequested() && engineMonitor.isStopped()) {
-					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '"
-					        + syncInfo.getTableName() + "'  is stopped successifuly!").toUpperCase());
+					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
+					        + syncInfo.getConfigCode() + "'  is stopped successifuly!").toUpperCase());
 					break;
 				} else {
 					if (engineMonitor.getMainEngine() != null) {
@@ -230,8 +231,8 @@ public abstract class OperationController implements Controller {
 						}
 					}
 					
-					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On table '"
-					        + syncInfo.getTableName() + "' is finished!").toUpperCase());
+					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
+					        + syncInfo.getConfigCode() + "' is finished!").toUpperCase());
 					
 					if (getOperationConfig().isRunOnce()) {
 						break;
@@ -248,25 +249,25 @@ public abstract class OperationController implements Controller {
 	}
 	
 	private synchronized void runInParallelMode() {
-		List<SyncTableConfiguration> allSync = getProcessController().getConfiguration().getTablesConfigurations();
+		List<EtlConfiguration> allSync = getProcessController().getConfiguration().getEtlConfiguration();
 		
 		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
 		
-		for (SyncTableConfiguration syncInfo : allSync) {
-			if (operationTableIsAlreadyFinished(syncInfo)) {
-				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On table '"
-				        + syncInfo.getTableName() + "' was already finished!").toUpperCase());
+		for (EtlConfiguration config : allSync) {
+			if (operationTableIsAlreadyFinished(config)) {
+				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
+				        + config.getConfigCode() + "' was already finished!").toUpperCase());
 			} else if (stopRequested()) {
 				logWarn("ABORTING THE ENGINE INITIALIZER DUE STOP REQUESTED!");
 				
 				break;
 			} else {
-				logInfo("INITIALIZING '" + getOperationType().name().toLowerCase() + "' ENGINE FOR TABLE '"
-				        + syncInfo.getTableName().toUpperCase() + "'");
+				logInfo("INITIALIZING '" + getOperationType().name().toLowerCase() + "' ENGINE FOR ETL CONFIGURATION '"
+				        + config.getConfigCode().toUpperCase() + "'");
 				
-				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
+				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(config);
 				
-				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo);
+				EngineMonitor engineMonitor = EngineMonitor.init(this, config, progressInfo);
 				
 				OpenConnection conn = getDefaultApp().openConnection();
 				
@@ -291,18 +292,17 @@ public abstract class OperationController implements Controller {
 		changeStatusToRunning();
 	}
 	
-	public boolean operationTableIsAlreadyFinished(SyncTableConfiguration tableConfiguration) {
+	public boolean operationTableIsAlreadyFinished(EtlConfiguration etlConfig) {
 		try {
-			TableOperationProgressInfo tableOpPm = retrieveProgressInfo(tableConfiguration);
+			TableOperationProgressInfo tableOpPm = retrieveProgressInfo(etlConfig);
 			
 			if (tableOpPm == null) {
-				logWarn("No Table Operation Info found for [" + tableConfiguration.getTableName() + "]");
+				logWarn("No Table Operation Info found for [" + etlConfig.getConfigCode() + "]");
 			} else {
 				SyncProgressMeter sPm = tableOpPm.getProgressMeter();
 				
 				if (sPm == null) {
-					logWarn(
-					    "The progress meter for table operation is not exists [" + tableConfiguration.getTableName() + "]");
+					logWarn("The progress meter for etl configuration is not exists [" + etlConfig.getConfigCode() + "]");
 				} else {
 					return sPm.isFinished();
 				}
@@ -453,9 +453,9 @@ public abstract class OperationController implements Controller {
 		}
 	}
 	
-	public synchronized void markTableOperationAsFinished(SyncTableConfiguration conf) {
+	public synchronized void markTableOperationAsFinished(EtlConfiguration conf) {
 		
-		logDebug("FINISHING OPERATION ON TABLE " + conf.getTableName().toUpperCase());
+		logDebug("FINISHING OPERATION ON TABLE " + conf.getConfigCode().toUpperCase());
 		
 		TableOperationProgressInfo progressInfo = this.retrieveProgressInfo(conf);
 		
@@ -479,8 +479,8 @@ public abstract class OperationController implements Controller {
 		return this.getProcessController().getConfiguration();
 	}
 	
-	public List<SyncTableConfiguration> getTablesConfigurations() {
-		return getConfiguration().getTablesConfigurations();
+	public List<EtlConfiguration> getEtlConfiguration() {
+		return getConfiguration().getEtlConfiguration();
 	}
 	
 	public File generateTableProcessStatusFile_(SyncTableConfiguration conf) {
@@ -659,9 +659,9 @@ public abstract class OperationController implements Controller {
 	
 	public abstract Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits);
 	
-	public abstract long getMinRecordId(SyncTableConfiguration tableInfo);
+	public abstract long getMinRecordId(EtlConfiguration tableInfo);
 	
-	public abstract long getMaxRecordId(SyncTableConfiguration tableInfo);
+	public abstract long getMaxRecordId(EtlConfiguration tableInfo);
 	
 	public void refresh() {
 	}
@@ -702,10 +702,10 @@ public abstract class OperationController implements Controller {
 		this.getProcessController().requestStop();
 	}
 	
-	public TableOperationProgressInfo retrieveProgressInfo(SyncTableConfiguration tableConfiguration) {
+	public TableOperationProgressInfo retrieveProgressInfo(EtlConfiguration config) {
 		if (progressInfo != null && utilities().arrayHasElement(progressInfo.getItemsProgressInfo())) {
 			for (TableOperationProgressInfo item : progressInfo.getItemsProgressInfo()) {
-				if (item.getTableConfiguration().equals(tableConfiguration))
+				if (item.getEtlConfiguration().equals(config))
 					return item;
 			}
 		}

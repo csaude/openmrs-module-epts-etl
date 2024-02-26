@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.engine.mozart;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -32,7 +33,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING NOT MERGED RECORDS ON TABLE '" + getSyncTableConfiguration().getTableName() + "'");
+		logInfo("DETECTING NOT MERGED RECORDS ON TABLE '" + getSrcTableName() + "'");
 		
 		performeOnServer(this.dbsInfo, conn);
 		
@@ -42,13 +43,11 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<SyncTableConfiguration> configuredTables = getRelatedOperationController().getConfiguration()
-		        .getTablesConfigurations();
+		List<EtlConfiguration> configuredTables = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
-			logDebug(
-			    "[" + dbName + "] Detecting not merged records " + ++i + "/" + dbInfo.getDbNames().size() + "!");
+			logDebug("[" + dbName + "] Detecting not merged records " + ++i + "/" + dbInfo.getDbNames().size() + "!");
 			
 			DBValidateInfo report = this.reportOfProblematics.initDBValidatedInfo(dbName);
 			
@@ -60,16 +59,17 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 				continue;
 			}
 			
-			for (SyncTableConfiguration configuredTable : configuredTables) {
+			for (EtlConfiguration conf : configuredTables) {
+				SyncTableConfiguration configuredTable = conf.getSrcTableConfiguration();
+				
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();
 				}
 				
-				logDebug(
-				    "[" + dbName + "] Checking table " + configuredTable.getTableName() + "...");
-			
+				logDebug("[" + dbName + "] Checking table " + configuredTable.getTableName() + "...");
 				
-				if (!utilities.arrayHasElement(configuredTable.getUniqueKeys())) continue;
+				if (!utilities.arrayHasElement(configuredTable.getUniqueKeys()))
+					continue;
 				
 				int notMergedRecord = determineNotMergedRecord(configuredTable, dbName, srcConn, conn);
 				

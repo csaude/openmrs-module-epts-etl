@@ -21,14 +21,14 @@ import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
-public class DataLoadEngine extends Engine{
+public class DataLoadEngine extends Engine {
+	
 	private File currJSONSourceFile;
 	
 	/*
 	 * The current json info which is being processed
 	 */
 	private SyncJSONInfo currJSONInfo;
-	
 	
 	public DataLoadEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
@@ -42,21 +42,21 @@ public class DataLoadEngine extends Engine{
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
 		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
 		
-		logInfo("WRITING  '"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " TO STAGING TABLE");
+		logInfo("WRITING  '" + migrationRecords.size() + "' " + getSrcTableName() + " TO STAGING TABLE");
 		
-		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSyncTableConfiguration(), conn);
+		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSrcTableConfiguration(), conn);
 		
-		logInfo("'"+migrationRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " WROTE TO STAGING TABLE");
+		logInfo("'" + migrationRecords.size() + "' " + getSrcTableName() + " WROTE TO STAGING TABLE");
 		
-		logDebug("MOVING SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] TO BACKUP AREA.");
+		logDebug("MOVING SOURCE JSON [" + this.currJSONSourceFile.getAbsolutePath() + "] TO BACKUP AREA.");
 		
 		BaseDAO.commit(conn);
 		
 		moveSoureJSONFileToBackup();
 		
-		logDebug("SOURCE JSON ["+this.currJSONSourceFile.getAbsolutePath()+"] MOVED TO BACKUP AREA.");
+		logDebug("SOURCE JSON [" + this.currJSONSourceFile.getAbsolutePath() + "] MOVED TO BACKUP AREA.");
 	}
-
+	
 	private void moveSoureJSONFileToBackup() {
 		try {
 			
@@ -64,7 +64,7 @@ public class DataLoadEngine extends Engine{
 			
 			pathToBkpFile += getSyncBkpDirectory().getAbsolutePath();
 			pathToBkpFile += FileUtilities.getPathSeparator();
-			pathToBkpFile +=  FileUtilities.generateFileNameFromRealPath(this.currJSONSourceFile.getAbsolutePath());
+			pathToBkpFile += FileUtilities.generateFileNameFromRealPath(this.currJSONSourceFile.getAbsolutePath());
 			
 			FileUtilities.renameTo(this.currJSONSourceFile.getAbsolutePath(), pathToBkpFile);
 			
@@ -76,10 +76,11 @@ public class DataLoadEngine extends Engine{
 			String pathToBkpMinimalFile = "";
 			pathToBkpMinimalFile += getSyncBkpDirectory().getAbsolutePath();
 			pathToBkpMinimalFile += FileUtilities.getPathSeparator();
-			pathToBkpMinimalFile +=  FileUtilities.generateFileNameFromRealPath(minimalFile);
+			pathToBkpMinimalFile += FileUtilities.generateFileNameFromRealPath(minimalFile);
 			
 			FileUtilities.renameTo(minimalFile, pathToBkpMinimalFile);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -94,9 +95,10 @@ public class DataLoadEngine extends Engine{
 		
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
-		if (this.currJSONSourceFile == null) return null;
+		if (this.currJSONSourceFile == null)
+			return null;
 		
-		getRelatedOperationController().logInfo("Loading content on JSON File "+ this.currJSONSourceFile.getAbsolutePath());
+		getRelatedOperationController().logInfo("Loading content on JSON File " + this.currJSONSourceFile.getAbsolutePath());
 		
 		try {
 			String json = new String(Files.readAllBytes(Paths.get(currJSONSourceFile.getAbsolutePath())));
@@ -106,8 +108,9 @@ public class DataLoadEngine extends Engine{
 			
 			return utilities.parseList(this.currJSONInfo.getSyncInfo(), SyncRecord.class);
 			
-		} catch (Exception e) {
-			getRelatedOperationController().logInfo("Error performing "+ this.currJSONSourceFile.getAbsolutePath());
+		}
+		catch (Exception e) {
+			getRelatedOperationController().logInfo("Error performing " + this.currJSONSourceFile.getAbsolutePath());
 			
 			e.printStackTrace();
 			
@@ -115,32 +118,35 @@ public class DataLoadEngine extends Engine{
 		}
 	}
 	
-	boolean printed; 
+	boolean printed;
+	
 	boolean tmpPrintFiles() {
-		if (printed) return printed;
+		if (printed)
+			return printed;
 		
 		File[] files = getSyncDirectory().listFiles(this.getSearchParams());
-	    
-		System.out.println("---------------------------------------------------------------------------------------------------------------------");
 		
-		for (File f :files) {
-			System.out.println(this.hashCode()+ ">" + f.getName());
+		System.out.println(
+		    "---------------------------------------------------------------------------------------------------------------------");
+		
+		for (File f : files) {
+			System.out.println(this.hashCode() + ">" + f.getName());
 		}
 		this.printed = true;
 		
 		return this.printed;
 	}
 	
-    private File getNextJSONFileToLoad(){
-    	File[] files = getSyncDirectory().listFiles(this.getSearchParams());
-    	
-    	if (files != null && files.length >0){
-    		return files[0];
-    	}
-    	
-    	return null;
-    }
-    
+	private File getNextJSONFileToLoad() {
+		File[] files = getSyncDirectory().listFiles(this.getSearchParams());
+		
+		if (files != null && files.length > 0) {
+			return files[0];
+		}
+		
+		return null;
+	}
+	
 	@Override
 	public LoadSyncDataSearchParams getSearchParams() {
 		return (LoadSyncDataSearchParams) super.getSearchParams();
@@ -148,30 +154,31 @@ public class DataLoadEngine extends Engine{
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new LoadSyncDataSearchParams(getRelatedOperationController(), this.getSyncTableConfiguration(), limits);
+		SyncSearchParams<? extends SyncRecord> searchParams = new LoadSyncDataSearchParams(getRelatedOperationController(),
+		        this.getEtlConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
-		//searchParams.setExtraCondition("obs_2020093011233502.json");
 		
 		return searchParams;
 	}
-    
-    private File getSyncBkpDirectory() throws IOException {
-    	String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSyncTableConfiguration()).getAbsolutePath();
-    	
-    	return new File(baseDirectory);
-    }
-    
-    @Override
-    public DataLoadController getRelatedOperationController() {
-    	return (DataLoadController) super.getRelatedOperationController();
-    }
-    
-    private File getSyncDirectory() {
-    	String baseDirectory = getRelatedOperationController().getSyncDirectory(getSyncTableConfiguration()).getAbsolutePath();
-    	
-    	return new File(baseDirectory);
-    }
-
+	
+	private File getSyncBkpDirectory() throws IOException {
+		String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSrcTableConfiguration())
+		        .getAbsolutePath();
+		
+		return new File(baseDirectory);
+	}
+	
+	@Override
+	public DataLoadController getRelatedOperationController() {
+		return (DataLoadController) super.getRelatedOperationController();
+	}
+	
+	private File getSyncDirectory() {
+		String baseDirectory = getRelatedOperationController().getSyncDirectory(getSrcTableConfiguration()).getAbsolutePath();
+		
+		return new File(baseDirectory);
+	}
+	
 	@Override
 	public void requestStop() {
 		// TODO Auto-generated method stub

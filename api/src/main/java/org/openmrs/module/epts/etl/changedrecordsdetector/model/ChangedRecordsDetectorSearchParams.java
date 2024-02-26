@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.changedrecordsdetector.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -20,13 +21,13 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 	
 	private SyncOperationType type;
 	
-	public ChangedRecordsDetectorSearchParams(SyncTableConfiguration tableInfo, String appCode, RecordLimits limits,
+	public ChangedRecordsDetectorSearchParams(EtlConfiguration config, String appCode, RecordLimits limits,
 	    SyncOperationType type, Connection conn) {
-		super(tableInfo, limits);
+		super(config, limits);
 		
 		this.appCode = appCode;
 		
-		setOrderByFields(tableInfo.getPrimaryKey());
+		setOrderByFields(config.getSrcTableConfiguration().getPrimaryKey());
 		
 		this.type = type;
 	}
@@ -38,6 +39,8 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+		
+		SyncTableConfiguration tableInfo = getConfig().getSrcTableConfiguration();
 		
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
 		
@@ -79,16 +82,14 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 		}
 		
 		if (!this.selectAllRecords) {
-			if (limits != null) {
+			if (getLimits() != null) {
 				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-				searchClauses.addToParameters(this.limits.getCurrentFirstRecordId());
-				searchClauses.addToParameters(this.limits.getCurrentLastRecordId());
+				searchClauses.addToParameters(this.getLimits().getCurrentFirstRecordId());
+				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
 			}
 		}
 		
-		if (this.tableInfo.getExtraConditionForExport() != null) {
-			searchClauses.addToClauses(tableInfo.getExtraConditionForExport());
-		}
+		tryToAddExtraConditionForExport(searchClauses);
 		
 		return searchClauses;
 	}
@@ -101,13 +102,13 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		RecordLimits bkpLimits = this.limits;
+		RecordLimits bkpLimits = this.getLimits();
 		
-		this.limits = null;
+		this.setLimits(null);
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.limits = bkpLimits;
+		this.setLimits(bkpLimits);
 		
 		return count;
 	}

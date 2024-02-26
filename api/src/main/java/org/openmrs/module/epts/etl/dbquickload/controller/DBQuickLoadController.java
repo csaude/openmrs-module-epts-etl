@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickload.engine.DBQuickLoadEngine;
@@ -35,10 +36,11 @@ public class DBQuickLoadController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
-		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, tableInfo, null);
+	public long getMinRecordId(EtlConfiguration config) {
+		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, config,
+		        null);
 		
-		File[] files = getSyncDirectory(tableInfo).listFiles(searchParams);
+		File[] files = getSyncDirectory(config.getSrcTableConfiguration()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0) {
 			return 0;
@@ -48,10 +50,11 @@ public class DBQuickLoadController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
-		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, tableInfo, null);
+	public long getMaxRecordId(EtlConfiguration config) {
+		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, config,
+		        null);
 		
-		File[] files = getSyncDirectory(tableInfo).listFiles(searchParams);
+		File[] files = getSyncDirectory(config.getSrcTableConfiguration()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0) {
 			return 0;

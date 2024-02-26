@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
@@ -126,8 +127,16 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return searchParams;
 	}
 	
-	public SyncTableConfiguration getSyncTableConfiguration() {
-		return monitor.getSyncTableInfo();
+	public EtlConfiguration getEtlConfiguration() {
+		return monitor.getEtlConfiguration();
+	}
+	
+	public String getSrcTableName() {
+		return getSrcTableConfiguration().getTableName();
+	}
+	
+	public SyncTableConfiguration getSrcTableConfiguration() {
+		return monitor.getSrcTableConfiguration();
 	}
 	
 	public SyncProgressMeter getProgressMeter_() {
@@ -207,7 +216,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 				}
 				
 				logDebug(
-				    "SEARCHING NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
+				    "SEARCHING NEXT MIGRATION RECORDS FOR ETL CONFIG '" + this.getEtlConfiguration().getConfigCode() + "'");
 				
 				OpenConnection conn = openConnection();
 				
@@ -256,7 +265,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 									this.finalCheckStatus = MigrationFinalCheckStatus.IGNORED;
 								}
 							} else {
-								logDebug("NO MORE '" + this.getSyncTableConfiguration().getTableName() + "' RECORDS TO "
+								logDebug("NO MORE '" + this.getSrcTableConfiguration().getTableName() + "' RECORDS TO "
 								        + getRelatedOperationController().getOperationType().name().toLowerCase()
 								        + " ON LIMITS [" + getLimits() + "]! FINISHING...");
 								
@@ -334,12 +343,13 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		
 		List<SyncRecord> records = searchNextRecords(conn);
 		
-		logDebug("SERCH NEXT MIGRATION RECORDS FOR TABLE '" + this.getSyncTableConfiguration().getTableName()
-		        + "' FINISHED. FOUND: '" + utilities.arraySize(records) + "' RECORDS.");
+		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
+		        + getSrcTableConfiguration().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records)
+		        + "' RECORDS.");
 		
 		if (utilities.arrayHasElement(records)) {
 			logDebug("INITIALIZING " + getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '"
-			        + records.size() + "' RECORDS OF TABLE '" + this.getSyncTableConfiguration().getTableName() + "'");
+			        + records.size() + "' RECORDS OF TABLE '" + this.getSrcTableConfiguration().getTableName() + "'");
 			
 			performeSync(records, conn);
 		}
@@ -526,7 +536,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	public synchronized void requestStop() {
 		if (isNotInitialized()) {
 			changeStatusToStopped();
-		} else if (!stopRequested() && !isFinished() && !isStopped()) {
+		} else {
 			if (this.hasChild()) {
 				for (Engine engine : this.getChildren()) {
 					engine.requestStop();

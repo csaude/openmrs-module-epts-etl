@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.engine.mozart;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.Extension;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
@@ -54,7 +55,7 @@ public class MozartFillEmptyFields extends MozartProblemSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING PROBLEMS ON TABLE '" + getSyncTableConfiguration().getTableName() + "'");
+		logInfo("DETECTING PROBLEMS ON TABLE '" + this.getSrcTableName() + "'");
 		
 		performeOnServer(this.dbsInfo, conn);
 		
@@ -64,8 +65,7 @@ public class MozartFillEmptyFields extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<SyncTableConfiguration> configuredTables = getRelatedOperationController().getConfiguration()
-		        .getTablesConfigurations();
+		List<EtlConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
@@ -81,7 +81,8 @@ public class MozartFillEmptyFields extends MozartProblemSolverEngine {
 				continue;
 			}
 			
-			for (SyncTableConfiguration configuredTable : configuredTables) {
+			for (EtlConfiguration conf : configs) {
+				SyncTableConfiguration configuredTable = conf.getSrcTableConfiguration();
 				
 				if (!configuredTable.getTableName().equals(tableToFill))
 					continue;

@@ -7,8 +7,8 @@ import java.sql.Statement;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.detectgapes.engine.DetectGapesEngine;
 import org.openmrs.module.epts.etl.detectgapes.model.DetectGapesSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -43,11 +43,11 @@ public class DetectGapesController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+	public long getMinRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return getExtremeRecord(tableInfo, "min", conn);
+			return getExtremeRecord(config, "min", conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -60,11 +60,11 @@ public class DetectGapesController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+	public long getMaxRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return getExtremeRecord(tableInfo, "max", conn);
+			return getExtremeRecord(config, "max", conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -76,15 +76,16 @@ public class DetectGapesController extends OperationController {
 		}
 	}
 	
-	private long getExtremeRecord(SyncTableConfiguration tableInfo, String function, Connection conn) throws DBException {
-		DetectGapesSearchParams searchParams = new DetectGapesSearchParams(tableInfo, null, this);
+	private long getExtremeRecord(EtlConfiguration config, String function, Connection conn) throws DBException {
+		DetectGapesSearchParams searchParams = new DetectGapesSearchParams(config, null,
+		        this);
 		searchParams.setSyncStartDate(getConfiguration().getStartDate());
 		
 		SearchClauses<DatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
 		
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		
-		searchClauses.setColumnsToSelect(function + "(" + tableInfo.getPrimaryKey() + ") as value");
+		searchClauses.setColumnsToSelect(function + "(" + config.getSrcTableConfiguration().getPrimaryKey() + ") as value");
 		
 		String sql = searchClauses.generateSQL(conn);
 		

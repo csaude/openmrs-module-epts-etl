@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.engine.mozart;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
@@ -27,6 +28,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * @see DBQuickMergeController
  */
 public class MozartRenameDsdFields extends MozartProblemSolverEngine {
+	
 	int lasProcessedDBPos;
 	
 	public MozartRenameDsdFields(EngineMonitor monitor, RecordLimits limits) {
@@ -40,7 +42,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING PROBLEMS ON TABLE '" + getSyncTableConfiguration().getTableName() + "'");
+		logInfo("DETECTING PROBLEMS ON TABLE '" + getSrcTableName() + "'");
 		
 		OpenConnection srcConn = this.dbsInfo.acquireConnection();
 		
@@ -58,10 +60,10 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 		done = true;
 	}
 	
-	private void performeOnServer(DatabasesInfo dbInfo, Connection conn, OpenConnection srcConn) throws DBException, LongTransactionException {
+	private void performeOnServer(DatabasesInfo dbInfo, Connection conn, OpenConnection srcConn)
+	        throws DBException, LongTransactionException {
 		
-		List<SyncTableConfiguration> configuredTables = getRelatedOperationController().getConfiguration()
-		        .getTablesConfigurations();
+		List<EtlConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		for (int i = this.lasProcessedDBPos; i < dbInfo.getDbNames().size(); i++) {
 			
@@ -69,8 +71,8 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 			
 			String dbName = dbInfo.getDbNames().get(i);
 			
-			logDebug("Trying to rename fields on DSD table on DB " + i + "/" + dbInfo.getDbNames().size() + " [" + dbName
-			        + "]");
+			logDebug(
+			    "Trying to rename fields on DSD table on DB " + i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
 			
 			DBValidateInfo report = this.reportOfResolvedProblems.initDBValidatedInfo(dbName);
 			
@@ -82,7 +84,8 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 				continue;
 			}
 			
-			for (SyncTableConfiguration configuredTable : configuredTables) {
+			for (EtlConfiguration config : configs) {
+				SyncTableConfiguration configuredTable = config.getSrcTableConfiguration();
 				
 				if (!configuredTable.getTableName().equals("dsd"))
 					continue;
@@ -123,8 +126,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 					report.addResolvedProblem(resolvedProblem);
 					
 					addUniqueKeyOnDsdUuidField(dbName, configuredTable, srcConn);
-				}
-				else {
+				} else {
 					logDebug("The key exists  on DB " + dbName);
 				}
 				
@@ -137,7 +139,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 				}
 				
 				srcConn.commitCurrentWork();
-
+				
 			}
 		}
 	}
@@ -159,7 +161,8 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 		
 		String query = "select count(*) from " + table + " where dsd_uuid is null";
 		
-		MozartRuntaskWithTimeCheck bg = MozartRuntaskWithTimeCheck.executeWithTimeCheck(MozartTaskType.QUERY, query, 60, conn);
+		MozartRuntaskWithTimeCheck bg = MozartRuntaskWithTimeCheck.executeWithTimeCheck(MozartTaskType.QUERY, query, 60,
+		    conn);
 		
 		return bg.getValues().get(0).integerValue() > 0;
 	}
@@ -204,7 +207,8 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 		
 		String query = "SELECT id value FROM " + table + " WHERE dsd_uuid is null";
 		
-		MozartRuntaskWithTimeCheck bg = MozartRuntaskWithTimeCheck.executeWithTimeCheck(MozartTaskType.QUERY, query, 300, conn);
+		MozartRuntaskWithTimeCheck bg = MozartRuntaskWithTimeCheck.executeWithTimeCheck(MozartTaskType.QUERY, query, 300,
+		    conn);
 		
 		List<SimpleValue> dsds = bg.getValues();
 		

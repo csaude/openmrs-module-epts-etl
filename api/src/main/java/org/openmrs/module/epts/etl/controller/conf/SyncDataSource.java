@@ -18,6 +18,14 @@ public interface SyncDataSource extends PojobleDatabaseObject {
 	
 	String getName();
 	
+	/**
+	 * Tels weather this source is mandatory or not. If it is required and it returns an empty
+	 * result then the main record will be ignored, i.e will not be loaded to destination table
+	 * 
+	 * @return true if this data source is required or false if not
+	 */
+	boolean isRequired();
+	
 	Class<DatabaseObject> getSyncRecordClass(AppInfo srcApplication) throws ForbiddenOperationException;
 	
 }

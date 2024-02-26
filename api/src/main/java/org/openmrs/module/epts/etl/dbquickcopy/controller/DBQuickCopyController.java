@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.dbquickcopy.controller;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickcopy.engine.DBQuickCopyEngine;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -38,11 +38,11 @@ public class DBQuickCopyController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+	public long getMinRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DatabaseObjectDAO.getFirstRecord(tableInfo, conn);
+			return DatabaseObjectDAO.getFirstRecord(config.getSrcTableConfiguration(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -55,11 +55,11 @@ public class DBQuickCopyController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+	public long getMaxRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DatabaseObjectDAO.getLastRecord(tableInfo, conn);
+			return DatabaseObjectDAO.getLastRecord(config.getSrcTableConfiguration(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();

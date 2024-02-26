@@ -4,6 +4,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -19,7 +20,6 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * This class is responsible for control record changes process
  * 
  * @author jpboane
- *
  */
 public class ResolveConflictsInStageAreaController extends OperationController {
 	
@@ -31,19 +31,21 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new ResolveConflictsInStageAreaEngine(monitor, limits);
 	}
-
+	
 	@Override
-	public long getMinRecordId(SyncTableConfiguration tableInfo) {
+	public long getMinRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
-		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(tableInfo, null, conn);
+		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(config, null,
+		        conn);
 		
 		try {
 			SyncImportInfoVO rec = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
 			
-			return rec != null ? rec.getId() :  0;
+			return rec != null ? rec.getId() : 0;
 			
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -52,19 +54,21 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 			conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
-	public long getMaxRecordId(SyncTableConfiguration tableInfo) {
+	public long getMaxRecordId(EtlConfiguration config) {
 		OpenConnection conn = openConnection();
 		
-		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(tableInfo, null, conn);
+		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(config, null,
+		        conn);
 		
 		try {
 			SyncImportInfoVO rec = SyncImportInfoDAO.getLastRecord(searchParams, conn);
 			
-			return rec != null ? rec.getId() :  0;
+			return rec != null ? rec.getId() : 0;
 			
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
@@ -82,11 +86,12 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 	@Override
 	public OpenConnection openConnection() {
 		OpenConnection conn = super.openConnection();
-	
+		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
 			try {
 				DBUtilities.disableForegnKeyChecks(conn);
-			} catch (DBException e) {
+			}
+			catch (DBException e) {
 				e.printStackTrace();
 				
 				throw new RuntimeException(e);

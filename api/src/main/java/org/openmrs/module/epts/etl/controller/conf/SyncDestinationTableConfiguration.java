@@ -144,6 +144,8 @@ public class SyncDestinationTableConfiguration extends SyncTableConfiguration {
 			}
 			catch (Exception e) {
 				srcConn.finalizeConnection();
+				
+				throw new RuntimeException(e);
 			}
 			
 		}
@@ -193,7 +195,12 @@ public class SyncDestinationTableConfiguration extends SyncTableConfiguration {
 					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
 					
 					if (relatedSrcObject == null) {
-						relatedSrcObject = mappingInfo.getSyncRecordClass(srcAppInfo).newInstance();
+						
+						if (mappingInfo.getAvaliableSrc().isRequired()) {
+							return null;
+						} else {
+							relatedSrcObject = mappingInfo.getSyncRecordClass(srcAppInfo).newInstance();
+						}
 					}
 					
 					srcObjects.add(relatedSrcObject);

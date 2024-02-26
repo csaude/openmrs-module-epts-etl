@@ -22,19 +22,17 @@ import org.openmrs.module.epts.etl.problems_solver.model.TmpUserVO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
- * 
  * @author jpboane
- *
  * @see DBQuickMergeController
  */
 public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
+	
 	public ProblemsSolverEngineUsersDupsUUID(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
-
 	
-	@Override	
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
+	@Override
+	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
@@ -48,40 +46,40 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException{
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
 		
 		int i = 1;
 		
-		for (SyncRecord record: syncRecords) {
-			if ( ((DatabaseObject)record).getUuid().isEmpty()) continue;
+		for (SyncRecord record : syncRecords) {
+			if (((DatabaseObject) record).getUuid().isEmpty())
+				continue;
 			
-			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 			
-			DatabaseObject rec = (DatabaseObject)record;
+			DatabaseObject rec = (DatabaseObject) record;
 			
-			SyncTableConfiguration syncTableInfo = SyncTableConfiguration.init("tmp_user", getSyncTableConfiguration().getRelatedSyncConfiguration());
+			SyncTableConfiguration syncTableInfo = SyncTableConfiguration.init("tmp_user",
+			    getEtlConfiguration().getRelatedSyncConfiguration());
 			
 			List<TmpUserVO> dups = DatabaseObjectDAO.getByField(TmpUserVO.class, "user_uuid", rec.getUuid(), conn);
-				
+			
 			logDebug(startingStrLog + " RESOLVING..." + rec);
 			
-		
-				
 			TmpUserVO preservedUser = TmpUserVO.getWinningRecord(dups, conn);
-			preservedUser.setUsersSyncTableConfiguration(getSyncTableConfiguration());
+			preservedUser.setUsersSyncTableConfiguration(this.getSrcTableConfiguration());
 			
 			for (int j = 1; j < dups.size(); j++) {
 				TmpUserVO dup = dups.get(j);
 				
 				dup.setSyncTableConfiguration(syncTableInfo);
 				
-				
 				UsersVO user = new UsersVO();
 				
 				user.setUserId(dup.getObjectId());
 				user.setUuid(dup.getUuid());
-			
+				
 				try {
 					logDebug("REMOVING USER [" + dup + "]");
 					
@@ -113,28 +111,26 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 				}
 			}
 			
-			
-			
 			i++;
 		}
 	}
-
 	
-	
-	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn) throws DBException, ForbiddenOperationException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
+	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)
+	        throws DBException, ForbiddenOperationException {
+		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + this.getSrcTableName());
 		
 		int i = 1;
 		
 		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
 		
-		for (SyncRecord record: syncRecords) {
-			String startingStrLog = utilities.garantirXCaracterOnNumber(i, (""+getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+		for (SyncRecord record : syncRecords) {
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 			
-			DatabaseObject rec = (DatabaseObject)record;
+			DatabaseObject rec = (DatabaseObject) record;
 			
-			List<DatabaseObject> dups = new ArrayList<>();//DatabaseObjectDAO.getByUuid(getSyncTableConfiguration().getSyncRecordClass(getDefaultApp()), rec.getUuid(), conn);
-				
+			List<DatabaseObject> dups = new ArrayList<>();
+			
 			logDebug(startingStrLog + " RESOLVING..." + rec);
 			
 			for (int j = 1; j < dups.size(); j++) {
@@ -142,9 +138,8 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
-				dup.save(getSyncTableConfiguration(), conn);
+				dup.save(getSrcTableConfiguration(), conn);
 			}
-			
 			
 			i++;
 		}
@@ -154,20 +149,21 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 			syncRecords.removeAll(recordsToIgnoreOnStatistics);
 		}
 		
-		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSyncTableConfiguration().getTableName() + "!");		
+		logDebug("MERGE DONE ON " + syncRecords.size() + " " + this.getSrcTableName() + "!");
 	}
 	
 	@Override
 	public void requestStop() {
 	}
-
+	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getSyncTableConfiguration(), null);
+		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getEtlConfiguration(),
+		        null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getSyncTableConfiguration().getRelatedSyncConfiguration().getStartDate());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
 	}
-
+	
 }
