@@ -92,13 +92,17 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		}
 		
 		String dstJoinSubquery = "";
+		String joinCondition = tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
 		
-		dstJoinSubquery += " SELECT * ";
-		dstJoinSubquery += " FROM    " + fromClause;
-		dstJoinSubquery += " WHERE " + tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
+		if (utilities.stringHasValue(joinCondition)) {
+			dstJoinSubquery += " SELECT * ";
+			dstJoinSubquery += " FROM    " + fromClause;
+			dstJoinSubquery += " WHERE " + joinCondition;
+		} else {
+			throw new ForbiddenOperationException("There is no join condition between ");
+		}
 		
 		return dstJoinSubquery;
-		
 	}
 	
 	@Override
@@ -109,7 +113,6 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		RecordLimits bkpLimits = this.getLimits();
 		
 		this.removeLimits();
-		;
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		

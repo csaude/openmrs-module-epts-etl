@@ -215,8 +215,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 					logInfo("PERFORMING FINAL CHECK...");
 				}
 				
-				logDebug(
-				    "SEARCHING NEXT MIGRATION RECORDS FOR ETL CONFIG '" + this.getEtlConfiguration().getConfigCode() + "'");
+				logDebug("SEARCHING NEXT MIGRATION RECORDS FOR ETL CONFIG '" + this.getEtlConfiguration().getConfigCode()
+				        + "'. DST [" + getEtlConfiguration().parseDstTableToString() + "]");
 				
 				OpenConnection conn = openConnection();
 				

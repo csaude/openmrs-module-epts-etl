@@ -83,10 +83,6 @@ public class DetectGapesEngine extends Engine {
 	}
 	
 	@Override
-	public void requestStop() {
-	}
-	
-	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DetectGapesSearchParams(this.getEtlConfiguration(), limits,
 		        getRelatedOperationController());

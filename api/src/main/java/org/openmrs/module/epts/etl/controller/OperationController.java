@@ -167,13 +167,26 @@ public abstract class OperationController implements Controller {
 		for (EtlConfiguration syncInfo : allSync) {
 			if (operationTableIsAlreadyFinished(syncInfo)) {
 				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Confinguration '"
-				        + syncInfo.getConfigCode() + "' was already finished!").toUpperCase());
+				        + syncInfo.getConfigCode() + "' DST: " + syncInfo.parseDstTableToString() + " was already finished!")
+				                .toUpperCase());
 			} else if (stopRequested()) {
 				logWarn("ABORTING THE ENGINE PROCESS DUE STOP REQUESTED!");
 				break;
 			} else {
+				
+				if (!syncInfo.isFullLoaded()) {
+					try {
+						syncInfo.fullLoad();
+					}
+					catch (DBException e) {
+						e.printStackTrace();
+						
+						throw new RuntimeException(e);
+					}
+				}
+				
 				logInfo(("Starting operation '" + getOperationType().name().toLowerCase() + "' On Etl Confinguration '"
-				        + syncInfo.getConfigCode() + "'").toUpperCase());
+				        + syncInfo.getConfigCode() + "' DST: " + syncInfo.parseDstTableToString()).toUpperCase());
 				
 				TableOperationProgressInfo progressInfo = null;
 				
@@ -181,8 +194,9 @@ public abstract class OperationController implements Controller {
 					progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
 				}
 				catch (NullPointerException e) {
-					logErr("Error on thread " + this.getControllerId()
-					        + ": Progress meter not found for Etl Confinguration [" + syncInfo.getConfigCode() + "]");
+					logErr(
+					    "Error on thread " + this.getControllerId() + ": Progress meter not found for Etl Confinguration ["
+					            + syncInfo.getConfigCode() + "]. DST: " + syncInfo.parseDstTableToString());
 					
 					e.printStackTrace();
 					
@@ -217,7 +231,8 @@ public abstract class OperationController implements Controller {
 				
 				if (stopRequested() && engineMonitor.isStopped()) {
 					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
-					        + syncInfo.getConfigCode() + "'  is stopped successifuly!").toUpperCase());
+					        + syncInfo.getConfigCode() + "' DST: " + syncInfo.parseDstTableToString()
+					        + "  is stopped successifuly!").toUpperCase());
 					break;
 				} else {
 					if (engineMonitor.getMainEngine() != null) {
@@ -232,7 +247,8 @@ public abstract class OperationController implements Controller {
 					}
 					
 					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
-					        + syncInfo.getConfigCode() + "' is finished!").toUpperCase());
+					        + syncInfo.getConfigCode() + "'" + syncInfo.parseDstTableToString() + "is finished!")
+					                .toUpperCase());
 					
 					if (getOperationConfig().isRunOnce()) {
 						break;
@@ -255,15 +271,16 @@ public abstract class OperationController implements Controller {
 		
 		for (EtlConfiguration config : allSync) {
 			if (operationTableIsAlreadyFinished(config)) {
-				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
-				        + config.getConfigCode() + "' was already finished!").toUpperCase());
+				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration ' DST: "
+				        + config.parseDstTableToString() + config.getConfigCode() + "' was already finished!")
+				                .toUpperCase());
 			} else if (stopRequested()) {
 				logWarn("ABORTING THE ENGINE INITIALIZER DUE STOP REQUESTED!");
 				
 				break;
 			} else {
-				logInfo("INITIALIZING '" + getOperationType().name().toLowerCase() + "' ENGINE FOR ETL CONFIGURATION '"
-				        + config.getConfigCode().toUpperCase() + "'");
+				logInfo("INITIALIZING '" + getOperationType().name().toLowerCase() + "' ENGINE FOR ETL CONFIGURATION ' DST: "
+				        + config.parseDstTableToString() + config.getConfigCode().toUpperCase() + "'");
 				
 				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(config);
 				

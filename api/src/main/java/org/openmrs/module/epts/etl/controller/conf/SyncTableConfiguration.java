@@ -86,6 +86,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		this.uniqueKeys = toCloneFrom.uniqueKeys;
 		this.fields = toCloneFrom.fields;
 		this.winningRecordFieldsInfo = toCloneFrom.winningRecordFieldsInfo;
+		this.fullLoaded = toCloneFrom.fullLoaded;
 	}
 	
 	public boolean isManualIdGeneration() {

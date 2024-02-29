@@ -61,8 +61,7 @@ public class DBCopyEngine extends Engine {
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getEtlConfiguration()
-				        .getDstTableConfiguration()) {
+				for (SyncDestinationTableConfiguration mappingInfo : getEtlConfiguration().getDstTableConfiguration()) {
 					
 					DatabaseObject destObject = null;
 					
@@ -92,10 +91,6 @@ public class DBCopyEngine extends Engine {
 		finally {
 			dstConn.finalizeConnection();
 		}
-	}
-	
-	@Override
-	public void requestStop() {
 	}
 	
 	public AppInfo getDstApp() {

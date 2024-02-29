@@ -8,9 +8,9 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.openmrs.module.epts.etl.Main;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
@@ -19,21 +19,25 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsUtil;
 
 public class SyncVM {
+	
 	@SuppressWarnings("unused")
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private List<SyncConfiguration> avaliableConfigurations;
 	
 	private SyncConfiguration activeConfiguration;
+	
 	private File configFile;
-
+	
 	private String activeTab;
+	
 	private String statusMessage;
 	
 	private SyncVM() throws IOException, DBException {
 		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
-	
-		File confDir = new File(rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "conf");
+		
+		File confDir = new File(
+		        rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "conf");
 		
 		if (!confDir.exists() || confDir.list().length == 0) {
 			throw new ForbiddenOperationException("Nenhum dicheiro de configuracao foi encontrado!");
@@ -48,17 +52,18 @@ public class SyncVM {
 			}
 		}
 		
-		String configFileName = this.activeConfiguration.getProcessType().isSourceSync() ? "source_sync_config.json" : "dest_sync_config.json";
-
-		this.configFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "conf" + FileUtilities.getPathSeparator() + configFileName);
-	
+		String configFileName = this.activeConfiguration.getProcessType().isSourceSync() ? "source_sync_config.json"
+		        : "dest_sync_config.json";
+		
+		this.configFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "sync"
+		        + FileUtilities.getPathSeparator() + "conf" + FileUtilities.getPathSeparator() + configFileName);
+		
 		this.activeTab = this.activeConfiguration.getOperationsAsList().get(0).getOperationType().toString();
-
+		
 		//ZipUtilities.copyModuleTagsToOpenMRS();	
 	}
 	
-	
-	public List<SyncOperationConfig> getOperations(){
+	public List<SyncOperationConfig> getOperations() {
 		return this.activeConfiguration.getOperationsAsList();
 	}
 	
@@ -98,20 +103,22 @@ public class SyncVM {
 		return this.activeTab.equals(operation.getOperationType());
 	}
 	
-	public TableOperationProgressInfo retrieveProgressInfo(SyncOperationConfig operation, SyncTableConfiguration item, String appOriginCode) {
+	public TableOperationProgressInfo retrieveProgressInfo(SyncOperationConfig operation, EtlConfiguration item,
+	        String appOriginCode) {
 		OperationController controller = operation.getRelatedController(appOriginCode);
 		
-		if (controller == null) return null;
+		if (controller == null)
+			return null;
 		
 		return controller.retrieveProgressInfo(item);
 	}
 	
-	public TableOperationProgressInfo retrieveProgressInfo(SyncOperationConfig operation, SyncTableConfiguration item) {
+	public TableOperationProgressInfo retrieveProgressInfo(SyncOperationConfig operation, EtlConfiguration item) {
 		return retrieveProgressInfo(operation, item, null);
 	}
 	
 	public OperationController getActiveOperationController() {
-		for (SyncOperationConfig syncConfig: this.getOperations()) {
+		for (SyncOperationConfig syncConfig : this.getOperations()) {
 			if (syncConfig.getOperationType().equals(this.activeTab)) {
 				return syncConfig.getRelatedController(null);
 			}
@@ -125,7 +132,8 @@ public class SyncVM {
 			if (conf.getDesignation().equals(selectedConfiguration)) {
 				this.activeConfiguration = conf;
 				break;
-			};
+			}
+			;
 		}
 		
 		this.activeConfiguration.setClassPath(ConfVM.retrieveClassPath());
@@ -153,18 +161,18 @@ public class SyncVM {
 			throw new RuntimeException(e);
 		}
 		
-		while(this.activeConfiguration.getRelatedController() == null || !this.activeConfiguration.getRelatedController().isProgressInfoLoaded()) {
+		while (this.activeConfiguration.getRelatedController() == null
+		        || !this.activeConfiguration.getRelatedController().isProgressInfoLoaded()) {
 			TimeCountDown.sleep(10);
 		}
 		
 		//tmpSync();
 	}
 	
-	
 	public void saveConfigFile(SyncConfiguration syncConfiguration) {
 		FileUtilities.removeFile(this.configFile.getAbsolutePath());
 		
 		FileUtilities.write(this.configFile.getAbsolutePath(), syncConfiguration.parseToJSON());
 	}
-		
+	
 }

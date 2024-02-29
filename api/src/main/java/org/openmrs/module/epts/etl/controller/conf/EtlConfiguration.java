@@ -82,11 +82,6 @@ public class EtlConfiguration extends BaseConfiguration {
 					SyncDestinationTableConfiguration map = dstTableConfiguration.get(0);
 					
 					map.setRelatedAppInfo(otherApps.get(0));
-					
-					if (DBUtilities.isTableExists(dstConn.getSchema(), map.getTableName(), dstConn)) {
-						map.fullLoad(dstConn);
-					}
-					
 				} else {
 					
 					for (SyncDestinationTableConfiguration map : this.dstTableConfiguration) {
@@ -157,7 +152,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	}
 	
 	public String getConfigCode() {
-		return configCode;
+		return utilities.stringHasValue(configCode) ? configCode : this.getSrcTableConfiguration().getTableName();
 	}
 	
 	public void setConfigCode(String configCode) {

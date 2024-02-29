@@ -117,9 +117,4 @@ public class TransportEngine extends Engine {
 		return getRelatedOperationController().getSyncDirectory(getSrcTableConfiguration());
 	}
 	
-	@Override
-	public void requestStop() {
-		// TODO Auto-generated method stub
-		
-	}
 }

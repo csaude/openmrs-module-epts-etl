@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.dbquickmerge.engine;
+package org.openmrs.module.epts.etl.etl.engine;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -9,13 +9,12 @@ import java.util.Map;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
-import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
-import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.dbquickmerge.model.MergingRecord;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.etl.model.EtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
@@ -31,30 +30,14 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * @author jpboane
  * @see EtlController
  */
-public class DBQuickMergeEngine extends Engine {
+public class EtlEngine extends Engine {
 	
-	public DBQuickMergeEngine(EngineMonitor monitor, RecordLimits limits) {
+	public EtlEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		
-		DBQuickMergeSearchParams searchParams = (DBQuickMergeSearchParams) getSearchParams();
-		
-		if (getFinalCheckStatus().onGoing()) {
-			OpenConnection dstConn = this.getDstApp().openConnection();
-			
-			try {
-				if (DBUtilities.isSameDatabaseServer(conn, dstConn)) {
-					this.searchParams.setExtraCondition(searchParams.generateDestinationExclusionClause(conn, dstConn));
-				}
-			}
-			finally {
-				dstConn.finalizeConnection();
-			}
-		}
-		
 		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
@@ -68,37 +51,12 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	protected boolean mustDoFinalCheck() {
-		if (getRelatedOperationController().getOperationConfig().skipFinalDataVerification()) {
-			return false;
-		} else {
-			
-			OpenConnection srcConn = openConnection();
-			OpenConnection dstConn = this.getDstApp().openConnection();
-			
-			boolean sameDBSDerver;
-			
-			try {
-				sameDBSDerver = DBUtilities.isSameDatabaseServer(srcConn, dstConn);
-			}
-			catch (DBException e) {
-				throw new RuntimeException(e);
-			}
-			finally {
-				srcConn.finalizeConnection();
-				dstConn.finalizeConnection();
-			}
-			
-			if (sameDBSDerver) {
-				return true;
-			} else {
-				return false;
-			}
-		}
+		return false;
 	}
 	
 	@Override
-	public DBQuickMergeController getRelatedOperationController() {
-		return (DBQuickMergeController) super.getRelatedOperationController();
+	public EtlController getRelatedOperationController() {
+		return (EtlController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -116,7 +74,8 @@ public class DBQuickMergeEngine extends Engine {
 	}
 	
 	public void performeBatchSync(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
+		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + syncRecords.size()
+		        + "' RECORDS");
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
@@ -164,7 +123,8 @@ public class DBQuickMergeEngine extends Engine {
 			
 			MergingRecord.mergeAll(mergingRecs, srcConn, dstConn);
 			
-			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSrcTableName());
+			logInfo(
+			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + syncRecords.size() + "' RECORDS");
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}
@@ -180,7 +140,8 @@ public class DBQuickMergeEngine extends Engine {
 	}
 	
 	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSrcTableName() + "' ONE-BY-ONE");
+		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + syncRecords.size()
+		        + "' RECORDS");
 		
 		int i = 1;
 		
@@ -295,8 +256,9 @@ public class DBQuickMergeEngine extends Engine {
 				syncRecords.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSrcTableName() + "!");
-				
+			logInfo(
+			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + syncRecords.size() + "' RECORDS");
+			
 			dstConn.markAsSuccessifullyTerminated();
 		}
 		finally {
@@ -316,8 +278,8 @@ public class DBQuickMergeEngine extends Engine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickMergeSearchParams(this.getEtlConfiguration(),
-		        limits, getRelatedOperationController());
+		SyncSearchParams<? extends SyncRecord> searchParams = new EtlSearchParams(this.getEtlConfiguration(), limits,
+		        getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

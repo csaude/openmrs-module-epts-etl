@@ -132,10 +132,6 @@ public class PojoGenerationEngine extends Engine {
 	}
 	
 	@Override
-	public void requestStop() {
-	}
-	
-	@Override
 	protected boolean mustDoFinalCheck() {
 		return false;
 	}

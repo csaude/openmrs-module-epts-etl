@@ -174,14 +174,9 @@ public class DataLoadEngine extends Engine {
 	}
 	
 	private File getSyncDirectory() {
-		String baseDirectory = getRelatedOperationController().getSyncDirectory(getSrcTableConfiguration()).getAbsolutePath();
+		String baseDirectory = getRelatedOperationController().getSyncDirectory(getSrcTableConfiguration())
+		        .getAbsolutePath();
 		
 		return new File(baseDirectory);
-	}
-	
-	@Override
-	public void requestStop() {
-		// TODO Auto-generated method stub
-		
 	}
 }

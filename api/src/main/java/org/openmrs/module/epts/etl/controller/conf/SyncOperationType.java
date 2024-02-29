@@ -31,7 +31,12 @@ public enum SyncOperationType {
 	DB_MERGE_FROM_SOURCE_DB,
 	DB_QUICK_MERGE,
 	GENERIC_OPERATION,
-	DETECT_GAPES;
+	DETECT_GAPES,
+	ETL;
+	
+	public static boolean isEtl(String operationType) {
+		return SyncOperationType.valueOf(operationType).equals(ETL);
+	}
 	
 	public static boolean isDetectGapesOperation(String operationType) {
 		return SyncOperationType.valueOf(operationType).equals(DETECT_GAPES);
@@ -212,6 +217,10 @@ public enum SyncOperationType {
 	
 	public boolean isDetectGapesOperation() {
 		return this.equals(DETECT_GAPES);
+	}
+	
+	public boolean isEtl() {
+		return this.equals(ETL);
 	}
 	
 	public boolean isSupportedOperation() {

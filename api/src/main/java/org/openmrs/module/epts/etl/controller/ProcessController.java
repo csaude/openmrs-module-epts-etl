@@ -389,7 +389,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			}
 		}
 		
-	}	
+	}
 	
 	@Override
 	public void run() {
@@ -487,7 +487,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			return false;
 		
 		if (isDBReSyncProcess() || isDBQuickExportProcess()) {
-			ProcessInfo processInfoOnDB = this.processInfo.loadFromFile();
+			ProcessInfo processInfoOnDB = this.processInfo.tryToLoadFromFile();
 			
 			return !this.processInfo.equals(processInfoOnDB);
 		}

@@ -28,6 +28,8 @@ public class ProcessInfo {
 	
 	private SyncConfiguration configuration;
 	
+	private boolean loadeFromFile;
+	
 	public ProcessInfo() {
 	}
 	
@@ -83,16 +85,30 @@ public class ProcessInfo {
 		return configuration;
 	}
 	
-	public ProcessInfo loadFromFile() {
+	public ProcessInfo tryToLoadFromFile() {
 		try {
-			return ProcessInfo.loadFromJSON(new String(Files.readAllBytes(generateProcessStatusFile().toPath())));
+			ProcessInfo pi = ProcessInfo.loadFromJSON(new String(Files.readAllBytes(generateProcessStatusFile().toPath())));
+			
+			pi.loadeFromFile = true;
+			
+			return pi;
 		}
 		catch (NoSuchFileException e) {
 			return null;
 		}
 		catch (IOException e) {
-			throw new RuntimeException();
+			throw new RuntimeException(e);
 		}
+	}
+	
+	@JsonIgnore
+	public boolean isLoadeFromFile() {
+		return loadeFromFile;
+	}
+	
+	@JsonIgnore
+	public boolean isFinished() {
+		return this.finishTime != null;
 	}
 	
 	public static ProcessInfo loadFromJSON(String json) {
@@ -102,7 +118,7 @@ public class ProcessInfo {
 	public File generateProcessStatusFile() {
 		String operationId = this.getProcessId();
 		
-		String fileName = generateProcessStatusFolder() + FileUtilities.getPathSeparator() + operationId;
+		String fileName = generateProcessStatusFolder() + FileUtilities.getPathSeparator() + operationId + "_process";
 		
 		return new File(fileName);
 	}

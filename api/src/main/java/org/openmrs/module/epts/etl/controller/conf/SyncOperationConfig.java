@@ -20,6 +20,7 @@ import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.export.controller.DBExportController;
 import org.openmrs.module.epts.etl.inconsistenceresolver.controller.InconsistenceSolverController;
@@ -356,6 +357,11 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
+	public boolean isEtl() {
+		return this.operationType.isEtl();
+	}
+	
+	@JsonIgnore
 	public boolean isPojoGeneration() {
 		return this.operationType.isPojoGeneration();
 	}
@@ -470,7 +476,9 @@ public class SyncOperationConfig extends BaseConfiguration {
 	
 	private OperationController generateSingle(ProcessController parent, String appOriginCode, Connection conn) {
 		
-		if (isDatabasePreparationOperation()) {
+		if (isEtl()) {
+			return new EtlController(parent, this);
+		} else if (isDatabasePreparationOperation()) {
 			return new DatabasePreparationController(parent, this);
 		} else if (isPojoGeneration()) {
 			return new PojoGenerationController(parent, this);
@@ -518,7 +526,14 @@ public class SyncOperationConfig extends BaseConfiguration {
 		String errorMsg = "";
 		int errNum = 0;
 		
-		if (this.getRelatedSyncConfig().isDataBaseMergeFromJSONProcess()) {
+		if (this.getRelatedSyncConfig().isEtl()) {
+			if (!this.canBeRunInEtlProcess())
+				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
+				        + "] Cannot be configured in Etl process\n";
+			
+			if (this.isLoadOperation() && (this.getSourceFolders() == null || this.getSourceFolders().size() == 0))
+				errorMsg += ++errNum + ". There is no source folder defined";
+		} else if (this.getRelatedSyncConfig().isDataBaseMergeFromJSONProcess()) {
 			if (!this.canBeRunInDestinationSyncProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in destination sync process\n";
@@ -610,6 +625,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 		} else if (this.getChild() != null) {
 			this.getChild().validate();
 		}
+		
 	}
 	
 	@JsonIgnore
@@ -644,6 +660,12 @@ public class SyncOperationConfig extends BaseConfiguration {
 	
 	public static List<SyncOperationType> getSupportedOperationsInPojoGenerationProcess() {
 		SyncOperationType[] supported = { SyncOperationType.POJO_GENERATION };
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
+	public static List<SyncOperationType> getSupportedOperationsInEtlProcess() {
+		SyncOperationType[] supported = { SyncOperationType.ETL };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -790,6 +812,11 @@ public class SyncOperationConfig extends BaseConfiguration {
 	@JsonIgnore
 	public boolean canBeRunInDestinationSyncProcess() {
 		return utilities.existOnArray(getSupportedOperationsInDestinationSyncProcess(), this.operationType);
+	}
+	
+	@JsonIgnore
+	public boolean canBeRunInEtlProcess() {
+		return utilities.existOnArray(getSupportedOperationsInEtlProcess(), this.operationType);
 	}
 	
 	public static List<SyncOperationType> getSupportedOperationsInDestinationSyncProcess() {

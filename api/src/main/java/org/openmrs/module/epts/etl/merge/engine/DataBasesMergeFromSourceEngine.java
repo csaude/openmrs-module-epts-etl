@@ -73,10 +73,6 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	}
 	
 	@Override
-	public void requestStop() {
-	}
-	
-	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new DataBaseMergeFromSourceDBSearchParams(
 		        this.getEtlConfiguration(), limits, conn);

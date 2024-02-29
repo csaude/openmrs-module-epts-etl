@@ -21,8 +21,8 @@ public class DataBaseMergeFromJSONEngine extends Engine {
 		super(monitor, limits);
 	}
 	
-	@Override	
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException{
+	@Override
+	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
 	}
 	
@@ -30,7 +30,6 @@ public class DataBaseMergeFromJSONEngine extends Engine {
 	protected void restart() {
 		this.getSearchParams().setSyncStartDate(DateAndTimeUtilities.getCurrentDate());
 	}
-	
 	
 	@Override
 	public DatabaseMergeFromJSONController getRelatedOperationController() {
@@ -74,8 +73,5 @@ public class DataBaseMergeFromJSONEngine extends Engine {
 		
 		return null;
 	}
-
-	@Override
-	public void requestStop() {
-	}
+	
 }

@@ -19,7 +19,12 @@ public enum SyncProcessType {
 	GENERIC_PROCESS,
 	DB_COPY,
 	DETECT_GAPES_ON_DB_TABLES,
-	POJO_GENERATION;
+	POJO_GENERATION,
+	ETL;
+	
+	public boolean isEtl() {
+		return this.equals(ETL);
+	}
 	
 	public boolean isPojoGeneration() {
 		return this.equals(POJO_GENERATION);
@@ -135,6 +140,10 @@ public enum SyncProcessType {
 	
 	public static boolean isGenericProcess(String processType) {
 		return SyncProcessType.valueOf(processType).isGenericProcess();
+	}
+	
+	public static boolean isEtl(String processType) {
+		return SyncProcessType.valueOf(processType).isEtl();
 	}
 	
 	public static boolean isDbCopy(String processType) {

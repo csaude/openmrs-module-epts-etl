@@ -103,13 +103,13 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private Map<String, Integer> qtyLoadedTables;
 	
-	private boolean etlCodesLoaded;
+	private boolean initialized;
 	
 	public SyncConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
 		this.allTables = new ArrayList<SyncTableConfiguration>();
 		
-		this.etlCodesLoaded = false;
+		this.initialized = false;
 		
 		this.qtyLoadedTables = new HashMap<>();
 		
@@ -281,6 +281,11 @@ public class SyncConfiguration extends BaseConfiguration {
 	@JsonIgnore
 	public boolean isPojoGeneration() {
 		return processType.isPojoGeneration();
+	}
+	
+	@JsonIgnore
+	public boolean isEtl() {
+		return processType.isEtl();
 	}
 	
 	@JsonIgnore
@@ -531,8 +536,8 @@ public class SyncConfiguration extends BaseConfiguration {
 	/**
 	 * Loads the code for each
 	 */
-	public void loadEtlConfigCodes() {
-		if (etlCodesLoaded) {
+	public void init() {
+		if (initialized) {
 			return;
 		}
 		
@@ -541,16 +546,27 @@ public class SyncConfiguration extends BaseConfiguration {
 				tc.setRelatedSyncConfiguration(this);
 				addConfiguredTable(tc.getSrcTableConfiguration());
 				
-				if (countOnTablesOnEtlConfiguration(tc.getSrcTableConfiguration().getTableName()) == 1) {
-					tc.setConfigCode(tc.getSrcTableConfiguration().getTableName());
-				} else {
-					int nextCode = increaseQtyLoadedTables(tc.getSrcTableConfiguration().getTableName());
-					
-					tc.setConfigCode(
-					    tc.getSrcTableConfiguration().getTableName() + "_" + utilities.garantirXCaracterOnNumber(nextCode, 3));
+				String code = "";
+				
+				if (utilities.arrayHasElement(tc.getDstTableConfiguration())) {
+					for (SyncDestinationTableConfiguration dst : tc.getDstTableConfiguration()) {
+						addConfiguredTable(dst);
+						
+						code = utilities.stringHasValue(code) ? "_and_" + dst.getTableName() : dst.getTableName();
+					}
 				}
+				
+				code = utilities.stringHasValue(code) ? code : tc.getSrcTableConfiguration().getTableName();
+				
+				code = tc.getSrcTableConfiguration().getTableName() + "_to_" + code;
+				
+				tc.setConfigCode(code);
 			}
 		}
+	}
+	
+	public boolean supportMultipleDestination() {
+		return this.isEtl();
 	}
 	
 	private void addConfiguredTable(SyncTableConfiguration tableConfiguration) {
@@ -558,7 +574,7 @@ public class SyncConfiguration extends BaseConfiguration {
 			return;
 		}
 		
-		this.configuredTables.add(tableConfiguration);	
+		this.configuredTables.add(tableConfiguration);
 	}
 	
 	private long countOnTablesOnEtlConfiguration(String tableName) {
@@ -575,13 +591,13 @@ public class SyncConfiguration extends BaseConfiguration {
 		try {
 			for (EtlConfiguration conf : this.getEtlConfiguration()) {
 				if (!conf.isFullLoaded()) {
-					logDebug(
-					    "PERFORMING FULL CONFIGURATION LOAD ON TABLE '" + conf.getSrcTableConfiguration().getTableName() + "'");
+					logDebug("PERFORMING FULL CONFIGURATION LOAD ON TABLE '" + conf.getSrcTableConfiguration().getTableName()
+					        + "'");
 					conf.fullLoad();
 				}
 				
-				logDebug(
-				    "THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '" + conf.getSrcTableConfiguration().getTableName() + "'");
+				logDebug("THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '" + conf.getSrcTableConfiguration().getTableName()
+				        + "'");
 			}
 			
 			this.fullLoaded = true;
@@ -623,7 +639,7 @@ public class SyncConfiguration extends BaseConfiguration {
 			SyncConfiguration syncConfiguration = new ObjectMapperProvider().getContext(SyncConfiguration.class)
 			        .readValue(json, SyncConfiguration.class);
 			
-			syncConfiguration.loadEtlConfigCodes();
+			syncConfiguration.init();
 			
 			return syncConfiguration;
 		}
@@ -779,9 +795,20 @@ public class SyncConfiguration extends BaseConfiguration {
 			}
 		}
 		
+		if (!supportMultipleDestination()) {
+			for (EtlConfiguration config : this.getEtlConfiguration()) {
+				if (utilities.arrayHasMoreThanOneElements(config.getDstTableConfiguration())) {
+					errorMsg += ++errNum + ". The config for source " + config.getSrcTableConfiguration().getTableName()
+					        + " has multiple destination \n";
+				}
+			}
+		}
+		
 		List<SyncOperationType> supportedOperations = null;
 		
-		if (isPojoGeneration()) {
+		if (isEtl()) {
+			supportedOperations = SyncOperationConfig.getSupportedOperationsInEtlProcess();
+		} else if (isPojoGeneration()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInPojoGenerationProcess();
 		} else if (isSourceSyncProcess()) {
 			supportedOperations = SyncOperationConfig.getSupportedOperationsInSourceSyncProcess();

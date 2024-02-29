@@ -134,10 +134,6 @@ public class DBExportEngine extends Engine {
 	}
 	
 	@Override
-	public void requestStop() {
-	}
-	
-	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends SyncRecord> searchParams = new ExportSearchParams(this.getEtlConfiguration(), limits,
 		        conn);

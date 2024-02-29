@@ -31,6 +31,7 @@ public class SearchParamsDAO extends BaseDAO {
 	}
 	
 	public static <T extends VO> List<T> search(AbstractSearchParams<T> searchParams, Connection conn) throws DBException {
+		
 		SearchClauses<T> searchClauses = searchParams.generateSearchClauses(conn);
 		
 		if (searchParams.getOrderByFields() != null) {

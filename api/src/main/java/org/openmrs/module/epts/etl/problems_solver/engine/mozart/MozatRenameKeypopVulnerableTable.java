@@ -21,7 +21,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
  * @author jpboane
- * @see DBQuickMergeController
+ * @see EtlController
  */
 public class MozatRenameKeypopVulnerableTable extends MozartProblemSolverEngine {
 	

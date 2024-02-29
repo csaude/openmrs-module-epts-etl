@@ -206,7 +206,8 @@ public class DatabasePreparationEngine extends Engine {
 		String parentTableName = getEtlConfiguration().getSrcTableConfiguration().generateFullStageTableName();
 		String tableName = getEtlConfiguration().getSrcTableConfiguration().generateRelatedStageUniqueKeysTableName();
 		
-		sql += "CREATE TABLE " + getEtlConfiguration().getSrcTableConfiguration().generateFullStageUniqueKeysTableName() + "(\n";
+		sql += "CREATE TABLE " + getEtlConfiguration().getSrcTableConfiguration().generateFullStageUniqueKeysTableName()
+		        + "(\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
@@ -260,13 +261,15 @@ public class DatabasePreparationEngine extends Engine {
 		sql += DBUtilities.generateTableBigIntField("destination_id", "NULL", conn) + endLineMarker;
 		
 		String checkCondition = "migration_status = -1 OR migration_status = 0 OR migration_status = 1";
-		String keyName = "CHK_" + getEtlConfiguration().getSrcTableConfiguration().generateRelatedStageTableName() + "_MIG_STATUS";
+		String keyName = "CHK_" + getEtlConfiguration().getSrcTableConfiguration().generateRelatedStageTableName()
+		        + "_MIG_STATUS";
 		
 		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
 		
 		String uniqueKeyName = tableName + "_UNQ_RECORD_ID".toLowerCase();
 		
-		if (getEtlConfiguration().getSrcTableConfiguration().isDestinationInstallationType() || getEtlConfiguration().getSrcTableConfiguration().isDBQuickLoad()
+		if (getEtlConfiguration().getSrcTableConfiguration().isDestinationInstallationType()
+		        || getEtlConfiguration().getSrcTableConfiguration().isDBQuickLoad()
 		        || getEtlConfiguration().getSrcTableConfiguration().isDBQuickCopy()) {
 			
 			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName,
@@ -296,10 +299,6 @@ public class DatabasePreparationEngine extends Engine {
 	@Override
 	public DatabasePreparationController getRelatedOperationController() {
 		return (DatabasePreparationController) super.getRelatedOperationController();
-	}
-	
-	@Override
-	public void requestStop() {
 	}
 	
 	@Override
