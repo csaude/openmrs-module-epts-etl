@@ -545,12 +545,14 @@ public class SyncConfiguration extends BaseConfiguration {
 			for (EtlConfiguration tc : this.etlConfiguration) {
 				tc.setRelatedSyncConfiguration(this);
 				addConfiguredTable(tc.getSrcTableConfiguration());
+				addToTableConfigurationPull(tc.getSrcTableConfiguration());
 				
 				String code = "";
 				
 				if (utilities.arrayHasElement(tc.getDstTableConfiguration())) {
 					for (SyncDestinationTableConfiguration dst : tc.getDstTableConfiguration()) {
 						addConfiguredTable(dst);
+						addToTableConfigurationPull(dst);
 						
 						code = utilities.stringHasValue(code) ? "_and_" + dst.getTableName() : dst.getTableName();
 					}
@@ -570,11 +572,9 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	private void addConfiguredTable(SyncTableConfiguration tableConfiguration) {
-		if (this.configuredTables.contains(tableConfiguration)) {
-			return;
+		if (!this.configuredTables.contains(tableConfiguration)) {
+			this.configuredTables.add(tableConfiguration);
 		}
-		
-		this.configuredTables.add(tableConfiguration);
 	}
 	
 	public void fullLoad() {

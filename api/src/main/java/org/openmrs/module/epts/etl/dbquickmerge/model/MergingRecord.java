@@ -167,8 +167,9 @@ public class MergingRecord {
 					}
 				}
 				
-				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(),
-				    parentInOrigin, destConn);
+				SyncTableConfiguration refTab = refInfo.getRefTableConfiguration();
+				
+				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refTab, parentInOrigin, destConn);
 				
 				DatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 				

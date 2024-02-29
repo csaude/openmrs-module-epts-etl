@@ -66,6 +66,8 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	private boolean disabled;
 	
+	private boolean mustLoadChildrenInfo;
+	
 	public SyncTableConfiguration() {
 	}
 	
@@ -87,6 +89,14 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		this.fields = toCloneFrom.fields;
 		this.winningRecordFieldsInfo = toCloneFrom.winningRecordFieldsInfo;
 		this.fullLoaded = toCloneFrom.fullLoaded;
+	}
+	
+	public boolean isMustLoadChildrenInfo() {
+		return mustLoadChildrenInfo;
+	}
+	
+	public void setMustLoadChildrenInfo(boolean mustLoadChildrenInfo) {
+		this.mustLoadChildrenInfo = mustLoadChildrenInfo;
 	}
 	
 	public boolean isManualIdGeneration() {
@@ -152,6 +162,11 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public List<RefInfo> getChildred() {
+		if (!this.mustLoadChildrenInfo) {
+			throw new ForbiddenOperationException(
+			        "The table configuration is set to not load Children. Please change configuration if you what to access Children ifo.");
+		}
+		
 		return childred;
 	}
 	
@@ -400,6 +415,9 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	protected synchronized void loadChildren(Connection conn) throws SQLException {
+		if (!this.mustLoadChildrenInfo)
+			return;
+		
 		logDebug("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
 		
 		this.childred = new ArrayList<RefInfo>();
@@ -766,13 +784,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	public void setMetadata(boolean metadata) {
-		if (this.getTableName().equals("users")) {
-			System.out.println("Stop");
-		}
-		
 		this.metadata = metadata;
-		
-		//if (utilities.isStringIn(this.getTableName(), "obs") && metadata) throw new ForbiddenOperationException("Obs cannot be metadata");
 	}
 	
 	@JsonIgnore
