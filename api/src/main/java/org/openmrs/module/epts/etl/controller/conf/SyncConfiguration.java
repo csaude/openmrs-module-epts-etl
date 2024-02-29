@@ -577,11 +577,6 @@ public class SyncConfiguration extends BaseConfiguration {
 		this.configuredTables.add(tableConfiguration);
 	}
 	
-	private long countOnTablesOnEtlConfiguration(String tableName) {
-		return this.etlConfiguration.stream().filter(str -> str.getSrcTableConfiguration().getTableName().equals(tableName))
-		        .count();
-	}
-	
 	public void fullLoad() {
 		if (this.fullLoaded)
 			return;
@@ -689,7 +684,7 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	public SyncTableConfiguration find(SyncTableConfiguration config) {
-		return utilities.findOnList(this.allTables, config);
+		return utilities.findOnList(this.configuredTables, config);
 	}
 	
 	@JsonIgnore

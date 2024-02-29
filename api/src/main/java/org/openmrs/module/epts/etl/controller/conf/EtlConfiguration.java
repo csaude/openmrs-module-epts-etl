@@ -174,14 +174,4 @@ public class EtlConfiguration extends BaseConfiguration {
 	public AppInfo getMainApp() {
 		return getRelatedSyncConfiguration().getMainApp();
 	}
-	
-	public List<String> parseDstTableToString() {
-		List<String> dst = new ArrayList<>();
-		
-		for (SyncDestinationTableConfiguration d : this.getDstTableConfiguration()) {
-			dst.add(d.getTableName());
-		}
-		
-		return dst;
-	}
 }

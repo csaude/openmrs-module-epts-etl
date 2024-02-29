@@ -35,10 +35,11 @@ public class MergingRecord {
 	private AppInfo destApp;
 	
 	private boolean writeOperationHistory;
-
+	
 	private long destinationRecordId;
 	
-	public MergingRecord(DatabaseObject record, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp, boolean writeOperationHistory) {
+	public MergingRecord(DatabaseObject record, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp,
+	    boolean writeOperationHistory) {
 		this.record = record;
 		this.config = config;
 		this.srcApp = srcApp;
@@ -53,7 +54,7 @@ public class MergingRecord {
 		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(this.config.getUniqueKeys()));
 		
 		consolidateAndSaveData(srcConn, destConn);
-	
+		
 		if (writeOperationHistory) {
 			save(srcConn);
 		}
@@ -85,7 +86,8 @@ public class MergingRecord {
 					
 					DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 					
-					this.destinationRecordId = ((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
+					this.destinationRecordId = ((AbstractDatabaseObject) record)
+					        .resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 				}
 				
 			} else if (e.isIntegrityConstraintViolationException()) {
@@ -158,8 +160,11 @@ public class MergingRecord {
 				    parentIdInOrigin, srcConn);
 				
 				if (parentInOrigin == null) {
-					throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(),
-					        mergingRecord.config.getOriginAppLocationCode(), refInfo);
+					
+					if (refInfo.getDefaultValueDueInconsistency() == null) {
+						throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(),
+						        mergingRecord.config.getOriginAppLocationCode(), refInfo);
+					}
 				}
 				
 				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getRefTableConfiguration(),
@@ -304,9 +309,10 @@ public class MergingRecord {
 			}
 		}
 	}
-
-	public static void mergeAll(Map<String, List<MergingRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn) throws ParentNotYetMigratedException, DBException {
-		for (String key: mergingRecs.keySet()) {
+	
+	public static void mergeAll(Map<String, List<MergingRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn)
+	        throws ParentNotYetMigratedException, DBException {
+		for (String key : mergingRecs.keySet()) {
 			mergeAll(mergingRecs.get(key), srcConn, dstConn);
 		}
 	}

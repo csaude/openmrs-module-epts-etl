@@ -766,6 +766,10 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	}
 	
 	public void setMetadata(boolean metadata) {
+		if (this.getTableName().equals("users")) {
+			System.out.println("Stop");
+		}
+		
 		this.metadata = metadata;
 		
 		//if (utilities.isStringIn(this.getTableName(), "obs") && metadata) throw new ForbiddenOperationException("Obs cannot be metadata");
