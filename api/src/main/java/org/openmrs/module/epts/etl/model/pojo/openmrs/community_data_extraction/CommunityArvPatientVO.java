@@ -29,9 +29,9 @@ public class CommunityArvPatientVO extends AbstractDatabaseObject implements Dat
 	private String partnerStatusAtEnrollment;
 	private String WHOClinicalStageAtEnrollment;
 	private java.util.Date WHOClinicalStageAtEnrollmentDate;
-	private double weightEnrollment;
+	private Double weightEnrollment;
 	private java.util.Date weightDate;
-	private double heightEnrollment;
+	private Double heightEnrollment;
 	private java.util.Date heightDate;
 	private java.util.Date artInitiationDate;
 	private String artRegimen;
@@ -186,11 +186,11 @@ public class CommunityArvPatientVO extends AbstractDatabaseObject implements Dat
 		return this.WHOClinicalStageAtEnrollmentDate;
 	}
  
-	public void setWeightEnrollment(double weightEnrollment){ 
+	public void setWeightEnrollment(Double weightEnrollment){ 
 	 	this.weightEnrollment = weightEnrollment;
 	}
  
-	public double getWeightEnrollment(){ 
+	public Double getWeightEnrollment(){ 
 		return this.weightEnrollment;
 	}
  
@@ -202,11 +202,11 @@ public class CommunityArvPatientVO extends AbstractDatabaseObject implements Dat
 		return this.weightDate;
 	}
  
-	public void setHeightEnrollment(double heightEnrollment){ 
+	public void setHeightEnrollment(Double heightEnrollment){ 
 	 	this.heightEnrollment = heightEnrollment;
 	}
  
-	public double getHeightEnrollment(){ 
+	public Double getHeightEnrollment(){ 
 		return this.heightEnrollment;
 	}
  

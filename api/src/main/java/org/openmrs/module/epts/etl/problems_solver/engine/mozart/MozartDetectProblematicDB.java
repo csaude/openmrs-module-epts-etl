@@ -47,7 +47,7 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING PROBLEMS ON TABLE '" + this.getSrcTableName() + "'");
+		logInfo("DETECTING PROBLEMS ON TABLE '" + this.getMainSrcTableName() + "'");
 		
 		performeOnServer(this.dbsInfo, conn);
 		
@@ -76,7 +76,7 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 			
 			for (EtlConfiguration conf : configs) {
 				
-				SyncTableConfiguration configuredTable = conf.getSrcTableConfiguration();
+				SyncTableConfiguration configuredTable = conf.getMainSrcTableConf();
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();
 				}

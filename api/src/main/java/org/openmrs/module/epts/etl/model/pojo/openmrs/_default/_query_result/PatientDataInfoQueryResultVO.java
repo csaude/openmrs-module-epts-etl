@@ -19,8 +19,8 @@ public class PatientDataInfoQueryResultVO extends AbstractDatabaseObject impleme
 	private String healthFacility;
 	private String district;
 	private String urban;
-	private double ageEnrollment;
-	private double openmrsCurrentAge;
+	private Double ageEnrollment;
+	private Double openmrsCurrentAge;
 	private String maritalStatusAtEnrollment;
 	private String pregnancyStatusAtEnrollment;
 	private String educationAtEnrollment;
@@ -29,8 +29,8 @@ public class PatientDataInfoQueryResultVO extends AbstractDatabaseObject impleme
 	private java.util.Date whoClinicalStageAtEnrollmentDate;
 	private String whoClinicalStageAtEnrollment;
 	private java.util.Date weightDate;
-	private double weightEnrollment;
-	private double heightEnrollment;
+	private Double weightEnrollment;
+	private Double heightEnrollment;
 	private java.util.Date heightDate;
 	private java.util.Date artInitiationDate;
 	private String artRegimenCode;
@@ -102,19 +102,19 @@ public class PatientDataInfoQueryResultVO extends AbstractDatabaseObject impleme
 		return this.urban;
 	}
  
-	public void setAgeEnrollment(double ageEnrollment){ 
+	public void setAgeEnrollment(Double ageEnrollment){ 
 	 	this.ageEnrollment = ageEnrollment;
 	}
  
-	public double getAgeEnrollment(){ 
+	public Double getAgeEnrollment(){ 
 		return this.ageEnrollment;
 	}
  
-	public void setOpenmrsCurrentAge(double openmrsCurrentAge){ 
+	public void setOpenmrsCurrentAge(Double openmrsCurrentAge){ 
 	 	this.openmrsCurrentAge = openmrsCurrentAge;
 	}
  
-	public double getOpenmrsCurrentAge(){ 
+	public Double getOpenmrsCurrentAge(){ 
 		return this.openmrsCurrentAge;
 	}
  
@@ -182,19 +182,19 @@ public class PatientDataInfoQueryResultVO extends AbstractDatabaseObject impleme
 		return this.weightDate;
 	}
  
-	public void setWeightEnrollment(double weightEnrollment){ 
+	public void setWeightEnrollment(Double weightEnrollment){ 
 	 	this.weightEnrollment = weightEnrollment;
 	}
  
-	public double getWeightEnrollment(){ 
+	public Double getWeightEnrollment(){ 
 		return this.weightEnrollment;
 	}
  
-	public void setHeightEnrollment(double heightEnrollment){ 
+	public void setHeightEnrollment(Double heightEnrollment){ 
 	 	this.heightEnrollment = heightEnrollment;
 	}
  
-	public double getHeightEnrollment(){ 
+	public Double getHeightEnrollment(){ 
 		return this.heightEnrollment;
 	}
  
@@ -296,8 +296,8 @@ public class PatientDataInfoQueryResultVO extends AbstractDatabaseObject impleme
 		this.healthFacility = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("health_facility") != null ? rs.getString("health_facility").trim() : null);
 		this.district = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("district") != null ? rs.getString("district").trim() : null);
 		this.urban = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("urban") != null ? rs.getString("urban").trim() : null);
-		this.ageEnrollment = rs.getDouble("age_enrollment");
-		this.openmrsCurrentAge = rs.getDouble("openmrs_current_age");
+		if (rs.getObject("age_enrollment") != null) this.ageEnrollment = rs.getDouble("age_enrollment");
+		if (rs.getObject("openmrs_current_age") != null) this.openmrsCurrentAge = rs.getDouble("openmrs_current_age");
 		this.maritalStatusAtEnrollment = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("marital_status_at_enrollment") != null ? rs.getString("marital_status_at_enrollment").trim() : null);
 		this.pregnancyStatusAtEnrollment = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("pregnancy_status_at_enrollment") != null ? rs.getString("pregnancy_status_at_enrollment").trim() : null);
 		this.educationAtEnrollment = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("education_at_enrollment") != null ? rs.getString("education_at_enrollment").trim() : null);
@@ -306,8 +306,8 @@ public class PatientDataInfoQueryResultVO extends AbstractDatabaseObject impleme
 		this.whoClinicalStageAtEnrollmentDate =  rs.getTimestamp("who_clinical_stage_at_enrollment_date") != null ? new java.util.Date( rs.getTimestamp("who_clinical_stage_at_enrollment_date").getTime() ) : null;
 		this.whoClinicalStageAtEnrollment = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("who_clinical_stage_at_enrollment") != null ? rs.getString("who_clinical_stage_at_enrollment").trim() : null);
 		this.weightDate =  rs.getTimestamp("weight_date") != null ? new java.util.Date( rs.getTimestamp("weight_date").getTime() ) : null;
-		this.weightEnrollment = rs.getDouble("weight_enrollment");
-		this.heightEnrollment = rs.getDouble("height_enrollment");
+		if (rs.getObject("weight_enrollment") != null) this.weightEnrollment = rs.getDouble("weight_enrollment");
+		if (rs.getObject("height_enrollment") != null) this.heightEnrollment = rs.getDouble("height_enrollment");
 		this.heightDate =  rs.getTimestamp("height_date") != null ? new java.util.Date( rs.getTimestamp("height_date").getTime() ) : null;
 		this.artInitiationDate =  rs.getTimestamp("art_initiation_date") != null ? new java.util.Date( rs.getTimestamp("art_initiation_date").getTime() ) : null;
 		this.artRegimenCode = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("art_regimen_code") != null ? rs.getString("art_regimen_code").trim() : null);

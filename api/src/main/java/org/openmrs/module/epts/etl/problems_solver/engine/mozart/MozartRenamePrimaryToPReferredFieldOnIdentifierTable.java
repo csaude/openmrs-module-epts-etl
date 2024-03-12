@@ -66,7 +66,7 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Mozart
 			}
 			
 			for (EtlConfiguration config : configs) {
-				SyncTableConfiguration configuredTable = config.getSrcTableConfiguration();
+				SyncTableConfiguration configuredTable = config.getMainSrcTableConf();
 				
 				if (!configuredTable.getTableName().equals("identifier"))
 					continue;

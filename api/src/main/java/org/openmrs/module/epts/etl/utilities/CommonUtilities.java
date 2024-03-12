@@ -1069,15 +1069,20 @@ public class CommonUtilities implements Serializable {
 		Object[] fields = BaseVO.getFields(obj);
 		
 		for (String fieldName : fieldsName) {
+			boolean fieldFound = false;
+			
 			for (int i = 0; i < fields.length; i++) {
 				Field field = (Field) fields[i];
 				
 				if (!field.getName().equals(fieldName))
 					continue;
 				
+				fieldFound = true;
+				
 				try {
-					if (field.get(obj) != null)
+					if (field.get(obj) != null) {
 						values.add(field.get(obj));
+					}
 				}
 				catch (IllegalArgumentException e) {
 					throw new RuntimeException(e);
@@ -1087,6 +1092,9 @@ public class CommonUtilities implements Serializable {
 				}
 			}
 			
+			if (!fieldFound)
+				throw new ForbiddenOperationException(
+				        "The field '" + fieldName + "' was not found on object '" + obj.getClass().getName() + "'");
 		}
 		
 		return values != null ? utilities.parseListToArray(values) : null;

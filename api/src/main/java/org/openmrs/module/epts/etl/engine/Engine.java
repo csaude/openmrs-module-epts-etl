@@ -131,12 +131,12 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return monitor.getEtlConfiguration();
 	}
 	
-	public String getSrcTableName() {
-		return getSrcTableConfiguration().getTableName();
+	public String getMainSrcTableName() {
+		return getMainSrcTableConf().getTableName();
 	}
 	
-	public SyncTableConfiguration getSrcTableConfiguration() {
-		return monitor.getSrcTableConfiguration();
+	public SyncTableConfiguration getMainSrcTableConf() {
+		return monitor.getSrcMainTableConf();
 	}
 	
 	public SyncProgressMeter getProgressMeter_() {
@@ -265,7 +265,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 									this.finalCheckStatus = MigrationFinalCheckStatus.IGNORED;
 								}
 							} else {
-								logDebug("NO MORE '" + this.getSrcTableConfiguration().getTableName() + "' RECORDS TO "
+								logDebug("NO MORE '" + this.getMainSrcTableConf().getTableName() + "' RECORDS TO "
 								        + getRelatedOperationController().getOperationType().name().toLowerCase()
 								        + " ON LIMITS [" + getLimits() + "]! FINISHING...");
 								
@@ -344,12 +344,12 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		List<SyncRecord> records = searchNextRecords(conn);
 		
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
-		        + getSrcTableConfiguration().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records)
+		        + getMainSrcTableConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records)
 		        + "' RECORDS.");
 		
 		if (utilities.arrayHasElement(records)) {
 			logDebug("INITIALIZING " + getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '"
-			        + records.size() + "' RECORDS OF TABLE '" + this.getSrcTableConfiguration().getTableName() + "'");
+			        + records.size() + "' RECORDS OF TABLE '" + this.getMainSrcTableConf().getTableName() + "'");
 			
 			performeSync(records, conn);
 		}

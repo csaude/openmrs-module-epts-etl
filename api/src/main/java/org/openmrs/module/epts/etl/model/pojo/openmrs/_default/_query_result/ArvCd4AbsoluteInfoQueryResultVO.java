@@ -12,18 +12,18 @@ import java.sql.ResultSet;
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class ArvCd4AbsoluteInfoQueryResultVO extends AbstractDatabaseObject implements DatabaseObject { 
-	private double cd4;
+	private Double cd4;
 	private java.util.Date cd4Date;
  
 	public ArvCd4AbsoluteInfoQueryResultVO() { 
 		this.metadata = false;
 	} 
  
-	public void setCd4(double cd4){ 
+	public void setCd4(Double cd4){ 
 	 	this.cd4 = cd4;
 	}
  
-	public double getCd4(){ 
+	public Double getCd4(){ 
 		return this.cd4;
 	}
  
@@ -46,7 +46,7 @@ public class ArvCd4AbsoluteInfoQueryResultVO extends AbstractDatabaseObject impl
  
 	public void load(ResultSet rs) throws SQLException{ 
 		super.load(rs);
-		this.cd4 = rs.getDouble("cd4");
+		if (rs.getObject("cd4") != null) this.cd4 = rs.getDouble("cd4");
 		this.cd4Date =  rs.getTimestamp("cd4_date") != null ? new java.util.Date( rs.getTimestamp("cd4_date").getTime() ) : null;
 	} 
  

@@ -9,7 +9,6 @@ import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.engine.DatabasesInfo;
@@ -20,11 +19,11 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * @author jpboane
  * @see MozartProblemSolverEngine
  */
-public class MozartTryToSelectedFieldValueOnLocation extends MozartProblemSolverEngine {
+public class CorrectLabTestResult extends MozartProblemSolverEngine {
 	
 	private AppInfo dstApp;
 	
-	public MozartTryToSelectedFieldValueOnLocation(EngineMonitor monitor, RecordLimits limits) {
+	public CorrectLabTestResult(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
 		try {

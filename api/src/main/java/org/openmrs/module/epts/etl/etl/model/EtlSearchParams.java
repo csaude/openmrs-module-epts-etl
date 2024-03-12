@@ -20,19 +20,25 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 	public EtlSearchParams(EtlConfiguration config, RecordLimits limits, EtlController relatedController) {
 		super(config, limits);
 		
-		setOrderByFields(getSrcTableConfiguration().getPrimaryKey());
+		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		String srcSchema = DBUtilities.determineSchemaName(conn);
-		SyncTableConfiguration tableInfo = getSrcTableConfiguration();
+		SyncTableConfiguration tableInfo = getMainSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_");
+		searchClauses.addColumnToSelect("distinct src_.*");
 		
-		searchClauses.addColumnToSelect("src_.*");
+		if (getAuxSrcTableConf() != null) {
+			searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_ inner join "
+			        + getAuxSrcTableConf().getTableName() + " on " + getSrcConf().generateConditionsFields());
+			
+		} else {
+			searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_");
+		}
 		
 		tryToAddLimits(searchClauses);
 		

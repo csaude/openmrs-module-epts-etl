@@ -47,7 +47,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 		super(monitor, limits);
 		
 		this.userRoleTableConf = SyncTableConfiguration.init("user_role",
-		    getEtlConfiguration().getRelatedSyncConfiguration());
+		    getEtlConfiguration().getSrcConf());
 		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());
 	}
 	
@@ -67,7 +67,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logInfo("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
+		logInfo("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
 		
@@ -116,7 +116,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 			UsersVO userOnSrc = new UsersVO();
 			userOnSrc.setUuid(record.getUuid());
 			
-			userOnSrc = (UsersVO) DatabaseObjectDAO.getByUniqueKeysOnSpecificSchema(getSrcTableConfiguration(), userOnSrc,
+			userOnSrc = (UsersVO) DatabaseObjectDAO.getByUniqueKeysOnSpecificSchema(getMainSrcTableConf(), userOnSrc,
 			    dbName, srcConn);
 			
 			if (userOnSrc == null) {
@@ -158,7 +158,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	
 	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)
 	        throws DBException, ForbiddenOperationException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
+		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
 		
@@ -179,7 +179,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
-				dup.save(getSrcTableConfiguration(), conn);
+				dup.save(getMainSrcTableConf(), conn);
 			}
 			
 			i++;
@@ -190,7 +190,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 			syncRecords.removeAll(recordsToIgnoreOnStatistics);
 		}
 		
-		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSrcTableName() + "!");
+		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getMainSrcTableName() + "!");
 	}
 	
 	@Override

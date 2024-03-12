@@ -4,8 +4,10 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.QueryDataSourceConfig;
+import org.openmrs.module.epts.etl.controller.conf.SrcConf;
+import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.SyncDataConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncDataSource;
-import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -15,7 +17,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 /**
  * This class represent a data from any related table
  */
-public class SyncExtraDataSource {
+public class EtlExtraDataSource extends SyncDataConfiguration {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -23,9 +25,9 @@ public class SyncExtraDataSource {
 	
 	private TableDataSourceConfig tableSrc;
 	
-	private SyncDestinationTableConfiguration relatedDestinationTableConf;
+	private SrcConf relatedSrcConf;
 	
-	public SyncExtraDataSource() {
+	public EtlExtraDataSource() {
 	}
 	
 	public QueryDataSourceConfig getQuerySrc() {
@@ -44,16 +46,12 @@ public class SyncExtraDataSource {
 		this.tableSrc = tableSrc;
 	}
 	
-	public SyncDestinationTableConfiguration getRelatedDestinationTableConf() {
-		return relatedDestinationTableConf;
+	public SrcConf getRelatedSrcConf() {
+		return relatedSrcConf;
 	}
 	
-	public void setRelatedDestinationTableConf(SyncDestinationTableConfiguration relatedDestinationTableConf) {
-		this.relatedDestinationTableConf = relatedDestinationTableConf;
-	}
-	
-	public void setRelatedMappedTable(SyncDestinationTableConfiguration relatedDestinationTableConf) {
-		this.relatedDestinationTableConf = relatedDestinationTableConf;
+	public void setRelatedSrcConf(SrcConf relatedSrcTableConf) {
+		this.relatedSrcConf = relatedSrcTableConf;
 		
 		if (this.querySrc != null) {
 			this.querySrc.setRelatedSrcExtraDataSrc(this);
@@ -64,7 +62,7 @@ public class SyncExtraDataSource {
 		}
 	}
 	
-	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, Connection srcConn,  AppInfo srcAppInfo)
+	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
 	        throws DBException {
 		
 		return getAvaliableSrc().loadRelatedSrcObject(mainObject, srcConn, srcAppInfo);
@@ -95,10 +93,15 @@ public class SyncExtraDataSource {
 		return getAvaliableSrc().getSyncRecordClass(application);
 	}
 
+	
 	public void fullLoad(Connection conn) throws DBException {
 		if (!getAvaliableSrc().isFullLoaded()) {
 			getAvaliableSrc().fullLoad(conn);
 		}
+	}
+	
+	public SyncConfiguration getRelatedSyncConfiguration() {
+		return this.relatedSrcConf.getRelatedSyncConfiguration();
 	}
 	
 }

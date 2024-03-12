@@ -17,23 +17,23 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 	public DatabaseIntegrityConsolidationSearchParams(EtlConfiguration config, RecordLimits limits, Connection conn) {
 		super(config, limits);
 		
-		setOrderByFields(config.getSrcTableConfiguration().getPrimaryKey());
+		setOrderByFields(config.getMainSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		searchClauses.addColumnToSelect(getSrcTableConfiguration().getTableName() + ".*");
-		searchClauses.addToClauseFrom(getSrcTableConfiguration().getTableName());
+		searchClauses.addColumnToSelect(getMainSrcTableConf().getTableName() + ".*");
+		searchClauses.addToClauseFrom(getMainSrcTableConf().getTableName());
 		
-		if (getSrcTableConfiguration().isFromOpenMRSModel()
-		        && getSrcTableConfiguration().getTableName().equalsIgnoreCase("patient")) {
+		if (getMainSrcTableConf().isFromOpenMRSModel()
+		        && getMainSrcTableConf().getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addToClauseFrom("INNER JOIN person ON person.person_id = patient.patient_id");
 		}
 		
 		searchClauses.addToClauseFrom(
-		    "INNER JOIN " + getSrcTableConfiguration().generateFullStageTableName() + " ON record_uuid = uuid");
+		    "INNER JOIN " + getMainSrcTableConf().generateFullStageTableName() + " ON record_uuid = uuid");
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("consistent = -1");

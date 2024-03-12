@@ -14,7 +14,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class CommunityArvCd4PercentageVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private Integer patientId;
-	private double cd4;
+	private Integer encounterId;
+	private Double cd4;
 	private java.util.Date cd4Date;
  
 	public CommunityArvCd4PercentageVO() { 
@@ -37,11 +38,19 @@ public class CommunityArvCd4PercentageVO extends AbstractDatabaseObject implemen
 		return this.patientId;
 	}
  
-	public void setCd4(double cd4){ 
+	public void setEncounterId(Integer encounterId){ 
+	 	this.encounterId = encounterId;
+	}
+ 
+	public Integer getEncounterId(){ 
+		return this.encounterId;
+	}
+ 
+	public void setCd4(Double cd4){ 
 	 	this.cd4 = cd4;
 	}
  
-	public double getCd4(){ 
+	public Double getCd4(){ 
 		return this.cd4;
 	}
  
@@ -67,6 +76,7 @@ public class CommunityArvCd4PercentageVO extends AbstractDatabaseObject implemen
 		super.load(rs);
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
+		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
 		this.cd4 = rs.getDouble("cd4");
 		this.cd4Date =  rs.getTimestamp("cd4_date") != null ? new java.util.Date( rs.getTimestamp("cd4_date").getTime() ) : null;
 	} 
@@ -78,37 +88,37 @@ public class CommunityArvCd4PercentageVO extends AbstractDatabaseObject implemen
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_arv_cd4_percentage(patient_id, cd4, cd4_date) VALUES( ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_cd4_percentage(patient_id, encounter_id, cd4, cd4_date) VALUES( ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.cd4, this.cd4Date};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.cd4, this.cd4Date};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_arv_cd4_percentage(id, patient_id, cd4, cd4_date) VALUES(?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_cd4_percentage(id, patient_id, encounter_id, cd4, cd4_date) VALUES(?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.cd4, this.cd4Date};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.cd4, this.cd4Date};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.cd4, this.cd4Date, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.cd4, this.cd4Date, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_arv_cd4_percentage SET patient_id = ?, cd4 = ?, cd4_date = ? WHERE id = ?;"; 
+ 		return "UPDATE community_arv_cd4_percentage SET patient_id = ?, encounter_id = ?, cd4 = ?, cd4_date = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.cd4) + "," + (this.cd4Date != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(cd4Date)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.cd4) + "," + (this.cd4Date != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(cd4Date)  +"\"" : null); 
 	} 
  
 	@Override

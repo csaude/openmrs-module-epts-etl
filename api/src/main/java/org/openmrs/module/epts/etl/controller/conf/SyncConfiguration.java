@@ -415,7 +415,11 @@ public class SyncConfiguration extends BaseConfiguration {
 			for (EtlConfiguration config : etlConfiguration) {
 				config.setRelatedSyncConfiguration(this);
 				
-				addToTableConfigurationPull(config.getSrcTableConfiguration());
+				addToTableConfigurationPull(config.getMainSrcTableConf());
+				
+				if (config.getSrcConf().getAuxSrcTableConf() != null) {
+					addToTableConfigurationPull(config.getSrcConf().getAuxSrcTableConf());
+				}
 			}
 		}
 		
@@ -544,23 +548,36 @@ public class SyncConfiguration extends BaseConfiguration {
 		synchronized (STRING_LOCK) {
 			for (EtlConfiguration tc : this.etlConfiguration) {
 				tc.setRelatedSyncConfiguration(this);
-				addConfiguredTable(tc.getSrcTableConfiguration());
-				addToTableConfigurationPull(tc.getSrcTableConfiguration());
+				tc.getMainSrcTableConf().setParent(tc.getSrcConf());
+				
+				addConfiguredTable(tc.getMainSrcTableConf());
+				addToTableConfigurationPull(tc.getMainSrcTableConf());
+				
+				if (tc.getSrcConf().getAuxSrcTableConf() != null) {
+					addConfiguredTable(tc.getSrcConf().getAuxSrcTableConf());
+					addToTableConfigurationPull(tc.getSrcConf().getAuxSrcTableConf());
+					
+					tc.getAuxSrcTableConf().setParent(tc.getSrcConf());
+				}
 				
 				String code = "";
 				
-				if (utilities.arrayHasElement(tc.getDstTableConfiguration())) {
-					for (SyncDestinationTableConfiguration dst : tc.getDstTableConfiguration()) {
-						addConfiguredTable(dst);
-						addToTableConfigurationPull(dst);
+				if (utilities.arrayHasElement(tc.getDstConf())) {
+					for (DstConf dst : tc.getDstConf()) {
+						addConfiguredTable(dst.getDstTableConf());
 						
-						code = utilities.stringHasValue(code) ? "_and_" + dst.getTableName() : dst.getTableName();
+						addToTableConfigurationPull(dst.getDstTableConf());
+						
+						dst.getDstTableConf().setParent(dst);
+						
+						code = utilities.stringHasValue(code) ? "_and_" + dst.getDstTableConf().getTableName()
+						        : dst.getDstTableConf().getTableName();
 					}
 				}
 				
-				code = utilities.stringHasValue(code) ? code : tc.getSrcTableConfiguration().getTableName();
+				code = utilities.stringHasValue(code) ? code : tc.getMainSrcTableConf().getTableName();
 				
-				code = tc.getSrcTableConfiguration().getTableName() + "_to_" + code;
+				code = tc.getMainSrcTableConf().getTableName() + "_to_" + code;
 				
 				tc.setConfigCode(code);
 			}
@@ -586,13 +603,11 @@ public class SyncConfiguration extends BaseConfiguration {
 		try {
 			for (EtlConfiguration conf : this.getEtlConfiguration()) {
 				if (!conf.isFullLoaded()) {
-					logDebug("PERFORMING FULL CONFIGURATION LOAD ON TABLE '" + conf.getSrcTableConfiguration().getTableName()
-					        + "'");
+					logDebug("PERFORMING FULL CONFIGURATION LOAD ON ETL '" + conf.getConfigCode() + "'");
 					conf.fullLoad();
 				}
 				
-				logDebug("THE FULL CONFIGURATION LOAD HAS DONE ON TABLE '" + conf.getSrcTableConfiguration().getTableName()
-				        + "'");
+				logDebug("THE FULL CONFIGURATION LOAD HAS DONE ON ETL '" + conf.getConfigCode() + "'");
 			}
 			
 			this.fullLoaded = true;
@@ -603,6 +618,9 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	public void loadAllTables() {
+		if (UUID.randomUUID() != null)
+			throw new ForbiddenOperationException("Please review this method");
+		
 		OpenConnection conn = getMainApp().openConnection();
 		
 		try {
@@ -612,12 +630,13 @@ public class SyncConfiguration extends BaseConfiguration {
 			ResultSet rs = dbmd.getTables(conn.getCatalog(), null, "%", types);
 			
 			while (rs.next()) {
-				SyncTableConfiguration tab = SyncTableConfiguration.init(rs.getString("TABLE_NAME"), this);
+				
+				/*SyncTableConfiguration tab = SyncTableConfiguration.init(rs.getString("TABLE_NAME"), this);
 				
 				if (tab.getTableName().startsWith("_"))
 					continue;
 				
-				this.allTables.add(tab);
+				this.allTables.add(tab);*/
 			}
 		}
 		catch (SQLException e) {
@@ -792,8 +811,8 @@ public class SyncConfiguration extends BaseConfiguration {
 		
 		if (!supportMultipleDestination()) {
 			for (EtlConfiguration config : this.getEtlConfiguration()) {
-				if (utilities.arrayHasMoreThanOneElements(config.getDstTableConfiguration())) {
-					errorMsg += ++errNum + ". The config for source " + config.getSrcTableConfiguration().getTableName()
+				if (utilities.arrayHasMoreThanOneElements(config.getDstConf())) {
+					errorMsg += ++errNum + ". The config for source " + config.getMainSrcTableConf().getTableName()
 					        + " has multiple destination \n";
 				}
 			}

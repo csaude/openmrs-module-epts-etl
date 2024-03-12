@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
@@ -24,7 +24,7 @@ public class FieldsMapping {
 	
 	private String dataSourceName;
 	
-	private String destField;
+	private String dstField;
 	
 	public FieldsMapping() {
 	}
@@ -32,15 +32,15 @@ public class FieldsMapping {
 	public FieldsMapping(String srcField, String dataSourceName, String destField) {
 		this.srcField = srcField;
 		this.dataSourceName = dataSourceName;
-		this.destField = destField;
+		this.dstField = destField;
 	}
 	
-	public String getDestField() {
-		return destField;
+	public String getDstField() {
+		return dstField;
 	}
 	
-	public void setDestField(String destField) {
-		this.destField = destField;
+	public void setDstField(String destField) {
+		this.dstField = destField;
 	}
 	
 	public String getSrcFieldAsClassField() {
@@ -48,7 +48,7 @@ public class FieldsMapping {
 	}
 	
 	public String getDestFieldAsClassField() {
-		return AttDefinedElements.convertTableAttNameToClassAttName(this.destField);
+		return AttDefinedElements.convertTableAttNameToClassAttName(this.dstField);
 	}
 	
 	public String getSrcField() {
@@ -74,15 +74,15 @@ public class FieldsMapping {
 		
 		FieldsMapping fm = (FieldsMapping) obj;
 		
-		return this.destField.equals(fm.destField);
+		return this.dstField.equals(fm.dstField);
 	}
 	
 	@Override
 	public String toString() {
-		return "[srcField: " + srcField + ", destField: " + destField + "]";
+		return "[srcField: " + srcField + ", dstField: " + dstField + "]";
 	}
 	
-	public Object retrieveValue(SyncDestinationTableConfiguration mappingInfo, List<DatabaseObject> srcObjects,
+	public Object retrieveValue(DstConf mappingInfo, List<DatabaseObject> srcObjects,
 	        AppInfo appInfo, Connection conn) throws DBException, ForbiddenOperationException {
 		
 		for (DatabaseObject srcObject : srcObjects) {

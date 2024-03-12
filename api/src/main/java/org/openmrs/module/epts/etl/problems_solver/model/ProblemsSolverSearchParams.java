@@ -30,8 +30,8 @@ public class ProblemsSolverSearchParams extends DatabaseObjectSearchParams {
 		
 		searchClauses.addColumnToSelect(tableName + ".*");
 		
-		if (this.getConfig().getExtraConditionForExport() != null) {
-			searchClauses.addToClauses(this.getConfig().getExtraConditionForExport());
+		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
+			searchClauses.addToClauses(this.getConfig().getSrcConf().getExtraConditionForExtract());
 		}
 		
 		searchClauses.addToClauses("processed = 0");

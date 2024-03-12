@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.dbcopy.model.DBCopySearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -48,7 +48,7 @@ public class DBCopyEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING BATCH COPY ON " + syncRecords.size() + "' " + getSrcTableConfiguration().getTableName());
+		logInfo("PERFORMING BATCH COPY ON " + syncRecords.size() + "' " + getMainSrcTableConf().getTableName());
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
@@ -61,17 +61,17 @@ public class DBCopyEngine extends Engine {
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getEtlConfiguration().getDstTableConfiguration()) {
+				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
 					DatabaseObject destObject = null;
 					
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
-					if (mergingRecs.get(mappingInfo.getTableName()) == null) {
-						mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
+					if (mergingRecs.get(mappingInfo.getDstTableConf().getTableName()) == null) {
+						mergingRecs.put(mappingInfo.getDstTableConf().getTableName(), new ArrayList<>(syncRecords.size()));
 					}
 					
-					mergingRecs.get(mappingInfo.getTableName()).add(destObject);
+					mergingRecs.get(mappingInfo.getDstTableConf().getTableName()).add(destObject);
 				}
 			}
 			
@@ -84,7 +84,7 @@ public class DBCopyEngine extends Engine {
 				DatabaseObjectDAO.insertAllDataWithoutId(mergingRecs.get(key), dstConn);
 			}
 			
-			logInfo("COPY DONE ON " + syncRecords.size() + " " + getSrcTableConfiguration().getTableName() + "!");
+			logInfo("COPY DONE ON " + syncRecords.size() + " " + getMainSrcTableConf().getTableName() + "!");
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}

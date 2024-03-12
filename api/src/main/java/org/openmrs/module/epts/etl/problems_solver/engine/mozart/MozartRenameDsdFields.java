@@ -42,7 +42,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING PROBLEMS ON TABLE '" + getSrcTableName() + "'");
+		logInfo("DETECTING PROBLEMS ON TABLE '" + getMainSrcTableName() + "'");
 		
 		OpenConnection srcConn = this.dbsInfo.acquireConnection();
 		
@@ -85,7 +85,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 			}
 			
 			for (EtlConfiguration config : configs) {
-				SyncTableConfiguration configuredTable = config.getSrcTableConfiguration();
+				SyncTableConfiguration configuredTable = config.getMainSrcTableConf();
 				
 				if (!configuredTable.getTableName().equals("dsd"))
 					continue;

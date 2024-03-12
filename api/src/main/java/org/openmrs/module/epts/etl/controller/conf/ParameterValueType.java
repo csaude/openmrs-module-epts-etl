@@ -7,9 +7,14 @@ public enum ParameterValueType {
 	 */
 	CONSTANT_PARAM,
 	/**
-	 * Indicates that the parameter value if from configuration file
+	 * Indicates that the parameter value is from configuration file
 	 */
 	CONFIGURATION_PARAM,
+	
+	/**
+	 * Indicate that the parameter value source is undefined
+	 */
+	UNDEFINED,
 	
 	/**
 	 * Indicate that the parameter value if from the main source object
@@ -28,4 +33,7 @@ public enum ParameterValueType {
 		return this.equals(MAIN_OBJECT_PARAM);
 	}
 	
+	public boolean isUndefined() {
+		return this.equals(UNDEFINED);
+	}
 }

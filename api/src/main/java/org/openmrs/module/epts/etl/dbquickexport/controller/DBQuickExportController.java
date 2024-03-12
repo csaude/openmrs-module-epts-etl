@@ -42,7 +42,7 @@ public class DBQuickExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DatabaseObjectDAO.getFirstRecord(config.getSrcTableConfiguration(), conn);
+			return DatabaseObjectDAO.getFirstRecord(config.getMainSrcTableConf(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -59,7 +59,7 @@ public class DBQuickExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DatabaseObjectDAO.getLastRecord(config.getSrcTableConfiguration(), conn);
+			return DatabaseObjectDAO.getLastRecord(config.getMainSrcTableConf(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -101,7 +101,7 @@ public class DBQuickExportController extends OperationController {
 			
 			String fileName = "";
 			
-						fileName += tableInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
+			fileName += tableInfo.getParent().getRelatedSyncConfiguration().getSyncRootDirectory();
 			fileName += FileUtilities.getPathSeparator();
 			
 			//Use "_" at begining of folder name to avoid situation were the starting character cause escape (ex: 't' on '\t')

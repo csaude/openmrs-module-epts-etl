@@ -33,7 +33,7 @@ public class MozartRenamePatientStateFields extends MozartProblemSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING PROBLEMS ON TABLE '" + getSrcTableName() + "'");
+		logInfo("DETECTING PROBLEMS ON TABLE '" + getMainSrcTableName() + "'");
 		
 		performeOnServer(this.dbsInfo, conn);
 		
@@ -60,7 +60,7 @@ public class MozartRenamePatientStateFields extends MozartProblemSolverEngine {
 				continue;
 			}
 			for (EtlConfiguration config : configs) {
-				SyncTableConfiguration configuredTable = config.getSrcTableConfiguration();
+				SyncTableConfiguration configuredTable = config.getMainSrcTableConf();
 				
 				if (!configuredTable.getTableName().equals("patient_state"))
 					continue;

@@ -34,7 +34,7 @@ public class DatabasePreparationEngine extends Engine {
 	}
 	
 	private String getTableName() {
-		return getEtlConfiguration().getSrcTableConfiguration().getTableName();
+		return getEtlConfiguration().getMainSrcTableConf().getTableName();
 	}
 	
 	@Override
@@ -54,7 +54,7 @@ public class DatabasePreparationEngine extends Engine {
 	private void updateTableInfo(Connection conn) throws SQLException {
 		logDebug("UPGRATING TABLE INFO [" + this.getTableName() + "]");
 		
-		if (!getEtlConfiguration().getSrcTableConfiguration().existRelatedExportStageTable(conn)) {
+		if (!getEtlConfiguration().getMainSrcTableConf().existRelatedExportStageTable(conn)) {
 			logDebug("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
 			
 			createRelatedSyncStageAreaTable(conn);
@@ -62,7 +62,7 @@ public class DatabasePreparationEngine extends Engine {
 			logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
 		}
 		
-		if (!getEtlConfiguration().getSrcTableConfiguration().existRelatedExportStageUniqueKeysTable(conn)) {
+		if (!getEtlConfiguration().getMainSrcTableConf().existRelatedExportStageUniqueKeysTable(conn)) {
 			logDebug("GENERATING RELATED STAGE UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
 			
 			createRelatedSyncStageAreaUniqueKeysTable(conn);
@@ -100,7 +100,7 @@ public class DatabasePreparationEngine extends Engine {
 		sql += "CREATE TRIGGER " + triggerName + " BEFORE " + triggerEvent + " ON " + this.getTableName() + "\n";
 		sql += "FOR EACH ROW\n";
 		sql += "	BEGIN\n";
-		sql += "	UPDATE " + getEtlConfiguration().getSrcTableConfiguration().generateFullStageTableName()
+		sql += "	UPDATE " + getEtlConfiguration().getMainSrcTableConf().generateFullStageTableName()
 		        + " SET last_update_date = CURRENT_TIMESTAMP();\n";
 		sql += "	END;\n";
 		
@@ -188,7 +188,7 @@ public class DatabasePreparationEngine extends Engine {
 		
 		List<SyncRecord> records = new ArrayList<SyncRecord>();
 		
-		records.add(new DatabasePreparationRecord(getEtlConfiguration().getSrcTableConfiguration()));
+		records.add(new DatabasePreparationRecord(getEtlConfiguration().getMainSrcTableConf()));
 		
 		return records;
 	}
@@ -203,10 +203,10 @@ public class DatabasePreparationEngine extends Engine {
 		String notNullConstraint = "NOT NULL";
 		String endLineMarker = ",\n";
 		
-		String parentTableName = getEtlConfiguration().getSrcTableConfiguration().generateFullStageTableName();
-		String tableName = getEtlConfiguration().getSrcTableConfiguration().generateRelatedStageUniqueKeysTableName();
+		String parentTableName = getEtlConfiguration().getMainSrcTableConf().generateFullStageTableName();
+		String tableName = getEtlConfiguration().getMainSrcTableConf().generateRelatedStageUniqueKeysTableName();
 		
-		sql += "CREATE TABLE " + getEtlConfiguration().getSrcTableConfiguration().generateFullStageUniqueKeysTableName()
+		sql += "CREATE TABLE " + getEtlConfiguration().getMainSrcTableConf().generateFullStageUniqueKeysTableName()
 		        + "(\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
@@ -236,13 +236,13 @@ public class DatabasePreparationEngine extends Engine {
 	}
 	
 	private void createRelatedSyncStageAreaTable(Connection conn) throws DBException {
-		String tableName = getEtlConfiguration().getSrcTableConfiguration().generateRelatedStageTableName();
+		String tableName = getEtlConfiguration().getMainSrcTableConf().generateRelatedStageTableName();
 		
 		String sql = "";
 		String notNullConstraint = "NOT NULL";
 		String endLineMarker = ",\n";
 		
-		sql += "CREATE TABLE " + getEtlConfiguration().getSrcTableConfiguration().generateFullStageTableName() + "(\n";
+		sql += "CREATE TABLE " + getEtlConfiguration().getMainSrcTableConf().generateFullStageTableName() + "(\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("record_origin_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
@@ -261,16 +261,16 @@ public class DatabasePreparationEngine extends Engine {
 		sql += DBUtilities.generateTableBigIntField("destination_id", "NULL", conn) + endLineMarker;
 		
 		String checkCondition = "migration_status = -1 OR migration_status = 0 OR migration_status = 1";
-		String keyName = "CHK_" + getEtlConfiguration().getSrcTableConfiguration().generateRelatedStageTableName()
+		String keyName = "CHK_" + getEtlConfiguration().getMainSrcTableConf().generateRelatedStageTableName()
 		        + "_MIG_STATUS";
 		
 		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
 		
 		String uniqueKeyName = tableName + "_UNQ_RECORD_ID".toLowerCase();
 		
-		if (getEtlConfiguration().getSrcTableConfiguration().isDestinationInstallationType()
-		        || getEtlConfiguration().getSrcTableConfiguration().isDBQuickLoad()
-		        || getEtlConfiguration().getSrcTableConfiguration().isDBQuickCopy()) {
+		if (getEtlConfiguration().getMainSrcTableConf().isDestinationInstallationType()
+		        || getEtlConfiguration().getMainSrcTableConf().isDBQuickLoad()
+		        || getEtlConfiguration().getMainSrcTableConf().isDBQuickCopy()) {
 			
 			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName,
 			    "record_origin_id, record_origin_location_code", conn) + endLineMarker;

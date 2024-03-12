@@ -48,7 +48,7 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
 		
@@ -58,7 +58,7 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 			
 			logDebug(startingStrLog + ": Merging Record: [" + record + "]");
 			
-			MergingRecord data = new MergingRecord((SyncImportInfoVO) record, getSrcTableConfiguration(),
+			MergingRecord data = new MergingRecord((SyncImportInfoVO) record, getMainSrcTableConf(),
 			        getRelatedOperationController().getRemoteApp(), getRelatedOperationController().getMainApp());
 			
 			try {

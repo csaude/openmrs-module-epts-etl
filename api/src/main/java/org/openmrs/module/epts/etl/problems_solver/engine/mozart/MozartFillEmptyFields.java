@@ -55,7 +55,7 @@ public class MozartFillEmptyFields extends MozartProblemSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING PROBLEMS ON TABLE '" + this.getSrcTableName() + "'");
+		logInfo("DETECTING PROBLEMS ON TABLE '" + this.getMainSrcTableName() + "'");
 		
 		performeOnServer(this.dbsInfo, conn);
 		
@@ -82,7 +82,7 @@ public class MozartFillEmptyFields extends MozartProblemSolverEngine {
 			}
 			
 			for (EtlConfiguration conf : configs) {
-				SyncTableConfiguration configuredTable = conf.getSrcTableConfiguration();
+				SyncTableConfiguration configuredTable = conf.getMainSrcTableConf();
 				
 				if (!configuredTable.getTableName().equals(tableToFill))
 					continue;

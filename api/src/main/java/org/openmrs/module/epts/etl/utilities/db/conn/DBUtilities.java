@@ -1079,12 +1079,27 @@ public class DBUtilities {
 	        SyncConfiguration configuration) {
 		List<Field> queryParameters = null;
 		
-		if (utilities.arrayHasElement(paramConfig)) {
-			queryParameters = DBUtilities.extractAllParamNamesOnQuery(query);
-		}
+		queryParameters = DBUtilities.extractAllParamNamesOnQuery(query);
 		
 		if (!utilities.arrayHasElement(queryParameters)) {
 			return null;
+		}
+		
+		if (paramConfig == null) {
+			paramConfig = new ArrayList<>();
+		}
+		
+		//Find missing parameters on configured parameters
+		
+		for (int i = 0; i < queryParameters.size(); i++) {
+			Field param = queryParameters.get(i);
+			
+			if (!paramConfig.contains(param)) {
+				QueryParameter qp = new QueryParameter(param.getName(), null);
+				qp.setValueType(ParameterValueType.UNDEFINED);
+				
+				paramConfig.add(qp);
+			}
 		}
 		
 		List<QueryParameter> paramConfigValues = loadParamConfigValue(paramConfig, srcObject, configuration);
@@ -1121,7 +1136,7 @@ public class DBUtilities {
 	 * @param configuration the configuration holding configuration values
 	 * @return the configuration parameters loaded with values
 	 */
-	public static List<QueryParameter> loadParamConfigValue(List<QueryParameter> paramConfig, DatabaseObject srcObject,
+	static List<QueryParameter> loadParamConfigValue(List<QueryParameter> paramConfig, DatabaseObject srcObject,
 	        SyncConfiguration configuration) {
 		List<QueryParameter> params = null;
 		
@@ -1149,6 +1164,36 @@ public class DBUtilities {
 					paramValue = getParamValueFromSourceMainObject(srcObject, paramName);
 				} else if (field.getValueType().isConstant()) {
 					paramValue = field.getValue();
+				} else if (field.getValueType().isUndefined()) {
+					String bkpParamName = paramName;
+					
+					// First get from configuration
+					Object paramValueFromConfig = null;
+					
+					try {
+						paramValueFromConfig = getParamValueFromSyncConfiguration(configuration, fieldValueName);
+					}
+					catch (ForbiddenOperationException e) {}
+					
+					//Then get from main object
+					paramName = AttDefinedElements.convertTableAttNameToClassAttName(fieldValueName);
+					
+					Object paramValueFromMainObject = null;
+					
+					try {
+						paramValueFromMainObject = getParamValueFromSourceMainObject(srcObject, paramName);
+					}
+					catch (ForbiddenOperationException e) {}
+					
+					if (paramValueFromConfig != null && paramValueFromMainObject != null) {
+						throw new ForbiddenOperationException("There was found 2 sources for param [" + bkpParamName
+						        + "]. You must specificaly configure this parameter!!!!");
+					} else if (paramValueFromConfig != null) {
+						paramValue = paramValueFromConfig;
+					} else if (paramValueFromMainObject != null) {
+						paramValue = paramValueFromMainObject;
+					}
+					
 				}
 				
 				params.add(new QueryParameter(paramName, paramValue));
@@ -1158,7 +1203,8 @@ public class DBUtilities {
 		return params;
 	}
 	
-	static Object getParamValueFromSyncConfiguration(SyncConfiguration configuration, String param) {
+	static Object getParamValueFromSyncConfiguration(SyncConfiguration configuration, String param)
+	        throws ForbiddenOperationException {
 		Object paramValue = utilities.getFieldValue(configuration, param);
 		
 		if (paramValue == null) {
@@ -1168,7 +1214,8 @@ public class DBUtilities {
 		return paramValue;
 	}
 	
-	static Object getParamValueFromSourceMainObject(DatabaseObject mainObject, String paramName) {
+	static Object getParamValueFromSourceMainObject(DatabaseObject mainObject, String paramName)
+	        throws ForbiddenOperationException {
 		
 		Object paramValue = mainObject.getFieldValue(paramName);
 		

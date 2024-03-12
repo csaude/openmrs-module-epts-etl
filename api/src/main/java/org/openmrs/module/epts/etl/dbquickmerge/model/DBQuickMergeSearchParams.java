@@ -21,13 +21,13 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	public DBQuickMergeSearchParams(EtlConfiguration config, RecordLimits limits, DBQuickMergeController relatedController) {
 		super(config, limits);
 		
-		setOrderByFields(getSrcTableConfiguration().getPrimaryKey());
+		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		String srcSchema = DBUtilities.determineSchemaName(conn);
-		SyncTableConfiguration tableInfo = getSrcTableConfiguration();
+		SyncTableConfiguration tableInfo = getMainSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
@@ -73,7 +73,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	private String generateDestinationJoinSubquery(Connection dstConn) throws DBException {
 		String dstSchema = DBUtilities.determineSchemaName(dstConn);
 		
-		SyncTableConfiguration tableInfo = getSrcTableConfiguration();
+		SyncTableConfiguration tableInfo = getMainSrcTableConf();
 		
 		String dstFullTableName = dstSchema + ".";
 		dstFullTableName += tableInfo.getTableName();

@@ -19,14 +19,14 @@ public class ExportSearchParams extends SyncSearchParams<DatabaseObject> {
 	public ExportSearchParams(EtlConfiguration config, RecordLimits limits, Connection conn) {
 		super(config, limits);
 		
-		setOrderByFields(getSrcTableConfiguration().getPrimaryKey());
+		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tableInfo = getSrcTableConfiguration();
+		SyncTableConfiguration tableInfo = getMainSrcTableConf();
 		
 		String schema = DBUtilities.determineSchemaName(conn);
 		

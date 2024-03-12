@@ -61,8 +61,8 @@ public class EngineMonitor implements MonitoredOperation {
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
 	}
 	
-	public SyncTableConfiguration getSrcTableConfiguration() {
-		return this.getEtlConfiguration().getSrcTableConfiguration();
+	public SyncTableConfiguration getSrcMainTableConf() {
+		return this.getEtlConfiguration().getMainSrcTableConf();
 	}
 	
 	public List<Engine> getOwnEngines() {
@@ -173,7 +173,7 @@ public class EngineMonitor implements MonitoredOperation {
 	private void initEngine() {
 		logInfo("INITIALIZING ENGINE FOR ETL CONFIG [" + getEtlConfiguration().getConfigCode().toUpperCase() + "]");
 		
-		logDebug("DETERMINING MIN RECORD FOR " + getSrcTableConfiguration().getTableName());
+		logDebug("DETERMINING MIN RECORD FOR " + getSrcMainTableConf().getTableName());
 		
 		long minRecId = getController().getMinRecordId(getEtlConfiguration());
 		
@@ -191,7 +191,7 @@ public class EngineMonitor implements MonitoredOperation {
 		}
 		
 		if (maxRecId == 0 && minRecId == 0) {
-			String msg = "NO RECORD TO PROCESS FOR ETL CONFIG '" + getSrcTableConfiguration().getTableName().toUpperCase()
+			String msg = "NO RECORD TO PROCESS FOR ETL CONFIG '" + getSrcMainTableConf().getTableName().toUpperCase()
 			        + "' NO ENGINE WILL BE CRIETED BY NOW!";
 			
 			if (mustRestartInTheEnd()) {

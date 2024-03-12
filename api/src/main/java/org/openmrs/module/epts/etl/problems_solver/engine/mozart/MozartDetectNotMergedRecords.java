@@ -33,7 +33,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 		if (done)
 			return;
 		
-		logInfo("DETECTING NOT MERGED RECORDS ON TABLE '" + getSrcTableName() + "'");
+		logInfo("DETECTING NOT MERGED RECORDS ON TABLE '" + getMainSrcTableName() + "'");
 		
 		performeOnServer(this.dbsInfo, conn);
 		
@@ -60,7 +60,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 			}
 			
 			for (EtlConfiguration conf : configuredTables) {
-				SyncTableConfiguration configuredTable = conf.getSrcTableConfiguration();
+				SyncTableConfiguration configuredTable = conf.getMainSrcTableConf();
 				
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();

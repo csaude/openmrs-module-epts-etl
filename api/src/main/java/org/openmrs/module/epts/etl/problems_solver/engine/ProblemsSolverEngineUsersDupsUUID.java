@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.openmrs._default.UsersVO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
-import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParams;
+import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParamsUsersDupsUUID;
 import org.openmrs.module.epts.etl.problems_solver.model.TmpUserVO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -47,31 +47,33 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
+		logDebug("RESOLVING PROBLEM ON " + syncRecords.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
 		
 		for (SyncRecord record : syncRecords) {
-			if (((DatabaseObject) record).getUuid().isEmpty())
-				continue;
-			
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
 			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 			
 			DatabaseObject rec = (DatabaseObject) record;
 			
 			SyncTableConfiguration syncTableInfo = SyncTableConfiguration.init("tmp_user",
-			    getEtlConfiguration().getRelatedSyncConfiguration());
+			    getEtlConfiguration().getSrcConf());
 			
-			List<TmpUserVO> dups = DatabaseObjectDAO.getByField(TmpUserVO.class, "user_uuid", rec.getUuid(), conn);
+			List<TmpUserVO> allDuplicatedByUuid = DatabaseObjectDAO.getByField(TmpUserVO.class, "user_uuid", rec.getUuid(),
+			    conn);
 			
 			logDebug(startingStrLog + " RESOLVING..." + rec);
 			
-			TmpUserVO preservedUser = TmpUserVO.getWinningRecord(dups, conn);
-			preservedUser.setUsersSyncTableConfiguration(this.getSrcTableConfiguration());
+			TmpUserVO preservedUser = TmpUserVO.getWinningRecord(allDuplicatedByUuid, conn);
+			preservedUser.setUsersSyncTableConfiguration(this.getMainSrcTableConf());
 			
-			for (int j = 1; j < dups.size(); j++) {
-				TmpUserVO dup = dups.get(j);
+			for (int j = 0; j < allDuplicatedByUuid.size(); j++) {
+				TmpUserVO dup = allDuplicatedByUuid.get(j);
+				
+				if (dup.isWinning()) {
+					continue;
+				}
 				
 				dup.setSyncTableConfiguration(syncTableInfo);
 				
@@ -88,18 +90,13 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 				}
 				catch (DBException e) {
 					logWarn("THE USER HAS RECORDS ASSOCIETED... HARMONIZING...");
-					dup.markAsUndeletable();
-					preservedUser.harmonize(dup, conn);
 					logWarn(e.getLocalizedMessage());
+					
+					dup.markAsUndeletable();
+					preservedUser.harmonize(conn);
 				}
 				
 				finally {
-					/*try {
-						conn.rollback();
-					}
-					catch (SQLException e) {
-					}*/
-					
 					dup.save(syncTableInfo, conn);
 					
 					try {
@@ -117,7 +114,7 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	
 	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)
 	        throws DBException, ForbiddenOperationException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + this.getSrcTableName());
+		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + this.getMainSrcTableName());
 		
 		int i = 1;
 		
@@ -138,7 +135,7 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
-				dup.save(getSrcTableConfiguration(), conn);
+				dup.save(getMainSrcTableConf(), conn);
 			}
 			
 			i++;
@@ -149,7 +146,7 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 			syncRecords.removeAll(recordsToIgnoreOnStatistics);
 		}
 		
-		logDebug("MERGE DONE ON " + syncRecords.size() + " " + this.getSrcTableName() + "!");
+		logDebug("MERGE DONE ON " + syncRecords.size() + " " + this.getMainSrcTableName() + "!");
 	}
 	
 	@Override
@@ -158,8 +155,8 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getEtlConfiguration(),
-		        null);
+		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParamsUsersDupsUUID(
+		        this.getEtlConfiguration(), null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

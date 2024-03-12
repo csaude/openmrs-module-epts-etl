@@ -43,7 +43,7 @@ public class TransportEngine extends Engine {
 		    TransportRecord.class);
 		
 		this.getMonitor()
-		        .logInfo("COPYING  '" + migrationRecords.size() + "' " + getSrcTableName() + " SOURCE FILES TO IMPORT AREA");
+		        .logInfo("COPYING  '" + migrationRecords.size() + "' " + getMainSrcTableName() + " SOURCE FILES TO IMPORT AREA");
 		
 		for (TransportRecord t : migrationRecordAsTransportRecord) {
 			t.transport();
@@ -63,7 +63,7 @@ public class TransportEngine extends Engine {
 		}
 		
 		this.getMonitor()
-		        .logInfo("'" + migrationRecords.size() + "' " + getSrcTableName() + " SOURCE FILES COPIED TO IMPORT AREA");
+		        .logInfo("'" + migrationRecords.size() + "' " + getMainSrcTableName() + " SOURCE FILES COPIED TO IMPORT AREA");
 	}
 	
 	@Override
@@ -101,11 +101,11 @@ public class TransportEngine extends Engine {
 	}
 	
 	private File getSyncBkpDirectory() throws IOException {
-		return getRelatedOperationController().getSyncBkpDirectory(getSrcTableConfiguration());
+		return getRelatedOperationController().getSyncBkpDirectory(getMainSrcTableConf());
 	}
 	
 	private File getSyncDestinationDirectory() throws IOException {
-		return getRelatedOperationController().getSyncDestinationDirectory(getSrcTableConfiguration());
+		return getRelatedOperationController().getSyncDestinationDirectory(getMainSrcTableConf());
 	}
 	
 	@Override
@@ -114,7 +114,7 @@ public class TransportEngine extends Engine {
 	}
 	
 	private File getSyncDirectory() {
-		return getRelatedOperationController().getSyncDirectory(getSrcTableConfiguration());
+		return getRelatedOperationController().getSyncDirectory(getMainSrcTableConf());
 	}
 	
 }

@@ -28,10 +28,10 @@ public class TransportSyncSearchParams extends SyncSearchParams<DatabaseObject> 
 		this.controller = controller;
 		
 		if (limits != null) {
-			this.firstFileName = getSrcTableConfiguration().getTableName() + "_"
+			this.firstFileName = getMainSrcTableConf().getTableName() + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + ".json";
-			this.lastFileName = getSrcTableConfiguration().getTableName() + "_"
+			this.lastFileName = getMainSrcTableConf().getTableName() + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json";
 		}
@@ -87,6 +87,6 @@ public class TransportSyncSearchParams extends SyncSearchParams<DatabaseObject> 
 	}
 	
 	private File getSyncDirectory() {
-		return controller.getSyncDirectory(getSrcTableConfiguration());
+		return controller.getSyncDirectory(getMainSrcTableConf());
 	}
 }

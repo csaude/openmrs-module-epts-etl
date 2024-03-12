@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.dbquickmerge.model.MergingRecord;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -66,7 +66,7 @@ public class EtlEngine extends Engine {
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		if (getRelatedSyncOperationConfig().writeOperationHistory()
-		        || getEtlConfiguration().getSrcTableConfiguration().hasWinningRecordsInfo()) {
+		        || getEtlConfiguration().getMainSrcTableConf().hasWinningRecordsInfo()) {
 			performeSyncOneByOne(syncRecords, conn);
 		} else {
 			performeBatchSync(syncRecords, conn);
@@ -86,32 +86,33 @@ public class EtlEngine extends Engine {
 		try {
 			int currObjectId = 0;
 			
-			if (getSrcTableConfiguration().isManualIdGeneration()) {
+			if (getMainSrcTableConf().isManualIdGeneration()) {
 				currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
 			}
 			
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getEtlConfiguration().getDstTableConfiguration()) {
+				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
 					DatabaseObject destObject = null;
 					
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
-						if (getSrcTableConfiguration().isManualIdGeneration()) {
+						if (getMainSrcTableConf().isManualIdGeneration()) {
 							destObject.setObjectId(currObjectId++);
 						}
 						
-						MergingRecord mr = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
-						        false);
+						MergingRecord mr = new MergingRecord(destObject, mappingInfo.getDstTableConf(), this.getSrcApp(),
+						        this.getDstApp(), false);
 						
-						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
-							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
+						if (mergingRecs.get(mappingInfo.getDstTableConf().getTableName()) == null) {
+							mergingRecs.put(mappingInfo.getDstTableConf().getTableName(),
+							    new ArrayList<>(syncRecords.size()));
 						}
 						
-						mergingRecs.get(mappingInfo.getTableName()).add(mr);
+						mergingRecs.get(mappingInfo.getDstTableConf().getTableName()).add(mr);
 					}
 				}
 			}
@@ -151,7 +152,7 @@ public class EtlEngine extends Engine {
 		
 		int currObjectId = 0;
 		
-		if (getSrcTableConfiguration().isManualIdGeneration()) {
+		if (getMainSrcTableConf().isManualIdGeneration()) {
 			currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
 		}
 		
@@ -164,7 +165,7 @@ public class EtlEngine extends Engine {
 				
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getEtlConfiguration().getDstTableConfiguration()) {
+				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
 					DatabaseObject destObject = null;
 					
@@ -174,13 +175,14 @@ public class EtlEngine extends Engine {
 						continue;
 					}
 					
-					if (getSrcTableConfiguration().isManualIdGeneration()) {
+					if (getMainSrcTableConf().isManualIdGeneration()) {
 						destObject.setObjectId(currObjectId++);
 					}
 					
 					boolean wrt = writeOperationHistory();
 					
-					MergingRecord data = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(), wrt);
+					MergingRecord data = new MergingRecord(destObject, mappingInfo.getDstTableConf(), this.getSrcApp(),
+					        this.getDstApp(), wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -193,7 +195,7 @@ public class EtlEngine extends Engine {
 						InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
 						    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
 						
-						inconsistenceInfo.save(mappingInfo, srcConn);
+						inconsistenceInfo.save(mappingInfo.getDstTableConf(), srcConn);
 						
 						wentWrong = false;
 					}

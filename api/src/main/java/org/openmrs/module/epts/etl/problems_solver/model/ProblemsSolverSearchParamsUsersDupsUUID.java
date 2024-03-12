@@ -4,15 +4,16 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SearchClauses;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class ProblemsSolverSearchParamsUsersDupsUUID extends DatabaseObjectSearchParams {
-	
-	private int savedCount;
 	
 	public ProblemsSolverSearchParamsUsersDupsUUID(EtlConfiguration config, RecordLimits limits) {
 		super(config, limits);
@@ -22,57 +23,39 @@ public class ProblemsSolverSearchParamsUsersDupsUUID extends DatabaseObjectSearc
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		String tableName = "tmp_user";
-		
-		searchClauses.addToClauseFrom(tableName);
-		
-		searchClauses.addColumnToSelect("distinct(" + tableName + ".user_uuid) uuid");
-		
+		searchClauses.addToClauseFrom("tmp_user");
+		searchClauses.addColumnToSelect("tmp_user.user_uuid");
 		searchClauses.addToGroupingFields("user_uuid");
-		searchClauses.addToHavingClauses("count(*) > 1");
 		
-		if (this.getConfig().getExtraConditionForExport() != null) {
-			searchClauses.addToClauses(this.getConfig().getExtraConditionForExport());
-		}
-		
-		if (utilities.stringHasValue(getExtraCondition())) {
-			searchClauses.addToClauses(getExtraCondition());
-		}
+		tryToAddExtraConditionForExport(searchClauses);
 		
 		return searchClauses;
 	}
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		if (this.savedCount > 0)
-			return this.savedCount;
+		String sql = "select count(*) from tmp_user where 1 = 1";
 		
-		RecordLimits bkpLimits = this.getLimits();
-		
-		this.removeLimits();
-		
-		int count = SearchParamsDAO.countAll(this, conn);
-		
-		this.setLimits(bkpLimits);
-		
-		this.savedCount = count;
-		
-		return count;
+		return DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn).intValue();
 	}
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		return countAllRecords(conn);
+		String sql = "select count(*) from tmp_user where processed = 0";
+		
+		return DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn).intValue();
+		
 	}
 	
-	/*@SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked")
 	@Override
-	public Class<OpenMRSObject> getRecordClass() {
+	public Class<DatabaseObject> getRecordClass() {
 		try {
-			return (Class<OpenMRSObject>) GenericOpenMRSObject.class.getClassLoader().loadClass("org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject");
+			return (Class<DatabaseObject>) GenericDatabaseObject.class.getClassLoader()
+			        .loadClass("org.openmrs.module.epts.etl.problems_solver.model.TmpUserVO");
 		}
 		catch (ClassNotFoundException e) {
 			throw new ForbiddenOperationException(e);
 		}
-	}*/
+	}
 }

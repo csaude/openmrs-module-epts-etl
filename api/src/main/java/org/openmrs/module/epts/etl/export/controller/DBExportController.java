@@ -41,7 +41,7 @@ public class DBExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(config.getSrcTableConfiguration(), conn);
+			DatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(config.getMainSrcTableConf(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			
@@ -61,7 +61,7 @@ public class DBExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(config.getSrcTableConfiguration(), conn);
+			DatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(config.getMainSrcTableConf(), conn);
 		
 			if (obj != null) return obj.getObjectId();
 			

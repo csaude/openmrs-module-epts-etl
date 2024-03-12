@@ -1,7 +1,6 @@
 package org.openmrs.module.epts.etl.controller.conf;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -10,27 +9,51 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class EtlConfiguration extends BaseConfiguration {
 	
-	private SyncTableConfiguration srcTableConfiguration;
-	
-	private String extraConditionForExport;
-	
-	private boolean disabled;
-	
 	private String configCode;
 	
-	private List<SyncDestinationTableConfiguration> dstTableConfiguration;
+	private SrcConf srcConf;
+	
+	private List<DstConf> dstConf;
 	
 	private SyncConfiguration relatedSyncConfiguration;
+	
+	private boolean disabled;
 	
 	private boolean fullLoaded;
 	
 	public EtlConfiguration() {
 	}
 	
+	public SrcConf getSrcConf() {
+		return srcConf;
+	}
+	
+	public void setSrcConf(SrcConf srcConf) {
+		this.srcConf = srcConf;
+	}
+	
+	public List<DstConf> getDstConf() {
+		return dstConf;
+	}
+	
+	public void setDstConf(List<DstConf> dstConf) {
+		this.dstConf = dstConf;
+	}
+	
+	public SyncTableConfiguration getMainSrcTableConf() {
+		return this.srcConf.getMainSrcTableConf();
+	}
+	
+	public SyncTableConfiguration getAuxSrcTableConf() {
+		return this.srcConf.getAuxSrcTableConf();
+	}
+	
 	public static EtlConfiguration fastCreate(SyncTableConfiguration tableConfig) {
 		EtlConfiguration etl = new EtlConfiguration();
 		
-		etl.setTableConfiguration(tableConfig);
+		SrcConf src = SrcConf.fastCreate(tableConfig);
+		
+		etl.setSrcConf(src);
 		
 		return etl;
 	}
@@ -52,11 +75,9 @@ public class EtlConfiguration extends BaseConfiguration {
 	}
 	
 	public void clone(EtlConfiguration toCloneFrom) {
-		this.srcTableConfiguration = toCloneFrom.srcTableConfiguration;
-		
-		this.extraConditionForExport = toCloneFrom.extraConditionForExport;
+		this.srcConf = toCloneFrom.srcConf;
 		this.disabled = toCloneFrom.disabled;
-		this.dstTableConfiguration = toCloneFrom.dstTableConfiguration;
+		this.dstConf = toCloneFrom.dstConf;
 	}
 	
 	public synchronized void fullLoad() throws DBException {
@@ -65,7 +86,7 @@ public class EtlConfiguration extends BaseConfiguration {
 			return;
 		}
 		
-		this.srcTableConfiguration.fullLoad();
+		this.srcConf.fullLoad();
 		
 		OpenConnection dstConn = null;
 		
@@ -75,28 +96,28 @@ public class EtlConfiguration extends BaseConfiguration {
 			if (utilities.arrayHasElement(otherApps)) {
 				dstConn = otherApps.get(0).openConnection();
 				
-				if (dstTableConfiguration == null) {
-					dstTableConfiguration = SyncDestinationTableConfiguration
-					        .generateFromSyncTableConfiguration(this.srcTableConfiguration);
+				if (dstConf == null) {
+					dstConf = utilities.parseToList(DstConf.generateFromSyncTableConfiguration(this.srcConf));
 					
-					SyncDestinationTableConfiguration map = dstTableConfiguration.get(0);
+					DstConf map = dstConf.get(0);
 					
 					map.setRelatedAppInfo(otherApps.get(0));
 				} else {
 					
-					for (SyncDestinationTableConfiguration map : this.dstTableConfiguration) {
+					for (DstConf map : this.dstConf) {
 						map.setRelatedAppInfo(otherApps.get(0));
 						
 						map.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
-						map.setSourceTableConfiguration(this.srcTableConfiguration);
+						
+						map.setSrcConf(this.srcConf);
 						
 						if (!utilities.arrayHasElement(map.getFieldsMapping())) {
-							map.generateMappingFields(this.srcTableConfiguration);
+							map.generateMappingFields(this.srcConf.getMainSrcTableConf());
 						}
 						
 						map.loadAdditionalFieldsInfo();
 						
-						if (DBUtilities.isTableExists(dstConn.getSchema(), map.getTableName(), dstConn)) {
+						if (DBUtilities.isTableExists(dstConn.getSchema(), map.getDstTableConf().getTableName(), dstConn)) {
 							map.fullLoad(dstConn);
 						}
 					}
@@ -115,14 +136,6 @@ public class EtlConfiguration extends BaseConfiguration {
 		}
 	}
 	
-	public SyncTableConfiguration getSrcTableConfiguration() {
-		return srcTableConfiguration;
-	}
-	
-	public void setTableConfiguration(SyncTableConfiguration tableConfiguration) {
-		this.srcTableConfiguration = tableConfiguration;
-	}
-	
 	public SyncConfiguration getRelatedSyncConfiguration() {
 		return relatedSyncConfiguration;
 	}
@@ -130,17 +143,9 @@ public class EtlConfiguration extends BaseConfiguration {
 	public void setRelatedSyncConfiguration(SyncConfiguration relatedSyncConfiguration) {
 		this.relatedSyncConfiguration = relatedSyncConfiguration;
 		
-		if (this.srcTableConfiguration != null) {
-			this.srcTableConfiguration.setRelatedSyncConfiguration(relatedSyncConfiguration);
+		if (this.srcConf != null) {
+			this.srcConf.setRelatedSyncConfiguration(relatedSyncConfiguration);
 		}
-	}
-	
-	public String getExtraConditionForExport() {
-		return extraConditionForExport;
-	}
-	
-	public void setExtraConditionForExport(String extraConditionForExport) {
-		this.extraConditionForExport = extraConditionForExport;
 	}
 	
 	public boolean isDisabled() {
@@ -152,19 +157,11 @@ public class EtlConfiguration extends BaseConfiguration {
 	}
 	
 	public String getConfigCode() {
-		return utilities.stringHasValue(configCode) ? configCode : this.getSrcTableConfiguration().getTableName();
+		return utilities.stringHasValue(configCode) ? configCode : this.srcConf.getMainSrcTableConf().getTableName();
 	}
 	
 	public void setConfigCode(String configCode) {
 		this.configCode = configCode;
-	}
-	
-	public List<SyncDestinationTableConfiguration> getDstTableConfiguration() {
-		return dstTableConfiguration;
-	}
-	
-	public void setDstTableConfiguration(List<SyncDestinationTableConfiguration> dstTableConfiguration) {
-		this.dstTableConfiguration = dstTableConfiguration;
 	}
 	
 	public String getOriginAppLocationCode() {

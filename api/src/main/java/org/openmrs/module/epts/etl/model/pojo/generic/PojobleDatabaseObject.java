@@ -7,6 +7,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.SyncDataConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -33,7 +34,7 @@ public interface PojobleDatabaseObject {
 	
 	String generateClassName();
 	
-	SyncConfiguration getRelatedSyncConfiguration();
+	SyncDataConfiguration getParent();
 	
 	String getObjectName();
 	
@@ -64,4 +65,6 @@ public interface PojobleDatabaseObject {
 	boolean isDestinationInstallationType();
 	
 	void generateRecordClass(AppInfo app, boolean fullClass);
+
+	SyncConfiguration getRelatedSyncConfiguration();
 }

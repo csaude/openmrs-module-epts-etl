@@ -118,7 +118,7 @@ public class UniqueKeyInfo {
 				
 				parentTableInfo = new SyncTableConfiguration();
 				parentTableInfo.setTableName(tableConfiguration.getSharePkWith());
-				parentTableInfo.setRelatedSyncConfiguration(tableConfiguration.getRelatedSyncConfiguration());
+				parentTableInfo.setParent(tableConfiguration.getParent());
 				
 				List<UniqueKeyInfo> parentUniqueKeys = loadUniqueKeysInfo(parentTableInfo, conn);
 				

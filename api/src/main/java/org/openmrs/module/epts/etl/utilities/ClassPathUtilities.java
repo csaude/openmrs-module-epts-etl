@@ -19,7 +19,7 @@ import org.openmrs.module.ModuleUtil;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
@@ -269,12 +269,12 @@ public class ClassPathUtilities {
 			List<File> clazzListFiless = new ArrayList<File>();
 			
 			for (EtlConfiguration config : syncConfiguration.getEtlConfiguration()) {
-				SyncTableConfiguration tableConfiguration = config.getSrcTableConfiguration();
+				SyncTableConfiguration tableConfiguration = config.getMainSrcTableConf();
 				
-				tryToCopyPOJOToClassPath(tableConfiguration,clazzListFiless, app);
+				tryToCopyPOJOToClassPath(tableConfiguration, clazzListFiless, app);
 				
-				for (SyncDestinationTableConfiguration dstConf : config.getDstTableConfiguration()) {
-					tryToCopyPOJOToClassPath(dstConf, clazzListFiless, app);
+				for (DstConf dstConf : config.getDstConf()) {
+					tryToCopyPOJOToClassPath(dstConf.getDstTableConf(), clazzListFiless, app);
 				}
 			}
 			
@@ -283,7 +283,8 @@ public class ClassPathUtilities {
 		}
 	}
 	
-	public static void tryToCopyPOJOToClassPath(SyncTableConfiguration tableConfiguration, List<File> clazzListFiless, AppInfo app) {
+	public static void tryToCopyPOJOToClassPath(SyncTableConfiguration tableConfiguration, List<File> clazzListFiless,
+	        AppInfo app) {
 		String pojoPackageDir = tableConfiguration.getRelatedSyncConfiguration().getPojoPackageAsDirectory(app)
 		        .getAbsolutePath();
 		

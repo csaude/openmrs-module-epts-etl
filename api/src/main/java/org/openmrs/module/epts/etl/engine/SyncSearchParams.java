@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.Date;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -75,8 +76,8 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	 * @param searchClauses
 	 */
 	public void tryToAddExtraConditionForExport(SearchClauses<DatabaseObject> searchClauses) {
-		if (getConfig().getExtraConditionForExport() != null) {
-			String extraContidion = this.getConfig().getExtraConditionForExport();
+		if (getConfig().getSrcConf().getExtraConditionForExtract() != null) {
+			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
 			
 			//@formatter:off
 			Object[] params = DBUtilities.loadParamsValues(extraContidion, getConfig().getRelatedSyncConfiguration());
@@ -95,7 +96,7 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	 */
 	public void tryToAddLimits(SearchClauses<DatabaseObject> searchClauses) {
 		if (this.getLimits() != null) {
-			searchClauses.addToClauses(getSrcTableConfiguration().getPrimaryKey() + " between ? and ?");
+			searchClauses.addToClauses("src_." + getMainSrcTableConf().getPrimaryKey() + " between ? and ?");
 			searchClauses.addToParameters(this.getLimits().getCurrentFirstRecordId());
 			searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
 		}
@@ -103,22 +104,33 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	
 	@SuppressWarnings("unchecked")
 	public Class<T> getRecordClass() {
-		return (Class<T>) getSrcTableConfiguration().getSyncRecordClass(getSrcTableConfiguration().getMainApp());
+		return (Class<T>) getMainSrcTableConf().getSyncRecordClass(getMainSrcTableConf().getMainApp());
 	}
 
-	/**
-	 * @return
-	 */
-	public SyncTableConfiguration getSrcTableConfiguration() {
-		return this.getConfig().getSrcTableConfiguration();
+	public SrcConf getSrcConf() {
+		return this.getConfig().getSrcConf();
 	}
 	
 	/**
 	 * @return
 	 */
+	public SyncTableConfiguration getMainSrcTableConf() {
+		return this.getConfig().getMainSrcTableConf();
+	}
+	
+	/**
+	 * @return
+	 */
+	public SyncTableConfiguration getAuxSrcTableConf() {
+		return this.getConfig().getAuxSrcTableConf();
+	}
+	
+	
+	/**
+	 * @return
+	 */
 	public SyncTableConfiguration getDstLastTableConfiguration() {
-		return  utilities.getLastRecordOnArray(getConfig().getDstTableConfiguration());
-		
+		return  utilities.getLastRecordOnArray(getConfig().getDstConf()).getDstTableConf();
 	}	
 	
 	public abstract int countAllRecords(Connection conn) throws DBException;

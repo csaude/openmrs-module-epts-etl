@@ -148,8 +148,13 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		try {
 			
 			for (Field field : getFields()) {
+				
 				if (field.getName().equals(fieldName)) {
-					if (field.getType().equals(Integer.class) && value instanceof Double) {
+					if (value == null) {
+						field.set(this, null);
+					} else if (field.getType().equals(String.class)) {
+						field.set(this, value.toString());
+					} else if (field.getType().equals(Integer.class) && value instanceof Double) {
 						/*
 						 * Cast value to int if the field type is Integer.
 						 * 

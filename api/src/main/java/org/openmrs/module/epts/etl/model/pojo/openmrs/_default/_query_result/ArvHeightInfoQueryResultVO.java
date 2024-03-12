@@ -1,38 +1,31 @@
 package org.openmrs.module.epts.etl.model.pojo.openmrs._default._query_result;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
-
+import org.openmrs.module.epts.etl.model.pojo.generic.*; 
+ 
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
+ 
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
+import java.sql.SQLException; 
+import java.sql.ResultSet; 
+ 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class ArvHeightInfoQueryResultVO extends AbstractDatabaseObject implements DatabaseObject { 
-	private double height;
-	private java.util.Date heightDate;
+	private Double height;
  
 	public ArvHeightInfoQueryResultVO() { 
 		this.metadata = false;
 	} 
  
-	public void setHeight(double height){ 
+	public void setHeight(Double height){ 
 	 	this.height = height;
 	}
+
+
  
-	public double getHeight(){ 
+	public Double getHeight(){ 
 		return this.height;
-	}
- 
-	public void setHeightDate(java.util.Date heightDate){ 
-	 	this.heightDate = heightDate;
-	}
-
-
- 
-	public java.util.Date getHeightDate(){ 
-		return this.heightDate;
 	}
  
 	public Integer getObjectId() { 
@@ -44,8 +37,7 @@ public class ArvHeightInfoQueryResultVO extends AbstractDatabaseObject implement
  
 	public void load(ResultSet rs) throws SQLException{ 
 		super.load(rs);
-		this.height = rs.getDouble("height");
-		this.heightDate =  rs.getTimestamp("height_date") != null ? new java.util.Date( rs.getTimestamp("height_date").getTime() ) : null;
+		if (rs.getObject("height") != null) this.height = rs.getDouble("height");
 	} 
  
 	@JsonIgnore
@@ -55,37 +47,37 @@ public class ArvHeightInfoQueryResultVO extends AbstractDatabaseObject implement
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO arv_height_info(patient_id, height, height_date) VALUES( ?, ?, ?);"; 
+ 		return "INSERT INTO arv_height_info(height) VALUES( ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.height, this.heightDate};		return params; 
+ 		Object[] params = {this.height};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO arv_height_info(patient_id, height, height_date) VALUES( ?, ?, ?);"; 
+ 		return "INSERT INTO arv_height_info(height) VALUES( ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.height, this.heightDate};		return params; 
+ 		Object[] params = {this.height};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.height, this.heightDate, null};		return params; 
+ 		Object[] params = {this.height, null};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE arv_height_info SET patient_id = ?, height = ?, height_date = ? WHERE null = ?;"; 
+ 		return "UPDATE arv_height_info SET height = ? WHERE null = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+ (this.height) + "," + (this.heightDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(heightDate)  +"\"" : null); 
+ 		return ""+(this.height); 
 	} 
  
 	@Override

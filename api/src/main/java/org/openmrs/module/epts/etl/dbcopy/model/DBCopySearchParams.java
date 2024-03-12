@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.dbcopy.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -26,13 +26,13 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 		super(config, limits);
 		
 		this.relatedController = relatedController;
-		setOrderByFields(getSrcTableConfiguration().getPrimaryKey());
+		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		Connection srcConn = conn;
-		SyncTableConfiguration tableInfo = getSrcTableConfiguration();
+		SyncTableConfiguration tableInfo = getMainSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
@@ -55,12 +55,12 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 				if (DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
 					String destFullTableName = DBUtilities.determineSchemaName(dstConn) + ".";
 					
-					SyncDestinationTableConfiguration lastMappedTable = utilities
-					        .getLastRecordOnArray(getConfig().getDstTableConfiguration());
+					DstConf lastMappedTable = utilities
+					        .getLastRecordOnArray(getConfig().getDstConf());
 					
-					destFullTableName += lastMappedTable.getTableName();
+					destFullTableName += lastMappedTable.getDstTableConf().getTableName();
 					
-					String srcPK = getConfig().getSrcTableConfiguration().getPrimaryKey();
+					String srcPK = getConfig().getMainSrcTableConf().getPrimaryKey();
 					String dstPK = lastMappedTable.getMappedField(srcPK);
 					
 					String excludeExisting = "";

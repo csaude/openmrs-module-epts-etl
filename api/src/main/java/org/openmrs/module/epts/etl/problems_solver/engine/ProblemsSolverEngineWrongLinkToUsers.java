@@ -55,7 +55,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	@SuppressWarnings({ "null", "unused" })
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + this.getSrcTableName());
+		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + this.getMainSrcTableName());
 		
 		OpenConnection srcConn = remoteApp.openConnection();
 		
@@ -69,10 +69,9 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					
 					logDebug(startingStrLog + " STARTING RESOLVE PROBLEMS OF RECORD [" + record + "]");
 					
-					Class<DatabaseObject> syncRecordClass = getSrcTableConfiguration().getSyncRecordClass(getDefaultApp());
+					Class<DatabaseObject> syncRecordClass = getMainSrcTableConf().getSyncRecordClass(getDefaultApp());
 					Class<DatabaseObject> prsonRecordClass = SyncTableConfiguration
-					        .init("person", getEtlConfiguration().getRelatedSyncConfiguration())
-					        .getSyncRecordClass(getDefaultApp());
+					        .init("person", getEtlConfiguration().getSrcConf()).getSyncRecordClass(getDefaultApp());
 					
 					DatabaseObject userOnDestDB = DatabaseObjectDAO.getById(syncRecordClass,
 					    ((DatabaseObject) record).getObjectId(), conn);
@@ -110,7 +109,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 							List<DatabaseObject> relatedPersonOnDestDB = null;//DatabaseObjectDAO.getByUuid(prsonRecordClass, relatedPersonOnSrcDB.getUuid(), conn);
 							
 							userOnDestDB.changeParentValue("personId", relatedPersonOnDestDB.get(0));
-							userOnDestDB.save(getSrcTableConfiguration(), conn);
+							userOnDestDB.save(getMainSrcTableConf(), conn);
 							
 							found = true;
 							
@@ -138,7 +137,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	@SuppressWarnings("null")
 	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)
 	        throws DBException, ForbiddenOperationException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
+		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
 		
@@ -159,7 +158,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
-				dup.save(getSrcTableConfiguration(), conn);
+				dup.save(getMainSrcTableConf(), conn);
 			}
 			
 			i++;
@@ -170,7 +169,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 			syncRecords.removeAll(recordsToIgnoreOnStatistics);
 		}
 		
-		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getSrcTableName() + "!");
+		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getMainSrcTableName() + "!");
 	}
 	
 	@Override

@@ -46,11 +46,11 @@ public class DBQuickLoadEngine extends Engine {
 		for (SyncImportInfoVO rec : migrationRecordAsSyncInfo)
 			rec.setConsistent(1);
 		
-		this.logInfo("WRITING  '" + migrationRecords.size() + "' " + getSrcTableName() + " TO STAGING TABLE");
+		this.logInfo("WRITING  '" + migrationRecords.size() + "' " + getMainSrcTableName() + " TO STAGING TABLE");
 		
-		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSrcTableConfiguration(), conn);
+		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getMainSrcTableConf(), conn);
 		
-		this.logInfo("'" + migrationRecords.size() + "' " + getSrcTableName() + " WROTE TO STAGING TABLE");
+		this.logInfo("'" + migrationRecords.size() + "' " + getMainSrcTableName() + " WROTE TO STAGING TABLE");
 		
 		this.logDebug("MOVING SOURCE JSON [" + this.currJSONSourceFile.getAbsolutePath() + "] TO BACKUP AREA.");
 		
@@ -152,7 +152,7 @@ public class DBQuickLoadEngine extends Engine {
 	}
 	
 	private File getSyncBkpDirectory() throws IOException {
-		String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSrcTableConfiguration())
+		String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getMainSrcTableConf())
 		        .getAbsolutePath();
 		
 		return new File(baseDirectory);
@@ -164,7 +164,7 @@ public class DBQuickLoadEngine extends Engine {
 	}
 	
 	private File getSyncDirectory() {
-		String baseDirectory = getRelatedOperationController().getSyncDirectory(getSrcTableConfiguration())
+		String baseDirectory = getRelatedOperationController().getSyncDirectory(getMainSrcTableConf())
 		        .getAbsolutePath();
 		
 		return new File(baseDirectory);

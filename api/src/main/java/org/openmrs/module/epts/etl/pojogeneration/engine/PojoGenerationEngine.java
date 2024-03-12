@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.SyncExtraDataSource;
+import org.openmrs.module.epts.etl.controller.conf.DstConf;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
@@ -57,7 +57,17 @@ public class PojoGenerationEngine extends Engine {
 			getEtlConfiguration().fullLoad();
 		}
 		
-		generate(mainApp, getSrcTableConfiguration());
+		generate(mainApp, getMainSrcTableConf());
+		
+		if (getEtlConfiguration().getSrcConf().getAuxSrcTableConf() != null) {
+			generate(mainApp, getEtlConfiguration().getSrcConf().getAuxSrcTableConf());
+		}
+		
+		if (getEtlConfiguration().getSrcConf().getExtraDataSource() != null) {
+			for (EtlExtraDataSource src : getEtlConfiguration().getSrcConf().getExtraDataSource()) {
+				generate(mainApp, src.getAvaliableSrc());
+			}
+		}
 		
 		List<AppInfo> otherApps = getEtlConfiguration().getRelatedSyncConfiguration().exposeAllAppsNotMain();
 		
@@ -66,16 +76,11 @@ public class PojoGenerationEngine extends Engine {
 		if (utilities.arrayHasElement(otherApps)) {
 			mappingAppInfo = otherApps.get(0);
 			
-			for (SyncDestinationTableConfiguration map : getEtlConfiguration().getDstTableConfiguration()) {
+			for (DstConf map : getEtlConfiguration().getDstConf()) {
 				map.setRelatedAppInfo(mappingAppInfo);
 				
-				generate(mappingAppInfo, map);
+				generate(mappingAppInfo, map.getDstTableConf());
 				
-				if (map.getExtraDataSource() != null) {
-					for (SyncExtraDataSource src : map.getExtraDataSource()) {
-						generate(mappingAppInfo, src.getAvaliableSrc());
-					}
-				}
 			}
 		}
 	}
@@ -116,7 +121,7 @@ public class PojoGenerationEngine extends Engine {
 		
 		List<SyncRecord> records = new ArrayList<SyncRecord>();
 		
-		records.add(new PojoGenerationRecord(getSrcTableConfiguration()));
+		records.add(new PojoGenerationRecord(getMainSrcTableConf()));
 		
 		return records;
 	}

@@ -1,31 +1,28 @@
 package org.openmrs.module.epts.etl.model.pojo.openmrs._default._query_result;
 
-import org.openmrs.module.epts.etl.model.pojo.generic.*; 
- 
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
- 
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
- 
-import java.sql.SQLException; 
-import java.sql.ResultSet; 
- 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class ArvWeightInfoQueryResultVO extends AbstractDatabaseObject implements DatabaseObject { 
-	private double Weight;
+	private Double weight;
  
 	public ArvWeightInfoQueryResultVO() { 
 		this.metadata = false;
 	} 
  
-	public void setWeight(double Weight){ 
-	 	this.Weight = Weight;
+	public void setWeight(Double weight){ 
+	 	this.weight = weight;
 	}
 
 
  
-	public double getWeight(){ 
-		return this.Weight;
+	public Double getWeight(){ 
+		return this.weight;
 	}
  
 	public Integer getObjectId() { 
@@ -37,7 +34,7 @@ public class ArvWeightInfoQueryResultVO extends AbstractDatabaseObject implement
  
 	public void load(ResultSet rs) throws SQLException{ 
 		super.load(rs);
-		this.Weight = rs.getDouble("Weight");
+		if (rs.getObject("weight") != null) this.weight = rs.getDouble("weight");
 	} 
  
 	@JsonIgnore
@@ -47,37 +44,37 @@ public class ArvWeightInfoQueryResultVO extends AbstractDatabaseObject implement
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO arv_weight_info(Weight) VALUES( ?);"; 
+ 		return "INSERT INTO arv_weight_info(weight) VALUES( ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.Weight};		return params; 
+ 		Object[] params = {this.weight};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO arv_weight_info(Weight) VALUES( ?);"; 
+ 		return "INSERT INTO arv_weight_info(weight) VALUES( ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.Weight};		return params; 
+ 		Object[] params = {this.weight};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.Weight, null};		return params; 
+ 		Object[] params = {this.weight, null};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE arv_weight_info SET Weight = ? WHERE null = ?;"; 
+ 		return "UPDATE arv_weight_info SET weight = ? WHERE null = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.Weight); 
+ 		return ""+(this.weight); 
 	} 
  
 	@Override

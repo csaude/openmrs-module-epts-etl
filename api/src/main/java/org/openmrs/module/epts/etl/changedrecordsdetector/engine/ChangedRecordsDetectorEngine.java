@@ -58,20 +58,20 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(syncRecords.size());
 		
 		this.getMonitor().logInfo(
-		    "PERFORMING CHANGE DETECTED ACTION '" + syncRecords.size() + "' " + getSrcTableConfiguration().getTableName());
+		    "PERFORMING CHANGE DETECTED ACTION '" + syncRecords.size() + "' " + getMainSrcTableConf().getTableName());
 		
 		for (DatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
-				((GenericDatabaseObject) obj).setSyncTableConfiguration(getSrcTableConfiguration());
+				((GenericDatabaseObject) obj).setSyncTableConfiguration(getMainSrcTableConf());
 				
 				processedRecords.add(DetectedRecordInfo.generate(obj,
 				    getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
-				    getMonitor().getSrcTableConfiguration().getOriginAppLocationCode()));
+				    getMonitor().getSrcMainTableConf().getOriginAppLocationCode()));
 				
 				if (getRelatedOperationController().getActionPerformeApp().isSinglePerformingMode()) {
 					DetectedRecordService.getInstance().performeAction(
 					    getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
-					    processedRecords.get(processedRecords.size() - 1), getSrcTableConfiguration());
+					    processedRecords.get(processedRecords.size() - 1), getMainSrcTableConf());
 				}
 				
 			}
@@ -88,11 +88,11 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		if (getRelatedOperationController().getActionPerformeApp().isBatchPerformingMode()) {
 			DetectedRecordService.getInstance().performeAction(
 			    getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords,
-			    getSrcTableConfiguration());
+			    getMainSrcTableConf());
 		}
 		
 		this.getMonitor().logInfo("ACTION PERFORMED FOR CHANGED RECORDS '" + syncRecords.size() + "' "
-		        + getSrcTableConfiguration().getTableName() + "!");
+		        + getMainSrcTableConf().getTableName() + "!");
 	}
 	
 	@Override

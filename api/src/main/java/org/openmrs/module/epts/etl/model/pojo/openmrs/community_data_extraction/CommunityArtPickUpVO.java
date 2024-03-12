@@ -11,14 +11,15 @@ import java.sql.ResultSet;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class CommunityArvWhoClinicalStageVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class CommunityArtPickUpVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private Integer patientId;
 	private Integer encounterId;
-	private String whoStage;
-	private java.util.Date whoStageDate;
+	private String pickupArt;
+	private java.util.Date artDate;
+	private String source;
  
-	public CommunityArvWhoClinicalStageVO() { 
+	public CommunityArtPickUpVO() { 
 		this.metadata = false;
 	} 
  
@@ -46,22 +47,30 @@ public class CommunityArvWhoClinicalStageVO extends AbstractDatabaseObject imple
 		return this.encounterId;
 	}
  
-	public void setWhoStage(String whoStage){ 
-	 	this.whoStage = whoStage;
+	public void setPickupArt(String pickupArt){ 
+	 	this.pickupArt = pickupArt;
 	}
  
-	public String getWhoStage(){ 
-		return this.whoStage;
+	public String getPickupArt(){ 
+		return this.pickupArt;
 	}
  
-	public void setWhoStageDate(java.util.Date whoStageDate){ 
-	 	this.whoStageDate = whoStageDate;
+	public void setArtDate(java.util.Date artDate){ 
+	 	this.artDate = artDate;
+	}
+ 
+	public java.util.Date getArtDate(){ 
+		return this.artDate;
+	}
+ 
+	public void setSource(String source){ 
+	 	this.source = source;
 	}
 
 
  
-	public java.util.Date getWhoStageDate(){ 
-		return this.whoStageDate;
+	public String getSource(){ 
+		return this.source;
 	}
  
 	public Integer getObjectId() { 
@@ -77,8 +86,9 @@ public class CommunityArvWhoClinicalStageVO extends AbstractDatabaseObject imple
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
 		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
-		this.whoStage = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("who_stage") != null ? rs.getString("who_stage").trim() : null);
-		this.whoStageDate =  rs.getTimestamp("who_stage_date") != null ? new java.util.Date( rs.getTimestamp("who_stage_date").getTime() ) : null;
+		this.pickupArt = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("pickup_art") != null ? rs.getString("pickup_art").trim() : null);
+		this.artDate =  rs.getTimestamp("art_date") != null ? new java.util.Date( rs.getTimestamp("art_date").getTime() ) : null;
+		this.source = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("source") != null ? rs.getString("source").trim() : null);
 	} 
  
 	@JsonIgnore
@@ -88,37 +98,37 @@ public class CommunityArvWhoClinicalStageVO extends AbstractDatabaseObject imple
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_arv_who_clinical_stage(patient_id, encounter_id, who_stage, who_stage_date) VALUES( ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_art_pick_up(patient_id, encounter_id, pickup_art, art_date, source) VALUES( ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.whoStage, this.whoStageDate};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.pickupArt, this.artDate, this.source};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_arv_who_clinical_stage(id, patient_id, encounter_id, who_stage, who_stage_date) VALUES(?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_art_pick_up(id, patient_id, encounter_id, pickup_art, art_date, source) VALUES(?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.encounterId, this.whoStage, this.whoStageDate};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.pickupArt, this.artDate, this.source};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.whoStage, this.whoStageDate, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.pickupArt, this.artDate, this.source, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_arv_who_clinical_stage SET patient_id = ?, encounter_id = ?, who_stage = ?, who_stage_date = ? WHERE id = ?;"; 
+ 		return "UPDATE community_art_pick_up SET patient_id = ?, encounter_id = ?, pickup_art = ?, art_date = ?, source = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.whoStage != null ? "\""+ utilities.scapeQuotationMarks(whoStage)  +"\"" : null) + "," + (this.whoStageDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(whoStageDate)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.pickupArt != null ? "\""+ utilities.scapeQuotationMarks(pickupArt)  +"\"" : null) + "," + (this.artDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(artDate)  +"\"" : null) + "," + (this.source != null ? "\""+ utilities.scapeQuotationMarks(source)  +"\"" : null); 
 	} 
  
 	@Override
@@ -145,7 +155,7 @@ public class CommunityArvWhoClinicalStageVO extends AbstractDatabaseObject imple
 
 	@Override
 	public String generateTableName() {
-		return "community_arv_who_clinical_stage";
+		return "community_art_pick_up";
 	}
 
 

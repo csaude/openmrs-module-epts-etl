@@ -34,9 +34,9 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<DatabaseObject> i
 		this.controller = controller;
 		
 		if (limits != null) {
-			this.firstFileName = getSrcTableConfiguration().getTableName() + "_"
+			this.firstFileName = getMainSrcTableConf().getTableName() + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + ".json";
-			this.lastFileName = getSrcTableConfiguration().getTableName() + "_"
+			this.lastFileName = getMainSrcTableConf().getTableName() + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json";
 		}
 	}
@@ -125,6 +125,6 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<DatabaseObject> i
 	}
 	
 	private File getSyncDirectory() {
-		return this.controller.getSyncDirectory(getSrcTableConfiguration());
+		return this.controller.getSyncDirectory(getMainSrcTableConf());
 	}
 }

@@ -1,13 +1,11 @@
 package org.openmrs.module.epts.etl.utilities.tools;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.ProcessStarter;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -33,17 +31,28 @@ public class QuickTest {
 		return service.openConnection();
 	}
 	
-	public static void main(String[] args) throws DBException, IOException {
-		//testQuickMerge();
+	public static void main(String[] args) throws DBException {
+		String query = "select * from ?.community_arv_patient limit 1";
+		
+		Object[] params = { "community_data" };
+		
+		//List<CommunityArvPatientVO> c = BaseDAO.search(CommunityArvPatientVO.class, query, params, openConnection());
+		
+		//System.out.println(c);
+		
+	}
 	
+	public static void main_(String[] args) throws DBException, IOException {
+		//testQuickMerge();
+		
 		int startingColumn = 3;
 		
 		for (int i = 0; i < 12; i++) {
-			int mes = i+1;
-			int mensalidade = startingColumn + 1 + i*2;
-			int pt = startingColumn + 1 + i*2 + 1;
+			int mes = i + 1;
+			int mensalidade = startingColumn + 1 + i * 2;
+			int pt = startingColumn + 1 + i * 2 + 1;
 			
-			System.out.println("Mes= " + mes + ", Mensalidade=" + mensalidade + ", PT= "+ pt );
+			System.out.println("Mes= " + mes + ", Mensalidade=" + mensalidade + ", PT= " + pt);
 		}
 	}
 	
@@ -58,13 +67,12 @@ public class QuickTest {
 		
 		OpenConnection conn = syncConfig.getMainApp().openConnection();
 		
-		
 		EtlConfiguration tableInfo = syncConfig.find(EtlConfiguration.fastCreate("obs"));
 		
 		DBQuickMergeController controller = (DBQuickMergeController) ps.getCurrentController().getOperationsControllers()
 		        .get(0);
 		
-		RecordLimits limits = new RecordLimits(1448341+500, 1449340, 20, null);
+		RecordLimits limits = new RecordLimits(1448341 + 500, 1449340, 20, null);
 		
 		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(tableInfo, limits, controller);
 		

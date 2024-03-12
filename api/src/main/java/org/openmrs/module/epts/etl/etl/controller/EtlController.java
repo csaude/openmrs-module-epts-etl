@@ -74,7 +74,7 @@ public class EtlController extends OperationController {
 				OpenConnection destConn = this.openDstConnection();
 				
 				this.currThreadStartId = DatabaseObjectDAO
-				        .getLastRecord(engine.getEtlConfiguration().getSrcTableConfiguration(), destConn);
+				        .getLastRecord(engine.getEtlConfiguration().getMainSrcTableConf(), destConn);
 				
 				this.currThreadStartId = this.currThreadStartId - this.currQtyRecords + 1;
 			}
@@ -182,7 +182,7 @@ public class EtlController extends OperationController {
 		
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		
-		searchClauses.setColumnsToSelect(function + "(" + config.getSrcTableConfiguration().getPrimaryKey() + ") as value");
+		searchClauses.setColumnsToSelect(function + "(src_." + config.getMainSrcTableConf().getPrimaryKey() + ") as value");
 		
 		String sql = searchClauses.generateSQL(conn);
 		

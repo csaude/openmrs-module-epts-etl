@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class CommunityDmcTypeOfDispensationVisitVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private Integer patientId;
+	private Integer encounterId;
 	private String elegibblyDmc;
 	private java.util.Date dateElegibblyDmc;
 	private String typeDmc;
@@ -37,6 +38,14 @@ public class CommunityDmcTypeOfDispensationVisitVO extends AbstractDatabaseObjec
  
 	public Integer getPatientId(){ 
 		return this.patientId;
+	}
+ 
+	public void setEncounterId(Integer encounterId){ 
+	 	this.encounterId = encounterId;
+	}
+ 
+	public Integer getEncounterId(){ 
+		return this.encounterId;
 	}
  
 	public void setElegibblyDmc(String elegibblyDmc){ 
@@ -85,6 +94,7 @@ public class CommunityDmcTypeOfDispensationVisitVO extends AbstractDatabaseObjec
 		super.load(rs);
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
+		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
 		this.elegibblyDmc = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("elegibbly_dmc") != null ? rs.getString("elegibbly_dmc").trim() : null);
 		this.dateElegibblyDmc =  rs.getTimestamp("date_elegibbly_dmc") != null ? new java.util.Date( rs.getTimestamp("date_elegibbly_dmc").getTime() ) : null;
 		this.typeDmc = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("type_dmc") != null ? rs.getString("type_dmc").trim() : null);
@@ -98,37 +108,37 @@ public class CommunityDmcTypeOfDispensationVisitVO extends AbstractDatabaseObjec
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_dmc_type_of_dispensation_visit(patient_id, elegibbly_dmc, date_elegibbly_dmc, type_dmc, value_dmc) VALUES( ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_dmc_type_of_dispensation_visit(patient_id, encounter_id, elegibbly_dmc, date_elegibbly_dmc, type_dmc, value_dmc) VALUES( ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.elegibblyDmc, this.dateElegibblyDmc, this.typeDmc, this.valueDmc};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.elegibblyDmc, this.dateElegibblyDmc, this.typeDmc, this.valueDmc};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_dmc_type_of_dispensation_visit(id, patient_id, elegibbly_dmc, date_elegibbly_dmc, type_dmc, value_dmc) VALUES(?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_dmc_type_of_dispensation_visit(id, patient_id, encounter_id, elegibbly_dmc, date_elegibbly_dmc, type_dmc, value_dmc) VALUES(?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.elegibblyDmc, this.dateElegibblyDmc, this.typeDmc, this.valueDmc};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.elegibblyDmc, this.dateElegibblyDmc, this.typeDmc, this.valueDmc};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.elegibblyDmc, this.dateElegibblyDmc, this.typeDmc, this.valueDmc, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.elegibblyDmc, this.dateElegibblyDmc, this.typeDmc, this.valueDmc, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_dmc_type_of_dispensation_visit SET patient_id = ?, elegibbly_dmc = ?, date_elegibbly_dmc = ?, type_dmc = ?, value_dmc = ? WHERE id = ?;"; 
+ 		return "UPDATE community_dmc_type_of_dispensation_visit SET patient_id = ?, encounter_id = ?, elegibbly_dmc = ?, date_elegibbly_dmc = ?, type_dmc = ?, value_dmc = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.elegibblyDmc != null ? "\""+ utilities.scapeQuotationMarks(elegibblyDmc)  +"\"" : null) + "," + (this.dateElegibblyDmc != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateElegibblyDmc)  +"\"" : null) + "," + (this.typeDmc != null ? "\""+ utilities.scapeQuotationMarks(typeDmc)  +"\"" : null) + "," + (this.valueDmc != null ? "\""+ utilities.scapeQuotationMarks(valueDmc)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.elegibblyDmc != null ? "\""+ utilities.scapeQuotationMarks(elegibblyDmc)  +"\"" : null) + "," + (this.dateElegibblyDmc != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateElegibblyDmc)  +"\"" : null) + "," + (this.typeDmc != null ? "\""+ utilities.scapeQuotationMarks(typeDmc)  +"\"" : null) + "," + (this.valueDmc != null ? "\""+ utilities.scapeQuotationMarks(valueDmc)  +"\"" : null); 
 	} 
  
 	@Override

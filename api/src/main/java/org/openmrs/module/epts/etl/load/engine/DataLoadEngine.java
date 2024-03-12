@@ -42,11 +42,11 @@ public class DataLoadEngine extends Engine {
 	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
 		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
 		
-		logInfo("WRITING  '" + migrationRecords.size() + "' " + getSrcTableName() + " TO STAGING TABLE");
+		logInfo("WRITING  '" + migrationRecords.size() + "' " + getMainSrcTableName() + " TO STAGING TABLE");
 		
-		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getSrcTableConfiguration(), conn);
+		SyncImportInfoDAO.insertAll(migrationRecordAsSyncInfo, getMainSrcTableConf(), conn);
 		
-		logInfo("'" + migrationRecords.size() + "' " + getSrcTableName() + " WROTE TO STAGING TABLE");
+		logInfo("'" + migrationRecords.size() + "' " + getMainSrcTableName() + " WROTE TO STAGING TABLE");
 		
 		logDebug("MOVING SOURCE JSON [" + this.currJSONSourceFile.getAbsolutePath() + "] TO BACKUP AREA.");
 		
@@ -162,7 +162,7 @@ public class DataLoadEngine extends Engine {
 	}
 	
 	private File getSyncBkpDirectory() throws IOException {
-		String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getSrcTableConfiguration())
+		String baseDirectory = getRelatedOperationController().getSyncBkpDirectory(getMainSrcTableConf())
 		        .getAbsolutePath();
 		
 		return new File(baseDirectory);
@@ -174,7 +174,7 @@ public class DataLoadEngine extends Engine {
 	}
 	
 	private File getSyncDirectory() {
-		String baseDirectory = getRelatedOperationController().getSyncDirectory(getSrcTableConfiguration())
+		String baseDirectory = getRelatedOperationController().getSyncDirectory(getMainSrcTableConf())
 		        .getAbsolutePath();
 		
 		return new File(baseDirectory);

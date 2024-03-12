@@ -46,15 +46,15 @@ public class DBExportEngine extends Engine {
 		try {
 			List<DatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, DatabaseObject.class);
 			
-			logDebug("GENERATING '" + syncRecords.size() + "' " + getSrcTableName() + " TO JSON FILE");
+			logDebug("GENERATING '" + syncRecords.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
 			
-			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getSrcTableName(), syncRecordsAsOpenMRSObjects,
+			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getMainSrcTableName(), syncRecordsAsOpenMRSObjects,
 			    getEtlConfiguration().getOriginAppLocationCode(), true);
 			
 			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(),
 			    syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
 			
-			logInfo("WRITING '" + syncRecords.size() + "' " + getSrcTableName() + " TO JSON FILE ["
+			logInfo("WRITING '" + syncRecords.size() + "' " + getMainSrcTableName() + " TO JSON FILE ["
 			        + jsonFIle.getAbsolutePath() + ".json]");
 			
 			//Try to remove not terminate files
@@ -71,9 +71,9 @@ public class DBExportEngine extends Engine {
 			
 			this.getMonitor().logInfo("JSON [" + jsonFIle + ".json] CREATED!");
 			
-			logDebug("MARKING '" + syncRecords.size() + "' " + getSrcTableName() + " AS SYNCHRONIZED");
+			logDebug("MARKING '" + syncRecords.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED");
 			
-			logDebug("MARKING '" + syncRecords.size() + "' " + getSrcTableName() + " AS SYNCHRONIZED FINISHED");
+			logDebug("MARKING '" + syncRecords.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED FINISHED");
 			
 			logDebug("MAKING FILES AVALIABLE");
 			
@@ -113,7 +113,7 @@ public class DBExportEngine extends Engine {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSrcTableConfiguration(),
+			DatabaseObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getMainSrcTableConf(),
 			    getEtlConfiguration().getOriginAppLocationCode(), conn);
 			
 			conn.markAsSuccessifullyTerminated();
@@ -129,7 +129,7 @@ public class DBExportEngine extends Engine {
 	}
 	
 	private File generateJSONTempFile(SyncJSONInfo jsonInfo, Integer startRecord, Integer lastRecord) throws IOException {
-		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcTableConfiguration(), startRecord,
+		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getMainSrcTableConf(), startRecord,
 		    lastRecord);
 	}
 	

@@ -32,7 +32,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	private Class<DatabaseObject> syncRecordClass;
 	
-	private SyncConfiguration relatedSyncConfiguration;
+	private SyncDataConfiguration parent;
 	
 	private String primaryKey;
 	
@@ -77,7 +77,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		this.childred = toCloneFrom.childred;
 		this.conditionalParents = toCloneFrom.conditionalParents;
 		this.syncRecordClass = toCloneFrom.syncRecordClass;
-		this.relatedSyncConfiguration = toCloneFrom.relatedSyncConfiguration;
+		this.parent = toCloneFrom.parent;
 		this.primaryKey = toCloneFrom.primaryKey;
 		this.primaryKeyType = toCloneFrom.primaryKeyType;
 		this.sharePkWith = toCloneFrom.sharePkWith;
@@ -228,13 +228,13 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		this.sharePkWith = sharePkWith;
 	}
 	
-	@JsonIgnore
-	public SyncConfiguration getRelatedSyncConfiguration() {
-		return relatedSyncConfiguration;
+	@Override
+	public SyncDataConfiguration getParent() {
+		return parent;
 	}
 	
-	public void setRelatedSyncConfiguration(SyncConfiguration relatedSyncConfiguration) {
-		this.relatedSyncConfiguration = relatedSyncConfiguration;
+	public void setParent(SyncDataConfiguration parent) {
+		this.parent = parent;
 	}
 	
 	public String getTableName() {
@@ -263,7 +263,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public String getPrimaryKey() {
-		OpenConnection conn = relatedSyncConfiguration.getMainApp().openConnection();
+		OpenConnection conn = getParent().getMainApp().openConnection();
 		
 		try {
 			return getPrimaryKey(conn);
@@ -284,7 +284,8 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 					
 					this.primaryKeyType = DBUtilities.determineColunType(tableName, this.primaryKey, conn);
 					
-					this.primaryKeyType = AttDefinedElements.convertDatabaseTypeTOJavaType(this.primaryKeyType);
+					this.primaryKeyType = AttDefinedElements.convertDatabaseTypeTOJavaType(this.primaryKey,
+					    this.primaryKeyType);
 				}
 			}
 			catch (SQLException e) {
@@ -434,8 +435,10 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 				
 				foreignKeyRS = conn.getMetaData().getExportedKeys(conn.getCatalog(), conn.getSchema(), tableName);
 				
+				int i = 0;
+				
 				while (foreignKeyRS.next()) {
-					logDebug("CONFIGURING CHILD [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
+					logDebug("CONFIGURING CHILD " + ++i + " [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
 					        + getTableName() + "'");
 					
 					RefInfo ref = new RefInfo();
@@ -443,9 +446,10 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 					ref.setRefType(RefInfo.CHILD_REF_TYPE);
 					ref.setRefColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
 					ref.setRefTableConfiguration(
-					    SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"), this.relatedSyncConfiguration));
-					ref.setRefColumnType(AttDefinedElements.convertDatabaseTypeTOJavaType(DBUtilities.determineColunType(
-					    ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(), conn)));
+					    SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"), this.parent));
+					ref.setRefColumnType(AttDefinedElements.convertDatabaseTypeTOJavaType(ref.getRefColumnName(),
+					    DBUtilities.determineColunType(ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(),
+					        conn)));
 					ref.setRelatedSyncTableConfiguration(this);
 					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getRefTableConfiguration().getTableName(),
 					    ref.getRefColumnName(), conn));
@@ -457,8 +461,8 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 					
 					this.childred.add(ref);
 					
-					logDebug("CHILDREN [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '" + getTableName()
-					        + "' CONFIGURED");
+					logDebug("CHILDREN " + i + " [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
+					        + getTableName() + "' CONFIGURED");
 				}
 				
 				logDebug("LOADED CHILDREN FOR TABLE '" + getTableName() + "'");
@@ -531,7 +535,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 					String refColumName = foreignKeyRS.getString("FKCOLUMN_NAME");
 					
 					SyncTableConfiguration refTableConfiguration = SyncTableConfiguration
-					        .init(foreignKeyRS.getString("PKTABLE_NAME"), this.relatedSyncConfiguration);
+					        .init(foreignKeyRS.getString("PKTABLE_NAME"), this.parent);
 					
 					RefInfo ref = generateRefInfo(refColumName, null, null, RefInfo.PARENT_REF_TYPE, refTableConfiguration,
 					    conn);
@@ -566,7 +570,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 						
 						if (autoGeneratedParent == null) {
 							configuredParent.setRefTableConfiguration(
-							    SyncTableConfiguration.init(configuredParent.getTableName(), this.relatedSyncConfiguration));
+							    SyncTableConfiguration.init(configuredParent.getTableName(), this.parent));
 							configuredParent.setRelatedSyncTableConfiguration(this);
 							
 							auxRefInfo.add(configuredParent);
@@ -593,16 +597,15 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		for (int i = 0; i < this.conditionalParents.size(); i++) {
 			RefInfo refInfo = this.conditionalParents.get(i);
 			
-			this.conditionalParents.set(i,
-			    generateRefInfo(refInfo.getRefColumnName(), refInfo.getConditionField(), refInfo.getConditionValue(),
-			        RefInfo.PARENT_REF_TYPE, init(refInfo.getTableName(), this.getRelatedSyncConfiguration()), conn));
+			this.conditionalParents.set(i, generateRefInfo(refInfo.getRefColumnName(), refInfo.getConditionField(),
+			    refInfo.getConditionValue(), RefInfo.PARENT_REF_TYPE, init(refInfo.getTableName(), this.parent), conn));
 		}
 	}
 	
 	private RefInfo generateRefInfo(String refColumName, String conditionField, Integer conditionValue, String refType,
 	        SyncTableConfiguration refTableConfiguration, Connection conn) throws DBException {
-		String refColumnType = AttDefinedElements
-		        .convertDatabaseTypeTOJavaType(DBUtilities.determineColunType(this.getTableName(), refColumName, conn));
+		String refColumnType = AttDefinedElements.convertDatabaseTypeTOJavaType(refColumName,
+		    DBUtilities.determineColunType(this.getTableName(), refColumName, conn));
 		boolean ignorable = DBUtilities.isTableColumnAllowNull(this.tableName, refColumName, conn);
 		
 		RefInfo ref = new RefInfo();
@@ -624,15 +627,15 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		return ref;
 	}
 	
-	public static SyncTableConfiguration init(String tableName, SyncConfiguration sourceInfo) {
-		SyncTableConfiguration tableInfo = sourceInfo.findPulledTableConfiguration(tableName);
+	public static SyncTableConfiguration init(String tableName, SyncDataConfiguration parent) {
+		SyncTableConfiguration tableInfo = parent.getRelatedSyncConfiguration().findPulledTableConfiguration(tableName);
 		
 		if (tableInfo == null) {
 			tableInfo = new SyncTableConfiguration();
 			tableInfo.setTableName(tableName);
-			tableInfo.setRelatedSyncConfiguration(sourceInfo);
+			tableInfo.setParent(parent);
 			
-			sourceInfo.addToTableConfigurationPull(tableInfo);
+			parent.getRelatedSyncConfiguration().addToTableConfigurationPull(tableInfo);
 		}
 		
 		return tableInfo;
@@ -982,7 +985,7 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	@JsonIgnore
 	public File getClassPath() {
-		return new File(relatedSyncConfiguration.getClassPath());
+		return new File(this.parent.getRelatedSyncConfiguration().getClassPath());
 	}
 	
 	@JsonIgnore
@@ -1158,6 +1161,10 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	public boolean useManualIdGeneration(Connection conn) throws DBException {
 		return DBUtilities.checkIfTableUseAutoIcrement(this.tableName, conn);
+	}
+	
+	public SyncConfiguration getRelatedSyncConfiguration() {
+		return this.parent.getRelatedSyncConfiguration();
 	}
 	
 }

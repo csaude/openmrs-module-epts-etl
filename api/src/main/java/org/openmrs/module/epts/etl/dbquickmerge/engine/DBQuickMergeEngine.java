@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncDestinationTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.dbquickmerge.model.MergingRecord;
@@ -108,7 +108,7 @@ public class DBQuickMergeEngine extends Engine {
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		if (getRelatedSyncOperationConfig().writeOperationHistory()
-		        || getEtlConfiguration().getSrcTableConfiguration().hasWinningRecordsInfo()) {
+		        || getEtlConfiguration().getMainSrcTableConf().hasWinningRecordsInfo()) {
 			performeSyncOneByOne(syncRecords, conn);
 		} else {
 			performeBatchSync(syncRecords, conn);
@@ -116,7 +116,7 @@ public class DBQuickMergeEngine extends Engine {
 	}
 	
 	public void performeBatchSync(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSrcTableName());
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getMainSrcTableName());
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
@@ -127,32 +127,33 @@ public class DBQuickMergeEngine extends Engine {
 		try {
 			int currObjectId = 0;
 			
-			if (getSrcTableConfiguration().isManualIdGeneration()) {
+			if (getMainSrcTableConf().isManualIdGeneration()) {
 				currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
 			}
 			
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getEtlConfiguration().getDstTableConfiguration()) {
+				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
 					DatabaseObject destObject = null;
 					
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
-						if (getSrcTableConfiguration().isManualIdGeneration()) {
+						if (getMainSrcTableConf().isManualIdGeneration()) {
 							destObject.setObjectId(currObjectId++);
 						}
 						
-						MergingRecord mr = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
-						        false);
+						MergingRecord mr = new MergingRecord(destObject, mappingInfo.getDstTableConf(), this.getSrcApp(),
+						        this.getDstApp(), false);
 						
-						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
-							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
+						if (mergingRecs.get(mappingInfo.getDstTableConf().getTableName()) == null) {
+							mergingRecs.put(mappingInfo.getDstTableConf().getTableName(),
+							    new ArrayList<>(syncRecords.size()));
 						}
 						
-						mergingRecs.get(mappingInfo.getTableName()).add(mr);
+						mergingRecs.get(mappingInfo.getDstTableConf().getTableName()).add(mr);
 					}
 				}
 			}
@@ -164,7 +165,7 @@ public class DBQuickMergeEngine extends Engine {
 			
 			MergingRecord.mergeAll(mergingRecs, srcConn, dstConn);
 			
-			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSrcTableName());
+			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getMainSrcTableName());
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}
@@ -180,7 +181,7 @@ public class DBQuickMergeEngine extends Engine {
 	}
 	
 	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getSrcTableName() + "' ONE-BY-ONE");
+		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getMainSrcTableName() + "' ONE-BY-ONE");
 		
 		int i = 1;
 		
@@ -190,7 +191,7 @@ public class DBQuickMergeEngine extends Engine {
 		
 		int currObjectId = 0;
 		
-		if (getSrcTableConfiguration().isManualIdGeneration()) {
+		if (getMainSrcTableConf().isManualIdGeneration()) {
 			currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
 		}
 		
@@ -203,23 +204,24 @@ public class DBQuickMergeEngine extends Engine {
 				
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (SyncDestinationTableConfiguration mappingInfo : getEtlConfiguration().getDstTableConfiguration()) {
+				for (DstConf dstConf : getEtlConfiguration().getDstConf()) {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = dstConf.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject == null) {
 						continue;
 					}
 					
-					if (getSrcTableConfiguration().isManualIdGeneration()) {
+					if (getMainSrcTableConf().isManualIdGeneration()) {
 						destObject.setObjectId(currObjectId++);
 					}
 					
 					boolean wrt = writeOperationHistory();
 					
-					MergingRecord data = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(), wrt);
+					MergingRecord data = new MergingRecord(destObject, dstConf.getDstTableConf(), this.getSrcApp(),
+					        this.getDstApp(), wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -232,7 +234,7 @@ public class DBQuickMergeEngine extends Engine {
 						InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
 						    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
 						
-						inconsistenceInfo.save(mappingInfo, srcConn);
+						inconsistenceInfo.save(dstConf.getDstTableConf(), srcConn);
 						
 						wentWrong = false;
 					}
@@ -295,8 +297,8 @@ public class DBQuickMergeEngine extends Engine {
 				syncRecords.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getSrcTableName() + "!");
-				
+			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getMainSrcTableName() + "!");
+			
 			dstConn.markAsSuccessifullyTerminated();
 		}
 		finally {

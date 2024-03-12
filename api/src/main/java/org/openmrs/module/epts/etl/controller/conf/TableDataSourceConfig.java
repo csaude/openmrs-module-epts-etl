@@ -1,10 +1,12 @@
 package org.openmrs.module.epts.etl.controller.conf;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.SyncExtraDataSource;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
@@ -17,7 +19,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class TableDataSourceConfig extends SyncTableConfiguration implements PojobleDatabaseObject, SyncDataSource {
 	
-	private SyncExtraDataSource relatedSrcExtraDataSrc;
+	private EtlExtraDataSource relatedSrcExtraDataSrc;
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -28,6 +30,45 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 	@Override
 	public boolean isRequired() {
 		return this.required;
+	}
+	
+	@Override
+	public synchronized void fullLoad(Connection conn) {
+		super.fullLoad(conn);
+		
+		if (!utilities.arrayHasElement(this.joinFields)) {
+			//Try to autoload join fields
+			
+			FieldsMapping fm = null;
+			
+			//Assuming that this datasource is parent
+			RefInfo pInfo = this.relatedSrcExtraDataSrc.getRelatedSrcConf().getMainSrcTableConf()
+			        .findParent(RefInfo.init(this.getTableName()));
+			
+			if (pInfo != null) {
+				fm = new FieldsMapping(pInfo.getRefColumnName(), "", pInfo.getRefColumnName());
+			} else {
+				
+				//Assuning that the this data src is child
+				pInfo = this.findParent(
+				    RefInfo.init(this.relatedSrcExtraDataSrc.getRelatedSrcConf().getMainSrcTableConf().getTableName()));
+				
+				if (pInfo != null) {
+					fm = new FieldsMapping(pInfo.getRefColumnName(), "", pInfo.getRefColumnName());
+				}
+			}
+			
+			if (fm != null) {
+				this.joinFields = new ArrayList<>();
+				this.joinFields.add(fm);
+			}
+		}
+		
+		if (utilities.arrayHasNoElement(this.joinFields)) {
+			throw new ForbiddenOperationException("No join fields were difined between "
+			        + this.relatedSrcExtraDataSrc.getRelatedSrcConf().getMainSrcTableConf().getTableName() + " And "
+			        + this.getTableName());
+		}
 	}
 	
 	public void setRequired(boolean required) {
@@ -50,11 +91,11 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 		this.joinFields = joinFields;
 	}
 	
-	public SyncExtraDataSource getRelatedSrcExtraDataSrc() {
+	public EtlExtraDataSource getRelatedSrcExtraDataSrc() {
 		return relatedSrcExtraDataSrc;
 	}
 	
-	public void setRelatedSrcExtraDataSrc(SyncExtraDataSource relatedSrcExtraDataSrc) {
+	public void setRelatedSrcExtraDataSrc(EtlExtraDataSource relatedSrcExtraDataSrc) {
 		this.relatedSrcExtraDataSrc = relatedSrcExtraDataSrc;
 	}
 	
@@ -77,7 +118,7 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 			
 			Object value = dbObject.getFieldValue(field.getSrcFieldAsClassField());
 			
-			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getDestField(), value);
+			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getDstField(), value);
 		}
 		
 		if (utilities.stringHasValue(this.getJoinExtraCondition())) {

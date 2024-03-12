@@ -652,7 +652,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		SearchClauses<DatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
 		
 		searchClauses.setColumnsToSelect(
-		    function + "(" + searchParams.getConfig().getSrcTableConfiguration().getPrimaryKey() + ") value");
+		    function + "(" + searchParams.getConfig().getMainSrcTableConf().getPrimaryKey() + ") value");
 		
 		Object[] params = {};
 		

@@ -10,7 +10,6 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -60,10 +59,12 @@ public class ChangedRecordsDetectorController extends OperationController {
 		try {
 			
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstChangedRecord(config.getSrcTableConfiguration(),
+				return DetectedRecordInfoDAO.getFirstChangedRecord(
+				    config.getSrcConf().getMainSrcTableConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstNewRecord(config.getSrcTableConfiguration(),
+				return DetectedRecordInfoDAO.getFirstNewRecord(
+				    config.getSrcConf().getMainSrcTableConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(
@@ -85,10 +86,12 @@ public class ChangedRecordsDetectorController extends OperationController {
 		
 		try {
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastChangedRecord(config.getSrcTableConfiguration(),
+				return DetectedRecordInfoDAO.getLastChangedRecord(
+				    config.getSrcConf().getMainSrcTableConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastNewRecord(config.getSrcTableConfiguration(),
+				return DetectedRecordInfoDAO.getLastNewRecord(
+				    config.getSrcConf().getMainSrcTableConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(

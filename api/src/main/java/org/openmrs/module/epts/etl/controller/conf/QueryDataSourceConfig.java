@@ -8,7 +8,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.SyncExtraDataSource;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -37,7 +37,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	
 	private boolean fullLoaded;
 	
-	private SyncExtraDataSource relatedSrcExtraDataSrc;
+	private EtlExtraDataSource relatedSrcExtraDataSrc;
 	
 	private Class<DatabaseObject> syncRecordClass;
 	
@@ -62,11 +62,11 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		this.paramConfig = paramConfig;
 	}
 	
-	public SyncExtraDataSource getRelatedSrcExtraDataSrc() {
+	public EtlExtraDataSource getRelatedSrcExtraDataSrc() {
 		return relatedSrcExtraDataSrc;
 	}
 	
-	public void setRelatedSrcExtraDataSrc(SyncExtraDataSource relatedSrcExtraDataSrc) {
+	public void setRelatedSrcExtraDataSrc(EtlExtraDataSource relatedSrcExtraDataSrc) {
 		this.relatedSrcExtraDataSrc = relatedSrcExtraDataSrc;
 	}
 	
@@ -128,7 +128,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	
 	@Override
 	public void fullLoad() throws DBException {
-		OpenConnection conn = getRelatedSrcExtraDataSrc().getRelatedDestinationTableConf().getMainApp().openConnection();
+		OpenConnection conn = getRelatedSrcExtraDataSrc().getRelatedSrcConf().getMainApp().openConnection();
 		
 		try {
 			fullLoad(conn);
@@ -173,7 +173,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	}
 	
 	public SyncConfiguration getRelatedSyncConfiguration() {
-		return relatedSrcExtraDataSrc.getRelatedDestinationTableConf().getRelatedSyncConfiguration();
+		return relatedSrcExtraDataSrc.getRelatedSyncConfiguration();
 	}
 	
 	@JsonIgnore
@@ -280,6 +280,11 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		}
 		
 		return className + "VO";
+	}
+	
+	@Override
+	public SyncDataConfiguration getParent() {
+		return this.relatedSrcExtraDataSrc;
 	}
 	
 	@Override

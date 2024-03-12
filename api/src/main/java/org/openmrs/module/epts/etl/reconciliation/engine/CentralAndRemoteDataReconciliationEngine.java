@@ -43,10 +43,10 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		if (getSrcTableName().equalsIgnoreCase("users"))
+		if (getMainSrcTableName().equalsIgnoreCase("users"))
 			return;
 		
-		this.getMonitor().logInfo("PERFORMING DATA RECONCILIATION ON " + syncRecords.size() + "' " + this.getSrcTableName());
+		this.getMonitor().logInfo("PERFORMING DATA RECONCILIATION ON " + syncRecords.size() + "' " + this.getMainSrcTableName());
 		
 		if (getRelatedOperationController().isMissingRecordsDetector()) {
 			performeMissingRecordsCreation(syncRecords, conn);
@@ -56,7 +56,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			performePhantomRecordsRemotion(syncRecords, conn);
 		}
 		
-		this.getMonitor().logInfo("RECONCILIATION DONE ON " + syncRecords.size() + " " + getSrcTableName() + "!");
+		this.getMonitor().logInfo("RECONCILIATION DONE ON " + syncRecords.size() + " " + getMainSrcTableName() + "!");
 	}
 	
 	private void performeMissingRecordsCreation(List<SyncRecord> syncRecords, Connection conn) throws DBException {
@@ -68,7 +68,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			
 			logInfo(startingStrLog + ": Restoring record: [" + record + "]");
 			
-			DataReconciliationRecord data = new DataReconciliationRecord((DatabaseObject) record, getSrcTableConfiguration(),
+			DataReconciliationRecord data = new DataReconciliationRecord((DatabaseObject) record, getMainSrcTableConf(),
 			        ConciliationReasonType.MISSING);
 			
 			data.reloadRelatedRecordDataFromRemote(conn);
@@ -90,7 +90,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			
 			logInfo(startingStrLog + ": Updating record: [" + record + "]");
 			
-			DataReconciliationRecord.tryToReconciliate((DatabaseObject) record, getSrcTableConfiguration(), conn);
+			DataReconciliationRecord.tryToReconciliate((DatabaseObject) record, getMainSrcTableConf(), conn);
 			
 			i++;
 		}
@@ -106,7 +106,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			logInfo(startingStrLog + ": Removing record: [" + record + "]");
 			
 			DataReconciliationRecord data = new DataReconciliationRecord(((DatabaseObject) record).getUuid(),
-			        getSrcTableConfiguration(), ConciliationReasonType.PHANTOM);
+			        getMainSrcTableConf(), ConciliationReasonType.PHANTOM);
 			data.reloadRelatedRecordDataFromDestination(conn);
 			data.removeRelatedRecord(conn);
 			data.save(conn);

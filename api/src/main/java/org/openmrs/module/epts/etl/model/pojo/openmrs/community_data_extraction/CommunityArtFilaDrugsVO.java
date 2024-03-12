@@ -14,6 +14,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class CommunityArtFilaDrugsVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private Integer patientId;
+	private Integer encounterId;
+	private Integer obsId;
 	private String regime;
 	private String formulation;
 	private Integer groupId;
@@ -23,7 +25,6 @@ public class CommunityArtFilaDrugsVO extends AbstractDatabaseObject implements D
 	private java.util.Date nextArtDate;
 	private String accommodationCamp;
 	private String dispensationModel;
-	private Integer encounter;
 	private String source;
  
 	public CommunityArtFilaDrugsVO() { 
@@ -44,6 +45,22 @@ public class CommunityArtFilaDrugsVO extends AbstractDatabaseObject implements D
  
 	public Integer getPatientId(){ 
 		return this.patientId;
+	}
+ 
+	public void setEncounterId(Integer encounterId){ 
+	 	this.encounterId = encounterId;
+	}
+ 
+	public Integer getEncounterId(){ 
+		return this.encounterId;
+	}
+ 
+	public void setObsId(Integer obsId){ 
+	 	this.obsId = obsId;
+	}
+ 
+	public Integer getObsId(){ 
+		return this.obsId;
 	}
  
 	public void setRegime(String regime){ 
@@ -118,14 +135,6 @@ public class CommunityArtFilaDrugsVO extends AbstractDatabaseObject implements D
 		return this.dispensationModel;
 	}
  
-	public void setEncounter(Integer encounter){ 
-	 	this.encounter = encounter;
-	}
- 
-	public Integer getEncounter(){ 
-		return this.encounter;
-	}
- 
 	public void setSource(String source){ 
 	 	this.source = source;
 	}
@@ -148,6 +157,8 @@ public class CommunityArtFilaDrugsVO extends AbstractDatabaseObject implements D
 		super.load(rs);
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
+		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
+		if (rs.getObject("obs_id") != null) this.obsId = rs.getInt("obs_id");
 		this.regime = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("regime") != null ? rs.getString("regime").trim() : null);
 		this.formulation = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("formulation") != null ? rs.getString("formulation").trim() : null);
 		if (rs.getObject("group_id") != null) this.groupId = rs.getInt("group_id");
@@ -157,7 +168,6 @@ public class CommunityArtFilaDrugsVO extends AbstractDatabaseObject implements D
 		this.nextArtDate =  rs.getTimestamp("next_art_date") != null ? new java.util.Date( rs.getTimestamp("next_art_date").getTime() ) : null;
 		this.accommodationCamp = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("accommodation_camp") != null ? rs.getString("accommodation_camp").trim() : null);
 		this.dispensationModel = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("dispensation_model") != null ? rs.getString("dispensation_model").trim() : null);
-		if (rs.getObject("encounter") != null) this.encounter = rs.getInt("encounter");
 		this.source = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("source") != null ? rs.getString("source").trim() : null);
 	} 
  
@@ -168,37 +178,37 @@ public class CommunityArtFilaDrugsVO extends AbstractDatabaseObject implements D
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_art_fila_drugs(patient_id, regime, formulation, group_id, quantity, dosage, pickup_date, next_art_date, accommodation_camp, dispensation_model, encounter, source) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_art_fila_drugs(patient_id, encounter_id, obs_id, regime, formulation, group_id, quantity, dosage, pickup_date, next_art_date, accommodation_camp, dispensation_model, source) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.regime, this.formulation, this.groupId, this.quantity, this.dosage, this.pickupDate, this.nextArtDate, this.accommodationCamp, this.dispensationModel, this.encounter, this.source};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.obsId, this.regime, this.formulation, this.groupId, this.quantity, this.dosage, this.pickupDate, this.nextArtDate, this.accommodationCamp, this.dispensationModel, this.source};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_art_fila_drugs(id, patient_id, regime, formulation, group_id, quantity, dosage, pickup_date, next_art_date, accommodation_camp, dispensation_model, encounter, source) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_art_fila_drugs(id, patient_id, encounter_id, obs_id, regime, formulation, group_id, quantity, dosage, pickup_date, next_art_date, accommodation_camp, dispensation_model, source) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.regime, this.formulation, this.groupId, this.quantity, this.dosage, this.pickupDate, this.nextArtDate, this.accommodationCamp, this.dispensationModel, this.encounter, this.source};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.obsId, this.regime, this.formulation, this.groupId, this.quantity, this.dosage, this.pickupDate, this.nextArtDate, this.accommodationCamp, this.dispensationModel, this.source};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.regime, this.formulation, this.groupId, this.quantity, this.dosage, this.pickupDate, this.nextArtDate, this.accommodationCamp, this.dispensationModel, this.encounter, this.source, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.obsId, this.regime, this.formulation, this.groupId, this.quantity, this.dosage, this.pickupDate, this.nextArtDate, this.accommodationCamp, this.dispensationModel, this.source, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_art_fila_drugs SET patient_id = ?, regime = ?, formulation = ?, group_id = ?, quantity = ?, dosage = ?, pickup_date = ?, next_art_date = ?, accommodation_camp = ?, dispensation_model = ?, encounter = ?, source = ? WHERE id = ?;"; 
+ 		return "UPDATE community_art_fila_drugs SET patient_id = ?, encounter_id = ?, obs_id = ?, regime = ?, formulation = ?, group_id = ?, quantity = ?, dosage = ?, pickup_date = ?, next_art_date = ?, accommodation_camp = ?, dispensation_model = ?, source = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.regime != null ? "\""+ utilities.scapeQuotationMarks(regime)  +"\"" : null) + "," + (this.formulation != null ? "\""+ utilities.scapeQuotationMarks(formulation)  +"\"" : null) + "," + (this.groupId) + "," + (this.quantity) + "," + (this.dosage != null ? "\""+ utilities.scapeQuotationMarks(dosage)  +"\"" : null) + "," + (this.pickupDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(pickupDate)  +"\"" : null) + "," + (this.nextArtDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(nextArtDate)  +"\"" : null) + "," + (this.accommodationCamp != null ? "\""+ utilities.scapeQuotationMarks(accommodationCamp)  +"\"" : null) + "," + (this.dispensationModel != null ? "\""+ utilities.scapeQuotationMarks(dispensationModel)  +"\"" : null) + "," + (this.encounter) + "," + (this.source != null ? "\""+ utilities.scapeQuotationMarks(source)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.obsId) + "," + (this.regime != null ? "\""+ utilities.scapeQuotationMarks(regime)  +"\"" : null) + "," + (this.formulation != null ? "\""+ utilities.scapeQuotationMarks(formulation)  +"\"" : null) + "," + (this.groupId) + "," + (this.quantity) + "," + (this.dosage != null ? "\""+ utilities.scapeQuotationMarks(dosage)  +"\"" : null) + "," + (this.pickupDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(pickupDate)  +"\"" : null) + "," + (this.nextArtDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(nextArtDate)  +"\"" : null) + "," + (this.accommodationCamp != null ? "\""+ utilities.scapeQuotationMarks(accommodationCamp)  +"\"" : null) + "," + (this.dispensationModel != null ? "\""+ utilities.scapeQuotationMarks(dispensationModel)  +"\"" : null) + "," + (this.source != null ? "\""+ utilities.scapeQuotationMarks(source)  +"\"" : null); 
 	} 
  
 	@Override

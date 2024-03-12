@@ -41,7 +41,7 @@ public class DataLoadController extends SiteOperationController {
 		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, config,
 		        null);
 		
-		File[] files = getSyncDirectory(config.getSrcTableConfiguration()).listFiles(searchParams);
+		File[] files = getSyncDirectory(config.getMainSrcTableConf()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0)
 			return 0;
@@ -62,7 +62,7 @@ public class DataLoadController extends SiteOperationController {
 		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, config,
 		        null);
 		
-		File[] files = getSyncDirectory(config.getSrcTableConfiguration()).listFiles(searchParams);
+		File[] files = getSyncDirectory(config.getMainSrcTableConf()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0)
 			return 0;

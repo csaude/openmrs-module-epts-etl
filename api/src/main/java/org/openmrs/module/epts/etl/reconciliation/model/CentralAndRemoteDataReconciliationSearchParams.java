@@ -31,7 +31,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tableInfo = this.getSrcTableConfiguration();
+		SyncTableConfiguration tableInfo = this.getMainSrcTableConf();
 		
 		if (this.type.isMissingRecordsDetector()) {
 			searchClauses.addColumnToSelect(
@@ -99,8 +99,8 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
 			}
 			
-			if (this.getConfig().getExtraConditionForExport() != null) {
-				searchClauses.addToClauses(this.getConfig().getExtraConditionForExport());
+			if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
+				searchClauses.addToClauses(this.getConfig().getSrcConf().getExtraConditionForExtract());
 			}
 		}
 		
@@ -113,10 +113,10 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 			return DatabaseEntityPOJOGenerator
 			        .tryToGetExistingCLass("org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject");
 		} else if (type.isOutdatedRecordsDetector()) {
-			return getSrcTableConfiguration().getSyncRecordClass(this.getConfig().getMainApp());
+			return getMainSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
 			
 		} else if (type.isPhantomRecordsDetector()) {
-			return this.getSrcTableConfiguration().getSyncRecordClass(this.getConfig().getMainApp());
+			return this.getMainSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
 		}
 		
 		throw new ForbiddenOperationException("Unsupported operation type '" + type + "'");

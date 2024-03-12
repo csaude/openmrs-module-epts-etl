@@ -26,9 +26,9 @@ public class LoadedRecordsSearchParams extends SyncSearchParams<SyncImportInfoVO
 	public SearchClauses<SyncImportInfoVO> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
 		
-		searchClauses.addColumnToSelect(getSrcTableConfiguration().generateFullStageTableName() + ".*");
+		searchClauses.addColumnToSelect(getMainSrcTableConf().generateFullStageTableName() + ".*");
 		
-		searchClauses.addToClauseFrom(getSrcTableConfiguration().generateFullStageTableName());
+		searchClauses.addToClauseFrom(getMainSrcTableConf().generateFullStageTableName());
 		
 		searchClauses.addToClauses("record_origin_location_code = ?");
 		searchClauses.addToParameters(this.appOriginLocationCode);

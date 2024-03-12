@@ -148,7 +148,7 @@ public class AttDefinedElements {
 	}
 	
 	private void generateElemets() {
-		this.attType = convertDatabaseTypeTOJavaType(dbAttType);
+		this.attType = convertDatabaseTypeTOJavaType(this.dbAttName, dbAttType);
 		this.attName = convertTableAttNameToClassAttName(dbAttName);
 		
 		this.attDefinition = defineAtt(attName, attType);
@@ -196,21 +196,28 @@ public class AttDefinedElements {
 	
 	private String defineResultSetLOadDefinition() {
 		
-		if (attType.equals("Integer")) {
+		if (attType.equals("Integer") || attType.toLowerCase().equals("int")) {
 			String loadStr = "if (rs.getObject(\"" + dbAttName + "\") != null) ";
 			loadStr += "this." + this.attName + " = rs.getInt(\"" + dbAttName + "\");";
 			
 			return loadStr;
-		} else if (attType.equals("boolean")) {
-			return "this." + this.attName + " = rs.getObject(\"" + dbAttName + "\") > 0;";
-		} else if (attType.equals("double")) {
-			return "this." + this.attName + " = rs.getDouble(\"" + dbAttName + "\");";
-		} else if (attType.equals("float")) {
-			return "this." + this.attName + " = rs.getFloat(\"" + dbAttName + "\");";
-		} else if (attType.equals("Long")) {
+		} else if (attType.toLowerCase().equals("double")) {
+			String loadStr = "if (rs.getObject(\"" + dbAttName + "\") != null) ";
+			loadStr += "this." + this.attName + " = rs.getDouble(\"" + dbAttName + "\");";
+			
+			return loadStr;
+		} else if (attType.toLowerCase().equals("long")) {
 			String loadStr = "if (rs.getObject(\"" + dbAttName + "\") != null) ";
 			loadStr += "this." + this.attName + " = rs.getLong(\"" + dbAttName + "\");";
+			
 			return loadStr;
+		} else if (attType.toLowerCase().equals("float")) {
+			String loadStr = "if (rs.getObject(\"" + dbAttName + "\") != null) ";
+			loadStr += "this." + this.attName + " = rs.getFloat(\"" + dbAttName + "\");";
+			
+			return loadStr;
+		} else if (attType.toLowerCase().equals("boolean")) {
+			return "this." + this.attName + " = rs.getBoolean(\"" + dbAttName + "\") > 0;";
 		} else if (attType.equals("String")) {
 			return "this." + this.attName + " = AttDefinedElements.removeStrangeCharactersOnString(rs.getString(\""
 			        + dbAttName + "\") != null ? rs.getString(\"" + dbAttName + "\").trim() : null);";
@@ -220,16 +227,18 @@ public class AttDefinedElements {
 		} else if (attType.equals("java.io.InputStream")) {
 			return "this." + this.attName + " = rs.getBlob(\"" + dbAttName + "\") != null ? rs.getBlob(\"" + dbAttName
 			        + "\").getBinaryStream() : null;";
-		} else if (attType.equals("byte")) {
+		} else if (attType.toLowerCase().equals("byte")) {
 			return "this." + this.attName + " = rs.getByte(\"" + dbAttName + "\");";
-		} else if (attType.equals("short")) {
-			return "this." + this.attName + " = rs.getShort(\"" + dbAttName + "\");";
+		} else if (attType.toLowerCase().equals("short")) {
+			String loadStr = "if (rs.getObject(\"" + dbAttName + "\") != null) ";
+			loadStr += "this." + this.attName + " = rs.getShort(\"" + dbAttName + "\");";
+			
+			return loadStr;
 		} else if (attType.equals("byte[]")) {
 			return "this." + this.attName + " = rs.getBytes(\"" + dbAttName + "\");";
 		} else {
 			return "this." + this.attName + " = rs.getObject(\"" + dbAttName + "\");";
 		}
-		
 	}
 	
 	public static String defineSqlAtribuitionString(String attName, Object attValue) {
@@ -239,22 +248,22 @@ public class AttDefinedElements {
 		
 		String aspasAbrir = "\"";
 		String aspasFechar = "\"";
-	
 		
 		if (utilities.isNumeric(attValue.toString())) {
 			sqlAtribuitionString = attName + " = " + attValue;
 		} else if (attValue instanceof Date) {
-			sqlAtribuitionString = attName + " = " + aspasAbrir + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) attValue) + aspasFechar;
+			sqlAtribuitionString = attName + " = " + aspasAbrir
+			        + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) attValue) + aspasFechar;
 		} else if (attValue instanceof String) {
-			sqlAtribuitionString =  attName + " = " + aspasAbrir + utilities.scapeQuotationMarks(attValue.toString()) + aspasFechar;
+			sqlAtribuitionString = attName + " = " + aspasAbrir + utilities.scapeQuotationMarks(attValue.toString())
+			        + aspasFechar;
 		} else {
 			sqlAtribuitionString = attName + " = " + aspasAbrir + attName + aspasFechar;
 		}
-			
 		
 		return sqlAtribuitionString;
 	}
-
+	
 	private boolean isDate() {
 		return utilities.isStringIn(this.attType, "java.util.Date", "Date");
 	}
@@ -264,7 +273,8 @@ public class AttDefinedElements {
 	}
 	
 	private boolean isNumeric() {
-		return utilities.isStringIn(this.attType, "Integer", "Long", "byte", "short", "double", "float");
+		return utilities.isStringIn(this.attType.toLowerCase(), "int", "integer", "long", "byte", "short", "double",
+		    "float");
 	}
 	
 	public static boolean isNumeric(String attType) {
@@ -332,7 +342,7 @@ public class AttDefinedElements {
 		return utilities.convertTableAttNameToClassAttName(tableAttName);
 	}
 	
-	public static String convertDatabaseTypeTOJavaType(String databaseType) {
+	public static String convertDatabaseTypeTOJavaType(String fieldName, String databaseType) {
 		databaseType = databaseType.toUpperCase();
 		
 		/*NOTE: Temporary Convert INT8 and SERIAL as Integer as Postgres use INT8 for serial columns (PK) Which is INT8.
@@ -341,15 +351,15 @@ public class AttDefinedElements {
 		if (utilities.isStringIn(databaseType, "INT", "MEDIUMINT", "INT8", "BIGINT", "SERIAL", "SERIAL4"))
 			return "Integer";
 		if (utilities.isStringIn(databaseType, "TINYINT", "BIT"))
-			return "byte";
+			return "Byte";
 		if (utilities.isStringIn(databaseType, "YEAR", "SMALLINT"))
-			return "short";
+			return "Short";
 		if (utilities.isStringIn(databaseType, "BIGINT", "INT8", "SERIAL"))
 			return "Long";
 		if (utilities.isStringIn(databaseType, "DECIMAL", "NUMERIC", "SMALLINT", "REAL", "DOUBLE"))
-			return "double";
+			return "Double";
 		if (utilities.isStringIn(databaseType, "FLOAT", "NUMERIC", "SMALLINT"))
-			return "float";
+			return "Float";
 		if (utilities.isStringIn(databaseType, "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT"))
 			return "String";
 		if (utilities.isStringIn(databaseType, "VARBINARY", "BLOB", "LONGBLOB"))
@@ -357,7 +367,7 @@ public class AttDefinedElements {
 		if (utilities.isStringIn(databaseType, "DATE", "DATETIME", "TIME", "TIMESTAMP"))
 			return "java.util.Date";
 		
-		throw new ForbiddenOperationException("Unknown data type [" + databaseType + "]");
+		throw new ForbiddenOperationException("Unknown data type for field " + fieldName + " [" + databaseType + "]");
 	}
 	
 	public static String[] convertTableAttNameToClassAttName(String[] dbAtts) {

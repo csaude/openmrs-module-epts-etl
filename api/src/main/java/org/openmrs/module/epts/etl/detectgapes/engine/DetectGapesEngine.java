@@ -59,7 +59,7 @@ public class DetectGapesEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logDebug("DETECTING GAPES ON " + syncRecords.size() + "' " + getSrcTableName());
+		logDebug("DETECTING GAPES ON " + syncRecords.size() + "' " + getMainSrcTableName());
 		
 		if (this.prevRec == null) {
 			this.prevRec = (DatabaseObject) syncRecords.get(0);
@@ -74,7 +74,7 @@ public class DetectGapesEngine extends Engine {
 				logDebug("Found gape of " + diff + " between " + prevRec.getObjectId() + " and " + rec.getObjectId());
 				
 				for (int i = prevRec.getObjectId() + 1; i < rec.getObjectId(); i++) {
-					GapeDAO.insert(getSrcTableConfiguration(), i, conn);
+					GapeDAO.insert(getMainSrcTableConf(), i, conn);
 				}
 			}
 			

@@ -25,7 +25,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 		
 		searchClauses.addColumnToSelect("distinct (src_.record_uuid) record_uuid");
 		
-		SyncTableConfiguration tableInfo = this.getSrcTableConfiguration();
+		SyncTableConfiguration tableInfo = this.getMainSrcTableConf();
 		
 		searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName() + " src_ ");
 		
@@ -45,8 +45,8 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
 			}
 			
-			if (this.getConfig().getExtraConditionForExport() != null) {
-				searchClauses.addToClauses(this.getConfig().getExtraConditionForExport());
+			if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
+				searchClauses.addToClauses(this.getConfig().getSrcConf().getExtraConditionForExtract());
 			}
 			
 			searchClauses.addToClauses("consistent = 1");
