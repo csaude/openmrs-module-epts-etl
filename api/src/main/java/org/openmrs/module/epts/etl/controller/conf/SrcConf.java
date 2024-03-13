@@ -99,10 +99,13 @@ public class SrcConf extends SyncDataConfiguration {
 		OpenConnection srcConn = this.getMainApp().openConnection();
 		
 		try {
-			for (EtlExtraDataSource src : this.getExtraDataSource()) {
-				src.setRelatedSrcConf(this);
-				
-				src.fullLoad(srcConn);
+			
+			if (utilities.arrayHasElement(this.getExtraDataSource())) {
+				for (EtlExtraDataSource src : this.getExtraDataSource()) {
+					src.setRelatedSrcConf(this);
+					
+					src.fullLoad(srcConn);
+				}
 			}
 		}
 		catch (Exception e) {

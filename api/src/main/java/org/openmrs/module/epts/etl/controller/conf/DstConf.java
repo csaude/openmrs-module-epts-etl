@@ -4,8 +4,8 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -69,6 +69,9 @@ public class DstConf extends SyncDataConfiguration {
 			throw new ForbiddenOperationException("The tableInfo is not full loaded!");
 		
 		DstConf dstSyncConfiguration = new DstConf();
+		dstSyncConfiguration.setRelatedSyncConfiguration(srcSyncConfig.getRelatedSyncConfiguration());
+		dstSyncConfiguration
+		        .setDstTableConf(SyncTableConfiguration.init(srcSyncConfig.getMainTableName(), dstSyncConfiguration));
 		
 		dstSyncConfiguration.dstTableConf.clone(srcSyncConfig.getMainSrcTableConf());
 		
