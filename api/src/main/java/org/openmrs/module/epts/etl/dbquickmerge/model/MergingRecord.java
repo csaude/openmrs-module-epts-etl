@@ -164,6 +164,17 @@ public class MergingRecord {
 					if (refInfo.getDefaultValueDueInconsistency() == null) {
 						throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(),
 						        mergingRecord.config.getOriginAppLocationCode(), refInfo);
+					} else {
+						
+						parentIdInOrigin = refInfo.getDefaultValueDueInconsistency();
+						
+						parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp),
+						    parentIdInOrigin, srcConn);
+						
+						if (parentInOrigin == null) {
+							throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(),
+							        mergingRecord.config.getOriginAppLocationCode(), refInfo);
+						}
 					}
 				}
 				
