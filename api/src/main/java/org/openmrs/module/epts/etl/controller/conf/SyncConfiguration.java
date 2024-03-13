@@ -26,6 +26,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -42,10 +43,6 @@ public class SyncConfiguration extends BaseConfiguration {
 	private String syncRootDirectory;
 	
 	private String originAppLocationCode;
-	
-	private Date startDate;
-	
-	private Date endDate;
 	
 	private Map<String, SyncTableConfiguration> syncTableConfigurationPull;
 	
@@ -103,6 +100,8 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private Map<String, Integer> qtyLoadedTables;
 	
+	private Map<String, String> params;
+	
 	private boolean initialized;
 	
 	public SyncConfiguration() {
@@ -114,6 +113,14 @@ public class SyncConfiguration extends BaseConfiguration {
 		this.qtyLoadedTables = new HashMap<>();
 		
 		this.configuredTables = new ArrayList<>();
+	}
+	
+	public Map<String, String> getParams() {
+		return params;
+	}
+	
+	public void setParams(Map<String, String> params) {
+		this.params = params;
 	}
 	
 	public List<SyncTableConfiguration> getConfiguredTables() {
@@ -211,19 +218,23 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	public Date getStartDate() {
-		return startDate;
-	}
-	
-	public void setStartDate(Date startDate) {
-		this.startDate = startDate;
+		String startDate = getParamValue("startDate");
+		
+		if (utilities.stringHasValue(startDate)) {
+			return DateAndTimeUtilities.createDate(startDate);
+		}
+		
+		return null;
 	}
 	
 	public Date getEndDate() {
-		return endDate;
-	}
-	
-	public void setEndDate(Date endDate) {
-		this.endDate = endDate;
+		String endDate = getParamValue("endDate");
+		
+		if (utilities.stringHasValue(endDate)) {
+			return DateAndTimeUtilities.createDate(endDate);
+		}
+		
+		return null;
 	}
 	
 	@JsonIgnore
@@ -1110,5 +1121,13 @@ public class SyncConfiguration extends BaseConfiguration {
 		for (AppInfo app : getAppsInfo()) {
 			app.finalize();
 		}
+	}
+	
+	public String getParamValue(String paramName) {
+		if (this.params != null) {
+			return this.params.get(paramName);
+		}
+		
+		return null;
 	}
 }

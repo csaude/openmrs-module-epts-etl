@@ -1148,8 +1148,13 @@ public class DBUtilities {
 				
 				Object paramValue = null;
 				String paramName = null;
+				String fieldValueName = "";
 				
-				String fieldValueName = field.getValue() != null ? field.getValue().toString() : field.getName();
+				if (field.getValueType().isConstant()) {
+					fieldValueName = field.getName();
+				} else {
+					fieldValueName = field.getValue() != null ? field.getValue().toString() : field.getName();
+				}
 				
 				if (field.getValueType().isConfiguration()) {
 					paramName = field.getName();
@@ -1164,6 +1169,7 @@ public class DBUtilities {
 					paramValue = getParamValueFromSourceMainObject(srcObject, paramName);
 				} else if (field.getValueType().isConstant()) {
 					paramValue = field.getValue();
+					paramName = fieldValueName;
 				} else if (field.getValueType().isUndefined()) {
 					String bkpParamName = paramName;
 					
@@ -1205,7 +1211,7 @@ public class DBUtilities {
 	
 	static Object getParamValueFromSyncConfiguration(SyncConfiguration configuration, String param)
 	        throws ForbiddenOperationException {
-		Object paramValue = utilities.getFieldValue(configuration, param);
+		Object paramValue = configuration.getParamValue(param);
 		
 		if (paramValue == null) {
 			throw new ForbiddenOperationException("The configuration param '" + param + "' is needed to load source object");
