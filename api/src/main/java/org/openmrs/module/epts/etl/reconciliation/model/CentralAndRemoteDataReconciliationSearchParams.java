@@ -99,8 +99,9 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
 			}
 			
-			if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
-				searchClauses.addToClauses(this.getConfig().getSrcConf().getExtraConditionForExtract());
+			if (this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract() != null) {
+				searchClauses
+				        .addToClauses(this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract());
 			}
 		}
 		

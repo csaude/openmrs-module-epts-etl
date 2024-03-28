@@ -43,6 +43,10 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		
 		tryToAddLimits(searchClauses);
 		
+		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
+			searchClauses.replaceColumnOnClause("patient_id", "person_id");
+		}
+		
 		tryToAddExtraConditionForExport(searchClauses);
 		
 		if (utilities.stringHasValue(getExtraCondition())) {

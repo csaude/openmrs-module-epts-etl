@@ -170,6 +170,8 @@ public class DBQuickMergeEngine extends Engine {
 			dstConn.markAsSuccessifullyTerminated();
 		}
 		catch (Exception e) {
+			e.printStackTrace();
+			
 			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits()
 			        + "]... \n Try to performe merge record by record...");
 			

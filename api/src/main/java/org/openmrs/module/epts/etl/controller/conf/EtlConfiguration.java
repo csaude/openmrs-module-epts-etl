@@ -44,10 +44,6 @@ public class EtlConfiguration extends BaseConfiguration {
 		return this.srcConf.getMainSrcTableConf();
 	}
 	
-	public SyncTableConfiguration getAuxSrcTableConf() {
-		return this.srcConf.getAuxSrcTableConf();
-	}
-	
 	public static EtlConfiguration fastCreate(SyncTableConfiguration tableConfig) {
 		EtlConfiguration etl = new EtlConfiguration();
 		
@@ -170,5 +166,9 @@ public class EtlConfiguration extends BaseConfiguration {
 	
 	public AppInfo getMainApp() {
 		return getRelatedSyncConfiguration().getMainApp();
+	}
+	
+	public SrcAdditionExtractionInfo getAdditionalExtractionInfo() {
+		return this.srcConf.getAdditionalExtractionInfo();
 	}
 }

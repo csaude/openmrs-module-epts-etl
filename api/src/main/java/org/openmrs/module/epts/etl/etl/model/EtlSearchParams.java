@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.etl.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.controller.conf.AdditionlExtractionSrcTable;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -32,13 +33,29 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 		
 		searchClauses.addColumnToSelect("distinct src_.*");
 		
-		if (getAuxSrcTableConf() != null) {
-			searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_ inner join "
-			        + getAuxSrcTableConf().getTableName() + " on " + getSrcConf().generateConditionsFields());
+		String clauseFrom = srcSchema + "." + tableInfo.getTableName() + " src_ ";
+		
+		if (getAdditionalExtractionInfo() != null) {
+			String joinType = getAdditionalExtractionInfo().getJoinType().toString();
 			
-		} else {
-			searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_");
+			for (AdditionlExtractionSrcTable t : getAdditionalExtractionInfo().getAdditionalExtractionTables()) {
+				String extraJoinQuery = "";
+				
+				if (utilities.stringHasValue(t.getJoinExtraCondition())) {
+					Object[] params = DBUtilities.loadParamsValues(t.getJoinExtraCondition(),
+					    getConfig().getRelatedSyncConfiguration());
+					
+					extraJoinQuery = " and " + DBUtilities.replaceSqlParametersWithQuestionMarks(t.getJoinExtraCondition());
+					
+					searchClauses.addToParameters(params);
+				}
+				
+				clauseFrom = clauseFrom + joinType + " join " + t.getTableName() + " on " + t.generateConditionsFields()
+				        + extraJoinQuery;
+			}
 		}
+		
+		searchClauses.addToClauseFrom(clauseFrom);
 		
 		tryToAddLimits(searchClauses);
 		

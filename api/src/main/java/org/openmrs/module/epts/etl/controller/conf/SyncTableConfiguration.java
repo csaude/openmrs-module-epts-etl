@@ -68,6 +68,8 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 	
 	private boolean mustLoadChildrenInfo;
 	
+	private String extraConditionForExtract;
+	
 	public SyncTableConfiguration() {
 	}
 	
@@ -89,6 +91,15 @@ public class SyncTableConfiguration extends BaseConfiguration implements Compara
 		this.fields = toCloneFrom.fields;
 		this.winningRecordFieldsInfo = toCloneFrom.winningRecordFieldsInfo;
 		this.fullLoaded = toCloneFrom.fullLoaded;
+		this.extraConditionForExtract = toCloneFrom.extraConditionForExtract;
+	}
+	
+	public String getExtraConditionForExtract() {
+		return extraConditionForExtract;
+	}
+	
+	public void setExtraConditionForExtract(String extraConditionForExtract) {
+		this.extraConditionForExtract = extraConditionForExtract;
 	}
 	
 	public boolean isMustLoadChildrenInfo() {

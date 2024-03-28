@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.Date;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.SrcAdditionExtractionInfo;
 import org.openmrs.module.epts.etl.controller.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
@@ -76,8 +77,8 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	 * @param searchClauses
 	 */
 	public void tryToAddExtraConditionForExport(SearchClauses<DatabaseObject> searchClauses) {
-		if (getConfig().getSrcConf().getExtraConditionForExtract() != null) {
-			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
+		if (this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract() != null) {
+			String extraContidion = this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract();
 			
 			//@formatter:off
 			Object[] params = DBUtilities.loadParamsValues(extraContidion, getConfig().getRelatedSyncConfiguration());
@@ -121,11 +122,9 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	/**
 	 * @return
 	 */
-	public SyncTableConfiguration getAuxSrcTableConf() {
-		return this.getConfig().getAuxSrcTableConf();
+	public SrcAdditionExtractionInfo getAdditionalExtractionInfo() {
+		return this.getConfig().getAdditionalExtractionInfo();
 	}
-	
-	
 	/**
 	 * @return
 	 */

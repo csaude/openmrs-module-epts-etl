@@ -45,8 +45,9 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
 			}
 			
-			if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
-				searchClauses.addToClauses(this.getConfig().getSrcConf().getExtraConditionForExtract());
+			if (this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract() != null) {
+				searchClauses
+				        .addToClauses(this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract());
 			}
 			
 			searchClauses.addToClauses("consistent = 1");

@@ -428,8 +428,14 @@ public class SyncConfiguration extends BaseConfiguration {
 				
 				addToTableConfigurationPull(config.getMainSrcTableConf());
 				
-				if (config.getSrcConf().getAuxSrcTableConf() != null) {
-					addToTableConfigurationPull(config.getSrcConf().getAuxSrcTableConf());
+				if (config.getSrcConf().getAdditionalExtractionInfo() != null
+				        && config.getSrcConf().getAdditionalExtractionInfo().getAdditionalExtractionTables() != null) {
+					
+					for (AdditionlExtractionSrcTable t : config.getSrcConf().getAdditionalExtractionInfo()
+					        .getAdditionalExtractionTables()) {
+						addToTableConfigurationPull(t);
+					}
+					
 				}
 			}
 		}
@@ -564,11 +570,17 @@ public class SyncConfiguration extends BaseConfiguration {
 				addConfiguredTable(tc.getMainSrcTableConf());
 				addToTableConfigurationPull(tc.getMainSrcTableConf());
 				
-				if (tc.getSrcConf().getAuxSrcTableConf() != null) {
-					addConfiguredTable(tc.getSrcConf().getAuxSrcTableConf());
-					addToTableConfigurationPull(tc.getSrcConf().getAuxSrcTableConf());
+				if (tc.getSrcConf().getAdditionalExtractionInfo() != null) {
 					
-					tc.getAuxSrcTableConf().setParent(tc.getSrcConf());
+					tc.getSrcConf().getAdditionalExtractionInfo().setParent(tc.getSrcConf());
+					
+					for (AdditionlExtractionSrcTable t : tc.getSrcConf().getAdditionalExtractionInfo()
+					        .getAdditionalExtractionTables()) {
+						
+						addConfiguredTable(t);
+						addToTableConfigurationPull(t);
+						t.setParent(tc.getSrcConf());
+					}
 				}
 				
 				String code = "";
