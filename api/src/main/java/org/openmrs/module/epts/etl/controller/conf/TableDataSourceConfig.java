@@ -42,19 +42,17 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 			FieldsMapping fm = null;
 			
 			//Assuming that this datasource is parent
-			RefInfo pInfo = this.relatedSrcExtraDataSrc.getRelatedSrcConf().getMainSrcTableConf()
-			        .findParent(RefInfo.init(this.getTableName()));
+			RefInfo pInfo = this.relatedSrcExtraDataSrc.getRelatedSrcConf().findParent(this.getTableName());
 			
 			if (pInfo != null) {
-				fm = new FieldsMapping(pInfo.getRefColumnName(), "", pInfo.getRefColumnName());
+				fm = new FieldsMapping(this.getPrimaryKey(), "", pInfo.getRefColumnName());
 			} else {
 				
 				//Assuning that the this data src is child
-				pInfo = this.findParent(
-				    RefInfo.init(this.relatedSrcExtraDataSrc.getRelatedSrcConf().getMainSrcTableConf().getTableName()));
+				pInfo = this.findParent(this.relatedSrcExtraDataSrc.getRelatedSrcConf().getTableName());
 				
 				if (pInfo != null) {
-					fm = new FieldsMapping(pInfo.getRefColumnName(), "", pInfo.getRefColumnName());
+					fm = new FieldsMapping(pInfo.getRefColumnName(), "", pInfo.getRefTableConfiguration().getPrimaryKey());
 				}
 			}
 			
@@ -66,8 +64,7 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 		
 		if (utilities.arrayHasNoElement(this.joinFields)) {
 			throw new ForbiddenOperationException("No join fields were difined between "
-			        + this.relatedSrcExtraDataSrc.getRelatedSrcConf().getMainSrcTableConf().getTableName() + " And "
-			        + this.getTableName());
+			        + this.relatedSrcExtraDataSrc.getRelatedSrcConf().getTableName() + " And " + this.getTableName());
 		}
 	}
 	

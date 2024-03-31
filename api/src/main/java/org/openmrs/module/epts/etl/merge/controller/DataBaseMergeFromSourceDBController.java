@@ -52,7 +52,7 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 		Integer id = Integer.valueOf(0);
 		
 		try {
-			SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(config.getMainSrcTableConf(), conn);
+			SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(config.getSrcConf(), conn);
 			
 			id = record != null ? record.getId() : 0;
 			
@@ -75,7 +75,7 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 		Integer id = Integer.valueOf(0);
 		
 		try {
-			SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(config.getMainSrcTableConf(), conn);
+			SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(config.getSrcConf(), conn);
 			
 			id = record != null ? record.getId() : 0;
 			

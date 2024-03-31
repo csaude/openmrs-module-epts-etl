@@ -15,6 +15,7 @@ public class CommunityArvVisitVO extends AbstractDatabaseObject implements Datab
 	private Integer id;
 	private Integer patientId;
 	private Integer encounterId;
+	private String encounterUuid;
 	private java.util.Date visitDate;
 	private java.util.Date nextVisitDate;
 	private String source;
@@ -45,6 +46,14 @@ public class CommunityArvVisitVO extends AbstractDatabaseObject implements Datab
  
 	public Integer getEncounterId(){ 
 		return this.encounterId;
+	}
+ 
+	public void setEncounterUuid(String encounterUuid){ 
+	 	this.encounterUuid = encounterUuid;
+	}
+ 
+	public String getEncounterUuid(){ 
+		return this.encounterUuid;
 	}
  
 	public void setVisitDate(java.util.Date visitDate){ 
@@ -86,6 +95,7 @@ public class CommunityArvVisitVO extends AbstractDatabaseObject implements Datab
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
 		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
+		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		this.visitDate =  rs.getTimestamp("visit_date") != null ? new java.util.Date( rs.getTimestamp("visit_date").getTime() ) : null;
 		this.nextVisitDate =  rs.getTimestamp("next_visit_date") != null ? new java.util.Date( rs.getTimestamp("next_visit_date").getTime() ) : null;
 		this.source = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("source") != null ? rs.getString("source").trim() : null);
@@ -98,37 +108,37 @@ public class CommunityArvVisitVO extends AbstractDatabaseObject implements Datab
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_arv_visit(patient_id, encounter_id, visit_date, next_visit_date, source) VALUES( ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_visit(patient_id, encounter_id, encounter_uuid, visit_date, next_visit_date, source) VALUES( ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.visitDate, this.nextVisitDate, this.source};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.visitDate, this.nextVisitDate, this.source};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_arv_visit(id, patient_id, encounter_id, visit_date, next_visit_date, source) VALUES(?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_visit(id, patient_id, encounter_id, encounter_uuid, visit_date, next_visit_date, source) VALUES(?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.encounterId, this.visitDate, this.nextVisitDate, this.source};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.encounterUuid, this.visitDate, this.nextVisitDate, this.source};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.visitDate, this.nextVisitDate, this.source, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.visitDate, this.nextVisitDate, this.source, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_arv_visit SET patient_id = ?, encounter_id = ?, visit_date = ?, next_visit_date = ?, source = ? WHERE id = ?;"; 
+ 		return "UPDATE community_arv_visit SET patient_id = ?, encounter_id = ?, encounter_uuid = ?, visit_date = ?, next_visit_date = ?, source = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.visitDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(visitDate)  +"\"" : null) + "," + (this.nextVisitDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(nextVisitDate)  +"\"" : null) + "," + (this.source != null ? "\""+ utilities.scapeQuotationMarks(source)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.visitDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(visitDate)  +"\"" : null) + "," + (this.nextVisitDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(nextVisitDate)  +"\"" : null) + "," + (this.source != null ? "\""+ utilities.scapeQuotationMarks(source)  +"\"" : null); 
 	} 
  
 	@Override

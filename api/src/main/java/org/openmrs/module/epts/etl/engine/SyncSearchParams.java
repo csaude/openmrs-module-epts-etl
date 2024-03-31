@@ -2,9 +2,10 @@ package org.openmrs.module.epts.etl.engine;
 
 import java.sql.Connection;
 import java.util.Date;
+import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.AuxiliaryExtractionSrcTable;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SrcAdditionExtractionInfo;
 import org.openmrs.module.epts.etl.controller.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
@@ -77,8 +78,8 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	 * @param searchClauses
 	 */
 	public void tryToAddExtraConditionForExport(SearchClauses<DatabaseObject> searchClauses) {
-		if (this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract() != null) {
-			String extraContidion = this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract();
+		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
+			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
 			
 			//@formatter:off
 			Object[] params = DBUtilities.loadParamsValues(extraContidion, getConfig().getRelatedSyncConfiguration());
@@ -97,7 +98,7 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	 */
 	public void tryToAddLimits(SearchClauses<DatabaseObject> searchClauses) {
 		if (this.getLimits() != null) {
-			searchClauses.addToClauses("src_." + getMainSrcTableConf().getPrimaryKey() + " between ? and ?");
+			searchClauses.addToClauses("src_." + getSrcTableConf().getPrimaryKey() + " between ? and ?");
 			searchClauses.addToParameters(this.getLimits().getCurrentFirstRecordId());
 			searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
 		}
@@ -105,7 +106,7 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	
 	@SuppressWarnings("unchecked")
 	public Class<T> getRecordClass() {
-		return (Class<T>) getMainSrcTableConf().getSyncRecordClass(getMainSrcTableConf().getMainApp());
+		return (Class<T>) getSrcTableConf().getSyncRecordClass(getSrcTableConf().getMainApp());
 	}
 
 	public SrcConf getSrcConf() {
@@ -115,21 +116,21 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	/**
 	 * @return
 	 */
-	public SyncTableConfiguration getMainSrcTableConf() {
-		return this.getConfig().getMainSrcTableConf();
+	public SyncTableConfiguration getSrcTableConf() {
+		return this.getConfig().getSrcConf();
 	}
 	
 	/**
 	 * @return
 	 */
-	public SrcAdditionExtractionInfo getAdditionalExtractionInfo() {
-		return this.getConfig().getAdditionalExtractionInfo();
+	public List<AuxiliaryExtractionSrcTable> getAuxiliaryExtractionSrcTable() {
+		return this.getConfig().getSrcConf().getAuxiliaryExtractionSrcTable();
 	}
 	/**
 	 * @return
 	 */
 	public SyncTableConfiguration getDstLastTableConfiguration() {
-		return  utilities.getLastRecordOnArray(getConfig().getDstConf()).getDstTableConf();
+		return  utilities.getLastRecordOnArray(getConfig().getDstConf());
 	}	
 	
 	public abstract int countAllRecords(Connection conn) throws DBException;

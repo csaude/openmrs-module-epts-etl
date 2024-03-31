@@ -31,7 +31,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	public SearchClauses<SyncImportInfoVO> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
 		
-		SyncTableConfiguration tableInfo = this.getMainSrcTableConf();
+		SyncTableConfiguration tableInfo = this.getSrcTableConf();
 		
 		searchClauses.addColumnToSelect(tableInfo.generateFullStageTableName() + ".*");
 		

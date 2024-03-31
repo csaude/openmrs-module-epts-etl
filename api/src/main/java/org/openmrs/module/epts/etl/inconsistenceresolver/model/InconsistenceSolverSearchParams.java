@@ -18,14 +18,14 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<DatabaseOb
 	public InconsistenceSolverSearchParams(EtlConfiguration config, RecordLimits limits, Connection conn) {
 		super(config, limits);
 		
-		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tableInfo = getMainSrcTableConf();
+		SyncTableConfiguration tableInfo = getSrcTableConf();
 		
 		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
 			searchClauses.addColumnToSelect("patient.*, person.uuid");

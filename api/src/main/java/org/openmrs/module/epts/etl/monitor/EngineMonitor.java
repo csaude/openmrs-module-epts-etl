@@ -62,7 +62,7 @@ public class EngineMonitor implements MonitoredOperation {
 	}
 	
 	public SyncTableConfiguration getSrcMainTableConf() {
-		return this.getEtlConfiguration().getMainSrcTableConf();
+		return this.getEtlConfiguration().getSrcConf();
 	}
 	
 	public List<Engine> getOwnEngines() {

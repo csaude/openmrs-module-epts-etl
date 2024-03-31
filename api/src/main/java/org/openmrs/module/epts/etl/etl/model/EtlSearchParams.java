@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.etl.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.AdditionlExtractionSrcTable;
+import org.openmrs.module.epts.etl.controller.conf.AuxiliaryExtractionSrcTable;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -21,13 +21,13 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 	public EtlSearchParams(EtlConfiguration config, RecordLimits limits, EtlController relatedController) {
 		super(config, limits);
 		
-		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		String srcSchema = DBUtilities.determineSchemaName(conn);
-		SyncTableConfiguration tableInfo = getMainSrcTableConf();
+		SyncTableConfiguration tableInfo = getSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
@@ -35,24 +35,36 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 		
 		String clauseFrom = srcSchema + "." + tableInfo.getTableName() + " src_ ";
 		
-		if (getAdditionalExtractionInfo() != null) {
-			String joinType = getAdditionalExtractionInfo().getJoinType().toString();
+		if (getAuxiliaryExtractionSrcTable() != null) {
 			
-			for (AdditionlExtractionSrcTable t : getAdditionalExtractionInfo().getAdditionalExtractionTables()) {
-				String extraJoinQuery = "";
+			String additionalLeftJoinFields = "";
+			
+			for (AuxiliaryExtractionSrcTable t : getAuxiliaryExtractionSrcTable()) {
+				String joinType = t.getJoinType().toString();
 				
-				if (utilities.stringHasValue(t.getJoinExtraCondition())) {
-					Object[] params = DBUtilities.loadParamsValues(t.getJoinExtraCondition(),
+				String extraJoinQuery = t.generateConditionsFields();
+				
+				if (utilities.stringHasValue(extraJoinQuery)) {
+					Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,
 					    getConfig().getRelatedSyncConfiguration());
 					
-					extraJoinQuery = " and " + DBUtilities.replaceSqlParametersWithQuestionMarks(t.getJoinExtraCondition());
+					extraJoinQuery = DBUtilities.replaceSqlParametersWithQuestionMarks(extraJoinQuery);
 					
 					searchClauses.addToParameters(params);
 				}
 				
-				clauseFrom = clauseFrom + joinType + " join " + t.getTableName() + " on " + t.generateConditionsFields()
-				        + extraJoinQuery;
+				clauseFrom = clauseFrom + joinType + " join " + t.getTableName() + " on " + extraJoinQuery;
+				
+				if (t.getJoinType().isLeftJoin()) {
+					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
+					    t.getPrimaryKey() + " is not null ", "or");
+				}
 			}
+			
+			if (utilities.stringHasValue(additionalLeftJoinFields)) {
+				searchClauses.addToClauses(additionalLeftJoinFields);
+			}
+			
 		}
 		
 		searchClauses.addToClauseFrom(clauseFrom);

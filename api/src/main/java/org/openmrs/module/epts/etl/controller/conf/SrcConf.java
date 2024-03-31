@@ -3,29 +3,23 @@ package org.openmrs.module.epts.etl.controller.conf;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class SrcConf extends SyncDataConfiguration {
+public class SrcConf extends SyncTableConfiguration {
 	
-	/*
-	 * The main source table
-	 */
-	private SyncTableConfiguration mainSrcTableConf;
-	
-	private SrcAdditionExtractionInfo additionalExtractionInfo;
+	private List<AuxiliaryExtractionSrcTable> auxiliaryExtractionSrcTable;
 	
 	private List<EtlExtraDataSource> extraDataSource;
 	
-	private boolean fullLoaded;
-	
-	public SrcAdditionExtractionInfo getAdditionalExtractionInfo() {
-		return additionalExtractionInfo;
+	public List<AuxiliaryExtractionSrcTable> getAuxiliaryExtractionSrcTable() {
+		return auxiliaryExtractionSrcTable;
 	}
 	
-	public void setAdditionalExtractionInfo(SrcAdditionExtractionInfo additionalExtractionInfo) {
-		this.additionalExtractionInfo = additionalExtractionInfo;
+	public void setAuxilliaryExtractionSrcTable(List<AuxiliaryExtractionSrcTable> auxiliaryExtractionSrcTable) {
+		this.auxiliaryExtractionSrcTable = auxiliaryExtractionSrcTable;
 	}
 	
 	public List<EtlExtraDataSource> getExtraDataSource() {
@@ -36,33 +30,55 @@ public class SrcConf extends SyncDataConfiguration {
 		this.extraDataSource = extraDataSource;
 	}
 	
-	public SyncTableConfiguration getMainSrcTableConf() {
-		return mainSrcTableConf;
-	}
-	
-	public String getMainTableName() {
-		return this.mainSrcTableConf.getTableName();
-	}
-	
-	public void setMainSrcTableConf(SyncTableConfiguration mainSrcTableConfiguration) {
-		this.mainSrcTableConf = mainSrcTableConfiguration;
-	}
-	
 	public synchronized void fullLoad() throws DBException {
 		
 		if (this.fullLoaded) {
 			return;
 		}
 		
-		this.mainSrcTableConf.fullLoad();
-		
-		if (this.additionalExtractionInfo != null) {
-			this.additionalExtractionInfo.fullLoad();
-		}
+		super.fullLoad();
 		
 		OpenConnection srcConn = this.getMainApp().openConnection();
 		
 		try {
+			
+			if (utilities.arrayHasElement(this.auxiliaryExtractionSrcTable)) {
+				for (AuxiliaryExtractionSrcTable t : this.auxiliaryExtractionSrcTable) {
+					t.fullLoad(srcConn);
+					
+					if (!utilities.arrayHasElement(t.getJoinFields())) {
+						//Try to autoload join fields
+						
+						FieldsMapping fm = null;
+						
+						//Assuming that the aux src is parent
+						RefInfo pInfo = this.findParent(t.getTableName());
+						
+						if (pInfo != null) {
+							fm = new FieldsMapping(pInfo.getRefColumnName(), "", pInfo.getRefTableConfiguration().getPrimaryKey());
+						} else {
+							
+							//Assuning that the aux src is child
+							pInfo = t.findParent(this.getTableName());
+							
+							if (pInfo != null) {
+								fm = new FieldsMapping(this.getPrimaryKey(), "", pInfo.getRefColumnName());
+							}
+						}
+						
+						if (fm != null) {
+							t.addJoinField(fm);
+						}
+					}
+					
+					if (utilities.arrayHasNoElement(t.getJoinFields())) {
+						throw new ForbiddenOperationException(
+						        "No join fields were difined between " + this.getTableName() + " And " + t.getTableName());
+					}
+				}
+				
+			}
+			
 			if (utilities.arrayHasElement(this.getExtraDataSource())) {
 				for (EtlExtraDataSource src : this.getExtraDataSource()) {
 					src.setRelatedSrcConf(this);
@@ -101,15 +117,19 @@ public class SrcConf extends SyncDataConfiguration {
 	public static SrcConf fastCreate(SyncTableConfiguration tableConfig) {
 		SrcConf src = new SrcConf();
 		
-		src.setMainSrcTableConf(tableConfig);
-		src.setRelatedSyncConfiguration(tableConfig.getParent().getRelatedSyncConfiguration());
+		src.clone(src);
 		
 		return src;
 	}
 	
 	@Override
-	public void setRelatedSyncConfiguration(SyncConfiguration relatedSyncConfiguration) {
-		super.setRelatedSyncConfiguration(relatedSyncConfiguration);
+	public void setParent(SyncDataConfiguration parent) {
+		super.setParent((EtlConfiguration) parent);
+	}
+	
+	@Override
+	public EtlConfiguration getParent() {
+		return (EtlConfiguration) super.getParent();
 	}
 	
 }

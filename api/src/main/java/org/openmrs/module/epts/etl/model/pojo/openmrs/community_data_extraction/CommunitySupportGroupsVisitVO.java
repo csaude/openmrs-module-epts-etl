@@ -15,6 +15,7 @@ public class CommunitySupportGroupsVisitVO extends AbstractDatabaseObject implem
 	private Integer id;
 	private Integer patientId;
 	private Integer encounterId;
+	private String encounterUuid;
 	private String elegibblySupportGroups;
 	private java.util.Date dateElegibblySupportGroups;
 	private String typeSupportGroups;
@@ -46,6 +47,14 @@ public class CommunitySupportGroupsVisitVO extends AbstractDatabaseObject implem
  
 	public Integer getEncounterId(){ 
 		return this.encounterId;
+	}
+ 
+	public void setEncounterUuid(String encounterUuid){ 
+	 	this.encounterUuid = encounterUuid;
+	}
+ 
+	public String getEncounterUuid(){ 
+		return this.encounterUuid;
 	}
  
 	public void setElegibblySupportGroups(String elegibblySupportGroups){ 
@@ -95,6 +104,7 @@ public class CommunitySupportGroupsVisitVO extends AbstractDatabaseObject implem
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
 		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
+		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		this.elegibblySupportGroups = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("elegibbly_support_groups") != null ? rs.getString("elegibbly_support_groups").trim() : null);
 		this.dateElegibblySupportGroups =  rs.getTimestamp("date_elegibbly_support_groups") != null ? new java.util.Date( rs.getTimestamp("date_elegibbly_support_groups").getTime() ) : null;
 		this.typeSupportGroups = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("type_support_groups") != null ? rs.getString("type_support_groups").trim() : null);
@@ -108,37 +118,37 @@ public class CommunitySupportGroupsVisitVO extends AbstractDatabaseObject implem
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_support_groups_visit(patient_id, encounter_id, elegibbly_support_groups, date_elegibbly_support_groups, type_support_groups, value_support_groups) VALUES( ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_support_groups_visit(patient_id, encounter_id, encounter_uuid, elegibbly_support_groups, date_elegibbly_support_groups, type_support_groups, value_support_groups) VALUES( ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.elegibblySupportGroups, this.dateElegibblySupportGroups, this.typeSupportGroups, this.valueSupportGroups};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.elegibblySupportGroups, this.dateElegibblySupportGroups, this.typeSupportGroups, this.valueSupportGroups};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_support_groups_visit(id, patient_id, encounter_id, elegibbly_support_groups, date_elegibbly_support_groups, type_support_groups, value_support_groups) VALUES(?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_support_groups_visit(id, patient_id, encounter_id, encounter_uuid, elegibbly_support_groups, date_elegibbly_support_groups, type_support_groups, value_support_groups) VALUES(?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.encounterId, this.elegibblySupportGroups, this.dateElegibblySupportGroups, this.typeSupportGroups, this.valueSupportGroups};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.encounterUuid, this.elegibblySupportGroups, this.dateElegibblySupportGroups, this.typeSupportGroups, this.valueSupportGroups};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.elegibblySupportGroups, this.dateElegibblySupportGroups, this.typeSupportGroups, this.valueSupportGroups, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.elegibblySupportGroups, this.dateElegibblySupportGroups, this.typeSupportGroups, this.valueSupportGroups, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_support_groups_visit SET patient_id = ?, encounter_id = ?, elegibbly_support_groups = ?, date_elegibbly_support_groups = ?, type_support_groups = ?, value_support_groups = ? WHERE id = ?;"; 
+ 		return "UPDATE community_support_groups_visit SET patient_id = ?, encounter_id = ?, encounter_uuid = ?, elegibbly_support_groups = ?, date_elegibbly_support_groups = ?, type_support_groups = ?, value_support_groups = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.elegibblySupportGroups != null ? "\""+ utilities.scapeQuotationMarks(elegibblySupportGroups)  +"\"" : null) + "," + (this.dateElegibblySupportGroups != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateElegibblySupportGroups)  +"\"" : null) + "," + (this.typeSupportGroups != null ? "\""+ utilities.scapeQuotationMarks(typeSupportGroups)  +"\"" : null) + "," + (this.valueSupportGroups != null ? "\""+ utilities.scapeQuotationMarks(valueSupportGroups)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.elegibblySupportGroups != null ? "\""+ utilities.scapeQuotationMarks(elegibblySupportGroups)  +"\"" : null) + "," + (this.dateElegibblySupportGroups != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(dateElegibblySupportGroups)  +"\"" : null) + "," + (this.typeSupportGroups != null ? "\""+ utilities.scapeQuotationMarks(typeSupportGroups)  +"\"" : null) + "," + (this.valueSupportGroups != null ? "\""+ utilities.scapeQuotationMarks(valueSupportGroups)  +"\"" : null); 
 	} 
  
 	@Override

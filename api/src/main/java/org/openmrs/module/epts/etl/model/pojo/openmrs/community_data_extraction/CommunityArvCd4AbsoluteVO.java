@@ -15,7 +15,8 @@ public class CommunityArvCd4AbsoluteVO extends AbstractDatabaseObject implements
 	private Integer id;
 	private Integer patientId;
 	private Integer encounterId;
-	private double cd4;
+	private String encounterUuid;
+	private Double cd4;
 	private java.util.Date cd4Date;
  
 	public CommunityArvCd4AbsoluteVO() { 
@@ -46,11 +47,19 @@ public class CommunityArvCd4AbsoluteVO extends AbstractDatabaseObject implements
 		return this.encounterId;
 	}
  
-	public void setCd4(double cd4){ 
+	public void setEncounterUuid(String encounterUuid){ 
+	 	this.encounterUuid = encounterUuid;
+	}
+ 
+	public String getEncounterUuid(){ 
+		return this.encounterUuid;
+	}
+ 
+	public void setCd4(Double cd4){ 
 	 	this.cd4 = cd4;
 	}
  
-	public double getCd4(){ 
+	public Double getCd4(){ 
 		return this.cd4;
 	}
  
@@ -77,7 +86,8 @@ public class CommunityArvCd4AbsoluteVO extends AbstractDatabaseObject implements
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
 		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
-		this.cd4 = rs.getDouble("cd4");
+		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
+		if (rs.getObject("cd4") != null) this.cd4 = rs.getDouble("cd4");
 		this.cd4Date =  rs.getTimestamp("cd4_date") != null ? new java.util.Date( rs.getTimestamp("cd4_date").getTime() ) : null;
 		this.uuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("uuid") != null ? rs.getString("uuid").trim() : null);
 	} 
@@ -89,37 +99,37 @@ public class CommunityArvCd4AbsoluteVO extends AbstractDatabaseObject implements
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_arv_cd4_absolute(patient_id, encounter_id, cd4, cd4_date, uuid) VALUES( ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_cd4_absolute(patient_id, encounter_id, encounter_uuid, cd4, cd4_date, uuid) VALUES( ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.cd4, this.cd4Date, this.uuid};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.cd4, this.cd4Date, this.uuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_arv_cd4_absolute(id, patient_id, encounter_id, cd4, cd4_date, uuid) VALUES(?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_cd4_absolute(id, patient_id, encounter_id, encounter_uuid, cd4, cd4_date, uuid) VALUES(?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.encounterId, this.cd4, this.cd4Date, this.uuid};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.encounterUuid, this.cd4, this.cd4Date, this.uuid};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.cd4, this.cd4Date, this.uuid, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.cd4, this.cd4Date, this.uuid, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_arv_cd4_absolute SET patient_id = ?, encounter_id = ?, cd4 = ?, cd4_date = ?, uuid = ? WHERE id = ?;"; 
+ 		return "UPDATE community_arv_cd4_absolute SET patient_id = ?, encounter_id = ?, encounter_uuid = ?, cd4 = ?, cd4_date = ?, uuid = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.cd4) + "," + (this.cd4Date != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(cd4Date)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.cd4) + "," + (this.cd4Date != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(cd4Date)  +"\"" : null) + "," + (this.uuid != null ? "\""+ utilities.scapeQuotationMarks(uuid)  +"\"" : null); 
 	} 
  
 	@Override

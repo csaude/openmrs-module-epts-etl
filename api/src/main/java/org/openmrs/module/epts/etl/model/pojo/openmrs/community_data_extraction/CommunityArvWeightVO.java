@@ -15,6 +15,7 @@ public class CommunityArvWeightVO extends AbstractDatabaseObject implements Data
 	private Integer id;
 	private Integer patientId;
 	private Integer encounterId;
+	private String encounterUuid;
 	private String weight;
 	private java.util.Date weightDate;
  
@@ -44,6 +45,14 @@ public class CommunityArvWeightVO extends AbstractDatabaseObject implements Data
  
 	public Integer getEncounterId(){ 
 		return this.encounterId;
+	}
+ 
+	public void setEncounterUuid(String encounterUuid){ 
+	 	this.encounterUuid = encounterUuid;
+	}
+ 
+	public String getEncounterUuid(){ 
+		return this.encounterUuid;
 	}
  
 	public void setWeight(String weight){ 
@@ -77,6 +86,7 @@ public class CommunityArvWeightVO extends AbstractDatabaseObject implements Data
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
 		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
+		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		this.weight = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("weight") != null ? rs.getString("weight").trim() : null);
 		this.weightDate =  rs.getTimestamp("weight_date") != null ? new java.util.Date( rs.getTimestamp("weight_date").getTime() ) : null;
 	} 
@@ -88,37 +98,37 @@ public class CommunityArvWeightVO extends AbstractDatabaseObject implements Data
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_arv_weight(patient_id, encounter_id, weight, weight_date) VALUES( ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_weight(patient_id, encounter_id, encounter_uuid, weight, weight_date) VALUES( ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.weight, this.weightDate};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.weight, this.weightDate};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_arv_weight(id, patient_id, encounter_id, weight, weight_date) VALUES(?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_weight(id, patient_id, encounter_id, encounter_uuid, weight, weight_date) VALUES(?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.encounterId, this.weight, this.weightDate};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.encounterUuid, this.weight, this.weightDate};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.weight, this.weightDate, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.weight, this.weightDate, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_arv_weight SET patient_id = ?, encounter_id = ?, weight = ?, weight_date = ? WHERE id = ?;"; 
+ 		return "UPDATE community_arv_weight SET patient_id = ?, encounter_id = ?, encounter_uuid = ?, weight = ?, weight_date = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.weight != null ? "\""+ utilities.scapeQuotationMarks(weight)  +"\"" : null) + "," + (this.weightDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(weightDate)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.weight != null ? "\""+ utilities.scapeQuotationMarks(weight)  +"\"" : null) + "," + (this.weightDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(weightDate)  +"\"" : null); 
 	} 
  
 	@Override

@@ -15,6 +15,7 @@ public class CommunityArtPickUpVO extends AbstractDatabaseObject implements Data
 	private Integer id;
 	private Integer patientId;
 	private Integer encounterId;
+	private String encounterUuid;
 	private String pickupArt;
 	private java.util.Date artDate;
 	private String source;
@@ -45,6 +46,14 @@ public class CommunityArtPickUpVO extends AbstractDatabaseObject implements Data
  
 	public Integer getEncounterId(){ 
 		return this.encounterId;
+	}
+ 
+	public void setEncounterUuid(String encounterUuid){ 
+	 	this.encounterUuid = encounterUuid;
+	}
+ 
+	public String getEncounterUuid(){ 
+		return this.encounterUuid;
 	}
  
 	public void setPickupArt(String pickupArt){ 
@@ -86,6 +95,7 @@ public class CommunityArtPickUpVO extends AbstractDatabaseObject implements Data
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
 		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
+		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		this.pickupArt = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("pickup_art") != null ? rs.getString("pickup_art").trim() : null);
 		this.artDate =  rs.getTimestamp("art_date") != null ? new java.util.Date( rs.getTimestamp("art_date").getTime() ) : null;
 		this.source = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("source") != null ? rs.getString("source").trim() : null);
@@ -98,37 +108,37 @@ public class CommunityArtPickUpVO extends AbstractDatabaseObject implements Data
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_art_pick_up(patient_id, encounter_id, pickup_art, art_date, source) VALUES( ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_art_pick_up(patient_id, encounter_id, encounter_uuid, pickup_art, art_date, source) VALUES( ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.pickupArt, this.artDate, this.source};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.pickupArt, this.artDate, this.source};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_art_pick_up(id, patient_id, encounter_id, pickup_art, art_date, source) VALUES(?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_art_pick_up(id, patient_id, encounter_id, encounter_uuid, pickup_art, art_date, source) VALUES(?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.encounterId, this.pickupArt, this.artDate, this.source};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.encounterUuid, this.pickupArt, this.artDate, this.source};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.pickupArt, this.artDate, this.source, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.pickupArt, this.artDate, this.source, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_art_pick_up SET patient_id = ?, encounter_id = ?, pickup_art = ?, art_date = ?, source = ? WHERE id = ?;"; 
+ 		return "UPDATE community_art_pick_up SET patient_id = ?, encounter_id = ?, encounter_uuid = ?, pickup_art = ?, art_date = ?, source = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.pickupArt != null ? "\""+ utilities.scapeQuotationMarks(pickupArt)  +"\"" : null) + "," + (this.artDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(artDate)  +"\"" : null) + "," + (this.source != null ? "\""+ utilities.scapeQuotationMarks(source)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.pickupArt != null ? "\""+ utilities.scapeQuotationMarks(pickupArt)  +"\"" : null) + "," + (this.artDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(artDate)  +"\"" : null) + "," + (this.source != null ? "\""+ utilities.scapeQuotationMarks(source)  +"\"" : null); 
 	} 
  
 	@Override

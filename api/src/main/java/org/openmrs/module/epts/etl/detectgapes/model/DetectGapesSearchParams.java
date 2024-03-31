@@ -23,13 +23,13 @@ public class DetectGapesSearchParams extends DatabaseObjectSearchParams {
 		super(config, limits);
 		
 		this.relatedController = relatedController;
-		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		String srcSchema = DBUtilities.determineSchemaName(conn);
-		SyncTableConfiguration tableInfo = getMainSrcTableConf();
+		SyncTableConfiguration tableInfo = getSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		

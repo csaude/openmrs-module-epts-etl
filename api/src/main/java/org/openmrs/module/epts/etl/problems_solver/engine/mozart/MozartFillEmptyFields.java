@@ -82,7 +82,7 @@ public class MozartFillEmptyFields extends MozartProblemSolverEngine {
 			}
 			
 			for (EtlConfiguration conf : configs) {
-				SyncTableConfiguration configuredTable = conf.getMainSrcTableConf();
+				SyncTableConfiguration configuredTable = conf.getSrcConf();
 				
 				if (!configuredTable.getTableName().equals(tableToFill))
 					continue;

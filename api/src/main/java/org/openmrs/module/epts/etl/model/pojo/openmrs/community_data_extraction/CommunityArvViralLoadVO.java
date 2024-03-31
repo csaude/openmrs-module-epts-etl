@@ -15,6 +15,7 @@ public class CommunityArvViralLoadVO extends AbstractDatabaseObject implements D
 	private Integer id;
 	private Integer encounterId;
 	private Integer obsId;
+	private String obsUuid;
 	private Double cv;
 	private String cvQualit;
 	private String cvComments;
@@ -47,6 +48,14 @@ public class CommunityArvViralLoadVO extends AbstractDatabaseObject implements D
  
 	public Integer getObsId(){ 
 		return this.obsId;
+	}
+ 
+	public void setObsUuid(String obsUuid){ 
+	 	this.obsUuid = obsUuid;
+	}
+ 
+	public String getObsUuid(){ 
+		return this.obsUuid;
 	}
  
 	public void setCv(Double cv){ 
@@ -104,7 +113,8 @@ public class CommunityArvViralLoadVO extends AbstractDatabaseObject implements D
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
 		if (rs.getObject("obs_id") != null) this.obsId = rs.getInt("obs_id");
-		this.cv = rs.getDouble("cv");
+		this.obsUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("obs_uuid") != null ? rs.getString("obs_uuid").trim() : null);
+		if (rs.getObject("cv") != null) this.cv = rs.getDouble("cv");
 		this.cvQualit = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("cv_qualit") != null ? rs.getString("cv_qualit").trim() : null);
 		this.cvComments = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("cv_comments") != null ? rs.getString("cv_comments").trim() : null);
 		this.cvDate =  rs.getTimestamp("cv_date") != null ? new java.util.Date( rs.getTimestamp("cv_date").getTime() ) : null;
@@ -118,37 +128,37 @@ public class CommunityArvViralLoadVO extends AbstractDatabaseObject implements D
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_arv_viral_load(encounter_id, obs_id, cv, cv_qualit, cv_comments, cv_date, source) VALUES( ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_viral_load(encounter_id, obs_id, obs_uuid, cv, cv_qualit, cv_comments, cv_date, source) VALUES( ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.encounterId, this.obsId, this.cv, this.cvQualit, this.cvComments, this.cvDate, this.source};		return params; 
+ 		Object[] params = {this.encounterId, this.obsId, this.obsUuid, this.cv, this.cvQualit, this.cvComments, this.cvDate, this.source};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_arv_viral_load(id, encounter_id, obs_id, cv, cv_qualit, cv_comments, cv_date, source) VALUES(?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_viral_load(id, encounter_id, obs_id, obs_uuid, cv, cv_qualit, cv_comments, cv_date, source) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.encounterId, this.obsId, this.cv, this.cvQualit, this.cvComments, this.cvDate, this.source};		return params; 
+ 		Object[] params = {this.id, this.encounterId, this.obsId, this.obsUuid, this.cv, this.cvQualit, this.cvComments, this.cvDate, this.source};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.encounterId, this.obsId, this.cv, this.cvQualit, this.cvComments, this.cvDate, this.source, this.id};		return params; 
+ 		Object[] params = {this.encounterId, this.obsId, this.obsUuid, this.cv, this.cvQualit, this.cvComments, this.cvDate, this.source, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_arv_viral_load SET encounter_id = ?, obs_id = ?, cv = ?, cv_qualit = ?, cv_comments = ?, cv_date = ?, source = ? WHERE id = ?;"; 
+ 		return "UPDATE community_arv_viral_load SET encounter_id = ?, obs_id = ?, obs_uuid = ?, cv = ?, cv_qualit = ?, cv_comments = ?, cv_date = ?, source = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterId) + "," + (this.obsId) + "," + (this.cv) + "," + (this.cvQualit != null ? "\""+ utilities.scapeQuotationMarks(cvQualit)  +"\"" : null) + "," + (this.cvComments != null ? "\""+ utilities.scapeQuotationMarks(cvComments)  +"\"" : null) + "," + (this.cvDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(cvDate)  +"\"" : null) + "," + (this.source != null ? "\""+ utilities.scapeQuotationMarks(source)  +"\"" : null); 
+ 		return ""+(this.encounterId) + "," + (this.obsId) + "," + (this.obsUuid != null ? "\""+ utilities.scapeQuotationMarks(obsUuid)  +"\"" : null) + "," + (this.cv) + "," + (this.cvQualit != null ? "\""+ utilities.scapeQuotationMarks(cvQualit)  +"\"" : null) + "," + (this.cvComments != null ? "\""+ utilities.scapeQuotationMarks(cvComments)  +"\"" : null) + "," + (this.cvDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(cvDate)  +"\"" : null) + "," + (this.source != null ? "\""+ utilities.scapeQuotationMarks(source)  +"\"" : null); 
 	} 
  
 	@Override

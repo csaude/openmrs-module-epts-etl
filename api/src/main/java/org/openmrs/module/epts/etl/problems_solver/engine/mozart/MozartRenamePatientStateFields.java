@@ -60,7 +60,7 @@ public class MozartRenamePatientStateFields extends MozartProblemSolverEngine {
 				continue;
 			}
 			for (EtlConfiguration config : configs) {
-				SyncTableConfiguration configuredTable = config.getMainSrcTableConf();
+				SyncTableConfiguration configuredTable = config.getSrcConf();
 				
 				if (!configuredTable.getTableName().equals("patient_state"))
 					continue;

@@ -27,7 +27,7 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 		
 		this.appCode = appCode;
 		
-		setOrderByFields(config.getMainSrcTableConf().getPrimaryKey());
+		setOrderByFields(config.getSrcConf().getPrimaryKey());
 		
 		this.type = type;
 	}
@@ -40,7 +40,7 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tableInfo = getConfig().getMainSrcTableConf();
+		SyncTableConfiguration tableInfo = getConfig().getSrcConf();
 		
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
 		

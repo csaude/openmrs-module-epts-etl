@@ -292,11 +292,11 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + searchParams.getConfig().getMainSrcTableConf()
+		sql += " FROM  	" + searchParams.getConfig().getSrcConf()
 		        .generateFullStageTableName() + "\n";
 		sql += " WHERE 	id = \n";
 		sql += " 			 (	SELECT " + function + "(id)\n";
-		sql += "				FROM   " + searchParams.getConfig().getMainSrcTableConf()
+		sql += "				FROM   " + searchParams.getConfig().getSrcConf()
 		        .generateFullStageTableName();
 		sql += "				WHERE " + extraCondition + ")";
 		

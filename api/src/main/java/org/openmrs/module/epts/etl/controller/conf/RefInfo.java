@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  * @author jpboane
  */
-public class RefInfo {
+public class RefInfo extends SyncTableConfiguration {
 	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -24,13 +24,9 @@ public class RefInfo {
 	
 	private SyncTableConfiguration refTableConfiguration;
 	
-	private SyncTableConfiguration relatedSyncTableConfiguration;
-	
 	private boolean setNullDueInconsistency;
 	
 	private Integer defaultValueDueInconsistency;
-	
-	private String tableName;
 	
 	private String refColumnName;
 	
@@ -75,15 +71,6 @@ public class RefInfo {
 		this.setNullDueInconsistency = setNullDueInconsistency;
 	}
 	
-	public void setRelatedSyncTableConfiguration(SyncTableConfiguration relatedSyncTableConfiguration) {
-		this.relatedSyncTableConfiguration = relatedSyncTableConfiguration;
-	}
-	
-	@JsonIgnore
-	public SyncTableConfiguration getRelatedSyncTableConfiguration() {
-		return relatedSyncTableConfiguration;
-	}
-	
 	@JsonIgnore
 	public String getRefType() {
 		return refType;
@@ -92,6 +79,16 @@ public class RefInfo {
 	@JsonIgnore
 	public Class<DatabaseObject> getRefObjectClass(AppInfo application) {
 		return this.refTableConfiguration.getSyncRecordClass(application);
+	}
+	
+	@JsonIgnore
+	public SyncTableConfiguration getRefTableConfiguration() {
+		return this.refTableConfiguration;
+	}
+	
+	@JsonIgnore
+	public String getRefTableName() {
+		return this.refTableConfiguration.getTableName();
 	}
 	
 	public void setRefType(String refType) {
@@ -107,23 +104,8 @@ public class RefInfo {
 		return defaultValueDueInconsistency;
 	}
 	
-	@JsonIgnore
-	public SyncTableConfiguration getRefTableConfiguration() {
-		return refTableConfiguration;
-	}
-	
 	public void setRefTableConfiguration(SyncTableConfiguration refTableConfiguration) {
 		this.refTableConfiguration = refTableConfiguration;
-		
-		this.tableName = refTableConfiguration.getTableName();
-	}
-	
-	public String getTableName() {
-		return tableName;
-	}
-	
-	public void setTableName(String tableName) {
-		this.tableName = tableName;
 	}
 	
 	public void setDefaultValueDueInconsistency(Integer defaultValueDueInconsistency) {
@@ -207,23 +189,15 @@ public class RefInfo {
 	public String toString() {
 		String str = "[TYPE: " + this.refType;
 		
-		if (isChild()) {
+		if (isParent()) {
 			str += " REF: " + getTableName() + "." + this.getRefColumnName() + " > "
-			        + this.getRelatedSyncTableConfiguration().getTableName() + "."
-			        + this.getRelatedSyncTableConfiguration().getPrimaryKey() + "]";
+			        + this.refTableConfiguration.getTableName() + "." + this.refTableConfiguration.getPrimaryKey() + "]";
 		} else {
-			str += " REF: " + this.getRelatedSyncTableConfiguration().getTableName() + "." + this.getRefColumnName() + " > "
-			        + getTableName() + "." + this.getRefTableConfiguration().getPrimaryKey() + "]";
+			str += " REF: " + this.refTableConfiguration.getTableName() + "." + this.getRefColumnName() + " > "
+			        + getTableName() + "." + this.getPrimaryKey() + "]";
 		}
 		
 		return str;
-	}
-	
-	public static RefInfo init(String tableName) {
-		RefInfo refInfo = new RefInfo();
-		refInfo.setTableName(tableName);
-		
-		return refInfo;
 	}
 	
 	@Override
@@ -237,6 +211,6 @@ public class RefInfo {
 		
 		String thisRefCol = this.getRefColumnName() != null ? this.getRefColumnName() : "";
 		
-		return thisRefCol.equals(other.getRefColumnName()) && this.tableName.equalsIgnoreCase(other.getTableName());
+		return thisRefCol.equals(other.getRefColumnName()) && this.getTableName().equalsIgnoreCase(other.getTableName());
 	}
 }

@@ -21,7 +21,7 @@ public class DatabaseObjectSearchParams extends SyncSearchParams<DatabaseObject>
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tbConfig = getSearchSourceType().isSource() ? getMainSrcTableConf()
+		SyncTableConfiguration tbConfig = getSearchSourceType().isSource() ? getSrcTableConf()
 		        : getDstLastTableConfiguration();
 		
 		if (tbConfig.isFromOpenMRSModel() && tbConfig.getTableName().equalsIgnoreCase("patient")) {

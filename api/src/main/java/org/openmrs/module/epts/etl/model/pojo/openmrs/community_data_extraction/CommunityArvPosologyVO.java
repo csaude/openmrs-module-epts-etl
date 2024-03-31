@@ -15,6 +15,7 @@ public class CommunityArvPosologyVO extends AbstractDatabaseObject implements Da
 	private Integer id;
 	private Integer patientId;
 	private Integer encounterId;
+	private String encounterUuid;
 	private java.util.Date visitDate;
 	private String dmcType;
 	private String therapeuticLine;
@@ -46,6 +47,14 @@ public class CommunityArvPosologyVO extends AbstractDatabaseObject implements Da
  
 	public Integer getEncounterId(){ 
 		return this.encounterId;
+	}
+ 
+	public void setEncounterUuid(String encounterUuid){ 
+	 	this.encounterUuid = encounterUuid;
+	}
+ 
+	public String getEncounterUuid(){ 
+		return this.encounterUuid;
 	}
  
 	public void setVisitDate(java.util.Date visitDate){ 
@@ -95,6 +104,7 @@ public class CommunityArvPosologyVO extends AbstractDatabaseObject implements Da
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
 		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
+		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		this.visitDate =  rs.getTimestamp("visit_date") != null ? new java.util.Date( rs.getTimestamp("visit_date").getTime() ) : null;
 		this.dmcType = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("dmc_type") != null ? rs.getString("dmc_type").trim() : null);
 		this.therapeuticLine = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("therapeutic_line") != null ? rs.getString("therapeutic_line").trim() : null);
@@ -108,37 +118,37 @@ public class CommunityArvPosologyVO extends AbstractDatabaseObject implements Da
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_arv_posology(patient_id, encounter_id, visit_date, dmc_type, therapeutic_line, posology) VALUES( ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_posology(patient_id, encounter_id, encounter_uuid, visit_date, dmc_type, therapeutic_line, posology) VALUES( ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.visitDate, this.dmcType, this.therapeuticLine, this.posology};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.visitDate, this.dmcType, this.therapeuticLine, this.posology};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_arv_posology(id, patient_id, encounter_id, visit_date, dmc_type, therapeutic_line, posology) VALUES(?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_posology(id, patient_id, encounter_id, encounter_uuid, visit_date, dmc_type, therapeutic_line, posology) VALUES(?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.encounterId, this.visitDate, this.dmcType, this.therapeuticLine, this.posology};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.encounterUuid, this.visitDate, this.dmcType, this.therapeuticLine, this.posology};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.visitDate, this.dmcType, this.therapeuticLine, this.posology, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.visitDate, this.dmcType, this.therapeuticLine, this.posology, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_arv_posology SET patient_id = ?, encounter_id = ?, visit_date = ?, dmc_type = ?, therapeutic_line = ?, posology = ? WHERE id = ?;"; 
+ 		return "UPDATE community_arv_posology SET patient_id = ?, encounter_id = ?, encounter_uuid = ?, visit_date = ?, dmc_type = ?, therapeutic_line = ?, posology = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.visitDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(visitDate)  +"\"" : null) + "," + (this.dmcType != null ? "\""+ utilities.scapeQuotationMarks(dmcType)  +"\"" : null) + "," + (this.therapeuticLine != null ? "\""+ utilities.scapeQuotationMarks(therapeuticLine)  +"\"" : null) + "," + (this.posology != null ? "\""+ utilities.scapeQuotationMarks(posology)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.visitDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(visitDate)  +"\"" : null) + "," + (this.dmcType != null ? "\""+ utilities.scapeQuotationMarks(dmcType)  +"\"" : null) + "," + (this.therapeuticLine != null ? "\""+ utilities.scapeQuotationMarks(therapeuticLine)  +"\"" : null) + "," + (this.posology != null ? "\""+ utilities.scapeQuotationMarks(posology)  +"\"" : null); 
 	} 
  
 	@Override

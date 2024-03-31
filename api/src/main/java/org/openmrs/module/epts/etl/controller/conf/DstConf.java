@@ -12,35 +12,13 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class DstConf extends SyncDataConfiguration {
+public class DstConf extends SyncTableConfiguration {
 	
 	private List<FieldsMapping> fieldsMapping;
 	
 	private AppInfo relatedAppInfo;
 	
-	private SrcConf srcConf;
-	
-	private SyncTableConfiguration dstTableConf;
-	
-	private boolean fullLoaded;
-	
 	public DstConf() {
-	}
-	
-	public SyncTableConfiguration getDstTableConf() {
-		return dstTableConf;
-	}
-	
-	public void setDstTableConf(SyncTableConfiguration dstTable) {
-		this.dstTableConf = dstTable;
-	}
-	
-	public SrcConf getSrcConf() {
-		return srcConf;
-	}
-	
-	public void setSrcConf(SrcConf srcSyncConfiguration) {
-		this.srcConf = srcSyncConfiguration;
 	}
 	
 	public List<FieldsMapping> getFieldsMapping() {
@@ -56,7 +34,7 @@ public class DstConf extends SyncDataConfiguration {
 			this.fieldsMapping = new ArrayList<FieldsMapping>();
 		}
 		
-		FieldsMapping fm = new FieldsMapping(srcField, this.dstTableConf.getTableName(), destField);
+		FieldsMapping fm = new FieldsMapping(srcField, this.getTableName(), destField);
 		
 		if (this.fieldsMapping.contains(fm))
 			throw new ForbiddenOperationException("The field [" + fm + "] already exists on mapping");
@@ -64,22 +42,17 @@ public class DstConf extends SyncDataConfiguration {
 		this.fieldsMapping.add(fm);
 	}
 	
-	public static DstConf generateFromSyncTableConfiguration(SrcConf srcSyncConfig) {
-		if (!srcSyncConfig.isFullLoaded())
+	public static DstConf generateDefaultDstConf(EtlConfiguration etlConf) {
+		if (!etlConf.isFullLoaded())
 			throw new ForbiddenOperationException("The tableInfo is not full loaded!");
 		
 		DstConf dstSyncConfiguration = new DstConf();
-		dstSyncConfiguration.setRelatedSyncConfiguration(srcSyncConfig.getRelatedSyncConfiguration());
-		dstSyncConfiguration
-		        .setDstTableConf(SyncTableConfiguration.init(srcSyncConfig.getMainTableName(), dstSyncConfiguration));
 		
-		dstSyncConfiguration.dstTableConf.clone(srcSyncConfig.getMainSrcTableConf());
+		dstSyncConfiguration.clone(etlConf.getSrcConf());
 		
-		dstSyncConfiguration.generateMappingFields(srcSyncConfig.getMainSrcTableConf());
+		dstSyncConfiguration.generateMappingFields(etlConf.getSrcConf());
 		
 		dstSyncConfiguration.loadAdditionalFieldsInfo();
-		
-		dstSyncConfiguration.setSrcConf(srcSyncConfig);
 		
 		return dstSyncConfiguration;
 	}
@@ -119,15 +92,6 @@ public class DstConf extends SyncDataConfiguration {
 		this.relatedAppInfo = relatedAppInfo;
 	}
 	
-	public synchronized void fullLoad(Connection conn) {
-		if (this.fullLoaded) {
-			return;
-		}
-		
-		this.dstTableConf.fullLoad(conn);
-		this.fullLoaded = true;
-	}
-	
 	public synchronized void fullLoad() throws DBException {
 		OpenConnection conn = this.relatedAppInfo.openConnection();
 		
@@ -139,6 +103,10 @@ public class DstConf extends SyncDataConfiguration {
 		}
 	}
 	
+	private SrcConf getSrcConf() {
+		return this.getParent().getSrcConf();
+	}
+	
 	public DatabaseObject generateMappedObject(DatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
 	        AppInfo dstAppInfo) throws DBException, ForbiddenOperationException {
 		try {
@@ -147,8 +115,8 @@ public class DstConf extends SyncDataConfiguration {
 			
 			srcObjects.add(srcObject);
 			
-			if (utilities.arrayHasElement(this.srcConf.getExtraDataSource())) {
-				for (EtlExtraDataSource mappingInfo : this.srcConf.getExtraDataSource()) {
+			if (utilities.arrayHasElement(this.getParent().getSrcConf().getExtraDataSource())) {
+				for (EtlExtraDataSource mappingInfo : this.getSrcConf().getExtraDataSource()) {
 					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
 					
 					if (relatedSrcObject == null) {
@@ -165,7 +133,7 @@ public class DstConf extends SyncDataConfiguration {
 				}
 			}
 			
-			DatabaseObject mappedObject = this.dstTableConf.getSyncRecordClass(dstAppInfo).newInstance();
+			DatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
 			
 			for (FieldsMapping fieldsMapping : this.getFieldsMapping()) {
 				
@@ -192,9 +160,19 @@ public class DstConf extends SyncDataConfiguration {
 		
 		for (FieldsMapping field : this.fieldsMapping) {
 			if (!utilities.stringHasValue(field.getDataSourceName())) {
-				field.setDataSourceName(this.srcConf.getMainSrcTableConf().getTableName());
+				field.setDataSourceName(this.getSrcConf().getTableName());
 			}
 		}
+	}
+	
+	@Override
+	public void setParent(SyncDataConfiguration parent) {
+		super.setParent((EtlConfiguration) parent);
+	}
+	
+	@Override
+	public EtlConfiguration getParent() {
+		return (EtlConfiguration) super.getParent();
 	}
 	
 }

@@ -67,11 +67,11 @@ public class DBCopyEngine extends Engine {
 					
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
-					if (mergingRecs.get(mappingInfo.getDstTableConf().getTableName()) == null) {
-						mergingRecs.put(mappingInfo.getDstTableConf().getTableName(), new ArrayList<>(syncRecords.size()));
+					if (mergingRecs.get(mappingInfo.getTableName()) == null) {
+						mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
 					}
 					
-					mergingRecs.get(mappingInfo.getDstTableConf().getTableName()).add(destObject);
+					mergingRecs.get(mappingInfo.getTableName()).add(destObject);
 				}
 			}
 			

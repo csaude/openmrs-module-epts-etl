@@ -15,6 +15,7 @@ public class CommunityArvHeightVO extends AbstractDatabaseObject implements Data
 	private Integer id;
 	private Integer patientId;
 	private Integer encounterId;
+	private String encounterUuid;
 	private String height;
 	private java.util.Date heightDate;
  
@@ -44,6 +45,14 @@ public class CommunityArvHeightVO extends AbstractDatabaseObject implements Data
  
 	public Integer getEncounterId(){ 
 		return this.encounterId;
+	}
+ 
+	public void setEncounterUuid(String encounterUuid){ 
+	 	this.encounterUuid = encounterUuid;
+	}
+ 
+	public String getEncounterUuid(){ 
+		return this.encounterUuid;
 	}
  
 	public void setHeight(String height){ 
@@ -77,6 +86,7 @@ public class CommunityArvHeightVO extends AbstractDatabaseObject implements Data
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
 		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
+		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		this.height = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("height") != null ? rs.getString("height").trim() : null);
 		this.heightDate =  rs.getTimestamp("height_date") != null ? new java.util.Date( rs.getTimestamp("height_date").getTime() ) : null;
 	} 
@@ -88,37 +98,37 @@ public class CommunityArvHeightVO extends AbstractDatabaseObject implements Data
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_arv_height(patient_id, encounter_id, height, height_date) VALUES( ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_height(patient_id, encounter_id, encounter_uuid, height, height_date) VALUES( ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.height, this.heightDate};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.height, this.heightDate};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_arv_height(id, patient_id, encounter_id, height, height_date) VALUES(?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_height(id, patient_id, encounter_id, encounter_uuid, height, height_date) VALUES(?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.encounterId, this.height, this.heightDate};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.encounterUuid, this.height, this.heightDate};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.height, this.heightDate, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.height, this.heightDate, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_arv_height SET patient_id = ?, encounter_id = ?, height = ?, height_date = ? WHERE id = ?;"; 
+ 		return "UPDATE community_arv_height SET patient_id = ?, encounter_id = ?, encounter_uuid = ?, height = ?, height_date = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.height != null ? "\""+ utilities.scapeQuotationMarks(height)  +"\"" : null) + "," + (this.heightDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(heightDate)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.height != null ? "\""+ utilities.scapeQuotationMarks(height)  +"\"" : null) + "," + (this.heightDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(heightDate)  +"\"" : null); 
 	} 
  
 	@Override

@@ -60,7 +60,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	
 	@Override
 	public long getMinRecordId(EtlConfiguration config) {
-		if (config.getMainSrcTableConf().getTableName().equalsIgnoreCase("users")) return 0;
+		if (config.getSrcConf().getTableName().equalsIgnoreCase("users")) return 0;
 		
 		OpenConnection conn = openConnection();
 		
@@ -68,17 +68,17 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			
 		try {
 			if (isMissingRecordsDetector()) {
-				SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(config.getMainSrcTableConf(), conn);
+				SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(config.getSrcConf(), conn);
 				
 				id = record != null ? record.getId() : 0;
 			}
 			else
 			if (isOutdateRecordsDetector()) {
-				id = DatabaseObjectDAO.getFirstRecord(config.getMainSrcTableConf(), conn);
+				id = DatabaseObjectDAO.getFirstRecord(config.getSrcConf(), conn);
 			}
 			else
 			if (isPhantomRecordsDetector()){
-				DatabaseObject record = DatabaseObjectDAO.getFirstPhantomRecordInDestination(config.getMainSrcTableConf(), conn);
+				DatabaseObject record = DatabaseObjectDAO.getFirstPhantomRecordInDestination(config.getSrcConf(), conn);
 				
 				id = record != null ? record.getObjectId() : 0;
 			}
@@ -96,7 +96,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 
 	@Override
 	public long getMaxRecordId(EtlConfiguration config) {
-		if (config.getMainSrcTableConf().getTableName().equalsIgnoreCase("users")) return 0;
+		if (config.getSrcConf().getTableName().equalsIgnoreCase("users")) return 0;
 		
 		OpenConnection conn = openConnection();
 		
@@ -104,17 +104,17 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		
 		try {
 			if (isMissingRecordsDetector()) {
-				SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(config.getMainSrcTableConf(), conn);
+				SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(config.getSrcConf(), conn);
 				
 				id = record != null ? record.getId() : 0;
 			}
 			else
 			if (isOutdateRecordsDetector()) {
-				id = DatabaseObjectDAO.getLastRecord(config.getMainSrcTableConf(), conn);
+				id = DatabaseObjectDAO.getLastRecord(config.getSrcConf(), conn);
 			}
 			else
 			if (isPhantomRecordsDetector()){
-				DatabaseObject record = DatabaseObjectDAO.getLastPhantomRecordInDestination(config.getMainSrcTableConf(), conn);
+				DatabaseObject record = DatabaseObjectDAO.getLastPhantomRecordInDestination(config.getSrcConf(), conn);
 				
 				id = record != null ? record.getObjectId() : 0;
 			}

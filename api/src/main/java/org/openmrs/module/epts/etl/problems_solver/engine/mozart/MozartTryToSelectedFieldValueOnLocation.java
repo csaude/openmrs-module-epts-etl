@@ -65,7 +65,7 @@ public class MozartTryToSelectedFieldValueOnLocation extends MozartProblemSolver
 				    "Trying to update 'selected' field " + ++i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
 				
 				for (EtlConfiguration config : getRelatedSyncConfiguration().getEtlConfiguration()) {
-					SyncTableConfiguration configuredTable = config.getMainSrcTableConf();
+					SyncTableConfiguration configuredTable = config.getSrcConf();
 					
 					if (!configuredTable.getTableName().equals("location"))
 						continue;

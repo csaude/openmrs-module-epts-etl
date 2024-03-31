@@ -23,14 +23,14 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 		super(config, limits);
 		
 		this.relatedController = relatedController;
-		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tableInfo = getMainSrcTableConf();
+		SyncTableConfiguration tableInfo = getSrcTableConf();
 		
 		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
 		

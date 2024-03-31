@@ -60,7 +60,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 			}
 			
 			for (EtlConfiguration conf : configuredTables) {
-				SyncTableConfiguration configuredTable = conf.getMainSrcTableConf();
+				SyncTableConfiguration configuredTable = conf.getSrcConf();
 				
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();

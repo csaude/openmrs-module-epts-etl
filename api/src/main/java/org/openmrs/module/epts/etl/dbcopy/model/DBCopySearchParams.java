@@ -2,8 +2,8 @@ package org.openmrs.module.epts.etl.dbcopy.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.DstConf;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -26,13 +26,13 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 		super(config, limits);
 		
 		this.relatedController = relatedController;
-		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		Connection srcConn = conn;
-		SyncTableConfiguration tableInfo = getMainSrcTableConf();
+		SyncTableConfiguration tableInfo = getSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
@@ -58,9 +58,9 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 					DstConf lastMappedTable = utilities
 					        .getLastRecordOnArray(getConfig().getDstConf());
 					
-					destFullTableName += lastMappedTable.getDstTableConf().getTableName();
+					destFullTableName += lastMappedTable.getTableName();
 					
-					String srcPK = getConfig().getMainSrcTableConf().getPrimaryKey();
+					String srcPK = getConfig().getSrcConf().getPrimaryKey();
 					String dstPK = lastMappedTable.getMappedField(srcPK);
 					
 					String excludeExisting = "";

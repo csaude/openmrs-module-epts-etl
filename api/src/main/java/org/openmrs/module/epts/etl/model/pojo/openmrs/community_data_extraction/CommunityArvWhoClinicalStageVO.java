@@ -15,6 +15,7 @@ public class CommunityArvWhoClinicalStageVO extends AbstractDatabaseObject imple
 	private Integer id;
 	private Integer patientId;
 	private Integer encounterId;
+	private String encounterUuid;
 	private String whoStage;
 	private java.util.Date whoStageDate;
  
@@ -44,6 +45,14 @@ public class CommunityArvWhoClinicalStageVO extends AbstractDatabaseObject imple
  
 	public Integer getEncounterId(){ 
 		return this.encounterId;
+	}
+ 
+	public void setEncounterUuid(String encounterUuid){ 
+	 	this.encounterUuid = encounterUuid;
+	}
+ 
+	public String getEncounterUuid(){ 
+		return this.encounterUuid;
 	}
  
 	public void setWhoStage(String whoStage){ 
@@ -77,6 +86,7 @@ public class CommunityArvWhoClinicalStageVO extends AbstractDatabaseObject imple
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		if (rs.getObject("patient_id") != null) this.patientId = rs.getInt("patient_id");
 		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
+		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		this.whoStage = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("who_stage") != null ? rs.getString("who_stage").trim() : null);
 		this.whoStageDate =  rs.getTimestamp("who_stage_date") != null ? new java.util.Date( rs.getTimestamp("who_stage_date").getTime() ) : null;
 	} 
@@ -88,37 +98,37 @@ public class CommunityArvWhoClinicalStageVO extends AbstractDatabaseObject imple
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO community_arv_who_clinical_stage(patient_id, encounter_id, who_stage, who_stage_date) VALUES( ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_who_clinical_stage(patient_id, encounter_id, encounter_uuid, who_stage, who_stage_date) VALUES( ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.whoStage, this.whoStageDate};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.whoStage, this.whoStageDate};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO community_arv_who_clinical_stage(id, patient_id, encounter_id, who_stage, who_stage_date) VALUES(?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO community_arv_who_clinical_stage(id, patient_id, encounter_id, encounter_uuid, who_stage, who_stage_date) VALUES(?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.patientId, this.encounterId, this.whoStage, this.whoStageDate};		return params; 
+ 		Object[] params = {this.id, this.patientId, this.encounterId, this.encounterUuid, this.whoStage, this.whoStageDate};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.patientId, this.encounterId, this.whoStage, this.whoStageDate, this.id};		return params; 
+ 		Object[] params = {this.patientId, this.encounterId, this.encounterUuid, this.whoStage, this.whoStageDate, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE community_arv_who_clinical_stage SET patient_id = ?, encounter_id = ?, who_stage = ?, who_stage_date = ? WHERE id = ?;"; 
+ 		return "UPDATE community_arv_who_clinical_stage SET patient_id = ?, encounter_id = ?, encounter_uuid = ?, who_stage = ?, who_stage_date = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.whoStage != null ? "\""+ utilities.scapeQuotationMarks(whoStage)  +"\"" : null) + "," + (this.whoStageDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(whoStageDate)  +"\"" : null); 
+ 		return ""+(this.patientId) + "," + (this.encounterId) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.whoStage != null ? "\""+ utilities.scapeQuotationMarks(whoStage)  +"\"" : null) + "," + (this.whoStageDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(whoStageDate)  +"\"" : null); 
 	} 
  
 	@Override

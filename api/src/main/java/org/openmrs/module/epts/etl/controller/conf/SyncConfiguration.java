@@ -426,13 +426,12 @@ public class SyncConfiguration extends BaseConfiguration {
 			for (EtlConfiguration config : etlConfiguration) {
 				config.setRelatedSyncConfiguration(this);
 				
-				addToTableConfigurationPull(config.getMainSrcTableConf());
+				addToTableConfigurationPull(config.getSrcConf());
 				
-				if (config.getSrcConf().getAdditionalExtractionInfo() != null
-				        && config.getSrcConf().getAdditionalExtractionInfo().getAdditionalExtractionTables() != null) {
+				if (config.getSrcConf().getAuxiliaryExtractionSrcTable() != null
+				        && config.getSrcConf().getAuxiliaryExtractionSrcTable() != null) {
 					
-					for (AdditionlExtractionSrcTable t : config.getSrcConf().getAdditionalExtractionInfo()
-					        .getAdditionalExtractionTables()) {
+					for (AuxiliaryExtractionSrcTable t : config.getSrcConf().getAuxiliaryExtractionSrcTable()) {
 						addToTableConfigurationPull(t);
 					}
 					
@@ -565,18 +564,14 @@ public class SyncConfiguration extends BaseConfiguration {
 		synchronized (STRING_LOCK) {
 			for (EtlConfiguration tc : this.etlConfiguration) {
 				tc.setRelatedSyncConfiguration(this);
-				tc.getMainSrcTableConf().setParent(tc.getSrcConf());
+				tc.getSrcConf().setParent(tc);
 				
-				addConfiguredTable(tc.getMainSrcTableConf());
-				addToTableConfigurationPull(tc.getMainSrcTableConf());
+				addConfiguredTable(tc.getSrcConf());
+				addToTableConfigurationPull(tc.getSrcConf());
 				
-				if (tc.getSrcConf().getAdditionalExtractionInfo() != null) {
+				if (tc.getSrcConf().getAuxiliaryExtractionSrcTable() != null) {
 					
-					tc.getSrcConf().getAdditionalExtractionInfo().setParent(tc.getSrcConf());
-					
-					for (AdditionlExtractionSrcTable t : tc.getSrcConf().getAdditionalExtractionInfo()
-					        .getAdditionalExtractionTables()) {
-						
+					for (AuxiliaryExtractionSrcTable t : tc.getSrcConf().getAuxiliaryExtractionSrcTable()) {
 						addConfiguredTable(t);
 						addToTableConfigurationPull(t);
 						t.setParent(tc.getSrcConf());
@@ -587,20 +582,19 @@ public class SyncConfiguration extends BaseConfiguration {
 				
 				if (utilities.arrayHasElement(tc.getDstConf())) {
 					for (DstConf dst : tc.getDstConf()) {
-						addConfiguredTable(dst.getDstTableConf());
+						addConfiguredTable(dst);
 						
-						addToTableConfigurationPull(dst.getDstTableConf());
+						addToTableConfigurationPull(dst);
 						
-						dst.getDstTableConf().setParent(dst);
+						dst.setParent(tc);
 						
-						code = utilities.stringHasValue(code) ? "_and_" + dst.getDstTableConf().getTableName()
-						        : dst.getDstTableConf().getTableName();
+						code = utilities.stringHasValue(code) ? "_and_" + dst.getTableName() : dst.getTableName();
 					}
 				}
 				
-				code = utilities.stringHasValue(code) ? code : tc.getMainSrcTableConf().getTableName();
+				code = utilities.stringHasValue(code) ? code : tc.getSrcConf().getTableName();
 				
-				code = tc.getMainSrcTableConf().getTableName() + "_to_" + code;
+				code = tc.getSrcConf().getTableName() + "_to_" + code;
 				
 				tc.setConfigCode(code);
 			}
@@ -835,7 +829,7 @@ public class SyncConfiguration extends BaseConfiguration {
 		if (!supportMultipleDestination()) {
 			for (EtlConfiguration config : this.getEtlConfiguration()) {
 				if (utilities.arrayHasMoreThanOneElements(config.getDstConf())) {
-					errorMsg += ++errNum + ". The config for source " + config.getMainSrcTableConf().getTableName()
+					errorMsg += ++errNum + ". The config for source " + config.getSrcConf().getTableName()
 					        + " has multiple destination \n";
 				}
 			}

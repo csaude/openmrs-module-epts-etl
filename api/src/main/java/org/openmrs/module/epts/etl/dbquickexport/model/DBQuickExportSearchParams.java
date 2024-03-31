@@ -20,13 +20,13 @@ public class DBQuickExportSearchParams extends SyncSearchParams<DatabaseObject> 
 	public DBQuickExportSearchParams(EtlConfiguration config, RecordLimits limits) {
 		super(config, limits);
 		
-		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
-		SyncTableConfiguration tableInfo = getMainSrcTableConf();
+		SyncTableConfiguration tableInfo = getSrcTableConf();
 		
 		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
 		

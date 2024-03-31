@@ -108,7 +108,7 @@ public class DBQuickMergeEngine extends Engine {
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		if (getRelatedSyncOperationConfig().writeOperationHistory()
-		        || getEtlConfiguration().getMainSrcTableConf().hasWinningRecordsInfo()) {
+		        || getEtlConfiguration().getSrcConf().hasWinningRecordsInfo()) {
 			performeSyncOneByOne(syncRecords, conn);
 		} else {
 			performeBatchSync(syncRecords, conn);
@@ -145,15 +145,15 @@ public class DBQuickMergeEngine extends Engine {
 							destObject.setObjectId(currObjectId++);
 						}
 						
-						MergingRecord mr = new MergingRecord(destObject, mappingInfo.getDstTableConf(), this.getSrcApp(),
+						MergingRecord mr = new MergingRecord(destObject, mappingInfo, this.getSrcApp(),
 						        this.getDstApp(), false);
 						
-						if (mergingRecs.get(mappingInfo.getDstTableConf().getTableName()) == null) {
-							mergingRecs.put(mappingInfo.getDstTableConf().getTableName(),
+						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
+							mergingRecs.put(mappingInfo.getTableName(),
 							    new ArrayList<>(syncRecords.size()));
 						}
 						
-						mergingRecs.get(mappingInfo.getDstTableConf().getTableName()).add(mr);
+						mergingRecs.get(mappingInfo.getTableName()).add(mr);
 					}
 				}
 			}
@@ -222,7 +222,7 @@ public class DBQuickMergeEngine extends Engine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					MergingRecord data = new MergingRecord(destObject, dstConf.getDstTableConf(), this.getSrcApp(),
+					MergingRecord data = new MergingRecord(destObject, dstConf, this.getSrcApp(),
 					        this.getDstApp(), wrt);
 					
 					try {
@@ -236,7 +236,7 @@ public class DBQuickMergeEngine extends Engine {
 						InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
 						    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
 						
-						inconsistenceInfo.save(dstConf.getDstTableConf(), srcConn);
+						inconsistenceInfo.save(dstConf, srcConn);
 						
 						wentWrong = false;
 					}

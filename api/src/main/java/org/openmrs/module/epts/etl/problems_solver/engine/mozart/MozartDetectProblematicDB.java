@@ -76,7 +76,7 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 			
 			for (EtlConfiguration conf : configs) {
 				
-				SyncTableConfiguration configuredTable = conf.getMainSrcTableConf();
+				SyncTableConfiguration configuredTable = conf.getSrcConf();
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();
 				}

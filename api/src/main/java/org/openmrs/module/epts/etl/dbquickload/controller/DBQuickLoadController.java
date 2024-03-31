@@ -40,7 +40,7 @@ public class DBQuickLoadController extends SiteOperationController {
 		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, config,
 		        null);
 		
-		File[] files = getSyncDirectory(config.getMainSrcTableConf()).listFiles(searchParams);
+		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0) {
 			return 0;
@@ -54,7 +54,7 @@ public class DBQuickLoadController extends SiteOperationController {
 		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, config,
 		        null);
 		
-		File[] files = getSyncDirectory(config.getMainSrcTableConf()).listFiles(searchParams);
+		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0) {
 			return 0;
