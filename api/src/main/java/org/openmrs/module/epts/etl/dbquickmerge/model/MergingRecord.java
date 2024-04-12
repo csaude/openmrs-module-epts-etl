@@ -156,7 +156,7 @@ public class MergingRecord {
 			Integer parentIdInOrigin = record.getParentValue(refInfo.getRefColumnAsClassAttName());
 			
 			if (parentIdInOrigin != null) {
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp),
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getRefObjectClass(mergingRecord.srcApp),
 				    parentIdInOrigin, srcConn);
 				
 				if (parentInOrigin == null) {
@@ -168,7 +168,7 @@ public class MergingRecord {
 						
 						parentIdInOrigin = refInfo.getDefaultValueDueInconsistency();
 						
-						parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp),
+						parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getRefObjectClass(mergingRecord.srcApp),
 						    parentIdInOrigin, srcConn);
 						
 						if (parentInOrigin == null) {
@@ -219,7 +219,7 @@ public class MergingRecord {
 			Integer parentId = record.getParentValue(refInfo.getRefColumnAsClassAttName());
 			
 			if (parentId != null) {
-				DatabaseObject parent = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.destApp), parentId,
+				DatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo.getRefObjectClass(mergingRecord.destApp), parentId,
 				    destConn);
 				
 				if (parent == null)
@@ -254,7 +254,7 @@ public class MergingRecord {
 			catch (NumberFormatException e) {}
 			
 			if (parentIdInOrigin != null) {
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getById(refInfo.getRefObjectClass(mergingRecord.srcApp),
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getRefObjectClass(mergingRecord.srcApp),
 				    parentIdInOrigin, srcConn);
 				
 				if (parentInOrigin == null)

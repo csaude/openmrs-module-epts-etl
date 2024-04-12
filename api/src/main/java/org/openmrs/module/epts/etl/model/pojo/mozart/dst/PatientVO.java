@@ -1,10 +1,11 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart;
+package org.openmrs.module.epts.etl.model.pojo.mozart.dst;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
@@ -16,7 +17,7 @@ public class PatientVO extends AbstractDatabaseObject implements DatabaseObject 
 	private String patientUuid;
 	private String gender;
 	private java.util.Date birthdate;
-	private byte birthdateEstimated;
+	private Byte birthdateEstimated;
 	private String sourceDatabase;
  
 	public PatientVO() { 
@@ -63,11 +64,11 @@ public class PatientVO extends AbstractDatabaseObject implements DatabaseObject 
 		return this.birthdate;
 	}
  
-	public void setBirthdateEstimated(byte birthdateEstimated){ 
+	public void setBirthdateEstimated(Byte birthdateEstimated){ 
 	 	this.birthdateEstimated = birthdateEstimated;
 	}
  
-	public byte getBirthdateEstimated(){ 
+	public Byte getBirthdateEstimated(){ 
 		return this.birthdateEstimated;
 	}
  
@@ -161,6 +162,11 @@ public class PatientVO extends AbstractDatabaseObject implements DatabaseObject 
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "patient";
 	}
 
 

@@ -73,7 +73,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					Class<DatabaseObject> prsonRecordClass = SyncTableConfiguration
 					        .init("person", getEtlConfiguration().getSrcConf()).getSyncRecordClass(getDefaultApp());
 					
-					DatabaseObject userOnDestDB = DatabaseObjectDAO.getById(syncRecordClass,
+					DatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(syncRecordClass,
 					    ((DatabaseObject) record).getObjectId(), conn);
 					
 					if (userOnDestDB.getParentValue("personId") != 1) {

@@ -1,10 +1,11 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart;
+package org.openmrs.module.epts.etl.model.pojo.mozart.src;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
@@ -20,7 +21,7 @@ public class LocationVO extends AbstractDatabaseObject implements DatabaseObject
 	private String name;
 	private String provinceName;
 	private String provinceDistrict;
-	private byte selected;
+	private Byte selected;
  
 	public LocationVO() { 
 		this.metadata = false;
@@ -98,13 +99,13 @@ public class LocationVO extends AbstractDatabaseObject implements DatabaseObject
 		return this.provinceDistrict;
 	}
  
-	public void setSelected(byte selected){ 
+	public void setSelected(Byte selected){ 
 	 	this.selected = selected;
 	}
 
 
  
-	public byte getSelected(){ 
+	public Byte getSelected(){ 
 		return this.selected;
 	}
  
@@ -190,6 +191,11 @@ public class LocationVO extends AbstractDatabaseObject implements DatabaseObject
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "location";
 	}
 
 

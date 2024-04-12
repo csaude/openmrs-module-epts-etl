@@ -1,10 +1,11 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart;
+package org.openmrs.module.epts.etl.model.pojo.mozart.src;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
@@ -15,7 +16,7 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 	private String encounterUuid;
 	private Integer regimenId;
 	private Integer formulationId;
-	private double quantityPrescribed;
+	private Double quantityPrescribed;
 	private String dosage;
 	private java.util.Date medicationPickupDate;
 	private java.util.Date nextPickupDate;
@@ -64,11 +65,11 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 		return this.formulationId;
 	}
  
-	public void setQuantityPrescribed(double quantityPrescribed){ 
+	public void setQuantityPrescribed(Double quantityPrescribed){ 
 	 	this.quantityPrescribed = quantityPrescribed;
 	}
  
-	public double getQuantityPrescribed(){ 
+	public Double getQuantityPrescribed(){ 
 		return this.quantityPrescribed;
 	}
  
@@ -176,7 +177,7 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		if (rs.getObject("regimen_id") != null) this.regimenId = rs.getInt("regimen_id");
 		if (rs.getObject("formulation_id") != null) this.formulationId = rs.getInt("formulation_id");
-		this.quantityPrescribed = rs.getDouble("quantity_prescribed");
+		if (rs.getObject("quantity_prescribed") != null) this.quantityPrescribed = rs.getDouble("quantity_prescribed");
 		this.dosage = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("dosage") != null ? rs.getString("dosage").trim() : null);
 		this.medicationPickupDate =  rs.getTimestamp("medication_pickup_date") != null ? new java.util.Date( rs.getTimestamp("medication_pickup_date").getTime() ) : null;
 		this.nextPickupDate =  rs.getTimestamp("next_pickup_date") != null ? new java.util.Date( rs.getTimestamp("next_pickup_date").getTime() ) : null;
@@ -250,6 +251,11 @@ public class MedicationVO extends AbstractDatabaseObject implements DatabaseObje
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "medication";
 	}
 
 

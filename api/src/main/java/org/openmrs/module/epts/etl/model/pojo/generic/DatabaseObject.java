@@ -35,11 +35,9 @@ public interface DatabaseObject extends SyncRecord {
 	public abstract void refreshLastSyncDateOnDestination(SyncTableConfiguration tableConfiguration,
 	        String recordOriginLocationCode, Connection conn);
 	
-	public abstract String generateDBPrimaryKeyAtt();
+	public abstract Oid getObjectId();
 	
-	public abstract Integer getObjectId();
-	
-	public abstract void setObjectId(Integer objectId);
+	public abstract void setObjectId(Oid objectId);
 	
 	public abstract List<UniqueKeyInfo> getUniqueKeysInfo();
 	
@@ -70,7 +68,7 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract boolean hasIgnoredParent();
 	
-	public abstract long save(SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
+	public abstract void save(SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	
 	public abstract String getUuid();
 	

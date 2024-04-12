@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -73,13 +74,19 @@ public class DatabaseObjectDAO extends BaseDAO {
 		refreshLastSyncDate(syncRecords, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
-	public static long insert(DatabaseObject record, Connection conn) throws DBException {
+	public static void insert(DatabaseObject record, Connection conn) throws DBException {
 		Object[] params = record.getInsertParamsWithoutObjectId();
 		String sql = record.getInsertSQLWithoutObjectId();
 		
 		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn);
 		
-		return executeQueryWithRetryOnError(sql, params, conn);
+		long id = executeQueryWithRetryOnError(sql, params, conn);
+		
+		
+		if (record.getObjectId().isSimpleId()) {
+			record.getObjectId().retrieveSimpleKey().setValue(id);
+		}
+		
 	}
 	
 	public static void insertWithObjectId(DatabaseObject record, Connection conn) throws DBException {
@@ -163,7 +170,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		for (UniqueKeyInfo uniqueKey : tableConfiguration.getUniqueKeys()) {
 			
-			List<Field> ukFields = uniqueKey.getFields();
+			List<Key> ukFields = uniqueKey.getFields();
 			
 			String tmpCodition = "";
 			
@@ -237,12 +244,11 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static <T extends DatabaseObject> T getById(Class<T> openMRSClass, Integer id, Connection conn)
-	        throws DBException {
+	public static <T extends DatabaseObject> T getByOid(Class<T> openMRSClass, Oid oid, Connection conn) throws DBException {
 		try {
 			T obj = openMRSClass.newInstance();
 			
-			Object[] params = { id };
+			Object[] params = oid.parseValuesToArray();
 			
 			String sql = "";
 			
@@ -251,7 +257,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql += " FROM  	" + obj.generateTableName()
 			        + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id" : "")
 			        + "\n";
-			sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + " = ?;";
+			sql += " WHERE 	" + oid.parseToParametrizedStringCondition();
 			
 			return find(openMRSClass, sql, params, conn);
 		}
@@ -267,12 +273,12 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static <T extends DatabaseObject> T getByIdOnSpecificSchema(Class<T> openMRSClass, Integer objectId,
-	        String schema, Connection conn) throws DBException {
+	public static <T extends DatabaseObject> T getByIdOnSpecificSchema(Class<T> openMRSClass, Oid oid, String schema,
+	        Connection conn) throws DBException {
 		try {
 			T obj = openMRSClass.newInstance();
 			
-			Object[] params = { objectId };
+			Object[] params = oid.parseValuesToArray();
 			
 			String tableName = obj.generateTableName();
 			
@@ -281,7 +287,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql += " SELECT " + tableName + ".*" + (tableName.equals("patient") ? ", uuid" : "") + "\n";
 			sql += " FROM  	" + schema + "." + tableName
 			        + (tableName.equals("patient") ? " left join person on person_id = patient_id" : "") + "\n";
-			sql += " WHERE 	" + obj.generateDBPrimaryKeyAtt() + " = ?;";
+			sql += " WHERE 	" + oid.parseToParametrizedStringCondition();
 			
 			return find(openMRSClass, sql, params, conn);
 		}
@@ -320,15 +326,14 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return find(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
 	}
 	
-	public static GenericDatabaseObject getById(String tableName, String pkColumnName, Integer id, Connection conn)
-	        throws DBException {
-		Object[] params = { id };
+	public static GenericDatabaseObject getByOid(String tableName, Oid pk, Connection conn) throws DBException {
+		Object[] params = pk.parseValuesToArray();
 		
 		String sql = "";
 		
-		sql += " SELECT " + pkColumnName + " as object_id";
+		sql += " SELECT " + pk.parseFieldNamesToCommaSeparatedString();
 		sql += " FROM  	" + tableName + "\n";
-		sql += " WHERE 	" + pkColumnName + " = ?;";
+		sql += " WHERE 	" + pk.parseToParametrizedStringCondition();
 		
 		return find(GenericDatabaseObject.class, sql, params, conn);
 	}
@@ -402,10 +407,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static void remove(DatabaseObject record, Connection conn) throws DBException {
-		Object[] params = { record.getObjectId() };
+		Object[] params = record.getObjectId().parseValuesToArray();
 		
-		String sql = " DELETE" + " FROM " + record.generateTableName() + " WHERE  " + record.generateDBPrimaryKeyAtt()
-		        + " =  ? ";
+		String sql = " DELETE" + " FROM " + record.generateTableName() + " WHERE  "
+		        + record.getObjectId().parseToParametrizedStringCondition();
 		
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
@@ -590,18 +595,34 @@ public class DatabaseObjectDAO extends BaseDAO {
 		if (maxAcceptableId <= 0)
 			throw new ForbiddenOperationException("There was not find any avaliable id for " + syncTableInfo.getTableName());
 		
+		if (syncTableInfo.getPrimaryKey().isCompositeKey()) {
+			throw new ForbiddenOperationException("The key for table " + syncTableInfo.getTableName()
+			        + " is composite. You cannot determine de avaliable ObjectId");
+		}
+		
+		if (!syncTableInfo.getPrimaryKey().retrieveSimpleKey().isNumericColumnType()) {
+			throw new ForbiddenOperationException("The key should be numeric...!");
+		}
+		
+		
+		String pkName = syncTableInfo.getPrimaryKey().retrieveSimpleKey().getName();
+		
 		String sql = "";
 		
-		sql += " SELECT max(" + syncTableInfo.getPrimaryKey() + ") object_id \n";
+		
+		sql += " SELECT max(" + pkName + ") " + pkName + " \n";
 		sql += " FROM  	" + syncTableInfo.getTableName() + ";\n";
 		
 		DatabaseObject maxObj = find(GenericDatabaseObject.class, sql, null, conn);
 		
 		if (maxObj != null) {
-			if (maxObj.getObjectId() < maxAcceptableId) {
+			if (maxObj.getObjectId().getSimpleValueAsInt() < maxAcceptableId) {
 				return maxAcceptableId;
 			} else {
-				if (getById(syncTableInfo.getSyncRecordClass(syncTableInfo.getMainApp()), maxAcceptableId - 1,
+				
+				Oid oid = Oid.fastCreate(pkName, maxAcceptableId - 1);
+				
+				if (getByOid(syncTableInfo.getSyncRecordClass(syncTableInfo.getMainApp()), oid,
 				    conn) == null) {
 					return maxAcceptableId - 1;
 				} else
@@ -651,8 +672,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		SearchClauses<DatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
 		
-		searchClauses.setColumnsToSelect(
-		    function + "(" + searchParams.getConfig().getSrcConf().getPrimaryKey() + ") value");
+		searchClauses.setColumnsToSelect(function + "(" + searchParams.getConfig().getSrcConf().getPrimaryKey() + ") value");
 		
 		Object[] params = {};
 		

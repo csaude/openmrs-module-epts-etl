@@ -153,7 +153,7 @@ public abstract class MozartProblemSolverEngine extends GenericEngine {
 				UniqueKeyInfo uk = new UniqueKeyInfo();
 				
 				for (Extension keyPart : keyInfo.getExtension()) {
-					uk.addField(new Field(keyPart.getValueString()));
+					uk.addKey(new Field(keyPart.getValueString()));
 				}
 				
 				knownKeys_.add(uk);

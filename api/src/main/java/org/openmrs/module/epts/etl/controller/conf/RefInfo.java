@@ -1,54 +1,65 @@
 package org.openmrs.module.epts.etl.controller.conf;
 
-import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Define the refencial information betwen a {@link SyncTableConfiguration} and its main parent;
+ * Define the specific refencial information between one table with onother;
  * 
  * @author jpboane
  */
-public class RefInfo extends SyncTableConfiguration {
-	
-	static CommonUtilities utilities = CommonUtilities.getInstance();
-	
+public class RefInfo {
 	public static final String PARENT_REF_TYPE = "PARENT";
 	
 	public static final String CHILD_REF_TYPE = "CHILD";
 	
-	private SyncTableConfiguration refTableConfiguration;
+	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private boolean setNullDueInconsistency;
+	private String refCode;
 	
-	private Integer defaultValueDueInconsistency;
+	private List<RefMapping> fieldsMapping;
 	
-	private String refColumnName;
+	private SyncTableConfiguration childTableConf;
 	
-	private String refColumnType;
-	
-	private String refType;
+	private SyncTableConfiguration parentTableCof;
 	
 	private String conditionField;
 	
 	private Integer conditionValue;
 	
-	/*
-	 * Indicate if this parent can be ignored if not found in referenced table or not
-	 */
-	private boolean ignorable;
-	
 	public RefInfo() {
-		this.refType = PARENT_REF_TYPE;
 	}
 	
-	public boolean isSetNullDueInconsistency() {
-		return setNullDueInconsistency;
+	public static RefInfo init(String refCode) {
+		RefInfo ref = new RefInfo();
+		
+		ref.refCode = refCode;
+		
+		return ref;
+	}
+	
+	public void addMapping(RefMapping mapping) {
+		if (this.fieldsMapping == null) {
+			this.fieldsMapping = new ArrayList<>();
+		}
+		
+		if (this.fieldsMapping.contains(mapping))
+			throw new ForbiddenOperationException("The maaping you tried to add alredy exists on mapping field");
+		
+		this.fieldsMapping.add(mapping);
+	}
+	
+	public String getRefCode() {
+		return refCode;
+	}
+	
+	public void setRefCode(String refCode) {
+		this.refCode = refCode;
 	}
 	
 	public String getConditionField() {
@@ -67,67 +78,28 @@ public class RefInfo extends SyncTableConfiguration {
 		this.conditionValue = conditionValue;
 	}
 	
-	public void setSetNullDueInconsistency(boolean setNullDueInconsistency) {
-		this.setNullDueInconsistency = setNullDueInconsistency;
+	public String getChildTableName() {
+		return childTableConf.getTableName();
 	}
 	
-	@JsonIgnore
-	public String getRefType() {
-		return refType;
+	public String getParentTableName() {
+		return getParentTableCof().getTableName();
 	}
 	
-	@JsonIgnore
-	public Class<DatabaseObject> getRefObjectClass(AppInfo application) {
-		return this.refTableConfiguration.getSyncRecordClass(application);
+	public SyncTableConfiguration getChildTableConf() {
+		return childTableConf;
 	}
 	
-	@JsonIgnore
-	public SyncTableConfiguration getRefTableConfiguration() {
-		return this.refTableConfiguration;
+	public void setChildTableConf(SyncTableConfiguration childTableConf) {
+		this.childTableConf = childTableConf;
 	}
 	
-	@JsonIgnore
-	public String getRefTableName() {
-		return this.refTableConfiguration.getTableName();
+	public SyncTableConfiguration getParentTableCof() {
+		return parentTableCof;
 	}
 	
-	public void setRefType(String refType) {
-		if (!utilities.isStringIn(refType, CHILD_REF_TYPE, PARENT_REF_TYPE)) {
-			throw new ForbiddenOperationException(
-			        "The RefInfo Type must be in [" + PARENT_REF_TYPE + ", " + CHILD_REF_TYPE + "]");
-		}
-		
-		this.refType = refType;
-	}
-	
-	public Integer getDefaultValueDueInconsistency() {
-		return defaultValueDueInconsistency;
-	}
-	
-	public void setRefTableConfiguration(SyncTableConfiguration refTableConfiguration) {
-		this.refTableConfiguration = refTableConfiguration;
-	}
-	
-	public void setDefaultValueDueInconsistency(Integer defaultValueDueInconsistency) {
-		this.defaultValueDueInconsistency = defaultValueDueInconsistency;
-	}
-	
-	@JsonIgnore
-	public boolean isNumericRefColumn() {
-		return AttDefinedElements.isNumeric(getRefColumnType());
-	}
-	
-	public String getRefColumnName() {
-		return refColumnName;
-	}
-	
-	public void setRefColumnName(String refColumnName) {
-		this.refColumnName = refColumnName;
-	}
-	
-	@JsonIgnore
-	public String getRefColumnAsClassAttName() {
-		return utilities.convertTableAttNameToClassAttName(this.getRefColumnName());
+	public void setParentTableCof(SyncTableConfiguration parentTableCof) {
+		this.parentTableCof = parentTableCof;
 	}
 	
 	@JsonIgnore
@@ -135,66 +107,42 @@ public class RefInfo extends SyncTableConfiguration {
 		return utilities.convertTableAttNameToClassAttName(this.getConditionField());
 	}
 	
-	public String getRefColumnType() {
-		return refColumnType;
-	}
-	
-	public void setRefColumnType(String refColumnType) {
-		this.refColumnType = refColumnType;
-	}
-	
-	public String getFullReferencedColumn(Connection conn) {
-		return this.getRefTableConfiguration().getTableName() + "." + this.getRefColumnName();
-	}
-	
-	public boolean isIgnorable() {
-		return ignorable;
-	}
-	
-	public void setIgnorable(boolean ignorable) {
-		this.ignorable = ignorable;
-	}
-	
 	@JsonIgnore
 	public boolean isSharedPk() {
-		if (getRefTableConfiguration().getSharePkWith() == null) {
+		if (this.childTableConf.getSharePkWith() == null) {
 			return false;
-		} else if (utilities.arrayHasElement(getRefTableConfiguration().getParents())) {
+		} else if (utilities.arrayHasElement(childTableConf.getParents())) {
 			
-			for (RefInfo refInfo : getRefTableConfiguration().getParents()) {
-				if (refInfo.getRefTableConfiguration().getTableName()
-				        .equalsIgnoreCase(this.getRefTableConfiguration().getSharePkWith())) {
+			for (RefInfo refInfo : this.childTableConf.getParentRefInfo()) {
+				if (refInfo.parentTableCof.getTableName().equalsIgnoreCase(this.parentTableCof.getSharePkWith())) {
 					return true;
 				}
 			}
 		}
 		
-		throw new ForbiddenOperationException(
-		        "The related table of shared pk " + this.getRefTableConfiguration().getSharePkWith() + " of table "
-		                + this.getRefTableConfiguration().getTableName() + " is not listed inparents!");
+		throw new ForbiddenOperationException("The related table of shared pk " + this.parentTableCof.getSharePkWith()
+		        + " of table " + this.parentTableCof.getTableName() + " is not listed inparents!");
 	}
 	
-	@JsonIgnore
-	public boolean isParent() {
-		return this.refType.equals(PARENT_REF_TYPE);
+	public List<RefMapping> getFieldsMapping() {
+		return fieldsMapping;
 	}
 	
-	@JsonIgnore
-	public boolean isChild() {
-		return this.refType.equals(CHILD_REF_TYPE);
+	public void setFieldsMapping(List<RefMapping> fieldsMapping) {
+		this.fieldsMapping = fieldsMapping;
 	}
 	
 	@Override
 	@JsonIgnore
 	public String toString() {
-		String str = "[TYPE: " + this.refType;
+		String str = "";
 		
-		if (isParent()) {
-			str += " REF: " + getTableName() + "." + this.getRefColumnName() + " > "
-			        + this.refTableConfiguration.getTableName() + "." + this.refTableConfiguration.getPrimaryKey() + "]";
-		} else {
-			str += " REF: " + this.refTableConfiguration.getTableName() + "." + this.getRefColumnName() + " > "
-			        + getTableName() + "." + this.getPrimaryKey() + "]";
+		for (RefMapping map : this.fieldsMapping) {
+			if (utilities.stringHasValue(str)) {
+				str += ",";
+			}
+			
+			str += map.toString();
 		}
 		
 		return str;
@@ -209,8 +157,89 @@ public class RefInfo extends SyncTableConfiguration {
 		
 		RefInfo other = (RefInfo) obj;
 		
-		String thisRefCol = this.getRefColumnName() != null ? this.getRefColumnName() : "";
+		if (utilities.stringHasValue(this.refCode) && utilities.stringHasValue(other.refCode)) {
+			return this.refCode.equals(other.refCode);
+		}
 		
-		return thisRefCol.equals(other.getRefColumnName()) && this.getTableName().equalsIgnoreCase(other.getTableName());
+		if (!this.childTableConf.equals(other.childTableConf)) {
+			return false;
+		}
+		
+		if (!this.parentTableCof.equals(other.parentTableCof)) {
+			return false;
+		}
+		
+		for (RefMapping map : this.fieldsMapping) {
+			if (!other.fieldsMapping.contains(map)) {
+				return false;
+			}
+		}
+		
+		for (RefMapping map : other.fieldsMapping) {
+			if (!this.fieldsMapping.contains(map)) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
+	
+	public RefMapping getRefMappingByChildClassAttName(String attName) {
+		
+		for (RefMapping map : this.fieldsMapping) {
+			if (map.getChildField().getNameAsClassAtt().equals(attName)) {
+				return map;
+			}
+		}
+		
+		throw new ForbiddenOperationException("No mapping defined for att '" + attName + "'");
+	}
+	
+	public List<RefMapping> getRefMappingByParentTableAtt(String attName) {
+		List<RefMapping> referenced = new ArrayList<>();
+		
+		for (RefMapping map : this.fieldsMapping) {
+			if (map.getParentField().getName().equals(attName)) {
+				referenced.add(map);
+			}
+		}
+		
+		if (utilities.arrayHasNoElement(referenced)) {
+			throw new ForbiddenOperationException("No mapping defined for att '" + attName + "'");
+		}
+		
+		return referenced;
+	}
+	
+	public RefMapping findRefMapping(String childField, String parentField) {
+		RefMapping toFind = RefMapping.fastCreate(childField, parentField);
+		
+		for (RefMapping map : this.fieldsMapping) {
+			if (map.equals(toFind))
+				return map;
+		}
+		
+		return null;
+	}
+	
+	public List<Key> extractParentFieldsFromRefMapping(){
+		List<Key> keys = new ArrayList<>();
+		
+		for (RefMapping f : this.fieldsMapping) {
+			keys.add(f.getParentField());
+		}
+		
+		return keys;
+	}
+	
+	public List<Key> extractChildFieldsFromRefMapping(){
+		List<Key> keys = new ArrayList<>();
+		
+		for (RefMapping f : this.fieldsMapping) {
+			keys.add(f.getChildField());
+		}
+		
+		return keys;
+	}
+	
 }

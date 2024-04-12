@@ -8,8 +8,8 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 
 /**
- * Utilitie class which help to define att elements for class like Att definition, getter and setter
- * definition, etc
+ * Utilities class which help to define att elements for class like Att definition, getter and
+ * setter definition, etc
  * 
  * @author jpboane
  */
@@ -41,8 +41,6 @@ public class AttDefinedElements {
 	
 	private String attType;
 	
-	//private boolean mainParentAtt;
-	
 	private String dbAttName;
 	
 	private String dbAttType;
@@ -56,11 +54,14 @@ public class AttDefinedElements {
 	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, PojobleDatabaseObject pojoble) {
 		this.dbAttName = dbAttName;
 		this.dbAttType = dbAttType;
-		
-		this.isObjectId = dbAttName.equalsIgnoreCase(pojoble.getPrimaryKey());
-		
 		this.isLast = isLast;
 		this.pojoble = pojoble;
+		
+		if (!pojoble.getPrimaryKey().isCompositeKey()) {
+			this.isObjectId = dbAttName.equalsIgnoreCase(this.pojoble.getPrimaryKey().retrieveSimpleKey().getName());
+		}
+		
+
 	}
 	
 	public String getAttDefinition() {
@@ -282,7 +283,13 @@ public class AttDefinedElements {
 	}
 	
 	private boolean isPK() {
-		return pojoble.getPrimaryKeyAsClassAtt().equals(this.attName);
+		this.isObjectId = dbAttName.equalsIgnoreCase(pojoble.getPrimaryKey().retrieveSimpleKey().getName());
+		
+		if (!pojoble.getPrimaryKey().isCompositeKey()) {
+			return this.attName.equalsIgnoreCase(pojoble.getPrimaryKey().retrieveSimpleKey().getNameAsClassAtt());
+		}
+		
+		return false;
 	}
 	
 	private boolean isSharedKey() {

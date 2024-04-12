@@ -53,7 +53,7 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 					searchClauses.addToParameters(params);
 				}
 				
-				clauseFrom = clauseFrom + joinType + " join " + t.getTableName() + " on " + extraJoinQuery;
+				clauseFrom = clauseFrom + " " + joinType + " join " + t.getTableName() + " on " + extraJoinQuery;
 				
 				if (t.getJoinType().isLeftJoin()) {
 					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,

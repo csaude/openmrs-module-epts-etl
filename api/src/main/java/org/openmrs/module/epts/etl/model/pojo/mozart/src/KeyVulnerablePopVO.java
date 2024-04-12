@@ -1,10 +1,11 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart;
+package org.openmrs.module.epts.etl.model.pojo.mozart.src;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
@@ -150,6 +151,11 @@ public class KeyVulnerablePopVO extends AbstractDatabaseObject implements Databa
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "key_vulnerable_pop";
 	}
 
 

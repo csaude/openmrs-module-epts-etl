@@ -1,14 +1,12 @@
 package org.openmrs.module.epts.etl.model.pojo.openmrs._default._query_result;
 
-import org.openmrs.module.epts.etl.model.pojo.generic.*; 
- 
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
- 
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
- 
-import java.sql.SQLException; 
-import java.sql.ResultSet; 
- 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
+
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
 public class WomenStatusInfoQueryResultVO extends AbstractDatabaseObject implements DatabaseObject { 

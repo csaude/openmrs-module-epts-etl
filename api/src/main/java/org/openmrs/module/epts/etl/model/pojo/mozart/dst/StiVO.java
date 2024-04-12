@@ -1,19 +1,23 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart;
+package org.openmrs.module.epts.etl.model.pojo.mozart.dst;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class FormVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class StiVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
-	private Integer encounterId;
 	private String encounterUuid;
+	private Integer stiConceptId;
+	private java.util.Date stiDate;
+	private Integer stiValue;
+	private String stiUuid;
 	private Integer formId;
 	private Integer encounterType;
 	private String patientUuid;
@@ -23,7 +27,7 @@ public class FormVO extends AbstractDatabaseObject implements DatabaseObject {
 	private String locationUuid;
 	private String sourceDatabase;
  
-	public FormVO() { 
+	public StiVO() { 
 		this.metadata = false;
 	} 
  
@@ -35,20 +39,44 @@ public class FormVO extends AbstractDatabaseObject implements DatabaseObject {
 		return this.id;
 	}
  
-	public void setEncounterId(Integer encounterId){ 
-	 	this.encounterId = encounterId;
-	}
- 
-	public Integer getEncounterId(){ 
-		return this.encounterId;
-	}
- 
 	public void setEncounterUuid(String encounterUuid){ 
 	 	this.encounterUuid = encounterUuid;
 	}
  
 	public String getEncounterUuid(){ 
 		return this.encounterUuid;
+	}
+ 
+	public void setStiConceptId(Integer stiConceptId){ 
+	 	this.stiConceptId = stiConceptId;
+	}
+ 
+	public Integer getStiConceptId(){ 
+		return this.stiConceptId;
+	}
+ 
+	public void setStiDate(java.util.Date stiDate){ 
+	 	this.stiDate = stiDate;
+	}
+ 
+	public java.util.Date getStiDate(){ 
+		return this.stiDate;
+	}
+ 
+	public void setStiValue(Integer stiValue){ 
+	 	this.stiValue = stiValue;
+	}
+ 
+	public Integer getStiValue(){ 
+		return this.stiValue;
+	}
+ 
+	public void setStiUuid(String stiUuid){ 
+	 	this.stiUuid = stiUuid;
+	}
+ 
+	public String getStiUuid(){ 
+		return this.stiUuid;
 	}
  
 	public void setFormId(Integer formId){ 
@@ -128,8 +156,11 @@ public class FormVO extends AbstractDatabaseObject implements DatabaseObject {
 	public void load(ResultSet rs) throws SQLException{ 
 		super.load(rs);
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
-		if (rs.getObject("encounter_id") != null) this.encounterId = rs.getInt("encounter_id");
 		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
+		if (rs.getObject("sti_concept_id") != null) this.stiConceptId = rs.getInt("sti_concept_id");
+		this.stiDate =  rs.getTimestamp("sti_date") != null ? new java.util.Date( rs.getTimestamp("sti_date").getTime() ) : null;
+		if (rs.getObject("sti_value") != null) this.stiValue = rs.getInt("sti_value");
+		this.stiUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("sti_uuid") != null ? rs.getString("sti_uuid").trim() : null);
 		if (rs.getObject("form_id") != null) this.formId = rs.getInt("form_id");
 		if (rs.getObject("encounter_type") != null) this.encounterType = rs.getInt("encounter_type");
 		this.patientUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("patient_uuid") != null ? rs.getString("patient_uuid").trim() : null);
@@ -147,37 +178,37 @@ public class FormVO extends AbstractDatabaseObject implements DatabaseObject {
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO form(encounter_id, encounter_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO sti(encounter_uuid, sti_concept_id, sti_date, sti_value, sti_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.encounterId, this.encounterUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase};		return params; 
+ 		Object[] params = {this.encounterUuid, this.stiConceptId, this.stiDate, this.stiValue, this.stiUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO form(id, encounter_id, encounter_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO sti(id, encounter_uuid, sti_concept_id, sti_date, sti_value, sti_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.encounterId, this.encounterUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase};		return params; 
+ 		Object[] params = {this.id, this.encounterUuid, this.stiConceptId, this.stiDate, this.stiValue, this.stiUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.encounterId, this.encounterUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase, this.id};		return params; 
+ 		Object[] params = {this.encounterUuid, this.stiConceptId, this.stiDate, this.stiValue, this.stiUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE form SET encounter_id = ?, encounter_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
+ 		return "UPDATE sti SET encounter_uuid = ?, sti_concept_id = ?, sti_date = ?, sti_value = ?, sti_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterId) + "," + (this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.formId) + "," + (this.encounterType) + "," + (this.patientUuid != null ? "\""+ utilities.scapeQuotationMarks(patientUuid)  +"\"" : null) + "," + (this.createdDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(createdDate)  +"\"" : null) + "," + (this.encounterDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(encounterDate)  +"\"" : null) + "," + (this.changeDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(changeDate)  +"\"" : null) + "," + (this.locationUuid != null ? "\""+ utilities.scapeQuotationMarks(locationUuid)  +"\"" : null) + "," + (this.sourceDatabase != null ? "\""+ utilities.scapeQuotationMarks(sourceDatabase)  +"\"" : null); 
+ 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.stiConceptId) + "," + (this.stiDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(stiDate)  +"\"" : null) + "," + (this.stiValue) + "," + (this.stiUuid != null ? "\""+ utilities.scapeQuotationMarks(stiUuid)  +"\"" : null) + "," + (this.formId) + "," + (this.encounterType) + "," + (this.patientUuid != null ? "\""+ utilities.scapeQuotationMarks(patientUuid)  +"\"" : null) + "," + (this.createdDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(createdDate)  +"\"" : null) + "," + (this.encounterDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(encounterDate)  +"\"" : null) + "," + (this.changeDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(changeDate)  +"\"" : null) + "," + (this.locationUuid != null ? "\""+ utilities.scapeQuotationMarks(locationUuid)  +"\"" : null) + "," + (this.sourceDatabase != null ? "\""+ utilities.scapeQuotationMarks(sourceDatabase)  +"\"" : null); 
 	} 
  
 	@Override
@@ -200,6 +231,11 @@ public class FormVO extends AbstractDatabaseObject implements DatabaseObject {
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "sti";
 	}
 
 

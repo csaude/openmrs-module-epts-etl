@@ -1,21 +1,22 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart;
+package org.openmrs.module.epts.etl.model.pojo.mozart.dst;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class ObservationWfdVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class ObservationVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private String encounterUuid;
 	private Integer conceptId;
 	private java.util.Date observationDate;
-	private double valueNumeric;
+	private Double valueNumeric;
 	private Integer valueConceptId;
 	private String valueText;
 	private java.util.Date valueDatetime;
@@ -29,7 +30,7 @@ public class ObservationWfdVO extends AbstractDatabaseObject implements Database
 	private String locationUuid;
 	private String sourceDatabase;
  
-	public ObservationWfdVO() { 
+	public ObservationVO() { 
 		this.metadata = false;
 	} 
  
@@ -65,11 +66,11 @@ public class ObservationWfdVO extends AbstractDatabaseObject implements Database
 		return this.observationDate;
 	}
  
-	public void setValueNumeric(double valueNumeric){ 
+	public void setValueNumeric(Double valueNumeric){ 
 	 	this.valueNumeric = valueNumeric;
 	}
  
-	public double getValueNumeric(){ 
+	public Double getValueNumeric(){ 
 		return this.valueNumeric;
 	}
  
@@ -185,7 +186,7 @@ public class ObservationWfdVO extends AbstractDatabaseObject implements Database
 		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		if (rs.getObject("concept_id") != null) this.conceptId = rs.getInt("concept_id");
 		this.observationDate =  rs.getTimestamp("observation_date") != null ? new java.util.Date( rs.getTimestamp("observation_date").getTime() ) : null;
-		this.valueNumeric = rs.getDouble("value_numeric");
+		if (rs.getObject("value_numeric") != null) this.valueNumeric = rs.getDouble("value_numeric");
 		if (rs.getObject("value_concept_id") != null) this.valueConceptId = rs.getInt("value_concept_id");
 		this.valueText = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("value_text") != null ? rs.getString("value_text").trim() : null);
 		this.valueDatetime =  rs.getTimestamp("value_datetime") != null ? new java.util.Date( rs.getTimestamp("value_datetime").getTime() ) : null;
@@ -207,7 +208,7 @@ public class ObservationWfdVO extends AbstractDatabaseObject implements Database
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO observation_wfd(encounter_uuid, concept_id, observation_date, value_numeric, value_concept_id, value_text, value_datetime, obs_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO observation(encounter_uuid, concept_id, observation_date, value_numeric, value_concept_id, value_text, value_datetime, obs_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -217,7 +218,7 @@ public class ObservationWfdVO extends AbstractDatabaseObject implements Database
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO observation_wfd(id, encounter_uuid, concept_id, observation_date, value_numeric, value_concept_id, value_text, value_datetime, obs_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO observation(id, encounter_uuid, concept_id, observation_date, value_numeric, value_concept_id, value_text, value_datetime, obs_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -232,7 +233,7 @@ public class ObservationWfdVO extends AbstractDatabaseObject implements Database
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE observation_wfd SET encounter_uuid = ?, concept_id = ?, observation_date = ?, value_numeric = ?, value_concept_id = ?, value_text = ?, value_datetime = ?, obs_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
+ 		return "UPDATE observation SET encounter_uuid = ?, concept_id = ?, observation_date = ?, value_numeric = ?, value_concept_id = ?, value_text = ?, value_datetime = ?, obs_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
@@ -260,6 +261,11 @@ public class ObservationWfdVO extends AbstractDatabaseObject implements Database
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "observation";
 	}
 
 

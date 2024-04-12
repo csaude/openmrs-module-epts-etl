@@ -55,14 +55,15 @@ public class SrcConf extends SyncTableConfiguration {
 						RefInfo pInfo = this.findParent(t.getTableName());
 						
 						if (pInfo != null) {
-							fm = new FieldsMapping(pInfo.getRefColumnName(), "", pInfo.getRefTableConfiguration().getPrimaryKey());
+	//						fm = new FieldsMapping(pInfo.getRefColumnName(), "",
+//							        pInfo.getRefTableConfiguration().getPrimaryKey());
 						} else {
 							
 							//Assuning that the aux src is child
 							pInfo = t.findParent(this.getTableName());
 							
 							if (pInfo != null) {
-								fm = new FieldsMapping(this.getPrimaryKey(), "", pInfo.getRefColumnName());
+	//							fm = new FieldsMapping(this.getPrimaryKey(), "", pInfo.getRefColumnName());
 							}
 						}
 						
@@ -80,10 +81,9 @@ public class SrcConf extends SyncTableConfiguration {
 			}
 			
 			if (utilities.arrayHasElement(this.getExtraDataSource())) {
-				for (EtlExtraDataSource src : this.getExtraDataSource()) {
-					src.setRelatedSrcConf(this);
-					
-					src.fullLoad(srcConn);
+				for (EtlExtraDataSource s : this.getExtraDataSource()) {
+					s.setRelatedSrcConf(this);
+					s.fullLoad(srcConn);
 				}
 			}
 		}

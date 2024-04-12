@@ -52,6 +52,7 @@ public class EtlExtraDataSource extends SyncDataConfiguration {
 	
 	public void setRelatedSrcConf(SrcConf relatedSrcTableConf) {
 		this.relatedSrcConf = relatedSrcTableConf;
+		this.setRelatedSyncConfiguration(relatedSrcTableConf.getRelatedSyncConfiguration());
 		
 		if (this.querySrc != null) {
 			this.querySrc.setRelatedSrcExtraDataSrc(this);
@@ -92,7 +93,6 @@ public class EtlExtraDataSource extends SyncDataConfiguration {
 	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		return getAvaliableSrc().getSyncRecordClass(application);
 	}
-
 	
 	public void fullLoad(Connection conn) throws DBException {
 		if (!getAvaliableSrc().isFullLoaded()) {

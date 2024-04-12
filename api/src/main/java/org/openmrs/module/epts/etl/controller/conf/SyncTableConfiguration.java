@@ -24,19 +24,19 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	
 	private String tableName;
 	
-	private List<RefInfo> parents;
+	private List<TableParent> parents;
 	
-	private List<RefInfo> childred;
+	private List<TableParent> conditionalParents;
 	
-	private List<RefInfo> conditionalParents;
+	private List<RefInfo> parentRefInfo;
+	
+	private List<RefInfo> childRefInfo;
 	
 	private Class<DatabaseObject> syncRecordClass;
 	
 	private SyncDataConfiguration parent;
 	
-	private String primaryKey;
-	
-	private String primaryKeyType;
+	private PrimaryKey primaryKey;
 	
 	private String sharePkWith;
 	
@@ -76,12 +76,12 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	public void clone(SyncTableConfiguration toCloneFrom) {
 		this.tableName = toCloneFrom.tableName;
 		this.parents = toCloneFrom.parents;
-		this.childred = toCloneFrom.childred;
+		this.childRefInfo = toCloneFrom.childRefInfo;
+		this.parentRefInfo = toCloneFrom.parentRefInfo;
 		this.conditionalParents = toCloneFrom.conditionalParents;
 		this.syncRecordClass = toCloneFrom.syncRecordClass;
 		this.parent = toCloneFrom.parent;
 		this.primaryKey = toCloneFrom.primaryKey;
-		this.primaryKeyType = toCloneFrom.primaryKeyType;
 		this.sharePkWith = toCloneFrom.sharePkWith;
 		this.metadata = toCloneFrom.metadata;
 		this.fullLoaded = toCloneFrom.fullLoaded;
@@ -163,26 +163,22 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		this.removeForbidden = removeForbidden;
 	}
 	
-	public List<RefInfo> getConditionalParents() {
+	public List<TableParent> getConditionalParents() {
 		return conditionalParents;
 	}
 	
-	public void setConditionalParents(List<RefInfo> conditionalParents) {
+	public void setConditionalParents(List<TableParent> conditionalParents) {
 		this.conditionalParents = conditionalParents;
 	}
 	
-	@JsonIgnore
-	public List<RefInfo> getChildred() {
+	@Override
+	public List<RefInfo> getChildRefInfo() {
 		if (!this.mustLoadChildrenInfo) {
 			throw new ForbiddenOperationException(
 			        "The table configuration is set to not load Children. Please change configuration if you what to access Children ifo.");
 		}
 		
-		return childred;
-	}
-	
-	public void setChildred(List<RefInfo> childred) {
-		this.childred = childred;
+		return this.childRefInfo;
 	}
 	
 	public AppInfo getMainApp() {
@@ -223,11 +219,11 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		return sourceFoldersAsString;
 	}
 	
-	public List<RefInfo> getParents() {
+	public List<TableParent> getParents() {
 		return parents;
 	}
 	
-	public void setParents(List<RefInfo> parents) {
+	public void setParents(List<TableParent> parents) {
 		this.parents = parents;
 	}
 	
@@ -268,12 +264,8 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	}
 	
 	@JsonIgnore
-	public String getPrimaryKeyAsClassAtt() {
-		return convertTableAttNameToClassAttName(getPrimaryKey());
-	}
-	
-	@JsonIgnore
-	public String getPrimaryKey() {
+	@Override
+	public PrimaryKey getPrimaryKey() {
 		OpenConnection conn = getParent().getMainApp().openConnection();
 		
 		try {
@@ -285,18 +277,35 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	}
 	
 	@JsonIgnore
-	public String getPrimaryKey(Connection conn) {
-		if (primaryKey == null) {
+	public PrimaryKey getPrimaryKey(Connection conn) {
+		if (this.primaryKey == null) {
 			try {
-				ResultSet rs = conn.getMetaData().getPrimaryKeys(conn.getCatalog(), conn.getSchema(), tableName);
+				String tableName = DBUtilities.extractTableNameFromFullTableName(this.tableName);
 				
-				if (rs.next()) {
-					this.primaryKey = rs.getString("COLUMN_NAME");
+				String schema = DBUtilities.determineSchemaFromFullTableName(this.tableName);
+				
+				schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
+				
+				String catalog = conn.getCatalog();
+				
+				if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
+					catalog = schema;
+				}
+				
+				ResultSet rs = conn.getMetaData().getPrimaryKeys(catalog, schema, tableName);
+				
+				while (rs.next()) {
 					
-					this.primaryKeyType = DBUtilities.determineColunType(tableName, this.primaryKey, conn);
+					if (this.primaryKey == null) {
+						this.primaryKey = new PrimaryKey();
+					}
 					
-					this.primaryKeyType = AttDefinedElements.convertDatabaseTypeTOJavaType(this.primaryKey,
-					    this.primaryKeyType);
+					Key pk = new Key();
+					pk.setName(rs.getString("COLUMN_NAME"));
+					pk.setType(DBUtilities.determineColunType(this.tableName, pk.getName(), conn));
+					pk.setType(AttDefinedElements.convertDatabaseTypeTOJavaType(pk.getName(), pk.getType()));
+					
+					this.primaryKey.addKey(pk);
 				}
 			}
 			catch (SQLException e) {
@@ -307,7 +316,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 			
 		}
 		
-		return primaryKey;
+		return this.primaryKey;
 	}
 	
 	@JsonIgnore
@@ -336,7 +345,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 				this.uniqueKeys = UniqueKeyInfo.loadUniqueKeysInfo(this, conn);
 				
 				if (useSharedPKKey()) {
-					SyncTableConfiguration parentConf = getSharedKeyRefInfo().getRefTableConfiguration();
+					SyncTableConfiguration parentConf = getSharedKeyRefInfo().getParentTableCof();
 					
 					parentConf.loadUniqueKeys(conn);
 					
@@ -359,31 +368,6 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	}
 	
 	@JsonIgnore
-	public String getPrimaryKeyType() {
-		if (primaryKeyType == null)
-			getPrimaryKey();
-		
-		return primaryKeyType;
-	}
-	
-	public String getPrimaryKeyType(Connection conn) {
-		if (primaryKeyType == null)
-			getPrimaryKey(conn);
-		
-		return primaryKeyType;
-	}
-	
-	@JsonIgnore
-	public boolean isNumericColumnType() {
-		return AttDefinedElements.isNumeric(this.getPrimaryKeyType());
-	}
-	
-	@JsonIgnore
-	public boolean isNumericColumnType(Connection conn) {
-		return AttDefinedElements.isNumeric(this.getPrimaryKeyType(conn));
-	}
-	
-	@JsonIgnore
 	public boolean hasPK() {
 		return getPrimaryKey() != null;
 	}
@@ -393,22 +377,30 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		return getPrimaryKey(conn) != null;
 	}
 	
-	private static String convertTableAttNameToClassAttName(String tableAttName) {
-		return utilities.convertTableAttNameToClassAttName(tableAttName);
-	}
-	
 	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
-		for (RefInfo parent : this.getParents()) {
-			if (parent.getRefColumnAsClassAttName().equals(parentAttName)) {
-				return parent.isIgnorable();
-			}
+		for (RefInfo parent : this.parentRefInfo) {
+			RefMapping map = parent.getRefMappingByChildClassAttName(parentAttName);
+			
+			return map.isIgnorable();
 		}
 		
 		throw new ForbiddenOperationException("The att '" + parentAttName + "' doesn't represent any defined parent att");
 	}
 	
 	private int countChildren(Connection conn) throws SQLException {
-		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(conn.getCatalog(), conn.getSchema(), tableName);
+		String tableName = DBUtilities.extractTableNameFromFullTableName(this.tableName);
+		
+		String schema = DBUtilities.determineSchemaFromFullTableName(this.tableName);
+		
+		schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
+		
+		String catalog = conn.getCatalog();
+		
+		if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
+			catalog = schema;
+		}
+		
+		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(catalog, schema, tableName);
 		
 		try {
 			if (DBUtilities.isMySQLDB(conn)) {
@@ -424,66 +416,6 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 			foreignKeyRS.close();
 		}
 		
-	}
-	
-	protected synchronized void loadChildren(Connection conn) throws SQLException {
-		if (!this.mustLoadChildrenInfo)
-			return;
-		
-		logDebug("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
-		
-		this.childred = new ArrayList<RefInfo>();
-		
-		int count = countChildren(conn);
-		
-		if (count == 0) {
-			logDebug("NO CHILDREN FOUND FOR TABLE '" + getTableName() + "'");
-		} else {
-			ResultSet foreignKeyRS = null;
-			
-			try {
-				logDebug("DISCOVERED '" + count + "' CHILDREN FOR TABLE '" + getTableName() + "'");
-				
-				foreignKeyRS = conn.getMetaData().getExportedKeys(conn.getCatalog(), conn.getSchema(), tableName);
-				
-				int i = 0;
-				
-				while (foreignKeyRS.next()) {
-					logDebug("CONFIGURING CHILD " + ++i + " [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
-					        + getTableName() + "'");
-					
-					RefInfo ref = new RefInfo();
-					ref.clone(this);
-					
-					ref.setRefType(RefInfo.CHILD_REF_TYPE);
-					ref.setRefColumnName(foreignKeyRS.getString("FKCOLUMN_NAME"));
-					ref.setRefTableConfiguration(
-					    SyncTableConfiguration.init(foreignKeyRS.getString("FKTABLE_NAME"), this.parent));
-					ref.setRefColumnType(AttDefinedElements.convertDatabaseTypeTOJavaType(ref.getRefColumnName(),
-					    DBUtilities.determineColunType(ref.getRefTableConfiguration().getTableName(), ref.getRefColumnName(),
-					        conn)));
-					ref.setIgnorable(DBUtilities.isTableColumnAllowNull(ref.getRefTableConfiguration().getTableName(),
-					    ref.getRefColumnName(), conn));
-					
-					//Mark as metadata if there is no table info configured
-					if (getRelatedSyncConfiguration().find(ref.getRefTableConfiguration()) == null) {
-						ref.getRefTableConfiguration().setMetadata(true);
-					}
-					
-					this.childred.add(ref);
-					
-					logDebug("CHILDREN " + i + " [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
-					        + getTableName() + "' CONFIGURED");
-				}
-				
-				logDebug("LOADED CHILDREN FOR TABLE '" + getTableName() + "'");
-			}
-			finally {
-				if (foreignKeyRS != null) {
-					foreignKeyRS.close();
-				}
-			}
-		}
 	}
 	
 	public void logInfo(String msg) {
@@ -503,7 +435,19 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	}
 	
 	private int countParents(Connection conn) throws SQLException {
-		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(conn.getCatalog(), conn.getSchema(), tableName);
+		String tableName = DBUtilities.extractTableNameFromFullTableName(this.tableName);
+		
+		String schema = DBUtilities.determineSchemaFromFullTableName(this.tableName);
+		
+		schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
+		
+		String catalog = conn.getCatalog();
+		
+		if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
+			catalog = schema;
+		}
+		
+		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(catalog, schema, tableName);
 		
 		try {
 			if (DBUtilities.isMySQLDB(conn)) {
@@ -528,68 +472,76 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		
 		int count = countParents(conn);
 		
+		//First load all necessary info on configured parents
+		
+		if (utilities.arrayHasElement(this.parents)) {
+			for (TableParent p : this.parents) {
+				for (RefInfo r : p.getRefInfo()) {
+					r.setChildTableConf(this);
+					r.setParentTableCof(p);
+					
+					for (RefMapping map : r.getFieldsMapping()) {
+						map.setRefInfo(r);
+					}
+					
+				}
+			}
+		}
+		
 		if (count == 0) {
 			logDebug("NO PARENT FOUND FOR TABLE '" + getTableName() + "'");
 		} else
 			try {
-				
-				List<RefInfo> auxRefInfo = new ArrayList<RefInfo>();
 				logDebug("DISCOVERED '" + count + "' PARENTS FOR TABLE '" + getTableName() + "'");
 				
-				foreignKeyRS = conn.getMetaData().getImportedKeys(conn.getCatalog(), conn.getSchema(), tableName);
+				String tableName = DBUtilities.extractTableNameFromFullTableName(this.tableName);
+				
+				String schema = DBUtilities.determineSchemaFromFullTableName(this.tableName);
+				
+				schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
+				
+				String catalog = conn.getCatalog();
+				
+				if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
+					catalog = schema;
+				}
+				
+				foreignKeyRS = conn.getMetaData().getImportedKeys(catalog, schema, tableName);
 				
 				while (foreignKeyRS.next()) {
 					
 					logDebug("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '"
 					        + getTableName() + "'");
 					
-					String refColumName = foreignKeyRS.getString("FKCOLUMN_NAME");
+					String refCode = foreignKeyRS.getString("FK_NAME");
 					
-					SyncTableConfiguration refTableConfiguration = SyncTableConfiguration
-					        .init(foreignKeyRS.getString("PKTABLE_NAME"), this.parent);
+					String childFieldName = foreignKeyRS.getString("FKCOLUMN_NAME");
 					
-					RefInfo ref = generateRefInfo(refColumName, null, null, RefInfo.PARENT_REF_TYPE, refTableConfiguration,
-					    conn);
+					String parentFieldName = foreignKeyRS.getString("PKCOLUMN_NAME");
+					String parentTableName = foreignKeyRS.getString("PKTABLE_NAME");
 					
-					if (utilities.existOnArray(auxRefInfo, ref)) {
-						logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName()
-						        + "' WAS ALREDY CONFIGURED! SKIPPING...");
-						continue;
-					}
+					SyncTableConfiguration referencedTabConf = SyncTableConfiguration.init(parentTableName, this.parent);
 					
-					RefInfo configuredParent = findParent(ref.getRefTableName());
-					
-					if (configuredParent != null) {
-						ref.setDefaultValueDueInconsistency(configuredParent.getDefaultValueDueInconsistency());
-						ref.setSetNullDueInconsistency(configuredParent.isSetNullDueInconsistency());
-					}
+					addParentRefInfo(refCode, childFieldName, referencedTabConf, parentFieldName, conn);
 					
 					logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName()
 					        + "' CONFIGURED");
-					
-					auxRefInfo.add(ref);
 				}
 				
 				//Check if there is a configured parent but not defined on the db schema
 				
 				if (utilities.arrayHasElement(this.parents)) {
-					for (RefInfo configuredParent : this.parents) {
-						if (configuredParent.getRefColumnName() == null)
-							continue;
+					
+					for (TableParent configuredParent : this.parents) {
 						
-						RefInfo autoGeneratedParent = utilities.findOnList(auxRefInfo, configuredParent);
-						
-						if (autoGeneratedParent == null) {
-							configuredParent.setRefTableConfiguration(
-							    SyncTableConfiguration.init(configuredParent.getTableName(), this.parent));
-							configuredParent.clone(this);
-							
-							auxRefInfo.add(configuredParent);
+						for (RefInfo r : configuredParent.getRefInfo()) {
+							if (!this.parentRefInfo.contains(r)) {
+								this.parentRefInfo.add(r);
+							}
 						}
 					}
+					
 				}
-				
-				this.parents = auxRefInfo;
 				
 				logDebug("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
 			}
@@ -601,39 +553,170 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		
 	}
 	
+	protected synchronized void loadChildren(Connection conn) throws SQLException {
+		if (!this.mustLoadChildrenInfo)
+			return;
+		
+		logDebug("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
+		
+		this.childRefInfo = new ArrayList<RefInfo>();
+		
+		int count = countChildren(conn);
+		
+		if (count == 0) {
+			logDebug("NO CHILDREN FOUND FOR TABLE '" + getTableName() + "'");
+		} else {
+			ResultSet foreignKeyRS = null;
+			
+			try {
+				logDebug("DISCOVERED '" + count + "' CHILDREN FOR TABLE '" + getTableName() + "'");
+				
+				String tableName = DBUtilities.extractTableNameFromFullTableName(this.tableName);
+				
+				String schema = DBUtilities.determineSchemaFromFullTableName(this.tableName);
+				
+				schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
+				
+				String catalog = conn.getCatalog();
+				
+				if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
+					catalog = schema;
+				}
+				
+				foreignKeyRS = conn.getMetaData().getExportedKeys(catalog, schema, tableName);
+				
+				int i = 0;
+				
+				while (foreignKeyRS.next()) {
+					logDebug("CONFIGURING CHILD " + ++i + " [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
+					        + getTableName() + "'");
+					
+					String refCode = foreignKeyRS.getString("FK_NAME");
+					
+					String childTableName = foreignKeyRS.getString("FKTABLE_NAME");
+					String childFieldName = foreignKeyRS.getString("FKCOLUMN_NAME");
+					
+					String parentFieldName = foreignKeyRS.getString("PKCOLUMN_NAME");
+					String parentTableName = foreignKeyRS.getString("PKTABLE_NAME");
+					
+					SyncTableConfiguration childTabConf = SyncTableConfiguration.init(childTableName, this.parent);
+					
+					addChildRefInfo(refCode, childTabConf, childFieldName, parentFieldName, conn);
+					
+					logDebug("CHILDREN " + i + " [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
+					        + getTableName() + "' CONFIGURED");
+				}
+				
+				logDebug("LOADED CHILDREN FOR TABLE '" + getTableName() + "'");
+			}
+			finally {
+				if (foreignKeyRS != null) {
+					foreignKeyRS.close();
+				}
+			}
+		}
+	}
+	
 	protected void loadConditionalParents(Connection conn) throws DBException {
 		if (!utilities.arrayHasElement(this.conditionalParents))
 			return;
 		
-		for (int i = 0; i < this.conditionalParents.size(); i++) {
-			RefInfo refInfo = this.conditionalParents.get(i);
-			
-			this.conditionalParents.set(i, generateRefInfo(refInfo.getRefColumnName(), refInfo.getConditionField(),
-			    refInfo.getConditionValue(), RefInfo.PARENT_REF_TYPE, init(refInfo.getTableName(), this.parent), conn));
+		for (TableParent p : this.conditionalParents) {
+			for (RefInfo r : p.getRefInfo()) {
+				r.setChildTableConf(this);
+				r.setParentTableCof(p);
+			}
 		}
 	}
 	
-	private RefInfo generateRefInfo(String refColumName, String conditionField, Integer conditionValue, String refType,
-	        SyncTableConfiguration refTableConfiguration, Connection conn) throws DBException {
-		String refColumnType = AttDefinedElements.convertDatabaseTypeTOJavaType(refColumName,
-		    DBUtilities.determineColunType(this.getTableName(), refColumName, conn));
-		boolean ignorable = DBUtilities.isTableColumnAllowNull(this.tableName, refColumName, conn);
+	private void addChildRefInfo(String refCode, SyncTableConfiguration childTabConf, String childFieldName,
+	        String parentFieldName, Connection conn) throws DBException {
 		
-		RefInfo ref = new RefInfo();
+		SyncTableConfiguration parentTabConf = this;
 		
-		ref.clone(this);
-		ref.setRefType(refType);
-		ref.setRefColumnName(refColumName);
-		ref.setRefTableConfiguration(refTableConfiguration);
-		ref.setIgnorable(ignorable);
-		ref.setRefColumnType(refColumnType);
-		ref.setConditionField(conditionField);
-		ref.setConditionValue(conditionValue);
+		initRefInfo(RefType.PARENT, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
+	}
+	
+	private void addParentRefInfo(String refCode, String childFieldName, SyncTableConfiguration parentTabConf,
+	        String parentFieldName, Connection conn) throws DBException {
 		
-		//Mark as metadata if is not specificaly mapped as parent in conf file
-		if (!ref.getRefTableConfiguration().isConfigured()) {
-			ref.getRefTableConfiguration().setMetadata(true);
+		SyncTableConfiguration childTabConf = this;
+		
+		initRefInfo(RefType.CHILD, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
+		
+	}
+	
+	private RefInfo initRefInfo(RefType refType, String refCode, SyncTableConfiguration childTabConf, String childFieldname,
+	        SyncTableConfiguration parentTabConf, String parentFieldName, Connection conn) throws DBException {
+		
+		String fieldName = null;
+		
+		if (refType.isChild()) {
+			fieldName = childFieldname;
+		} else {
+			fieldName = parentFieldName;
 		}
+		
+		Field field = utilities.findOnArray(this.fields, new Field(fieldName));
+		
+		if (field == null) {
+			throw new ForbiddenOperationException(
+			        "The field '" + fieldName + "' was not found on '" + this.tableName + "' fields!!!");
+		}
+		
+		boolean ignorable = DBUtilities.isTableColumnAllowNull(this.tableName, fieldName, conn);
+		
+		RefMapping map = RefMapping.fastCreate(childFieldname, parentFieldName);
+		
+		map.getChildField().setType(field.getType());
+		map.getParentField().setType(field.getType());
+		map.setIgnorable(ignorable);
+		
+		if (this.parentRefInfo == null) {
+			this.parentRefInfo = new ArrayList<>();
+		}
+		
+		if (this.childRefInfo == null) {
+			this.childRefInfo = new ArrayList<>();
+		}
+		
+		List<RefInfo> allRef = null;
+		RefInfo ref = null;
+		
+		if (refType.isChild()) {
+			allRef = this.childRefInfo;
+		} else {
+			allRef = this.parentRefInfo;
+		}
+		
+		ref = utilities.findOnList(allRef, RefInfo.init(refCode));
+		
+		if (ref == null) {
+			ref = RefInfo.init(refCode);
+			
+			ref.setParentTableCof(parentTabConf);
+			ref.setChildTableConf(childTabConf);
+			
+			//Mark as metadata if is not specificaly mapped as parent in conf file
+			if (!ref.getParentTableCof().isConfigured()) {
+				ref.getParentTableCof().setMetadata(true);
+			}
+			
+			allRef.add(ref);
+		}
+		
+		RefMapping configuredMapping = findConfiguredRefMapping(parentTabConf.getTableName(), map.getParentField().getName(),
+		    map.getChildField().getName());
+		
+		if (configuredMapping != null) {
+			map.setDefaultValueDueInconsistency(configuredMapping.getDefaultValueDueInconsistency());
+			map.setSetNullDueInconsistency(configuredMapping.getDefaultValueDueInconsistency() == null);
+			
+			ref.setConditionField(map.getRefInfo().getConditionField());
+			ref.setConditionValue(map.getRefInfo().getConditionValue());
+		}
+		
+		ref.addMapping(map);
 		
 		return ref;
 	}
@@ -782,7 +865,14 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	}
 	
 	private String generateClassName(String tableName) {
-		String[] nameParts = tableName.split("_");
+		String[] nameParts = tableName.split("\\.");
+		
+		//Ignore the schema
+		if (nameParts.length > 1) {
+			tableName = nameParts[1];
+		}
+		
+		nameParts = tableName.split("_");
 		
 		String className = utilities.capitalize(nameParts[0]);
 		
@@ -937,9 +1027,17 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 			return null;
 		} else if (utilities.arrayHasElement(this.getParents())) {
 			
-			for (RefInfo refInfo : getParents()) {
-				if (refInfo.getRefTableConfiguration().getTableName().equalsIgnoreCase(this.sharePkWith)) {
-					return refInfo;
+			for (RefInfo refInfo : this.parentRefInfo) {
+				if (refInfo.getParentTableCof().getTableName().equalsIgnoreCase(this.sharePkWith)) {
+					
+					PrimaryKey pk = refInfo.getParentTableCof().getPrimaryKey();
+					
+					PrimaryKey refInfoKey = new PrimaryKey();
+					refInfoKey.setFields(refInfo.extractParentFieldsFromRefMapping());
+					
+					if (pk.hasSameFields(refInfoKey)) {
+						return refInfo;
+					}
 				}
 			}
 		}
@@ -975,30 +1073,40 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	}
 	
 	/**
-	 * Find and returns the parent info with a given name.
+	 * Find and returns the RefMapping info on configured parents.
 	 * 
 	 * @param parentTableName
 	 * @return the parents with a given name #parentTableName
 	 * @throws ForbiddenOperationException if there are more that one parents with a given name
 	 */
-	public RefInfo findParent(String parentTableName) throws ForbiddenOperationException {
+	public RefMapping findConfiguredRefMapping(String parentTableName, String parentField, String childField)
+	        throws ForbiddenOperationException {
 		if (!utilities.arrayHasElement(this.parents))
 			return null;
 		
-		RefInfo refInfo = null;
-		
-		for (RefInfo info : this.parents) {
-			if (parentTableName.equals(info.getRefTableName())) {
-				
-				if (refInfo == null) {
-					refInfo = info;
-				} else {
-					throw new ForbiddenOperationException("There are more that one " + parentTableName + " parent");
+		for (TableParent info : this.parents) {
+			
+			if (info.getTableName().equalsIgnoreCase(parentTableName)) {
+				for (RefInfo r : info.getRefInfo()) {
+					RefMapping rm = r.findRefMapping(childField, parentField);
+					
+					if (rm != null)
+						return rm;
 				}
 			}
 		}
 		
-		return refInfo;
+		return null;
+	}
+	
+	public SyncTableConfiguration findParentOnChildRefInfo(String parentTableName) {
+		for (RefInfo ref : this.childRefInfo) {
+			if (parentTableName.equals(ref.getParentTableName())) {
+				return ref.getParentTableCof();
+			}
+		}
+		
+		return null;
 	}
 	
 	@Override
@@ -1083,8 +1191,8 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		return joinCondition;
 	}
 	
-	private String generateUniqueKeyJoinField(UniqueKeyInfo uniqueKey_) {
-		List<Field> uniqueKeyFields = uniqueKey_.getFields();
+	private String generateUniqueKeyJoinField(UniqueKeyInfo uk) {
+		List<Key> uniqueKeyFields = uk.getFields();
 		
 		String joinFields = "";
 		
@@ -1150,7 +1258,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	private String generateUniqueKeyConditionsFields(UniqueKeyInfo uniqueKey) {
 		String joinFields = "";
 		
-		List<Field> uniqueKeyFields = uniqueKey.getFields();
+		List<Key> uniqueKeyFields = uniqueKey.getFields();
 		
 		for (int i = 0; i < uniqueKeyFields.size(); i++) {
 			if (i > 0)
@@ -1165,7 +1273,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	private String generateUniqueKeyConditionsFields(UniqueKeyInfo uniqueKey, DatabaseObject dbObject) {
 		String conditionFields = "";
 		
-		List<Field> uniqueKeyFields = uniqueKey.getFields();
+		List<Key> uniqueKeyFields = uniqueKey.getFields();
 		
 		uniqueKey.loadValuesToFields(dbObject);
 		

@@ -1,21 +1,22 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart;
+package org.openmrs.module.epts.etl.model.pojo.mozart.dst;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class MedicationWfdVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class MedicationVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private String encounterUuid;
 	private Integer regimenId;
 	private Integer formulationId;
-	private double quantityPrescribed;
+	private Double quantityPrescribed;
 	private String dosage;
 	private java.util.Date medicationPickupDate;
 	private java.util.Date nextPickupDate;
@@ -36,7 +37,7 @@ public class MedicationWfdVO extends AbstractDatabaseObject implements DatabaseO
 	private String locationUuid;
 	private String sourceDatabase;
  
-	public MedicationWfdVO() { 
+	public MedicationVO() { 
 		this.metadata = false;
 	} 
  
@@ -72,11 +73,11 @@ public class MedicationWfdVO extends AbstractDatabaseObject implements DatabaseO
 		return this.formulationId;
 	}
  
-	public void setQuantityPrescribed(double quantityPrescribed){ 
+	public void setQuantityPrescribed(Double quantityPrescribed){ 
 	 	this.quantityPrescribed = quantityPrescribed;
 	}
  
-	public double getQuantityPrescribed(){ 
+	public Double getQuantityPrescribed(){ 
 		return this.quantityPrescribed;
 	}
  
@@ -248,7 +249,7 @@ public class MedicationWfdVO extends AbstractDatabaseObject implements DatabaseO
 		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		if (rs.getObject("regimen_id") != null) this.regimenId = rs.getInt("regimen_id");
 		if (rs.getObject("formulation_id") != null) this.formulationId = rs.getInt("formulation_id");
-		this.quantityPrescribed = rs.getDouble("quantity_prescribed");
+		if (rs.getObject("quantity_prescribed") != null) this.quantityPrescribed = rs.getDouble("quantity_prescribed");
 		this.dosage = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("dosage") != null ? rs.getString("dosage").trim() : null);
 		this.medicationPickupDate =  rs.getTimestamp("medication_pickup_date") != null ? new java.util.Date( rs.getTimestamp("medication_pickup_date").getTime() ) : null;
 		this.nextPickupDate =  rs.getTimestamp("next_pickup_date") != null ? new java.util.Date( rs.getTimestamp("next_pickup_date").getTime() ) : null;
@@ -277,7 +278,7 @@ public class MedicationWfdVO extends AbstractDatabaseObject implements DatabaseO
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO medication_wfd(encounter_uuid, regimen_id, formulation_id, quantity_prescribed, dosage, medication_pickup_date, next_pickup_date, mode_dispensation_id, med_sequence_id, type_dispensation_id, alternative_line_id, reason_change_regimen_id, med_side_effects_id, adherence_id, medication_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO medication(encounter_uuid, regimen_id, formulation_id, quantity_prescribed, dosage, medication_pickup_date, next_pickup_date, mode_dispensation_id, med_sequence_id, type_dispensation_id, alternative_line_id, reason_change_regimen_id, med_side_effects_id, adherence_id, medication_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -287,7 +288,7 @@ public class MedicationWfdVO extends AbstractDatabaseObject implements DatabaseO
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO medication_wfd(id, encounter_uuid, regimen_id, formulation_id, quantity_prescribed, dosage, medication_pickup_date, next_pickup_date, mode_dispensation_id, med_sequence_id, type_dispensation_id, alternative_line_id, reason_change_regimen_id, med_side_effects_id, adherence_id, medication_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO medication(id, encounter_uuid, regimen_id, formulation_id, quantity_prescribed, dosage, medication_pickup_date, next_pickup_date, mode_dispensation_id, med_sequence_id, type_dispensation_id, alternative_line_id, reason_change_regimen_id, med_side_effects_id, adherence_id, medication_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -302,7 +303,7 @@ public class MedicationWfdVO extends AbstractDatabaseObject implements DatabaseO
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE medication_wfd SET encounter_uuid = ?, regimen_id = ?, formulation_id = ?, quantity_prescribed = ?, dosage = ?, medication_pickup_date = ?, next_pickup_date = ?, mode_dispensation_id = ?, med_sequence_id = ?, type_dispensation_id = ?, alternative_line_id = ?, reason_change_regimen_id = ?, med_side_effects_id = ?, adherence_id = ?, medication_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
+ 		return "UPDATE medication SET encounter_uuid = ?, regimen_id = ?, formulation_id = ?, quantity_prescribed = ?, dosage = ?, medication_pickup_date = ?, next_pickup_date = ?, mode_dispensation_id = ?, med_sequence_id = ?, type_dispensation_id = ?, alternative_line_id = ?, reason_change_regimen_id = ?, med_side_effects_id = ?, adherence_id = ?, medication_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
@@ -330,6 +331,11 @@ public class MedicationWfdVO extends AbstractDatabaseObject implements DatabaseO
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "medication";
 	}
 
 

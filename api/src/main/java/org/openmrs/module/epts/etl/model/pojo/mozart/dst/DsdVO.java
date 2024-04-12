@@ -1,20 +1,22 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart;
+package org.openmrs.module.epts.etl.model.pojo.mozart.dst;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class ClinicalConsultationWfdVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class DsdVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private String encounterUuid;
-	private java.util.Date consultationDate;
-	private java.util.Date scheduledDate;
+	private Integer dsdId;
+	private Integer dsdStateId;
+	private String dsdUuid;
 	private Integer formId;
 	private Integer encounterType;
 	private String patientUuid;
@@ -24,7 +26,7 @@ public class ClinicalConsultationWfdVO extends AbstractDatabaseObject implements
 	private String locationUuid;
 	private String sourceDatabase;
  
-	public ClinicalConsultationWfdVO() { 
+	public DsdVO() { 
 		this.metadata = false;
 	} 
  
@@ -44,20 +46,28 @@ public class ClinicalConsultationWfdVO extends AbstractDatabaseObject implements
 		return this.encounterUuid;
 	}
  
-	public void setConsultationDate(java.util.Date consultationDate){ 
-	 	this.consultationDate = consultationDate;
+	public void setDsdId(Integer dsdId){ 
+	 	this.dsdId = dsdId;
 	}
  
-	public java.util.Date getConsultationDate(){ 
-		return this.consultationDate;
+	public Integer getDsdId(){ 
+		return this.dsdId;
 	}
  
-	public void setScheduledDate(java.util.Date scheduledDate){ 
-	 	this.scheduledDate = scheduledDate;
+	public void setDsdStateId(Integer dsdStateId){ 
+	 	this.dsdStateId = dsdStateId;
 	}
  
-	public java.util.Date getScheduledDate(){ 
-		return this.scheduledDate;
+	public Integer getDsdStateId(){ 
+		return this.dsdStateId;
+	}
+ 
+	public void setDsdUuid(String dsdUuid){ 
+	 	this.dsdUuid = dsdUuid;
+	}
+ 
+	public String getDsdUuid(){ 
+		return this.dsdUuid;
 	}
  
 	public void setFormId(Integer formId){ 
@@ -138,8 +148,9 @@ public class ClinicalConsultationWfdVO extends AbstractDatabaseObject implements
 		super.load(rs);
 		if (rs.getObject("id") != null) this.id = rs.getInt("id");
 		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
-		this.consultationDate =  rs.getTimestamp("consultation_date") != null ? new java.util.Date( rs.getTimestamp("consultation_date").getTime() ) : null;
-		this.scheduledDate =  rs.getTimestamp("scheduled_date") != null ? new java.util.Date( rs.getTimestamp("scheduled_date").getTime() ) : null;
+		if (rs.getObject("dsd_id") != null) this.dsdId = rs.getInt("dsd_id");
+		if (rs.getObject("dsd_state_id") != null) this.dsdStateId = rs.getInt("dsd_state_id");
+		this.dsdUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("dsd_uuid") != null ? rs.getString("dsd_uuid").trim() : null);
 		if (rs.getObject("form_id") != null) this.formId = rs.getInt("form_id");
 		if (rs.getObject("encounter_type") != null) this.encounterType = rs.getInt("encounter_type");
 		this.patientUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("patient_uuid") != null ? rs.getString("patient_uuid").trim() : null);
@@ -157,37 +168,37 @@ public class ClinicalConsultationWfdVO extends AbstractDatabaseObject implements
  
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO clinical_consultation_wfd(encounter_uuid, consultation_date, scheduled_date, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO dsd(encounter_uuid, dsd_id, dsd_state_id, dsd_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.encounterUuid, this.consultationDate, this.scheduledDate, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase};		return params; 
+ 		Object[] params = {this.encounterUuid, this.dsdId, this.dsdStateId, this.dsdUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO clinical_consultation_wfd(id, encounter_uuid, consultation_date, scheduled_date, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO dsd(id, encounter_uuid, dsd_id, dsd_state_id, dsd_uuid, form_id, encounter_type, patient_uuid, created_date, encounter_date, change_date, location_uuid, source_database) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.id, this.encounterUuid, this.consultationDate, this.scheduledDate, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase};		return params; 
+ 		Object[] params = {this.id, this.encounterUuid, this.dsdId, this.dsdStateId, this.dsdUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase};		return params; 
 	} 
  
 	@JsonIgnore
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.encounterUuid, this.consultationDate, this.scheduledDate, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase, this.id};		return params; 
+ 		Object[] params = {this.encounterUuid, this.dsdId, this.dsdStateId, this.dsdUuid, this.formId, this.encounterType, this.patientUuid, this.createdDate, this.encounterDate, this.changeDate, this.locationUuid, this.sourceDatabase, this.id};		return params; 
 	} 
  
 	@JsonIgnore
 	public String getUpdateSQL(){ 
- 		return "UPDATE clinical_consultation_wfd SET encounter_uuid = ?, consultation_date = ?, scheduled_date = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
+ 		return "UPDATE dsd SET encounter_uuid = ?, dsd_id = ?, dsd_state_id = ?, dsd_uuid = ?, form_id = ?, encounter_type = ?, patient_uuid = ?, created_date = ?, encounter_date = ?, change_date = ?, location_uuid = ?, source_database = ? WHERE id = ?;"; 
 	} 
  
 	@JsonIgnore
 	public String generateInsertValues(){ 
- 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.consultationDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(consultationDate)  +"\"" : null) + "," + (this.scheduledDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(scheduledDate)  +"\"" : null) + "," + (this.formId) + "," + (this.encounterType) + "," + (this.patientUuid != null ? "\""+ utilities.scapeQuotationMarks(patientUuid)  +"\"" : null) + "," + (this.createdDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(createdDate)  +"\"" : null) + "," + (this.encounterDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(encounterDate)  +"\"" : null) + "," + (this.changeDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(changeDate)  +"\"" : null) + "," + (this.locationUuid != null ? "\""+ utilities.scapeQuotationMarks(locationUuid)  +"\"" : null) + "," + (this.sourceDatabase != null ? "\""+ utilities.scapeQuotationMarks(sourceDatabase)  +"\"" : null); 
+ 		return ""+(this.encounterUuid != null ? "\""+ utilities.scapeQuotationMarks(encounterUuid)  +"\"" : null) + "," + (this.dsdId) + "," + (this.dsdStateId) + "," + (this.dsdUuid != null ? "\""+ utilities.scapeQuotationMarks(dsdUuid)  +"\"" : null) + "," + (this.formId) + "," + (this.encounterType) + "," + (this.patientUuid != null ? "\""+ utilities.scapeQuotationMarks(patientUuid)  +"\"" : null) + "," + (this.createdDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(createdDate)  +"\"" : null) + "," + (this.encounterDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(encounterDate)  +"\"" : null) + "," + (this.changeDate != null ? "\""+ DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(changeDate)  +"\"" : null) + "," + (this.locationUuid != null ? "\""+ utilities.scapeQuotationMarks(locationUuid)  +"\"" : null) + "," + (this.sourceDatabase != null ? "\""+ utilities.scapeQuotationMarks(sourceDatabase)  +"\"" : null); 
 	} 
  
 	@Override
@@ -210,6 +221,11 @@ public class ClinicalConsultationWfdVO extends AbstractDatabaseObject implements
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "dsd";
 	}
 
 

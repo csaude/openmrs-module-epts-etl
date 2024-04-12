@@ -1099,4 +1099,47 @@ public class CommonUtilities implements Serializable {
 		
 		return values != null ? utilities.parseListToArray(values) : null;
 	}
+	
+	public Field getField(Object obj, String fieldName) {
+		Object[] fields = BaseVO.getFields(obj);
+		
+		for (int i = 0; i < fields.length; i++) {
+			Field field = (Field) fields[i];
+			
+			if (field.getName().equals(fieldName)) {
+				return field;
+			}
+		}
+		
+		throw new ForbiddenOperationException(
+		        "The field '" + fieldName + "' was not found on object '" + obj.getClass().getName() + "'");
+		
+	}
+	
+	public Class<?> getFieldType(Object obj, String fieldName) {
+		return getField(obj, fieldName).getType();
+	}
+	
+	public Object parseValue(String value, Class<?> destinationType) {
+		if (destinationType.equals(String.class) && value instanceof String) {
+			return value;
+		} else if (destinationType.equals(Date.class) && value instanceof String) {
+			return DateAndTimeUtilities.createDate(value);
+			
+		} else if (destinationType.equals(Double.class) && value instanceof String) {
+			return Double.parseDouble(value);
+		} else if (destinationType.equals(Integer.class) && value instanceof String) {
+			return Integer.parseInt(value);
+			
+		} else if (destinationType.equals(Long.class) && value instanceof String) {
+			return Long.parseLong(value);
+		} else if (destinationType.equals(Boolean.class) && value instanceof String) {
+			return Boolean.parseBoolean(value);
+		} else if (destinationType.equals(Short.class) && value instanceof String) {
+			return Short.parseShort(value);
+		} else if (destinationType.equals(Float.class) && value instanceof String) {
+			return Float.parseFloat(value);
+		}
+		return value;
+	}
 }

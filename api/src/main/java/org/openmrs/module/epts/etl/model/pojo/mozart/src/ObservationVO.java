@@ -1,10 +1,11 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart;
+package org.openmrs.module.epts.etl.model.pojo.mozart.src;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
@@ -15,7 +16,7 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 	private String encounterUuid;
 	private Integer conceptId;
 	private java.util.Date observationDate;
-	private double valueNumeric;
+	private Double valueNumeric;
 	private Integer valueConceptId;
 	private String valueText;
 	private java.util.Date valueDatetime;
@@ -57,11 +58,11 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 		return this.observationDate;
 	}
  
-	public void setValueNumeric(double valueNumeric){ 
+	public void setValueNumeric(Double valueNumeric){ 
 	 	this.valueNumeric = valueNumeric;
 	}
  
-	public double getValueNumeric(){ 
+	public Double getValueNumeric(){ 
 		return this.valueNumeric;
 	}
  
@@ -113,7 +114,7 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 		this.encounterUuid = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("encounter_uuid") != null ? rs.getString("encounter_uuid").trim() : null);
 		if (rs.getObject("concept_id") != null) this.conceptId = rs.getInt("concept_id");
 		this.observationDate =  rs.getTimestamp("observation_date") != null ? new java.util.Date( rs.getTimestamp("observation_date").getTime() ) : null;
-		this.valueNumeric = rs.getDouble("value_numeric");
+		if (rs.getObject("value_numeric") != null) this.valueNumeric = rs.getDouble("value_numeric");
 		if (rs.getObject("value_concept_id") != null) this.valueConceptId = rs.getInt("value_concept_id");
 		this.valueText = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("value_text") != null ? rs.getString("value_text").trim() : null);
 		this.valueDatetime =  rs.getTimestamp("value_datetime") != null ? new java.util.Date( rs.getTimestamp("value_datetime").getTime() ) : null;
@@ -180,6 +181,11 @@ public class ObservationVO extends AbstractDatabaseObject implements DatabaseObj
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "observation";
 	}
 
 

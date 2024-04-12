@@ -94,7 +94,7 @@ public class EtlEngine extends Engine {
 				DatabaseObject rec = (DatabaseObject) record;
 				
 				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
-					
+						
 					DatabaseObject destObject = null;
 					
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());

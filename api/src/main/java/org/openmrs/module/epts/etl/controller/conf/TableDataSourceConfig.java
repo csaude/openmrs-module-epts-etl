@@ -94,6 +94,17 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 	
 	public void setRelatedSrcExtraDataSrc(EtlExtraDataSource relatedSrcExtraDataSrc) {
 		this.relatedSrcExtraDataSrc = relatedSrcExtraDataSrc;
+		setParent(relatedSrcExtraDataSrc);
+	}
+	
+	@Override
+	public SyncDataConfiguration getParent() {
+		return this.relatedSrcExtraDataSrc;
+	}
+	
+	@Override
+	public SyncConfiguration getRelatedSyncConfiguration() {
+		return getParent().getRelatedSyncConfiguration();
 	}
 	
 	@Override

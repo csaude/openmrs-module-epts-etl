@@ -14,59 +14,78 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class DstConf extends SyncTableConfiguration {
 	
-	private List<FieldsMapping> fieldsMapping;
+	private List<FieldsMapping> allFieldsMapping;
+	
+	private List<FieldsMapping> manualFieldsMapping;
 	
 	private AppInfo relatedAppInfo;
 	
 	public DstConf() {
 	}
 	
-	public List<FieldsMapping> getFieldsMapping() {
-		return fieldsMapping;
+	public List<FieldsMapping> getManualFieldsMapping() {
+		return manualFieldsMapping;
 	}
 	
-	public void setFieldsMappings(List<FieldsMapping> fieldsMapping) {
-		this.fieldsMapping = fieldsMapping;
+	public void setManualFieldsMapping(List<FieldsMapping> manualFieldsMapping) {
+		this.manualFieldsMapping = manualFieldsMapping;
+	}
+	
+	public List<FieldsMapping> getAllFieldsMapping() {
+		return allFieldsMapping;
 	}
 	
 	private void addMapping(String srcField, String destField) {
-		if (this.fieldsMapping == null) {
-			this.fieldsMapping = new ArrayList<FieldsMapping>();
+		addMapping(new FieldsMapping(srcField, this.getTableName(), destField));
+	}
+	
+	private void addMapping(FieldsMapping fm) throws ForbiddenOperationException {
+		if (this.allFieldsMapping == null) {
+			this.allFieldsMapping = new ArrayList<FieldsMapping>();
 		}
 		
-		FieldsMapping fm = new FieldsMapping(srcField, this.getTableName(), destField);
-		
-		if (this.fieldsMapping.contains(fm))
+		if (this.allFieldsMapping.contains(fm))
 			throw new ForbiddenOperationException("The field [" + fm + "] already exists on mapping");
 		
-		this.fieldsMapping.add(fm);
+		this.allFieldsMapping.add(fm);
 	}
 	
 	public static DstConf generateDefaultDstConf(EtlConfiguration etlConf) {
-		if (!etlConf.isFullLoaded())
-			throw new ForbiddenOperationException("The tableInfo is not full loaded!");
-		
 		DstConf dstSyncConfiguration = new DstConf();
 		
 		dstSyncConfiguration.clone(etlConf.getSrcConf());
 		
-		dstSyncConfiguration.generateMappingFields(etlConf.getSrcConf());
-		
-		dstSyncConfiguration.loadAdditionalFieldsInfo();
+		dstSyncConfiguration.generateAllFieldsMapping();
 		
 		return dstSyncConfiguration;
 	}
 	
-	public void generateMappingFields(SyncTableConfiguration tableConfiguration) {
-		for (Field field : tableConfiguration.getFields()) {
-			this.addMapping(field.getName(), field.getName());
+	public void generateAllFieldsMapping() {
+		this.allFieldsMapping = new ArrayList<>();
+		
+		if (utilities.arrayHasElement(this.manualFieldsMapping)) {
+			for (FieldsMapping fm : this.manualFieldsMapping) {
+				if (!utilities.stringHasValue(fm.getDataSourceName())) {
+					fm.setDataSourceName(getParent().getSrcConf().getTableName());
+				}
+				
+				addMapping(fm);
+			}
+		}
+		
+		for (Field field : getParent().getSrcConf().getFields()) {
+			FieldsMapping fm = new FieldsMapping(field.getName(), this.getTableName(), field.getName());
+			
+			if (!this.allFieldsMapping.contains(fm)) {
+				this.addMapping(field.getName(), field.getName());
+			}
 		}
 	}
 	
 	public String getMappedField(String srcField) {
 		List<FieldsMapping> machedFields = new ArrayList<FieldsMapping>();
 		
-		for (FieldsMapping field : this.fieldsMapping) {
+		for (FieldsMapping field : this.allFieldsMapping) {
 			if (field.getSrcField().equals(srcField)) {
 				machedFields.add(field);
 				
@@ -135,9 +154,9 @@ public class DstConf extends SyncTableConfiguration {
 			
 			DatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
 			
-			for (FieldsMapping fieldsMapping : this.getFieldsMapping()) {
+			for (FieldsMapping fieldsMapping : this.allFieldsMapping) {
 				
-				Object srcValue = fieldsMapping.retrieveValue(this, srcObjects, dstAppInfo, srcConn);
+				Object srcValue = fieldsMapping.retrieveValue(mappedObject, srcObjects, dstAppInfo, srcConn);
 				
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
 			}
@@ -151,18 +170,6 @@ public class DstConf extends SyncTableConfiguration {
 			throw new RuntimeException(e);
 		}
 		
-	}
-	
-	public void loadAdditionalFieldsInfo() {
-		if (!utilities.arrayHasElement(this.fieldsMapping)) {
-			throw new ForbiddenOperationException("The mapping fields was not loaded yet");
-		}
-		
-		for (FieldsMapping field : this.fieldsMapping) {
-			if (!utilities.stringHasValue(field.getDataSourceName())) {
-				field.setDataSourceName(this.getSrcConf().getTableName());
-			}
-		}
 	}
 	
 	@Override

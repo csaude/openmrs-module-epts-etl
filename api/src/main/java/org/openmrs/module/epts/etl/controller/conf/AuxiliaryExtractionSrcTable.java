@@ -7,6 +7,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 /**
  * Represent the auxiliary extraction table. This allow the addition of extraction conditions in
@@ -78,7 +79,9 @@ public class AuxiliaryExtractionSrcTable extends SyncTableConfiguration {
 			
 			FieldsMapping field = this.joinFields.get(i);
 			
-			conditionFields += "src_." + field.getSrcField() + " = " + getTableName() + "." + field.getDstField();
+			String tableName = DBUtilities.extractTableNameFromFullTableName(getTableName());
+			
+			conditionFields += "src_." + field.getSrcField() + " = " + tableName + "." + field.getDstField();
 		}
 		
 		if (utilities.stringHasValue(this.getJoinExtraCondition())) {

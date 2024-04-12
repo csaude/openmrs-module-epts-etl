@@ -1,10 +1,11 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart;
+package org.openmrs.module.epts.etl.model.pojo.mozart.src;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
  
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
+ 
 import java.sql.SQLException; 
 import java.sql.ResultSet; 
  
@@ -15,7 +16,7 @@ public class IdentifierVO extends AbstractDatabaseObject implements DatabaseObje
 	private String patientUuid;
 	private Integer identifierType;
 	private String identifierValue;
-	private byte preferred;
+	private Byte preferred;
 	private String identifierUuid;
  
 	public IdentifierVO() { 
@@ -54,11 +55,11 @@ public class IdentifierVO extends AbstractDatabaseObject implements DatabaseObje
 		return this.identifierValue;
 	}
  
-	public void setPreferred(byte preferred){ 
+	public void setPreferred(Byte preferred){ 
 	 	this.preferred = preferred;
 	}
  
-	public byte getPreferred(){ 
+	public Byte getPreferred(){ 
 		return this.preferred;
 	}
  
@@ -150,6 +151,11 @@ public class IdentifierVO extends AbstractDatabaseObject implements DatabaseObje
 	public void setParentToNull(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);
+	}
+
+	@Override
+	public String generateTableName() {
+		return "identifier";
 	}
 
 

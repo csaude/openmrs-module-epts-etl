@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.utilities.tools;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -31,15 +32,17 @@ public class QuickTest {
 		return service.openConnection();
 	}
 	
-	public static void main(String[] args) throws DBException {
-		String query = "select * from ?.community_arv_patient limit 1";
+	public static void main(String[] args) throws DBException, IOException {
+		testLoadParents();
 		
-		Object[] params = { "community_data" };
+	}
+	
+	public static void testLoadParents() throws IOException, DBException {
+		String path = "D:\\ORG\\C-SAUDE\\PROJECTOS\\Mozart\\etl\\conf\\testing.json";
 		
-		//List<CommunityArvPatientVO> c = BaseDAO.search(CommunityArvPatientVO.class, query, params, openConnection());
+		SyncConfiguration conf = SyncConfiguration.loadFromFile(new File(path));
 		
-		//System.out.println(c);
-		
+		conf.getEtlConfiguration().get(0).fullLoad();
 	}
 	
 	public static void main_(String[] args) throws DBException, IOException {
