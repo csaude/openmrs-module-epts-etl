@@ -46,11 +46,7 @@ public interface PojobleDatabaseObject {
 	String getSharePkWith();
 	
 	boolean hasPK();
-	
-	//List<TableParent> getParents();
-	
-	//List<TableParent> getConditionalParents();
-	
+
 	boolean isMetadata();
 	
 	File getPOJOCopiledFilesDirectory();
@@ -68,4 +64,6 @@ public interface PojobleDatabaseObject {
 	List<RefInfo> getParentRefInfo();
 	
 	List<RefInfo> getChildRefInfo();
+
+	boolean hasDateFields();
 }

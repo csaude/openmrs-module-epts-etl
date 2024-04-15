@@ -37,7 +37,7 @@ public class InconsistenceSolverController extends OperationController {
 		try {
 			DatabaseObject obj = DatabaseObjectDAO.getFirstNeverProcessedRecordOnOrigin(config.getSrcConf(), conn);
 		
-			if (obj != null) return obj.getObjectId();
+			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
 			
 			return 0;
 		} catch (DBException e) {
@@ -57,7 +57,7 @@ public class InconsistenceSolverController extends OperationController {
 		try {
 			DatabaseObject obj = DatabaseObjectDAO.getLastNeverProcessedRecordOnOrigin(config.getSrcConf(), conn);
 		
-			if (obj != null) return obj.getObjectId();
+			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
 			
 			return 0;
 		} catch (DBException e) {

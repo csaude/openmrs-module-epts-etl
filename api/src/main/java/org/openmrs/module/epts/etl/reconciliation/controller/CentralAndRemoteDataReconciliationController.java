@@ -80,7 +80,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			if (isPhantomRecordsDetector()){
 				DatabaseObject record = DatabaseObjectDAO.getFirstPhantomRecordInDestination(config.getSrcConf(), conn);
 				
-				id = record != null ? record.getObjectId() : 0;
+				id = record != null ? record.getObjectId().getSimpleValueAsInt() : 0;
 			}
 		
 			return id;
@@ -116,7 +116,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			if (isPhantomRecordsDetector()){
 				DatabaseObject record = DatabaseObjectDAO.getLastPhantomRecordInDestination(config.getSrcConf(), conn);
 				
-				id = record != null ? record.getObjectId() : 0;
+				id = record != null ? record.getObjectId().getSimpleValueAsInt() : 0;
 			}
 		
 			return id;

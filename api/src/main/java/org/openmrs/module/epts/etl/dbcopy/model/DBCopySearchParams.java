@@ -2,12 +2,12 @@ package org.openmrs.module.epts.etl.dbcopy.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SearchSourceType;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -26,7 +26,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 		super(config, limits);
 		
 		this.relatedController = relatedController;
-		setOrderByFields(getSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	@Override
@@ -53,6 +53,8 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 				dstConn = this.relatedController.openDstConnection();
 				
 				if (DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
+					throw new ForbiddenOperationException("Rever este metodo!");
+					/*
 					String destFullTableName = DBUtilities.determineSchemaName(dstConn) + ".";
 					
 					DstConf lastMappedTable = utilities
@@ -69,7 +71,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 					excludeExisting += "				from " + destFullTableName + " dest_";
 					excludeExisting += "				where dest_." + dstPK + " = src_." + srcPK + ")";
 					
-					searchClauses.addToClauses(excludeExisting);
+					searchClauses.addToClauses(excludeExisting);*/
 				}
 			}
 			finally {

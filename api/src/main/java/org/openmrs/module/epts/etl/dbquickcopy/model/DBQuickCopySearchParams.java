@@ -23,7 +23,7 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 		super(config, limits);
 		
 		this.relatedController = relatedController;
-		setOrderByFields(getSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	@Override

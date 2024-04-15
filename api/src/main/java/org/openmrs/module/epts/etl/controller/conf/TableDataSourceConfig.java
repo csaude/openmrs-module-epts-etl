@@ -39,26 +39,36 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 		if (!utilities.arrayHasElement(this.joinFields)) {
 			//Try to autoload join fields
 			
-			FieldsMapping fm = null;
+			List<FieldsMapping> fm = new ArrayList<>();
 			
 			//Assuming that this datasource is parent
-			RefInfo pInfo = this.relatedSrcExtraDataSrc.getRelatedSrcConf().findParent(this.getTableName());
+			List<RefInfo> pInfo = this.relatedSrcExtraDataSrc.getRelatedSrcConf().findAllRefToParent(this.getTableName());
 			
 			if (pInfo != null) {
-				fm = new FieldsMapping(this.getPrimaryKey(), "", pInfo.getRefColumnName());
+				for (RefInfo ref : pInfo) {
+					for (RefMapping map : ref.getFieldsMapping()) {
+						fm.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
+					}
+				}
 			} else {
 				
 				//Assuning that the this data src is child
-				pInfo = this.findParent(this.relatedSrcExtraDataSrc.getRelatedSrcConf().getTableName());
+				pInfo = this.findAllRefToParent(this.relatedSrcExtraDataSrc.getRelatedSrcConf().getTableName());
 				
 				if (pInfo != null) {
-					fm = new FieldsMapping(pInfo.getRefColumnName(), "", pInfo.getRefTableConfiguration().getPrimaryKey());
+					for (RefInfo ref : pInfo) {
+						for (RefMapping map : ref.getFieldsMapping()) {
+							fm.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
+						}
+					}
 				}
 			}
 			
 			if (fm != null) {
 				this.joinFields = new ArrayList<>();
-				this.joinFields.add(fm);
+				for (FieldsMapping f : fm) {
+					this.joinFields.add(f);
+				}
 			}
 		}
 		

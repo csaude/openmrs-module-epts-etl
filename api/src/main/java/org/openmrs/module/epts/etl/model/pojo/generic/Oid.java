@@ -6,7 +6,18 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 
 public class Oid extends PrimaryKey {
 	
+	private boolean fullLoaded;
+	
 	public Oid() {
+		this.fullLoaded = false;
+	}
+	
+	public boolean isFullLoaded() {
+		return fullLoaded;
+	}
+	
+	public void setFullLoaded(boolean fullLoaded) {
+		this.fullLoaded = fullLoaded;
 	}
 	
 	public boolean isSimpleId() {
@@ -62,11 +73,13 @@ public class Oid extends PrimaryKey {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof Oid)) return false;
+		if (!(obj instanceof Oid))
+			return false;
 		
 		Oid oid = (Oid) obj;
 		
-		if (!super.equals(obj)) return false;
+		if (!super.equals(obj))
+			return false;
 		
 		for (Key thisKey : this.getFields()) {
 			Key otherKey = oid.getKey(thisKey.getName());
@@ -79,7 +92,5 @@ public class Oid extends PrimaryKey {
 		return true;
 		
 	}
-
-
 	
 }

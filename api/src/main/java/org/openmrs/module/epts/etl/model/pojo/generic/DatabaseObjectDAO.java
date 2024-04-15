@@ -84,7 +84,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		
 		if (record.getObjectId().isSimpleId()) {
-			record.getObjectId().retrieveSimpleKey().setValue(id);
+			record.fastCreateSimpleNumericKey(id);
 		}
 		
 	}

@@ -21,7 +21,7 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 	public EtlSearchParams(EtlConfiguration config, RecordLimits limits, EtlController relatedController) {
 		super(config, limits);
 		
-		setOrderByFields(getSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	@Override

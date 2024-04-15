@@ -298,12 +298,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	}
 	
 	@Override
-	public String getPrimaryKey() {
-		return null;
-	}
-	
-	@Override
-	public String getPrimaryKeyAsClassAtt() {
+	public PrimaryKey getPrimaryKey() {
 		return null;
 	}
 	
@@ -315,21 +310,6 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	@Override
 	public boolean hasPK() {
 		return false;
-	}
-	
-	@Override
-	public boolean isNumericColumnType() {
-		return false;
-	}
-	
-	@Override
-	public List<RefInfo> getParents() {
-		return null;
-	}
-	
-	@Override
-	public List<RefInfo> getConditionalParents() {
-		return null;
 	}
 	
 	@Override
@@ -363,7 +343,26 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		
 		return DatabaseObjectDAO.find(this.getSyncRecordClass(srcAppInfo), query, params, srcConn);
 	}
-	
 
+	@Override
+	public List<RefInfo> getParentRefInfo() {
+		return null;
+	}
+
+	@Override
+	public List<RefInfo> getChildRefInfo() {
+		return null;
+	}
+	
+	@Override
+	public boolean hasDateFields() {
+		for (Field t : this.fields){
+			if (t.isDateField()) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
 	
 }

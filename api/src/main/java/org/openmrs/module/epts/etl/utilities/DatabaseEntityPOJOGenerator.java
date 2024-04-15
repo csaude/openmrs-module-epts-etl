@@ -18,7 +18,9 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
+import org.openmrs.module.epts.etl.controller.conf.RefMapping;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.exceptions.SyncExeption;
 import org.openmrs.module.epts.etl.model.Field;
@@ -140,7 +142,11 @@ public class DatabaseEntityPOJOGenerator {
 		    attElements.getSqlInsertLastEndPartDefinition());
 		
 		if (pojoble.getPrimaryKey() != null) {
-			updateParamsDefinition += ", this." + pojoble.getPrimaryKeyAsClassAtt() + "};";
+			
+			for (Key key : pojoble.getPrimaryKey().getFields()) {
+				updateParamsDefinition += ", this." + key.getNameAsClassAtt() + "};";
+			}
+			
 		} else {
 			updateParamsDefinition += ", null};";
 		}
@@ -153,8 +159,14 @@ public class DatabaseEntityPOJOGenerator {
 		String insertSQLDefinitionWithObjectId = "INSERT INTO " + pojoble.getObjectName() + "(" + pojoble.getPrimaryKey()
 		        + ", " + insertSQLFieldsWithoutObjectId + ") VALUES(?, " + insertSQLQuestionMarksWithoutObjectId + ");";
 		
-		String insertParamsWithObjectIdDefinition = "Object[] params = {this." + pojoble.getPrimaryKeyAsClassAtt() + ", "
-		        + insertParamsWithoutObjectId + "};";
+		String insertParamsWithObjectIdDefinition = "Object[] params = {this."
+		        + pojoble.getPrimaryKey().getFields().get(0).getNameAsClassAtt();
+		
+		for (Key key : pojoble.getPrimaryKey().getFields()) {
+			insertParamsWithObjectIdDefinition += "," + key.getNameAsClassAtt();
+		}
+		
+		insertParamsWithObjectIdDefinition = "," + insertParamsWithoutObjectId + "};";
 		
 		if (!pojoble.hasPK()) {
 			insertSQLDefinitionWithObjectId = insertSQLDefinitionWithoutObjectId;
@@ -164,21 +176,6 @@ public class DatabaseEntityPOJOGenerator {
 		insertValuesDefinition += attElements.getSqlInsertValues();
 		
 		String methodFromSuperClass = "";
-		
-		String primaryKeyAtt = pojoble.hasPK() ? pojoble.getPrimaryKeyAsClassAtt() : null;
-		
-		methodFromSuperClass += "	public Integer getObjectId() { \n ";
-		if (pojoble.isNumericColumnType() && pojoble.hasPK())
-			methodFromSuperClass += "		return this." + primaryKeyAtt + "; \n";
-		else
-			methodFromSuperClass += "		return 0; \n";
-		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	public void setObjectId(Integer selfId){ \n";
-		
-		if (pojoble.isNumericColumnType() && pojoble.hasPK()) {
-			methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
-		}
 		
 		methodFromSuperClass += "	} \n \n";
 		
@@ -238,14 +235,18 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public boolean hasParents() {\n";
 		
-		if (utilities.arrayHasElement(pojoble.getParents())) {
-			for (RefInfo refInfo : pojoble.getParents()) {
-				if (refInfo.isNumericRefColumn()) {
-					methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName()
-					        + " != 0) return true;\n\n";
-				} else {
-					methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName()
-					        + " != null) return true;\n\n";
+		if (utilities.arrayHasElement(pojoble.getParentRefInfo())) {
+			for (RefInfo refInfo : pojoble.getParentRefInfo()) {
+				
+				for (RefMapping map : refInfo.getFieldsMapping()) {
+					
+					if (map.isPrimitieveRefColumn()) {
+						methodFromSuperClass += "		if (this." + map.getChildFieldNameAsAttClass()
+						        + " != 0) return true;\n\n";
+					} else {
+						methodFromSuperClass += "		if (this." + map.getParentFieldNameAsAttClass()
+						        + " != null) return true;\n\n";
+					}
 				}
 			}
 		}
@@ -257,30 +258,11 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public Integer getParentValue(String parentAttName) {";
 		
-		if (utilities.arrayHasElement(pojoble.getParents())) {
-			for (RefInfo refInfo : pojoble.getParents()) {
-				if (refInfo.isNumericRefColumn()) {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) return this."
-					        + refInfo.getRefColumnAsClassAttName() + ";";
-				} else {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) return 0;";
-				}
-			}
-		}
-		
-		if (utilities.arrayHasElement(pojoble.getConditionalParents())) {
-			for (RefInfo refInfo : pojoble.getConditionalParents()) {
-				if (refInfo.isNumericRefColumn()) {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) return this."
-					        + refInfo.getRefColumnAsClassAttName() + ";";
-				} else {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) return Integer.parseInt(this."
-					        + refInfo.getRefColumnAsClassAttName() + ");";
-				}
+		if (utilities.arrayHasElement(pojoble.getParentRefInfo())) {
+			for (RefInfo refInfo : pojoble.getParentRefInfo()) {
+				methodFromSuperClass += "		\n		if (parentAttName.equals(\""
+				        + refInfo.getChildColumnAsClassAttOnSimpleMapping() + "\")) return this."
+				        + refInfo.getChildColumnAsClassAttOnSimpleMapping() + ";";
 			}
 		}
 		
@@ -291,61 +273,23 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	}\n\n";
 		
 		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public void changeParentValue(String parentAttName, DatabaseObject newParent) {";
-		
-		if (utilities.arrayHasElement(pojoble.getParents())) {
-			for (RefInfo refInfo : pojoble.getParents()) {
-				if (refInfo.isNumericRefColumn()) {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
-					        + refInfo.getRefColumnAsClassAttName()
-					        + " = newParent.getObjectId();\n			return;\n		}";
-				} else {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
-					        + refInfo.getRefColumnAsClassAttName()
-					        + " = \"\" + newParent.getObjectId();\n			return;\n		}";
-				}
-			}
-		}
-		
-		if (utilities.arrayHasElement(pojoble.getConditionalParents())) {
-			for (RefInfo refInfo : pojoble.getConditionalParents()) {
-				if (refInfo.isNumericRefColumn()) {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
-					        + refInfo.getRefColumnAsClassAttName()
-					        + " = newParent.getObjectId();\n			return;\n		}";
-				} else {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
-					        + refInfo.getRefColumnAsClassAttName()
-					        + " = newParent.getObjectId().toString();\n			return;\n		}";
-				}
-			}
-		}
-		
-		methodFromSuperClass += "\n\n";
-		
-		methodFromSuperClass += "		throw new RuntimeException(\"No found parent for: \" + parentAttName);\n";
+		methodFromSuperClass += "	public void changeParentValue(RefInfo refInfo, DatabaseObject newParent) {";
+			
+		methodFromSuperClass += "		for (RefMapping map : refInfo.getFieldsMapping()) { \n";
+		methodFromSuperClass += "			Object parentValue = newParent.getFieldValue(map.getChildFieldNameAsAttClass()); \\n";
+		methodFromSuperClass += "			setValue(map.getChildFieldNameAsAttClass(), parentValue); ";
+		methodFromSuperClass += "		} \n";
 		
 		methodFromSuperClass += "	}\n\n";
 		
 		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public void setParentToNull(String parentAttName) {";
+		methodFromSuperClass += "	public void setParentToNull(RefInfo refInfo) {";
 		
-		if (utilities.arrayHasElement(pojoble.getParents())) {
-			for (RefInfo refInfo : pojoble.getParents()) {
-				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName()
-				        + "\")) {\n			this." + refInfo.getRefColumnAsClassAttName()
-				        + " = null;\n			return;\n		}";
-			}
-		}
-		
-		methodFromSuperClass += "\n\n";
-		
-		methodFromSuperClass += "		throw new RuntimeException(\"No found parent for: \" + parentAttName);\n";
-		
+		methodFromSuperClass += "		for (RefMapping map : refInfo.getFieldsMapping()) { \n";
+		methodFromSuperClass += "			Object parentValue = newParent.getFieldValue(map.getChildFieldNameAsAttClass()); \\n";
+		methodFromSuperClass += "			setValue(map.getChildFieldNameAsAttClass(), parentValue); ";
+		methodFromSuperClass += "		} \n";
+
 		methodFromSuperClass += "	}\n\n";
 		
 		methodFromSuperClass += "	@Override\n";
@@ -356,8 +300,13 @@ public class DatabaseEntityPOJOGenerator {
 		String classDefinition = "package " + pojoble.generateFullPackageName(application) + ";\n\n";
 		
 		classDefinition += "import org.openmrs.module.epts.etl.model.pojo.generic.*; \n \n";
+		
+		if (pojoble.hasDateFields()) {
 		classDefinition += "import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; \n \n";
+		}
+		
 		classDefinition += "import org.openmrs.module.epts.etl.utilities.AttDefinedElements; \n \n";
+		classDefinition += "import org.openmrs.module.epts.etl.controller.conf.RefInfo; \n \n";
 		
 		classDefinition += "import java.sql.SQLException; \n";
 		classDefinition += "import java.sql.ResultSet; \n \n";

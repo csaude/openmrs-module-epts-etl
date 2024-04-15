@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 
@@ -200,4 +201,10 @@ public class Field implements Serializable {
 		
 		return (String) value;
 	}
+	
+	
+	public boolean isDateField() {
+		return AttDefinedElements.isDateType(this.type);
+	}
 }
+

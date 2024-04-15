@@ -25,6 +25,13 @@ public class Key extends Field {
 		setType(type);
 	}
 	
+	public Key(String name, String type, Object value) {
+		this(name);
+		
+		setType(type);
+		setValue(value);
+	}
+	
 	public String getNameAsClassAtt() {
 		return AttDefinedElements.convertTableAttNameToClassAttName(getName());
 	}

@@ -17,7 +17,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 	public DatabaseIntegrityConsolidationSearchParams(EtlConfiguration config, RecordLimits limits, Connection conn) {
 		super(config, limits);
 		
-		setOrderByFields(config.getSrcConf().getPrimaryKey());
+		setOrderByFields(config.getSrcConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	@Override

@@ -23,7 +23,11 @@ public class DetectGapesSearchParams extends DatabaseObjectSearchParams {
 		super(config, limits);
 		
 		this.relatedController = relatedController;
-		setOrderByFields(getSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
+	}
+	
+	public DetectGapesController getRelatedController() {
+		return relatedController;
 	}
 	
 	@Override

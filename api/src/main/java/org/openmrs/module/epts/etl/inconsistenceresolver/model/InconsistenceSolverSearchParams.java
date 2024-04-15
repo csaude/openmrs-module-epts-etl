@@ -18,7 +18,7 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<DatabaseOb
 	public InconsistenceSolverSearchParams(EtlConfiguration config, RecordLimits limits, Connection conn) {
 		super(config, limits);
 		
-		setOrderByFields(getSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	@Override

@@ -51,8 +51,8 @@ public class DBExportEngine extends Engine {
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getMainSrcTableName(), syncRecordsAsOpenMRSObjects,
 			    getEtlConfiguration().getOriginAppLocationCode(), true);
 			
-			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(),
-			    syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
+			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId().getSimpleValueAsInt(),
+			    syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId().getSimpleValueAsInt());
 			
 			logInfo("WRITING '" + syncRecords.size() + "' " + getMainSrcTableName() + " TO JSON FILE ["
 			        + jsonFIle.getAbsolutePath() + ".json]");

@@ -24,9 +24,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	
 	private String tableName;
 	
-	private List<TableParent> parents;
-	
-	private List<TableParent> conditionalParents;
+	private List<ConditionalParent> conditionalParents;
 	
 	private List<RefInfo> parentRefInfo;
 	
@@ -75,7 +73,6 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	
 	public void clone(SyncTableConfiguration toCloneFrom) {
 		this.tableName = toCloneFrom.tableName;
-		this.parents = toCloneFrom.parents;
 		this.childRefInfo = toCloneFrom.childRefInfo;
 		this.parentRefInfo = toCloneFrom.parentRefInfo;
 		this.conditionalParents = toCloneFrom.conditionalParents;
@@ -126,6 +123,19 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		return this.winningRecordFieldsInfo != null;
 	}
 	
+	@Override
+	public List<RefInfo> getParentRefInfo() {
+		return parentRefInfo;
+	}
+	
+	public void setParentRefInfo(List<RefInfo> parentRefInfo) {
+		this.parentRefInfo = parentRefInfo;
+	}
+	
+	public void setChildRefInfo(List<RefInfo> childRefInfo) {
+		this.childRefInfo = childRefInfo;
+	}
+	
 	public List<Field> getFields() {
 		return fields;
 	}
@@ -163,11 +173,11 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		this.removeForbidden = removeForbidden;
 	}
 	
-	public List<TableParent> getConditionalParents() {
+	public List<ConditionalParent> getConditionalParents() {
 		return conditionalParents;
 	}
 	
-	public void setConditionalParents(List<TableParent> conditionalParents) {
+	public void setConditionalParents(List<ConditionalParent> conditionalParents) {
 		this.conditionalParents = conditionalParents;
 	}
 	
@@ -208,23 +218,15 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	public String getParentsAsString() {
 		String sourceFoldersAsString = "";
 		
-		if (utilities.arrayHasElement(this.getParents())) {
-			for (int i = 0; i < this.getParents().size() - 1; i++) {
-				sourceFoldersAsString += this.getParents().get(i).getTableName() + ",";
+		if (utilities.arrayHasElement(this.parentRefInfo)) {
+			for (int i = 0; i < this.parentRefInfo.size() - 1; i++) {
+				sourceFoldersAsString += this.parentRefInfo.get(i).getParentTableName() + ",";
 			}
 			
-			sourceFoldersAsString += this.getParents().get(this.getParents().size() - 1).getTableName();
+			sourceFoldersAsString += this.parentRefInfo.get(this.parentRefInfo.size() - 1).getParentTableName();
 		}
 		
 		return sourceFoldersAsString;
-	}
-	
-	public List<TableParent> getParents() {
-		return parents;
-	}
-	
-	public void setParents(List<TableParent> parents) {
-		this.parents = parents;
 	}
 	
 	public String getSharePkWith() {
@@ -236,6 +238,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	}
 	
 	@Override
+	@JsonIgnore
 	public SyncDataConfiguration getParent() {
 		return parent;
 	}
@@ -472,22 +475,6 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		
 		int count = countParents(conn);
 		
-		//First load all necessary info on configured parents
-		
-		if (utilities.arrayHasElement(this.parents)) {
-			for (TableParent p : this.parents) {
-				for (RefInfo r : p.getRefInfo()) {
-					r.setChildTableConf(this);
-					r.setParentTableCof(p);
-					
-					for (RefMapping map : r.getFieldsMapping()) {
-						map.setRefInfo(r);
-					}
-					
-				}
-			}
-		}
-		
 		if (count == 0) {
 			logDebug("NO PARENT FOUND FOR TABLE '" + getTableName() + "'");
 		} else
@@ -530,9 +517,27 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 				
 				//Check if there is a configured parent but not defined on the db schema
 				
+				if (utilities.arrayHasElement(this.conditionalParents)) {
+					
+					for (ConditionalParent configuredParent : this.conditionalParents) {
+						
+						for (RefInfo ref : this.parentRefInfo) {
+							if (ref.getParentTableName().equals(configuredParent.getTableName())) {
+								ref.setConditionalFields(configuredParent.getConditionalFields());
+							}
+						}
+						
+					}
+					
+				}
+				
+				loadConditionalParents(conn);
+				
+				//Include conditional parents
+				
 				if (utilities.arrayHasElement(this.parents)) {
 					
-					for (TableParent configuredParent : this.parents) {
+					for (ConditionalParent configuredParent : this.parents) {
 						
 						for (RefInfo r : configuredParent.getRefInfo()) {
 							if (!this.parentRefInfo.contains(r)) {
@@ -621,7 +626,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		if (!utilities.arrayHasElement(this.conditionalParents))
 			return;
 		
-		for (TableParent p : this.conditionalParents) {
+		for (ConditionalParent p : this.conditionalParents) {
 			for (RefInfo r : p.getRefInfo()) {
 				r.setChildTableConf(this);
 				r.setParentTableCof(p);
@@ -634,7 +639,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		
 		SyncTableConfiguration parentTabConf = this;
 		
-		initRefInfo(RefType.PARENT, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
+		initRefInfo(RefType.EXPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
 	}
 	
 	private void addParentRefInfo(String refCode, String childFieldName, SyncTableConfiguration parentTabConf,
@@ -642,7 +647,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		
 		SyncTableConfiguration childTabConf = this;
 		
-		initRefInfo(RefType.CHILD, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
+		initRefInfo(RefType.IMPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
 		
 	}
 	
@@ -651,7 +656,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		
 		String fieldName = null;
 		
-		if (refType.isChild()) {
+		if (refType.isImported()) {
 			fieldName = childFieldname;
 		} else {
 			fieldName = parentFieldName;
@@ -683,7 +688,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		List<RefInfo> allRef = null;
 		RefInfo ref = null;
 		
-		if (refType.isChild()) {
+		if (refType.isExported()) {
 			allRef = this.childRefInfo;
 		} else {
 			allRef = this.parentRefInfo;
@@ -985,16 +990,14 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 			if (!exists)
 				throw new ForbiddenOperationException("The table '" + getTableName() + "' does not exist!!!");
 			
+			setFields(DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn));
+			
 			getPrimaryKey(conn);
 			
 			loadParents(conn);
 			loadChildren(conn);
 			
-			loadConditionalParents(conn);
-			
 			loadUniqueKeys(conn);
-			
-			setFields(DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn));
 			
 			this.fullLoaded = true;
 		}
@@ -1084,7 +1087,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		if (!utilities.arrayHasElement(this.parents))
 			return null;
 		
-		for (TableParent info : this.parents) {
+		for (ConditionalParent info : this.parents) {
 			
 			if (info.getTableName().equalsIgnoreCase(parentTableName)) {
 				for (RefInfo r : info.getRefInfo()) {
@@ -1107,6 +1110,18 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		}
 		
 		return null;
+	}
+	
+	public List<RefInfo> findAllRefToParent(String parentTableName) {
+		List<RefInfo> references = new ArrayList<>();
+		
+		for (RefInfo ref : this.parentRefInfo) {
+			if (parentTableName.equals(ref.getParentTableName())) {
+				references.add(ref);
+			}
+		}
+		
+		return references;
 	}
 	
 	@Override
@@ -1299,6 +1314,17 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	
 	public SyncConfiguration getRelatedSyncConfiguration() {
 		return this.parent.getRelatedSyncConfiguration();
+	}
+	
+	@Override
+	public boolean hasDateFields() {
+		for (Field t : this.fields) {
+			if (t.isDateField()) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 }

@@ -68,12 +68,12 @@ public class DetectGapesEngine extends Engine {
 		for (SyncRecord record : syncRecords) {
 			DatabaseObject rec = (DatabaseObject) record;
 			
-			int diff = rec.getObjectId() - prevRec.getObjectId();
+			int diff = rec.getObjectId().getSimpleValueAsInt() - prevRec.getObjectId().getSimpleValueAsInt();
 			
 			if (diff > 1) {
 				logDebug("Found gape of " + diff + " between " + prevRec.getObjectId() + " and " + rec.getObjectId());
 				
-				for (int i = prevRec.getObjectId() + 1; i < rec.getObjectId(); i++) {
+				for (int i = prevRec.getObjectId().getSimpleValueAsInt() + 1; i < rec.getObjectId().getSimpleValueAsInt(); i++) {
 					GapeDAO.insert(getMainSrcTableConf(), i, conn);
 				}
 			}

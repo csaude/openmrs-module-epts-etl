@@ -5,22 +5,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.openmrs._default.UserRoleVO;
-import org.openmrs.module.epts.etl.model.pojo.openmrs._default.UsersVO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.epts.etl.problems_solver.model.TmpUserVO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
  * @author jpboane
@@ -41,13 +37,13 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	
 	private SyncTableConfiguration userRoleTableConf;
 	
+	@SuppressWarnings("unused")
 	private Class<DatabaseObject> userRoleRecordClass;
 	
 	public ProblemsSolverEngineMissingUserRoles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
-		this.userRoleTableConf = SyncTableConfiguration.init("user_role",
-		    getEtlConfiguration().getSrcConf());
+		this.userRoleTableConf = SyncTableConfiguration.init("user_role", getEtlConfiguration().getSrcConf());
 		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());
 	}
 	
@@ -106,6 +102,9 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	}
 	
 	private boolean performeOnServer(TmpUserVO record, DatabasesInfo dbInfo, Connection conn) throws DBException {
+		throw new ForbiddenOperationException("Review this method");
+		
+		/*
 		boolean found = false;
 		
 		OpenConnection srcConn = dbInfo.acquireConnection();
@@ -153,7 +152,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 			}
 		}
 		
-		return found;
+		return found;*/
 	}
 	
 	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)

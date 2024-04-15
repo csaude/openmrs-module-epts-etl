@@ -9,13 +9,14 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
@@ -38,6 +39,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	
 	protected boolean metadata;
 	
+	protected Oid objectId;
+	
 	/*
 	 * Indicate if there where parents which have been ingored
 	 */
@@ -48,6 +51,10 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	protected SyncImportInfoVO relatedSyncInfo;
 	
 	protected List<UniqueKeyInfo> uniqueKeysInfo;
+	
+	public AbstractDatabaseObject() {
+		this.objectId = new Oid();
+	}
 	
 	public void load(ResultSet rs) throws SQLException {
 		super.load(rs);
@@ -63,6 +70,24 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			
 		}
 		catch (SQLException e) {}
+	}
+	
+	@Override
+	public void loadObjectIdData(SyncTableConfiguration tabConf) {
+		if (tabConf.getPrimaryKey() != null) {
+			this.objectId = tabConf.getPrimaryKey().generateOid(this);
+			
+			this.objectId.setFullLoaded(true);
+		}
+	}
+	
+	@Override
+	public Oid getObjectId() {
+		return this.objectId;
+	}
+	
+	public void setObjectId(Oid objectId) {
+		this.objectId = objectId;
 	}
 	
 	/**
@@ -453,12 +478,15 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			        + ") has composite pk. YOu cannot change the parent for children!");
 		}
 		
-		for (RefInfo refInfo : syncTableInfo.getChildred()) {
-			List<DatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo.getRefTableConfiguration(),
-			    refInfo.getRefColumnName(), this.getObjectId().getSimpleValueAsInt(), conn);
+		this.loadObjectIdData(syncTableInfo);
+		
+		for (RefInfo refInfo : syncTableInfo.getChildRefInfo()) {
+			
+			List<DatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo.getParentTableCof(),
+			    refInfo.getSimpleRefMapping().getParentField().getName(), this.getObjectId().getSimpleValueAsInt(), conn);
 			
 			for (DatabaseObject child : children) {
-				child.changeParentValue(refInfo.getRefColumnAsClassAttName(), newParent);
+				child.changeParentValue(refInfo, newParent);
 				DatabaseObjectDAO.update(child, conn);
 			}
 		}
@@ -511,22 +539,22 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			for (Entry<RefInfo, Integer> entry : missingParents.entrySet()) {
 				//try to load the default parent
 				
-				if (entry.getKey().isSetNullDueInconsistency()) {
-					this.setParentToNull(entry.getKey().getRefColumnAsClassAttName());
+				if (entry.getKey().getSimpleRefMapping().isSetNullDueInconsistency()) {
+					this.setParentToNull(entry.getKey());
 					this.save(tableConfiguration, conn);
 					
 					qtyInconsistence--;
-				} else if (entry.getKey().getDefaultValueDueInconsistency() != null) {
-					Oid oid = Oid.fastCreate(tableConfiguration.getPrimaryKey().retrieveSimpleKey().getName(),
-					    entry.getKey().getDefaultValueDueInconsistency());
+				} else if (entry.getKey().getSimpleRefMapping().getDefaultValueDueInconsistency() != null) {
+					Oid oid = Oid.fastCreate(tableConfiguration.getPrimaryKey().retrieveSimpleKey().getNameAsClassAtt(),
+					    entry.getKey().getSimpleRefMapping().getDefaultValueDueInconsistency());
 					
-					DatabaseObject parent = DatabaseObjectDAO
-					        .getByOid(entry.getKey().getRefObjectClass(tableConfiguration.getMainApp()), oid, conn);
+					DatabaseObject parent = DatabaseObjectDAO.getByOid(
+					    entry.getKey().getParentTableCof().getSyncRecordClass(tableConfiguration.getMainApp()), oid, conn);
 					
 					if (parent == null) {
 						solvedCurrentInconsistency = false;
 					} else {
-						this.changeParentValue(entry.getKey().getRefColumnAsClassAttName(), parent);
+						this.changeParentValue(entry.getKey(), parent);
 						this.save(tableConfiguration, conn);
 						
 						qtyInconsistence--;
@@ -560,11 +588,12 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			        + ") has composite pk. You cannot performe the request action!");
 		}
 		
-		Integer defaultParent = inconsistenceInfoSource.getKey().getDefaultValueDueInconsistency();
+		Integer defaultParent = (Integer) inconsistenceInfoSource.getKey().getSimpleRefMapping()
+		        .getDefaultValueDueInconsistency();
 		
-		InconsistenceInfo info = InconsistenceInfo.generate(tableConfiguration.getTableName(),
-		    this.getObjectId().getSimpleValueAsInt(), inconsistenceInfoSource.getKey().getTableName(),
-		    inconsistenceInfoSource.getValue(), defaultParent, recordOriginLocationCode);
+		InconsistenceInfo info = InconsistenceInfo.generate(tableConfiguration.getTableName(), this.getObjectId(),
+		    inconsistenceInfoSource.getKey().getChildTableConf().getTableName(), inconsistenceInfoSource.getValue(),
+		    defaultParent, recordOriginLocationCode);
 		info.save(tableConfiguration, conn);
 	}
 	
@@ -591,34 +620,33 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 				private static final long serialVersionUID = 1L;
 			};
 		
-		for (RefInfo refInfo : syncTableInfo.getChildred()) {
-			if (!refInfo.getRefTableConfiguration().isConfigured())
+		for (RefInfo refInfo : syncTableInfo.getChildRefInfo()) {
+			if (!refInfo.getChildTableConf().isConfigured())
 				continue;
 			
 			Integer qtyChildren = DatabaseObjectDAO.countAllOfParentId(
-			    refInfo.getRefTableConfiguration().getSyncRecordClass(syncTableInfo.getMainApp()),
-			    refInfo.getRefColumnName(), this.getObjectId().getSimpleValueAsInt(), conn);
+			    refInfo.getChildTableConf().getSyncRecordClass(syncTableInfo.getMainApp()),
+			    refInfo.getSimpleRefMapping().getChildField().getName(), this.getObjectId().getSimpleValueAsInt(), conn);
 			
 			if (qtyChildren == 0) {
 				continue;
 			}
 			
-			/*if (qtyChildren > 999) {
-				throw new ForbiddenOperationException("The operation is trying to remove this record [" + syncTableInfo.getTableName() + " = " + this.getUuid() + ", from " + this.getRelatedSyncInfo().getRecordOriginLocationCode() + " but it has " + qtyChildren + " " + refInfo.getTableName() + " related to. Please check this inconsistence before continue");
-			}*/
-			
 			List<DatabaseObject> children = DatabaseObjectDAO.getByParentId(
-			    refInfo.getRefTableConfiguration().getSyncRecordClass(syncTableInfo.getMainApp()),
-			    refInfo.getRefColumnName(), this.getObjectId().getSimpleValueAsInt(), conn);
+			    refInfo.getChildTableConf().getSyncRecordClass(syncTableInfo.getMainApp()),
+			    refInfo.getSimpleRefMapping().getChildField().getName(), this.getObjectId().getSimpleValueAsInt(), conn);
 			
 			for (DatabaseObject child : children) {
-				child.resolveInconsistence(refInfo.getRefTableConfiguration(), conn);
+				child.resolveInconsistence(refInfo.getChildTableConf(), conn);
 			}
 		}
 	}
 	
 	@Override
 	public void consolidateData(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		if (UUID.randomUUID() != null)
+			throw new ForbiddenOperationException("Review this method!!");
+		/*
 		if (!tableConfiguration.isFullLoaded())
 			tableConfiguration.fullLoad();
 		
@@ -668,13 +696,17 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		} else {
 			removeDueInconsistency(tableConfiguration, missingParents, conn);
 			getRelatedSyncInfo().markAsFailedToMigrate(tableConfiguration, generateMissingInfo(missingParents), conn);
-		}
+		}*/
 	}
 	
 	@Override
 	public void loadDestParentInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		
+		if (UUID.randomUUID() != null)
+			throw new ForbiddenOperationException("Review this method!");
+		
+		/*
 		if (tableInfo.getPrimaryKey().isCompositeKey()) {
 			throw new ForbiddenOperationException("The related table (" + tableInfo.getTableName()
 			        + ") has composite pk. You cannot performe the request action!");
@@ -687,26 +719,27 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		if (!utilities.arrayHasElement(tableInfo.getParents()))
 			return;
 		
-		for (RefInfo refInfo : tableInfo.getParents()) {
-			if (tableInfo.getSharePkWith() != null
-			        && tableInfo.getSharePkWith().equals(refInfo.getRefTableConfiguration().getTableName())) {
+		for (RefInfo refInfo : tableInfo.getParentRefInfo()) {
+			if (tableInfo.getSharePkWith() != null && tableInfo.getSharePkWith().equals(refInfo.getParentTableName())) {
 				continue;
 			}
 			
-			Integer parentId = getParentValue(refInfo.getRefColumnAsClassAttName());
+			Integer parentId = getParentValue(refInfo.getSimpleRefMapping().getChildField().getNameAsClassAtt());
 			
 			if (parentId != null) {
 				DatabaseObject parent;
 				
-				if (refInfo.getRefTableConfiguration().isMetadata()) {
-					Oid oid = Oid.fastCreate(
-					    refInfo.getRefTableConfiguration().getPrimaryKey().retrieveSimpleKey().getName(), parentId);
+				if (refInfo.getParentTableCof().isMetadata()) {
+					Oid oid = Oid.fastCreate(refInfo.getParentTableCof().getPrimaryKey().retrieveSimpleKey().getName(),
+					    parentId);
 					
-					parent = DatabaseObjectDAO.getByOid(refInfo.getRefTableConfiguration().getTableName(), oid, conn);
+					parent = DatabaseObjectDAO.getByOid(refInfo.getSimpleRefMapping().getParentField().getName(), oid, conn);
 				} else {
+					boolean ignorable = refInfo.getSimpleRefMapping().isIgnorable()
+					        || refInfo.getSimpleRefMapping().getDefaultValueDueInconsistencyAsInt() > 0;
+					
 					parent = retrieveParentInDestination(parentId, recordOriginLocationCode,
-					    refInfo.getRefTableConfiguration(),
-					    refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
+					    refInfo.getSimpleRefMapping().getParentField().getName(), ignorable, conn);
 				}
 				
 				if (parent == null) {
@@ -752,7 +785,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 				
 				changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);
 			}
-		}
+		}*/
 	}
 	
 	@Override
@@ -763,6 +796,10 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	
 	public void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents,
 	        Connection conn) throws DBException {
+		
+		if (UUID.randomUUID() != null)
+			throw new ForbiddenOperationException("Review this method!");
+		/*
 		if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden())
 			throw new SyncExeption("This metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId()
 			        + ". is missing its some parents [" + generateMissingInfo(missingParents)
@@ -792,7 +829,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					child.consolidateData(refInfo.getRefTableConfiguration(), conn);
 				}
 			}
-		}
+		}*/
 	}
 	
 	public void remove(Connection conn) throws DBException {
@@ -800,8 +837,14 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	public Map<RefInfo, Integer> loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
-		Map<RefInfo, Integer> missingParents = new HashMap<RefInfo, Integer>();
+		if (UUID.randomUUID() != null)
+			throw new ForbiddenOperationException("Review this method!");
 		
+		return null;
+		
+		/*
+		Map<RefInfo, Integer> missingParents = new HashMap<RefInfo, Integer>();
+		 
 		if (!utilities.arrayHasElement(tableInfo.getParents()))
 			return missingParents;
 		
@@ -896,7 +939,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			}
 		}
 		
-		return missingParents;
+		return missingParents;*/
 	}
 	
 	@Override
@@ -924,7 +967,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		
 		for (Entry<RefInfo, Integer> missing : missingParents.entrySet()) {
 			missingInfo = utilities.concatStringsWithSeparator(missingInfo,
-			    "[" + missing.getKey().getRefTableConfiguration().getTableName() + ": " + missing.getValue() + "]", ";");
+			    "[" + missing.getKey().getParentTableName() + ": " + missing.getValue() + "]", ";");
 		}
 		
 		return "The record [" + this.generateTableName() + " = " + this.getObjectId()
@@ -936,7 +979,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		
 		for (Entry<RefInfo, Integer> missing : missingParents.entrySet()) {
 			missingInfo = utilities.concatStringsWithSeparator(missingInfo,
-			    "[" + missing.getKey().getRefTableConfiguration().getTableName() + ": " + missing.getValue() + "]", ";");
+			    "[" + missing.getKey().getParentTableName() + ": " + missing.getValue() + "]", ";");
 		}
 		
 		return "The record [" + this.generateTableName() + " = " + this.getObjectId()
@@ -987,6 +1030,13 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		}
 		
 		return "[" + utilities.concatStringsWithSeparator(objectId, ukeys, ",") + "]";
+	}
+	
+	@Override
+	public void fastCreateSimpleNumericKey(long i) {
+		Oid oid = new Oid();
+		
+		oid.addKey(new Key("", i));
 	}
 	
 }

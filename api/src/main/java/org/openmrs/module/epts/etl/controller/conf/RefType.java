@@ -2,15 +2,15 @@ package org.openmrs.module.epts.etl.controller.conf;
 
 public enum RefType {
 	
-	PARENT,
-	CHILD;
+	IMPORTED,
+	EXPORTED;
 	
-	public boolean isParent() {
-		return this.equals(PARENT);
+	public boolean isImported() {
+		return this.equals(IMPORTED);
 	}
 	
-	public boolean isChild() {
-		return this.equals(CHILD);
+	public boolean isExported() {
+		return this.equals(EXPORTED);
 	}
 	
 }

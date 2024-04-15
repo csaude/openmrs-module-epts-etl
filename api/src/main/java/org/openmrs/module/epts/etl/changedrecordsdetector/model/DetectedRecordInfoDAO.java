@@ -9,11 +9,15 @@ import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DetectedRecordInfoDAO extends BaseDAO{
-	public static long insert(DetectedRecordInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
+	public static void insert(DetectedRecordInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
+		
+		long id = 0;
+		
 		try {
 			Object[] params = {record.getTableName(),
 							   record.getObjectId(),
@@ -41,14 +45,21 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 			sql += "		   ?,\n";
 			sql += "		   ?);";
 			
-			return executeQueryWithRetryOnError(sql, params, conn);
+			id =  executeQueryWithRetryOnError(sql, params, conn);
+			
+			if (tableConfiguration.getPrimaryKey().isSimpleNumericKey()){
+				record.setObjectId(new Oid());
+				
+				record.getObjectId().retrieveSimpleKey().setValue(id);
+			}
+
+			
 		} catch (DBException e) {
 			if (!e.isDuplicatePrimaryOrUniqueKeyException()) {
 				throw e;
-			} else {
-				return record.getObjectId();
-			}
+			} 
 		}
+		
 	}
 	
 	public static int getFirstNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {

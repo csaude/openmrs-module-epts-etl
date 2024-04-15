@@ -53,7 +53,12 @@ public class EtlRecord {
 			config.fullLoad();
 		
 		try {
-			this.destinationRecordId = record.save(config, destConn);
+			record.save(config, destConn);
+			
+			if (record.getObjectId().isSimpleNumericKey()) {
+				this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
+			}
+			
 		}
 		catch (DBException e) {
 			if (e.isDuplicatePrimaryOrUniqueKeyException()) {
@@ -66,8 +71,13 @@ public class EtlRecord {
 					
 					DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 					
-					this.destinationRecordId = ((AbstractDatabaseObject) record)
+					((AbstractDatabaseObject) record)
 					        .resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
+					
+					
+					if (record.getObjectId().isSimpleNumericKey()) {
+						this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
+					}
 				}
 			} else
 				throw e;

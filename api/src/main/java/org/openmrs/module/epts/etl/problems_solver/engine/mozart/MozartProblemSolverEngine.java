@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.Extension;
+import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -153,7 +154,7 @@ public abstract class MozartProblemSolverEngine extends GenericEngine {
 				UniqueKeyInfo uk = new UniqueKeyInfo();
 				
 				for (Extension keyPart : keyInfo.getExtension()) {
-					uk.addKey(new Field(keyPart.getValueString()));
+					uk.addKey(new Key(keyPart.getValueString()));
 				}
 				
 				knownKeys_.add(uk);

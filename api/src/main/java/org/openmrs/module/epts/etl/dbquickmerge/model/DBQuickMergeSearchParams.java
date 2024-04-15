@@ -21,7 +21,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	public DBQuickMergeSearchParams(EtlConfiguration config, RecordLimits limits, DBQuickMergeController relatedController) {
 		super(config, limits);
 		
-		setOrderByFields(getSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	@Override

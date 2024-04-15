@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -13,23 +14,18 @@ import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class GenericDatabaseObject extends AbstractDatabaseObject {
-	private Integer objectId;
 	
 	private SyncTableConfiguration syncTableConfiguration;
 	
 	public GenericDatabaseObject() {
 	}
 	
-	public GenericDatabaseObject(Integer objectId) {
-		this.objectId = objectId;
-	}
-	
 	public void load(ResultSet rs) throws SQLException{ 
 		try {
 			super.load(rs);
 			
-			this.objectId = rs.getInt(1);
-			
+			this.objectId =  Oid.fastCreate("", rs.getInt(1));
+
 		} catch (SQLException e) {}
 	}
 	
@@ -39,12 +35,6 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	public void setSyncTableConfiguration(SyncTableConfiguration syncTableConfiguration) {
 		this.syncTableConfiguration = syncTableConfiguration;
-	}
-	
-	@Override
-	@JsonIgnore
-	public String generateDBPrimaryKeyAtt() {
-		return this.syncTableConfiguration.getPrimaryKey();
 	}
 	
 	@Override
@@ -110,16 +100,6 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	public Integer getParentValue(String parentAttName) {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
-
-	@Override
-	public Integer getObjectId() {
-		return this.objectId;
-	}
-
-	@Override
-	public void setObjectId(Integer objectId) {
-		this.objectId = objectId;
-	}
 	
 	@Override
 	public String generateTableName() {
@@ -132,19 +112,19 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 
 	@Override
-	public void changeParentValue(String parentAttName, DatabaseObject newParent) {
+	public void changeParentValue(RefInfo refInfo, DatabaseObject newParent) {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 	
 	public static GenericDatabaseObject fastCreate(SyncImportInfoVO syncImportInfo, SyncTableConfiguration syncTableConfiguration) {
 		GenericDatabaseObject obj = new GenericDatabaseObject(syncTableConfiguration);
-		obj.setObjectId(syncImportInfo.getRecordOriginId());
+		obj.setObjectId(Oid.fastCreate("", syncImportInfo.getRecordOriginId()));
 		
 		return obj;
 	}
 
 	@Override
-	public void setParentToNull(String parentAttName) {
+	public void setParentToNull(RefInfo refInfo) {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 }

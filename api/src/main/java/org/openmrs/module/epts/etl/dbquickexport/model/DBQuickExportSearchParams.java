@@ -20,7 +20,7 @@ public class DBQuickExportSearchParams extends SyncSearchParams<DatabaseObject> 
 	public DBQuickExportSearchParams(EtlConfiguration config, RecordLimits limits) {
 		super(config, limits);
 		
-		setOrderByFields(getSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	@Override

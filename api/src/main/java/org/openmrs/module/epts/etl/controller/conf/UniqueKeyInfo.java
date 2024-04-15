@@ -183,7 +183,7 @@ public class UniqueKeyInfo {
 		uk.fields = keyElements;
 		
 		//Don't add PK as uniqueKey
-		if (config.getPrimaryKey().equals(uk)) {
+		if (!config.getPrimaryKey().equals(uk)) {
 			uniqueKeys.add(uk);
 			
 			return false;
@@ -205,7 +205,11 @@ public class UniqueKeyInfo {
 			return true;
 		}
 		
-		return this.hasSameFields(other);
+		if (this.hasSameFields(other)) {
+			return true;
+		}
+		
+		return false;
 	}
 	
 	public boolean hasSameFields(UniqueKeyInfo other) {
@@ -327,9 +331,8 @@ public class UniqueKeyInfo {
 			fields += key.getName();
 		}
 		
-		return fields;		
+		return fields;
 	}
-	
 	
 	public String parseToParametrizedStringCondition() {
 		String fields = "";
@@ -344,7 +347,7 @@ public class UniqueKeyInfo {
 			fields += key.getName() + " = ? ";
 		}
 		
-		return fields;			
+		return fields;
 	}
 	
 	public Key getKey(String name) {
@@ -352,7 +355,7 @@ public class UniqueKeyInfo {
 			return null;
 		}
 		
-		for (Key key: this.fields) {
+		for (Key key : this.fields) {
 			if (key.getName().equals(name)) {
 				return key;
 			}

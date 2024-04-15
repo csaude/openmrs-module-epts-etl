@@ -49,8 +49,20 @@ public class RefMapping {
 		return defaultValueDueInconsistency;
 	}
 	
+	public Integer getDefaultValueDueInconsistencyAsInt() {
+		return Integer.parseInt(this.defaultValueDueInconsistency.toString());
+	}
+	
 	public void setDefaultValueDueInconsistency(Object defaultValueDueInconsistency) {
 		this.defaultValueDueInconsistency = defaultValueDueInconsistency;
+	}
+	
+	public String getChildFieldNameAsAttClass() {
+		return this.childField.getNameAsClassAtt();
+	}
+	
+	public String getParentFieldNameAsAttClass() {
+		return this.parentField.getNameAsClassAtt();
 	}
 	
 	public Key getChildField() {
@@ -111,4 +123,9 @@ public class RefMapping {
 		return AttDefinedElements.isNumeric(this.childField.getType());
 	}
 	
+	@JsonIgnore
+	public boolean isPrimitieveRefColumn() {
+		return AttDefinedElements.isPrimitive(this.childField.getType());
+	}
+		
 }

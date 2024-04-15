@@ -61,7 +61,6 @@ public class AttDefinedElements {
 			this.isObjectId = dbAttName.equalsIgnoreCase(this.pojoble.getPrimaryKey().retrieveSimpleKey().getName());
 		}
 		
-
 	}
 	
 	public String getAttDefinition() {
@@ -377,6 +376,13 @@ public class AttDefinedElements {
 		throw new ForbiddenOperationException("Unknown data type for field " + fieldName + " [" + databaseType + "]");
 	}
 	
+	public static boolean isDateType(String type) {
+		boolean isDatabaseDateType = utilities.isStringIn(type.toUpperCase(), "DATE", "DATETIME", "TIME", "TIMESTAMP");
+		boolean isJavaDateType = utilities.isStringIn(type.toUpperCase(), "java.util.Date");
+		
+		return isDatabaseDateType || isJavaDateType;
+	}
+	
 	public static String[] convertTableAttNameToClassAttName(String[] dbAtts) {
 		List<String> atts = new ArrayList<String>();
 		
@@ -385,6 +391,10 @@ public class AttDefinedElements {
 		}
 		
 		return utilities.parseListToArray(atts);
+	}
+	
+	public static boolean isPrimitive(String type) {
+		return isNumeric(type) || utilities.isStringIn(type, "char", "boolean");
 	}
 	
 }

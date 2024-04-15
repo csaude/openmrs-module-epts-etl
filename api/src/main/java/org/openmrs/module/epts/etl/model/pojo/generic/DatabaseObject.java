@@ -76,11 +76,17 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract boolean hasParents();
 	
-	public abstract Integer getParentValue(String parentAttName);
-	
+	public abstract Object getParentValue(String parentAttName);
 	
 	public abstract String generateTableName();
-		
+	
+	/**
+	 * Load the objectId info
+	 * 
+	 * @param tabConf the table configuration
+	 */
+	public abstract void loadObjectIdData(SyncTableConfiguration tabConf);
+	
 	/**
 	 * Consolidate data for database consistency
 	 * <p>
@@ -133,9 +139,9 @@ public interface DatabaseObject extends SyncRecord {
 	public abstract void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents,
 	        Connection conn) throws DBException;
 	
-	public abstract void changeParentValue(String parentAttName, DatabaseObject newParent);
+	public abstract void changeParentValue(RefInfo refInfo, DatabaseObject newParent);
 	
-	public abstract void setParentToNull(String parentAttName);
+	public abstract void setParentToNull(RefInfo refInfo);
 	
 	public abstract void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException;
 	
@@ -228,4 +234,7 @@ public interface DatabaseObject extends SyncRecord {
 		} else
 			throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey.toString() + "] has no value.");
 	}
+	
+	public abstract void fastCreateSimpleNumericKey(long i);
+	
 }

@@ -43,6 +43,9 @@ public class QuickTest {
 		SyncConfiguration conf = SyncConfiguration.loadFromFile(new File(path));
 		
 		conf.getEtlConfiguration().get(0).fullLoad();
+		
+		
+		System.out.println(conf);
 	}
 	
 	public static void main_(String[] args) throws DBException, IOException {

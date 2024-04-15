@@ -141,8 +141,8 @@ public class DBQuickMergeEngine extends Engine {
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
-						if (getMainSrcTableConf().isManualIdGeneration()) {
-							destObject.setObjectId(currObjectId++);
+						if ( getMainSrcTableConf().getPrimaryKey().isSimpleNumericKey() && getMainSrcTableConf().isManualIdGeneration()) {
+							destObject.fastCreateSimpleNumericKey(currObjectId++);
 						}
 						
 						MergingRecord mr = new MergingRecord(destObject, mappingInfo, this.getSrcApp(),
@@ -216,8 +216,8 @@ public class DBQuickMergeEngine extends Engine {
 						continue;
 					}
 					
-					if (getMainSrcTableConf().isManualIdGeneration()) {
-						destObject.setObjectId(currObjectId++);
+					if (getMainSrcTableConf().getPrimaryKey().isSimpleNumericKey() && getMainSrcTableConf().isManualIdGeneration()) {
+						destObject.fastCreateSimpleNumericKey(currObjectId++);
 					}
 					
 					boolean wrt = writeOperationHistory();

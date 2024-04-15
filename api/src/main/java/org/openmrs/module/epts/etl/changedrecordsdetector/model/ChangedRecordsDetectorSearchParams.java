@@ -27,7 +27,7 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 		
 		this.appCode = appCode;
 		
-		setOrderByFields(config.getSrcConf().getPrimaryKey());
+		setOrderByFields(config.getSrcConf().getPrimaryKey().parseFieldNamesToArray());
 		
 		this.type = type;
 	}

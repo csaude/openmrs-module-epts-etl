@@ -41,7 +41,7 @@ public class DataReconciliationRecord {
 		dataReciliationRecord.config = config;
 		dataReciliationRecord.stageInfo = record.getRelatedSyncInfo();
 		
-		DatabaseObject srcObj = DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginId(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
+		DatabaseObject srcObj = DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginIdAsOid(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
 		
 		srcObj.setRelatedSyncInfo(record.getRelatedSyncInfo());
 		
@@ -60,7 +60,7 @@ public class DataReconciliationRecord {
 		if (this.stageInfo == null) this.stageInfo = SyncImportInfoDAO.getWinRecord(this.config, this.recordUuid, conn);
 		
 		if (this.stageInfo != null) {
-			this.record= DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), stageInfo.getRecordOriginId(), stageInfo.getRecordOriginLocationCode(), conn);
+			this.record= DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), stageInfo.getRecordOriginIdAsOid(), stageInfo.getRecordOriginLocationCode(), conn);
 		}
 		else {
 			this.record = null;
@@ -107,9 +107,9 @@ public class DataReconciliationRecord {
 		if (getConfig().isFromOpenMRSModel() &&  getTableName().equals("person")) {
 			//Try to Restore the related patient
 			
-			for (RefInfo refInfo: config.getChildred()) {
-				if (refInfo.getTableName().equals("patient")) {
-					DataReconciliationRecord childData = new DataReconciliationRecord(this.recordUuid, refInfo.getRefTableConfiguration(), ConciliationReasonType.MISSING);
+			for (RefInfo refInfo: config.getChildRefInfo()) {
+				if (refInfo.getParentTableName().equals("patient")) {
+					DataReconciliationRecord childData = new DataReconciliationRecord(this.recordUuid, refInfo.getChildTableConf(), ConciliationReasonType.MISSING);
 					
 					childData.reloadRelatedRecordDataFromRemote(conn);
 					
@@ -175,14 +175,14 @@ public class DataReconciliationRecord {
 	public void removeRelatedRecord(Connection conn) throws DBException{
 		if (!config.isFullLoaded()) config.fullLoad();
 		
-		for (RefInfo refInfo: config.getChildred()) {
-			if (!refInfo.getRefTableConfiguration().isConfigured()) continue;
+		for (RefInfo refInfo: config.getChildRefInfo()) {
+			if (!refInfo.getChildTableConf().isConfigured()) continue;
 		
 			
-			List<DatabaseObject> children =  DatabaseObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), refInfo.getRefColumnName(), this.record.getObjectId(), conn);
+			List<DatabaseObject> children =  DatabaseObjectDAO.getByParentId(refInfo.getChildSyncRecordClass(config.getMainApp()), refInfo.getChildColumnOnSimpleMapping(), this.record.getObjectId().getSimpleValueAsInt(), conn);
 					
 			for (DatabaseObject child : children) {
-				DataReconciliationRecord childDataInfo = new DataReconciliationRecord(child.getUuid(), refInfo.getRefTableConfiguration(), ConciliationReasonType.WRONG_RELATIONSHIPS);
+				DataReconciliationRecord childDataInfo = new DataReconciliationRecord(child.getUuid(), refInfo.getChildTableConf(), ConciliationReasonType.WRONG_RELATIONSHIPS);
 				
 				childDataInfo.reloadRelatedRecordDataFromRemote(conn);
 				

@@ -62,8 +62,8 @@ public class DBQuickExportEngine extends Engine {
 			jsonInfo.clearOriginApplicationCodeForAllChildren();
 			
 			//Generates the File to store the tmp json file
-			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId(),
-			    syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId());
+			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId().getSimpleValueAsInt(),
+			    syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId().getSimpleValueAsInt());
 			
 			this.getMonitor().logInfo("WRITING '" + syncRecords.size() + "' " + getMainSrcTableName() + " TO JSON FILE ["
 			        + jsonFIle.getAbsolutePath() + ".json]");

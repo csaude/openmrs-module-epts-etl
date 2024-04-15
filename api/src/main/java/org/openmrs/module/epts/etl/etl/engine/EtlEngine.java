@@ -21,6 +21,7 @@ import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -100,8 +101,8 @@ public class EtlEngine extends Engine {
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
-						if (getMainSrcTableConf().isManualIdGeneration()) {
-							destObject.setObjectId(currObjectId++);
+						if (getMainSrcTableConf().getPrimaryKey().isSimpleNumericKey() && getMainSrcTableConf().isManualIdGeneration()) {
+							destObject.setObjectId(Oid.fastCreate("", currObjectId++));
 						}
 						
 						MergingRecord mr = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
@@ -174,8 +175,8 @@ public class EtlEngine extends Engine {
 						continue;
 					}
 					
-					if (getMainSrcTableConf().isManualIdGeneration()) {
-						destObject.setObjectId(currObjectId++);
+					if (getMainSrcTableConf().getPrimaryKey().isSimpleNumericKey() && getMainSrcTableConf().isManualIdGeneration()) {
+						destObject.setObjectId(Oid.fastCreate("", currObjectId++));
 					}
 					
 					boolean wrt = writeOperationHistory();

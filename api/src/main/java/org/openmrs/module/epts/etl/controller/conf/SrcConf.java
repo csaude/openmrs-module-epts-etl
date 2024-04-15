@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.controller.conf;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
@@ -7,6 +8,8 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class SrcConf extends SyncTableConfiguration {
 	
@@ -49,26 +52,40 @@ public class SrcConf extends SyncTableConfiguration {
 					if (!utilities.arrayHasElement(t.getJoinFields())) {
 						//Try to autoload join fields
 						
-						FieldsMapping fm = null;
+						List<FieldsMapping> fm = null;
 						
 						//Assuming that the aux src is parent
-						RefInfo pInfo = this.findParent(t.getTableName());
+						List<RefInfo> pInfo = this.findAllRefToParent(t.getTableName());
 						
-						if (pInfo != null) {
-	//						fm = new FieldsMapping(pInfo.getRefColumnName(), "",
-//							        pInfo.getRefTableConfiguration().getPrimaryKey());
+						if (utilities.arrayHasElement(pInfo)) {
+							fm = new ArrayList<>();
+							
+							for (RefInfo ref : pInfo) {
+								for (RefMapping map : ref.getFieldsMapping()) {
+									fm.add(new FieldsMapping(map.getChildField().getName(), "",
+									        map.getParentField().getName()));
+								}
+							}
 						} else {
+							fm = new ArrayList<>();
 							
 							//Assuning that the aux src is child
-							pInfo = t.findParent(this.getTableName());
+							pInfo = t.findAllRefToParent(this.getTableName());
 							
 							if (pInfo != null) {
-	//							fm = new FieldsMapping(this.getPrimaryKey(), "", pInfo.getRefColumnName());
+								for (RefInfo ref : pInfo) {
+									for (RefMapping map : ref.getFieldsMapping()) {
+										fm.add(new FieldsMapping(map.getParentField().getName(), "",
+										        map.getChildField().getName()));
+									}
+								}
 							}
 						}
 						
 						if (fm != null) {
-							t.addJoinField(fm);
+							for (FieldsMapping f : fm) {
+								t.addJoinField(f);
+							}
 						}
 					}
 					
@@ -128,6 +145,7 @@ public class SrcConf extends SyncTableConfiguration {
 	}
 	
 	@Override
+	@JsonIgnore
 	public EtlConfiguration getParent() {
 		return (EtlConfiguration) super.getParent();
 	}

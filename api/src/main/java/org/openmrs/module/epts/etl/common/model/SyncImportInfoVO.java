@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
@@ -105,6 +106,12 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 	@JsonIgnore
 	public Integer getConsistent() {
 		return consistent;
+	}
+	
+	
+	@JsonIgnore
+	public Oid getRecordOriginIdAsOid() {
+		return Oid.fastCreate("", recordOriginId);
 	}
 	
 	public Integer getRecordOriginId() {
@@ -231,7 +238,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 	        boolean generateRecordJSON) throws DBException {
 		SyncImportInfoVO syncInfo = new SyncImportInfoVO();
 		
-		syncInfo.setRecordOriginId(syncRecord.getObjectId());
+		syncInfo.setRecordOriginId(syncRecord.getObjectId().getSimpleValueAsInt());
 		syncInfo.setRecordOriginLocationCode(recordOriginLocationCode);
 		
 		syncInfo.setDateChanged(syncRecord.getDateChanged());
@@ -267,7 +274,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 				if (tableInfo.useSharedPKKey()) {
 					refrieveSharedPKKey(tableInfo, source, 0, conn);
 				} else {
-					source.setObjectId(0);
+					source.setObjectId(new Oid());
 				}
 				
 				//Migrate now and ajust later
@@ -282,7 +289,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 				}
 				
 				if (!tableInfo.useSharedPKKey()) {
-					source.setObjectId(0);
+					source.setObjectId(new Oid());
 				}
 			}
 			
@@ -364,7 +371,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 			}
 			
 			if (!tableInfo.isMetadata()) {
-				rec.setObjectId(0);
+				rec.setObjectId(new Oid());
 			}
 			
 			rec.setRelatedSyncInfo(imp);
@@ -392,7 +399,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 		}
 		
 		if (!tableInfo.isMetadata()) {
-			rec.setObjectId(0);
+			rec.setObjectId(new Oid());
 		}
 		
 		this.setConsistent(DatabaseObject.INCONSISTENCE_STATUS);

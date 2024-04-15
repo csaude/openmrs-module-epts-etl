@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -14,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author jpboane
  */
 public class RefInfo {
+	
 	public static final String PARENT_REF_TYPE = "PARENT";
 	
 	public static final String CHILD_REF_TYPE = "CHILD";
@@ -28,9 +31,7 @@ public class RefInfo {
 	
 	private SyncTableConfiguration parentTableCof;
 	
-	private String conditionField;
-	
-	private Integer conditionValue;
+	private List<Field> conditionalFields;
 	
 	public RefInfo() {
 	}
@@ -41,6 +42,42 @@ public class RefInfo {
 		ref.refCode = refCode;
 		
 		return ref;
+	}
+	
+	public List<Field> getConditionalFields() {
+		return conditionalFields;
+	}
+	
+	public void setConditionalFields(List<Field> conditionalFields) {
+		this.conditionalFields = conditionalFields;
+	}
+	
+	public String getParentColumnOnSimpleMapping() {
+		return getSimpleRefMapping().getParentField().getName();
+	}
+	
+	public String getChildColumnOnSimpleMapping() {
+		return getSimpleRefMapping().getChildField().getName();
+	}
+	
+	public String getParentColumnAsClassAttOnSimpleMapping() {
+		return getSimpleRefMapping().getParentField().getNameAsClassAtt();
+	}
+	
+	public String getChildColumnAsClassAttOnSimpleMapping() {
+		return getSimpleRefMapping().getChildField().getNameAsClassAtt();
+	}
+	
+	public boolean isSimpleMapping() {
+		return utilities.arraySize(this.fieldsMapping) <= 1;
+	}
+	
+	public RefMapping getSimpleRefMapping() {
+		if (!isSimpleMapping()) {
+			throw new ForbiddenOperationException("The ref is not simple!");
+		}
+		
+		return this.fieldsMapping.get(0);
 	}
 	
 	public void addMapping(RefMapping mapping) {
@@ -62,22 +99,6 @@ public class RefInfo {
 		this.refCode = refCode;
 	}
 	
-	public String getConditionField() {
-		return conditionField;
-	}
-	
-	public void setConditionField(String conditionField) {
-		this.conditionField = conditionField;
-	}
-	
-	public Integer getConditionValue() {
-		return conditionValue;
-	}
-	
-	public void setConditionValue(Integer conditionValue) {
-		this.conditionValue = conditionValue;
-	}
-	
 	public String getChildTableName() {
 		return childTableConf.getTableName();
 	}
@@ -90,6 +111,14 @@ public class RefInfo {
 		return childTableConf;
 	}
 	
+	public Class<DatabaseObject> getParentSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+		return this.parentTableCof.getSyncRecordClass(application);
+	}
+	
+	public Class<DatabaseObject> getChildSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+		return this.childTableConf.getSyncRecordClass(application);
+	}
+	
 	public void setChildTableConf(SyncTableConfiguration childTableConf) {
 		this.childTableConf = childTableConf;
 	}
@@ -100,11 +129,6 @@ public class RefInfo {
 	
 	public void setParentTableCof(SyncTableConfiguration parentTableCof) {
 		this.parentTableCof = parentTableCof;
-	}
-	
-	@JsonIgnore
-	public String getRefConditionFieldAsClassAttName() {
-		return utilities.convertTableAttNameToClassAttName(this.getConditionField());
 	}
 	
 	@JsonIgnore
@@ -222,7 +246,7 @@ public class RefInfo {
 		return null;
 	}
 	
-	public List<Key> extractParentFieldsFromRefMapping(){
+	public List<Key> extractParentFieldsFromRefMapping() {
 		List<Key> keys = new ArrayList<>();
 		
 		for (RefMapping f : this.fieldsMapping) {
@@ -232,7 +256,7 @@ public class RefInfo {
 		return keys;
 	}
 	
-	public List<Key> extractChildFieldsFromRefMapping(){
+	public List<Key> extractChildFieldsFromRefMapping() {
 		List<Key> keys = new ArrayList<>();
 		
 		for (RefMapping f : this.fieldsMapping) {
