@@ -32,11 +32,11 @@ public class EtlRecord {
 		this.record = record;
 		this.config = config;
 		this.writeOperationHistory = writeOperationHistory;
+		
+		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(this.config.getUniqueKeys()));
 	}
 	
 	public void load(Connection srcConn, Connection destConn) throws DBException {
-		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(this.config.getUniqueKeys()));
-		
 		doSave(srcConn, destConn);
 		
 		if (writeOperationHistory) {
@@ -71,9 +71,7 @@ public class EtlRecord {
 					
 					DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 					
-					((AbstractDatabaseObject) record)
-					        .resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
-					
+					((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 					
 					if (record.getObjectId().isSimpleNumericKey()) {
 						this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
@@ -123,8 +121,6 @@ public class EtlRecord {
 		List<DatabaseObject> objects = new ArrayList<DatabaseObject>(mergingRecs.size());
 		
 		for (EtlRecord etlRecord : mergingRecs) {
-			etlRecord.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(etlRecord.config.getUniqueKeys()));
-			
 			objects.add(etlRecord.record);
 		}
 		

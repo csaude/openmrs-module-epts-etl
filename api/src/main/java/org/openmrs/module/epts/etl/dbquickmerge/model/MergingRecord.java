@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.ConditionalParent;
+import org.openmrs.module.epts.etl.controller.conf.TableParent;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -51,10 +51,10 @@ public class MergingRecord {
 		
 		this.parentsWithDefaultValues = new ArrayList<ParentInfo>();
 		
+		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(this.config.getUniqueKeys()));
 	}
 	
 	public void merge(Connection srcConn, Connection destConn) throws DBException {
-		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(this.config.getUniqueKeys()));
 		
 		consolidateAndSaveData(srcConn, destConn);
 		
@@ -138,7 +138,7 @@ public class MergingRecord {
 			
 			DatabaseObject parent = parentInfo.getParent();
 			
-			MergingRecord parentData = new MergingRecord(parent, refInfo.getParentTableCof(), this.srcApp, this.destApp,
+			MergingRecord parentData = new MergingRecord(parent, refInfo.getParentTableConf(), this.srcApp, this.destApp,
 			        this.writeOperationHistory);
 			
 			parentData.merge(srcConn, destConn);
@@ -162,7 +162,7 @@ public class MergingRecord {
 		DatabaseObject record = mergingRecord.record;
 		
 		for (RefInfo refInfo : config.getParentRefInfo()) {
-			if (refInfo.getParentTableCof().isMetadata())
+			if (refInfo.getParentTableConf().isMetadata())
 				continue;
 			
 			String fieldNameOnParentTable = refInfo.getSimpleRefMapping().getParentField().getNameAsClassAtt();
@@ -171,7 +171,7 @@ public class MergingRecord {
 			Object oParentIdInOrigin = record.getParentValue(filedNameOnChildTable);
 			
 			if (oParentIdInOrigin != null) {
-				Integer parentIdInOrigin = (Integer)oParentIdInOrigin;
+				Integer parentIdInOrigin = (Integer) oParentIdInOrigin;
 				
 				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(
 				    refInfo.getParentSyncRecordClass(mergingRecord.srcApp),
@@ -196,7 +196,7 @@ public class MergingRecord {
 					}
 				}
 				
-				SyncTableConfiguration parentTabConf = refInfo.getParentTableCof();
+				SyncTableConfiguration parentTabConf = refInfo.getParentTableConf();
 				
 				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parentTabConf, parentInOrigin, destConn);
 				
@@ -231,13 +231,13 @@ public class MergingRecord {
 		DatabaseObject record = mergingRecord.record;
 		
 		for (RefInfo refInfo : config.getParentRefInfo()) {
-			if (!refInfo.getParentTableCof().isMetadata())
+			if (!refInfo.getParentTableConf().isMetadata())
 				continue;
 			
 			Object oParentId = record.getParentValue(refInfo.getChildColumnAsClassAttOnSimpleMapping());
 			
 			if (oParentId != null) {
-				Integer parentId = (Integer)oParentId;
+				Integer parentId = (Integer) oParentId;
 				
 				DatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo.getParentSyncRecordClass(mergingRecord.destApp),
 				    Oid.fastCreate(refInfo.getParentColumnOnSimpleMapping(), parentId), destConn);
@@ -257,19 +257,20 @@ public class MergingRecord {
 		DatabaseObject record = mergingRecord.record;
 		SyncTableConfiguration config = mergingRecord.config;
 		
-		for (ConditionalParent parent : config.getConditionalParents()) {
+		for (TableParent parent : config.getConditionalParents()) {
 			if (parent.isMetadata())
 				continue;
 			
-			if (utilities.arrayHasMoreThanOneElements(parent.getRefInfo())) {
-				throw new ForbiddenOperationException("Not supported multi referenced parent");
+			RefInfo refInfo = parent.getRef();
+			
+			if (utilities.arrayHasMoreThanOneElements(refInfo.getConditionalFields())) {
+				throw new ForbiddenOperationException("Currently not supported multiple conditional fields");
 			}
 			
-			RefInfo refInfo = parent.getRefInfo().get(0);
+			String conditionalFieldName = refInfo.getConditionalFields().get(0).getNameAsClassAtt();
+			Object conditionalvalue = refInfo.getConditionalFields().get(0).getValue();
 			
-			Object conditionFieldValue = record.getFieldValues(refInfo.getChildColumnAsClassAttOnSimpleMapping())[0];
-			
-			if (!conditionFieldValue.equals(refInfo.getConditionValue()))
+			if (!conditionalvalue.equals(record.getFieldValue(conditionalFieldName)))
 				continue;
 			
 			Integer parentIdInOrigin = null;
@@ -289,7 +290,7 @@ public class MergingRecord {
 					throw new MissingParentException(parentIdInOrigin, parent.getTableName(),
 					        mergingRecord.config.getOriginAppLocationCode(), refInfo);
 				
-				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getParentTableCof(), parentInOrigin,
+				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getParentTableConf(), parentInOrigin,
 				    destConn);
 				
 				DatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
@@ -297,7 +298,7 @@ public class MergingRecord {
 				if (parentInDest == null) {
 					mergingRecord.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInOrigin));
 					
-					parentInDest = DatabaseObjectDAO.getDefaultRecord(refInfo.getParentTableCof(), destConn);
+					parentInDest = DatabaseObjectDAO.getDefaultRecord(refInfo.getParentTableConf(), destConn);
 				}
 				
 				record.changeParentValue(refInfo, parentInDest);
@@ -333,8 +334,6 @@ public class MergingRecord {
 		List<DatabaseObject> objects = new ArrayList<DatabaseObject>(mergingRecs.size());
 		
 		for (MergingRecord mergingRecord : mergingRecs) {
-			mergingRecord.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(mergingRecord.config.getUniqueKeys()));
-			
 			MergingRecord.loadDestParentInfo(mergingRecord, srcConn, dstConn);
 			MergingRecord.loadDestConditionalParentInfo(mergingRecord, srcConn, dstConn);
 			

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 
@@ -45,7 +46,7 @@ public class AttDefinedElements {
 	
 	private String dbAttType;
 	
-	private boolean isObjectId;
+	private boolean isPartOfObjectId;
 	
 	private boolean isLast;
 	
@@ -57,10 +58,17 @@ public class AttDefinedElements {
 		this.isLast = isLast;
 		this.pojoble = pojoble;
 		
-		if (!pojoble.getPrimaryKey().isCompositeKey()) {
-			this.isObjectId = dbAttName.equalsIgnoreCase(this.pojoble.getPrimaryKey().retrieveSimpleKey().getName());
-		}
+		Key key = new Key(dbAttName);
 		
+		if (this.pojoble.getPrimaryKey() != null) {
+			this.isPartOfObjectId = this.pojoble.getPrimaryKey().containsKey(key);
+		}else {
+			System.out.println("Stop");
+		}
+	}
+	
+	public boolean isPartOfObjectId() {
+		return isPartOfObjectId;
 	}
 	
 	public String getAttDefinition() {
@@ -159,28 +167,26 @@ public class AttDefinedElements {
 		String aspasAbrir = "\"\\\"\"+";
 		String aspasFechar = "+\"\\\"\"";
 		
-		if (!isObjectId || isSharedKey()) {
-			this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
-			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
-			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
-			
-			this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
-			this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
-			
-			if (isNumeric()) {
-				this.sqlInsertValues = "this." + attName;
-			} else if (isDate()) {
-				this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir
-				        + " DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(" + attName + ")  " + aspasFechar + " : null";
-			} else if (isString()) {
-				this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + " utilities.scapeQuotationMarks("
-				        + attName + ")  " + aspasFechar + " : null";
-			} else {
-				this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + attName + aspasFechar + " : null";
-			}
-			
-			this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + ");
+		this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
+		this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
+		this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
+		
+		this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
+		this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
+		
+		if (isNumeric()) {
+			this.sqlInsertValues = "this." + attName;
+		} else if (isDate()) {
+			this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir
+			        + " DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(" + attName + ")  " + aspasFechar + " : null";
+		} else if (isString()) {
+			this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + " utilities.scapeQuotationMarks("
+			        + attName + ")  " + aspasFechar + " : null";
+		} else {
+			this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + attName + aspasFechar + " : null";
 		}
+		
+		this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + ");
 	}
 	
 	public static String removeStrangeCharactersOnString(String str) {
@@ -279,27 +285,6 @@ public class AttDefinedElements {
 	
 	public static boolean isNumeric(String attType) {
 		return utilities.isStringIn(attType, "Integer", "Long", "byte", "short", "double", "float");
-	}
-	
-	private boolean isPK() {
-		this.isObjectId = dbAttName.equalsIgnoreCase(pojoble.getPrimaryKey().retrieveSimpleKey().getName());
-		
-		if (!pojoble.getPrimaryKey().isCompositeKey()) {
-			return this.attName.equalsIgnoreCase(pojoble.getPrimaryKey().retrieveSimpleKey().getNameAsClassAtt());
-		}
-		
-		return false;
-	}
-	
-	private boolean isSharedKey() {
-		if (!isPK())
-			return false;
-		
-		if (pojoble.getSharePkWith() != null) {
-			return true;
-		}
-		
-		return false;
 	}
 	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,

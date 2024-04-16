@@ -233,12 +233,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public String generateInsertValues() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
 	public boolean hasIgnoredParent() {
 		// TODO Auto-generated method stub
 		return false;
@@ -374,5 +368,17 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	public void setParentToNull(RefInfo refInfo) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public String generateInsertValuesWithoutObjectId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String generateInsertValuesWithObjectId() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

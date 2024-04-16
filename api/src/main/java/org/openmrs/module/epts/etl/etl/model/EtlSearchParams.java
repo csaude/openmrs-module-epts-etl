@@ -57,7 +57,7 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 				
 				if (t.getJoinType().isLeftJoin()) {
 					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
-					    t.getPrimaryKey() + " is not null ", "or");
+					    t.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
 				}
 			}
 			

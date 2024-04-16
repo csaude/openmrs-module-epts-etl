@@ -18,6 +18,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
+import org.openmrs.module.epts.etl.controller.conf.RefMapping;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
@@ -482,7 +483,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		
 		for (RefInfo refInfo : syncTableInfo.getChildRefInfo()) {
 			
-			List<DatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo.getParentTableCof(),
+			List<DatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo.getParentTableConf(),
 			    refInfo.getSimpleRefMapping().getParentField().getName(), this.getObjectId().getSimpleValueAsInt(), conn);
 			
 			for (DatabaseObject child : children) {
@@ -549,7 +550,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					    entry.getKey().getSimpleRefMapping().getDefaultValueDueInconsistency());
 					
 					DatabaseObject parent = DatabaseObjectDAO.getByOid(
-					    entry.getKey().getParentTableCof().getSyncRecordClass(tableConfiguration.getMainApp()), oid, conn);
+					    entry.getKey().getParentTableConf().getSyncRecordClass(tableConfiguration.getMainApp()), oid, conn);
 					
 					if (parent == null) {
 						solvedCurrentInconsistency = false;
@@ -1037,6 +1038,22 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		Oid oid = new Oid();
 		
 		oid.addKey(new Key("", i));
+	}
+	
+	@Override
+	public void setParentToNull(RefInfo refInfo) {
+		for (RefMapping map : refInfo.getFieldsMapping()) {
+			setFieldValue(map.getChildFieldNameAsAttClass(), null);
+		}
+	}
+	
+	@Override
+	public void changeParentValue(RefInfo refInfo, DatabaseObject newParent) {
+		for (RefMapping map : refInfo.getFieldsMapping()) {
+			Object parentValue = newParent.getFieldValue(map.getChildFieldNameAsAttClass());
+			this.setFieldValue(map.getChildFieldNameAsAttClass(), parentValue);
+		}
+		
 	}
 	
 }

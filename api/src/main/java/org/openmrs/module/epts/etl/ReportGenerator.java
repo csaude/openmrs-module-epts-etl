@@ -9,7 +9,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.ConditionalParent;
+import org.openmrs.module.epts.etl.controller.conf.TableParent;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -52,7 +52,7 @@ public class ReportGenerator {
 		        + "," + recordsOnStageTable;
 		
 		if (utilities.arrayHasElement(config.getParents())) {
-			ConditionalParent parent = null;
+			TableParent parent = null;
 			
 			int firstMissingParentPos = 0;
 			

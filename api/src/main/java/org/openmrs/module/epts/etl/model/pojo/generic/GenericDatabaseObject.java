@@ -74,11 +74,6 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
-	@Override
-	@JsonIgnore
-	public String generateInsertValues() {
-		throw new ForbiddenOperationException("Forbidden Method");
-	}
 
 	@Override
 	public String getUuid() {
@@ -126,5 +121,17 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	public void setParentToNull(RefInfo refInfo) {
 		throw new ForbiddenOperationException("Forbidden Method");
+	}
+
+	@Override
+	public String generateInsertValuesWithoutObjectId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String generateInsertValuesWithObjectId() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

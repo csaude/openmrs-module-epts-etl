@@ -64,7 +64,9 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract Object[] getUpdateParams();
 	
-	public abstract String generateInsertValues();
+	public abstract String generateInsertValuesWithoutObjectId();
+	
+	public abstract String generateInsertValuesWithObjectId();	
 	
 	public abstract boolean hasIgnoredParent();
 	

@@ -1,7 +1,6 @@
 package org.openmrs.module.epts.etl.controller.conf;
 
 import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 
 public class Key extends Field {
 	
@@ -31,13 +30,5 @@ public class Key extends Field {
 		setType(type);
 		setValue(value);
 	}
-	
-	public String getNameAsClassAtt() {
-		return AttDefinedElements.convertTableAttNameToClassAttName(getName());
-	}
-	
-	public boolean isNumericColumnType() {
-		return AttDefinedElements.isNumeric(this.getType());
-	}
-	
+		
 }

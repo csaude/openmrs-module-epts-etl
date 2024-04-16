@@ -536,7 +536,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			values += "(" + utilities.resolveScapeCharacter(objects.get(i).generateInsertValues()) + "),";
+			values += "(" + utilities.resolveScapeCharacter(objects.get(i).generateInsertValuesWithoutObjectId()) + "),";
 		}
 		
 		if (utilities.stringHasValue(values)) {
@@ -558,8 +558,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			values += "(" + objects.get(i).getObjectId() + ","
-			        + utilities.resolveScapeCharacter(objects.get(i).generateInsertValues()) + "),";
+			values += "(" + utilities.resolveScapeCharacter(objects.get(i).generateInsertValuesWithObjectId()) + "),";
 		}
 		
 		if (utilities.stringHasValue(values)) {

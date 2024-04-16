@@ -85,23 +85,25 @@ public class EtlEngine extends Engine {
 		Map<String, List<MergingRecord>> mergingRecs = new HashMap<>();
 		
 		try {
-			int currObjectId = 0;
-			
-			if (getMainSrcTableConf().isManualIdGeneration()) {
-				currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
-			}
 			
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
 				
 				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
-						
+					
 					DatabaseObject destObject = null;
 					
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
-						if (getMainSrcTableConf().getPrimaryKey().isSimpleNumericKey() && getMainSrcTableConf().isManualIdGeneration()) {
+						if (mappingInfo.getPrimaryKey().isSimpleNumericKey() && mappingInfo.isManualIdGeneration()) {
+							
+							int currObjectId = 0;
+							
+							if (getMainSrcTableConf().isManualIdGeneration()) {
+								currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
+							}
+							
 							destObject.setObjectId(Oid.fastCreate("", currObjectId++));
 						}
 						
@@ -150,12 +152,6 @@ public class EtlEngine extends Engine {
 		
 		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
 		
-		int currObjectId = 0;
-		
-		if (getMainSrcTableConf().isManualIdGeneration()) {
-			currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
-		}
-		
 		try {
 			for (SyncRecord record : syncRecords) {
 				String startingStrLog = utilities.garantirXCaracterOnNumber(i,
@@ -175,7 +171,14 @@ public class EtlEngine extends Engine {
 						continue;
 					}
 					
-					if (getMainSrcTableConf().getPrimaryKey().isSimpleNumericKey() && getMainSrcTableConf().isManualIdGeneration()) {
+					if (mappingInfo.getPrimaryKey().isSimpleNumericKey() && mappingInfo.isManualIdGeneration()) {
+						
+						int currObjectId = 0;
+						
+						if (getMainSrcTableConf().isManualIdGeneration()) {
+							currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
+						}
+						
 						destObject.setObjectId(Oid.fastCreate("", currObjectId++));
 					}
 					

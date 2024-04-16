@@ -54,6 +54,14 @@ public class UniqueKeyInfo {
 		return this.fields.get(0);
 	}
 	
+	public String retrieveSimpleKeyColumnName() {
+		return retrieveSimpleKey().getName();
+	}
+	
+	public String retrieveSimpleKeyColumnNameAsClassAtt() {
+		return retrieveSimpleKey().getNameAsClassAtt();
+	}
+	
 	@JsonIgnore
 	public List<String> generateListFromFieldsNames() {
 		List<String> fieldsAsName = new ArrayList<String>();
@@ -334,6 +342,21 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
+	public String generateInsertQuetionMark() {
+		String fields = "";
+		
+		for (int i = 0; i < this.getFields().size(); i++) {
+			if (utilities.stringHasValue(fields)) {
+				fields += ", ";
+			}
+			
+			fields += "?";
+		}
+		
+		return fields;
+	}
+	
+	
 	public String parseToParametrizedStringCondition() {
 		String fields = "";
 		
@@ -350,6 +373,39 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
+	
+	public String generateSqlNotNullCheckWithDisjunction () {
+		String fields = "";
+		
+		for (int i = 0; i < this.getFields().size(); i++) {
+			Key key = this.getFields().get(i);
+			
+			if (utilities.stringHasValue(fields)) {
+				fields += " OR ";
+			}
+			
+			fields += key.getName() + " is not null ";
+		}
+		
+		return fields;
+	}
+	
+	public String generateSqlNotNullCheckWithIntersetion() {
+		String fields = "";
+		
+		for (int i = 0; i < this.getFields().size(); i++) {
+			Key key = this.getFields().get(i);
+			
+			if (utilities.stringHasValue(fields)) {
+				fields += " AND ";
+			}
+			
+			fields += key.getName() + " is not null ";
+		}
+		
+		return fields;
+	}	
+	
 	public Key getKey(String name) {
 		if (!utilities.arrayHasElement(this.fields)) {
 			return null;
@@ -362,5 +418,9 @@ public class UniqueKeyInfo {
 		}
 		
 		return null;
+	}
+	
+	public boolean containsKey(Key key) {
+		return getKey(key.getName()) != null;
 	}
 }

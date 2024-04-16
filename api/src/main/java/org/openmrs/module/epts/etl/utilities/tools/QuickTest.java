@@ -2,11 +2,13 @@ package org.openmrs.module.epts.etl.utilities.tools;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.ProcessStarter;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -14,6 +16,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -32,17 +35,25 @@ public class QuickTest {
 		return service.openConnection();
 	}
 	
-	public static void main(String[] args) throws DBException, IOException {
+	public static void main(String[] args) throws Exception{
 		testLoadParents();
 		
 	}
 	
-	public static void testLoadParents() throws IOException, DBException {
+	public static void testLoadParents() throws IOException, ClassNotFoundException, ForbiddenOperationException, SQLException {
 		String path = "D:\\ORG\\C-SAUDE\\PROJECTOS\\Mozart\\etl\\conf\\testing.json";
 		
 		SyncConfiguration conf = SyncConfiguration.loadFromFile(new File(path));
 		
-		conf.getEtlConfiguration().get(0).fullLoad();
+		EtlConfiguration etlConf = conf.getEtlConfiguration().get(1);
+		
+		etlConf.fullLoad();
+		
+		SyncTableConfiguration tbConf = etlConf.getSrcConf();
+		
+		//tbConf.getSyncRecordClass(conf.getMainApp());
+		
+		DatabaseEntityPOJOGenerator.generate(tbConf, conf.getMainApp());
 		
 		
 		System.out.println(conf);

@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.controller.conf;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -29,7 +30,7 @@ public class RefInfo {
 	
 	private SyncTableConfiguration childTableConf;
 	
-	private SyncTableConfiguration parentTableCof;
+	private SyncTableConfiguration parentTableConf;
 	
 	private List<Field> conditionalFields;
 	
@@ -86,7 +87,7 @@ public class RefInfo {
 		}
 		
 		if (this.fieldsMapping.contains(mapping))
-			throw new ForbiddenOperationException("The maaping you tried to add alredy exists on mapping field");
+			throw new DuplicateMappingException("The maaping you tried to add alredy exists on mapping field on table [" + this.getChildTableName() + "]");
 		
 		this.fieldsMapping.add(mapping);
 	}
@@ -104,7 +105,7 @@ public class RefInfo {
 	}
 	
 	public String getParentTableName() {
-		return getParentTableCof().getTableName();
+		return getParentTableConf().getTableName();
 	}
 	
 	public SyncTableConfiguration getChildTableConf() {
@@ -112,7 +113,7 @@ public class RefInfo {
 	}
 	
 	public Class<DatabaseObject> getParentSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
-		return this.parentTableCof.getSyncRecordClass(application);
+		return this.parentTableConf.getSyncRecordClass(application);
 	}
 	
 	public Class<DatabaseObject> getChildSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
@@ -123,29 +124,29 @@ public class RefInfo {
 		this.childTableConf = childTableConf;
 	}
 	
-	public SyncTableConfiguration getParentTableCof() {
-		return parentTableCof;
+	public SyncTableConfiguration getParentTableConf() {
+		return parentTableConf;
 	}
 	
-	public void setParentTableCof(SyncTableConfiguration parentTableCof) {
-		this.parentTableCof = parentTableCof;
+	public void setParentTableConf(SyncTableConfiguration parentTableConf) {
+		this.parentTableConf = parentTableConf;
 	}
 	
 	@JsonIgnore
 	public boolean isSharedPk() {
 		if (this.childTableConf.getSharePkWith() == null) {
 			return false;
-		} else if (utilities.arrayHasElement(childTableConf.getParents())) {
+		} else if (utilities.arrayHasElement(childTableConf.getParentRefInfo())) {
 			
 			for (RefInfo refInfo : this.childTableConf.getParentRefInfo()) {
-				if (refInfo.parentTableCof.getTableName().equalsIgnoreCase(this.parentTableCof.getSharePkWith())) {
+				if (refInfo.parentTableConf.getTableName().equalsIgnoreCase(this.parentTableConf.getSharePkWith())) {
 					return true;
 				}
 			}
 		}
 		
-		throw new ForbiddenOperationException("The related table of shared pk " + this.parentTableCof.getSharePkWith()
-		        + " of table " + this.parentTableCof.getTableName() + " is not listed inparents!");
+		throw new ForbiddenOperationException("The related table of shared pk " + this.parentTableConf.getSharePkWith()
+		        + " of table " + this.parentTableConf.getTableName() + " is not listed inparents!");
 	}
 	
 	public List<RefMapping> getFieldsMapping() {
@@ -189,7 +190,7 @@ public class RefInfo {
 			return false;
 		}
 		
-		if (!this.parentTableCof.equals(other.parentTableCof)) {
+		if (!this.parentTableConf.equals(other.parentTableConf)) {
 			return false;
 		}
 		
@@ -265,5 +266,6 @@ public class RefInfo {
 		
 		return keys;
 	}
+	
 	
 }

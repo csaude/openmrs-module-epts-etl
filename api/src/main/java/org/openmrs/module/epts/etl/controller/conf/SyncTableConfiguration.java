@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -24,7 +25,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	
 	private String tableName;
 	
-	private List<ConditionalParent> conditionalParents;
+	private List<TableParent> parents;
 	
 	private List<RefInfo> parentRefInfo;
 	
@@ -73,9 +74,9 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	
 	public void clone(SyncTableConfiguration toCloneFrom) {
 		this.tableName = toCloneFrom.tableName;
+		this.parents = toCloneFrom.parents;
 		this.childRefInfo = toCloneFrom.childRefInfo;
 		this.parentRefInfo = toCloneFrom.parentRefInfo;
-		this.conditionalParents = toCloneFrom.conditionalParents;
 		this.syncRecordClass = toCloneFrom.syncRecordClass;
 		this.parent = toCloneFrom.parent;
 		this.primaryKey = toCloneFrom.primaryKey;
@@ -173,14 +174,6 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		this.removeForbidden = removeForbidden;
 	}
 	
-	public List<ConditionalParent> getConditionalParents() {
-		return conditionalParents;
-	}
-	
-	public void setConditionalParents(List<ConditionalParent> conditionalParents) {
-		this.conditionalParents = conditionalParents;
-	}
-	
 	@Override
 	public List<RefInfo> getChildRefInfo() {
 		if (!this.mustLoadChildrenInfo) {
@@ -218,15 +211,23 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	public String getParentsAsString() {
 		String sourceFoldersAsString = "";
 		
-		if (utilities.arrayHasElement(this.parentRefInfo)) {
-			for (int i = 0; i < this.parentRefInfo.size() - 1; i++) {
-				sourceFoldersAsString += this.parentRefInfo.get(i).getParentTableName() + ",";
+		if (utilities.arrayHasElement(this.getParents())) {
+			for (int i = 0; i < this.getParents().size() - 1; i++) {
+				sourceFoldersAsString += this.getParents().get(i).getTableName() + ",";
 			}
 			
-			sourceFoldersAsString += this.parentRefInfo.get(this.parentRefInfo.size() - 1).getParentTableName();
+			sourceFoldersAsString += this.getParents().get(this.getParents().size() - 1).getTableName();
 		}
 		
 		return sourceFoldersAsString;
+	}
+	
+	public List<TableParent> getParents() {
+		return parents;
+	}
+	
+	public void setParents(List<TableParent> parents) {
+		this.parents = parents;
 	}
 	
 	public String getSharePkWith() {
@@ -238,7 +239,6 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	}
 	
 	@Override
-	@JsonIgnore
 	public SyncDataConfiguration getParent() {
 		return parent;
 	}
@@ -346,22 +346,6 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		if (tableConfiguration.uniqueKeys == null) {
 			try {
 				this.uniqueKeys = UniqueKeyInfo.loadUniqueKeysInfo(this, conn);
-				
-				if (useSharedPKKey()) {
-					SyncTableConfiguration parentConf = getSharedKeyRefInfo().getParentTableCof();
-					
-					parentConf.loadUniqueKeys(conn);
-					
-					if (utilities.arrayHasElement(parentConf.getUniqueKeys())) {
-						
-						for (UniqueKeyInfo uk : parentConf.getUniqueKeys()) {
-							if (!utilities.existOnArray(this.uniqueKeys, uk)) {
-								this.uniqueKeys.add(uk);
-							}
-						}
-					}
-				}
-				
 			}
 			catch (SQLException e) {
 				throw new RuntimeException(e);
@@ -475,6 +459,25 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		
 		int count = countParents(conn);
 		
+		//First load all necessary info on configured parents
+		
+		if (utilities.arrayHasElement(this.parents)) {
+			for (TableParent p : this.parents) {
+				RefInfo r = p.getRef();
+				
+				r.setChildTableConf(this);
+				r.setParentTableConf(p);
+				
+				for (RefMapping map : r.getFieldsMapping()) {
+					map.setRefInfo(r);
+					
+					Field field = utilities.findOnArray(this.fields, new Field(map.getChildFieldName()));
+					map.getChildField().setType(field.getType());
+				}
+				
+			}
+		}
+		
 		if (count == 0) {
 			logDebug("NO PARENT FOUND FOR TABLE '" + getTableName() + "'");
 		} else
@@ -515,42 +518,55 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 					        + "' CONFIGURED");
 				}
 				
-				//Check if there is a configured parent but not defined on the db schema
-				
-				if (utilities.arrayHasElement(this.conditionalParents)) {
+				//Copy additional configured Info
+				if (this.parentRefInfo != null && this.parents != null) {
 					
-					for (ConditionalParent configuredParent : this.conditionalParents) {
+					for (RefInfo ref : this.parentRefInfo) {
 						
-						for (RefInfo ref : this.parentRefInfo) {
-							if (ref.getParentTableName().equals(configuredParent.getTableName())) {
-								ref.setConditionalFields(configuredParent.getConditionalFields());
+						for (TableParent p : this.parents) {
+							RefInfo configuredRef = p.getRef();
+							
+							if (ref.equals(configuredRef)) {
+								ref.setConditionalFields(configuredRef.getConditionalFields());
+								
+								for (RefMapping map : ref.getFieldsMapping()) {
+									RefMapping configuredMap = configuredRef.findRefMapping(map.getChildFieldName(),
+									    map.getParentFieldName());
+									
+									if (configuredMap == null) {
+										throw new ForbiddenOperationException(
+										        "The mapping [" + map.getChildFieldName() + " : " + map.getParentFieldName()
+										                + "] was not found on configured mapping!");
+									}
+									
+									map.setIgnorable(map.isIgnorable() ? configuredMap.isIgnorable() : map.isIgnorable());
+									map.setDefaultValueDueInconsistency(configuredMap.getDefaultValueDueInconsistency());
+									map.setSetNullDueInconsistency(configuredMap.isSetNullDueInconsistency());
+								}
 							}
 						}
-						
 					}
-					
 				}
 				
-				loadConditionalParents(conn);
-				
-				//Include conditional parents
+				//Check if there is a configured parent but not defined on the db schema
 				
 				if (utilities.arrayHasElement(this.parents)) {
 					
-					for (ConditionalParent configuredParent : this.parents) {
+					for (TableParent configuredParent : this.parents) {
 						
-						for (RefInfo r : configuredParent.getRefInfo()) {
-							if (!this.parentRefInfo.contains(r)) {
-								this.parentRefInfo.add(r);
-							}
+						RefInfo r = configuredParent.getRef();
+						
+						if (!this.parentRefInfo.contains(r)) {
+							this.parentRefInfo.add(r);
 						}
 					}
-					
 				}
 				
 				logDebug("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
 			}
-			finally {
+			finally
+			
+			{
 				if (foreignKeyRS != null) {
 					foreignKeyRS.close();
 				}
@@ -622,18 +638,6 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		}
 	}
 	
-	protected void loadConditionalParents(Connection conn) throws DBException {
-		if (!utilities.arrayHasElement(this.conditionalParents))
-			return;
-		
-		for (ConditionalParent p : this.conditionalParents) {
-			for (RefInfo r : p.getRefInfo()) {
-				r.setChildTableConf(this);
-				r.setParentTableCof(p);
-			}
-		}
-	}
-	
 	private void addChildRefInfo(String refCode, SyncTableConfiguration childTabConf, String childFieldName,
 	        String parentFieldName, Connection conn) throws DBException {
 		
@@ -647,7 +651,9 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		
 		SyncTableConfiguration childTabConf = this;
 		
-		initRefInfo(RefType.IMPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
+		@SuppressWarnings("unused")
+		RefInfo ref = initRefInfo(RefType.IMPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName,
+		    conn);
 		
 	}
 	
@@ -688,10 +694,10 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		List<RefInfo> allRef = null;
 		RefInfo ref = null;
 		
-		if (refType.isExported()) {
-			allRef = this.childRefInfo;
-		} else {
+		if (refType.isImported()) {
 			allRef = this.parentRefInfo;
+		} else {
+			allRef = this.childRefInfo;
 		}
 		
 		ref = utilities.findOnList(allRef, RefInfo.init(refCode));
@@ -699,29 +705,21 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		if (ref == null) {
 			ref = RefInfo.init(refCode);
 			
-			ref.setParentTableCof(parentTabConf);
+			ref.setParentTableConf(parentTabConf);
 			ref.setChildTableConf(childTabConf);
 			
 			//Mark as metadata if is not specificaly mapped as parent in conf file
-			if (!ref.getParentTableCof().isConfigured()) {
-				ref.getParentTableCof().setMetadata(true);
+			if (!ref.getParentTableConf().isConfigured()) {
+				ref.getParentTableConf().setMetadata(true);
 			}
 			
 			allRef.add(ref);
 		}
 		
-		RefMapping configuredMapping = findConfiguredRefMapping(parentTabConf.getTableName(), map.getParentField().getName(),
-		    map.getChildField().getName());
-		
-		if (configuredMapping != null) {
-			map.setDefaultValueDueInconsistency(configuredMapping.getDefaultValueDueInconsistency());
-			map.setSetNullDueInconsistency(configuredMapping.getDefaultValueDueInconsistency() == null);
-			
-			ref.setConditionField(map.getRefInfo().getConditionField());
-			ref.setConditionValue(map.getRefInfo().getConditionValue());
+		try {
+			ref.addMapping(map);
 		}
-		
-		ref.addMapping(map);
+		catch (DuplicateMappingException e) {}
 		
 		return ref;
 	}
@@ -997,6 +995,8 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 			loadParents(conn);
 			loadChildren(conn);
 			
+			tryToDiscoverySharedKeyInfo(conn);
+			
 			loadUniqueKeys(conn);
 			
 			this.fullLoaded = true;
@@ -1006,6 +1006,29 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 			
 			throw new RuntimeException(e);
 		}
+	}
+	
+	private void tryToDiscoverySharedKeyInfo(Connection conn) throws DBException {
+		//Discovery shared pk
+		
+		if (this.parentRefInfo != null) {
+			for (RefInfo ref : this.parentRefInfo) {
+				
+				ref.getParentTableConf().getPrimaryKey(conn);
+				
+				PrimaryKey parentRefInfoAskey = new PrimaryKey();
+				parentRefInfoAskey.setFields(ref.extractParentFieldsFromRefMapping());
+				
+				PrimaryKey childRefInfoAskey = new PrimaryKey();
+				childRefInfoAskey.setFields(ref.extractChildFieldsFromRefMapping());
+				
+				if (ref.getParentTableConf().primaryKey.equals(parentRefInfoAskey)
+				        && ref.getChildTableConf().primaryKey.equals(childRefInfoAskey)) {
+					this.sharePkWith = ref.getParentTableName();
+				}
+			}
+		}
+		
 	}
 	
 	public synchronized void fullLoad() throws DBException {
@@ -1031,9 +1054,9 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		} else if (utilities.arrayHasElement(this.getParents())) {
 			
 			for (RefInfo refInfo : this.parentRefInfo) {
-				if (refInfo.getParentTableCof().getTableName().equalsIgnoreCase(this.sharePkWith)) {
+				if (refInfo.getParentTableConf().getTableName().equalsIgnoreCase(this.sharePkWith)) {
 					
-					PrimaryKey pk = refInfo.getParentTableCof().getPrimaryKey();
+					PrimaryKey pk = refInfo.getParentTableConf().getPrimaryKey();
 					
 					PrimaryKey refInfoKey = new PrimaryKey();
 					refInfoKey.setFields(refInfo.extractParentFieldsFromRefMapping());
@@ -1075,37 +1098,10 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		return getRelatedSyncConfiguration().getPOJOSourceFilesDirectory();
 	}
 	
-	/**
-	 * Find and returns the RefMapping info on configured parents.
-	 * 
-	 * @param parentTableName
-	 * @return the parents with a given name #parentTableName
-	 * @throws ForbiddenOperationException if there are more that one parents with a given name
-	 */
-	public RefMapping findConfiguredRefMapping(String parentTableName, String parentField, String childField)
-	        throws ForbiddenOperationException {
-		if (!utilities.arrayHasElement(this.parents))
-			return null;
-		
-		for (ConditionalParent info : this.parents) {
-			
-			if (info.getTableName().equalsIgnoreCase(parentTableName)) {
-				for (RefInfo r : info.getRefInfo()) {
-					RefMapping rm = r.findRefMapping(childField, parentField);
-					
-					if (rm != null)
-						return rm;
-				}
-			}
-		}
-		
-		return null;
-	}
-	
 	public SyncTableConfiguration findParentOnChildRefInfo(String parentTableName) {
 		for (RefInfo ref : this.childRefInfo) {
 			if (parentTableName.equals(ref.getParentTableName())) {
-				return ref.getParentTableCof();
+				return ref.getParentTableConf();
 			}
 		}
 		
@@ -1325,6 +1321,23 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		}
 		
 		return false;
+	}
+	
+	public List<TableParent> getConditionalParents() {
+		List<TableParent> conditionalParents = null;
+		
+		if (utilities.arrayHasElement(this.parents)) {
+			
+			conditionalParents = new ArrayList<>();
+			
+			for (TableParent p : this.parents) {
+				if (utilities.arrayHasElement(p.getRef().getConditionalFields())) {
+					conditionalParents.add(p);
+				}
+			}
+		}
+		
+		return conditionalParents;
 	}
 	
 }

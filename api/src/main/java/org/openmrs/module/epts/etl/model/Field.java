@@ -29,7 +29,7 @@ public class Field implements Serializable {
 	
 	public Field() {
 	}
-
+	
 	public String getType() {
 		return type;
 	}
@@ -53,6 +53,10 @@ public class Field implements Serializable {
 	
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	public String getNameAsClassAtt() {
+		return AttDefinedElements.convertTableAttNameToClassAttName(this.name);
 	}
 	
 	public Object getValue() {
@@ -98,8 +102,8 @@ public class Field implements Serializable {
 	}
 	
 	/**
-	 * Retorna o valor Integer correspondente ao valor do parametro identificado por 'paramName'; Se o
-	 * parametro nao existir ou se o valor nao for compativel, retorna '0'
+	 * Retorna o valor Integer correspondente ao valor do parametro identificado por 'paramName'; Se
+	 * o parametro nao existir ou se o valor nao for compativel, retorna '0'
 	 * 
 	 * @param fields
 	 * @param paramName
@@ -202,9 +206,11 @@ public class Field implements Serializable {
 		return (String) value;
 	}
 	
-	
 	public boolean isDateField() {
 		return AttDefinedElements.isDateType(this.type);
 	}
+	
+	public boolean isNumericColumnType() {
+		return AttDefinedElements.isNumeric(this.type);
+	}
 }
-

@@ -10,6 +10,10 @@ public class RefMapping {
 	
 	private Key parentField;
 	
+	private String childFieldName;
+	
+	private String parentFieldName;
+	
 	private Object defaultValueDueInconsistency;
 	
 	private RefInfo refInfo;
@@ -20,6 +24,31 @@ public class RefMapping {
 	 * Indicate if this parent can be ignored if not found in referenced table or not
 	 */
 	private boolean ignorable;
+	
+	public String getChildFieldName() {
+		return childFieldName;
+	}
+	
+	public void setChildFieldName(String childFieldName) {
+		this.childFieldName = childFieldName;
+		
+		if (this.childField == null) {
+			this.childField = new Key(this.childFieldName);
+		}
+		
+	}
+	
+	public String getParentFieldName() {
+		return parentFieldName;
+	}
+	
+	public void setParentFieldName(String parentFieldName) {
+		this.parentFieldName = parentFieldName;
+		
+		if (this.parentField == null) {
+			this.parentField = new Key(this.parentFieldName);
+		}
+	}
 	
 	public boolean isIgnorable() {
 		return ignorable;
@@ -71,6 +100,13 @@ public class RefMapping {
 	
 	public void setChildField(Key childField) {
 		this.childField = childField;
+		
+		if (childField != null) {
+			
+			this.childFieldName = childField.getName();
+		} else {
+			this.childFieldName = null;
+		}
 	}
 	
 	public Key getParentField() {
@@ -79,6 +115,12 @@ public class RefMapping {
 	
 	public void setParentField(Key parentField) {
 		this.parentField = parentField;
+		
+		if (parentField != null) {
+			this.parentFieldName = parentField.getName();
+		} else {
+			this.parentFieldName = null;
+		}
 	}
 	
 	public static RefMapping fastCreate(String childFieldName, String parentFieldName) {
@@ -86,6 +128,9 @@ public class RefMapping {
 		
 		ref.childField = new Key(childFieldName);
 		ref.parentField = new Key(parentFieldName);
+		
+		ref.childFieldName = childFieldName;
+		ref.parentFieldName = parentFieldName;
 		
 		return ref;
 	}
@@ -127,5 +172,5 @@ public class RefMapping {
 	public boolean isPrimitieveRefColumn() {
 		return AttDefinedElements.isPrimitive(this.childField.getType());
 	}
-		
+	
 }

@@ -8,7 +8,9 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSour
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -19,6 +21,14 @@ public class DstConf extends SyncTableConfiguration {
 	private List<FieldsMapping> manualFieldsMapping;
 	
 	private AppInfo relatedAppInfo;
+	
+	private static final int DEFAULT_NEXT_TREAD_ID = -1;
+	
+	private int currThreadStartId;
+	
+	private int currQtyRecords;
+	
+	private final String stringLock = new String("LOCK_STRING");
 	
 	public DstConf() {
 	}
@@ -36,7 +46,7 @@ public class DstConf extends SyncTableConfiguration {
 	}
 	
 	private void addMapping(String srcField, String destField) {
-		addMapping(new FieldsMapping(srcField, this.getTableName(), destField));
+		addMapping(new FieldsMapping(srcField, this.getSrcConf().getTableName(), destField));
 	}
 	
 	private void addMapping(FieldsMapping fm) throws ForbiddenOperationException {
@@ -180,6 +190,44 @@ public class DstConf extends SyncTableConfiguration {
 	@Override
 	public EtlConfiguration getParent() {
 		return (EtlConfiguration) super.getParent();
+	}
+	
+	public int generateNextStartIdForThread(List<SyncRecord> syncRecords, Connection conn)
+	        throws DBException, ForbiddenOperationException {
+		
+		synchronized (stringLock) {
+			
+			if (this.currThreadStartId == DEFAULT_NEXT_TREAD_ID) {
+				this.currQtyRecords = syncRecords.size();
+				
+				this.currThreadStartId = DatabaseObjectDAO.getLastRecord(this, conn);
+				
+				this.currThreadStartId = this.currThreadStartId - this.currQtyRecords + 1;
+			}
+			
+			this.currThreadStartId += this.currQtyRecords;
+			this.currQtyRecords = syncRecords.size();
+			
+			return this.currThreadStartId;
+		}
+	}
+	
+	public static synchronized int generateNextStartIdForThread(int dbCurrId, int currThreadStartId,
+	        int qtyRecordsPerProcessing) {
+		if (currThreadStartId == DEFAULT_NEXT_TREAD_ID) {
+			
+			currThreadStartId = dbCurrId;
+			
+			if (currThreadStartId == 0) {
+				currThreadStartId = 1 - qtyRecordsPerProcessing;
+			} else {
+				currThreadStartId = dbCurrId - qtyRecordsPerProcessing + 1;
+			}
+		}
+		
+		currThreadStartId += qtyRecordsPerProcessing;
+		
+		return currThreadStartId;
 	}
 	
 }

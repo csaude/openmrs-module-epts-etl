@@ -8,6 +8,7 @@ import org.openmrs.module.epts.etl.controller.conf.AuxiliaryExtractionSrcTable;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
@@ -98,10 +99,15 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	 */
 	public void tryToAddLimits(SearchClauses<DatabaseObject> searchClauses) {
 		if (this.getLimits() != null) {
-			searchClauses.addToClauses("src_." + getSrcTableConf().getPrimaryKey() + " between ? and ?");
-			searchClauses.addToParameters(this.getLimits().getCurrentFirstRecordId());
-			searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
-		}
+			
+			if (getSrcTableConf().getPrimaryKey().isSimpleNumericKey()) {
+				searchClauses.addToClauses("src_." + getSrcTableConf().getPrimaryKey().retrieveSimpleKeyColumnName() + " between ? and ?");
+				searchClauses.addToParameters(this.getLimits().getCurrentFirstRecordId());
+				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
+			}else {
+				throw new ForbiddenOperationException("Not supported composite or not numeric key for limit query!");
+			}
+		}		
 	}
 	
 	@SuppressWarnings("unchecked")
