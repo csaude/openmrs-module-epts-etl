@@ -4,10 +4,10 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefMapping;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
@@ -72,11 +72,10 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					
 					logDebug(startingStrLog + " STARTING RESOLVE PROBLEMS OF RECORD [" + record + "]");
 					
-					Class<DatabaseObject> syncRecordClass = getMainSrcTableConf().getSyncRecordClass(getDefaultApp());
-					Class<DatabaseObject> prsonRecordClass = SyncTableConfiguration
-					        .init("person", getEtlConfiguration().getSrcConf()).getSyncRecordClass(getDefaultApp());
+					Class<DatabaseObject> prsonRecordClass = AbstractTableConfiguration
+					        .initGenericTabConf("person", getEtlConfiguration().getSrcConf()).getSyncRecordClass(getDefaultApp());
 					
-					DatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(syncRecordClass,
+					DatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(getMainSrcTableConf(),
 					    ((DatabaseObject) record).getObjectId(), conn);
 					
 					if ((Integer) userOnDestDB.getParentValue("personId") != 1) {

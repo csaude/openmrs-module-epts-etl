@@ -3,7 +3,7 @@ package fgh.sp.openmrs_changed_records_action.eip;
 
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
@@ -31,7 +31,7 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 	}
 	
 	@Override
-	public void performeAction(ChangedRecord record, SyncTableConfiguration syncTableConfiguration) {
+	public void performeAction(ChangedRecord record, AbstractTableConfiguration abstractTableConfiguration) {
 		SenderRetryQueueItem item = new SenderRetryQueueItem();
 		
 		Event event = new Event();
@@ -80,7 +80,7 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 	}
 
 	@Override
-	public void performeAction(List<ChangedRecord> record, SyncTableConfiguration syncTableConfiguration) {
+	public void performeAction(List<ChangedRecord> record, AbstractTableConfiguration abstractTableConfiguration) {
 		throw new ForbiddenOperationException("Not supported batch performing");
 	}	
 }

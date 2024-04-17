@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class DstConf extends SyncTableConfiguration {
+public class DstConf extends AbstractTableConfiguration {
 	
 	private List<FieldsMapping> allFieldsMapping;
 	
@@ -31,6 +31,11 @@ public class DstConf extends SyncTableConfiguration {
 	private final String stringLock = new String("LOCK_STRING");
 	
 	public DstConf() {
+	}
+	
+	@Override
+	public boolean isGeneric() {
+		return false;
 	}
 	
 	public List<FieldsMapping> getManualFieldsMapping() {

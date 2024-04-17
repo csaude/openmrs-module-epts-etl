@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.controller.conf;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -38,7 +39,7 @@ public class EtlConfiguration extends SyncDataConfiguration {
 		this.dstConf = dstConf;
 	}
 	
-	public static EtlConfiguration fastCreate(SyncTableConfiguration tableConfig) {
+	public static EtlConfiguration fastCreate(AbstractTableConfiguration tableConfig) {
 		EtlConfiguration etl = new EtlConfiguration();
 		
 		SrcConf src = SrcConf.fastCreate(tableConfig);
@@ -84,6 +85,11 @@ public class EtlConfiguration extends SyncDataConfiguration {
 			List<AppInfo> otherApps = getRelatedSyncConfiguration().exposeAllAppsNotMain();
 			
 			if (utilities.arrayHasElement(otherApps)) {
+				
+				if (utilities.arrayHasMoreThanOneElements(otherApps)) {
+					throw new ForbiddenOperationException("Not supported more that one destination apps");
+				}
+				
 				dstConn = otherApps.get(0).openConnection();
 				
 				if (dstConf == null) {

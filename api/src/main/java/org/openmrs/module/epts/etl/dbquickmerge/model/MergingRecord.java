@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.TableParent;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -29,7 +29,7 @@ public class MergingRecord {
 	
 	private DatabaseObject record;
 	
-	private SyncTableConfiguration config;
+	private AbstractTableConfiguration config;
 	
 	private List<ParentInfo> parentsWithDefaultValues;
 	
@@ -41,7 +41,7 @@ public class MergingRecord {
 	
 	private long destinationRecordId;
 	
-	public MergingRecord(DatabaseObject record, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp,
+	public MergingRecord(DatabaseObject record, AbstractTableConfiguration config, AppInfo srcApp, AppInfo destApp,
 	    boolean writeOperationHistory) {
 		this.record = record;
 		this.config = config;
@@ -51,7 +51,7 @@ public class MergingRecord {
 		
 		this.parentsWithDefaultValues = new ArrayList<ParentInfo>();
 		
-		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(this.config.getUniqueKeys()));
+		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(this.config.getUniqueKeys(), this.record));
 	}
 	
 	public void merge(Connection srcConn, Connection destConn) throws DBException {
@@ -63,7 +63,7 @@ public class MergingRecord {
 		}
 	}
 	
-	public SyncTableConfiguration getConfig() {
+	public AbstractTableConfiguration getConfig() {
 		return config;
 	}
 	
@@ -154,7 +154,7 @@ public class MergingRecord {
 	
 	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection srcConn, Connection destConn)
 	        throws ParentNotYetMigratedException, DBException {
-		SyncTableConfiguration config = mergingRecord.config;
+		AbstractTableConfiguration config = mergingRecord.config;
 		
 		if (!utilities.arrayHasElement(config.getParents()))
 			return;
@@ -173,8 +173,7 @@ public class MergingRecord {
 			if (oParentIdInOrigin != null) {
 				Integer parentIdInOrigin = (Integer) oParentIdInOrigin;
 				
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(
-				    refInfo.getParentSyncRecordClass(mergingRecord.srcApp),
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getParentTableConf(),
 				    Oid.fastCreate(fieldNameOnParentTable, parentIdInOrigin), srcConn);
 				
 				if (parentInOrigin == null) {
@@ -186,7 +185,7 @@ public class MergingRecord {
 						
 						parentIdInOrigin = refInfo.getSimpleRefMapping().getDefaultValueDueInconsistencyAsInt();
 						
-						parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getParentSyncRecordClass(mergingRecord.srcApp),
+						parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getParentTableConf(),
 						    Oid.fastCreate(fieldNameOnParentTable, parentIdInOrigin), srcConn);
 						
 						if (parentInOrigin == null) {
@@ -196,7 +195,7 @@ public class MergingRecord {
 					}
 				}
 				
-				SyncTableConfiguration parentTabConf = refInfo.getParentTableConf();
+				AbstractTableConfiguration parentTabConf = refInfo.getParentTableConf();
 				
 				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parentTabConf, parentInOrigin, destConn);
 				
@@ -223,7 +222,7 @@ public class MergingRecord {
 	 */
 	private static void determineMissingMetadataParent(MergingRecord mergingRecord, Connection srcConn, Connection destConn)
 	        throws MissingParentException, DBException {
-		SyncTableConfiguration config = mergingRecord.config;
+		AbstractTableConfiguration config = mergingRecord.config;
 		
 		if (!utilities.arrayHasElement(config.getParents()))
 			return;
@@ -239,7 +238,7 @@ public class MergingRecord {
 			if (oParentId != null) {
 				Integer parentId = (Integer) oParentId;
 				
-				DatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo.getParentSyncRecordClass(mergingRecord.destApp),
+				DatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo.getParentTableConf(),
 				    Oid.fastCreate(refInfo.getParentColumnOnSimpleMapping(), parentId), destConn);
 				
 				if (parent == null)
@@ -255,7 +254,7 @@ public class MergingRecord {
 			return;
 		
 		DatabaseObject record = mergingRecord.record;
-		SyncTableConfiguration config = mergingRecord.config;
+		AbstractTableConfiguration config = mergingRecord.config;
 		
 		for (TableParent parent : config.getConditionalParents()) {
 			if (parent.isMetadata())
@@ -283,8 +282,7 @@ public class MergingRecord {
 			if (parentIdInOrigin != null) {
 				Oid objectId = Oid.fastCreate(refInfo.getParentColumnOnSimpleMapping(), parentIdInOrigin);
 				
-				DatabaseObject parentInOrigin = DatabaseObjectDAO
-				        .getByOid(refInfo.getParentSyncRecordClass(mergingRecord.srcApp), objectId, srcConn);
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getParentTableConf(), objectId, srcConn);
 				
 				if (parentInOrigin == null)
 					throw new MissingParentException(parentIdInOrigin, parent.getTableName(),
@@ -325,7 +323,7 @@ public class MergingRecord {
 			return;
 		}
 		
-		SyncTableConfiguration config = mergingRecs.get(0).config;
+		AbstractTableConfiguration config = mergingRecs.get(0).config;
 		
 		if (!config.isFullLoaded()) {
 			config.fullLoad();

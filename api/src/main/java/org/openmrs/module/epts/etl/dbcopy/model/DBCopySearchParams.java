@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.dbcopy.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SearchSourceType;
@@ -32,7 +32,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		Connection srcConn = conn;
-		SyncTableConfiguration tableInfo = getSrcTableConf();
+		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		

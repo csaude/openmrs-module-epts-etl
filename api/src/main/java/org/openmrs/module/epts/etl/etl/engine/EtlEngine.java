@@ -98,13 +98,12 @@ public class EtlEngine extends Engine {
 					if (destObject != null) {
 						if (mappingInfo.getPrimaryKey().isSimpleNumericKey() && mappingInfo.isManualIdGeneration()) {
 							
-							int currObjectId = 0;
+							int currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
 							
-							if (getMainSrcTableConf().isManualIdGeneration()) {
-								currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
-							}
-							
-							destObject.setObjectId(Oid.fastCreate("", currObjectId++));
+							destObject.setObjectId(Oid.fastCreate(
+							    mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
+						} else {
+							destObject.loadObjectIdData(mappingInfo);
 						}
 						
 						MergingRecord mr = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
@@ -173,13 +172,12 @@ public class EtlEngine extends Engine {
 					
 					if (mappingInfo.getPrimaryKey().isSimpleNumericKey() && mappingInfo.isManualIdGeneration()) {
 						
-						int currObjectId = 0;
+						int currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
 						
-						if (getMainSrcTableConf().isManualIdGeneration()) {
-							currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
-						}
-						
-						destObject.setObjectId(Oid.fastCreate("", currObjectId++));
+						destObject.setObjectId(Oid.fastCreate(
+						    mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
+					} else {
+						destObject.loadObjectIdData(mappingInfo);
 					}
 					
 					boolean wrt = writeOperationHistory();

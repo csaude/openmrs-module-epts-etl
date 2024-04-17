@@ -4,7 +4,7 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -31,7 +31,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tableInfo = this.getSrcTableConf();
+		AbstractTableConfiguration tableInfo = this.getSrcTableConf();
 		
 		if (this.type.isMissingRecordsDetector()) {
 			searchClauses.addColumnToSelect(

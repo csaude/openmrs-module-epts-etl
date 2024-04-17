@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents a query configuration. A query is used on data mapping between source and destination
  * table
  */
-public class TableDataSourceConfig extends SyncTableConfiguration implements PojobleDatabaseObject, SyncDataSource {
+public class TableDataSourceConfig extends AbstractTableConfiguration implements PojobleDatabaseObject, SyncDataSource {
 	
 	private EtlExtraDataSource relatedSrcExtraDataSrc;
 	
@@ -108,7 +108,7 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 	}
 	
 	@Override
-	public SyncDataConfiguration getParent() {
+	public EtlExtraDataSource getParent() {
 		return this.relatedSrcExtraDataSrc;
 	}
 	
@@ -149,5 +149,15 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 	@Override
 	public String getName() {
 		return super.getTableName();
+	}
+	
+	@Override
+	public AppInfo getRelatedAppInfo() {
+		return this.relatedSrcExtraDataSrc.getRelatedSrcConf().getRelatedAppInfo();
+	}
+	
+	@Override
+	public boolean isGeneric() {
+		return false;
 	}
 }

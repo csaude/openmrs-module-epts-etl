@@ -101,7 +101,7 @@ public class UniqueKeyInfo {
 		}
 	}
 	
-	public static List<UniqueKeyInfo> loadUniqueKeysInfo(SyncTableConfiguration tableConfiguration, Connection conn)
+	public static List<UniqueKeyInfo> loadUniqueKeysInfo(AbstractTableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
 		if (tableConfiguration.getPrimaryKey(conn) == null) {
 			throw new ForbiddenOperationException(
@@ -150,9 +150,9 @@ public class UniqueKeyInfo {
 			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);
 			
 			if (tableConfiguration.useSharedPKKey()) {
-				SyncTableConfiguration parentTableInfo = new SyncTableConfiguration();
+				AbstractTableConfiguration parentTableInfo = new GenericTabableConfiguration();
 				
-				parentTableInfo = new SyncTableConfiguration();
+				parentTableInfo = new GenericTabableConfiguration();
 				parentTableInfo.setTableName(tableConfiguration.getSharePkWith());
 				parentTableInfo.setParent(tableConfiguration.getParent());
 				
@@ -179,7 +179,7 @@ public class UniqueKeyInfo {
 	}
 	
 	private static boolean addUniqueKey(String keyName, List<Key> keyElements, List<UniqueKeyInfo> uniqueKeys,
-	        SyncTableConfiguration config, Connection conn) {
+	        AbstractTableConfiguration config, Connection conn) {
 		
 		if (keyElements == null || keyElements.isEmpty())
 			return false;
@@ -287,7 +287,20 @@ public class UniqueKeyInfo {
 		return uk;
 	}
 	
-	public static List<UniqueKeyInfo> cloneAll(List<UniqueKeyInfo> uniqueKeysInfo) {
+	public static List<UniqueKeyInfo> cloneAllAndLoadValues(List<UniqueKeyInfo> uniqueKeysInfo, DatabaseObject obj) {
+		List<UniqueKeyInfo> uks = cloneAll_(uniqueKeysInfo);
+		
+		if (utilities.arrayHasElement(uks)) {
+			
+			for (UniqueKeyInfo uk : uks) {
+				uk.loadValuesToFields(obj);
+			}
+		}
+		
+		return uks;
+	}
+	
+	public static List<UniqueKeyInfo> cloneAll_(List<UniqueKeyInfo> uniqueKeysInfo) {
 		
 		if (uniqueKeysInfo == null) {
 			return null;
@@ -356,7 +369,6 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
-	
 	public String parseToParametrizedStringCondition() {
 		String fields = "";
 		
@@ -373,8 +385,7 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
-	
-	public String generateSqlNotNullCheckWithDisjunction () {
+	public String generateSqlNotNullCheckWithDisjunction() {
 		String fields = "";
 		
 		for (int i = 0; i < this.getFields().size(); i++) {
@@ -404,7 +415,7 @@ public class UniqueKeyInfo {
 		}
 		
 		return fields;
-	}	
+	}
 	
 	public Key getKey(String name) {
 		if (!utilities.arrayHasElement(this.fields)) {

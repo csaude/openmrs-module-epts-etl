@@ -8,7 +8,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.controller.ProcessStarter;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -49,7 +49,7 @@ public class QuickTest {
 		
 		etlConf.fullLoad();
 		
-		SyncTableConfiguration tbConf = etlConf.getSrcConf();
+		AbstractTableConfiguration tbConf = etlConf.getSrcConf();
 		
 		//tbConf.getSyncRecordClass(conf.getMainApp());
 		

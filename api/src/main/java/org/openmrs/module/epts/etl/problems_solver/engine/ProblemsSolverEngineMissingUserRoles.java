@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
@@ -35,7 +35,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 			//new DatabasesInfo("Echo Central Server", DatabasesInfo.DB_NAMES_ECHO, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
 	};
 	
-	private SyncTableConfiguration userRoleTableConf;
+	private AbstractTableConfiguration userRoleTableConf;
 	
 	@SuppressWarnings("unused")
 	private Class<DatabaseObject> userRoleRecordClass;
@@ -43,7 +43,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	public ProblemsSolverEngineMissingUserRoles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
-		this.userRoleTableConf = SyncTableConfiguration.init("user_role", getEtlConfiguration().getSrcConf());
+		this.userRoleTableConf = AbstractTableConfiguration.initGenericTabConf("user_role", getEtlConfiguration().getSrcConf());
 		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());
 	}
 	

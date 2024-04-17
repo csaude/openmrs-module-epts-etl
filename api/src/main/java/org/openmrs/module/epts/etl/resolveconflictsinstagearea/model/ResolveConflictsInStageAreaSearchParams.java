@@ -5,7 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -25,7 +25,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 		
 		searchClauses.addColumnToSelect("distinct (src_.record_uuid) record_uuid");
 		
-		SyncTableConfiguration tableInfo = this.getSrcTableConf();
+		AbstractTableConfiguration tableInfo = this.getSrcTableConf();
 		
 		searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName() + " src_ ");
 		

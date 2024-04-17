@@ -5,7 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
@@ -22,7 +22,7 @@ public class TmpUserVO extends GenericDatabaseObject {
 	
 	private int deletable;
 	
-	private SyncTableConfiguration usersSyncTableConfiguration;
+	private AbstractTableConfiguration usersSyncTableConfiguration;
 	
 	public void load(ResultSet rs) throws SQLException {
 		try {
@@ -59,7 +59,7 @@ public class TmpUserVO extends GenericDatabaseObject {
 		return winnerUserId;
 	}
 	
-	public void setUsersSyncTableConfiguration(SyncTableConfiguration usersSyncTableConfiguration) {
+	public void setUsersSyncTableConfiguration(AbstractTableConfiguration usersSyncTableConfiguration) {
 		this.usersSyncTableConfiguration = usersSyncTableConfiguration;
 	}
 	
@@ -77,7 +77,7 @@ public class TmpUserVO extends GenericDatabaseObject {
 	}
 	
 	@Override
-	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public void save(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		BaseDAO.executeQueryWithRetryOnError(
 		    "update tmp_user set deletable = " + this.deletable + " where user_id = " + getObjectId(), null, conn);
 	}

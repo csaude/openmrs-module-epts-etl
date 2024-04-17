@@ -6,7 +6,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -15,18 +15,18 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DataReconciliationRecord {
 	private DatabaseObject record;
-	private SyncTableConfiguration config;
+	private AbstractTableConfiguration config;
 	private SyncImportInfoVO stageInfo;
 	private String recordUuid;
 	private ConciliationReasonType reasonType;
 	
-	public DataReconciliationRecord(String recordUuid, SyncTableConfiguration config, ConciliationReasonType reasonType) {
+	public DataReconciliationRecord(String recordUuid, AbstractTableConfiguration config, ConciliationReasonType reasonType) {
 		this.recordUuid = recordUuid;
 		this.config = config;
 		this.reasonType = reasonType;
 	}
 	
-	public DataReconciliationRecord(DatabaseObject record, SyncTableConfiguration config, ConciliationReasonType reasonType) {
+	public DataReconciliationRecord(DatabaseObject record, AbstractTableConfiguration config, ConciliationReasonType reasonType) {
 		this.record = record;
 		this.recordUuid = record.getUuid();
 		this.stageInfo = record.getRelatedSyncInfo();
@@ -34,7 +34,7 @@ public class DataReconciliationRecord {
 		this.reasonType = reasonType;
 	}
 	
-	public static void tryToReconciliate(DatabaseObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
+	public static void tryToReconciliate(DatabaseObject record, AbstractTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
 		DataReconciliationRecord dataReciliationRecord = new DataReconciliationRecord(record.getUuid(), config, ConciliationReasonType.OUTDATED);
 		
 		dataReciliationRecord.record = record; 
@@ -92,7 +92,7 @@ public class DataReconciliationRecord {
 		return recordUuid;
 	}
 	
-	public SyncTableConfiguration getConfig() {
+	public AbstractTableConfiguration getConfig() {
 		return config;
 	}
 	
@@ -125,7 +125,7 @@ public class DataReconciliationRecord {
 		
 	}
 
-	private static void loadDestParentInfo(DatabaseObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
+	private static void loadDestParentInfo(DatabaseObject record, AbstractTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
 		throw new ForbiddenOperationException("Review this method");
 		
 	/*SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();

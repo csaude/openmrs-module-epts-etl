@@ -7,7 +7,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.controller.conf.AuxiliaryExtractionSrcTable;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SrcConf;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -122,7 +122,7 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	/**
 	 * @return
 	 */
-	public SyncTableConfiguration getSrcTableConf() {
+	public AbstractTableConfiguration getSrcTableConf() {
 		return this.getConfig().getSrcConf();
 	}
 	
@@ -135,7 +135,7 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	/**
 	 * @return
 	 */
-	public SyncTableConfiguration getDstLastTableConfiguration() {
+	public AbstractTableConfiguration getDstLastTableConfiguration() {
 		return  utilities.getLastRecordOnArray(getConfig().getDstConf());
 	}	
 	

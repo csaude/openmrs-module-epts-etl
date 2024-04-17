@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -69,7 +69,7 @@ public class TransportController extends OperationController {
 		return Long.parseLong(pats[pats.length - 1]);
 	}
 	
-	public File getSyncDirectory(SyncTableConfiguration syncInfo) {
+	public File getSyncDirectory(AbstractTableConfiguration syncInfo) {
 		String fileName = "";
 		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
@@ -83,7 +83,7 @@ public class TransportController extends OperationController {
 		return new File(fileName);
 	}
 	
-	public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
+	public File getSyncBkpDirectory(AbstractTableConfiguration syncInfo) throws IOException {
 		String fileName = "";
 		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
@@ -104,7 +104,7 @@ public class TransportController extends OperationController {
 		return bkpDirectory;
 	}
 	
-	public File getSyncDestinationDirectory(SyncTableConfiguration syncInfo) throws IOException {
+	public File getSyncDestinationDirectory(AbstractTableConfiguration syncInfo) throws IOException {
 		String fileName = "";
 		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();

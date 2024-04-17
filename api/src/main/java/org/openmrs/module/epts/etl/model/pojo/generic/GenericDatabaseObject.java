@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
-	private SyncTableConfiguration syncTableConfiguration;
+	private AbstractTableConfiguration abstractTableConfiguration;
 	
 	public GenericDatabaseObject() {
 	}
@@ -29,12 +29,12 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		} catch (SQLException e) {}
 	}
 	
-	public GenericDatabaseObject(SyncTableConfiguration syncTableConfiguration) {
-		this.syncTableConfiguration = syncTableConfiguration;
+	public GenericDatabaseObject(AbstractTableConfiguration abstractTableConfiguration) {
+		this.abstractTableConfiguration = abstractTableConfiguration;
 	}
 	
-	public void setSyncTableConfiguration(SyncTableConfiguration syncTableConfiguration) {
-		this.syncTableConfiguration = syncTableConfiguration;
+	public void setSyncTableConfiguration(AbstractTableConfiguration abstractTableConfiguration) {
+		this.abstractTableConfiguration = abstractTableConfiguration;
 	}
 	
 	@Override
@@ -98,11 +98,11 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public String generateTableName() {
-		return this.syncTableConfiguration.getTableName();
+		return this.abstractTableConfiguration.getTableName();
 	}
 
 	@Override
-	public void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException {
+	public void resolveInconsistence(AbstractTableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 
@@ -111,8 +111,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		throw new ForbiddenOperationException("Forbidden Method");
 	}
 	
-	public static GenericDatabaseObject fastCreate(SyncImportInfoVO syncImportInfo, SyncTableConfiguration syncTableConfiguration) {
-		GenericDatabaseObject obj = new GenericDatabaseObject(syncTableConfiguration);
+	public static GenericDatabaseObject fastCreate(SyncImportInfoVO syncImportInfo, AbstractTableConfiguration abstractTableConfiguration) {
+		GenericDatabaseObject obj = new GenericDatabaseObject(abstractTableConfiguration);
 		obj.setObjectId(Oid.fastCreate("", syncImportInfo.getRecordOriginId()));
 		
 		return obj;

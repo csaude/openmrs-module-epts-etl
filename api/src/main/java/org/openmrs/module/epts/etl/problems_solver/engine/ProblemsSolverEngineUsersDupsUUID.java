@@ -54,7 +54,7 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 					
 					DatabaseObject rec = (DatabaseObject) record;
 					
-					SyncTableConfiguration syncTableInfo = SyncTableConfiguration.init("tmp_user",
+					AbstractTableConfiguration syncTableInfo = AbstractTableConfiguration.init("tmp_user",
 					    getEtlConfiguration().getSrcConf());
 					
 					List<TmpUserVO> allDuplicatedByUuid = DatabaseObjectDAO.getByField(TmpUserVO.class, "user_uuid", rec.getUuid(),

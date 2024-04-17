@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -21,14 +21,14 @@ public class MergingRecord {
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private DatabaseObject record;
-	private SyncTableConfiguration config;
+	private AbstractTableConfiguration config;
 	private SyncImportInfoVO stageInfo;
 	private List<ParentInfo>  parentsWithDefaultValues;
 
 	private AppInfo srcApp;
 	private AppInfo destApp;
 	
-	public MergingRecord(SyncImportInfoVO stageInfo, SyncTableConfiguration config, AppInfo srcApp, AppInfo destApp) {
+	public MergingRecord(SyncImportInfoVO stageInfo, AbstractTableConfiguration config, AppInfo srcApp, AppInfo destApp) {
 		this.srcApp = srcApp;
 		this.destApp = destApp;
 		this.stageInfo = stageInfo;
@@ -77,7 +77,7 @@ public class MergingRecord {
 	}
 	
 	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection conn) throws ParentNotYetMigratedException, DBException {
-		SyncTableConfiguration config = mergingRecord.config;
+		AbstractTableConfiguration config = mergingRecord.config;
 		
 		if (!utilities.arrayHasElement(config.getParents())) return;
 		

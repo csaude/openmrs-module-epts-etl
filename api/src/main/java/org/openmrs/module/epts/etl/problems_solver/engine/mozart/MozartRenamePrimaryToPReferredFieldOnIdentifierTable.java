@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
@@ -66,7 +66,7 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Mozart
 			}
 			
 			for (EtlConfiguration config : configs) {
-				SyncTableConfiguration configuredTable = config.getSrcConf();
+				AbstractTableConfiguration configuredTable = config.getSrcConf();
 				
 				if (!configuredTable.getTableName().equals("identifier"))
 					continue;

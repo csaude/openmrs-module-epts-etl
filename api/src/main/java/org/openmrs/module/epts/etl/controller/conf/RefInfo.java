@@ -28,9 +28,9 @@ public class RefInfo {
 	
 	private List<RefMapping> fieldsMapping;
 	
-	private SyncTableConfiguration childTableConf;
+	private AbstractTableConfiguration childTableConf;
 	
-	private SyncTableConfiguration parentTableConf;
+	private AbstractTableConfiguration parentTableConf;
 	
 	private List<Field> conditionalFields;
 	
@@ -108,7 +108,7 @@ public class RefInfo {
 		return getParentTableConf().getTableName();
 	}
 	
-	public SyncTableConfiguration getChildTableConf() {
+	public AbstractTableConfiguration getChildTableConf() {
 		return childTableConf;
 	}
 	
@@ -120,15 +120,15 @@ public class RefInfo {
 		return this.childTableConf.getSyncRecordClass(application);
 	}
 	
-	public void setChildTableConf(SyncTableConfiguration childTableConf) {
+	public void setChildTableConf(AbstractTableConfiguration childTableConf) {
 		this.childTableConf = childTableConf;
 	}
 	
-	public SyncTableConfiguration getParentTableConf() {
+	public AbstractTableConfiguration getParentTableConf() {
 		return parentTableConf;
 	}
 	
-	public void setParentTableConf(SyncTableConfiguration parentTableConf) {
+	public void setParentTableConf(AbstractTableConfiguration parentTableConf) {
 		this.parentTableConf = parentTableConf;
 	}
 	

@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.Key;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
@@ -18,7 +18,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public class DatabaseObjectDAO extends BaseDAO {
 	
-	private static void refreshLastSyncDate(DatabaseObject syncRecord, SyncTableConfiguration tableConfiguration,
+	private static void refreshLastSyncDate(DatabaseObject syncRecord, AbstractTableConfiguration tableConfiguration,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
 		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), recordOriginLocationCode,
 		        syncRecord.getObjectId() };
@@ -36,17 +36,18 @@ public class DatabaseObjectDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void refreshLastSyncDateOnDestination(DatabaseObject syncRecord, SyncTableConfiguration tableConfiguration,
+	public static void refreshLastSyncDateOnDestination(DatabaseObject syncRecord,
+	        AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
+	        throws DBException {
+		refreshLastSyncDate(syncRecord, tableConfiguration, recordOriginLocationCode, conn);
+	}
+	
+	public static void refreshLastSyncDateOnOrigin(DatabaseObject syncRecord, AbstractTableConfiguration tableConfiguration,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
 		refreshLastSyncDate(syncRecord, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
-	public static void refreshLastSyncDateOnOrigin(DatabaseObject syncRecord, SyncTableConfiguration tableConfiguration,
-	        String recordOriginLocationCode, Connection conn) throws DBException {
-		refreshLastSyncDate(syncRecord, tableConfiguration, recordOriginLocationCode, conn);
-	}
-	
-	private static void refreshLastSyncDate(List<DatabaseObject> syncRecords, SyncTableConfiguration tableConfiguration,
+	private static void refreshLastSyncDate(List<DatabaseObject> syncRecords, AbstractTableConfiguration tableConfiguration,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
 		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), recordOriginLocationCode,
 		        syncRecords.get(0).getObjectId(), syncRecords.get(syncRecords.size() - 1).getObjectId() };
@@ -65,23 +66,33 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static void refreshLastSyncDateOnDestination(List<DatabaseObject> syncRecords,
-	        SyncTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn) throws DBException {
+	        AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
+	        throws DBException {
 		refreshLastSyncDate(syncRecords, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
 	public static void refreshLastSyncDateOnOrigin(List<DatabaseObject> syncRecords,
-	        SyncTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn) throws DBException {
+	        AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
+	        throws DBException {
 		refreshLastSyncDate(syncRecords, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
-	public static void insert(DatabaseObject record, Connection conn) throws DBException {
-		Object[] params = record.getInsertParamsWithoutObjectId();
-		String sql = record.getInsertSQLWithoutObjectId();
+	public static void insert(DatabaseObject record, AbstractTableConfiguration tableConfiguration, Connection conn)
+	        throws DBException {
+		Object[] params = null;
+		String sql = null;
+		
+		if (tableConfiguration.isManualIdGeneration() || tableConfiguration.getPrimaryKey().isCompositeKey()) {
+			params = record.getInsertParamsWithObjectId();
+			sql = record.getInsertSQLWithObjectId();
+		} else {
+			params = record.getInsertParamsWithoutObjectId();
+			sql = record.getInsertSQLWithoutObjectId();
+		}
 		
 		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn);
 		
 		long id = executeQueryWithRetryOnError(sql, params, conn);
-		
 		
 		if (record.getObjectId().isSimpleId()) {
 			record.fastCreateSimpleNumericKey(id);
@@ -108,7 +119,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static DatabaseObject thinGetByRecordOrigin(Integer recordOriginId, String recordOriginLocationCode,
-	        SyncTableConfiguration parentTableConfiguration, Connection conn) throws DBException {
+	        AbstractTableConfiguration parentTableConfiguration, Connection conn) throws DBException {
 		
 		try {
 			Object[] params = { recordOriginId, recordOriginLocationCode };
@@ -143,12 +154,12 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static <T extends DatabaseObject> List<T> getByUniqueKeys(SyncTableConfiguration tableConfiguration, T obj,
+	public static <T extends DatabaseObject> List<T> getByUniqueKeys(AbstractTableConfiguration tableConfiguration, T obj,
 	        Connection conn) throws DBException {
 		return getByUniqueKeys(tableConfiguration, DBUtilities.determineSchemaName(conn), obj, conn);
 	}
 	
-	public static <T extends DatabaseObject> T getByUniqueKeysOnSpecificSchema(SyncTableConfiguration tableConfiguration,
+	public static <T extends DatabaseObject> T getByUniqueKeysOnSpecificSchema(AbstractTableConfiguration tableConfiguration,
 	        T obj, String schema, Connection conn) throws DBException {
 		List<T> result = getByUniqueKeys(tableConfiguration, schema, obj, conn);
 		
@@ -156,7 +167,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static <T extends DatabaseObject> List<T> getByUniqueKeys(SyncTableConfiguration tableConfiguration,
+	private static <T extends DatabaseObject> List<T> getByUniqueKeys(AbstractTableConfiguration tableConfiguration,
 	        String schema, T obj, Connection conn) throws DBException {
 		if (!tableConfiguration.isFullLoaded())
 			tableConfiguration.fullLoad();
@@ -210,7 +221,15 @@ public class DatabaseObjectDAO extends BaseDAO {
 		        + "\n";
 		sql += " WHERE 	" + conditionSQL;
 		
-		return (List<T>) search(obj.getClass(), sql, params, conn);
+		List<T> objs = (List<T>) search(obj.getClass(), sql, params, conn);
+		
+		if (utilities.arrayHasElement(objs)) {
+			for (T t : objs) {
+				t.loadObjectIdData(tableConfiguration);
+			}
+		}
+		
+		return objs;
 	}
 	
 	public static <T extends DatabaseObject> List<T> getByField(Class<T> openMRSClass, String fieldName, String fieldValue,
@@ -231,6 +250,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql += " ORDER BY " + fieldName;
 			
 			return search(openMRSClass, sql, params, conn);
+			
 		}
 		catch (InstantiationException e) {
 			e.printStackTrace();
@@ -244,8 +264,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static <T extends DatabaseObject> T getByOid(Class<T> openMRSClass, Oid oid, Connection conn) throws DBException {
+	@SuppressWarnings("unchecked")
+	public static <T extends DatabaseObject> T getByOid(AbstractTableConfiguration tabConf, Oid oid, Connection conn)
+	        throws DBException {
 		try {
+			
+			Class<T> openMRSClass = (Class<T>) tabConf.getSyncRecordClass(tabConf.getRelatedAppInfo());
+			
 			T obj = openMRSClass.newInstance();
 			
 			Object[] params = oid.parseValuesToArray();
@@ -259,7 +284,14 @@ public class DatabaseObjectDAO extends BaseDAO {
 			        + "\n";
 			sql += " WHERE 	" + oid.parseToParametrizedStringCondition();
 			
-			return find(openMRSClass, sql, params, conn);
+			obj = find(openMRSClass, sql, params, conn);
+			
+			if (obj != null) {
+				obj.loadObjectIdData(tabConf);
+			}
+			
+			return obj;
+			
 		}
 		catch (InstantiationException e) {
 			e.printStackTrace();
@@ -303,7 +335,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static List<DatabaseObject> getByParentId(SyncTableConfiguration tableConfiguration, String parentField,
+	public static List<DatabaseObject> getByParentId(AbstractTableConfiguration tableConfiguration, String parentField,
 	        Integer parentId, Connection conn) throws DBException {
 		Object[] params = { parentField };
 		
@@ -313,7 +345,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return utilities.parseList(search(GenericDatabaseObject.class, sql, params, conn), DatabaseObject.class);
 	}
 	
-	public static DatabaseObject getDefaultRecord(SyncTableConfiguration tableConfiguration, Connection conn)
+	public static DatabaseObject getDefaultRecord(AbstractTableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
 		Object[] params = {};
 		
@@ -338,17 +370,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return find(GenericDatabaseObject.class, sql, params, conn);
 	}
 	
-	public static DatabaseObject getFirstConsistentRecordInOrigin(SyncTableConfiguration tableInfo, Connection conn)
+	public static DatabaseObject getFirstConsistentRecordInOrigin(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		return getConsistentRecordInOrigin(tableInfo, "min", conn);
 	}
 	
-	public static DatabaseObject getLastConsistentRecordOnOrigin(SyncTableConfiguration tableInfo, Connection conn)
+	public static DatabaseObject getLastConsistentRecordOnOrigin(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		return getConsistentRecordInOrigin(tableInfo, "max", conn);
 	}
 	
-	private static GenericDatabaseObject getConsistentRecordInOrigin(SyncTableConfiguration tableConfiguration,
+	private static GenericDatabaseObject getConsistentRecordInOrigin(AbstractTableConfiguration tableConfiguration,
 	        String function, Connection conn) throws DBException {
 		Object[] params = {};
 		
@@ -375,18 +407,18 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return find(GenericDatabaseObject.class, sql, params, conn);
 	}
 	
-	public static DatabaseObject getFirstNeverProcessedRecordOnOrigin(SyncTableConfiguration tableInfo, Connection conn)
+	public static DatabaseObject getFirstNeverProcessedRecordOnOrigin(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		return getExtremeNeverProcessedRecordOnOrigin(tableInfo, "min", conn);
 	}
 	
-	public static DatabaseObject getLastNeverProcessedRecordOnOrigin(SyncTableConfiguration tableInfo, Connection conn)
+	public static DatabaseObject getLastNeverProcessedRecordOnOrigin(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		return getExtremeNeverProcessedRecordOnOrigin(tableInfo, "max", conn);
 	}
 	
-	private static DatabaseObject getExtremeNeverProcessedRecordOnOrigin(SyncTableConfiguration tableInfo, String function,
-	        Connection conn) throws DBException {
+	private static DatabaseObject getExtremeNeverProcessedRecordOnOrigin(AbstractTableConfiguration tableInfo,
+	        String function, Connection conn) throws DBException {
 		Object[] params = {};
 		
 		String sql = "";
@@ -416,7 +448,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static int countAllOfOriginParentId(String parentField, Integer parentOriginId, String appOriginCode,
-	        SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	        AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		
 		Object[] params = { parentOriginId, appOriginCode };
 		
@@ -447,7 +479,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static List<DatabaseObject> getByOriginParentId(String parentField, Integer parentOriginId, String appOriginCode,
-	        SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	        AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		Object[] params = { parentOriginId, appOriginCode };
 		
 		String sql = " SELECT * ";
@@ -489,8 +521,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return search(clazz, sql, params, conn);
 	}
 	
-	private static void insertAllMetadata(List<DatabaseObject> records, SyncTableConfiguration tableInfo, Connection conn)
-	        throws DBException {
+	private static void insertAllMetadata(List<DatabaseObject> records, AbstractTableConfiguration tableInfo,
+	        Connection conn) throws DBException {
 		if (!tableInfo.isMetadata())
 			throw new ForbiddenOperationException(
 			        "You tried to insert " + tableInfo.getTableName() + " as metadata but it is not a metadata!!!");
@@ -500,23 +532,24 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static void insertAll(List<DatabaseObject> objects, SyncTableConfiguration syncTableConfiguration,
+	public static void insertAll(List<DatabaseObject> objects, AbstractTableConfiguration abstractTableConfiguration,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
-		boolean isInMetadata = utilities.isStringIn(syncTableConfiguration.getTableName(), "location", "concept_datatype",
-		    "concept", "person_attribute_type", "provider_attribute_type", "program", "program_workflow",
+		boolean isInMetadata = utilities.isStringIn(abstractTableConfiguration.getTableName(), "location",
+		    "concept_datatype", "concept", "person_attribute_type", "provider_attribute_type", "program", "program_workflow",
 		    "program_workflow_state", "encounter_type", "visit_type", "relationship_type", "patient_identifier_type");
 		
-		if (syncTableConfiguration.getRelatedSyncConfiguration().isOpenMRSModel() && syncTableConfiguration.isMetadata()
-		        && !isInMetadata) {
+		if (abstractTableConfiguration.getRelatedSyncConfiguration().isOpenMRSModel()
+		        && abstractTableConfiguration.isMetadata() && !isInMetadata) {
 			throw new ForbiddenOperationException(
-			        "The table " + syncTableConfiguration.getTableName() + " is been treated as metadata but it is not");
+			        "The table " + abstractTableConfiguration.getTableName() + " is been treated as metadata but it is not");
 		}
 		
-		if (syncTableConfiguration.isMetadata()) {
-			insertAllMetadata(objects, syncTableConfiguration, conn);
+		if (abstractTableConfiguration.isMetadata()) {
+			insertAllMetadata(objects, abstractTableConfiguration, conn);
 		} else {
 			
-			if (syncTableConfiguration.isManualIdGeneration()) {
+			if (abstractTableConfiguration.isManualIdGeneration()
+			        || abstractTableConfiguration.getPrimaryKey().isCompositeKey()) {
 				insertAllDataWithId(objects, conn);
 			} else {
 				insertAllDataWithoutId(objects, conn);
@@ -569,7 +602,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unused")
-	private static DatabaseObject retrieveProblematicObjectFromExceptionInfo(SyncTableConfiguration tableConfiguration,
+	private static DatabaseObject retrieveProblematicObjectFromExceptionInfo(AbstractTableConfiguration tableConfiguration,
 	        DBException e, Connection conn) throws DBException {
 		//UUID duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
 		String s = e.getLocalizedMessage().split("'")[1];
@@ -589,7 +622,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return null;
 	}
 	
-	public static Integer getAvaliableObjectId(SyncTableConfiguration syncTableInfo, Integer maxAcceptableId,
+	public static Integer getAvaliableObjectId(AbstractTableConfiguration syncTableInfo, Integer maxAcceptableId,
 	        Connection conn) throws DBException {
 		if (maxAcceptableId <= 0)
 			throw new ForbiddenOperationException("There was not find any avaliable id for " + syncTableInfo.getTableName());
@@ -603,11 +636,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 			throw new ForbiddenOperationException("The key should be numeric...!");
 		}
 		
-		
 		String pkName = syncTableInfo.getPrimaryKey().retrieveSimpleKey().getName();
 		
 		String sql = "";
-		
 		
 		sql += " SELECT max(" + pkName + ") " + pkName + " \n";
 		sql += " FROM  	" + syncTableInfo.getTableName() + ";\n";
@@ -621,8 +652,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 				
 				Oid oid = Oid.fastCreate(pkName, maxAcceptableId - 1);
 				
-				if (getByOid(syncTableInfo.getSyncRecordClass(syncTableInfo.getMainApp()), oid,
-				    conn) == null) {
+				if (getByOid(syncTableInfo, oid, conn) == null) {
 					return maxAcceptableId - 1;
 				} else
 					return getAvaliableObjectId(syncTableInfo, maxAcceptableId - 1, conn);
@@ -632,17 +662,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static Integer getFirstRecord(SyncTableConfiguration tableConf, Connection conn)
+	public static Integer getFirstRecord(AbstractTableConfiguration tableConf, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		return getSpecificRecord(tableConf, "min", conn);
 	}
 	
-	public static Integer getLastRecord(SyncTableConfiguration tableConf, Connection conn)
+	public static Integer getLastRecord(AbstractTableConfiguration tableConf, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		return getSpecificRecord(tableConf, "max", conn);
 	}
 	
-	public static Integer getSpecificRecord(SyncTableConfiguration tableConf, String function, Connection conn)
+	public static Integer getSpecificRecord(AbstractTableConfiguration tableConf, String function, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
 		String sql = " SELECT " + function + "(" + tableConf.getPrimaryKey() + ") value\n";
@@ -680,17 +710,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return v != null && v.hasValue() ? v.IntegerValue() : 0;
 	}
 	
-	public static DatabaseObject getFirstOutDatedRecordInDestination(SyncTableConfiguration tableConfiguration,
+	public static DatabaseObject getFirstOutDatedRecordInDestination(AbstractTableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getOutDatedRecordInDestination(tableConfiguration, "min", conn);
 	}
 	
-	public static DatabaseObject getLastOutDatedRecordInDestination(SyncTableConfiguration tableConfiguration,
+	public static DatabaseObject getLastOutDatedRecordInDestination(AbstractTableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getOutDatedRecordInDestination(tableConfiguration, "max", conn);
 	}
 	
-	private static GenericDatabaseObject getOutDatedRecordInDestination(SyncTableConfiguration tableConfiguration,
+	private static GenericDatabaseObject getOutDatedRecordInDestination(AbstractTableConfiguration tableConfiguration,
 	        String function, Connection conn) throws DBException {
 		Object[] params = {};
 		
@@ -734,18 +764,18 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return find(GenericDatabaseObject.class, sql, params, conn);
 	}
 	
-	public static DatabaseObject getFirstPhantomRecordInDestination(SyncTableConfiguration tableConfiguration,
+	public static DatabaseObject getFirstPhantomRecordInDestination(AbstractTableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getPhantomRecordInDestination(tableConfiguration, "min", conn);
 	}
 	
-	public static DatabaseObject getLastPhantomRecordInDestination(SyncTableConfiguration tableConfiguration,
+	public static DatabaseObject getLastPhantomRecordInDestination(AbstractTableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getPhantomRecordInDestination(tableConfiguration, "max", conn);
 	}
 	
-	private static DatabaseObject getPhantomRecordInDestination(SyncTableConfiguration tableConfiguration, String function,
-	        Connection conn) throws DBException {
+	private static DatabaseObject getPhantomRecordInDestination(AbstractTableConfiguration tableConfiguration,
+	        String function, Connection conn) throws DBException {
 		Object[] params = {};
 		
 		String sql = "";
@@ -771,17 +801,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return find(GenericDatabaseObject.class, sql, params, conn);
 	}
 	
-	public static DatabaseObject getFirstOutDatedRecordInDestination_(SyncTableConfiguration tableConfiguration,
+	public static DatabaseObject getFirstOutDatedRecordInDestination_(AbstractTableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getOutDatedRecordInDestination_(tableConfiguration, "min", conn);
 	}
 	
-	public static DatabaseObject getLastOutDatedRecordInDestination_(SyncTableConfiguration tableConfiguration,
+	public static DatabaseObject getLastOutDatedRecordInDestination_(AbstractTableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getOutDatedRecordInDestination_(tableConfiguration, "max", conn);
 	}
 	
-	private static GenericDatabaseObject getOutDatedRecordInDestination_(SyncTableConfiguration tableConfiguration,
+	private static GenericDatabaseObject getOutDatedRecordInDestination_(AbstractTableConfiguration tableConfiguration,
 	        String function, Connection conn) throws DBException {
 		Object[] params = {};
 		

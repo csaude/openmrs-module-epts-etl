@@ -53,7 +53,7 @@ public class DBQuickExportEngine extends Engine {
 			this.getMonitor().logInfo("GENERATING '" + syncRecords.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
 			
 			for (DatabaseObject rec : syncRecordsAsOpenMRSObjects) {
-				rec.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(getMainSrcTableConf().getUniqueKeys()));
+				rec.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(getMainSrcTableConf().getUniqueKeys(), rec));
 			}
 			
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getMainSrcTableName(), syncRecordsAsOpenMRSObjects,

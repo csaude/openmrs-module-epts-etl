@@ -8,7 +8,7 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
@@ -166,7 +166,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		return info;
 	}
 	
-	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public void save(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		DetectedRecordInfoDAO.insert(this, tableConfiguration, conn);
 	}
 	
@@ -176,21 +176,21 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void refreshLastSyncDateOnOrigin(SyncTableConfiguration tableConfiguration, String recordOriginLocationCode,
+	public void refreshLastSyncDateOnOrigin(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void refreshLastSyncDateOnDestination(SyncTableConfiguration tableConfiguration, String recordOriginLocationCode,
+	public void refreshLastSyncDateOnDestination(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void loadDestParentInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
+	public void loadDestParentInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		// TODO Auto-generated method stub
 		
@@ -250,21 +250,21 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void consolidateData(SyncTableConfiguration tableInfo, Connection conn)
+	public void consolidateData(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn)
+	public void resolveInconsistence(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode,
+	public SyncImportInfoVO retrieveRelatedSyncInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode,
 	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
@@ -295,26 +295,26 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public Map<RefInfo, Integer> loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+	public Map<RefInfo, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents,
+	public void removeDueInconsistency(AbstractTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents,
 	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException {
+	public void changeObjectId(AbstractTableConfiguration abstractTableConfiguration, Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void changeParentForAllChildren(DatabaseObject newParent, SyncTableConfiguration syncTableInfo, Connection conn)
+	public void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo, Connection conn)
 	        throws DBException {
 		// TODO Auto-generated method stub
 		
@@ -322,7 +322,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	
 	@Override
 	public DatabaseObject retrieveParentInDestination(Integer parentId, String a,
-	        SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
+	        AbstractTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		return null;
 	}
@@ -347,7 +347,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 
 	@Override
-	public void loadObjectIdData(SyncTableConfiguration tabConf) {
+	public void loadObjectIdData(AbstractTableConfiguration tabConf) {
 		this.objectId = tabConf.getPrimaryKey().generateOid(this);
 	}
 

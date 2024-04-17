@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
@@ -65,7 +65,7 @@ public class MozartTryToSelectedFieldValueOnLocation extends MozartProblemSolver
 				    "Trying to update 'selected' field " + ++i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
 				
 				for (EtlConfiguration config : getRelatedSyncConfiguration().getEtlConfiguration()) {
-					SyncTableConfiguration configuredTable = config.getSrcConf();
+					AbstractTableConfiguration configuredTable = config.getSrcConf();
 					
 					if (!configuredTable.getTableName().equals("location"))
 						continue;

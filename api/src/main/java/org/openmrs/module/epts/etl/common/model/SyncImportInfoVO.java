@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.MetadataInconsistentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -191,22 +191,22 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 		this.migrationStatus = MIGRATION_STATUS_INCOMPLETE;
 	}
 	
-	public void markAsConsistent(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+	public void markAsConsistent(AbstractTableConfiguration tableInfo, Connection conn) throws DBException {
 		SyncImportInfoDAO.markAsConsistent(tableInfo, this, conn);
 	}
 	
-	public void markAsInconsistent(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+	public void markAsInconsistent(AbstractTableConfiguration tableInfo, Connection conn) throws DBException {
 		SyncImportInfoDAO.markAsInconsistent(tableInfo, this, conn);
 	}
 	
-	public void markAsPartialMigrated(SyncTableConfiguration tableInfo, String errMsg, Connection conn) throws DBException {
+	public void markAsPartialMigrated(AbstractTableConfiguration tableInfo, String errMsg, Connection conn) throws DBException {
 		this.migrationStatus = MIGRATION_STATUS_INCOMPLETE;
 		this.lastSyncTryErr = errMsg;
 		
 		SyncImportInfoDAO.updateMigrationStatus(tableInfo, this, conn);
 	}
 	
-	public void markAsSyncFailedToMigrate(SyncTableConfiguration tableInfo, String errMsg, Connection conn)
+	public void markAsSyncFailedToMigrate(AbstractTableConfiguration tableInfo, String errMsg, Connection conn)
 	        throws DBException {
 		this.migrationStatus = MIGRATION_STATUS_FAILED;
 		this.lastSyncTryErr = errMsg;
@@ -251,7 +251,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 		return syncInfo;
 	}
 	
-	public static SyncImportInfoVO retrieveFromSyncRecord(SyncTableConfiguration tableConfiguration,
+	public static SyncImportInfoVO retrieveFromSyncRecord(AbstractTableConfiguration tableConfiguration,
 	        DatabaseObject syncRecord, String recordOriginLocationCode, Connection conn) throws DBException {
 		SyncImportInfoVO syncInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(tableConfiguration, syncRecord,
 		    recordOriginLocationCode, conn);
@@ -260,7 +260,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 		return syncInfo;
 	}
 	
-	public void sync(SyncTableConfiguration tableInfo, Class<DatabaseObject> objectClass, Connection conn)
+	public void sync(AbstractTableConfiguration tableInfo, Class<DatabaseObject> objectClass, Connection conn)
 	        throws DBException {
 		DatabaseObject source = utilities.loadObjectFormJSON(objectClass, this.json);
 		source.setRelatedSyncInfo(this);
@@ -313,7 +313,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 	 * @throws ParentNotYetMigratedException
 	 * @throws DBException
 	 */
-	private void refrieveSharedPKKey(SyncTableConfiguration tableConfiguration, DatabaseObject source, int qtyTry,
+	private void refrieveSharedPKKey(AbstractTableConfiguration tableConfiguration, DatabaseObject source, int qtyTry,
 	        Connection conn) throws ParentNotYetMigratedException, DBException {
 		try {
 			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, source, conn);
@@ -337,19 +337,19 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 		}
 	}
 	
-	public void markAsToBeCompletedInFuture(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+	public void markAsToBeCompletedInFuture(AbstractTableConfiguration tableInfo, Connection conn) throws DBException {
 		SyncImportInfoDAO.markAsToBeCompletedInFuture(this, tableInfo, conn);
 	}
 	
-	public void markAsFailedToMigrate(SyncTableConfiguration tableInfo, String errMsg, Connection conn) throws DBException {
+	public void markAsFailedToMigrate(AbstractTableConfiguration tableInfo, String errMsg, Connection conn) throws DBException {
 		SyncImportInfoDAO.markAsFailedToMigrate(this, tableInfo, errMsg, conn);
 	}
 	
-	public void markAsMigrated(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+	public void markAsMigrated(AbstractTableConfiguration tableInfo, Connection conn) throws DBException {
 		SyncImportInfoDAO.remove(this, tableInfo, conn);
 	}
 	
-	public static List<DatabaseObject> convertAllToOpenMRSObject(SyncTableConfiguration tableInfo,
+	public static List<DatabaseObject> convertAllToOpenMRSObject(AbstractTableConfiguration tableInfo,
 	        Class<DatabaseObject> objectClass, List<SyncImportInfoVO> toParse, Connection conn) {
 		List<DatabaseObject> records = new ArrayList<DatabaseObject>();
 		
@@ -383,7 +383,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 		return records;
 	}
 	
-	public DatabaseObject convertToOpenMRSObject(SyncTableConfiguration tableInfo, Connection conn) {
+	public DatabaseObject convertToOpenMRSObject(AbstractTableConfiguration tableInfo, Connection conn) {
 		String modifiedJSON = this.getJson();
 		
 		DatabaseObject rec = null;
@@ -421,11 +421,11 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 		        && this.getRecordOriginId() == otherObj.getRecordOriginId();
 	}
 	
-	public void delete(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+	public void delete(AbstractTableConfiguration tableInfo, Connection conn) throws DBException {
 		SyncImportInfoDAO.remove(this, tableInfo, conn);
 	}
 	
-	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public void save(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		if (getId() > 0) {
 			SyncImportInfoDAO.update(this, tableConfiguration, conn);
 		} else {

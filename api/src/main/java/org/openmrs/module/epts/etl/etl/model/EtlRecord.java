@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
@@ -22,18 +22,18 @@ public class EtlRecord {
 	
 	private DatabaseObject record;
 	
-	private SyncTableConfiguration config;
+	private AbstractTableConfiguration config;
 	
 	private boolean writeOperationHistory;
 	
 	private long destinationRecordId;
 	
-	public EtlRecord(DatabaseObject record, SyncTableConfiguration config, boolean writeOperationHistory) {
+	public EtlRecord(DatabaseObject record, AbstractTableConfiguration config, boolean writeOperationHistory) {
 		this.record = record;
 		this.config = config;
 		this.writeOperationHistory = writeOperationHistory;
 		
-		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(this.config.getUniqueKeys()));
+		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(this.config.getUniqueKeys(), this.record));
 	}
 	
 	public void load(Connection srcConn, Connection destConn) throws DBException {
@@ -44,7 +44,7 @@ public class EtlRecord {
 		}
 	}
 	
-	public SyncTableConfiguration getConfig() {
+	public AbstractTableConfiguration getConfig() {
 		return config;
 	}
 	
@@ -112,7 +112,7 @@ public class EtlRecord {
 			return;
 		}
 		
-		SyncTableConfiguration config = mergingRecs.get(0).config;
+		AbstractTableConfiguration config = mergingRecs.get(0).config;
 		
 		if (!config.isFullLoaded()) {
 			config.fullLoad();

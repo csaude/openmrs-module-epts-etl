@@ -21,7 +21,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SyncTableConfiguration extends SyncDataConfiguration implements Comparable<SyncTableConfiguration>, PojobleDatabaseObject {
+public abstract class AbstractTableConfiguration extends SyncDataConfiguration implements Comparable<AbstractTableConfiguration>, PojobleDatabaseObject {
 	
 	private String tableName;
 	
@@ -69,10 +69,10 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	
 	private String extraConditionForExtract;
 	
-	public SyncTableConfiguration() {
+	public AbstractTableConfiguration() {
 	}
 	
-	public void clone(SyncTableConfiguration toCloneFrom) {
+	public void clone(AbstractTableConfiguration toCloneFrom) {
 		this.tableName = toCloneFrom.tableName;
 		this.parents = toCloneFrom.parents;
 		this.childRefInfo = toCloneFrom.childRefInfo;
@@ -92,6 +92,8 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		this.extraConditionForExtract = toCloneFrom.extraConditionForExtract;
 	}
 	
+	public abstract boolean isGeneric();
+	
 	public String getExtraConditionForExtract() {
 		return extraConditionForExtract;
 	}
@@ -110,6 +112,10 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	
 	public boolean isManualIdGeneration() {
 		return manualIdGeneration;
+	}
+	
+	public void setManualIdGeneration(boolean manualIdGeneration) {
+		this.manualIdGeneration = manualIdGeneration;
 	}
 	
 	public List<List<Field>> getWinningRecordFieldsInfo() {
@@ -342,7 +348,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	}
 	
 	@JsonIgnore
-	private void loadUniqueKeys(SyncTableConfiguration tableConfiguration, Connection conn) {
+	private void loadUniqueKeys(AbstractTableConfiguration tableConfiguration, Connection conn) {
 		if (tableConfiguration.uniqueKeys == null) {
 			try {
 				this.uniqueKeys = UniqueKeyInfo.loadUniqueKeysInfo(this, conn);
@@ -510,7 +516,8 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 					String parentFieldName = foreignKeyRS.getString("PKCOLUMN_NAME");
 					String parentTableName = foreignKeyRS.getString("PKTABLE_NAME");
 					
-					SyncTableConfiguration referencedTabConf = SyncTableConfiguration.init(parentTableName, this.parent);
+					AbstractTableConfiguration referencedTabConf = AbstractTableConfiguration
+					        .initGenericTabConf(parentTableName, this.parent);
 					
 					addParentRefInfo(refCode, childFieldName, referencedTabConf, parentFieldName, conn);
 					
@@ -618,9 +625,9 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 					String childFieldName = foreignKeyRS.getString("FKCOLUMN_NAME");
 					
 					String parentFieldName = foreignKeyRS.getString("PKCOLUMN_NAME");
-					String parentTableName = foreignKeyRS.getString("PKTABLE_NAME");
 					
-					SyncTableConfiguration childTabConf = SyncTableConfiguration.init(childTableName, this.parent);
+					AbstractTableConfiguration childTabConf = AbstractTableConfiguration.initGenericTabConf(childTableName,
+					    this.parent);
 					
 					addChildRefInfo(refCode, childTabConf, childFieldName, parentFieldName, conn);
 					
@@ -638,18 +645,18 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		}
 	}
 	
-	private void addChildRefInfo(String refCode, SyncTableConfiguration childTabConf, String childFieldName,
+	private void addChildRefInfo(String refCode, AbstractTableConfiguration childTabConf, String childFieldName,
 	        String parentFieldName, Connection conn) throws DBException {
 		
-		SyncTableConfiguration parentTabConf = this;
+		AbstractTableConfiguration parentTabConf = this;
 		
 		initRefInfo(RefType.EXPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
 	}
 	
-	private void addParentRefInfo(String refCode, String childFieldName, SyncTableConfiguration parentTabConf,
+	private void addParentRefInfo(String refCode, String childFieldName, AbstractTableConfiguration parentTabConf,
 	        String parentFieldName, Connection conn) throws DBException {
 		
-		SyncTableConfiguration childTabConf = this;
+		AbstractTableConfiguration childTabConf = this;
 		
 		@SuppressWarnings("unused")
 		RefInfo ref = initRefInfo(RefType.IMPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName,
@@ -657,8 +664,9 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		
 	}
 	
-	private RefInfo initRefInfo(RefType refType, String refCode, SyncTableConfiguration childTabConf, String childFieldname,
-	        SyncTableConfiguration parentTabConf, String parentFieldName, Connection conn) throws DBException {
+	private RefInfo initRefInfo(RefType refType, String refCode, AbstractTableConfiguration childTabConf,
+	        String childFieldname, AbstractTableConfiguration parentTabConf, String parentFieldName, Connection conn)
+	        throws DBException {
 		
 		String fieldName = null;
 		
@@ -724,11 +732,11 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		return ref;
 	}
 	
-	public static SyncTableConfiguration init(String tableName, SyncDataConfiguration parent) {
-		SyncTableConfiguration tableInfo = parent.getRelatedSyncConfiguration().findPulledTableConfiguration(tableName);
+	public static AbstractTableConfiguration initGenericTabConf(String tableName, SyncDataConfiguration parent) {
+		AbstractTableConfiguration tableInfo = parent.getRelatedSyncConfiguration().findPulledTableConfiguration(tableName);
 		
 		if (tableInfo == null) {
-			tableInfo = new SyncTableConfiguration();
+			tableInfo = new GenericTabableConfiguration();
 			tableInfo.setTableName(tableName);
 			tableInfo.setParent(parent);
 			
@@ -771,7 +779,8 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	 */
 	@JsonIgnore
 	public boolean isRemovableMetadata() {
-		return utilities.existOnArray(utilities.parseArrayToList(SyncTableConfiguration.REMOVABLE_METADATA), this.tableName);
+		return utilities.existOnArray(utilities.parseArrayToList(AbstractTableConfiguration.REMOVABLE_METADATA),
+		    this.tableName);
 	}
 	
 	@JsonIgnore
@@ -968,7 +977,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	
 	@JsonIgnore
 	public boolean isConfigured() {
-		for (SyncTableConfiguration tabConf : getRelatedSyncConfiguration().getConfiguredTables()) {
+		for (AbstractTableConfiguration tabConf : getRelatedSyncConfiguration().getConfiguredTables()) {
 			if (tabConf.equals(this))
 				return true;
 		}
@@ -998,6 +1007,11 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 			tryToDiscoverySharedKeyInfo(conn);
 			
 			loadUniqueKeys(conn);
+			
+			//If was not specifically set to true
+			if (!this.manualIdGeneration) {
+				this.manualIdGeneration = useManualIdGeneration(conn);
+			}
 			
 			this.fullLoaded = true;
 		}
@@ -1082,10 +1096,10 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	public boolean equals(Object obj) {
 		if (obj == null)
 			return false;
-		if (!(obj instanceof SyncTableConfiguration))
+		if (!(obj instanceof AbstractTableConfiguration))
 			return false;
 		
-		return this.getTableName().equalsIgnoreCase(((SyncTableConfiguration) obj).getTableName());
+		return this.getTableName().equalsIgnoreCase(((AbstractTableConfiguration) obj).getTableName());
 	}
 	
 	@JsonIgnore
@@ -1098,7 +1112,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		return getRelatedSyncConfiguration().getPOJOSourceFilesDirectory();
 	}
 	
-	public SyncTableConfiguration findParentOnChildRefInfo(String parentTableName) {
+	public AbstractTableConfiguration findParentOnChildRefInfo(String parentTableName) {
 		for (RefInfo ref : this.childRefInfo) {
 			if (parentTableName.equals(ref.getParentTableName())) {
 				return ref.getParentTableConf();
@@ -1121,7 +1135,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 	}
 	
 	@Override
-	public int compareTo(SyncTableConfiguration o) {
+	public int compareTo(AbstractTableConfiguration o) {
 		if (this.equals(o))
 			return 0;
 		
@@ -1339,5 +1353,7 @@ public class SyncTableConfiguration extends SyncDataConfiguration implements Com
 		
 		return conditionalParents;
 	}
+	
+	public abstract AppInfo getRelatedAppInfo();
 	
 }

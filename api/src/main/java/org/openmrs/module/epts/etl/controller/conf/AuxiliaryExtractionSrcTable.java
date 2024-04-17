@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
  * Represent the auxiliary extraction table. This allow the addition of extraction conditions in
  * case these additional conditions need to be added from related tables
  */
-public class AuxiliaryExtractionSrcTable extends SyncTableConfiguration {
+public class AuxiliaryExtractionSrcTable extends AbstractTableConfiguration {
 	
 	/*
 	 * Main source and auxiliary join fields
@@ -118,6 +118,16 @@ public class AuxiliaryExtractionSrcTable extends SyncTableConfiguration {
 		}
 		
 		this.joinFields.add(fm);
+	}
+	
+	@Override
+	public boolean isGeneric() {
+		return false;
+	}
+	
+	@Override
+	public AppInfo getRelatedAppInfo() {
+		return this.getParent().getRelatedAppInfo();
 	}
 	
 }

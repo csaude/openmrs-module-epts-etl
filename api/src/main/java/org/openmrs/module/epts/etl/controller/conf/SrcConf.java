@@ -11,7 +11,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SrcConf extends SyncTableConfiguration {
+public class SrcConf extends AbstractTableConfiguration {
 	
 	private List<AuxiliaryExtractionSrcTable> auxiliaryExtractionSrcTable;
 	
@@ -31,6 +31,11 @@ public class SrcConf extends SyncTableConfiguration {
 	
 	public void setExtraDataSource(List<EtlExtraDataSource> extraDataSource) {
 		this.extraDataSource = extraDataSource;
+	}
+	
+	@Override
+	public boolean isGeneric() {
+		return false;
 	}
 	
 	public synchronized void fullLoad() throws DBException {
@@ -131,7 +136,7 @@ public class SrcConf extends SyncTableConfiguration {
 		return this.fullLoaded;
 	}
 	
-	public static SrcConf fastCreate(SyncTableConfiguration tableConfig) {
+	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig) {
 		SrcConf src = new SrcConf();
 		
 		src.clone(src);
@@ -148,6 +153,11 @@ public class SrcConf extends SyncTableConfiguration {
 	@JsonIgnore
 	public EtlConfiguration getParent() {
 		return (EtlConfiguration) super.getParent();
+	}
+	
+	@Override
+	public AppInfo getRelatedAppInfo() {
+		return getMainApp();
 	}
 	
 }
