@@ -69,6 +69,12 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	
 	private String extraConditionForExtract;
 	
+	private String insertSQLWithObjectId;
+	
+	private String insertSQLWithoutObjectId;
+	
+	private String updateSQL;
+	
 	public AbstractTableConfiguration() {
 	}
 	
@@ -90,9 +96,22 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		this.winningRecordFieldsInfo = toCloneFrom.winningRecordFieldsInfo;
 		this.fullLoaded = toCloneFrom.fullLoaded;
 		this.extraConditionForExtract = toCloneFrom.extraConditionForExtract;
+		this.insertSQLWithObjectId = toCloneFrom.insertSQLWithObjectId;
+		this.insertSQLWithoutObjectId = toCloneFrom.insertSQLWithoutObjectId;
+		this.updateSQL = toCloneFrom.updateSQL;
 	}
 	
-	public abstract boolean isGeneric();
+	public String getInsertSQLWithObjectId() {
+		return insertSQLWithObjectId;
+	}
+	
+	public String getInsertSQLWithoutObjectId() {
+		return insertSQLWithoutObjectId;
+	}
+	
+	public String getUpdateSQL() {
+		return updateSQL;
+	}
 	
 	public String getExtraConditionForExtract() {
 		return extraConditionForExtract;
@@ -1008,6 +1027,8 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 			
 			loadUniqueKeys(conn);
 			
+			loadAttDefinition(conn);
+			
 			//If was not specifically set to true
 			if (!this.manualIdGeneration) {
 				this.manualIdGeneration = useManualIdGeneration(conn);
@@ -1020,6 +1041,22 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 			
 			throw new RuntimeException(e);
 		}
+	}
+	
+	private void loadAttDefinition(Connection conn) {
+		int qtyAttrs = this.fields.size();
+		
+		for (int i = 0; i < qtyAttrs - 1; i++) {
+			Field field = this.fields.get(i);
+			
+			field.setAttDefinedElements(AttDefinedElements.define(field.getName(), field.getType(), false, this));
+		}
+		
+		Field field = this.fields.get(qtyAttrs - 1);
+		
+		field.setAttDefinedElements(AttDefinedElements.define(field.getName(), field.getType(), true, this));
+		
+		generateSQLElemenets();
 	}
 	
 	private void tryToDiscoverySharedKeyInfo(Connection conn) throws DBException {
@@ -1354,6 +1391,177 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		return conditionalParents;
 	}
 	
+	private void generateSQLElemenets() {
+		generateInsertSQLWithObjectId();
+		generateInsertSQLWithoutObjectId();
+		generateUpdateSQL();
+	}
+	
+	public Object[] generateInsertParamsWithObjectId(DatabaseObject obj) {
+		int qtyAttrs = this.fields.size();
+		
+		Object[] params = new Object[qtyAttrs];
+		
+		for (int i = 0; i < this.fields.size(); i++) {
+			Field field = this.fields.get(i);
+			
+			params[i] = obj.getFieldValue(field.getName());
+		}
+		
+		return params;
+	}
+	
+	public Object[] generateInsertParamsWithoutObjectId(DatabaseObject obj) {
+		int qtyAttrs = this.fields.size();
+		
+		Object[] params = new Object[qtyAttrs];
+		
+		AttDefinedElements attElements;
+		
+		for (int i = 0; i < this.fields.size(); i++) {
+			Field field = this.fields.get(i);
+			
+			attElements = field.getAttDefinedElements();
+			
+			if (!attElements.isPartOfObjectId()) {
+				params[i] = obj.getFieldValue(field.getName());
+			}
+		}
+		
+		return params;
+	}
+	
+	
+	@JsonIgnore
+	public void generateInsertSQLWithoutObjectId() {
+		String insertSQLFieldsWithoutObjectId = "";
+		String insertSQLQuestionMarksWithoutObjectId = "";
+		
+		for (Field field : this.fields) {
+			AttDefinedElements attElements = field.getAttDefinedElements();
+			
+			if (attElements.isPartOfObjectId()) {
+				insertSQLFieldsWithoutObjectId = utilities.concatStrings(insertSQLFieldsWithoutObjectId,
+				    attElements.getSqlInsertFirstPartDefinition());
+				
+				insertSQLQuestionMarksWithoutObjectId = utilities.concatStrings(insertSQLQuestionMarksWithoutObjectId,
+				    attElements.getSqlInsertLastEndPartDefinition());
+			}
+		}
+		
+		this.insertSQLWithoutObjectId = "INSERT INTO " + this.getObjectName() + "(" + insertSQLFieldsWithoutObjectId
+		        + ") VALUES( " + insertSQLQuestionMarksWithoutObjectId + ");";
+	}
+	
+	private void generateInsertSQLWithObjectId() {
+		String insertSQLFieldsWithObjectId = "";
+		String insertSQLQuestionMarksWithObjectId = "";
+		
+		for (Field field : this.fields) {
+			AttDefinedElements attElements = field.getAttDefinedElements();
+			
+			insertSQLFieldsWithObjectId = utilities.concatStrings(insertSQLFieldsWithObjectId,
+			    attElements.getSqlInsertFirstPartDefinition());
+			
+			insertSQLQuestionMarksWithObjectId = utilities.concatStrings(insertSQLQuestionMarksWithObjectId,
+			    attElements.getSqlInsertLastEndPartDefinition());
+		}
+		
+		this.insertSQLWithObjectId = "INSERT INTO " + this.getObjectName() + "(" + insertSQLFieldsWithObjectId + ") VALUES( "
+		        + insertSQLQuestionMarksWithObjectId + ");";
+		
+	}
+	
+	@JsonIgnore
+	public String generateUpdateSQL() {
+		if (this.getPrimaryKey() == null)
+			throw new ForbiddenOperationException("Impossible to generate update params, there is no primary key");
+		
+		this.updateSQL = "UPDATE " + this.getObjectName() + " SET ";
+		
+		for (Field field : this.fields) {
+			AttDefinedElements attElements = field.getAttDefinedElements();
+			
+			updateSQL = utilities.concatStrings(updateSQL, attElements.getSqlUpdateDefinition());
+			
+		}
+		
+		updateSQL += " WHERE " + this.getPrimaryKey().parseToParametrizedStringCondition();
+		
+		return updateSQL;
+	}
+	
+	@JsonIgnore
+	public Object[] generateUpdateParams(DatabaseObject obj) {
+		if (this.getPrimaryKey() == null)
+			throw new ForbiddenOperationException("Impossible to generate update params, there is no primary key");
+		
+		int qtyAttrs = this.fields.size();
+		
+		Object[] params = new Object[qtyAttrs + this.getPrimaryKey().getFields().size()];
+		
+		int i = 0;
+		
+		for (i = 0; i < this.fields.size(); i++) {
+			Field field = this.fields.get(i);
+			
+			params[i] = obj.getFieldValue(field.getName());
+		}
+		
+		for (Key key : this.getPrimaryKey().getFields()) {
+			params[i++] = obj.getFieldValue(key.getName());
+		}
+		
+		return params;
+		
+	}
+	
+	public String generateInsertValuesWithoutObjectId(DatabaseObject obj) {
+		String insertValuesWithObjectIdDefinition = "";
+		
+		AttDefinedElements attElements;
+		
+		for (Field field : this.fields) {
+			attElements = field.getAttDefinedElements();
+			
+			if (!attElements.isPartOfObjectId()) {
+				insertValuesWithObjectIdDefinition = utilities.concatStrings(insertValuesWithObjectIdDefinition,
+				    attElements.defineSqlInsertValue(obj));
+			}
+		}
+		
+		return insertValuesWithObjectIdDefinition;
+	}
+	
+	public String generateInsertValuesWithObjectId(DatabaseObject obj) {
+		String insertValuesWithObjectIdDefinition = "";
+		
+		AttDefinedElements attElements;
+		
+		for (Field field : this.fields) {
+			attElements = field.getAttDefinedElements();
+			
+			insertValuesWithObjectIdDefinition = utilities.concatStrings(insertValuesWithObjectIdDefinition,
+			    attElements.defineSqlInsertValue(obj));
+		}
+		
+		return insertValuesWithObjectIdDefinition;
+	}
+	
 	public abstract AppInfo getRelatedAppInfo();
+	
+	public abstract boolean isGeneric();
+	
+	public List<Field> cloneFields() {
+		List<Field> clonedFields = new ArrayList<>();
+		
+		if (utilities.arrayHasElement(this.fields)) {
+			for (Field field : this.fields) {
+				clonedFields.add(field.createACopy());
+			}
+		}
+		
+		return clonedFields;
+	}
 	
 }

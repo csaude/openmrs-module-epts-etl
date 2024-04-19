@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -66,7 +66,7 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract String generateInsertValuesWithoutObjectId();
 	
-	public abstract String generateInsertValuesWithObjectId();	
+	public abstract String generateInsertValuesWithObjectId();
 	
 	public abstract boolean hasIgnoredParent();
 	
@@ -138,14 +138,15 @@ public interface DatabaseObject extends SyncRecord {
 	public abstract Map<RefInfo, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws DBException;
 	
-	public abstract void removeDueInconsistency(AbstractTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents,
-	        Connection conn) throws DBException;
+	public abstract void removeDueInconsistency(AbstractTableConfiguration syncTableInfo,
+	        Map<RefInfo, Integer> missingParents, Connection conn) throws DBException;
 	
 	public abstract void changeParentValue(RefInfo refInfo, DatabaseObject newParent);
 	
 	public abstract void setParentToNull(RefInfo refInfo);
 	
-	public abstract void changeObjectId(AbstractTableConfiguration abstractTableConfiguration, Connection conn) throws DBException;
+	public abstract void changeObjectId(AbstractTableConfiguration abstractTableConfiguration, Connection conn)
+	        throws DBException;
 	
 	public abstract void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo,
 	        Connection conn) throws DBException;
@@ -218,6 +219,13 @@ public interface DatabaseObject extends SyncRecord {
 		}
 		
 		return utils.parseListToArray(values);
+	}
+	
+	default void setTableConfiguration(AbstractTableConfiguration tableConfiguration) {
+	}
+	
+	default AbstractTableConfiguration getTableConfiguration() {
+		return null;
 	}
 	
 	/**

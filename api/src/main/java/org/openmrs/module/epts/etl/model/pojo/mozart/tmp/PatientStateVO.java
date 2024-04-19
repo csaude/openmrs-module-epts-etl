@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart.src;
+package org.openmrs.module.epts.etl.model.pojo.mozart.tmp;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  

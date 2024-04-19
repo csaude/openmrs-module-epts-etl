@@ -27,7 +27,17 @@ public class Field implements Serializable {
 	
 	private String type;
 	
+	private AttDefinedElements attDefinedElements;
+	
 	public Field() {
+	}
+	
+	public AttDefinedElements getAttDefinedElements() {
+		return attDefinedElements;
+	}
+	
+	public void setAttDefinedElements(AttDefinedElements attDefinedElements) {
+		this.attDefinedElements = attDefinedElements;
 	}
 	
 	public String getType() {
@@ -212,5 +222,13 @@ public class Field implements Serializable {
 	
 	public boolean isNumericColumnType() {
 		return AttDefinedElements.isNumeric(this.type);
+	}
+	
+	public Field createACopy() {
+		Field f = new Field(this.name);
+		
+		f.setType(this.type);
+		
+		return f;
 	}
 }

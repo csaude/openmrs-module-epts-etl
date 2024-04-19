@@ -11,7 +11,7 @@ import java.sql.ResultSet;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class PatientStateVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class PatientStateNew extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private String patientUuid;
 	private Integer programId;
@@ -27,7 +27,7 @@ public class PatientStateVO extends AbstractDatabaseObject implements DatabaseOb
 	private String stateUuid;
 	private String sourceDatabase;
  
-	public PatientStateVO() { 
+	public PatientStateNew() { 
 		this.metadata = false;
 	} 
  

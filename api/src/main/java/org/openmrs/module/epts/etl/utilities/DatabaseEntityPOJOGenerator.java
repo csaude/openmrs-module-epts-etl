@@ -4,7 +4,6 @@ package org.openmrs.module.epts.etl.utilities;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.SQLException;
@@ -22,6 +21,7 @@ import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefMapping;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.exceptions.SyncExeption;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
@@ -47,13 +47,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		String fullClassName = pojoble.generateFullClassName(application);
 		
-		Class<DatabaseObject> existingCLass = null;//tryToGetExistingCLass(fullClassName, pojoble.getRelatedSyncConfiguration());
-		
-		if (existingCLass != null) {
-			if (!Modifier.isAbstract(existingCLass.getModifiers())) {
-				return existingCLass;
-			}
-		}
+		Class<DatabaseObject> existingCLass = null;
 		
 		String attsDefinition = "";
 		String gettersAndSetterDefinition = "";
@@ -351,13 +345,13 @@ public class DatabaseEntityPOJOGenerator {
 		compile(sourceFile, pojoble, application);
 		
 		existingCLass = tryToGetExistingCLass(fullClassName, pojoble.getRelatedSyncConfiguration());
-		/*
+		
 		if (existingCLass == null)
 			throw new SyncExeption("The class for " + pojoble.getObjectName() + " was not created!") {
 				
 				private static final long serialVersionUID = 1L;
 			};
-		*/
+		
 		return existingCLass;
 	}
 	

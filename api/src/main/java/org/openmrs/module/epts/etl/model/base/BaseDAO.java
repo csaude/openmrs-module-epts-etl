@@ -23,6 +23,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBOperation;
+
 /**
  * Base DAO This class provides the base datasource & common functionaloty for all DAO's in the
  * application. All DAO's must extend this class to get access to the datasource.
@@ -142,6 +143,20 @@ public abstract class BaseDAO {
 	 */
 	public static <T extends VO> List<T> search(Class<T> voClass, String sql, Object[] params, Connection conn)
 	        throws DBException {
+		return search(null, voClass, sql, params, conn);
+	}
+	
+	/**
+	 * Perform an SQL Select, using prepared statement.
+	 * 
+	 * @param voDataLoader the data loader for searched objects
+	 * @param voClass the class of searched records
+	 * @param sql to perform.
+	 * @param params Array of objects to fill question marks in the update string.
+	 * @return generated list os object using retrived data from DB.
+	 */
+	public static <T extends VO> List<T> search(VOLoaderHelper voDataLoader, Class<T> voClass, String sql, Object[] params,
+	        Connection conn) throws DBException {
 		ArrayList<T> result = new ArrayList<T>();
 		ResultSet rs = null;
 		
@@ -159,9 +174,20 @@ public abstract class BaseDAO {
 			rs = st.getResultSet();
 			
 			while (rs.next()) {
-				result.add(factory.newInstance());
+				T instance = factory.newInstance();
 				
-				result.get(result.size() - 1).load(rs);
+				result.add(instance);
+				
+				if (voDataLoader != null) {
+					voDataLoader.beforeLoad(instance);
+				}
+				
+				instance.load(rs);
+				
+				if (voDataLoader != null) {
+					voDataLoader.beforeLoad(instance);
+				}
+				
 			}
 		}
 		catch (SQLException e) {

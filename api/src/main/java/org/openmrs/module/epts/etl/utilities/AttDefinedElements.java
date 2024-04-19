@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 
 /**
@@ -52,6 +53,10 @@ public class AttDefinedElements {
 	
 	private PojobleDatabaseObject pojoble;
 	
+	static String aspasAbrir = "\"";
+	
+	static String aspasFechar = "\"";
+	
 	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, PojobleDatabaseObject pojoble) {
 		this.dbAttName = dbAttName;
 		this.dbAttType = dbAttType;
@@ -62,9 +67,13 @@ public class AttDefinedElements {
 		
 		if (this.pojoble.getPrimaryKey() != null) {
 			this.isPartOfObjectId = this.pojoble.getPrimaryKey().containsKey(key);
-		}else {
+		} else {
 			System.out.println("Stop");
 		}
+	}
+	
+	public boolean isLast() {
+		return isLast;
 	}
 	
 	public boolean isPartOfObjectId() {
@@ -189,6 +198,36 @@ public class AttDefinedElements {
 		this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + ");
 	}
 	
+	public String defineSqlInsertValue(DatabaseObject obj) {
+		String sqlInsertValues = "";
+		
+		Object value = obj.getFieldValue(this.attName);
+		
+		if (isNumeric()) {
+			sqlInsertValues = value.toString();
+		} else if (isDate()) {
+			
+			if (value != null) {
+				this.sqlInsertValues = DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) value);
+				
+			} else {
+				this.sqlInsertValues = "null";
+				
+			}
+			
+		} else if (isString()) {
+			if (value != null) {
+				sqlInsertValues = utilities.scapeQuotationMarks(value.toString());
+			}
+		} else {
+			this.sqlInsertValues = "null";
+		}
+		
+		sqlInsertValues = "(" + this.sqlInsertValues + (this.isLast ? ")" : ") + \",\" + ");
+		
+		return sqlInsertValues;
+	}
+	
 	public static String removeStrangeCharactersOnString(String str) {
 		if (!utilities.stringHasValue(str))
 			return str;
@@ -249,11 +288,6 @@ public class AttDefinedElements {
 	
 	public static String defineSqlAtribuitionString(String attName, Object attValue) {
 		String sqlAtribuitionString = "";
-		//String aspasAbrir = "\"\\\"\"+";
-		//String aspasFechar = "+\"\\\"\"";
-		
-		String aspasAbrir = "\"";
-		String aspasFechar = "\"";
 		
 		if (utilities.isNumeric(attValue.toString())) {
 			sqlAtribuitionString = attName + " = " + attValue;

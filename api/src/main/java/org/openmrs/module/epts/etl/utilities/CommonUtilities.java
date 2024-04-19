@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -1066,7 +1067,7 @@ public class CommonUtilities implements Serializable {
 	public Object[] getFieldValues(Object obj, String... fieldsName) {
 		List<Object> values = new ArrayList<Object>();
 		
-		Object[] fields = BaseVO.getFields(obj);
+		Object[] fields = getFields(obj);
 		
 		for (String fieldName : fieldsName) {
 			boolean fieldFound = false;
@@ -1101,7 +1102,7 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	public Field getField(Object obj, String fieldName) {
-		Object[] fields = BaseVO.getFields(obj);
+		Object[] fields = getFields(obj);
 		
 		for (int i = 0; i < fields.length; i++) {
 			Field field = (Field) fields[i];
@@ -1142,4 +1143,30 @@ public class CommonUtilities implements Serializable {
 		}
 		return value;
 	}
+	
+	/**
+	 * Retorna todos os atributos de instancia de da classe de um objecto independentemento do
+	 * modificador de acesso
+	 * 
+	 * @return todos os atributos de instancia de da classe de um objecto independentemento do
+	 *         modificador de acesso
+	 */
+	public Field[] getFields(Object obj) {
+		List<Field> fields = new ArrayList<Field>();
+		Class<?> cl = obj.getClass();
+		
+		while (cl != null) {
+			Field[] in = cl.getDeclaredFields();
+			for (int i = 0; i < in.length; i++) {
+				Field field = in[i];
+				if (Modifier.isStatic(field.getModifiers()))
+					continue;
+				field.setAccessible(true);
+				fields.add(field);
+			}
+			cl = cl.getSuperclass();
+		}
+		return utilities.parseListToArray(fields);
+	}
+	
 }

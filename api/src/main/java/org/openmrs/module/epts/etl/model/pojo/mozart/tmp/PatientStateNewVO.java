@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.model.pojo.mozart.src;
+package org.openmrs.module.epts.etl.model.pojo.mozart.tmp;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
@@ -11,7 +11,7 @@ import java.sql.ResultSet;
  
 import com.fasterxml.jackson.annotation.JsonIgnore; 
  
-public class PatientStateVO extends AbstractDatabaseObject implements DatabaseObject { 
+public class PatientStateNewVO extends AbstractDatabaseObject implements DatabaseObject { 
 	private Integer id;
 	private String patientUuid;
 	private Integer programId;
@@ -27,7 +27,7 @@ public class PatientStateVO extends AbstractDatabaseObject implements DatabaseOb
 	private String stateUuid;
 	private String sourceDatabase;
  
-	public PatientStateVO() { 
+	public PatientStateNewVO() { 
 		this.metadata = false;
 	} 
  
@@ -168,13 +168,13 @@ this.sourceDatabase = AttDefinedElements.removeStrangeCharactersOnString(rs.getS
 	@JsonIgnore
 	@Override
 	public String getInsertSQLWithoutObjectId(){ 
- 		return "INSERT INTO patient_state(patient_uuid, program_id, program_enrollment_date, program_completed_date, location_uuid, enrollment_uuid, encounter_uuid, source_id, state_id, state_date, created_date, state_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_state_new(patient_uuid, program_id, program_enrollment_date, program_completed_date, location_uuid, enrollment_uuid, encounter_uuid, source_id, state_id, state_date, created_date, state_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
 	@Override
 	public String getInsertSQLWithObjectId(){ 
- 		return "INSERT INTO patient_state(id, patient_uuid, program_id, program_enrollment_date, program_completed_date, location_uuid, enrollment_uuid, encounter_uuid, source_id, state_id, state_date, created_date, state_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
+ 		return "INSERT INTO patient_state_new(id, patient_uuid, program_id, program_enrollment_date, program_completed_date, location_uuid, enrollment_uuid, encounter_uuid, source_id, state_id, state_date, created_date, state_uuid, source_database) VALUES( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"; 
 	} 
  
 	@JsonIgnore
@@ -201,7 +201,7 @@ this.sourceDatabase = AttDefinedElements.removeStrangeCharactersOnString(rs.getS
 	@JsonIgnore
 	@Override
 	public String getUpdateSQL(){ 
- 		return "UPDATE patient_state SET id = ?, patient_uuid = ?, program_id = ?, program_enrollment_date = ?, program_completed_date = ?, location_uuid = ?, enrollment_uuid = ?, encounter_uuid = ?, source_id = ?, state_id = ?, state_date = ?, created_date = ?, state_uuid = ?, source_database = ? WHERE id = ? "; 
+ 		return "UPDATE patient_state_new SET id = ?, patient_uuid = ?, program_id = ?, program_enrollment_date = ?, program_completed_date = ?, location_uuid = ?, enrollment_uuid = ?, encounter_uuid = ?, source_id = ?, state_id = ?, state_date = ?, created_date = ?, state_uuid = ?, source_database = ? WHERE id = ? "; 
 	} 
  
 	@JsonIgnore
@@ -228,7 +228,7 @@ this.sourceDatabase = AttDefinedElements.removeStrangeCharactersOnString(rs.getS
 
 	@Override
 	public String generateTableName() {
-		return "patient_state";
+		return "patient_state_new";
 	}
 
 
