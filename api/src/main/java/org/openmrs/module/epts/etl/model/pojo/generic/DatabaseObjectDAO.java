@@ -82,12 +82,12 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = null;
 		String sql = null;
 		
-		if (tableConfiguration.isManualIdGeneration() || tableConfiguration.getPrimaryKey().isCompositeKey()) {
-			params = record.getInsertParamsWithObjectId();
-			sql = record.getInsertSQLWithObjectId();
-		} else {
+		if (tableConfiguration.isAutoIncrementId()) {
 			params = record.getInsertParamsWithoutObjectId();
 			sql = record.getInsertSQLWithoutObjectId();
+		} else {
+			params = record.getInsertParamsWithObjectId();
+			sql = record.getInsertSQLWithObjectId();
 		}
 		
 		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn);
@@ -474,8 +474,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return v.IntegerValue();
 	}
 	
-	public static List<? extends DatabaseObject> getByOriginParentId(String parentField, Integer parentOriginId, String appOriginCode,
-	        AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public static List<? extends DatabaseObject> getByOriginParentId(String parentField, Integer parentOriginId,
+	        String appOriginCode, AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		Object[] params = { parentOriginId, appOriginCode };
 		
 		String sql = " SELECT * ";
@@ -488,8 +488,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		    tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
 	}
 	
-	public static List<? extends DatabaseObject> getByParentIdOnSpecificSchema(AbstractTableConfiguration tabConf, String parentField,
-	        Integer parentId, String schema, Connection conn) throws DBException {
+	public static List<? extends DatabaseObject> getByParentIdOnSpecificSchema(AbstractTableConfiguration tabConf,
+	        String parentField, Integer parentId, String schema, Connection conn) throws DBException {
 		Object[] params = { parentId };
 		
 		Class<? extends DatabaseObject> clazz = tabConf.getSyncRecordClass();
@@ -533,11 +533,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 			insertAllMetadata(objects, abstractTableConfiguration, conn);
 		} else {
 			
-			if (abstractTableConfiguration.isManualIdGeneration()
-			        || abstractTableConfiguration.getPrimaryKey().isCompositeKey()) {
-				insertAllDataWithId(objects, conn);
-			} else {
+			if (abstractTableConfiguration.isAutoIncrementId()) {
 				insertAllDataWithoutId(objects, conn);
+			} else {
+				insertAllDataWithId(objects, conn);
 			}
 		}
 	}

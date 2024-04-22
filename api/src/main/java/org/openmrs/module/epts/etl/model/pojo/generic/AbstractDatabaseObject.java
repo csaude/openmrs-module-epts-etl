@@ -275,7 +275,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		} else {
 			try {
 				
-				if (tableConfiguration.isManualIdGeneration() || tableConfiguration.getPrimaryKey().isCompositeKey()) {
+				if (tableConfiguration.isAutoIncrementId()) {
 					DatabaseObjectDAO.insertWithObjectId(this, conn);
 				} else {
 					DatabaseObjectDAO.insert(this, tableConfiguration, conn);
@@ -305,7 +305,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					
 					DatabaseObject recordOnDB = null;
 					
-					if (tableConfiguration.isManualIdGeneration() || tableConfiguration.getPrimaryKey().isCompositeKey()) {
+					if (tableConfiguration.isAutoIncrementId()) {
 						recordOnDB = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
 					}
 					
@@ -1022,6 +1022,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	
 	@Override
 	public String toString() {
+		
 		String objectId = "objectId = " + (this.getObjectId() != null ? this.getObjectId() : "");
 		
 		String ukeys = "";

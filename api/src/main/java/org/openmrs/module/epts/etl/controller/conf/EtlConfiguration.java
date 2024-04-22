@@ -93,7 +93,7 @@ public class EtlConfiguration extends SyncDataConfiguration {
 				dstConn = otherApps.get(0).openConnection();
 				
 				if (dstConf == null) {
-					dstConf = utilities.parseToList(DstConf.generateDefaultDstConf(this));
+					dstConf = utilities.parseToList(DstConf.generateDefaultDstConf(this, dstConn));
 					
 					DstConf map = dstConf.get(0);
 					
@@ -101,13 +101,17 @@ public class EtlConfiguration extends SyncDataConfiguration {
 				} else {
 					
 					for (DstConf map : this.dstConf) {
+						if (map.getTableName() == null) {
+							map.setTableName(this.srcConf.getTableName());
+						}
+						
 						map.setRelatedAppInfo(otherApps.get(0));
 						
 						map.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
 						
 						map.setParent(this);
 						
-						map.generateAllFieldsMapping();
+						map.generateAllFieldsMapping(dstConn);
 						
 						if (DBUtilities.isTableExists(dstConn.getSchema(), map.getTableName(), dstConn)) {
 							map.fullLoad(dstConn);

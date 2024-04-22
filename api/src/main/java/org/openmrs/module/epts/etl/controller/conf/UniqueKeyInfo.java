@@ -106,10 +106,6 @@ public class UniqueKeyInfo {
 	
 	public static List<UniqueKeyInfo> loadUniqueKeysInfo(AbstractTableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
-		if (tableConfiguration.getPrimaryKey(conn) == null) {
-			throw new ForbiddenOperationException(
-			        "The primary key is not defined on table " + tableConfiguration.getTableName() + "!");
-		}
 		
 		List<UniqueKeyInfo> uniqueKeysInfo = new ArrayList<UniqueKeyInfo>();
 		
@@ -194,7 +190,7 @@ public class UniqueKeyInfo {
 		uk.fields = keyElements;
 		
 		//Don't add PK as uniqueKey
-		if (!config.getPrimaryKey().equals(uk)) {
+		if (config.getPrimaryKey() != null && !config.getPrimaryKey().equals(uk)) {
 			uniqueKeys.add(uk);
 			
 			return false;
@@ -240,6 +236,10 @@ public class UniqueKeyInfo {
 	@Override
 	@JsonIgnore
 	public String toString() {
+		
+		if (this.fields == null)
+			return "";
+		
 		String toString = keyName + "[";
 		int i = 0;
 		
@@ -383,6 +383,20 @@ public class UniqueKeyInfo {
 			}
 			
 			fields += key.getName() + " = ? ";
+		}
+		
+		return fields;
+	}
+	
+	public static String parseToParametrizedStringConditionToAll(List<UniqueKeyInfo> uks) {
+		String fields = "";
+		
+		for (UniqueKeyInfo uk : uks) {
+			if (utilities.stringHasValue(fields)) {
+				fields += " AND ";
+			}
+			
+			fields += uk.parseToParametrizedStringCondition();
 		}
 		
 		return fields;

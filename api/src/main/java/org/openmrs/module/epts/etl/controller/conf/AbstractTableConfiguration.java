@@ -63,7 +63,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	 */
 	private List<List<Field>> winningRecordFieldsInfo;
 	
-	private boolean manualIdGeneration;
+	private boolean autoIncrementId;
 	
 	private boolean disabled;
 	
@@ -142,12 +142,12 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		this.mustLoadChildrenInfo = mustLoadChildrenInfo;
 	}
 	
-	public boolean isManualIdGeneration() {
-		return manualIdGeneration;
+	public boolean isAutoIncrementId() {
+		return autoIncrementId;
 	}
 	
-	public void setManualIdGeneration(boolean manualIdGeneration) {
-		this.manualIdGeneration = manualIdGeneration;
+	public void setAutoIncrementId(boolean autoIncrementId) {
+		this.autoIncrementId = autoIncrementId;
 	}
 	
 	public List<List<Field>> getWinningRecordFieldsInfo() {
@@ -307,7 +307,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	@JsonIgnore
 	@Override
 	public PrimaryKey getPrimaryKey() {
-		OpenConnection conn = getParent().getMainApp().openConnection();
+		OpenConnection conn = getRelatedAppInfo().openConnection();
 		
 		try {
 			return getPrimaryKey(conn);
@@ -1052,8 +1052,8 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 			loadAttDefinition(conn);
 			
 			//If was not specifically set to true
-			if (!this.manualIdGeneration) {
-				this.manualIdGeneration = useManualIdGeneration(conn);
+			if (!this.autoIncrementId) {
+				this.autoIncrementId = useAutoIncrementId(conn);
 			}
 			
 			this.fullLoaded = true;
@@ -1377,7 +1377,16 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		return utilities.arrayHasElement(this.getUniqueKeys());
 	}
 	
-	public boolean useManualIdGeneration(Connection conn) throws DBException {
+	public boolean useSimpleNumericPk() {
+		return this.getPrimaryKey() != null && this.getPrimaryKey().isSimpleNumericKey();
+	}
+	
+	public boolean useAutoIncrementId(Connection conn) throws DBException {
+		
+		if (this.getPrimaryKey() == null || this.getPrimaryKey().isCompositeKey()) {
+			return false;
+		}
+		
 		return DBUtilities.checkIfTableUseAutoIcrement(this.tableName, conn);
 	}
 	
@@ -1494,9 +1503,13 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	}
 	
 	@JsonIgnore
-	public String generateUpdateSQL() {
-		if (this.getPrimaryKey() == null)
-			throw new ForbiddenOperationException("Impossible to generate update params, there is no primary key");
+	private String generateUpdateSQL() {
+		if (this.getPrimaryKey() == null) {
+			
+			if (this.getUniqueKeys() == null) {
+				throw new ForbiddenOperationException("Impossible to generate update params, there is no primary key");
+			}
+		}
 		
 		this.updateSQL = "UPDATE " + this.getObjectName() + " SET ";
 		
@@ -1507,15 +1520,19 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 			
 		}
 		
-		updateSQL += " WHERE " + this.getPrimaryKey().parseToParametrizedStringCondition();
+		if (this.getPrimaryKey() != null) {
+			updateSQL += " WHERE " + this.getPrimaryKey().parseToParametrizedStringCondition();
+		} else {
+			updateSQL += " WHERE " + UniqueKeyInfo.parseToParametrizedStringConditionToAll(this.getUniqueKeys());
+		}
 		
 		return updateSQL;
 	}
 	
 	@JsonIgnore
 	public Object[] generateUpdateParams(DatabaseObject obj) {
-		if (this.getPrimaryKey() == null)
-			throw new ForbiddenOperationException("Impossible to generate update params, there is no primary key");
+		if (this.getPrimaryKey() == null && (this.getUniqueKeys() == null || this.getUniqueKeys().isEmpty()))
+			throw new ForbiddenOperationException("Impossible to generate update params, there is unique key defied");
 		
 		int qtyAttrs = this.fields.size();
 		
@@ -1527,6 +1544,18 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 			Field field = this.fields.get(i);
 			
 			params[i] = obj.getFieldValue(field.getName());
+		}
+		
+		List<Key> keys = null;
+		
+		if (this.getPrimaryKey() != null) {
+			keys = this.getPrimaryKey().getFields();
+		} else {
+			keys = new ArrayList<>();
+			
+			for (UniqueKeyInfo key : this.getUniqueKeys()) {
+				keys.addAll(key.getFields());
+			}
 		}
 		
 		for (Key key : this.getPrimaryKey().getFields()) {
@@ -1584,6 +1613,10 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		}
 		
 		return clonedFields;
+	}
+	
+	public boolean hasCompositeKey() {
+		return this.getPrimaryKey() != null && this.getPrimaryKey().isCompositeKey();
 	}
 	
 }

@@ -12,6 +12,7 @@ import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class DstConf extends AbstractTableConfiguration {
@@ -65,17 +66,17 @@ public class DstConf extends AbstractTableConfiguration {
 		this.allFieldsMapping.add(fm);
 	}
 	
-	public static DstConf generateDefaultDstConf(EtlConfiguration etlConf) {
+	public static DstConf generateDefaultDstConf(EtlConfiguration etlConf, Connection conn) throws DBException {
 		DstConf dstSyncConfiguration = new DstConf();
 		
 		dstSyncConfiguration.clone(etlConf.getSrcConf());
 		
-		dstSyncConfiguration.generateAllFieldsMapping();
+		dstSyncConfiguration.generateAllFieldsMapping(conn);
 		
 		return dstSyncConfiguration;
 	}
 	
-	public void generateAllFieldsMapping() {
+	public void generateAllFieldsMapping(Connection conn) throws DBException {
 		this.allFieldsMapping = new ArrayList<>();
 		
 		if (utilities.arrayHasElement(this.manualFieldsMapping)) {
@@ -88,7 +89,10 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 		}
 		
-		for (Field field : getParent().getSrcConf().getFields()) {
+		List<Field> myFields = 	DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn);
+		
+		
+		for (Field field : myFields) {
 			FieldsMapping fm = new FieldsMapping(field.getName(), this.getTableName(), field.getName());
 			
 			if (!this.allFieldsMapping.contains(fm)) {
@@ -238,5 +242,7 @@ public class DstConf extends AbstractTableConfiguration {
 		
 		return currThreadStartId;
 	}
+
+
 	
 }

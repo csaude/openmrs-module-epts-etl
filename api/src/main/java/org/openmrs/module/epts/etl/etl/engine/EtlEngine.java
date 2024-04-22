@@ -19,7 +19,6 @@ import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableE
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
@@ -41,7 +40,8 @@ public class EtlEngine extends Engine {
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		return utilities.parseList(
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
 	}
 	
 	public AppInfo getDstApp() {
@@ -98,7 +98,7 @@ public class EtlEngine extends Engine {
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
-						if (mappingInfo.getPrimaryKey().isSimpleNumericKey() && mappingInfo.isManualIdGeneration()) {
+						if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
 							
 							int currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
 							
@@ -172,7 +172,7 @@ public class EtlEngine extends Engine {
 						continue;
 					}
 					
-					if (mappingInfo.getPrimaryKey().isSimpleNumericKey() && mappingInfo.isManualIdGeneration()) {
+					if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
 						
 						int currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
 						

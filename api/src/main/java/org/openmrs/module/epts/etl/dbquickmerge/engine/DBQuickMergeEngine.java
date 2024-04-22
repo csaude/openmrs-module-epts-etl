@@ -140,7 +140,7 @@ public class DBQuickMergeEngine extends Engine {
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
-						if (mappingInfo.getPrimaryKey().isSimpleNumericKey() && mappingInfo.isManualIdGeneration()) {
+						if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
 							
 							int currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
 							
@@ -214,8 +214,7 @@ public class DBQuickMergeEngine extends Engine {
 						continue;
 					}
 					
-					if (mappingInfo.getPrimaryKey().isSimpleNumericKey() && mappingInfo.isManualIdGeneration()) {
-						
+					if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
 						int currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
 						
 						destObject.setObjectId(Oid.fastCreate(
