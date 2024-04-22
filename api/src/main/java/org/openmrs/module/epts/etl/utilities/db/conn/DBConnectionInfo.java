@@ -130,4 +130,8 @@ public class DBConnectionInfo {
 		
 		return conf;
 	}
+
+	public static DBConnectionInfo loadFromJson(String json) {
+		return utilities.loadObjectFormJSON(DBConnectionInfo.class, json);
+	}
 }

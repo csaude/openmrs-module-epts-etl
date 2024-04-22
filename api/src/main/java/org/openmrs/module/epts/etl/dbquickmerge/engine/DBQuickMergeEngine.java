@@ -19,9 +19,11 @@ import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -46,7 +48,7 @@ public class DBQuickMergeEngine extends Engine {
 			OpenConnection dstConn = this.getDstApp().openConnection();
 			
 			try {
-				if (DBUtilities.isSameDatabaseServer(conn, dstConn)) {
+				if (DBUtilities.isSameDatabaseServer(conn, dstConn) && getMainSrcTableConf().hasUniqueKeys()) {
 					this.searchParams.setExtraCondition(searchParams.generateDestinationExclusionClause(conn, dstConn));
 				}
 			}
@@ -55,7 +57,9 @@ public class DBQuickMergeEngine extends Engine {
 			}
 		}
 		
-		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		return utilities.parseList(
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		
 	}
 	
 	public AppInfo getDstApp() {
@@ -108,7 +112,7 @@ public class DBQuickMergeEngine extends Engine {
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		if (getRelatedSyncOperationConfig().writeOperationHistory()
-		        || getEtlConfiguration().getMainSrcTableConf().hasWinningRecordsInfo()) {
+		        || getEtlConfiguration().getSrcConf().hasWinningRecordsInfo()) {
 			performeSyncOneByOne(syncRecords, conn);
 		} else {
 			performeBatchSync(syncRecords, conn);
@@ -125,11 +129,6 @@ public class DBQuickMergeEngine extends Engine {
 		Map<String, List<MergingRecord>> mergingRecs = new HashMap<>();
 		
 		try {
-			int currObjectId = 0;
-			
-			if (getMainSrcTableConf().isManualIdGeneration()) {
-				currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
-			}
 			
 			for (SyncRecord record : syncRecords) {
 				DatabaseObject rec = (DatabaseObject) record;
@@ -141,19 +140,24 @@ public class DBQuickMergeEngine extends Engine {
 					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
-						if (getMainSrcTableConf().isManualIdGeneration()) {
-							destObject.setObjectId(currObjectId++);
+						if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
+							
+							int currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
+							
+							destObject.setObjectId(Oid.fastCreate(
+							    mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
+						} else {
+							destObject.loadObjectIdData(mappingInfo);
 						}
 						
-						MergingRecord mr = new MergingRecord(destObject, mappingInfo.getDstTableConf(), this.getSrcApp(),
-						        this.getDstApp(), false);
+						MergingRecord mr = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
+						        false);
 						
-						if (mergingRecs.get(mappingInfo.getDstTableConf().getTableName()) == null) {
-							mergingRecs.put(mappingInfo.getDstTableConf().getTableName(),
-							    new ArrayList<>(syncRecords.size()));
+						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
+							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
 						}
 						
-						mergingRecs.get(mappingInfo.getDstTableConf().getTableName()).add(mr);
+						mergingRecs.get(mappingInfo.getTableName()).add(mr);
 					}
 				}
 			}
@@ -191,12 +195,6 @@ public class DBQuickMergeEngine extends Engine {
 		
 		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
 		
-		int currObjectId = 0;
-		
-		if (getMainSrcTableConf().isManualIdGeneration()) {
-			currObjectId = getRelatedOperationController().generateNextStartIdForThread(this, syncRecords);
-		}
-		
 		try {
 			for (SyncRecord record : syncRecords) {
 				String startingStrLog = utilities.garantirXCaracterOnNumber(i,
@@ -206,24 +204,28 @@ public class DBQuickMergeEngine extends Engine {
 				
 				DatabaseObject rec = (DatabaseObject) record;
 				
-				for (DstConf dstConf : getEtlConfiguration().getDstConf()) {
+				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = dstConf.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject == null) {
 						continue;
 					}
 					
-					if (getMainSrcTableConf().isManualIdGeneration()) {
-						destObject.setObjectId(currObjectId++);
+					if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
+						int currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
+						
+						destObject.setObjectId(Oid.fastCreate(
+						    mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
+					} else {
+						destObject.loadObjectIdData(mappingInfo);
 					}
 					
 					boolean wrt = writeOperationHistory();
 					
-					MergingRecord data = new MergingRecord(destObject, dstConf.getDstTableConf(), this.getSrcApp(),
-					        this.getDstApp(), wrt);
+					MergingRecord data = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(), wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -236,7 +238,7 @@ public class DBQuickMergeEngine extends Engine {
 						InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
 						    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
 						
-						inconsistenceInfo.save(dstConf.getDstTableConf(), srcConn);
+						inconsistenceInfo.save(mappingInfo, srcConn);
 						
 						wentWrong = false;
 					}

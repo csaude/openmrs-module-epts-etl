@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 
@@ -26,9 +27,19 @@ public class Field implements Serializable {
 	
 	private String type;
 	
+	private AttDefinedElements attDefinedElements;
+	
 	public Field() {
 	}
-
+	
+	public AttDefinedElements getAttDefinedElements() {
+		return attDefinedElements;
+	}
+	
+	public void setAttDefinedElements(AttDefinedElements attDefinedElements) {
+		this.attDefinedElements = attDefinedElements;
+	}
+	
 	public String getType() {
 		return type;
 	}
@@ -52,6 +63,10 @@ public class Field implements Serializable {
 	
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	public String getNameAsClassAtt() {
+		return AttDefinedElements.convertTableAttNameToClassAttName(this.name);
 	}
 	
 	public Object getValue() {
@@ -97,8 +112,8 @@ public class Field implements Serializable {
 	}
 	
 	/**
-	 * Retorna o valor Integer correspondente ao valor do parametro identificado por 'paramName'; Se o
-	 * parametro nao existir ou se o valor nao for compativel, retorna '0'
+	 * Retorna o valor Integer correspondente ao valor do parametro identificado por 'paramName'; Se
+	 * o parametro nao existir ou se o valor nao for compativel, retorna '0'
 	 * 
 	 * @param fields
 	 * @param paramName
@@ -199,5 +214,21 @@ public class Field implements Serializable {
 			return "";
 		
 		return (String) value;
+	}
+	
+	public boolean isDateField() {
+		return AttDefinedElements.isDateType(this.type);
+	}
+	
+	public boolean isNumericColumnType() {
+		return AttDefinedElements.isNumeric(this.type);
+	}
+	
+	public Field createACopy() {
+		Field f = new Field(this.name);
+		
+		f.setType(this.type);
+		
+		return f;
 	}
 }

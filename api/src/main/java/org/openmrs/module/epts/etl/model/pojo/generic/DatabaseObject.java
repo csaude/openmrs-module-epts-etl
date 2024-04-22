@@ -7,14 +7,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.exceptions.SyncExeption;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
 
@@ -29,17 +29,15 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public static final int INCONSISTENCE_STATUS = -1;
 	
-	public abstract void refreshLastSyncDateOnOrigin(SyncTableConfiguration tableConfiguration,
+	public abstract void refreshLastSyncDateOnOrigin(AbstractTableConfiguration tableConfiguration,
 	        String recordOriginLocationCode, Connection conn);
 	
-	public abstract void refreshLastSyncDateOnDestination(SyncTableConfiguration tableConfiguration,
+	public abstract void refreshLastSyncDateOnDestination(AbstractTableConfiguration tableConfiguration,
 	        String recordOriginLocationCode, Connection conn);
 	
-	public abstract String generateDBPrimaryKeyAtt();
+	public abstract Oid getObjectId();
 	
-	public abstract Integer getObjectId();
-	
-	public abstract void setObjectId(Integer objectId);
+	public abstract void setObjectId(Oid objectId);
 	
 	public abstract List<UniqueKeyInfo> getUniqueKeysInfo();
 	
@@ -51,7 +49,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @param conn
 	 * @throws DBException
 	 */
-	public void loadDestParentInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
+	public void loadDestParentInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws ParentNotYetMigratedException, DBException;
 	
 	public abstract Object[] getInsertParamsWithoutObjectId();
@@ -66,11 +64,13 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract Object[] getUpdateParams();
 	
-	public abstract String generateInsertValues();
+	public abstract String generateInsertValuesWithoutObjectId();
+	
+	public abstract String generateInsertValuesWithObjectId();
 	
 	public abstract boolean hasIgnoredParent();
 	
-	public abstract long save(SyncTableConfiguration syncTableInfo, Connection conn) throws DBException;
+	public abstract void save(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	
 	public abstract String getUuid();
 	
@@ -78,11 +78,17 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract boolean hasParents();
 	
-	public abstract Integer getParentValue(String parentAttName);
-	
+	public abstract Object getParentValue(String parentAttName);
 	
 	public abstract String generateTableName();
-		
+	
+	/**
+	 * Load the objectId info
+	 * 
+	 * @param tabConf the table configuration
+	 */
+	public abstract void loadObjectIdData(AbstractTableConfiguration tabConf);
+	
 	/**
 	 * Consolidate data for database consistency
 	 * <p>
@@ -96,7 +102,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws InconsistentStateException
 	 * @throws DBException
 	 */
-	public abstract void consolidateData(SyncTableConfiguration tableInfo, Connection conn)
+	public abstract void consolidateData(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException;
 	
 	/**
@@ -111,14 +117,14 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws InconsistentStateException
 	 * @throws DBException
 	 */
-	public abstract void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn)
+	public abstract void resolveInconsistence(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException;
 	
-	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo,
+	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(AbstractTableConfiguration tableInfo,
 	        String recordOriginLocationCode, Connection conn) throws DBException;
 	
 	public abstract DatabaseObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode,
-	        SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
+	        AbstractTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
 	        throws ParentNotYetMigratedException, DBException;
 	
 	public abstract SyncImportInfoVO getRelatedSyncInfo();
@@ -129,19 +135,20 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract void remove(Connection conn) throws DBException;
 	
-	public abstract Map<RefInfo, Integer> loadMissingParents(SyncTableConfiguration tableInfo, Connection conn)
+	public abstract Map<RefInfo, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws DBException;
 	
-	public abstract void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents,
-	        Connection conn) throws DBException;
+	public abstract void removeDueInconsistency(AbstractTableConfiguration syncTableInfo,
+	        Map<RefInfo, Integer> missingParents, Connection conn) throws DBException;
 	
-	public abstract void changeParentValue(String parentAttName, DatabaseObject newParent);
+	public abstract void changeParentValue(RefInfo refInfo, DatabaseObject newParent);
 	
-	public abstract void setParentToNull(String parentAttName);
+	public abstract void setParentToNull(RefInfo refInfo);
 	
-	public abstract void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException;
+	public abstract void changeObjectId(AbstractTableConfiguration abstractTableConfiguration, Connection conn)
+	        throws DBException;
 	
-	public abstract void changeParentForAllChildren(DatabaseObject newParent, SyncTableConfiguration syncTableInfo,
+	public abstract void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo,
 	        Connection conn) throws DBException;
 	
 	public abstract Date getDateChanged();
@@ -159,33 +166,25 @@ public interface DatabaseObject extends SyncRecord {
 	public abstract boolean hasExactilyTheSameDataWith(DatabaseObject srcObj);
 	
 	/**
-	 * Return the values of given fields
-	 * 
-	 * @param fieldName of fields to retrieve
-	 * @return Return the values of given fields
-	 */
-	public abstract Object[] getFieldValues(String... fieldName);
-	
-	/**
 	 * Return a value of given field
 	 * 
 	 * @param fieldName of field to retrieve
 	 * @return Return a value of given field
 	 */
-	public abstract Object getFieldValue(String fieldName);
+	public abstract Object getFieldValue(String fieldName) throws ForbiddenOperationException;
 	
 	public abstract void setFieldValue(String fieldName, Object value);
 	
 	/**
-	 * Retrive values for all {@link SyncTableConfiguration#getUniqueKeys()} fields. The values
-	 * follow the very same sequence defined with {@link SyncTableConfiguration#getUniqueKeys()}
+	 * Retrive values for all {@link AbstractTableConfiguration#getUniqueKeys()} fields. The values
+	 * follow the very same sequence defined with {@link AbstractTableConfiguration#getUniqueKeys()}
 	 * 
-	 * @param tableConfiguration the {@link SyncTableConfiguration} from where the
-	 *            {@link SyncTableConfiguration#getUniqueKeys()} will be retrieved from
-	 * @return values for all {@link SyncTableConfiguration#getUniqueKeys()} field.
+	 * @param tableConfiguration the {@link AbstractTableConfiguration} from where the
+	 *            {@link AbstractTableConfiguration#getUniqueKeys()} will be retrieved from
+	 * @return values for all {@link AbstractTableConfiguration#getUniqueKeys()} field.
 	 * @throws ForbiddenOperationException if one or more fields in any key have null value
 	 */
-	public default Object[] getUniqueKeysFieldValues(SyncTableConfiguration tableConfiguration)
+	public default Object[] getUniqueKeysFieldValues(AbstractTableConfiguration tableConfiguration)
 	        throws ForbiddenOperationException {
 		if (!tableConfiguration.isFullLoaded()) {
 			try {
@@ -202,16 +201,38 @@ public interface DatabaseObject extends SyncRecord {
 		List<Object> values = new ArrayList<Object>();
 		
 		for (UniqueKeyInfo uniqueKey : tableConfiguration.getUniqueKeys()) {
-			Object[] fieldValues = this.getFieldValues(AttDefinedElements
-			        .convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKey.generateListFromFieldsNames())));
+			Object[] fieldValues = new Object[uniqueKey.getFields().size()];
 			
-			if (fieldValues != null && fieldValues.length == uniqueKey.getFields().size()) {
-				values.addAll(utils.parseArrayToList(fieldValues));
-			} else
-				throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey + "] has no value.");
+			for (int i = 0; i < uniqueKey.getFields().size(); i++) {
+				Field f = uniqueKey.getFields().get(i);
+				
+				Object fv = null;
+				
+				try {
+					fv = this.getFieldValue(f.getName());
+				}
+				catch (ForbiddenOperationException e) {
+					fv = this.getFieldValue(f.getNameAsClassAtt());
+				}
+				
+				if (fv == null) {
+					throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey + "] has no value.");
+				}
+				
+				fieldValues[i] = fv;
+			}
+			
+			values.addAll(utils.parseArrayToList(fieldValues));
 		}
 		
 		return utils.parseListToArray(values);
+	}
+	
+	default void setTableConfiguration(PojobleDatabaseObject tableConfiguration) {
+	}
+	
+	default PojobleDatabaseObject getTableConfiguration() {
+		return null;
 	}
 	
 	/**
@@ -222,12 +243,30 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws ForbiddenOperationException if one or more fields in any key have null value
 	 */
 	public default Object[] getUniqueKeysFieldValues(UniqueKeyInfo uniqueKey) throws ForbiddenOperationException {
-		Object[] fieldValues = this.getFieldValues(AttDefinedElements
-		        .convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKey.generateListFromFieldsNames())));
+		Object[] fieldValues = new Object[uniqueKey.getFields().size()];
 		
-		if (fieldValues != null && fieldValues.length == uniqueKey.getFields().size()) {
-			return fieldValues;
-		} else
-			throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey.toString() + "] has no value.");
+		for (int i = 0; i < uniqueKey.getFields().size(); i++) {
+			Field f = uniqueKey.getFields().get(i);
+			
+			Object fv = null;
+			
+			try {
+				fv = this.getFieldValue(f.getName());
+			}
+			catch (ForbiddenOperationException e) {
+				fv = this.getFieldValue(f.getNameAsClassAtt());
+			}
+			
+			if (fv == null) {
+				throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey + "] has no value.");
+			}
+			
+			fieldValues[i] = fv;
+		}
+		
+		return fieldValues;
 	}
+	
+	public abstract void fastCreateSimpleNumericKey(long i);
+	
 }

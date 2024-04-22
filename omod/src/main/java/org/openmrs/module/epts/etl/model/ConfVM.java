@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
 import org.openmrs.module.epts.etl.controller.conf.SyncProcessType;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.ClassPathUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -31,7 +31,7 @@ public class ConfVM {
 	
 	private SyncOperationConfig selectedOperation;
 	
-	private SyncTableConfiguration selectedTable;
+	private AbstractTableConfiguration selectedTable;
 	
 	private File configFile;
 	private String statusMessage;
@@ -50,7 +50,7 @@ public class ConfVM {
 		return selectedOperation;
 	}
 
-	public SyncTableConfiguration getSelectedTable() {
+	public AbstractTableConfiguration getSelectedTable() {
 		return selectedTable;
 	}
 	
@@ -62,7 +62,7 @@ public class ConfVM {
 		this.selectedOperation = selectedOperation;
 	}
 
-	public void setSelectedTable(SyncTableConfiguration selectedTable) {
+	public void setSelectedTable(AbstractTableConfiguration selectedTable) {
 		this.selectedTable = selectedTable;
 	}
 

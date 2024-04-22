@@ -84,6 +84,6 @@ public class DBQuickLoadSearchParams extends SyncSearchParams<DatabaseObject> im
 	}
 	
 	private File getSyncDirectory() {
-		return this.controller.getSyncDirectory(getMainSrcTableConf());
+		return this.controller.getSyncDirectory(getSrcTableConf());
 	}
 }

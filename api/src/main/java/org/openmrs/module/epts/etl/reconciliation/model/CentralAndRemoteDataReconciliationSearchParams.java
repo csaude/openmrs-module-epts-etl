@@ -2,9 +2,9 @@ package org.openmrs.module.epts.etl.reconciliation.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -31,7 +31,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tableInfo = this.getMainSrcTableConf();
+		AbstractTableConfiguration tableInfo = this.getSrcTableConf();
 		
 		if (this.type.isMissingRecordsDetector()) {
 			searchClauses.addColumnToSelect(
@@ -99,25 +99,25 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
 			}
 			
-			if (this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract() != null) {
-				searchClauses
-				        .addToClauses(this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract());
+			if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
+				searchClauses.addToClauses(this.getConfig().getSrcConf().getExtraConditionForExtract());
 			}
 		}
 		
 		return searchClauses;
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public Class<DatabaseObject> getRecordClass() {
 		if (type.isMissingRecordsDetector()) {
 			return DatabaseEntityPOJOGenerator
 			        .tryToGetExistingCLass("org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject");
 		} else if (type.isOutdatedRecordsDetector()) {
-			return getMainSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
+			return (Class<DatabaseObject>) getSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
 			
 		} else if (type.isPhantomRecordsDetector()) {
-			return this.getMainSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
+			return (Class<DatabaseObject>) this.getSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
 		}
 		
 		throw new ForbiddenOperationException("Unsupported operation type '" + type + "'");

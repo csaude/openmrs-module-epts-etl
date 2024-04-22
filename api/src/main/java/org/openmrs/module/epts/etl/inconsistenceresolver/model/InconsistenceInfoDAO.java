@@ -2,12 +2,12 @@ package org.openmrs.module.epts.etl.inconsistenceresolver.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class InconsistenceInfoDAO extends BaseDAO{
-	public static void insert(InconsistenceInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
+	public static void insert(InconsistenceInfo record, AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException{
 		try {
 			String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
 			

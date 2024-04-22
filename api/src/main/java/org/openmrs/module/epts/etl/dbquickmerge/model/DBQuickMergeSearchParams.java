@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.dbquickmerge.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -21,13 +21,13 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	public DBQuickMergeSearchParams(EtlConfiguration config, RecordLimits limits, DBQuickMergeController relatedController) {
 		super(config, limits);
 		
-		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		String srcSchema = DBUtilities.determineSchemaName(conn);
-		SyncTableConfiguration tableInfo = getMainSrcTableConf();
+		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
@@ -77,7 +77,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	private String generateDestinationJoinSubquery(Connection dstConn) throws DBException {
 		String dstSchema = DBUtilities.determineSchemaName(dstConn);
 		
-		SyncTableConfiguration tableInfo = getMainSrcTableConf();
+		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
 		String dstFullTableName = dstSchema + ".";
 		dstFullTableName += tableInfo.getTableName();
@@ -103,7 +103,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 			dstJoinSubquery += " FROM    " + fromClause;
 			dstJoinSubquery += " WHERE " + joinCondition;
 		} else {
-			throw new ForbiddenOperationException("There is no join condition between ");
+			throw new ForbiddenOperationException("There is no join condition between the src [" + tableInfo.getTableName() + "] and it extra data src");
 		}
 		
 		return dstJoinSubquery;

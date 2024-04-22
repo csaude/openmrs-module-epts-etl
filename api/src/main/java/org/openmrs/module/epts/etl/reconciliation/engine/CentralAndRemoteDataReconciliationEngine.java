@@ -6,9 +6,10 @@ import java.util.List;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.reconciliation.controller.CentralAndRemoteDataReconciliationController;
 import org.openmrs.module.epts.etl.reconciliation.model.CentralAndRemoteDataReconciliationSearchParams;
@@ -24,7 +25,8 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		return utilities.parseList(
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override
@@ -46,7 +48,8 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		if (getMainSrcTableName().equalsIgnoreCase("users"))
 			return;
 		
-		this.getMonitor().logInfo("PERFORMING DATA RECONCILIATION ON " + syncRecords.size() + "' " + this.getMainSrcTableName());
+		this.getMonitor()
+		        .logInfo("PERFORMING DATA RECONCILIATION ON " + syncRecords.size() + "' " + this.getMainSrcTableName());
 		
 		if (getRelatedOperationController().isMissingRecordsDetector()) {
 			performeMissingRecordsCreation(syncRecords, conn);

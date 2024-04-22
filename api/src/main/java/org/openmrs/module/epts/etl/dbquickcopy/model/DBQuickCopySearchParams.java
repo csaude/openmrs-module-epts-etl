@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.dbquickcopy.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickload.model.LoadedRecordsSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -23,14 +23,14 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 		super(config, limits);
 		
 		this.relatedController = relatedController;
-		setOrderByFields(getMainSrcTableConf().getPrimaryKey());
+		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tableInfo = getMainSrcTableConf();
+		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
 		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
 		

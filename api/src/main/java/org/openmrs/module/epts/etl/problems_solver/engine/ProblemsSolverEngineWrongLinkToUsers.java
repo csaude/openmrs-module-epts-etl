@@ -4,17 +4,22 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.RefInfo;
+import org.openmrs.module.epts.etl.controller.conf.RefMapping;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParams;
@@ -40,7 +45,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override
@@ -69,20 +74,19 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					
 					logDebug(startingStrLog + " STARTING RESOLVE PROBLEMS OF RECORD [" + record + "]");
 					
-					Class<DatabaseObject> syncRecordClass = getMainSrcTableConf().getSyncRecordClass(getDefaultApp());
-					Class<DatabaseObject> prsonRecordClass = SyncTableConfiguration
-					        .init("person", getEtlConfiguration().getSrcConf()).getSyncRecordClass(getDefaultApp());
+					AbstractTableConfiguration personTabConf = AbstractTableConfiguration
+					        .initGenericTabConf("person", getEtlConfiguration().getSrcConf());
 					
-					DatabaseObject userOnDestDB = DatabaseObjectDAO.getById(syncRecordClass,
+					DatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(getMainSrcTableConf(),
 					    ((DatabaseObject) record).getObjectId(), conn);
 					
-					if (userOnDestDB.getParentValue("personId") != 1) {
+					if ((Integer) userOnDestDB.getParentValue("personId") != 1) {
 						logDebug("SKIPPING THE RECORD BECAUSE IT HAS THE CORRECT PERSON ["
 						        + userOnDestDB.getParentValue("personId") + "]");
 						continue;
 					}
 					
-					if (userOnDestDB.getObjectId() == 1) {
+					if (userOnDestDB.getObjectId().getSimpleValueAsInt() == 1) {
 						logDebug("SKIPPING THE RECORD BECAUSE IT IS THE DEFAULT USER");
 						continue;
 					}
@@ -96,19 +100,16 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 							
 							logDebug("RESOLVING USER PROBLEM USING DATA FROM [" + dbName + "]");
 							
-							DatabaseObject relatedPersonOnSrcDB = DatabaseObjectDAO.getByIdOnSpecificSchema(prsonRecordClass,
-							    userOnSrcDB.getParentValue("personId"), dbName, srcConn);
-							
-							/*if (relatedPersonOnSrcDB == null) {
-								logDebug("RELATED PERSON NOT FOUND ON ON [" + dbName + "]");
-								continue;
-							}
-							
-							*/
+							DatabaseObject relatedPersonOnSrcDB = DatabaseObjectDAO.getByIdOnSpecificSchema(personTabConf,
+							    Oid.fastCreate("", userOnSrcDB.getParentValue("personId")), dbName, srcConn);
 							
 							List<DatabaseObject> relatedPersonOnDestDB = null;//DatabaseObjectDAO.getByUuid(prsonRecordClass, relatedPersonOnSrcDB.getUuid(), conn);
 							
-							userOnDestDB.changeParentValue("personId", relatedPersonOnDestDB.get(0));
+							RefInfo r = new RefInfo();
+							
+							r.addMapping(RefMapping.fastCreate("person_id", "person_id"));
+							
+							userOnDestDB.changeParentValue(r, relatedPersonOnDestDB.get(0));
 							userOnDestDB.save(getMainSrcTableConf(), conn);
 							
 							found = true;

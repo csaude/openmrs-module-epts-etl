@@ -4,23 +4,20 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
-import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.openmrs._default.UserRoleVO;
-import org.openmrs.module.epts.etl.model.pojo.openmrs._default.UsersVO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.epts.etl.problems_solver.model.TmpUserVO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
  * @author jpboane
@@ -39,21 +36,23 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 			//new DatabasesInfo("Echo Central Server", DatabasesInfo.DB_NAMES_ECHO, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
 	};
 	
-	private SyncTableConfiguration userRoleTableConf;
+	private AbstractTableConfiguration userRoleTableConf;
 	
-	private Class<DatabaseObject> userRoleRecordClass;
+	@SuppressWarnings("unused")
+	private Class<? extends DatabaseObject> userRoleRecordClass;
 	
 	public ProblemsSolverEngineMissingUserRoles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
-		this.userRoleTableConf = SyncTableConfiguration.init("user_role",
+		this.userRoleTableConf = AbstractTableConfiguration.initGenericTabConf("user_role",
 		    getEtlConfiguration().getSrcConf());
 		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());
 	}
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		return utilities.parseList(
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override
@@ -106,6 +105,9 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	}
 	
 	private boolean performeOnServer(TmpUserVO record, DatabasesInfo dbInfo, Connection conn) throws DBException {
+		throw new ForbiddenOperationException("Review this method");
+		
+		/*
 		boolean found = false;
 		
 		OpenConnection srcConn = dbInfo.acquireConnection();
@@ -153,7 +155,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 			}
 		}
 		
-		return found;
+		return found;*/
 	}
 	
 	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)

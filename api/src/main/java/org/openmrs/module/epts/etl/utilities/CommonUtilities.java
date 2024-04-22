@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -22,7 +23,6 @@ import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.base.BaseVO;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1053,35 +1053,32 @@ public class CommonUtilities implements Serializable {
 		return map;
 	}
 	
-	public Object getFieldValue(Object obj, String fieldsName) {
-		Object[] values = getFieldValues(obj, fieldsName);
+	public Object getFieldValueOnFieldList(List<org.openmrs.module.epts.etl.model.Field> fields, String fieldName)
+	        throws ForbiddenOperationException {
 		
-		if (utilities.arrayHasElement(values)) {
-			return values[0];
+		for (int i = 0; i < fields.size(); i++) {
+			org.openmrs.module.epts.etl.model.Field field = fields.get(i);
+			
+			if (field.getName().equals(fieldName)) {
+				return field.getValue();
+			}
 		}
 		
-		return null;
+		throw new ForbiddenOperationException("The field '" + fieldName + "' was not found on list of fields");
+		
 	}
 	
-	public Object[] getFieldValues(Object obj, String... fieldsName) {
-		List<Object> values = new ArrayList<Object>();
+	public Object getFieldValue(Object obj, String fieldName) throws ForbiddenOperationException {
+		Object[] fields = getFields(obj);
 		
-		Object[] fields = BaseVO.getFields(obj);
-		
-		for (String fieldName : fieldsName) {
-			boolean fieldFound = false;
+		for (int i = 0; i < fields.length; i++) {
+			Field field = (Field) fields[i];
 			
-			for (int i = 0; i < fields.length; i++) {
-				Field field = (Field) fields[i];
-				
-				if (!field.getName().equals(fieldName))
-					continue;
-				
-				fieldFound = true;
+			if (field.getName().equals(fieldName)) {
 				
 				try {
 					if (field.get(obj) != null) {
-						values.add(field.get(obj));
+						return field.get(obj);
 					}
 				}
 				catch (IllegalArgumentException e) {
@@ -1091,12 +1088,78 @@ public class CommonUtilities implements Serializable {
 					throw new RuntimeException(e);
 				}
 			}
-			
-			if (!fieldFound)
-				throw new ForbiddenOperationException(
-				        "The field '" + fieldName + "' was not found on object '" + obj.getClass().getName() + "'");
 		}
 		
-		return values != null ? utilities.parseListToArray(values) : null;
+		throw new ForbiddenOperationException(
+		        "The field '" + fieldName + "' was not found on object '" + obj.getClass().getName() + "'");
 	}
+	
+	public Field getField(Object obj, String fieldName) throws ForbiddenOperationException {
+		Object[] fields = getFields(obj);
+		
+		for (int i = 0; i < fields.length; i++) {
+			Field field = (Field) fields[i];
+			
+			if (field.getName().equals(fieldName)) {
+				return field;
+			}
+		}
+		
+		throw new ForbiddenOperationException(
+		        "The field '" + fieldName + "' was not found on object '" + obj.getClass().getName() + "'");
+		
+	}
+	
+	public Class<?> getFieldType(Object obj, String fieldName) {
+		return getField(obj, fieldName).getType();
+	}
+	
+	public Object parseValue(String value, Class<?> destinationType) {
+		if (destinationType.equals(String.class) && value instanceof String) {
+			return value;
+		} else if (destinationType.equals(Date.class) && value instanceof String) {
+			return DateAndTimeUtilities.createDate(value);
+			
+		} else if (destinationType.equals(Double.class) && value instanceof String) {
+			return Double.parseDouble(value);
+		} else if (destinationType.equals(Integer.class) && value instanceof String) {
+			return Integer.parseInt(value);
+			
+		} else if (destinationType.equals(Long.class) && value instanceof String) {
+			return Long.parseLong(value);
+		} else if (destinationType.equals(Boolean.class) && value instanceof String) {
+			return Boolean.parseBoolean(value);
+		} else if (destinationType.equals(Short.class) && value instanceof String) {
+			return Short.parseShort(value);
+		} else if (destinationType.equals(Float.class) && value instanceof String) {
+			return Float.parseFloat(value);
+		}
+		return value;
+	}
+	
+	/**
+	 * Retorna todos os atributos de instancia de da classe de um objecto independentemento do
+	 * modificador de acesso
+	 * 
+	 * @return todos os atributos de instancia de da classe de um objecto independentemento do
+	 *         modificador de acesso
+	 */
+	public Field[] getFields(Object obj) {
+		List<Field> fields = new ArrayList<Field>();
+		Class<?> cl = obj.getClass();
+		
+		while (cl != null) {
+			Field[] in = cl.getDeclaredFields();
+			for (int i = 0; i < in.length; i++) {
+				Field field = in[i];
+				if (Modifier.isStatic(field.getModifiers()))
+					continue;
+				field.setAccessible(true);
+				fields.add(field);
+			}
+			cl = cl.getSuperclass();
+		}
+		return utilities.parseListToArray(fields);
+	}
+	
 }

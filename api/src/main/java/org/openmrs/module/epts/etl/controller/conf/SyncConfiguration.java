@@ -44,7 +44,7 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private String originAppLocationCode;
 	
-	private Map<String, SyncTableConfiguration> syncTableConfigurationPull;
+	private Map<String, AbstractTableConfiguration> syncTableConfigurationPull;
 	
 	private List<EtlConfiguration> etlConfiguration;
 	
@@ -58,7 +58,7 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private List<SyncOperationConfig> operations;
 	
-	private List<SyncTableConfiguration> configuredTables;
+	private List<AbstractTableConfiguration> configuredTables;
 	
 	//If true, all operations defined within this conf won't run on start. But may run if this sync configuration is nested to another configuration
 	private boolean automaticStart;
@@ -81,7 +81,7 @@ public class SyncConfiguration extends BaseConfiguration {
 	
 	private ProcessController relatedController;
 	
-	private List<SyncTableConfiguration> allTables;
+	private List<AbstractTableConfiguration> allTables;
 	
 	private EptsEtlLogger logger;
 	
@@ -105,8 +105,8 @@ public class SyncConfiguration extends BaseConfiguration {
 	private boolean initialized;
 	
 	public SyncConfiguration() {
-		syncTableConfigurationPull = new HashMap<String, SyncTableConfiguration>();
-		this.allTables = new ArrayList<SyncTableConfiguration>();
+		syncTableConfigurationPull = new HashMap<String, AbstractTableConfiguration>();
+		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
 		this.initialized = false;
 		
@@ -123,11 +123,11 @@ public class SyncConfiguration extends BaseConfiguration {
 		this.params = params;
 	}
 	
-	public List<SyncTableConfiguration> getConfiguredTables() {
+	public List<AbstractTableConfiguration> getConfiguredTables() {
 		return configuredTables;
 	}
 	
-	public void setConfiguredTables(List<SyncTableConfiguration> configuredTables) {
+	public void setConfiguredTables(List<AbstractTableConfiguration> configuredTables) {
 		this.configuredTables = configuredTables;
 	}
 	
@@ -159,11 +159,11 @@ public class SyncConfiguration extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public List<SyncTableConfiguration> getAllTables() {
+	public List<AbstractTableConfiguration> getAllTables() {
 		return allTables;
 	}
 	
-	public void setAllTables(List<SyncTableConfiguration> allTables) {
+	public void setAllTables(List<AbstractTableConfiguration> allTables) {
 		this.allTables = allTables;
 	}
 	
@@ -426,13 +426,12 @@ public class SyncConfiguration extends BaseConfiguration {
 			for (EtlConfiguration config : etlConfiguration) {
 				config.setRelatedSyncConfiguration(this);
 				
-				addToTableConfigurationPull(config.getMainSrcTableConf());
+				addToTableConfigurationPull(config.getSrcConf());
 				
-				if (config.getSrcConf().getAdditionalExtractionInfo() != null
-				        && config.getSrcConf().getAdditionalExtractionInfo().getAdditionalExtractionTables() != null) {
+				if (config.getSrcConf().getAuxiliaryExtractionSrcTable() != null
+				        && config.getSrcConf().getAuxiliaryExtractionSrcTable() != null) {
 					
-					for (AdditionlExtractionSrcTable t : config.getSrcConf().getAdditionalExtractionInfo()
-					        .getAdditionalExtractionTables()) {
+					for (AuxiliaryExtractionSrcTable t : config.getSrcConf().getAuxiliaryExtractionSrcTable()) {
 						addToTableConfigurationPull(t);
 					}
 					
@@ -443,11 +442,11 @@ public class SyncConfiguration extends BaseConfiguration {
 		this.etlConfiguration = etlConfiguration;
 	}
 	
-	public void addToTableConfigurationPull(SyncTableConfiguration tableConfiguration) {
+	public void addToTableConfigurationPull(AbstractTableConfiguration tableConfiguration) {
 		syncTableConfigurationPull.put(tableConfiguration.getTableName(), tableConfiguration);
 	}
 	
-	public SyncTableConfiguration findPulledTableConfiguration(String tableName) {
+	public AbstractTableConfiguration findPulledTableConfiguration(String tableName) {
 		return syncTableConfigurationPull.get(tableName);
 	}
 	
@@ -565,18 +564,14 @@ public class SyncConfiguration extends BaseConfiguration {
 		synchronized (STRING_LOCK) {
 			for (EtlConfiguration tc : this.etlConfiguration) {
 				tc.setRelatedSyncConfiguration(this);
-				tc.getMainSrcTableConf().setParent(tc.getSrcConf());
+				tc.getSrcConf().setParent(tc);
 				
-				addConfiguredTable(tc.getMainSrcTableConf());
-				addToTableConfigurationPull(tc.getMainSrcTableConf());
+				addConfiguredTable(tc.getSrcConf());
+				addToTableConfigurationPull(tc.getSrcConf());
 				
-				if (tc.getSrcConf().getAdditionalExtractionInfo() != null) {
+				if (tc.getSrcConf().getAuxiliaryExtractionSrcTable() != null) {
 					
-					tc.getSrcConf().getAdditionalExtractionInfo().setParent(tc.getSrcConf());
-					
-					for (AdditionlExtractionSrcTable t : tc.getSrcConf().getAdditionalExtractionInfo()
-					        .getAdditionalExtractionTables()) {
-						
+					for (AuxiliaryExtractionSrcTable t : tc.getSrcConf().getAuxiliaryExtractionSrcTable()) {
 						addConfiguredTable(t);
 						addToTableConfigurationPull(t);
 						t.setParent(tc.getSrcConf());
@@ -587,20 +582,19 @@ public class SyncConfiguration extends BaseConfiguration {
 				
 				if (utilities.arrayHasElement(tc.getDstConf())) {
 					for (DstConf dst : tc.getDstConf()) {
-						addConfiguredTable(dst.getDstTableConf());
+						addConfiguredTable(dst);
 						
-						addToTableConfigurationPull(dst.getDstTableConf());
+						addToTableConfigurationPull(dst);
 						
-						dst.getDstTableConf().setParent(dst);
+						dst.setParent(tc);
 						
-						code = utilities.stringHasValue(code) ? "_and_" + dst.getDstTableConf().getTableName()
-						        : dst.getDstTableConf().getTableName();
+						code = utilities.stringHasValue(code) ? "_and_" + dst.getTableName() : dst.getTableName();
 					}
 				}
 				
-				code = utilities.stringHasValue(code) ? code : tc.getMainSrcTableConf().getTableName();
+				code = utilities.stringHasValue(code) ? code : tc.getSrcConf().getTableName();
 				
-				code = tc.getMainSrcTableConf().getTableName() + "_to_" + code;
+				code = tc.getSrcConf().getTableName() + "_to_" + code;
 				
 				tc.setConfigCode(code);
 			}
@@ -611,7 +605,7 @@ public class SyncConfiguration extends BaseConfiguration {
 		return this.isEtl();
 	}
 	
-	private void addConfiguredTable(SyncTableConfiguration tableConfiguration) {
+	private void addConfiguredTable(AbstractTableConfiguration tableConfiguration) {
 		if (!this.configuredTables.contains(tableConfiguration)) {
 			this.configuredTables.add(tableConfiguration);
 		}
@@ -654,7 +648,7 @@ public class SyncConfiguration extends BaseConfiguration {
 			
 			while (rs.next()) {
 				
-				/*SyncTableConfiguration tab = SyncTableConfiguration.init(rs.getString("TABLE_NAME"), this);
+				/*AbstractTableConfiguration tab = AbstractTableConfiguration.init(rs.getString("TABLE_NAME"), this);
 				
 				if (tab.getTableName().startsWith("_"))
 					continue;
@@ -704,8 +698,8 @@ public class SyncConfiguration extends BaseConfiguration {
 		return find(tableConfiguration);
 	}
 	
-	public SyncTableConfiguration findSyncTableConfigurationOnAllTables(String tableName) {
-		SyncTableConfiguration tableConfiguration = new SyncTableConfiguration();
+	public AbstractTableConfiguration findSyncTableConfigurationOnAllTables(String tableName) {
+		AbstractTableConfiguration tableConfiguration = new GenericTabableConfiguration();
 		tableConfiguration.setTableName(tableName);
 		
 		return utilities.findOnList(this.allTables, tableConfiguration);
@@ -725,7 +719,7 @@ public class SyncConfiguration extends BaseConfiguration {
 		return utilities.findOnList(this.etlConfiguration, config);
 	}
 	
-	public SyncTableConfiguration find(SyncTableConfiguration config) {
+	public AbstractTableConfiguration find(AbstractTableConfiguration config) {
 		return utilities.findOnList(this.configuredTables, config);
 	}
 	
@@ -835,7 +829,7 @@ public class SyncConfiguration extends BaseConfiguration {
 		if (!supportMultipleDestination()) {
 			for (EtlConfiguration config : this.getEtlConfiguration()) {
 				if (utilities.arrayHasMoreThanOneElements(config.getDstConf())) {
-					errorMsg += ++errNum + ". The config for source " + config.getMainSrcTableConf().getTableName()
+					errorMsg += ++errNum + ". The config for source " + config.getSrcConf().getTableName()
 					        + " has multiple destination \n";
 				}
 			}
@@ -995,9 +989,9 @@ public class SyncConfiguration extends BaseConfiguration {
 			throw new ForbiddenOperationException("Please revier this mathod");
 		}
 		
-		List<SyncTableConfiguration> tablesConfigurations = new ArrayList<SyncTableConfiguration>();
+		List<AbstractTableConfiguration> tablesConfigurations = new ArrayList<AbstractTableConfiguration>();
 		
-		for (SyncTableConfiguration conf : this.allTables) {
+		for (AbstractTableConfiguration conf : this.allTables) {
 			if (!conf.isDisabled()) {
 				tablesConfigurations.add(conf);
 				

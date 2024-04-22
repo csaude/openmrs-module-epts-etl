@@ -5,7 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -31,7 +31,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	public SearchClauses<SyncImportInfoVO> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
 		
-		SyncTableConfiguration tableInfo = this.getMainSrcTableConf();
+		AbstractTableConfiguration tableInfo = this.getSrcTableConf();
 		
 		searchClauses.addColumnToSelect(tableInfo.generateFullStageTableName() + ".*");
 		

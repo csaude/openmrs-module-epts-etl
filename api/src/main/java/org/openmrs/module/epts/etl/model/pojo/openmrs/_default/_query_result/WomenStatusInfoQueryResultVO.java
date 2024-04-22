@@ -2,8 +2,6 @@ package org.openmrs.module.epts.etl.model.pojo.openmrs._default._query_result;
 
 import org.openmrs.module.epts.etl.model.pojo.generic.*; 
  
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; 
- 
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements; 
  
 import java.sql.SQLException; 
@@ -28,55 +26,58 @@ public class WomenStatusInfoQueryResultVO extends AbstractDatabaseObject impleme
 		return this.womenStatus;
 	}
  
-	public Integer getObjectId() { 
- 		return 0; 
-	} 
- 
-	public void setObjectId(Integer selfId){ 
-	} 
- 
+	@Override
 	public void load(ResultSet rs) throws SQLException{ 
 		super.load(rs);
-		this.womenStatus = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("women_status") != null ? rs.getString("women_status").trim() : null);
+ 
+this.womenStatus = AttDefinedElements.removeStrangeCharactersOnString(rs.getString("women_status") != null ? rs.getString("women_status").trim() : null);
 	} 
  
 	@JsonIgnore
-	public String generateDBPrimaryKeyAtt(){ 
- 		return null; 
-	} 
- 
-	@JsonIgnore
+	@Override
 	public String getInsertSQLWithoutObjectId(){ 
  		return "INSERT INTO women_status_info(women_status) VALUES( ?);"; 
 	} 
  
 	@JsonIgnore
-	public Object[]  getInsertParamsWithoutObjectId(){ 
- 		Object[] params = {this.womenStatus};		return params; 
-	} 
- 
-	@JsonIgnore
+	@Override
 	public String getInsertSQLWithObjectId(){ 
  		return "INSERT INTO women_status_info(women_status) VALUES( ?);"; 
 	} 
  
 	@JsonIgnore
+	@Override
+	public Object[]  getInsertParamsWithoutObjectId(){ 
+ 		Object[] params = {this.womenStatus};
+		return params; 
+	} 
+ 
+	@JsonIgnore
+	@Override
 	public Object[]  getInsertParamsWithObjectId(){ 
- 		Object[] params = {this.womenStatus};		return params; 
+ 		Object[] params = {this.womenStatus};
+		return params; 
 	} 
  
 	@JsonIgnore
+	@Override
 	public Object[]  getUpdateParams(){ 
- 		Object[] params = {this.womenStatus, null};		return params; 
-	} 
+ 		throw new RuntimeException("Impossible auto update command! No primary key is defined for table object!");	} 
  
 	@JsonIgnore
+	@Override
 	public String getUpdateSQL(){ 
- 		return "UPDATE women_status_info SET women_status = ? WHERE null = ?;"; 
+ 		throw new RuntimeException("Impossible auto update command! No primary key is defined for table object!");	} 
+ 
+	@JsonIgnore
+	@Override
+	public String generateInsertValuesWithoutObjectId(){ 
+ 		return ""+(this.womenStatus != null ? "\""+ utilities.scapeQuotationMarks(womenStatus)  +"\"" : null); 
 	} 
  
 	@JsonIgnore
-	public String generateInsertValues(){ 
+	@Override
+	public String generateInsertValuesWithObjectId(){ 
  		return ""+(this.womenStatus != null ? "\""+ utilities.scapeQuotationMarks(womenStatus)  +"\"" : null); 
 	} 
  
@@ -89,18 +90,6 @@ public class WomenStatusInfoQueryResultVO extends AbstractDatabaseObject impleme
 	public Integer getParentValue(String parentAttName) {
 
 		throw new RuntimeException("No found parent for: " + parentAttName);	}
-
-	@Override
-	public void changeParentValue(String parentAttName, DatabaseObject newParent) {
-
-		throw new RuntimeException("No found parent for: " + parentAttName);
-	}
-
-	@Override
-	public void setParentToNull(String parentAttName) {
-
-		throw new RuntimeException("No found parent for: " + parentAttName);
-	}
 
 	@Override
 	public String generateTableName() {

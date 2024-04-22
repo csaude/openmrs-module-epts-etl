@@ -5,15 +5,19 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DetectedRecordInfoDAO extends BaseDAO{
-	public static long insert(DetectedRecordInfo record, SyncTableConfiguration tableConfiguration, Connection conn) throws DBException{
+	public static void insert(DetectedRecordInfo record, AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException{
+		
+		long id = 0;
+		
 		try {
 			Object[] params = {record.getTableName(),
 							   record.getObjectId(),
@@ -41,33 +45,40 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 			sql += "		   ?,\n";
 			sql += "		   ?);";
 			
-			return executeQueryWithRetryOnError(sql, params, conn);
+			id =  executeQueryWithRetryOnError(sql, params, conn);
+			
+			if (tableConfiguration.getPrimaryKey().isSimpleNumericKey()){
+				record.setObjectId(new Oid());
+				
+				record.getObjectId().retrieveSimpleKey().setValue(id);
+			}
+
+			
 		} catch (DBException e) {
 			if (!e.isDuplicatePrimaryOrUniqueKeyException()) {
 				throw e;
-			} else {
-				return record.getObjectId();
-			}
+			} 
 		}
+		
 	}
 	
-	public static int getFirstNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getFirstNewRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
 		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationType.NEW_RECORDS_DETECTOR, conn);
 	}
 	
-	public static int getLastNewRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getLastNewRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
 		return getChangedRecord(tableConf, appCode, observationDate, "max",  SyncOperationType.NEW_RECORDS_DETECTOR, conn);
 	}
 	
-	public static int getFirstChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getFirstChangedRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
 		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationType.CHANGED_RECORDS_DETECTOR, conn);
 	}
 	
-	public static int getLastChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getLastChangedRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
 		return getChangedRecord(tableConf, appCode, observationDate, "max",  SyncOperationType.CHANGED_RECORDS_DETECTOR, conn);
 	}
 	
-	public static int getChangedRecord(SyncTableConfiguration tableConf, String appCode, Date observationDate, String function, SyncOperationType type, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getChangedRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, String function, SyncOperationType type, Connection conn) throws DBException, ForbiddenOperationException {
 		
 		List<String> excludedtablesOnVoided =  utilities.parseToList("users", "provider", "location", "orders", "note");
 		

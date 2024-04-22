@@ -85,7 +85,7 @@ public class DetectGapesController extends OperationController {
 		
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		
-		searchClauses.setColumnsToSelect(function + "(" + config.getMainSrcTableConf().getPrimaryKey() + ") as value");
+		searchClauses.setColumnsToSelect(function + "(" + config.getSrcConf().getPrimaryKey() + ") as value");
 		
 		String sql = searchClauses.generateSQL(conn);
 		

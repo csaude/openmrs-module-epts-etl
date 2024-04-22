@@ -4,7 +4,7 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -27,7 +27,7 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 		
 		this.appCode = appCode;
 		
-		setOrderByFields(config.getMainSrcTableConf().getPrimaryKey());
+		setOrderByFields(config.getSrcConf().getPrimaryKey().parseFieldNamesToArray());
 		
 		this.type = type;
 	}
@@ -40,7 +40,7 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tableInfo = getConfig().getMainSrcTableConf();
+		AbstractTableConfiguration tableInfo = getConfig().getSrcConf();
 		
 		searchClauses.addToClauseFrom(tableInfo.getTableName());
 		

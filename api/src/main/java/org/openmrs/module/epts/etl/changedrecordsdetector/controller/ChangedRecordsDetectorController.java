@@ -60,11 +60,11 @@ public class ChangedRecordsDetectorController extends OperationController {
 			
 			if (operationConfig.isChangedRecordsDetector()) {
 				return DetectedRecordInfoDAO.getFirstChangedRecord(
-				    config.getSrcConf().getMainSrcTableConf(),
+				    config.getSrcConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
 				return DetectedRecordInfoDAO.getFirstNewRecord(
-				    config.getSrcConf().getMainSrcTableConf(),
+				    config.getSrcConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(
@@ -87,11 +87,11 @@ public class ChangedRecordsDetectorController extends OperationController {
 		try {
 			if (operationConfig.isChangedRecordsDetector()) {
 				return DetectedRecordInfoDAO.getLastChangedRecord(
-				    config.getSrcConf().getMainSrcTableConf(),
+				    config.getSrcConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
 				return DetectedRecordInfoDAO.getLastNewRecord(
-				    config.getSrcConf().getMainSrcTableConf(),
+				    config.getSrcConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(

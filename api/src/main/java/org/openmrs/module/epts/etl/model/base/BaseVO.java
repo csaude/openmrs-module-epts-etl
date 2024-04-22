@@ -3,7 +3,6 @@ package org.openmrs.module.epts.etl.model.base;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -128,14 +127,14 @@ public abstract class BaseVO implements VO {
 	}
 	
 	/**
-	 * Retorna todos os atributos de inst�ncia desta classe independentemento do modificador de
+	 * Retorna todos os atributos de instancia desta classe independentemento do modificador de
 	 * acesso
 	 * 
-	 * @return todos os atributos de inst�ncia desta classe independentemento do modificador de
+	 * @return todos os atributos de instancia desta classe independentemento do modificador de
 	 *         acesso
 	 */
-	protected Field[] getFields() {
-		return getFields(this);
+	public Field[] getFields() {
+		return utilities.getFields(this);
 	}
 	
 	@JsonIgnore
@@ -148,40 +147,13 @@ public abstract class BaseVO implements VO {
 	}
 	
 	/**
-	 * Retorna todos os atributos de inst�ncia de da classe de um objecto independentemento do
-	 * modificador de acesso
-	 * 
-	 * @return todos os atributos de inst�ncia de da classe de um objecto independentemento do
-	 *         modificador de acesso
-	 */
-	public static Field[] getFields(Object obj) {
-		List<Field> fields = new ArrayList<Field>();
-		Class<?> cl = obj.getClass();
-		
-		while (cl != null) {
-			Field[] in = cl.getDeclaredFields();
-			for (int i = 0; i < in.length; i++) {
-				Field field = in[i];
-				if (Modifier.isStatic(field.getModifiers()))
-					continue;
-				field.setAccessible(true);
-				fields.add(field);
-			}
-			cl = cl.getSuperclass();
-		}
-		return utilities.parseListToArray(fields);
-	}
-	
-	/**
 	 * Carrega para os atributos deste objecto valores a partir dos correspondentes campos em um
 	 * {@link ResultSet}
 	 * 
 	 * @param resultSet contendo os valores a copiar
 	 */
 	public void load(ResultSet resultSet) throws SQLException {
-		Object[] fields = getFields();
-		for (int i = 0; i < fields.length; i++) {
-			Field field = (Field) fields[i];
+		for (Field field : this.getFields()) {
 			String name = toColumnName(field.getName());
 			
 			try {
@@ -242,6 +214,64 @@ public abstract class BaseVO implements VO {
 				// e.printStackTrace();
 			}
 		}
+	}
+	
+	public static Object retrieveFieldValue(String fieldName, String type, ResultSet resultSet) throws SQLException {
+		
+		if (utilities.isStringIn(type.toUpperCase(), "INT", "MEDIUMINT", "INT8", "BIGINT", "SERIAL", "SERIAL4"))
+			type = "java.lang.Integer";
+		else if (utilities.isStringIn(type.toUpperCase(), "TINYINT", "BIT"))
+			type = "java.lang.Byte";
+		else if (utilities.isStringIn(type.toUpperCase(), "YEAR", "SMALLINT"))
+			type = "java.lang.Short";
+		else if (utilities.isStringIn(type.toUpperCase(), "BIGINT", "INT8", "SERIAL"))
+			type = "java.lang.Long";
+		else if (utilities.isStringIn(type.toUpperCase(), "DECIMAL", "NUMERIC", "SMALLINT", "REAL", "DOUBLE"))
+			type = "java.lang.Double";
+		else if (utilities.isStringIn(type.toUpperCase(), "FLOAT", "NUMERIC", "SMALLINT"))
+			type = "java.lang.Float";
+		else if (utilities.isStringIn(type.toUpperCase(), "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT"))
+			type = "java.lang.String";
+		else if (utilities.isStringIn(type.toUpperCase(), "VARBINARY", "BLOB", "LONGBLOB"))
+			type = "[B";
+		else if (utilities.isStringIn(type.toUpperCase(), "DATE", "DATETIME", "TIME", "TIMESTAMP"))
+			type = "java.util.Date";
+		else if (utilities.isStringIn(type.toUpperCase(), "BOOLEAN"))
+			type = "java.util.Boolean";
+		
+		Object value = resultSet.getObject(fieldName);
+		
+		if (value != null) {
+			if (type.equals("java.util.Boolean")) {
+				int number = resultSet.getInt(fieldName);
+				
+				return number > 0;
+			} else if (type.equals("java.lang.Double"))
+				return resultSet.getDouble(fieldName);
+			else if (type.equals("java.lang.Float"))
+				return resultSet.getFloat(fieldName);
+			else if (type.equals("java.lang.Integer"))
+				return resultSet.getInt(fieldName);
+			else if (type.equals("java.lang.String")) {
+				return resultSet.getString(fieldName).trim();
+			} else if (value instanceof Timestamp || value instanceof Date || value instanceof LocalDateTime) {
+				
+				return new java.util.Date(resultSet.getTimestamp(fieldName).getTime());
+				
+			} else if (type.equals("java.io.InputStream")) {
+				
+				Blob blob = resultSet.getBlob(fieldName);
+				
+				return blob.getBinaryStream();
+				
+			} else if (type.equals("[B")) {
+				return resultSet.getBytes(fieldName);
+			}
+			
+		}
+		
+		return value;
+		
 	}
 	
 	/**

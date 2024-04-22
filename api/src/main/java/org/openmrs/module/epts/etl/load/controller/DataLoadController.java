@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.load.engine.DataLoadEngine;
@@ -41,7 +41,7 @@ public class DataLoadController extends SiteOperationController {
 		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, config,
 		        null);
 		
-		File[] files = getSyncDirectory(config.getMainSrcTableConf()).listFiles(searchParams);
+		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0)
 			return 0;
@@ -62,7 +62,7 @@ public class DataLoadController extends SiteOperationController {
 		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, config,
 		        null);
 		
-		File[] files = getSyncDirectory(config.getMainSrcTableConf()).listFiles(searchParams);
+		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0)
 			return 0;
@@ -78,7 +78,7 @@ public class DataLoadController extends SiteOperationController {
 		return Long.parseLong(pats[pats.length - 1]);
 	}
 	
-	public File getSyncDirectory(SyncTableConfiguration syncInfo) {
+	public File getSyncDirectory(AbstractTableConfiguration syncInfo) {
 		String fileName = "";
 		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
@@ -95,7 +95,7 @@ public class DataLoadController extends SiteOperationController {
 		return new File(fileName);
 	}
 	
-	public File getSyncBkpDirectory(SyncTableConfiguration syncInfo) throws IOException {
+	public File getSyncBkpDirectory(AbstractTableConfiguration syncInfo) throws IOException {
 		String fileName = "";
 		
 		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();

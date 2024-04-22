@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
@@ -20,6 +19,8 @@ public class FieldsMapping {
 	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
+	private String srcValue;
+	
 	private String srcField;
 	
 	private String dataSourceName;
@@ -33,6 +34,14 @@ public class FieldsMapping {
 		this.srcField = srcField;
 		this.dataSourceName = dataSourceName;
 		this.dstField = destField;
+	}
+	
+	public String getSrcValue() {
+		return srcValue;
+	}
+	
+	public void setSrcValue(String srcValue) {
+		this.srcValue = srcValue;
 	}
 	
 	public String getDstField() {
@@ -82,17 +91,25 @@ public class FieldsMapping {
 		return "[srcField: " + srcField + ", dstField: " + dstField + "]";
 	}
 	
-	public Object retrieveValue(DstConf mappingInfo, List<DatabaseObject> srcObjects,
-	        AppInfo appInfo, Connection conn) throws DBException, ForbiddenOperationException {
+	public Object retrieveValue(DatabaseObject dstObject, List<DatabaseObject> srcObjects, AppInfo appInfo, Connection conn)
+	        throws DBException, ForbiddenOperationException {
+		
+		if (this.srcValue != null) {
+			return utilities.parseValue(this.srcValue, utilities.getFieldType(dstObject, this.dstField));
+		}
 		
 		for (DatabaseObject srcObject : srcObjects) {
 			if (this.getDataSourceName().equals(srcObject.generateTableName())) {
-				return srcObject.getFieldValue(this.getSrcFieldAsClassField());
+				try {
+					return srcObject.getFieldValue(this.getSrcField());
+				}
+				catch (ForbiddenOperationException e) {
+					return srcObject.getFieldValue(this.getSrcFieldAsClassField());
+				}
 			}
 		}
 		
 		throw new ForbiddenOperationException(
 		        "The field '" + this.srcField + " does not belong to any configured source table");
 	}
-	
 }

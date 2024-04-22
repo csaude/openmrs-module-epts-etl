@@ -4,7 +4,6 @@ package org.openmrs.module.epts.etl.utilities;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.SQLException;
@@ -18,7 +17,9 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
+import org.openmrs.module.epts.etl.controller.conf.RefMapping;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.exceptions.SyncExeption;
 import org.openmrs.module.epts.etl.model.Field;
@@ -46,27 +47,27 @@ public class DatabaseEntityPOJOGenerator {
 		
 		String fullClassName = pojoble.generateFullClassName(application);
 		
-		Class<DatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName, pojoble.getRelatedSyncConfiguration());
-		
-		if (existingCLass != null) {
-			if (!Modifier.isAbstract(existingCLass.getModifiers())) {
-				return existingCLass;
-			}
-		}
+		Class<DatabaseObject> existingCLass = null;
 		
 		String attsDefinition = "";
-		String getttersAndSetterDefinition = "";
-		String resultSetLoadDefinition = "		";
+		String gettersAndSetterDefinition = "";
+		String resultSetLoadDefinition = "";
 		
 		String insertSQLFieldsWithoutObjectId = "";
+		String insertSQLFieldsWithObjectId = "";
+		
 		String insertSQLQuestionMarksWithoutObjectId = "";
+		String insertSQLQuestionMarksWithObjectId = "";
 		
 		String updateSQLDefinition = "UPDATE " + pojoble.getObjectName() + " SET ";
 		
 		String insertParamsWithoutObjectId = "";
+		String insertParamsWithObjectId = "";
+		
 		String updateParamsDefinition = "Object[] params = {";
 		
-		String insertValuesDefinition = "";
+		String insertValuesWithoutObjectIdDefinition = "";
+		String insertValuesWithObjectIdDefinition = "";
 		
 		AttDefinedElements attElements;
 		
@@ -79,34 +80,51 @@ public class DatabaseEntityPOJOGenerator {
 			
 			if (!isIgnorableField(field.getName())) {
 				attsDefinition = utilities.concatStringsWithSeparator(attsDefinition, attElements.getAttDefinition(), "\n");
-				getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition,
+				gettersAndSetterDefinition = utilities.concatStrings(gettersAndSetterDefinition,
 				    attElements.getSetterDefinition());
 				
-				getttersAndSetterDefinition += "\n \n";
-				getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition,
+				gettersAndSetterDefinition += "\n \n";
+				gettersAndSetterDefinition = utilities.concatStrings(gettersAndSetterDefinition,
 				    attElements.getGetterDefinition());
 				
-				getttersAndSetterDefinition += "\n \n";
+				gettersAndSetterDefinition += "\n \n";
 			}
 			
-			insertSQLFieldsWithoutObjectId = utilities.concatStrings(insertSQLFieldsWithoutObjectId,
+			if (!attElements.isPartOfObjectId()) {
+				insertSQLFieldsWithoutObjectId = utilities.concatStrings(insertSQLFieldsWithoutObjectId,
+				    attElements.getSqlInsertFirstPartDefinition());
+				
+				insertSQLQuestionMarksWithoutObjectId = utilities.concatStrings(insertSQLQuestionMarksWithoutObjectId,
+				    attElements.getSqlInsertLastEndPartDefinition());
+				
+				insertValuesWithoutObjectIdDefinition = utilities.concatStrings(insertValuesWithoutObjectIdDefinition,
+				    attElements.getSqlInsertValues());
+				
+				insertParamsWithoutObjectId = utilities.concatStrings(insertParamsWithoutObjectId,
+				    attElements.getSqlInsertParamDefinifion());
+			}
+			
+			insertSQLFieldsWithObjectId = utilities.concatStrings(insertSQLFieldsWithObjectId,
 			    attElements.getSqlInsertFirstPartDefinition());
-			insertSQLQuestionMarksWithoutObjectId = utilities.concatStrings(insertSQLQuestionMarksWithoutObjectId,
+			
+			insertSQLQuestionMarksWithObjectId = utilities.concatStrings(insertSQLQuestionMarksWithObjectId,
 			    attElements.getSqlInsertLastEndPartDefinition());
 			
-			updateSQLDefinition = utilities.concatStrings(updateSQLDefinition, attElements.getSqlUpdateDefinition());
+			insertValuesWithObjectIdDefinition = utilities.concatStrings(insertValuesWithObjectIdDefinition,
+			    attElements.getSqlInsertValues());
 			
-			insertValuesDefinition = utilities.concatStrings(insertValuesDefinition, attElements.getSqlInsertValues());
-			
-			insertParamsWithoutObjectId = utilities.concatStrings(insertParamsWithoutObjectId,
+			insertParamsWithObjectId = utilities.concatStrings(insertParamsWithObjectId,
 			    attElements.getSqlInsertParamDefinifion());
+			
+			updateSQLDefinition = utilities.concatStrings(updateSQLDefinition, attElements.getSqlUpdateDefinition());
 			
 			updateParamsDefinition = utilities.concatStrings(updateParamsDefinition,
 			    attElements.getSqlUpdateParamDefinifion());
 			
 			resultSetLoadDefinition = utilities.concatStrings(resultSetLoadDefinition,
 			    attElements.getResultSetLoadDefinition());
-			resultSetLoadDefinition += "\n		";
+			
+			resultSetLoadDefinition += "\n";
 		}
 		
 		Field field = pojoble.getFields().get(qtyAttrs - 1);
@@ -115,137 +133,152 @@ public class DatabaseEntityPOJOGenerator {
 		
 		if (!isIgnorableField(field.getName())) {
 			attsDefinition = utilities.concatStringsWithSeparator(attsDefinition, attElements.getAttDefinition(), "\n");
-			getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition,
+			gettersAndSetterDefinition = utilities.concatStrings(gettersAndSetterDefinition,
 			    attElements.getSetterDefinition());
 			
-			getttersAndSetterDefinition += "\n\n";
+			gettersAndSetterDefinition += "\n\n";
 			
-			getttersAndSetterDefinition += "\n \n";
-			getttersAndSetterDefinition = utilities.concatStrings(getttersAndSetterDefinition,
+			gettersAndSetterDefinition += "\n \n";
+			gettersAndSetterDefinition = utilities.concatStrings(gettersAndSetterDefinition,
 			    attElements.getGetterDefinition());
 		}
 		
-		updateSQLDefinition += attElements.getSqlUpdateDefinition() + " WHERE " + pojoble.getPrimaryKey() + " = ?;";
+		//insertValuesWithoutObjectIdDefinition
+		
+		updateSQLDefinition += attElements.getSqlUpdateDefinition();
 		
 		updateParamsDefinition += attElements.getSqlUpdateParamDefinifion();
 		
 		resultSetLoadDefinition += attElements.getResultSetLoadDefinition();
 		resultSetLoadDefinition += "\n";
 		
-		insertParamsWithoutObjectId += attElements.getSqlInsertParamDefinifion();
+		if (!attElements.isPartOfObjectId()) {
+			insertParamsWithoutObjectId += attElements.getSqlInsertParamDefinifion();
+			
+			insertSQLFieldsWithoutObjectId = utilities.concatStrings(insertSQLFieldsWithoutObjectId,
+			    attElements.getSqlInsertFirstPartDefinition());
+			insertSQLQuestionMarksWithoutObjectId = utilities.concatStrings(insertSQLQuestionMarksWithoutObjectId,
+			    attElements.getSqlInsertLastEndPartDefinition());
+			
+			insertValuesWithoutObjectIdDefinition += attElements.getSqlInsertValues();
+		}
 		
-		insertSQLFieldsWithoutObjectId = utilities.concatStrings(insertSQLFieldsWithoutObjectId,
+		insertParamsWithObjectId += attElements.getSqlInsertParamDefinifion();
+		
+		insertSQLFieldsWithObjectId = utilities.concatStrings(insertSQLFieldsWithObjectId,
 		    attElements.getSqlInsertFirstPartDefinition());
-		insertSQLQuestionMarksWithoutObjectId = utilities.concatStrings(insertSQLQuestionMarksWithoutObjectId,
+		
+		insertSQLQuestionMarksWithObjectId = utilities.concatStrings(insertSQLQuestionMarksWithObjectId,
 		    attElements.getSqlInsertLastEndPartDefinition());
 		
+		insertValuesWithObjectIdDefinition += attElements.getSqlInsertValues();
+		
 		if (pojoble.getPrimaryKey() != null) {
-			updateParamsDefinition += ", this." + pojoble.getPrimaryKeyAsClassAtt() + "};";
-		} else {
-			updateParamsDefinition += ", null};";
+			updateSQLDefinition += " WHERE " + pojoble.getPrimaryKey().parseToParametrizedStringCondition();
+			
+			for (Key key : pojoble.getPrimaryKey().getFields()) {
+				updateParamsDefinition += ", this." + key.getNameAsClassAtt();
+			}
+			
+			updateParamsDefinition += "};";
+			
 		}
 		
 		String insertSQLDefinitionWithoutObjectId = "INSERT INTO " + pojoble.getObjectName() + "("
 		        + insertSQLFieldsWithoutObjectId + ") VALUES( " + insertSQLQuestionMarksWithoutObjectId + ");";
 		
+		String insertSQLDefinitionWithObjectId = "INSERT INTO " + pojoble.getObjectName() + "(" + insertSQLFieldsWithObjectId
+		        + ") VALUES( " + insertSQLQuestionMarksWithObjectId + ");";
+		
 		String insertParamsWithoutObjectIdDefinition = "Object[] params = {" + insertParamsWithoutObjectId + "};";
 		
-		String insertSQLDefinitionWithObjectId = "INSERT INTO " + pojoble.getObjectName() + "(" + pojoble.getPrimaryKey()
-		        + ", " + insertSQLFieldsWithoutObjectId + ") VALUES(?, " + insertSQLQuestionMarksWithoutObjectId + ");";
-		
-		String insertParamsWithObjectIdDefinition = "Object[] params = {this." + pojoble.getPrimaryKeyAsClassAtt() + ", "
-		        + insertParamsWithoutObjectId + "};";
-		
-		if (!pojoble.hasPK()) {
-			insertSQLDefinitionWithObjectId = insertSQLDefinitionWithoutObjectId;
-			insertParamsWithObjectIdDefinition = insertParamsWithoutObjectIdDefinition;
-		}
-		
-		insertValuesDefinition += attElements.getSqlInsertValues();
+		String insertParamsWithObjectIdDefinition = "Object[] params = {" + insertParamsWithObjectId + "};";
 		
 		String methodFromSuperClass = "";
 		
-		String primaryKeyAtt = pojoble.hasPK() ? pojoble.getPrimaryKeyAsClassAtt() : null;
-		
-		methodFromSuperClass += "	public Integer getObjectId() { \n ";
-		if (pojoble.isNumericColumnType() && pojoble.hasPK())
-			methodFromSuperClass += "		return this." + primaryKeyAtt + "; \n";
-		else
-			methodFromSuperClass += "		return 0; \n";
-		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	public void setObjectId(Integer selfId){ \n";
-		
-		if (pojoble.isNumericColumnType() && pojoble.hasPK()) {
-			methodFromSuperClass += "		this." + primaryKeyAtt + " = selfId; \n";
-		}
-		
-		methodFromSuperClass += "	} \n \n";
-		
+		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public void load(ResultSet rs) throws SQLException{ \n";
-		methodFromSuperClass += "		super.load(rs);\n";
+		methodFromSuperClass += "		super.load(rs);\n \n";
 		methodFromSuperClass += resultSetLoadDefinition;
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
-		methodFromSuperClass += "	public String generateDBPrimaryKeyAtt(){ \n ";
-		
-		if (pojoble.hasPK()) {
-			methodFromSuperClass += "		return \"" + pojoble.getPrimaryKey() + "\"; \n";
-		} else {
-			methodFromSuperClass += "		return null; \n";
-		}
-		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	@JsonIgnore\n";
+		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public String getInsertSQLWithoutObjectId(){ \n ";
 		methodFromSuperClass += "		return \"" + insertSQLDefinitionWithoutObjectId + "\"; \n";
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
-		methodFromSuperClass += "	public Object[]  getInsertParamsWithoutObjectId(){ \n ";
-		methodFromSuperClass += "		" + insertParamsWithoutObjectIdDefinition;
-		methodFromSuperClass += "		return params; \n";
-		methodFromSuperClass += "	} \n \n";
-		
-		methodFromSuperClass += "	@JsonIgnore\n";
+		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public String getInsertSQLWithObjectId(){ \n ";
 		methodFromSuperClass += "		return \"" + insertSQLDefinitionWithObjectId + "\"; \n";
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public Object[]  getInsertParamsWithoutObjectId(){ \n ";
+		methodFromSuperClass += "		" + insertParamsWithoutObjectIdDefinition + "\n";
+		methodFromSuperClass += "		return params; \n";
+		methodFromSuperClass += "	} \n \n";
+		
+		methodFromSuperClass += "	@JsonIgnore\n";
+		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public Object[]  getInsertParamsWithObjectId(){ \n ";
-		methodFromSuperClass += "		" + insertParamsWithObjectIdDefinition;
+		methodFromSuperClass += "		" + insertParamsWithObjectIdDefinition + "\n";
 		methodFromSuperClass += "		return params; \n";
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
+		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public Object[]  getUpdateParams(){ \n ";
-		methodFromSuperClass += "		" + updateParamsDefinition;
-		methodFromSuperClass += "		return params; \n";
+		
+		if (pojoble.getPrimaryKey() != null) {
+			methodFromSuperClass += "		" + updateParamsDefinition + "\n";
+			methodFromSuperClass += "		return params; \n";
+		} else {
+			methodFromSuperClass += "		throw new RuntimeException(\"Impossible auto update command! No primary key is defined for table object!\");";
+		}
+		
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
+		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public String getUpdateSQL(){ \n ";
-		methodFromSuperClass += "		return \"" + updateSQLDefinition + "\"; \n";
+		
+		if (pojoble.getPrimaryKey() != null) {
+			methodFromSuperClass += "		return \"" + updateSQLDefinition + "\"; \n";
+		} else {
+			methodFromSuperClass += "		throw new RuntimeException(\"Impossible auto update command! No primary key is defined for table object!\");";
+		}
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@JsonIgnore\n";
-		methodFromSuperClass += "	public String generateInsertValues(){ \n ";
-		methodFromSuperClass += "		return \"\"+" + insertValuesDefinition + "; \n";
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public String generateInsertValuesWithoutObjectId(){ \n ";
+		methodFromSuperClass += "		return \"\"+" + insertValuesWithoutObjectIdDefinition + "; \n";
+		methodFromSuperClass += "	} \n \n";
+		
+		methodFromSuperClass += "	@JsonIgnore\n";
+		methodFromSuperClass += "	@Override\n";
+		methodFromSuperClass += "	public String generateInsertValuesWithObjectId(){ \n ";
+		methodFromSuperClass += "		return \"\"+" + insertValuesWithObjectIdDefinition + "; \n";
 		methodFromSuperClass += "	} \n \n";
 		
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public boolean hasParents() {\n";
 		
-		if (utilities.arrayHasElement(pojoble.getParents())) {
-			for (RefInfo refInfo : pojoble.getParents()) {
-				if (refInfo.isNumericRefColumn()) {
-					methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName()
-					        + " != 0) return true;\n\n";
-				} else {
-					methodFromSuperClass += "		if (this." + refInfo.getRefColumnAsClassAttName()
-					        + " != null) return true;\n\n";
+		if (utilities.arrayHasElement(pojoble.getParentRefInfo())) {
+			for (RefInfo refInfo : pojoble.getParentRefInfo()) {
+				
+				for (RefMapping map : refInfo.getFieldsMapping()) {
+					
+					if (map.isPrimitieveRefColumn()) {
+						methodFromSuperClass += "		if (this." + map.getChildFieldNameAsAttClass()
+						        + " != 0) return true;\n\n";
+					} else {
+						methodFromSuperClass += "		if (this." + map.getChildFieldNameAsAttClass()
+						        + " != null) return true;\n\n";
+					}
 				}
 			}
 		}
@@ -257,94 +290,17 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public Integer getParentValue(String parentAttName) {";
 		
-		if (utilities.arrayHasElement(pojoble.getParents())) {
-			for (RefInfo refInfo : pojoble.getParents()) {
-				if (refInfo.isNumericRefColumn()) {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) return this."
-					        + refInfo.getRefColumnAsClassAttName() + ";";
-				} else {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) return 0;";
-				}
-			}
-		}
-		
-		if (utilities.arrayHasElement(pojoble.getConditionalParents())) {
-			for (RefInfo refInfo : pojoble.getConditionalParents()) {
-				if (refInfo.isNumericRefColumn()) {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) return this."
-					        + refInfo.getRefColumnAsClassAttName() + ";";
-				} else {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) return Integer.parseInt(this."
-					        + refInfo.getRefColumnAsClassAttName() + ");";
-				}
+		if (utilities.arrayHasElement(pojoble.getParentRefInfo())) {
+			for (RefInfo refInfo : pojoble.getParentRefInfo()) {
+				methodFromSuperClass += "		\n		if (parentAttName.equals(\""
+				        + refInfo.getChildColumnAsClassAttOnSimpleMapping() + "\")) return this."
+				        + refInfo.getChildColumnAsClassAttOnSimpleMapping() + ";";
 			}
 		}
 		
 		methodFromSuperClass += "\n\n";
 		
 		methodFromSuperClass += "		throw new RuntimeException(\"No found parent for: \" + parentAttName);";
-		
-		methodFromSuperClass += "	}\n\n";
-		
-		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public void changeParentValue(String parentAttName, DatabaseObject newParent) {";
-		
-		if (utilities.arrayHasElement(pojoble.getParents())) {
-			for (RefInfo refInfo : pojoble.getParents()) {
-				if (refInfo.isNumericRefColumn()) {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
-					        + refInfo.getRefColumnAsClassAttName()
-					        + " = newParent.getObjectId();\n			return;\n		}";
-				} else {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
-					        + refInfo.getRefColumnAsClassAttName()
-					        + " = \"\" + newParent.getObjectId();\n			return;\n		}";
-				}
-			}
-		}
-		
-		if (utilities.arrayHasElement(pojoble.getConditionalParents())) {
-			for (RefInfo refInfo : pojoble.getConditionalParents()) {
-				if (refInfo.isNumericRefColumn()) {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
-					        + refInfo.getRefColumnAsClassAttName()
-					        + " = newParent.getObjectId();\n			return;\n		}";
-				} else {
-					methodFromSuperClass += "		\n		if (parentAttName.equals(\""
-					        + refInfo.getRefColumnAsClassAttName() + "\")) {\n			this."
-					        + refInfo.getRefColumnAsClassAttName()
-					        + " = newParent.getObjectId().toString();\n			return;\n		}";
-				}
-			}
-		}
-		
-		methodFromSuperClass += "\n\n";
-		
-		methodFromSuperClass += "		throw new RuntimeException(\"No found parent for: \" + parentAttName);\n";
-		
-		methodFromSuperClass += "	}\n\n";
-		
-		methodFromSuperClass += "	@Override\n";
-		methodFromSuperClass += "	public void setParentToNull(String parentAttName) {";
-		
-		if (utilities.arrayHasElement(pojoble.getParents())) {
-			for (RefInfo refInfo : pojoble.getParents()) {
-				methodFromSuperClass += "		\n		if (parentAttName.equals(\"" + refInfo.getRefColumnAsClassAttName()
-				        + "\")) {\n			this." + refInfo.getRefColumnAsClassAttName()
-				        + " = null;\n			return;\n		}";
-			}
-		}
-		
-		methodFromSuperClass += "\n\n";
-		
-		methodFromSuperClass += "		throw new RuntimeException(\"No found parent for: \" + parentAttName);\n";
 		
 		methodFromSuperClass += "	}\n\n";
 		
@@ -356,7 +312,11 @@ public class DatabaseEntityPOJOGenerator {
 		String classDefinition = "package " + pojoble.generateFullPackageName(application) + ";\n\n";
 		
 		classDefinition += "import org.openmrs.module.epts.etl.model.pojo.generic.*; \n \n";
-		classDefinition += "import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; \n \n";
+		
+		if (pojoble.hasDateFields()) {
+			classDefinition += "import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities; \n \n";
+		}
+		
 		classDefinition += "import org.openmrs.module.epts.etl.utilities.AttDefinedElements; \n \n";
 		
 		classDefinition += "import java.sql.SQLException; \n";
@@ -369,7 +329,7 @@ public class DatabaseEntityPOJOGenerator {
 		classDefinition += "	public " + pojoble.generateClassName() + "() { \n";
 		classDefinition += "		this.metadata = " + pojoble.isMetadata() + ";\n";
 		classDefinition += "	} \n \n";
-		classDefinition += getttersAndSetterDefinition + "\n \n";
+		classDefinition += gettersAndSetterDefinition + "\n \n";
 		classDefinition += methodFromSuperClass + "\n";
 		
 		classDefinition += "}";

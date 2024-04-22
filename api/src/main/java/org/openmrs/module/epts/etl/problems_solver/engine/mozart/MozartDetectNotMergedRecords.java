@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SimpleValue;
@@ -60,7 +60,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 			}
 			
 			for (EtlConfiguration conf : configuredTables) {
-				SyncTableConfiguration configuredTable = conf.getMainSrcTableConf();
+				AbstractTableConfiguration configuredTable = conf.getSrcConf();
 				
 				if (!configuredTable.isFullLoaded()) {
 					configuredTable.fullLoad();
@@ -95,7 +95,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 		srcConn.finalizeConnection();
 	}
 	
-	private int determineNotMergedRecord(SyncTableConfiguration tableInfo, String dbName, Connection srcConn,
+	private int determineNotMergedRecord(AbstractTableConfiguration tableInfo, String dbName, Connection srcConn,
 	        Connection destConn) throws DBException {
 		String table = dbName + "." + tableInfo.getTableName();
 		

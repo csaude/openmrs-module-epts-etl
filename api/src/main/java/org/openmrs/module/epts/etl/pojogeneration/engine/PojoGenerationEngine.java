@@ -4,8 +4,8 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.AdditionlExtractionSrcTable;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.AuxiliaryExtractionSrcTable;
 import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -60,9 +60,8 @@ public class PojoGenerationEngine extends Engine {
 		
 		generate(mainApp, getMainSrcTableConf());
 		
-		if (getEtlConfiguration().getSrcConf().getAdditionalExtractionInfo() != null) {
-			for (AdditionlExtractionSrcTable t : getEtlConfiguration().getSrcConf().getAdditionalExtractionInfo()
-			        .getAdditionalExtractionTables()) {
+		if (getEtlConfiguration().getSrcConf().getAuxiliaryExtractionSrcTable() != null) {
+			for (AuxiliaryExtractionSrcTable t : getEtlConfiguration().getSrcConf().getAuxiliaryExtractionSrcTable()) {
 				generate(mainApp, t);
 			}
 		}
@@ -83,7 +82,7 @@ public class PojoGenerationEngine extends Engine {
 			for (DstConf map : getEtlConfiguration().getDstConf()) {
 				map.setRelatedAppInfo(mappingAppInfo);
 				
-				generate(mappingAppInfo, map.getDstTableConf());
+				generate(mappingAppInfo, map);
 				
 			}
 		}

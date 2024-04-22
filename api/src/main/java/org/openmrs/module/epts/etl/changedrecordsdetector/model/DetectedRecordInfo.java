@@ -6,12 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
 
@@ -21,7 +23,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	
 	private Integer id;
 	
-	private Integer objectId;
+	private Oid objectId;
 	
 	private String uuid;
 	
@@ -47,7 +49,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	public DetectedRecordInfo() {
 	}
 	
-	private DetectedRecordInfo(String tableName, Integer objectId, String uuid, String appCode,
+	private DetectedRecordInfo(String tableName, Oid objectId, String uuid, String appCode,
 	    String recordOriginLocationCode) {
 		this.tableName = tableName;
 		this.objectId = objectId;
@@ -105,11 +107,11 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		this.appCode = appCode;
 	}
 	
-	public Integer getObjectId() {
+	public Oid getObjectId() {
 		return objectId;
 	}
 	
-	public void setObjectId(Integer objectId) {
+	public void setObjectId(Oid objectId) {
 		this.objectId = objectId;
 	}
 	
@@ -157,15 +159,15 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		return OperationInfo.fastCreateInsertOperation(record.getDateCreated());
 	}
 	
-	public static DetectedRecordInfo generate(String tableName, Integer recordId, String recordUuid, String appCode,
+	public static DetectedRecordInfo generate(String tableName, Oid recordId, String recordUuid, String appCode,
 	        String recordOriginLocationCode) {
 		DetectedRecordInfo info = new DetectedRecordInfo(tableName, recordId, recordUuid, appCode, recordOriginLocationCode);
 		
 		return info;
 	}
 	
-	public long save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
-		return DetectedRecordInfoDAO.insert(this, tableConfiguration, conn);
+	public void save(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		DetectedRecordInfoDAO.insert(this, tableConfiguration, conn);
 	}
 	
 	@Override
@@ -174,27 +176,21 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void refreshLastSyncDateOnOrigin(SyncTableConfiguration tableConfiguration, String recordOriginLocationCode,
+	public void refreshLastSyncDateOnOrigin(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void refreshLastSyncDateOnDestination(SyncTableConfiguration tableConfiguration, String recordOriginLocationCode,
-	        Connection conn) {
+	public void refreshLastSyncDateOnDestination(AbstractTableConfiguration tableConfiguration,
+	        String recordOriginLocationCode, Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public String generateDBPrimaryKeyAtt() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	public void loadDestParentInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
+	public void loadDestParentInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		// TODO Auto-generated method stub
 		
@@ -237,12 +233,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public String generateInsertValues() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
 	public boolean hasIgnoredParent() {
 		// TODO Auto-generated method stub
 		return false;
@@ -260,21 +250,21 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void consolidateData(SyncTableConfiguration tableInfo, Connection conn)
+	public void consolidateData(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void resolveInconsistence(SyncTableConfiguration tableInfo, Connection conn)
+	public void resolveInconsistence(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public SyncImportInfoVO retrieveRelatedSyncInfo(SyncTableConfiguration tableInfo, String recordOriginLocationCode,
+	public SyncImportInfoVO retrieveRelatedSyncInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode,
 	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
@@ -305,46 +295,35 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public Map<RefInfo, Integer> loadMissingParents(SyncTableConfiguration tableInfo, Connection conn) throws DBException {
+	public Map<RefInfo, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
+	        throws DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public void removeDueInconsistency(SyncTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents,
+	public void removeDueInconsistency(AbstractTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents,
 	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void changeParentValue(String parentAttName, DatabaseObject newParent) {
+	public void changeObjectId(AbstractTableConfiguration abstractTableConfiguration, Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void setParentToNull(String parentAttName) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public void changeObjectId(SyncTableConfiguration syncTableConfiguration, Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public void changeParentForAllChildren(DatabaseObject newParent, SyncTableConfiguration syncTableInfo, Connection conn)
-	        throws DBException {
+	public void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo,
+	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
 	public DatabaseObject retrieveParentInDestination(Integer parentId, String a,
-	        SyncTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
+	        AbstractTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		return null;
 	}
@@ -352,11 +331,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	@Override
 	public boolean hasExactilyTheSameDataWith(DatabaseObject srcObj) {
 		return false;
-	}
-	
-	@Override
-	public Object[] getFieldValues(String... fieldName) {
-		return null;
 	}
 	
 	@Override
@@ -368,4 +342,39 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	public void setFieldValue(String fieldName, Object value) {
 	}
 	
+	@Override
+	public void loadObjectIdData(AbstractTableConfiguration tabConf) {
+		this.objectId = tabConf.getPrimaryKey().generateOid(this);
+	}
+	
+	@Override
+	public void fastCreateSimpleNumericKey(long i) {
+		Oid oid = new Oid();
+		
+		oid.addKey(new Key("", i));
+	}
+	
+	@Override
+	public void changeParentValue(RefInfo refInfo, DatabaseObject newParent) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void setParentToNull(RefInfo refInfo) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public String generateInsertValuesWithoutObjectId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public String generateInsertValuesWithObjectId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

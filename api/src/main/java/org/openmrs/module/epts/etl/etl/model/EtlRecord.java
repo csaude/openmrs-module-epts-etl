@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
@@ -22,21 +22,21 @@ public class EtlRecord {
 	
 	private DatabaseObject record;
 	
-	private SyncTableConfiguration config;
+	private AbstractTableConfiguration config;
 	
 	private boolean writeOperationHistory;
 	
 	private long destinationRecordId;
 	
-	public EtlRecord(DatabaseObject record, SyncTableConfiguration config, boolean writeOperationHistory) {
+	public EtlRecord(DatabaseObject record, AbstractTableConfiguration config, boolean writeOperationHistory) {
 		this.record = record;
 		this.config = config;
 		this.writeOperationHistory = writeOperationHistory;
+		
+		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(this.config.getUniqueKeys(), this.record));
 	}
 	
 	public void load(Connection srcConn, Connection destConn) throws DBException {
-		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(this.config.getUniqueKeys()));
-		
 		doSave(srcConn, destConn);
 		
 		if (writeOperationHistory) {
@@ -44,7 +44,7 @@ public class EtlRecord {
 		}
 	}
 	
-	public SyncTableConfiguration getConfig() {
+	public AbstractTableConfiguration getConfig() {
 		return config;
 	}
 	
@@ -53,7 +53,12 @@ public class EtlRecord {
 			config.fullLoad();
 		
 		try {
-			this.destinationRecordId = record.save(config, destConn);
+			record.save(config, destConn);
+			
+			if (record.getObjectId().isSimpleNumericKey()) {
+				this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
+			}
+			
 		}
 		catch (DBException e) {
 			if (e.isDuplicatePrimaryOrUniqueKeyException()) {
@@ -66,8 +71,11 @@ public class EtlRecord {
 					
 					DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 					
-					this.destinationRecordId = ((AbstractDatabaseObject) record)
-					        .resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
+					((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
+					
+					if (record.getObjectId().isSimpleNumericKey()) {
+						this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
+					}
 				}
 			} else
 				throw e;
@@ -104,7 +112,7 @@ public class EtlRecord {
 			return;
 		}
 		
-		SyncTableConfiguration config = mergingRecs.get(0).config;
+		AbstractTableConfiguration config = mergingRecs.get(0).config;
 		
 		if (!config.isFullLoaded()) {
 			config.fullLoad();
@@ -113,8 +121,6 @@ public class EtlRecord {
 		List<DatabaseObject> objects = new ArrayList<DatabaseObject>(mergingRecs.size());
 		
 		for (EtlRecord etlRecord : mergingRecs) {
-			etlRecord.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAll(etlRecord.config.getUniqueKeys()));
-			
 			objects.add(etlRecord.record);
 		}
 		

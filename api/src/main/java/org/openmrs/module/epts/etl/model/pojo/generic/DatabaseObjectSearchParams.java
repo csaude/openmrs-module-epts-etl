@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -13,15 +13,23 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabaseObjectSearchParams extends SyncSearchParams<DatabaseObject> {
 	
+	private DatabaseObjectLoaderHelper loaderHealper;
+	
 	public DatabaseObjectSearchParams(EtlConfiguration config, RecordLimits limits) {
 		super(config, limits);
+		
+		this.loaderHealper = new DatabaseObjectLoaderHelper(config.getSrcConf());
+	}
+	
+	public DatabaseObjectLoaderHelper getLoaderHealper() {
+		return loaderHealper;
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		SyncTableConfiguration tbConfig = getSearchSourceType().isSource() ? getMainSrcTableConf()
+		AbstractTableConfiguration tbConfig = getSearchSourceType().isSource() ? getSrcTableConf()
 		        : getDstLastTableConfiguration();
 		
 		if (tbConfig.isFromOpenMRSModel() && tbConfig.getTableName().equalsIgnoreCase("patient")) {

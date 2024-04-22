@@ -26,6 +26,7 @@ public interface SyncDataSource extends PojobleDatabaseObject {
 	 */
 	boolean isRequired();
 	
-	Class<DatabaseObject> getSyncRecordClass(AppInfo srcApplication) throws ForbiddenOperationException;
+	Class<? extends DatabaseObject> getSyncRecordClass(AppInfo srcApplication) throws ForbiddenOperationException;
 	
+	Class<? extends DatabaseObject> getSyncRecordClass() throws ForbiddenOperationException;
 }

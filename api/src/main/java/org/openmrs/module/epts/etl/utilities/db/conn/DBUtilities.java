@@ -273,6 +273,32 @@ public class DBUtilities {
 		return sql.toUpperCase().replaceFirst(tableName, " " + fullTableName);
 	}
 	
+	public static String determineSchemaFromFullTableName(String fullTableName) {
+		
+		String[] tabDef = fullTableName.split("\\.");
+		
+		/* If the table definition already come with schema
+		 */
+		if (tabDef.length > 1) {
+			return tabDef[0];
+		}
+		
+		return null;
+	}
+	
+	public static String extractTableNameFromFullTableName(String fullTableName) {
+		
+		String[] tabDef = fullTableName.split("\\.");
+		
+		/* If the table definition already come with schema
+		 */
+		if (tabDef.length > 1) {
+			return tabDef[1];
+		} else {
+			return fullTableName;
+		}
+	}
+	
 	public static String determineSchemaName(Connection conn) throws DBException {
 		try {
 			if (conn instanceof OpenConnection) {
@@ -462,6 +488,18 @@ public class DBUtilities {
 	
 	public static boolean isResourceExist(String resourceSchema, String resourceTable, String resourceType,
 	        String resourceName, Connection conn) throws DBException {
+		
+		if (resourceType.equals(RESOURCE_TYPE_TABLE)) {
+			String[] tabDef = resourceName.split("\\.");
+			
+			/* If the table definition already come with schema
+			 */
+			if (tabDef.length > 1) {
+				resourceSchema = tabDef[0];
+				resourceName = tabDef[1];
+			}
+		}
+		
 		if (isMySQLDB(conn)) {
 			return isMySQLResourceExist(resourceSchema, resourceTable, resourceType, resourceName, conn);
 		}
@@ -847,9 +885,16 @@ public class DBUtilities {
 		ResultSet rs;
 		ResultSetMetaData rsMetaData;
 		
+		if (utilities.stringHasValue(DBUtilities.determineSchemaFromFullTableName(tableName))) {
+			schema = DBUtilities.determineSchemaFromFullTableName(tableName);
+		}
+		
 		try {
-			st = conn.prepareStatement("SELECT * FROM " + schema + "." + tableName + " WHERE 1 != 1");
 			
+			// @formatter:off
+			st = conn.prepareStatement("SELECT * FROM " + schema + "." + DBUtilities.extractTableNameFromFullTableName(tableName) + " WHERE 1 != 1");
+			
+			// @formatter:on
 			rs = st.executeQuery();
 			rsMetaData = rs.getMetaData();
 			

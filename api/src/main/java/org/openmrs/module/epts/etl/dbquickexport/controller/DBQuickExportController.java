@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickexport.engine.DBQuickExportEngine;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -42,7 +42,7 @@ public class DBQuickExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DatabaseObjectDAO.getFirstRecord(config.getMainSrcTableConf(), conn);
+			return DatabaseObjectDAO.getFirstRecord(config.getSrcConf(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -59,7 +59,7 @@ public class DBQuickExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DatabaseObjectDAO.getLastRecord(config.getMainSrcTableConf(), conn);
+			return DatabaseObjectDAO.getLastRecord(config.getSrcConf(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -94,7 +94,7 @@ public class DBQuickExportController extends OperationController {
 		return conn;
 	}
 	
-	public File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, Integer startRecord,
+	public File generateJSONTempFile(SyncJSONInfo jsonInfo, AbstractTableConfiguration tableInfo, Integer startRecord,
 	        Integer lastRecord) throws IOException {
 		
 		synchronized (stringLock) {

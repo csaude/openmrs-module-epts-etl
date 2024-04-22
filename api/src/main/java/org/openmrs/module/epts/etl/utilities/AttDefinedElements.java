@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 
 /**
- * Utilitie class which help to define att elements for class like Att definition, getter and setter
- * definition, etc
+ * Utilities class which help to define att elements for class like Att definition, getter and
+ * setter definition, etc
  * 
  * @author jpboane
  */
@@ -41,26 +43,39 @@ public class AttDefinedElements {
 	
 	private String attType;
 	
-	//private boolean mainParentAtt;
-	
 	private String dbAttName;
 	
 	private String dbAttType;
 	
-	private boolean isObjectId;
+	private boolean isPartOfObjectId;
 	
 	private boolean isLast;
 	
 	private PojobleDatabaseObject pojoble;
 	
+	static String aspasAbrir = "\"";
+	
+	static String aspasFechar = "\"";
+	
 	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, PojobleDatabaseObject pojoble) {
 		this.dbAttName = dbAttName;
 		this.dbAttType = dbAttType;
-		
-		this.isObjectId = dbAttName.equalsIgnoreCase(pojoble.getPrimaryKey());
-		
 		this.isLast = isLast;
 		this.pojoble = pojoble;
+		
+		Key key = new Key(dbAttName);
+		
+		if (this.pojoble.getPrimaryKey() != null) {
+			this.isPartOfObjectId = this.pojoble.getPrimaryKey().containsKey(key);
+		}
+	}
+	
+	public boolean isLast() {
+		return isLast;
+	}
+	
+	public boolean isPartOfObjectId() {
+		return isPartOfObjectId;
 	}
 	
 	public String getAttDefinition() {
@@ -159,28 +174,55 @@ public class AttDefinedElements {
 		String aspasAbrir = "\"\\\"\"+";
 		String aspasFechar = "+\"\\\"\"";
 		
-		if (!isObjectId || isSharedKey()) {
-			this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
-			this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
-			this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
-			
-			this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
-			this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
-			
-			if (isNumeric()) {
-				this.sqlInsertValues = "this." + attName;
-			} else if (isDate()) {
-				this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir
-				        + " DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(" + attName + ")  " + aspasFechar + " : null";
-			} else if (isString()) {
-				this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + " utilities.scapeQuotationMarks("
-				        + attName + ")  " + aspasFechar + " : null";
-			} else {
-				this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + attName + aspasFechar + " : null";
-			}
-			
-			this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + ");
+		this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
+		this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
+		this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
+		
+		this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
+		this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");
+		
+		if (isNumeric()) {
+			this.sqlInsertValues = "this." + attName;
+		} else if (isDate()) {
+			this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir
+			        + " DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(" + attName + ")  " + aspasFechar + " : null";
+		} else if (isString()) {
+			this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + " utilities.scapeQuotationMarks("
+			        + attName + ")  " + aspasFechar + " : null";
+		} else {
+			this.sqlInsertValues = "this." + attName + " != null ? " + aspasAbrir + attName + aspasFechar + " : null";
 		}
+		
+		this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + ");
+	}
+	
+	public String defineSqlInsertValue(DatabaseObject obj) {
+		String sqlInsertValues = "";
+		
+		Object value = null;
+		
+		try {
+			value = obj.getFieldValue(this.dbAttName);
+		}
+		catch (ForbiddenOperationException e) {
+			value = obj.getFieldValue(this.attName);
+		}
+		
+		if (value == null) {
+			sqlInsertValues = "null";
+		} else if (isNumeric()) {
+			sqlInsertValues = value.toString();
+		} else if (isDate()) {
+			sqlInsertValues = aspasAbrir + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) value) + aspasFechar;
+		} else if (isString()) {
+			sqlInsertValues = aspasAbrir + utilities.scapeQuotationMarks(value.toString()) + aspasFechar;
+		} else {
+			sqlInsertValues = aspasAbrir + value.toString() + aspasFechar;
+		}
+		
+		sqlInsertValues = "(" + sqlInsertValues + (this.isLast ? ")" : ")" + ",");
+		
+		return sqlInsertValues;
 	}
 	
 	public static String removeStrangeCharactersOnString(String str) {
@@ -243,11 +285,6 @@ public class AttDefinedElements {
 	
 	public static String defineSqlAtribuitionString(String attName, Object attValue) {
 		String sqlAtribuitionString = "";
-		//String aspasAbrir = "\"\\\"\"+";
-		//String aspasFechar = "+\"\\\"\"";
-		
-		String aspasAbrir = "\"";
-		String aspasFechar = "\"";
 		
 		if (utilities.isNumeric(attValue.toString())) {
 			sqlAtribuitionString = attName + " = " + attValue;
@@ -279,21 +316,6 @@ public class AttDefinedElements {
 	
 	public static boolean isNumeric(String attType) {
 		return utilities.isStringIn(attType, "Integer", "Long", "byte", "short", "double", "float");
-	}
-	
-	private boolean isPK() {
-		return pojoble.getPrimaryKeyAsClassAtt().equals(this.attName);
-	}
-	
-	private boolean isSharedKey() {
-		if (!isPK())
-			return false;
-		
-		if (pojoble.getSharePkWith() != null) {
-			return true;
-		}
-		
-		return false;
 	}
 	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,
@@ -370,6 +392,13 @@ public class AttDefinedElements {
 		throw new ForbiddenOperationException("Unknown data type for field " + fieldName + " [" + databaseType + "]");
 	}
 	
+	public static boolean isDateType(String type) {
+		boolean isDatabaseDateType = utilities.isStringIn(type.toUpperCase(), "DATE", "DATETIME", "TIME", "TIMESTAMP");
+		boolean isJavaDateType = utilities.isStringIn(type.toUpperCase(), "java.util.Date");
+		
+		return isDatabaseDateType || isJavaDateType;
+	}
+	
 	public static String[] convertTableAttNameToClassAttName(String[] dbAtts) {
 		List<String> atts = new ArrayList<String>();
 		
@@ -378,6 +407,10 @@ public class AttDefinedElements {
 		}
 		
 		return utilities.parseListToArray(atts);
+	}
+	
+	public static boolean isPrimitive(String type) {
+		return isNumeric(type) || utilities.isStringIn(type, "char", "boolean");
 	}
 	
 }

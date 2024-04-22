@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncProgressMeter;
@@ -495,7 +495,7 @@ public abstract class OperationController implements Controller {
 		return getConfiguration().getEtlConfiguration();
 	}
 	
-	public File generateTableProcessStatusFile_(SyncTableConfiguration conf) {
+	public File generateTableProcessStatusFile_(AbstractTableConfiguration conf) {
 		String operationId = this.getControllerId() + "_" + conf.getTableName();
 		
 		String fileName = generateOperationStatusFolder() + FileUtilities.getPathSeparator() + operationId;

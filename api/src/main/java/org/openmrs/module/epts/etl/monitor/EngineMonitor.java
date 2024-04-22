@@ -7,7 +7,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncProgressMeter;
@@ -61,8 +61,8 @@ public class EngineMonitor implements MonitoredOperation {
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
 	}
 	
-	public SyncTableConfiguration getSrcMainTableConf() {
-		return this.getEtlConfiguration().getMainSrcTableConf();
+	public AbstractTableConfiguration getSrcMainTableConf() {
+		return this.getEtlConfiguration().getSrcConf();
 	}
 	
 	public List<Engine> getOwnEngines() {

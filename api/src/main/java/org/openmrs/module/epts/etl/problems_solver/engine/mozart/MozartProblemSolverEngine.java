@@ -8,7 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.Extension;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.Key;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -116,7 +117,7 @@ public abstract class MozartProblemSolverEngine extends GenericEngine {
 		this.saveReport();
 	}
 	
-	protected List<String> generateMissingFields(String dbName, SyncTableConfiguration configuredTable, Connection conn)
+	protected List<String> generateMissingFields(String dbName, AbstractTableConfiguration configuredTable, Connection conn)
 	        throws DBException {
 		List<Field> fields = DBUtilities.getTableFields(configuredTable.getTableName(), dbName, conn);
 		List<Field> configuredFields = configuredTable.getFields();
@@ -143,7 +144,7 @@ public abstract class MozartProblemSolverEngine extends GenericEngine {
 		}
 	}
 	
-	private static List<UniqueKeyInfo> generateKnownUk(SyncTableConfiguration configuredTable) {
+	private static List<UniqueKeyInfo> generateKnownUk(AbstractTableConfiguration configuredTable) {
 		try {
 			List<UniqueKeyInfo> knownKeys_ = new ArrayList<UniqueKeyInfo>();
 			
@@ -153,7 +154,7 @@ public abstract class MozartProblemSolverEngine extends GenericEngine {
 				UniqueKeyInfo uk = new UniqueKeyInfo();
 				
 				for (Extension keyPart : keyInfo.getExtension()) {
-					uk.addField(new Field(keyPart.getValueString()));
+					uk.addKey(new Key(keyPart.getValueString()));
 				}
 				
 				knownKeys_.add(uk);
@@ -166,7 +167,7 @@ public abstract class MozartProblemSolverEngine extends GenericEngine {
 		}
 	}
 	
-	protected List<UniqueKeyInfo> generateMissingUniqueKeys(String dbName, SyncTableConfiguration configuredTable, Connection conn)
+	protected List<UniqueKeyInfo> generateMissingUniqueKeys(String dbName, AbstractTableConfiguration configuredTable, Connection conn)
 	        throws DBException, LongTransactionException {
 		
 		List<UniqueKeyInfo> missing = new ArrayList<UniqueKeyInfo>();

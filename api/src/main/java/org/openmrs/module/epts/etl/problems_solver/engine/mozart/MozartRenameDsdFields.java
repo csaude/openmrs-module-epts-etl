@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -85,7 +85,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 			}
 			
 			for (EtlConfiguration config : configs) {
-				SyncTableConfiguration configuredTable = config.getMainSrcTableConf();
+				AbstractTableConfiguration configuredTable = config.getSrcConf();
 				
 				if (!configuredTable.getTableName().equals("dsd"))
 					continue;
@@ -167,7 +167,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 		return bg.getValues().get(0).integerValue() > 0;
 	}
 	
-	private boolean checkIfDsdUuidFieldExists(String dbName, SyncTableConfiguration configuredTable, Connection conn)
+	private boolean checkIfDsdUuidFieldExists(String dbName, AbstractTableConfiguration configuredTable, Connection conn)
 	        throws DBException {
 		List<String> missingField = generateMissingFields(dbName, configuredTable, conn);
 		
@@ -177,7 +177,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 			return false;
 	}
 	
-	private boolean checkIfDsdUuidFieldHasUniqueKey(String dbName, SyncTableConfiguration configuredTable, Connection conn)
+	private boolean checkIfDsdUuidFieldHasUniqueKey(String dbName, AbstractTableConfiguration configuredTable, Connection conn)
 	        throws DBException, LongTransactionException {
 		
 		List<UniqueKeyInfo> uniqueKeys = DBUtilities.getUniqueKeys("dsd", dbName, conn);
@@ -192,7 +192,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 		return false;
 	}
 	
-	private void addUniqueKeyOnDsdUuidField(String dbName, SyncTableConfiguration configuredTable, Connection conn)
+	private void addUniqueKeyOnDsdUuidField(String dbName, AbstractTableConfiguration configuredTable, Connection conn)
 	        throws DBException {
 		
 		String table = dbName + ".dsd";

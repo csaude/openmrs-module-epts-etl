@@ -24,7 +24,7 @@ public class DataBaseMergeFromSourceDBSearchParams extends SyncSearchParams<Sync
 		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
 		
 		searchClauses.addColumnToSelect("*");
-		searchClauses.addToClauseFrom(getMainSrcTableConf().generateFullStageTableName());
+		searchClauses.addToClauseFrom(getSrcTableConf().generateFullStageTableName());
 		searchClauses.addToClauses("consistent = 1");
 		
 		if (!this.selectAllRecords) {
@@ -35,9 +35,9 @@ public class DataBaseMergeFromSourceDBSearchParams extends SyncSearchParams<Sync
 				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
 			}
 			
-			if (this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract() != null) {
+			if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
 				searchClauses
-				        .addToClauses(this.getConfig().getSrcConf().getMainSrcTableConf().getExtraConditionForExtract());
+				        .addToClauses(this.getConfig().getSrcConf().getExtraConditionForExtract());
 			}
 		}
 		

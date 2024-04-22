@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -15,18 +15,18 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DataReconciliationRecord {
 	private DatabaseObject record;
-	private SyncTableConfiguration config;
+	private AbstractTableConfiguration config;
 	private SyncImportInfoVO stageInfo;
 	private String recordUuid;
 	private ConciliationReasonType reasonType;
 	
-	public DataReconciliationRecord(String recordUuid, SyncTableConfiguration config, ConciliationReasonType reasonType) {
+	public DataReconciliationRecord(String recordUuid, AbstractTableConfiguration config, ConciliationReasonType reasonType) {
 		this.recordUuid = recordUuid;
 		this.config = config;
 		this.reasonType = reasonType;
 	}
 	
-	public DataReconciliationRecord(DatabaseObject record, SyncTableConfiguration config, ConciliationReasonType reasonType) {
+	public DataReconciliationRecord(DatabaseObject record, AbstractTableConfiguration config, ConciliationReasonType reasonType) {
 		this.record = record;
 		this.recordUuid = record.getUuid();
 		this.stageInfo = record.getRelatedSyncInfo();
@@ -34,14 +34,14 @@ public class DataReconciliationRecord {
 		this.reasonType = reasonType;
 	}
 	
-	public static void tryToReconciliate(DatabaseObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
+	public static void tryToReconciliate(DatabaseObject record, AbstractTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
 		DataReconciliationRecord dataReciliationRecord = new DataReconciliationRecord(record.getUuid(), config, ConciliationReasonType.OUTDATED);
 		
 		dataReciliationRecord.record = record; 
 		dataReciliationRecord.config = config;
 		dataReciliationRecord.stageInfo = record.getRelatedSyncInfo();
 		
-		DatabaseObject srcObj = DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginId(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
+		DatabaseObject srcObj = DatabaseObjectDAO.getByIdOnSpecificSchema(config, dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginIdAsOid(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
 		
 		srcObj.setRelatedSyncInfo(record.getRelatedSyncInfo());
 		
@@ -60,7 +60,7 @@ public class DataReconciliationRecord {
 		if (this.stageInfo == null) this.stageInfo = SyncImportInfoDAO.getWinRecord(this.config, this.recordUuid, conn);
 		
 		if (this.stageInfo != null) {
-			this.record= DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), stageInfo.getRecordOriginId(), stageInfo.getRecordOriginLocationCode(), conn);
+			this.record= DatabaseObjectDAO.getByIdOnSpecificSchema(config, stageInfo.getRecordOriginIdAsOid(), stageInfo.getRecordOriginLocationCode(), conn);
 		}
 		else {
 			this.record = null;
@@ -92,7 +92,7 @@ public class DataReconciliationRecord {
 		return recordUuid;
 	}
 	
-	public SyncTableConfiguration getConfig() {
+	public AbstractTableConfiguration getConfig() {
 		return config;
 	}
 	
@@ -107,9 +107,9 @@ public class DataReconciliationRecord {
 		if (getConfig().isFromOpenMRSModel() &&  getTableName().equals("person")) {
 			//Try to Restore the related patient
 			
-			for (RefInfo refInfo: config.getChildred()) {
-				if (refInfo.getTableName().equals("patient")) {
-					DataReconciliationRecord childData = new DataReconciliationRecord(this.recordUuid, refInfo.getRefTableConfiguration(), ConciliationReasonType.MISSING);
+			for (RefInfo refInfo: config.getChildRefInfo()) {
+				if (refInfo.getParentTableName().equals("patient")) {
+					DataReconciliationRecord childData = new DataReconciliationRecord(this.recordUuid, refInfo.getChildTableConf(), ConciliationReasonType.MISSING);
 					
 					childData.reloadRelatedRecordDataFromRemote(conn);
 					
@@ -125,7 +125,7 @@ public class DataReconciliationRecord {
 		
 	}
 
-	private static void loadDestParentInfo(DatabaseObject record, SyncTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
+	private static void loadDestParentInfo(DatabaseObject record, AbstractTableConfiguration config, Connection conn) throws ParentNotYetMigratedException, DBException {
 		throw new ForbiddenOperationException("Review this method");
 		
 	/*SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
@@ -175,14 +175,14 @@ public class DataReconciliationRecord {
 	public void removeRelatedRecord(Connection conn) throws DBException{
 		if (!config.isFullLoaded()) config.fullLoad();
 		
-		for (RefInfo refInfo: config.getChildred()) {
-			if (!refInfo.getRefTableConfiguration().isConfigured()) continue;
+		for (RefInfo refInfo: config.getChildRefInfo()) {
+			if (!refInfo.getChildTableConf().isConfigured()) continue;
 		
 			
-			List<DatabaseObject> children =  DatabaseObjectDAO.getByParentId(refInfo.getRefTableConfiguration().getSyncRecordClass(config.getMainApp()), refInfo.getRefColumnName(), this.record.getObjectId(), conn);
+			List<DatabaseObject> children =  DatabaseObjectDAO.getByParentId(refInfo.getChildTableConf(), refInfo.getChildColumnOnSimpleMapping(), this.record.getObjectId().getSimpleValueAsInt(), conn);
 					
 			for (DatabaseObject child : children) {
-				DataReconciliationRecord childDataInfo = new DataReconciliationRecord(child.getUuid(), refInfo.getRefTableConfiguration(), ConciliationReasonType.WRONG_RELATIONSHIPS);
+				DataReconciliationRecord childDataInfo = new DataReconciliationRecord(child.getUuid(), refInfo.getChildTableConf(), ConciliationReasonType.WRONG_RELATIONSHIPS);
 				
 				childDataInfo.reloadRelatedRecordDataFromRemote(conn);
 				

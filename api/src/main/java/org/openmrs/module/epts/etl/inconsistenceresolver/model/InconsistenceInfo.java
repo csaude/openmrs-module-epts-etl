@@ -2,15 +2,16 @@ package org.openmrs.module.epts.etl.inconsistenceresolver.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class InconsistenceInfo extends BaseVO{
 	private Integer id;
 	private String tableName;
-	private Integer recordId;
+	private Oid recordId;
 	private String parentTableName;
 	private Integer parentId;
 	private Integer defaultParentId;
@@ -20,7 +21,7 @@ public class InconsistenceInfo extends BaseVO{
 	}
 	
 	
-	public InconsistenceInfo(String tableName, Integer recordId, String parentTableName, Integer parentId, Integer defaultParentId, String recordOriginLocationCode) {
+	public InconsistenceInfo(String tableName, Oid recordId, String parentTableName, Integer parentId, Integer defaultParentId, String recordOriginLocationCode) {
 		this.tableName = tableName;
 		this.recordId = recordId;
 		this.parentTableName = parentTableName;
@@ -55,11 +56,11 @@ public class InconsistenceInfo extends BaseVO{
 		this.tableName = tableName;
 	}
 
-	public Integer getRecordId() {
+	public Oid getRecordId() {
 		return recordId;
 	}
 
-	public void setRecordId(Integer recordId) {
+	public void setRecordId(Oid recordId) {
 		this.recordId = recordId;
 	}
 
@@ -88,19 +89,19 @@ public class InconsistenceInfo extends BaseVO{
 	}
 	
 	public static InconsistenceInfo generate(DatabaseObject record, DatabaseObject parent, Integer defaultParentId, String recordOriginLocationCode) {
-		InconsistenceInfo info = new InconsistenceInfo(record.generateTableName(), record.getObjectId(), parent.generateTableName(), parent.getObjectId(), defaultParentId, recordOriginLocationCode);
+		InconsistenceInfo info = new InconsistenceInfo(record.generateTableName(), record.getObjectId(), parent.generateTableName(), parent.getObjectId().getSimpleValueAsInt(), defaultParentId, recordOriginLocationCode);
 	
 		return info;
 	}
 	
-	public static InconsistenceInfo generate(String tableName, Integer recordId, String parentTableName, Integer parentId, Integer defaultParentId, String recordOriginLocationCode) {
+	public static InconsistenceInfo generate(String tableName, Oid recordId, String parentTableName, Integer parentId, Integer defaultParentId, String recordOriginLocationCode) {
 		InconsistenceInfo info = new InconsistenceInfo(tableName, recordId, parentTableName, parentId, defaultParentId, recordOriginLocationCode);
 	
 		return info;
 	}
 
 
-	public void save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public void save(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		InconsistenceInfoDAO.insert(this, tableConfiguration, conn);
 	}
 }

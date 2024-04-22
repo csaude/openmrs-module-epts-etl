@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.engine.mozart;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
@@ -82,7 +82,7 @@ public class MozatRenameKeypopVulnerableTable extends MozartProblemSolverEngine 
 				DBUtilities.renameTable(dbName, "keypop_vulnerable", "key_vulnerable_pop", srcConn);
 			}
 			
-			/*SyncTableConfiguration configuredTable = getEtlConfiguration().getRelatedSyncConfiguration().findSyncTableConfiguration("key_vulnerable_pop");
+			/*AbstractTableConfiguration configuredTable = getEtlConfiguration().getRelatedSyncConfiguration().findSyncTableConfiguration("key_vulnerable_pop");
 			
 			List<UniqueKeyInfo> missingKeys = generateMissingUniqueKeys(dbName, configuredTable , srcConn);
 			
@@ -94,7 +94,7 @@ public class MozatRenameKeypopVulnerableTable extends MozartProblemSolverEngine 
 		}
 	}
 	
-	private void addUniqueKey(String dbName, SyncTableConfiguration configuredTable, Connection conn) throws DBException {
+	private void addUniqueKey(String dbName, AbstractTableConfiguration configuredTable, Connection conn) throws DBException {
 		
 		String table = dbName + ".key_vulnerable_pop";
 		

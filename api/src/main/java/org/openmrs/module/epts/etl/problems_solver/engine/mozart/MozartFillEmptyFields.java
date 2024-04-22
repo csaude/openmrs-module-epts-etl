@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.Extension;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -82,7 +82,7 @@ public class MozartFillEmptyFields extends MozartProblemSolverEngine {
 			}
 			
 			for (EtlConfiguration conf : configs) {
-				SyncTableConfiguration configuredTable = conf.getMainSrcTableConf();
+				AbstractTableConfiguration configuredTable = conf.getSrcConf();
 				
 				if (!configuredTable.getTableName().equals(tableToFill))
 					continue;

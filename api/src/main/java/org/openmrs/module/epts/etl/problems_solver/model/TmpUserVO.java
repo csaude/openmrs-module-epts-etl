@@ -5,12 +5,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.openmrs._default.UsersVO;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class TmpUserVO extends GenericDatabaseObject {
@@ -23,11 +22,11 @@ public class TmpUserVO extends GenericDatabaseObject {
 	
 	private int deletable;
 	
-	private SyncTableConfiguration usersSyncTableConfiguration;
+	private AbstractTableConfiguration usersSyncTableConfiguration;
 	
 	public void load(ResultSet rs) throws SQLException {
 		try {
-			setObjectId(rs.getInt("user_id"));
+			 setObjectId( Oid.fastCreate("user_id", rs.getInt("user_id")));
 		}
 		catch (SQLException e) {}
 		try {
@@ -60,7 +59,7 @@ public class TmpUserVO extends GenericDatabaseObject {
 		return winnerUserId;
 	}
 	
-	public void setUsersSyncTableConfiguration(SyncTableConfiguration usersSyncTableConfiguration) {
+	public void setUsersSyncTableConfiguration(AbstractTableConfiguration usersSyncTableConfiguration) {
 		this.usersSyncTableConfiguration = usersSyncTableConfiguration;
 	}
 	
@@ -78,19 +77,22 @@ public class TmpUserVO extends GenericDatabaseObject {
 	}
 	
 	@Override
-	public long save(SyncTableConfiguration tableConfiguration, Connection conn) throws DBException {
-		return BaseDAO.executeQueryWithRetryOnError(
+	public void save(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
+		BaseDAO.executeQueryWithRetryOnError(
 		    "update tmp_user set deletable = " + this.deletable + " where user_id = " + getObjectId(), null, conn);
 	}
 	
 	public void harmonize(Connection conn) throws DBException {
-		for (RefInfo child : this.usersSyncTableConfiguration.getChildred()) {
+		throw new ForbiddenOperationException("Review this method!");
+
+		/*
+		for (RefInfo child : this.usersSyncTableConfiguration.getChildRefInfo()) {
 			
 			String sql = "";
 			
-			sql += " update " + child.getRefTableConfiguration().getTableName();
-			sql += " set 	" + child.getRefColumnName() + " = " + this.getWinnerUserId();
-			sql += " where  " + child.getRefColumnName() + " = " + this.getObjectId();
+			sql += " update " + child.getChildTableName();
+			sql += " set 	" + child.getChildColumnOnSimpleMapping() + " = " + this.getWinnerUserId();
+			sql += " where  " + child.getChildColumnOnSimpleMapping() + " = " + this.getObjectId();
 			
 			BaseDAO.executeQueryWithRetryOnError(sql, null, conn);
 		}
@@ -101,7 +103,7 @@ public class TmpUserVO extends GenericDatabaseObject {
 		user.setUuid(this.getUuid());
 		user.remove(conn);
 		
-		markAsHarmonized(conn);
+		markAsHarmonized(conn);*/
 	}
 	
 	public void markAsHarmonized(Connection conn) throws DBException {

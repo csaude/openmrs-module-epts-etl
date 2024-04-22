@@ -35,7 +35,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DatabaseObjectDAO.getFirstRecord(config.getMainSrcTableConf(), conn);
+			return DatabaseObjectDAO.getFirstRecord(config.getSrcConf(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -52,7 +52,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = openConnection();
 		
 		try {
-			return DatabaseObjectDAO.getLastRecord(config.getMainSrcTableConf(), conn);
+			return DatabaseObjectDAO.getLastRecord(config.getSrcConf(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();

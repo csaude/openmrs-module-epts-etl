@@ -3,19 +3,18 @@ package org.openmrs.module.epts.etl.controller.conf;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class EtlConfiguration extends BaseConfiguration {
+public class EtlConfiguration extends SyncDataConfiguration {
 	
 	private String configCode;
 	
 	private SrcConf srcConf;
 	
 	private List<DstConf> dstConf;
-	
-	private SyncConfiguration relatedSyncConfiguration;
 	
 	private boolean disabled;
 	
@@ -40,11 +39,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		this.dstConf = dstConf;
 	}
 	
-	public SyncTableConfiguration getMainSrcTableConf() {
-		return this.srcConf.getMainSrcTableConf();
-	}
-	
-	public static EtlConfiguration fastCreate(SyncTableConfiguration tableConfig) {
+	public static EtlConfiguration fastCreate(AbstractTableConfiguration tableConfig) {
 		EtlConfiguration etl = new EtlConfiguration();
 		
 		SrcConf src = SrcConf.fastCreate(tableConfig);
@@ -90,10 +85,15 @@ public class EtlConfiguration extends BaseConfiguration {
 			List<AppInfo> otherApps = getRelatedSyncConfiguration().exposeAllAppsNotMain();
 			
 			if (utilities.arrayHasElement(otherApps)) {
+				
+				if (utilities.arrayHasMoreThanOneElements(otherApps)) {
+					throw new ForbiddenOperationException("Not supported more that one destination apps");
+				}
+				
 				dstConn = otherApps.get(0).openConnection();
 				
 				if (dstConf == null) {
-					dstConf = utilities.parseToList(DstConf.generateFromSyncTableConfiguration(this.srcConf));
+					dstConf = utilities.parseToList(DstConf.generateDefaultDstConf(this, dstConn));
 					
 					DstConf map = dstConf.get(0);
 					
@@ -101,19 +101,19 @@ public class EtlConfiguration extends BaseConfiguration {
 				} else {
 					
 					for (DstConf map : this.dstConf) {
+						if (map.getTableName() == null) {
+							map.setTableName(this.srcConf.getTableName());
+						}
+						
 						map.setRelatedAppInfo(otherApps.get(0));
 						
 						map.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
 						
-						map.setSrcConf(this.srcConf);
+						map.setParent(this);
 						
-						if (!utilities.arrayHasElement(map.getFieldsMapping())) {
-							map.generateMappingFields(this.srcConf.getMainSrcTableConf());
-						}
+						map.generateAllFieldsMapping(dstConn);
 						
-						map.loadAdditionalFieldsInfo();
-						
-						if (DBUtilities.isTableExists(dstConn.getSchema(), map.getDstTableConf().getTableName(), dstConn)) {
+						if (DBUtilities.isTableExists(dstConn.getSchema(), map.getTableName(), dstConn)) {
 							map.fullLoad(dstConn);
 						}
 					}
@@ -132,15 +132,19 @@ public class EtlConfiguration extends BaseConfiguration {
 		}
 	}
 	
-	public SyncConfiguration getRelatedSyncConfiguration() {
-		return relatedSyncConfiguration;
-	}
-	
+	@Override
 	public void setRelatedSyncConfiguration(SyncConfiguration relatedSyncConfiguration) {
-		this.relatedSyncConfiguration = relatedSyncConfiguration;
+		super.setRelatedSyncConfiguration(relatedSyncConfiguration);
 		
 		if (this.srcConf != null) {
 			this.srcConf.setRelatedSyncConfiguration(relatedSyncConfiguration);
+		}
+		
+		if (this.dstConf != null) {
+			
+			for (DstConf conf : this.dstConf) {
+				conf.setRelatedSyncConfiguration(relatedSyncConfiguration);
+			}
 		}
 	}
 	
@@ -153,7 +157,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	}
 	
 	public String getConfigCode() {
-		return utilities.stringHasValue(configCode) ? configCode : this.srcConf.getMainSrcTableConf().getTableName();
+		return utilities.stringHasValue(configCode) ? configCode : this.srcConf.getTableName();
 	}
 	
 	public void setConfigCode(String configCode) {
@@ -166,9 +170,5 @@ public class EtlConfiguration extends BaseConfiguration {
 	
 	public AppInfo getMainApp() {
 		return getRelatedSyncConfiguration().getMainApp();
-	}
-	
-	public SrcAdditionExtractionInfo getAdditionalExtractionInfo() {
-		return this.srcConf.getAdditionalExtractionInfo();
 	}
 }

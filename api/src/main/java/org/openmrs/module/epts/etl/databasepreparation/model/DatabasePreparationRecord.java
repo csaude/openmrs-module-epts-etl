@@ -3,18 +3,18 @@ package org.openmrs.module.epts.etl.databasepreparation.model;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 
 public class DatabasePreparationRecord implements SyncRecord{
 
-	private SyncTableConfiguration tableConfiguration;
+	private AbstractTableConfiguration tableConfiguration;
 	
-	public DatabasePreparationRecord(SyncTableConfiguration tableConfiguration) {
+	public DatabasePreparationRecord(AbstractTableConfiguration tableConfiguration) {
 		this.tableConfiguration = tableConfiguration;
 	}
 	
-	public SyncTableConfiguration getTableConfiguration() {
+	public AbstractTableConfiguration getTableConfiguration() {
 		return tableConfiguration;
 	}
 	

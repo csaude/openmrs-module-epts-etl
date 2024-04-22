@@ -11,9 +11,10 @@ import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
@@ -135,7 +136,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return getMainSrcTableConf().getTableName();
 	}
 	
-	public SyncTableConfiguration getMainSrcTableConf() {
+	public AbstractTableConfiguration getMainSrcTableConf() {
 		return monitor.getSrcMainTableConf();
 	}
 	
@@ -239,7 +240,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 						if (getRelatedOperationController().mustRestartInTheEnd()) {
 							this.requestANewJob();
 						} else {
-							if (this.isMainEngine() && this.hasChild() && finalCheckStatus.notInitialized()) {
+							if (this.isMainEngine() && finalCheckStatus.notInitialized()) {
 								//Do the final check before finishing
 								
 								while (this.hasChild() && !isAllChildFinished()) {
@@ -351,10 +352,20 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 			logDebug("INITIALIZING " + getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '"
 			        + records.size() + "' RECORDS OF TABLE '" + this.getMainSrcTableConf().getTableName() + "'");
 			
+			beforeSync(records, conn);
+			
 			performeSync(records, conn);
 		}
 		
 		return utilities.arraySize(records);
+	}
+	
+	private void beforeSync(List<SyncRecord> records, Connection conn) {
+		for (SyncRecord rec : records) {
+			if (rec instanceof DatabaseObject) {
+				((DatabaseObject) rec).loadObjectIdData(getMainSrcTableConf());
+			}
+		}
 	}
 	
 	public synchronized void refreshProgressMeter(int newlyProcessedRecords, Connection conn) throws DBException {
@@ -711,7 +722,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected abstract SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn);
 	
-	public abstract void performeSync(List<SyncRecord> searchNextRecords, Connection conn) throws DBException;
+	public abstract void performeSync(List<SyncRecord> records, Connection conn) throws DBException;
 	
 	protected abstract List<SyncRecord> searchNextRecords(Connection conn) throws DBException;
 	

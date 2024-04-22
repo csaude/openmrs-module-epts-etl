@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -17,7 +18,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents a query configuration. A query is used on data mapping between source and destination
  * table
  */
-public class TableDataSourceConfig extends SyncTableConfiguration implements PojobleDatabaseObject, SyncDataSource {
+public class TableDataSourceConfig extends AbstractTableConfiguration implements PojobleDatabaseObject, SyncDataSource {
 	
 	private EtlExtraDataSource relatedSrcExtraDataSrc;
 	
@@ -26,6 +27,17 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 	private String joinExtraCondition;
 	
 	private boolean required;
+	
+	private DatabaseObjectLoaderHelper loadHealper;
+	
+	@Override
+	public DatabaseObjectLoaderHelper getLoadHealper() {
+		return this.loadHealper;
+	}
+	
+	public void setLoadHealper(DatabaseObjectLoaderHelper loadHealper) {
+		this.loadHealper = loadHealper;
+	}
 	
 	@Override
 	public boolean isRequired() {
@@ -39,36 +51,45 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 		if (!utilities.arrayHasElement(this.joinFields)) {
 			//Try to autoload join fields
 			
-			FieldsMapping fm = null;
+			List<FieldsMapping> fm = new ArrayList<>();
 			
 			//Assuming that this datasource is parent
-			RefInfo pInfo = this.relatedSrcExtraDataSrc.getRelatedSrcConf().getMainSrcTableConf()
-			        .findParent(RefInfo.init(this.getTableName()));
+			List<RefInfo> pInfo = this.relatedSrcExtraDataSrc.getRelatedSrcConf().findAllRefToParent(this.getTableName());
 			
 			if (pInfo != null) {
-				fm = new FieldsMapping(pInfo.getRefColumnName(), "", pInfo.getRefColumnName());
+				for (RefInfo ref : pInfo) {
+					for (RefMapping map : ref.getFieldsMapping()) {
+						fm.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
+					}
+				}
 			} else {
 				
 				//Assuning that the this data src is child
-				pInfo = this.findParent(
-				    RefInfo.init(this.relatedSrcExtraDataSrc.getRelatedSrcConf().getMainSrcTableConf().getTableName()));
+				pInfo = this.findAllRefToParent(this.relatedSrcExtraDataSrc.getRelatedSrcConf().getTableName());
 				
 				if (pInfo != null) {
-					fm = new FieldsMapping(pInfo.getRefColumnName(), "", pInfo.getRefColumnName());
+					for (RefInfo ref : pInfo) {
+						for (RefMapping map : ref.getFieldsMapping()) {
+							fm.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
+						}
+					}
 				}
 			}
 			
 			if (fm != null) {
 				this.joinFields = new ArrayList<>();
-				this.joinFields.add(fm);
+				for (FieldsMapping f : fm) {
+					this.joinFields.add(f);
+				}
 			}
 		}
 		
 		if (utilities.arrayHasNoElement(this.joinFields)) {
 			throw new ForbiddenOperationException("No join fields were difined between "
-			        + this.relatedSrcExtraDataSrc.getRelatedSrcConf().getMainSrcTableConf().getTableName() + " And "
-			        + this.getTableName());
+			        + this.relatedSrcExtraDataSrc.getRelatedSrcConf().getTableName() + " And " + this.getTableName());
 		}
+		
+		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
 	
 	public void setRequired(boolean required) {
@@ -97,6 +118,17 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 	
 	public void setRelatedSrcExtraDataSrc(EtlExtraDataSource relatedSrcExtraDataSrc) {
 		this.relatedSrcExtraDataSrc = relatedSrcExtraDataSrc;
+		setParent(relatedSrcExtraDataSrc);
+	}
+	
+	@Override
+	public EtlExtraDataSource getParent() {
+		return this.relatedSrcExtraDataSrc;
+	}
+	
+	@Override
+	public SyncConfiguration getRelatedSyncConfiguration() {
+		return getParent().getRelatedSyncConfiguration();
 	}
 	
 	@Override
@@ -104,7 +136,7 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 	        throws DBException {
 		String condition = generateConditionsFields(mainObject);
 		
-		return DatabaseObjectDAO.find(this.getSyncRecordClass(srcAppInfo), condition, srcConn);
+		return DatabaseObjectDAO.find(this.loadHealper, this.getSyncRecordClass(srcAppInfo), condition, srcConn);
 	}
 	
 	private String generateConditionsFields(DatabaseObject dbObject) {
@@ -116,7 +148,14 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 			
 			FieldsMapping field = this.joinFields.get(i);
 			
-			Object value = dbObject.getFieldValue(field.getSrcFieldAsClassField());
+			Object value;
+			
+			try {
+				value = dbObject.getFieldValue(field.getSrcField());
+			}
+			catch (ForbiddenOperationException e) {
+				value = dbObject.getFieldValue(field.getSrcFieldAsClassField());
+			}
 			
 			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getDstField(), value);
 		}
@@ -131,5 +170,15 @@ public class TableDataSourceConfig extends SyncTableConfiguration implements Poj
 	@Override
 	public String getName() {
 		return super.getTableName();
+	}
+	
+	@Override
+	public AppInfo getRelatedAppInfo() {
+		return this.relatedSrcExtraDataSrc.getRelatedSrcConf().getRelatedAppInfo();
+	}
+	
+	@Override
+	public boolean isGeneric() {
+		return false;
 	}
 }

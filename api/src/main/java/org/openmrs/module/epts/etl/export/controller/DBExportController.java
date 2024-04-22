@@ -7,9 +7,10 @@ import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.export.engine.DBExportEngine;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -38,12 +39,17 @@ public class DBExportController extends OperationController {
 
 	@Override
 	public long getMinRecordId(EtlConfiguration config) {
+		
+		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
+			throw new ForbiddenOperationException("Not supported composite primary key");
+		}
+		
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(config.getMainSrcTableConf(), conn);
+			DatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(config.getSrcConf(), conn);
 		
-			if (obj != null) return obj.getObjectId();
+			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
 			
 			return 0;
 		} catch (DBException e) {
@@ -58,12 +64,16 @@ public class DBExportController extends OperationController {
 
 	@Override
 	public long getMaxRecordId(EtlConfiguration config) {
+		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
+			throw new ForbiddenOperationException("Not supported composite primary key");
+		}
+		
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(config.getMainSrcTableConf(), conn);
+			DatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(config.getSrcConf(), conn);
 		
-			if (obj != null) return obj.getObjectId();
+			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
 			
 			return 0;
 		} catch (DBException e) {
@@ -76,7 +86,7 @@ public class DBExportController extends OperationController {
 		}
 	}
 	
-	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, SyncTableConfiguration tableInfo, Integer startRecord, Integer lastRecord) throws IOException {
+	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, AbstractTableConfiguration tableInfo, Integer startRecord, Integer lastRecord) throws IOException {
 		String fileName = "";
 		
 		fileName += tableInfo.getRelatedSyncConfiguration().getSyncRootDirectory();

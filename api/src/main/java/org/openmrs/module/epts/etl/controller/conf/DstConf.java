@@ -8,92 +8,103 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSour
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class DstConf extends SyncDataConfiguration {
+public class DstConf extends AbstractTableConfiguration {
 	
-	private List<FieldsMapping> fieldsMapping;
+	private List<FieldsMapping> allFieldsMapping;
+	
+	private List<FieldsMapping> manualFieldsMapping;
 	
 	private AppInfo relatedAppInfo;
 	
-	private SrcConf srcConf;
+	private static final int DEFAULT_NEXT_TREAD_ID = -1;
 	
-	private SyncTableConfiguration dstTableConf;
+	private int currThreadStartId;
 	
-	private boolean fullLoaded;
+	private int currQtyRecords;
+	
+	private final String stringLock = new String("LOCK_STRING");
 	
 	public DstConf() {
 	}
 	
-	public SyncTableConfiguration getDstTableConf() {
-		return dstTableConf;
+	@Override
+	public boolean isGeneric() {
+		return false;
 	}
 	
-	public void setDstTableConf(SyncTableConfiguration dstTable) {
-		this.dstTableConf = dstTable;
+	public List<FieldsMapping> getManualFieldsMapping() {
+		return manualFieldsMapping;
 	}
 	
-	public SrcConf getSrcConf() {
-		return srcConf;
+	public void setManualFieldsMapping(List<FieldsMapping> manualFieldsMapping) {
+		this.manualFieldsMapping = manualFieldsMapping;
 	}
 	
-	public void setSrcConf(SrcConf srcSyncConfiguration) {
-		this.srcConf = srcSyncConfiguration;
-	}
-	
-	public List<FieldsMapping> getFieldsMapping() {
-		return fieldsMapping;
-	}
-	
-	public void setFieldsMappings(List<FieldsMapping> fieldsMapping) {
-		this.fieldsMapping = fieldsMapping;
+	public List<FieldsMapping> getAllFieldsMapping() {
+		return allFieldsMapping;
 	}
 	
 	private void addMapping(String srcField, String destField) {
-		if (this.fieldsMapping == null) {
-			this.fieldsMapping = new ArrayList<FieldsMapping>();
-		}
-		
-		FieldsMapping fm = new FieldsMapping(srcField, this.dstTableConf.getTableName(), destField);
-		
-		if (this.fieldsMapping.contains(fm))
-			throw new ForbiddenOperationException("The field [" + fm + "] already exists on mapping");
-		
-		this.fieldsMapping.add(fm);
+		addMapping(new FieldsMapping(srcField, this.getSrcConf().getTableName(), destField));
 	}
 	
-	public static DstConf generateFromSyncTableConfiguration(SrcConf srcSyncConfig) {
-		if (!srcSyncConfig.isFullLoaded())
-			throw new ForbiddenOperationException("The tableInfo is not full loaded!");
+	private void addMapping(FieldsMapping fm) throws ForbiddenOperationException {
+		if (this.allFieldsMapping == null) {
+			this.allFieldsMapping = new ArrayList<FieldsMapping>();
+		}
 		
+		if (this.allFieldsMapping.contains(fm))
+			throw new ForbiddenOperationException("The field [" + fm + "] already exists on mapping");
+		
+		this.allFieldsMapping.add(fm);
+	}
+	
+	public static DstConf generateDefaultDstConf(EtlConfiguration etlConf, Connection conn) throws DBException {
 		DstConf dstSyncConfiguration = new DstConf();
-		dstSyncConfiguration.setRelatedSyncConfiguration(srcSyncConfig.getRelatedSyncConfiguration());
-		dstSyncConfiguration
-		        .setDstTableConf(SyncTableConfiguration.init(srcSyncConfig.getMainTableName(), dstSyncConfiguration));
 		
-		dstSyncConfiguration.dstTableConf.clone(srcSyncConfig.getMainSrcTableConf());
+		dstSyncConfiguration.clone(etlConf.getSrcConf());
 		
-		dstSyncConfiguration.generateMappingFields(srcSyncConfig.getMainSrcTableConf());
-		
-		dstSyncConfiguration.loadAdditionalFieldsInfo();
-		
-		dstSyncConfiguration.setSrcConf(srcSyncConfig);
+		dstSyncConfiguration.generateAllFieldsMapping(conn);
 		
 		return dstSyncConfiguration;
 	}
 	
-	public void generateMappingFields(SyncTableConfiguration tableConfiguration) {
-		for (Field field : tableConfiguration.getFields()) {
-			this.addMapping(field.getName(), field.getName());
+	public void generateAllFieldsMapping(Connection conn) throws DBException {
+		this.allFieldsMapping = new ArrayList<>();
+		
+		if (utilities.arrayHasElement(this.manualFieldsMapping)) {
+			for (FieldsMapping fm : this.manualFieldsMapping) {
+				if (!utilities.stringHasValue(fm.getDataSourceName())) {
+					fm.setDataSourceName(getParent().getSrcConf().getTableName());
+				}
+				
+				addMapping(fm);
+			}
+		}
+		
+		List<Field> myFields = 	DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn);
+		
+		
+		for (Field field : myFields) {
+			FieldsMapping fm = new FieldsMapping(field.getName(), this.getTableName(), field.getName());
+			
+			if (!this.allFieldsMapping.contains(fm)) {
+				this.addMapping(field.getName(), field.getName());
+			}
 		}
 	}
 	
 	public String getMappedField(String srcField) {
 		List<FieldsMapping> machedFields = new ArrayList<FieldsMapping>();
 		
-		for (FieldsMapping field : this.fieldsMapping) {
+		for (FieldsMapping field : this.allFieldsMapping) {
 			if (field.getSrcField().equals(srcField)) {
 				machedFields.add(field);
 				
@@ -119,15 +130,6 @@ public class DstConf extends SyncDataConfiguration {
 		this.relatedAppInfo = relatedAppInfo;
 	}
 	
-	public synchronized void fullLoad(Connection conn) {
-		if (this.fullLoaded) {
-			return;
-		}
-		
-		this.dstTableConf.fullLoad(conn);
-		this.fullLoaded = true;
-	}
-	
 	public synchronized void fullLoad() throws DBException {
 		OpenConnection conn = this.relatedAppInfo.openConnection();
 		
@@ -139,6 +141,10 @@ public class DstConf extends SyncDataConfiguration {
 		}
 	}
 	
+	private SrcConf getSrcConf() {
+		return this.getParent().getSrcConf();
+	}
+	
 	public DatabaseObject generateMappedObject(DatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
 	        AppInfo dstAppInfo) throws DBException, ForbiddenOperationException {
 		try {
@@ -147,8 +153,8 @@ public class DstConf extends SyncDataConfiguration {
 			
 			srcObjects.add(srcObject);
 			
-			if (utilities.arrayHasElement(this.srcConf.getExtraDataSource())) {
-				for (EtlExtraDataSource mappingInfo : this.srcConf.getExtraDataSource()) {
+			if (utilities.arrayHasElement(this.getParent().getSrcConf().getExtraDataSource())) {
+				for (EtlExtraDataSource mappingInfo : this.getSrcConf().getExtraDataSource()) {
 					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
 					
 					if (relatedSrcObject == null) {
@@ -165,14 +171,18 @@ public class DstConf extends SyncDataConfiguration {
 				}
 			}
 			
-			DatabaseObject mappedObject = this.dstTableConf.getSyncRecordClass(dstAppInfo).newInstance();
+			DatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
 			
-			for (FieldsMapping fieldsMapping : this.getFieldsMapping()) {
+			mappedObject.setTableConfiguration(this);
+			
+			for (FieldsMapping fieldsMapping : this.allFieldsMapping) {
 				
-				Object srcValue = fieldsMapping.retrieveValue(this, srcObjects, dstAppInfo, srcConn);
+				Object srcValue = fieldsMapping.retrieveValue(mappedObject, srcObjects, dstAppInfo, srcConn);
 				
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
 			}
+			
+			mappedObject.loadObjectIdData(this);
 			
 			return mappedObject;
 		}
@@ -185,16 +195,54 @@ public class DstConf extends SyncDataConfiguration {
 		
 	}
 	
-	public void loadAdditionalFieldsInfo() {
-		if (!utilities.arrayHasElement(this.fieldsMapping)) {
-			throw new ForbiddenOperationException("The mapping fields was not loaded yet");
-		}
+	@Override
+	public void setParent(SyncDataConfiguration parent) {
+		super.setParent((EtlConfiguration) parent);
+	}
+	
+	@Override
+	public EtlConfiguration getParent() {
+		return (EtlConfiguration) super.getParent();
+	}
+	
+	public int generateNextStartIdForThread(List<SyncRecord> syncRecords, Connection conn)
+	        throws DBException, ForbiddenOperationException {
 		
-		for (FieldsMapping field : this.fieldsMapping) {
-			if (!utilities.stringHasValue(field.getDataSourceName())) {
-				field.setDataSourceName(this.srcConf.getMainSrcTableConf().getTableName());
+		synchronized (stringLock) {
+			
+			if (this.currThreadStartId == DEFAULT_NEXT_TREAD_ID) {
+				this.currQtyRecords = syncRecords.size();
+				
+				this.currThreadStartId = DatabaseObjectDAO.getLastRecord(this, conn);
+				
+				this.currThreadStartId = this.currThreadStartId - this.currQtyRecords + 1;
 			}
+			
+			this.currThreadStartId += this.currQtyRecords;
+			this.currQtyRecords = syncRecords.size();
+			
+			return this.currThreadStartId;
 		}
 	}
+	
+	public static synchronized int generateNextStartIdForThread(int dbCurrId, int currThreadStartId,
+	        int qtyRecordsPerProcessing) {
+		if (currThreadStartId == DEFAULT_NEXT_TREAD_ID) {
+			
+			currThreadStartId = dbCurrId;
+			
+			if (currThreadStartId == 0) {
+				currThreadStartId = 1 - qtyRecordsPerProcessing;
+			} else {
+				currThreadStartId = dbCurrId - qtyRecordsPerProcessing + 1;
+			}
+		}
+		
+		currThreadStartId += qtyRecordsPerProcessing;
+		
+		return currThreadStartId;
+	}
+
+
 	
 }
