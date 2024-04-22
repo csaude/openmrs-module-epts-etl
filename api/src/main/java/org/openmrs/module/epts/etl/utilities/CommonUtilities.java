@@ -23,7 +23,6 @@ import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.base.BaseVO;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1054,35 +1053,32 @@ public class CommonUtilities implements Serializable {
 		return map;
 	}
 	
-	public Object getFieldValue(Object obj, String fieldsName) {
-		Object[] values = getFieldValues(obj, fieldsName);
+	public Object getFieldValueOnFieldList(List<org.openmrs.module.epts.etl.model.Field> fields, String fieldName)
+	        throws ForbiddenOperationException {
 		
-		if (utilities.arrayHasElement(values)) {
-			return values[0];
+		for (int i = 0; i < fields.size(); i++) {
+			org.openmrs.module.epts.etl.model.Field field = fields.get(i);
+			
+			if (field.getName().equals(fieldName)) {
+				return field.getValue();
+			}
 		}
 		
-		return null;
+		throw new ForbiddenOperationException("The field '" + fieldName + "' was not found on list of fields");
+		
 	}
 	
-	public Object[] getFieldValues(Object obj, String... fieldsName) {
-		List<Object> values = new ArrayList<Object>();
-		
+	public Object getFieldValue(Object obj, String fieldName) throws ForbiddenOperationException {
 		Object[] fields = getFields(obj);
 		
-		for (String fieldName : fieldsName) {
-			boolean fieldFound = false;
+		for (int i = 0; i < fields.length; i++) {
+			Field field = (Field) fields[i];
 			
-			for (int i = 0; i < fields.length; i++) {
-				Field field = (Field) fields[i];
-				
-				if (!field.getName().equals(fieldName))
-					continue;
-				
-				fieldFound = true;
+			if (field.getName().equals(fieldName)) {
 				
 				try {
 					if (field.get(obj) != null) {
-						values.add(field.get(obj));
+						return field.get(obj);
 					}
 				}
 				catch (IllegalArgumentException e) {
@@ -1092,16 +1088,13 @@ public class CommonUtilities implements Serializable {
 					throw new RuntimeException(e);
 				}
 			}
-			
-			if (!fieldFound)
-				throw new ForbiddenOperationException(
-				        "The field '" + fieldName + "' was not found on object '" + obj.getClass().getName() + "'");
 		}
 		
-		return values != null ? utilities.parseListToArray(values) : null;
+		throw new ForbiddenOperationException(
+		        "The field '" + fieldName + "' was not found on object '" + obj.getClass().getName() + "'");
 	}
 	
-	public Field getField(Object obj, String fieldName) {
+	public Field getField(Object obj, String fieldName) throws ForbiddenOperationException {
 		Object[] fields = getFields(obj);
 		
 		for (int i = 0; i < fields.length; i++) {

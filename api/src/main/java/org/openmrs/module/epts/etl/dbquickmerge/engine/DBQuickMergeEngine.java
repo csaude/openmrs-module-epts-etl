@@ -19,9 +19,10 @@ import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -56,7 +57,9 @@ public class DBQuickMergeEngine extends Engine {
 			}
 		}
 		
-		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		return utilities.parseList(
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		
 	}
 	
 	public AppInfo getDstApp() {

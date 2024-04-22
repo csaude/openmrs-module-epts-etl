@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -41,7 +41,7 @@ public class DataReconciliationRecord {
 		dataReciliationRecord.config = config;
 		dataReciliationRecord.stageInfo = record.getRelatedSyncInfo();
 		
-		DatabaseObject srcObj = DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginIdAsOid(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
+		DatabaseObject srcObj = DatabaseObjectDAO.getByIdOnSpecificSchema(config, dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginIdAsOid(),  dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
 		
 		srcObj.setRelatedSyncInfo(record.getRelatedSyncInfo());
 		
@@ -60,7 +60,7 @@ public class DataReconciliationRecord {
 		if (this.stageInfo == null) this.stageInfo = SyncImportInfoDAO.getWinRecord(this.config, this.recordUuid, conn);
 		
 		if (this.stageInfo != null) {
-			this.record= DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(config.getMainApp()), stageInfo.getRecordOriginIdAsOid(), stageInfo.getRecordOriginLocationCode(), conn);
+			this.record= DatabaseObjectDAO.getByIdOnSpecificSchema(config, stageInfo.getRecordOriginIdAsOid(), stageInfo.getRecordOriginLocationCode(), conn);
 		}
 		else {
 			this.record = null;
@@ -179,7 +179,7 @@ public class DataReconciliationRecord {
 			if (!refInfo.getChildTableConf().isConfigured()) continue;
 		
 			
-			List<DatabaseObject> children =  DatabaseObjectDAO.getByParentId(refInfo.getChildSyncRecordClass(config.getMainApp()), refInfo.getChildColumnOnSimpleMapping(), this.record.getObjectId().getSimpleValueAsInt(), conn);
+			List<DatabaseObject> children =  DatabaseObjectDAO.getByParentId(refInfo.getChildTableConf(), refInfo.getChildColumnOnSimpleMapping(), this.record.getObjectId().getSimpleValueAsInt(), conn);
 					
 			for (DatabaseObject child : children) {
 				DataReconciliationRecord childDataInfo = new DataReconciliationRecord(child.getUuid(), refInfo.getChildTableConf(), ConciliationReasonType.WRONG_RELATIONSHIPS);

@@ -201,29 +201,28 @@ public class AttDefinedElements {
 	public String defineSqlInsertValue(DatabaseObject obj) {
 		String sqlInsertValues = "";
 		
-		Object value = obj.getFieldValue(this.attName);
+		Object value = null;
 		
-		if (isNumeric()) {
-			sqlInsertValues = value.toString();
-		} else if (isDate()) {
-			
-			if (value != null) {
-				this.sqlInsertValues = DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) value);
-				
-			} else {
-				this.sqlInsertValues = "null";
-				
-			}
-			
-		} else if (isString()) {
-			if (value != null) {
-				sqlInsertValues = utilities.scapeQuotationMarks(value.toString());
-			}
-		} else {
-			this.sqlInsertValues = "null";
+		try {
+			value = obj.getFieldValue(this.dbAttName);
+		}
+		catch (ForbiddenOperationException e) {
+			value = obj.getFieldValue(this.attName);
 		}
 		
-		sqlInsertValues = "(" + this.sqlInsertValues + (this.isLast ? ")" : ") + \",\" + ");
+		if (value == null) {
+			sqlInsertValues = "null";
+		} else if (isNumeric()) {
+			sqlInsertValues = value.toString();
+		} else if (isDate()) {
+			sqlInsertValues = aspasAbrir + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) value) + aspasFechar;
+		} else if (isString()) {
+			sqlInsertValues = aspasAbrir + utilities.scapeQuotationMarks(value.toString()) + aspasFechar;
+		} else {
+			sqlInsertValues = aspasAbrir + value.toString() + aspasFechar;
+		}
+		
+		sqlInsertValues = "(" + sqlInsertValues + (this.isLast ? ")" : ")" + ",");
 		
 		return sqlInsertValues;
 	}

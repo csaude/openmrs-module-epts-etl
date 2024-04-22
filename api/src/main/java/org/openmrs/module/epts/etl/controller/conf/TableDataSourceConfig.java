@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -26,6 +27,17 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	private String joinExtraCondition;
 	
 	private boolean required;
+	
+	private DatabaseObjectLoaderHelper loadHealper;
+	
+	@Override
+	public DatabaseObjectLoaderHelper getLoadHealper() {
+		return this.loadHealper;
+	}
+	
+	public void setLoadHealper(DatabaseObjectLoaderHelper loadHealper) {
+		this.loadHealper = loadHealper;
+	}
 	
 	@Override
 	public boolean isRequired() {
@@ -76,6 +88,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			throw new ForbiddenOperationException("No join fields were difined between "
 			        + this.relatedSrcExtraDataSrc.getRelatedSrcConf().getTableName() + " And " + this.getTableName());
 		}
+		
+		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
 	
 	public void setRequired(boolean required) {
@@ -122,7 +136,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	        throws DBException {
 		String condition = generateConditionsFields(mainObject);
 		
-		return DatabaseObjectDAO.find(this.getSyncRecordClass(srcAppInfo), condition, srcConn);
+		return DatabaseObjectDAO.find(this.loadHealper, this.getSyncRecordClass(srcAppInfo), condition, srcConn);
 	}
 	
 	private String generateConditionsFields(DatabaseObject dbObject) {
@@ -134,7 +148,14 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			
 			FieldsMapping field = this.joinFields.get(i);
 			
-			Object value = dbObject.getFieldValue(field.getSrcFieldAsClassField());
+			Object value;
+			
+			try {
+				value = dbObject.getFieldValue(field.getSrcField());
+			}
+			catch (ForbiddenOperationException e) {
+				value = dbObject.getFieldValue(field.getSrcFieldAsClassField());
+			}
 			
 			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getDstField(), value);
 		}

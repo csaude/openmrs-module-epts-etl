@@ -82,12 +82,14 @@ public abstract class BaseDAO {
 	/**
 	 * Perform an SQL Select, using prepared statement.
 	 * 
+	 * @param loaderHelper the helper for loading extra information
 	 * @param sql string to perform.
 	 * @param params Array of objects to fill question marks in the update string.
 	 * @return generated object with retrieved data from DB
 	 */
 	
-	public static <T extends VO> T find(Class<T> voClass, String sql, Object[] params, Connection conn) throws DBException {
+	public static <T extends VO> T find(VOLoaderHelper loaderHelper, Class<T> voClass, String sql, Object[] params,
+	        Connection conn) throws DBException {
 		
 		List<T> result;
 		result = search(voClass, sql, params, conn);
@@ -107,10 +109,39 @@ public abstract class BaseDAO {
 	 */
 	
 	public static <T extends VO> T find(Class<T> voClass, String condition, Connection conn) throws DBException {
+		return find(null, voClass, condition, conn);
+	}
+	
+	/**
+	 * Perform an SQL Select, using prepared statement.
+	 * 
+	 * @param sql string to perform.
+	 * @param params Array of objects to fill question marks in the update string.
+	 * @return generated object with retrieved data from DB
+	 */
+	
+	public static <T extends VO> T find(Class<T> voClass, String sql, Object[] params, Connection conn) throws DBException {
+		return find(null, voClass, sql, params, conn);
+	}
+	
+	/**
+	 * Perform an database querying on the table related to the passed class.
+	 * 
+	 * @param condition the condition to use.
+	 * @param params Array of objects to fill question marks in the update string.
+	 * @return generated object with retrieved data from DB
+	 */
+	
+	public static <T extends VO> T find(VOLoaderHelper loaderHelper, Class<T> voClass, String condition, Connection conn)
+	        throws DBException {
 		T obj;
 		
 		try {
 			obj = voClass.newInstance();
+			
+			if (loaderHelper != null) {
+				loaderHelper.beforeLoad(obj);
+			}
 		}
 		catch (InstantiationException e) {
 			throw new RuntimeException(e);
@@ -126,7 +157,7 @@ public abstract class BaseDAO {
 		sql += " where " + condition;
 		
 		List<T> result;
-		result = search(voClass, sql, null, conn);
+		result = search(loaderHelper, voClass, sql, null, conn);
 		
 		if (utilities.arrayHasElement(result))
 			return result.get(0);
@@ -185,7 +216,7 @@ public abstract class BaseDAO {
 				instance.load(rs);
 				
 				if (voDataLoader != null) {
-					voDataLoader.beforeLoad(instance);
+					voDataLoader.afterLoad(instance);
 				}
 				
 			}

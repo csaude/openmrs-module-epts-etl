@@ -15,20 +15,54 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
-	private AbstractTableConfiguration tableConfiguration;
+	private PojobleDatabaseObject tableConfiguration;
 	
 	private List<Field> fields;
 	
 	public GenericDatabaseObject() {
 	}
 	
-	@Override
-	public void setTableConfiguration(AbstractTableConfiguration tableConfiguration) {
+	public GenericDatabaseObject(PojobleDatabaseObject tableConfiguration) {
 		this.tableConfiguration = tableConfiguration;
+		
+		this.fields = this.tableConfiguration.cloneFields();
 	}
 	
 	@Override
-	public AbstractTableConfiguration getTableConfiguration() {
+	public Object getFieldValue(String fieldName) {
+		try {
+			return utilities.getFieldValueOnFieldList(utilities.parseList(this.fields, Field.class), fieldName);
+		}
+		catch (ForbiddenOperationException e) {
+			return super.getFieldValue(fieldName);
+		}
+		
+	}
+	
+	@Override
+	public void setFieldValue(String fieldName, Object value) {
+		super.setFieldValue(fieldName, value);
+		
+		for (Field field : this.fields) {
+			
+			if (field.getName().equals(fieldName) || field.getNameAsClassAtt().equals(fieldName)) {
+				field.setValue(value);
+				
+				break;
+			}
+		}
+		
+	}
+	
+	@Override
+	public void setTableConfiguration(PojobleDatabaseObject tableConfiguration) {
+		this.tableConfiguration = tableConfiguration;
+		
+		this.fields = this.tableConfiguration.cloneFields();
+	}
+	
+	@Override
+	public PojobleDatabaseObject getTableConfiguration() {
 		return this.tableConfiguration;
 	}
 	
@@ -41,12 +75,13 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			
 			super.load(rs);
 			
-			this.fields = this.tableConfiguration.cloneFields();
-			
 			for (Field field : this.fields) {
 				field.setValue(retrieveFieldValue(field.getName(), field.getType(), rs));
 			}
 			
+			if (this.tableConfiguration instanceof AbstractTableConfiguration) {
+				loadObjectIdData((AbstractTableConfiguration) this.tableConfiguration);
+			}
 		}
 		catch (SQLException e) {}
 	}
@@ -54,47 +89,79 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	@JsonIgnore
 	public Object[] getInsertParamsWithoutObjectId() {
-		return this.tableConfiguration.generateInsertParamsWithoutObjectId(this);
+		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.tableConfiguration).generateInsertParamsWithoutObjectId(this);
+		}
+		
+		return null;
 	}
 	
 	@Override
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId() {
-		return this.tableConfiguration.generateInsertValuesWithoutObjectId(this);
+		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.tableConfiguration).generateInsertValuesWithoutObjectId(this);
+		}
+		
+		return null;
 	}
 	
 	@Override
 	@JsonIgnore
 	public Object[] getInsertParamsWithObjectId() {
-		return this.tableConfiguration.generateInsertParamsWithObjectId(this);
+		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.tableConfiguration).generateInsertParamsWithObjectId(this);
+		}
+		
+		return null;
 	}
 	
 	@Override
 	@JsonIgnore
 	public String getInsertSQLWithObjectId() {
-		return this.tableConfiguration.getInsertSQLWithObjectId();
+		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.tableConfiguration).getInsertSQLWithObjectId();
+		}
+		
+		return null;
 	}
 	
 	@Override
 	@JsonIgnore
 	public String getUpdateSQL() {
-		return this.tableConfiguration.getUpdateSQL();
+		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.tableConfiguration).getUpdateSQL();
+		}
+		
+		return null;
 	}
 	
 	@Override
 	@JsonIgnore
 	public Object[] getUpdateParams() {
-		return this.tableConfiguration.generateUpdateParams(this);
+		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.tableConfiguration).generateUpdateParams(this);
+		}
+		
+		return null;
 	}
 	
 	@Override
 	public String generateInsertValuesWithoutObjectId() {
-		return this.tableConfiguration.generateInsertValuesWithoutObjectId(this);
+		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.tableConfiguration).generateInsertValuesWithoutObjectId(this);
+		}
+		
+		return null;
 	}
 	
 	@Override
 	public String generateInsertValuesWithObjectId() {
-		return this.tableConfiguration.generateInsertValuesWithObjectId(this);
+		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.tableConfiguration).generateInsertValuesWithObjectId(this);
+		}
+		
+		return null;
 	}
 	
 	@Override
@@ -131,7 +198,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public String generateTableName() {
-		return this.tableConfiguration.getTableName();
+		return this.tableConfiguration.getObjectName();
 	}
 	
 	public static GenericDatabaseObject fastCreate(SyncImportInfoVO syncImportInfo, AbstractTableConfiguration tableConf) {

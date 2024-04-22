@@ -207,12 +207,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public Object[] getFieldValues(String... fieldsName) {
-		return utilities.getFieldValues(this, fieldsName);
-	}
-	
-	@Override
-	public Object getFieldValue(String fieldsName) {
+	public Object getFieldValue(String fieldsName) throws ForbiddenOperationException {
 		return utilities.getFieldValue(this, fieldsName);
 	}
 	
@@ -343,11 +338,17 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 				boolean thisRecordIsUpdated = true;
 				
 				for (org.openmrs.module.epts.etl.model.Field field : fields) {
-					Object[] thisRecordFieldValue = this
-					        .getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(field.getName()));
+					Object thisRecordFieldValue;
+					
+					try {
+						thisRecordFieldValue = this.getFieldValue(field.getName());
+					}
+					catch (ForbiddenOperationException e) {
+						thisRecordFieldValue = this.getFieldValue(field.getNameAsClassAtt());
+					}
 					
 					//If at least one of field value is different from the winning value, assume that this record is not updated
-					if (!thisRecordFieldValue[0].toString().equals(field.getValue().toString())) {
+					if (!thisRecordFieldValue.toString().equals(field.getValue().toString())) {
 						thisRecordIsUpdated = false;
 						
 						//Check the next list of fields
@@ -364,13 +365,24 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		} else if (utilities.arrayHasElement(tableConfiguration.getObservationDateFields())) {
 			for (String dateField : tableConfiguration.getObservationDateFields()) {
 				
-				Object[] thisRecordDateArray = this
-				        .getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
-				Object[] recordOnDBDateArray = recordOnDB
-				        .getFieldValues(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
+				Date thisRecordDate;
+				Date recordOnDBDate;
 				
-				Date thisRecordDate = thisRecordDateArray != null ? (Date) thisRecordDateArray[0] : null;
-				Date recordOnDBDate = recordOnDBDateArray != null ? (Date) recordOnDBDateArray[0] : null;
+				try {
+					thisRecordDate = (Date) this.getFieldValue(dateField);
+				}
+				catch (ForbiddenOperationException e) {
+					thisRecordDate = (Date) this
+					        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
+				}
+				
+				try {
+					recordOnDBDate = (Date) recordOnDB.getFieldValue(dateField);
+				}
+				catch (ForbiddenOperationException e) {
+					recordOnDBDate = (Date) recordOnDB
+					        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
+				}
 				
 				if (thisRecordDate != null) {
 					if (recordOnDBDate == null) {
@@ -632,8 +644,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 				continue;
 			}
 			
-			List<DatabaseObject> children = DatabaseObjectDAO.getByParentId(
-			    refInfo.getChildTableConf().getSyncRecordClass(syncTableInfo.getMainApp()),
+			List<DatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo.getChildTableConf(),
 			    refInfo.getSimpleRefMapping().getChildField().getName(), this.getObjectId().getSimpleValueAsInt(), conn);
 			
 			for (DatabaseObject child : children) {

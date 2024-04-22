@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.controller.conf;
 
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 
@@ -13,7 +14,16 @@ public class PrimaryKey extends UniqueKeyInfo {
 		Oid oid = new Oid();
 		
 		for (Key key : this.getFields()) {
-			oid.addKey(new Key(key.getName(), key.getType(), obj.getFieldValue(key.getNameAsClassAtt())));
+			Object keyValue;
+			
+			try {
+				keyValue = obj.getFieldValue(key.getName());
+			}
+			catch (ForbiddenOperationException e) {
+				keyValue = obj.getFieldValue(key.getNameAsClassAtt());
+			}
+			
+			oid.addKey(new Key(key.getName(), key.getType(), keyValue));
 		}
 		
 		return oid;

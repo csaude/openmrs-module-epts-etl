@@ -13,8 +13,8 @@ import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.exceptions.SyncExeption;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
 
@@ -166,20 +166,12 @@ public interface DatabaseObject extends SyncRecord {
 	public abstract boolean hasExactilyTheSameDataWith(DatabaseObject srcObj);
 	
 	/**
-	 * Return the values of given fields
-	 * 
-	 * @param fieldName of fields to retrieve
-	 * @return Return the values of given fields
-	 */
-	public abstract Object[] getFieldValues(String... fieldName);
-	
-	/**
 	 * Return a value of given field
 	 * 
 	 * @param fieldName of field to retrieve
 	 * @return Return a value of given field
 	 */
-	public abstract Object getFieldValue(String fieldName);
+	public abstract Object getFieldValue(String fieldName) throws ForbiddenOperationException;
 	
 	public abstract void setFieldValue(String fieldName, Object value);
 	
@@ -209,22 +201,37 @@ public interface DatabaseObject extends SyncRecord {
 		List<Object> values = new ArrayList<Object>();
 		
 		for (UniqueKeyInfo uniqueKey : tableConfiguration.getUniqueKeys()) {
-			Object[] fieldValues = this.getFieldValues(AttDefinedElements
-			        .convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKey.generateListFromFieldsNames())));
+			Object[] fieldValues = new Object[uniqueKey.getFields().size()];
 			
-			if (fieldValues != null && fieldValues.length == uniqueKey.getFields().size()) {
-				values.addAll(utils.parseArrayToList(fieldValues));
-			} else
-				throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey + "] has no value.");
+			for (int i = 0; i < uniqueKey.getFields().size(); i++) {
+				Field f = uniqueKey.getFields().get(i);
+				
+				Object fv = null;
+				
+				try {
+					fv = this.getFieldValue(f.getName());
+				}
+				catch (ForbiddenOperationException e) {
+					fv = this.getFieldValue(f.getNameAsClassAtt());
+				}
+				
+				if (fv == null) {
+					throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey + "] has no value.");
+				}
+				
+				fieldValues[i] = fv;
+			}
+			
+			values.addAll(utils.parseArrayToList(fieldValues));
 		}
 		
 		return utils.parseListToArray(values);
 	}
 	
-	default void setTableConfiguration(AbstractTableConfiguration tableConfiguration) {
+	default void setTableConfiguration(PojobleDatabaseObject tableConfiguration) {
 	}
 	
-	default AbstractTableConfiguration getTableConfiguration() {
+	default PojobleDatabaseObject getTableConfiguration() {
 		return null;
 	}
 	
@@ -236,13 +243,28 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws ForbiddenOperationException if one or more fields in any key have null value
 	 */
 	public default Object[] getUniqueKeysFieldValues(UniqueKeyInfo uniqueKey) throws ForbiddenOperationException {
-		Object[] fieldValues = this.getFieldValues(AttDefinedElements
-		        .convertTableAttNameToClassAttName(utils.parseListToArray(uniqueKey.generateListFromFieldsNames())));
+		Object[] fieldValues = new Object[uniqueKey.getFields().size()];
 		
-		if (fieldValues != null && fieldValues.length == uniqueKey.getFields().size()) {
-			return fieldValues;
-		} else
-			throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey.toString() + "] has no value.");
+		for (int i = 0; i < uniqueKey.getFields().size(); i++) {
+			Field f = uniqueKey.getFields().get(i);
+			
+			Object fv = null;
+			
+			try {
+				fv = this.getFieldValue(f.getName());
+			}
+			catch (ForbiddenOperationException e) {
+				fv = this.getFieldValue(f.getNameAsClassAtt());
+			}
+			
+			if (fv == null) {
+				throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey + "] has no value.");
+			}
+			
+			fieldValues[i] = fv;
+		}
+		
+		return fieldValues;
 	}
 	
 	public abstract void fastCreateSimpleNumericKey(long i);

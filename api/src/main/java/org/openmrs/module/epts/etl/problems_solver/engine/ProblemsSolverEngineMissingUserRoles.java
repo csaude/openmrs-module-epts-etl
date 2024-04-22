@@ -9,9 +9,10 @@ import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParams;
@@ -38,18 +39,20 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	private AbstractTableConfiguration userRoleTableConf;
 	
 	@SuppressWarnings("unused")
-	private Class<DatabaseObject> userRoleRecordClass;
+	private Class<? extends DatabaseObject> userRoleRecordClass;
 	
 	public ProblemsSolverEngineMissingUserRoles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
-		this.userRoleTableConf = AbstractTableConfiguration.initGenericTabConf("user_role", getEtlConfiguration().getSrcConf());
+		this.userRoleTableConf = AbstractTableConfiguration.initGenericTabConf("user_role",
+		    getEtlConfiguration().getSrcConf());
 		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());
 	}
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		return utilities.parseList(
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override

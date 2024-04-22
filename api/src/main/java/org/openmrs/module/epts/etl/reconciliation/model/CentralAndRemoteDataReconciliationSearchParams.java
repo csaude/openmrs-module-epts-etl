@@ -2,9 +2,9 @@ package org.openmrs.module.epts.etl.reconciliation.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -107,16 +107,17 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 		return searchClauses;
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public Class<DatabaseObject> getRecordClass() {
 		if (type.isMissingRecordsDetector()) {
 			return DatabaseEntityPOJOGenerator
 			        .tryToGetExistingCLass("org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject");
 		} else if (type.isOutdatedRecordsDetector()) {
-			return getSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
+			return (Class<DatabaseObject>) getSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
 			
 		} else if (type.isPhantomRecordsDetector()) {
-			return this.getSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
+			return (Class<DatabaseObject>) this.getSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
 		}
 		
 		throw new ForbiddenOperationException("Unsupported operation type '" + type + "'");

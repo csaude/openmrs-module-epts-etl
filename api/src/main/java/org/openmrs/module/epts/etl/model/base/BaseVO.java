@@ -220,29 +220,29 @@ public abstract class BaseVO implements VO {
 		
 		if (utilities.isStringIn(type.toUpperCase(), "INT", "MEDIUMINT", "INT8", "BIGINT", "SERIAL", "SERIAL4"))
 			type = "java.lang.Integer";
-		if (utilities.isStringIn(type.toUpperCase(), "TINYINT", "BIT"))
+		else if (utilities.isStringIn(type.toUpperCase(), "TINYINT", "BIT"))
 			type = "java.lang.Byte";
-		if (utilities.isStringIn(type.toUpperCase(), "YEAR", "SMALLINT"))
+		else if (utilities.isStringIn(type.toUpperCase(), "YEAR", "SMALLINT"))
 			type = "java.lang.Short";
-		if (utilities.isStringIn(type.toUpperCase(), "BIGINT", "INT8", "SERIAL"))
+		else if (utilities.isStringIn(type.toUpperCase(), "BIGINT", "INT8", "SERIAL"))
 			type = "java.lang.Long";
-		if (utilities.isStringIn(type.toUpperCase(), "DECIMAL", "NUMERIC", "SMALLINT", "REAL", "DOUBLE"))
+		else if (utilities.isStringIn(type.toUpperCase(), "DECIMAL", "NUMERIC", "SMALLINT", "REAL", "DOUBLE"))
 			type = "java.lang.Double";
-		if (utilities.isStringIn(type.toUpperCase(), "FLOAT", "NUMERIC", "SMALLINT"))
+		else if (utilities.isStringIn(type.toUpperCase(), "FLOAT", "NUMERIC", "SMALLINT"))
 			type = "java.lang.Float";
-		if (utilities.isStringIn(type.toUpperCase(), "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT"))
+		else if (utilities.isStringIn(type.toUpperCase(), "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT"))
 			type = "java.lang.String";
-		if (utilities.isStringIn(type.toUpperCase(), "VARBINARY", "BLOB", "LONGBLOB"))
+		else if (utilities.isStringIn(type.toUpperCase(), "VARBINARY", "BLOB", "LONGBLOB"))
 			type = "[B";
-		if (utilities.isStringIn(type.toUpperCase(), "DATE", "DATETIME", "TIME", "TIMESTAMP"))
+		else if (utilities.isStringIn(type.toUpperCase(), "DATE", "DATETIME", "TIME", "TIMESTAMP"))
 			type = "java.util.Date";
-		if (utilities.isStringIn(type.toUpperCase(), "BOOLEAN"))
+		else if (utilities.isStringIn(type.toUpperCase(), "BOOLEAN"))
 			type = "java.util.Boolean";
 		
 		Object value = resultSet.getObject(fieldName);
 		
 		if (value != null) {
-			if (type.equals("java.lang.Integer")) {
+			if (type.equals("java.util.Boolean")) {
 				int number = resultSet.getInt(fieldName);
 				
 				return number > 0;

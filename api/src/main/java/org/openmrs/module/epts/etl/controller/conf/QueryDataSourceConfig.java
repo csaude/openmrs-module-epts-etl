@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
@@ -13,6 +14,8 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
+import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -39,11 +42,22 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 	
 	private EtlExtraDataSource relatedSrcExtraDataSrc;
 	
-	private Class<DatabaseObject> syncRecordClass;
+	private Class<? extends DatabaseObject> syncRecordClass;
 	
 	private List<QueryParameter> paramConfig;
 	
 	private boolean required;
+	
+	private DatabaseObjectLoaderHelper loadHealper;
+	
+	@Override
+	public DatabaseObjectLoaderHelper getLoadHealper() {
+		return this.loadHealper;
+	}
+	
+	public void setLoadHealper(DatabaseObjectLoaderHelper loadHealper) {
+		this.loadHealper = loadHealper;
+	}
 	
 	@Override
 	public boolean isRequired() {
@@ -144,12 +158,22 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		
 		setFields(DBUtilities.determineFieldsFromQuery(query, conn));
 		
+		this.loadHealper = new DatabaseObjectLoaderHelper(this);
+
 		this.fullLoaded = true;
 	}
 	
 	@JsonIgnore
 	@Override
-	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	public Class<? extends DatabaseObject> getSyncRecordClass() throws ForbiddenOperationException {
+		return this.getSyncRecordClass(relatedSrcExtraDataSrc.getMainApp());
+	}
+	
+	@Override
+	public Class<? extends DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+		if (syncRecordClass == null)
+			syncRecordClass = GenericDatabaseObject.class;
+		
 		if (syncRecordClass == null)
 			this.syncRecordClass = DatabaseEntityPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application),
 			    getRelatedSyncConfiguration());
@@ -341,7 +365,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		
 		String query = DBUtilities.replaceSqlParametersWithQuestionMarks(this.getQuery());
 		
-		return DatabaseObjectDAO.find(this.getSyncRecordClass(srcAppInfo), query, params, srcConn);
+		return DatabaseObjectDAO.find(this.loadHealper, this.getSyncRecordClass(srcAppInfo), query, params, srcConn);
 	}
 
 	@Override
@@ -363,6 +387,19 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		}
 		
 		return false;
+	}
+	
+	@Override
+	public List<Field> cloneFields() {
+		List<Field> clonedFields = new ArrayList<>();
+		
+		if (utilities.arrayHasElement(this.fields)) {
+			for (Field field : this.fields) {
+				clonedFields.add(field.createACopy());
+			}
+		}
+		
+		return clonedFields;
 	}
 	
 }

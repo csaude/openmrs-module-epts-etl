@@ -44,7 +44,7 @@ public class SearchParamsDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends VO> List<T> search(Engine engine, Connection conn) throws DBException {
+	public static <T extends VO> List<T> search_(Engine engine, Connection conn) throws DBException {
 		SearchClauses<T> searchClauses = (SearchClauses<T>) engine.getSearchParams().generateSearchClauses(conn);
 		
 		if (engine.getSearchParams().getOrderByFields() != null) {

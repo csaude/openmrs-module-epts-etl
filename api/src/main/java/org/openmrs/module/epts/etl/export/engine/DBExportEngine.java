@@ -11,11 +11,12 @@ import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.export.controller.DBExportController;
 import org.openmrs.module.epts.etl.export.model.ExportSearchParams;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -29,7 +30,9 @@ public class DBExportEngine extends Engine {
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(SearchParamsDAO.search(this, conn), SyncRecord.class);
+		return utilities.parseList(
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		
 	}
 	
 	@Override
@@ -51,7 +54,8 @@ public class DBExportEngine extends Engine {
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getMainSrcTableName(), syncRecordsAsOpenMRSObjects,
 			    getEtlConfiguration().getOriginAppLocationCode(), true);
 			
-			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId().getSimpleValueAsInt(),
+			File jsonFIle = generateJSONTempFile(jsonInfo,
+			    syncRecordsAsOpenMRSObjects.get(0).getObjectId().getSimpleValueAsInt(),
 			    syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId().getSimpleValueAsInt());
 			
 			logInfo("WRITING '" + syncRecords.size() + "' " + getMainSrcTableName() + " TO JSON FILE ["

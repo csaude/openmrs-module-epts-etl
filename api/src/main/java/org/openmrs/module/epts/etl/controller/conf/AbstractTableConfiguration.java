@@ -12,6 +12,8 @@ import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
+import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
@@ -31,7 +33,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	
 	private List<RefInfo> childRefInfo;
 	
-	private Class<DatabaseObject> syncRecordClass;
+	private Class<? extends DatabaseObject> syncRecordClass;
 	
 	private SyncDataConfiguration parent;
 	
@@ -75,6 +77,8 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	
 	private String updateSQL;
 	
+	private DatabaseObjectLoaderHelper loadHealper;
+	
 	public AbstractTableConfiguration() {
 	}
 	
@@ -99,6 +103,15 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		this.insertSQLWithObjectId = toCloneFrom.insertSQLWithObjectId;
 		this.insertSQLWithoutObjectId = toCloneFrom.insertSQLWithoutObjectId;
 		this.updateSQL = toCloneFrom.updateSQL;
+	}
+	
+	@Override
+	public DatabaseObjectLoaderHelper getLoadHealper() {
+		return this.loadHealper;
+	}
+	
+	public void setLoadHealper(DatabaseObjectLoaderHelper loadHealper) {
+		this.loadHealper = loadHealper;
 	}
 	
 	public String getInsertSQLWithObjectId() {
@@ -766,7 +779,16 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	}
 	
 	@JsonIgnore
-	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	public Class<? extends DatabaseObject> getSyncRecordClass() throws ForbiddenOperationException {
+		return this.getSyncRecordClass(getRelatedAppInfo());
+	}
+	
+	@JsonIgnore
+	public Class<? extends DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+		
+		if (syncRecordClass == null)
+			this.syncRecordClass = GenericDatabaseObject.class;
+		
 		if (syncRecordClass == null)
 			this.syncRecordClass = DatabaseEntityPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application),
 			    getRelatedSyncConfiguration());
@@ -1431,7 +1453,6 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		return params;
 	}
 	
-	
 	@JsonIgnore
 	public void generateInsertSQLWithoutObjectId() {
 		String insertSQLFieldsWithoutObjectId = "";
@@ -1552,6 +1573,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	
 	public abstract boolean isGeneric();
 	
+	@Override
 	public List<Field> cloneFields() {
 		List<Field> clonedFields = new ArrayList<>();
 		

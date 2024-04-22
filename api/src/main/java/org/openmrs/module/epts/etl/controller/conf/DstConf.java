@@ -169,12 +169,16 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			DatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
 			
+			mappedObject.setTableConfiguration(this);
+			
 			for (FieldsMapping fieldsMapping : this.allFieldsMapping) {
 				
 				Object srcValue = fieldsMapping.retrieveValue(mappedObject, srcObjects, dstAppInfo, srcConn);
 				
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
 			}
+			
+			mappedObject.loadObjectIdData(this);
 			
 			return mappedObject;
 		}

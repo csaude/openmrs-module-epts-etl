@@ -7,8 +7,10 @@ import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
 import org.openmrs.module.epts.etl.resolveconflictsinstagearea.model.ResolveConflictsInStageAreaSearchParams;
@@ -22,7 +24,7 @@ public class ResolveConflictsInStageAreaEngine extends Engine {
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override

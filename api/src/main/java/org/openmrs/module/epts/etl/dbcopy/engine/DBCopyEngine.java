@@ -13,10 +13,11 @@ import org.openmrs.module.epts.etl.dbcopy.model.DBCopySearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -29,7 +30,7 @@ public class DBCopyEngine extends Engine {
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override

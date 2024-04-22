@@ -13,8 +13,16 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabaseObjectSearchParams extends SyncSearchParams<DatabaseObject> {
 	
+	private DatabaseObjectLoaderHelper loaderHealper;
+	
 	public DatabaseObjectSearchParams(EtlConfiguration config, RecordLimits limits) {
 		super(config, limits);
+		
+		this.loaderHealper = new DatabaseObjectLoaderHelper(config.getSrcConf());
+	}
+	
+	public DatabaseObjectLoaderHelper getLoaderHealper() {
+		return loaderHealper;
 	}
 	
 	@Override

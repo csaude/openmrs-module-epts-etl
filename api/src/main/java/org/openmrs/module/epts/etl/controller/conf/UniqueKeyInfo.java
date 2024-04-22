@@ -91,11 +91,14 @@ public class UniqueKeyInfo {
 	
 	public void loadValuesToFields(DatabaseObject object) {
 		for (Field field : this.fields) {
-			String attClasse = AttDefinedElements.convertTableAttNameToClassAttName(field.getName());
+			Object value;
 			
-			Object[] fieldValues = object.getFieldValues(attClasse);
-			
-			Object value = fieldValues != null ? fieldValues[0] : null;
+			try {
+				value = object.getFieldValue(field.getName());
+			}
+			catch (ForbiddenOperationException e) {
+				value = object.getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(field.getName()));
+			}
 			
 			field.setValue(value);
 		}

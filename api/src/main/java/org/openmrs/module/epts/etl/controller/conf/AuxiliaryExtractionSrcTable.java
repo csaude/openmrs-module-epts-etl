@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -100,7 +101,13 @@ public class AuxiliaryExtractionSrcTable extends AbstractTableConfiguration {
 			
 			FieldsMapping field = this.joinFields.get(i);
 			
-			Object value = dbObject.getFieldValue(field.getSrcFieldAsClassField());
+			Object value;
+			try {
+				value = dbObject.getFieldValue(field.getSrcField());
+			}
+			catch (ForbiddenOperationException e) {
+				value = dbObject.getFieldValue(field.getSrcFieldAsClassField());
+			}
 			
 			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getDstField(), value);
 		}

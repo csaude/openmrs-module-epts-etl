@@ -14,6 +14,8 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * This class represent a data from any related table
  */
@@ -90,7 +92,12 @@ public class EtlExtraDataSource extends SyncDataConfiguration {
 		return getAvaliableSrc().getName();
 	}
 	
-	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	@JsonIgnore
+	public Class<? extends DatabaseObject> getSyncRecordClass() throws ForbiddenOperationException {
+		return this.getSyncRecordClass(getMainApp());
+	}
+	
+	public Class<? extends DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		return getAvaliableSrc().getSyncRecordClass(application);
 	}
 	

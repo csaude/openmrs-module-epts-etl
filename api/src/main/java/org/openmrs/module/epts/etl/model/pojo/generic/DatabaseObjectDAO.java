@@ -140,8 +140,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 			        + " ON record_uuid = uuid\n";
 			sql += " WHERE 	record_origin_id = ? and record_origin_location_code = ? ";
 			
-			return find(parentTableConfiguration.getSyncRecordClass(parentTableConfiguration.getMainApp()), sql, params,
-			    conn);
+			return find(parentTableConfiguration.getLoadHealper(),
+			    parentTableConfiguration.getSyncRecordClass(parentTableConfiguration.getMainApp()), sql, params, conn);
 		}
 		catch (Exception e) {
 			logger.info("Error trying do retrieve record on table " + parentTableConfiguration.getTableName() + "["
@@ -221,7 +221,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		        + "\n";
 		sql += " WHERE 	" + conditionSQL;
 		
-		List<T> objs = (List<T>) search(obj.getClass(), sql, params, conn);
+		List<T> objs = (List<T>) search(tableConfiguration.getLoadHealper(), obj.getClass(), sql, params, conn);
 		
 		if (utilities.arrayHasElement(objs)) {
 			for (T t : objs) {
@@ -232,10 +232,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return objs;
 	}
 	
-	public static <T extends DatabaseObject> List<T> getByField(Class<T> openMRSClass, String fieldName, String fieldValue,
-	        Connection conn) throws DBException {
+	public static <T extends DatabaseObject> List<T> getByField(AbstractTableConfiguration tableConfiguration,
+	        String fieldName, String fieldValue, Connection conn) throws DBException {
 		try {
 			Object[] params = { fieldValue };
+			
+			@SuppressWarnings("unchecked")
+			Class<T> openMRSClass = (Class<T>) tableConfiguration.getSyncRecordClass(tableConfiguration.getRelatedAppInfo());
 			
 			T obj = openMRSClass.newInstance();
 			
@@ -249,7 +252,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql += " WHERE 	" + fieldName + " = ?";
 			sql += " ORDER BY " + fieldName;
 			
-			return search(openMRSClass, sql, params, conn);
+			return search(tableConfiguration.getLoadHealper(), openMRSClass, sql, params, conn);
 			
 		}
 		catch (InstantiationException e) {
@@ -284,7 +287,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			        + "\n";
 			sql += " WHERE 	" + oid.parseToParametrizedStringCondition();
 			
-			obj = find(openMRSClass, sql, params, conn);
+			obj = find(tabConf.getLoadHealper(), openMRSClass, sql, params, conn);
 			
 			if (obj != null) {
 				obj.loadObjectIdData(tabConf);
@@ -305,9 +308,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static <T extends DatabaseObject> T getByIdOnSpecificSchema(Class<T> openMRSClass, Oid oid, String schema,
-	        Connection conn) throws DBException {
+	@SuppressWarnings("unchecked")
+	public static <T extends DatabaseObject> T getByIdOnSpecificSchema(AbstractTableConfiguration tabConf, Oid oid,
+	        String schema, Connection conn) throws DBException {
 		try {
+			
+			Class<T> openMRSClass = (Class<T>) tabConf.getSyncRecordClass(tabConf.getRelatedAppInfo());
+			
 			T obj = openMRSClass.newInstance();
 			
 			Object[] params = oid.parseValuesToArray();
@@ -321,7 +328,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			        + (tableName.equals("patient") ? " left join person on person_id = patient_id" : "") + "\n";
 			sql += " WHERE 	" + oid.parseToParametrizedStringCondition();
 			
-			return find(openMRSClass, sql, params, conn);
+			return find(tabConf.getLoadHealper(), openMRSClass, sql, params, conn);
 		}
 		catch (InstantiationException e) {
 			e.printStackTrace();
@@ -339,10 +346,11 @@ public class DatabaseObjectDAO extends BaseDAO {
 	        Integer parentId, Connection conn) throws DBException {
 		Object[] params = { parentField };
 		
-		String sql = " SELECT " + tableConfiguration.getPrimaryKey() + " as object_id " + " FROM     "
-		        + tableConfiguration.getTableName() + " WHERE 	" + parentField + " = ?";
+		String sql = " SELECT * FROM " + tableConfiguration.getTableName() + " WHERE 	" + parentField + " = ?";
 		
-		return utilities.parseList(search(GenericDatabaseObject.class, sql, params, conn), DatabaseObject.class);
+		return utilities.parseList(
+		    search(tableConfiguration.getLoadHealper(), GenericDatabaseObject.class, sql, params, conn),
+		    DatabaseObject.class);
 	}
 	
 	public static DatabaseObject getDefaultRecord(AbstractTableConfiguration tableConfiguration, Connection conn)
@@ -355,19 +363,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += " FROM  	" + tableConfiguration.getTableName() + "\n";
 		sql += " LIMIT 0, 1";
 		
-		return find(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
-	}
-	
-	public static GenericDatabaseObject getByOid(String tableName, Oid pk, Connection conn) throws DBException {
-		Object[] params = pk.parseValuesToArray();
-		
-		String sql = "";
-		
-		sql += " SELECT " + pk.parseFieldNamesToCommaSeparatedString();
-		sql += " FROM  	" + tableName + "\n";
-		sql += " WHERE 	" + pk.parseToParametrizedStringCondition();
-		
-		return find(GenericDatabaseObject.class, sql, params, conn);
+		return find(tableConfiguration.getLoadHealper(),
+		    tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
 	}
 	
 	public static DatabaseObject getFirstConsistentRecordInOrigin(AbstractTableConfiguration tableInfo, Connection conn)
@@ -404,7 +401,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += "				FROM   " + tablesToSelect + "\n";
 		sql += "				WHERE consistent = 1;\n";
 		
-		return find(GenericDatabaseObject.class, sql, params, conn);
+		return find(tableConfiguration.getLoadHealper(), GenericDatabaseObject.class, sql, params, conn);
 	}
 	
 	public static DatabaseObject getFirstNeverProcessedRecordOnOrigin(AbstractTableConfiguration tableInfo, Connection conn)
@@ -417,25 +414,24 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return getExtremeNeverProcessedRecordOnOrigin(tableInfo, "max", conn);
 	}
 	
-	private static DatabaseObject getExtremeNeverProcessedRecordOnOrigin(AbstractTableConfiguration tableInfo,
-	        String function, Connection conn) throws DBException {
+	private static DatabaseObject getExtremeNeverProcessedRecordOnOrigin(AbstractTableConfiguration tabConf, String function,
+	        Connection conn) throws DBException {
 		Object[] params = {};
 		
 		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + tableInfo.getTableName() + "\n";
-		sql += " WHERE 	" + tableInfo.getPrimaryKey() + "	=	 (	SELECT " + function + "(" + tableInfo.getPrimaryKey()
-		        + ")\n";
-		sql += "													FROM   " + tableInfo.getTableName() + " \n";
+		sql += " FROM  	" + tabConf.getTableName() + "\n";
+		sql += " WHERE 	" + tabConf.getPrimaryKey() + "	=	 (	SELECT " + function + "(" + tabConf.getPrimaryKey() + ")\n";
+		sql += "													FROM   " + tabConf.getTableName() + " \n";
 		sql += "													WHERE  NOT EXISTS ( SELECT * \n";
 		sql += "																		FROM "
-		        + tableInfo.generateFullStageTableName() + "\n";
+		        + tabConf.generateFullStageTableName() + "\n";
 		sql += "																		WHERE record_origin_id = "
-		        + tableInfo.getPrimaryKey() + "\n)";
+		        + tabConf.getPrimaryKey() + "\n)";
 		sql += "												   )";
 		
-		return find(tableInfo.getSyncRecordClass(tableInfo.getMainApp()), sql, params, conn);
+		return find(tabConf.getLoadHealper(), tabConf.getSyncRecordClass(tabConf.getMainApp()), sql, params, conn);
 	}
 	
 	public static void remove(DatabaseObject record, Connection conn) throws DBException {
@@ -464,7 +460,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return v.intValue();
 	}
 	
-	public static Integer countAllOfParentId(Class<DatabaseObject> clazz, String parentField, Integer parentId,
+	public static Integer countAllOfParentId(Class<? extends DatabaseObject> clazz, String parentField, Integer parentId,
 	        Connection conn) throws DBException {
 		Object[] params = { parentId };
 		
@@ -478,7 +474,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return v.IntegerValue();
 	}
 	
-	public static List<DatabaseObject> getByOriginParentId(String parentField, Integer parentOriginId, String appOriginCode,
+	public static List<? extends DatabaseObject> getByOriginParentId(String parentField, Integer parentOriginId, String appOriginCode,
 	        AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
 		Object[] params = { parentOriginId, appOriginCode };
 		
@@ -488,26 +484,15 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += " WHERE 	" + parentField + " = ? ";
 		sql += "			AND record_origin_location_code = ? ";
 		
-		return search(tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
+		return search(tableConfiguration.getLoadHealper(),
+		    tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
 	}
 	
-	public static List<DatabaseObject> getByParentId(Class<DatabaseObject> clazz, String parentField, Integer parentId,
-	        Connection conn) throws DBException {
-		Object[] params = { parentId };
-		
-		DatabaseObject obj = utilities.createInstance(clazz);
-		
-		String sql = " SELECT " + obj.generateTableName() + ".*"
-		        + (obj.generateTableName().equals("patient") ? ", uuid" : "") + " FROM     " + obj.generateTableName()
-		        + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id " : "")
-		        + " WHERE 	" + parentField + " = ?";
-		
-		return search(clazz, sql, params, conn);
-	}
-	
-	public static List<DatabaseObject> getByParentIdOnSpecificSchema(Class<DatabaseObject> clazz, String parentField,
+	public static List<? extends DatabaseObject> getByParentIdOnSpecificSchema(AbstractTableConfiguration tabConf, String parentField,
 	        Integer parentId, String schema, Connection conn) throws DBException {
 		Object[] params = { parentId };
+		
+		Class<? extends DatabaseObject> clazz = tabConf.getSyncRecordClass();
 		
 		DatabaseObject obj = utilities.createInstance(clazz);
 		
@@ -518,7 +503,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		                : "")
 		        + " WHERE 	" + parentField + " = ?";
 		
-		return search(clazz, sql, params, conn);
+		return search(tabConf.getLoadHealper(), clazz, sql, params, conn);
 	}
 	
 	private static void insertAllMetadata(List<DatabaseObject> records, AbstractTableConfiguration tableInfo,
@@ -624,26 +609,26 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return null;
 	}
 	
-	public static Integer getAvaliableObjectId(AbstractTableConfiguration syncTableInfo, Integer maxAcceptableId,
-	        Connection conn) throws DBException {
+	public static Integer getAvaliableObjectId(AbstractTableConfiguration tabConf, Integer maxAcceptableId, Connection conn)
+	        throws DBException {
 		if (maxAcceptableId <= 0)
-			throw new ForbiddenOperationException("There was not find any avaliable id for " + syncTableInfo.getTableName());
+			throw new ForbiddenOperationException("There was not find any avaliable id for " + tabConf.getTableName());
 		
-		if (syncTableInfo.getPrimaryKey().isCompositeKey()) {
-			throw new ForbiddenOperationException("The key for table " + syncTableInfo.getTableName()
+		if (tabConf.getPrimaryKey().isCompositeKey()) {
+			throw new ForbiddenOperationException("The key for table " + tabConf.getTableName()
 			        + " is composite. You cannot determine de avaliable ObjectId");
 		}
 		
-		if (!syncTableInfo.getPrimaryKey().retrieveSimpleKey().isNumericColumnType()) {
+		if (!tabConf.getPrimaryKey().retrieveSimpleKey().isNumericColumnType()) {
 			throw new ForbiddenOperationException("The key should be numeric...!");
 		}
 		
-		String pkName = syncTableInfo.getPrimaryKey().retrieveSimpleKey().getName();
+		String pkName = tabConf.getPrimaryKey().retrieveSimpleKey().getName();
 		
 		String sql = "";
 		
 		sql += " SELECT max(" + pkName + ") " + pkName + " \n";
-		sql += " FROM  	" + syncTableInfo.getTableName() + ";\n";
+		sql += " FROM  	" + tabConf.getTableName() + ";\n";
 		
 		DatabaseObject maxObj = find(GenericDatabaseObject.class, sql, null, conn);
 		
@@ -654,10 +639,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 				
 				Oid oid = Oid.fastCreate(pkName, maxAcceptableId - 1);
 				
-				if (getByOid(syncTableInfo, oid, conn) == null) {
+				if (getByOid(tabConf, oid, conn) == null) {
 					return maxAcceptableId - 1;
 				} else
-					return getAvaliableObjectId(syncTableInfo, maxAcceptableId - 1, conn);
+					return getAvaliableObjectId(tabConf, maxAcceptableId - 1, conn);
 			}
 		} else {
 			return maxAcceptableId;
@@ -845,7 +830,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			dateChangedClause += " or (dest_.date_changed < src_.record_date_changed)";
 		}
 		
-		sql += " SELECT " + tableConfiguration.getPrimaryKey() + " object_id \n";
+		sql += " SELECT " + tableConfiguration.getPrimaryKey().parseFieldNamesToCommaSeparatedString() + " \n";
 		sql += " FROM  	" + table + "\n";
 		sql += " WHERE 	1 = 1 \n";
 		sql += "		AND " + tableConfiguration.getPrimaryKey() + " = ";
@@ -854,6 +839,6 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += "				WHERE 1= 1\n";
 		sql += "					AND (" + startingClause + dateVoidedClause + dateChangedClause + "))";
 		
-		return find(GenericDatabaseObject.class, sql, params, conn);
+		return find(tableConfiguration.getLoadHealper(), GenericDatabaseObject.class, sql, params, conn);
 	}
 }

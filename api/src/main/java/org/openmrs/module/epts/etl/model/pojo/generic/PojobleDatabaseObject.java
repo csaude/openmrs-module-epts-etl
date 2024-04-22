@@ -46,14 +46,16 @@ public interface PojobleDatabaseObject {
 	String getSharePkWith();
 	
 	boolean hasPK();
-
+	
 	boolean isMetadata();
 	
 	File getPOJOCopiledFilesDirectory();
 	
 	File getClassPath();
 	
-	Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException;
+	Class<? extends DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException;
+	
+	Class<? extends DatabaseObject> getSyncRecordClass() throws ForbiddenOperationException;
 	
 	boolean isDestinationInstallationType();
 	
@@ -64,6 +66,10 @@ public interface PojobleDatabaseObject {
 	List<RefInfo> getParentRefInfo();
 	
 	List<RefInfo> getChildRefInfo();
-
+	
 	boolean hasDateFields();
+	
+	DatabaseObjectLoaderHelper getLoadHealper();
+	
+	List<Field> cloneFields();
 }

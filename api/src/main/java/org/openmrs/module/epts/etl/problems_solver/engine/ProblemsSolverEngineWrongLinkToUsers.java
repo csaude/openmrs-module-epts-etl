@@ -12,10 +12,12 @@ import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -43,7 +45,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	
 	@Override
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
+		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override
@@ -72,8 +74,8 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					
 					logDebug(startingStrLog + " STARTING RESOLVE PROBLEMS OF RECORD [" + record + "]");
 					
-					Class<DatabaseObject> prsonRecordClass = AbstractTableConfiguration
-					        .initGenericTabConf("person", getEtlConfiguration().getSrcConf()).getSyncRecordClass(getDefaultApp());
+					AbstractTableConfiguration personTabConf = AbstractTableConfiguration
+					        .initGenericTabConf("person", getEtlConfiguration().getSrcConf());
 					
 					DatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(getMainSrcTableConf(),
 					    ((DatabaseObject) record).getObjectId(), conn);
@@ -98,7 +100,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 							
 							logDebug("RESOLVING USER PROBLEM USING DATA FROM [" + dbName + "]");
 							
-							DatabaseObject relatedPersonOnSrcDB = DatabaseObjectDAO.getByIdOnSpecificSchema(prsonRecordClass,
+							DatabaseObject relatedPersonOnSrcDB = DatabaseObjectDAO.getByIdOnSpecificSchema(personTabConf,
 							    Oid.fastCreate("", userOnSrcDB.getParentValue("personId")), dbName, srcConn);
 							
 							List<DatabaseObject> relatedPersonOnDestDB = null;//DatabaseObjectDAO.getByUuid(prsonRecordClass, relatedPersonOnSrcDB.getUuid(), conn);

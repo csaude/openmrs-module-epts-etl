@@ -6,9 +6,9 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -37,7 +37,7 @@ public class MergingRecord {
 	}
 	
 	public void merge(Connection conn) throws DBException {
-		this.record = DatabaseObjectDAO.getByIdOnSpecificSchema(config.getSyncRecordClass(this.srcApp), Oid.fastCreate("", stageInfo.getRecordOriginId()),  stageInfo.getRecordOriginLocationCode(), conn);
+		this.record = DatabaseObjectDAO.getByIdOnSpecificSchema(config, Oid.fastCreate("", stageInfo.getRecordOriginId()),  stageInfo.getRecordOriginLocationCode(), conn);
 		this.record.setRelatedSyncInfo(stageInfo);
 		
 		consolidateAndSaveData(conn);
@@ -63,7 +63,7 @@ public class MergingRecord {
 			SyncImportInfoVO parentStageInfo = parentInfo.getParentStageInfo();
 			
 			MergingRecord parentData = new MergingRecord(parentStageInfo, refInfo.getParentTableConf(), this.srcApp, this.destApp);
-			parentData.record = DatabaseObjectDAO.getByIdOnSpecificSchema(refInfo.getParentSyncRecordClass(this.srcApp), parentStageInfo.getRecordOriginIdAsOid(),  parentStageInfo.getRecordOriginLocationCode(), conn);
+			parentData.record = DatabaseObjectDAO.getByIdOnSpecificSchema(refInfo.getParentTableConf(), parentStageInfo.getRecordOriginIdAsOid(),  parentStageInfo.getRecordOriginLocationCode(), conn);
 			parentData.merge(conn);
 			
 			DatabaseObject parent = parentData.record;

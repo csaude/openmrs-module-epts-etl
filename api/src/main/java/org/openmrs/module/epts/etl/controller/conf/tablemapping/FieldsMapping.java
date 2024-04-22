@@ -100,7 +100,12 @@ public class FieldsMapping {
 		
 		for (DatabaseObject srcObject : srcObjects) {
 			if (this.getDataSourceName().equals(srcObject.generateTableName())) {
-				return srcObject.getFieldValue(this.getSrcFieldAsClassField());
+				try {
+					return srcObject.getFieldValue(this.getSrcField());
+				}
+				catch (ForbiddenOperationException e) {
+					return srcObject.getFieldValue(this.getSrcFieldAsClassField());
+				}
 			}
 		}
 		

@@ -4,20 +4,29 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.openmrs.module.epts.etl.controller.ProcessStarter;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
+import org.openmrs.module.epts.etl.dbquickmerge.model.MergingRecord;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.SimpleValue;
+import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -30,8 +39,8 @@ public class QuickTest {
 	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
+	@SuppressWarnings("unused")
 	public static OpenConnection openConnection() {
-		@SuppressWarnings("unused")
 		DBConnectionInfo connInfo_localhost = new DBConnectionInfo("root", "root", "jdbc:mysql://localhost:3306/tmp_qlm_hgq",
 		        "com.mysql.cj.jdbc.Driver");
 		
@@ -42,13 +51,76 @@ public class QuickTest {
 		
 		DBConnectionInfo connInfo_mozart = DBConnectionInfo.loadFromJson(json);
 		
-		DBConnectionService service = DBConnectionService.init(connInfo_mozart);
+		DBConnectionService service = DBConnectionService.init(connInfo_localhost);
 		
 		return service.openConnection();
 	}
 	
 	public static void main(String[] args) throws Exception {
-		countAll();
+		searchRecords();
+	}
+	
+	public static void searchRecords() throws IOException, DBException {
+		
+		String path = "D:\\ORG\\C-SAUDE\\PROJECTOS\\Mozart\\etl\\conf\\mpozart_etl.json";
+		
+		SyncConfiguration conf = SyncConfiguration.loadFromFile(new File(path));
+		
+		EtlConfiguration etlConf = conf.getEtlConfiguration().get(0);
+		
+		etlConf.fullLoad();
+		
+		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(etlConf, null, null);
+		
+		searchParams.setQtdRecordPerSelected(conf.getOperations().get(0).getMaxRecordPerProcessing());
+		
+		AppInfo srcApp = conf.getMainApp();
+		AppInfo dstApp = etlConf.getDstConf().get(0).getRelatedAppInfo();
+		
+		OpenConnection srcConn = conf.getMainApp().openConnection();
+		
+		List<DatabaseObject> syncRecords = DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) searchParams,
+		    srcConn);
+		
+		OpenConnection dstConn = dstApp.openConnection();
+		
+		Map<String, List<MergingRecord>> mergingRecs = new HashMap<>();
+		
+		try {
+			
+			for (SyncRecord record : syncRecords) {
+				DatabaseObject rec = (DatabaseObject) record;
+				
+				for (DstConf mappingInfo : etlConf.getDstConf()) {
+					
+					DatabaseObject destObject = null;
+					
+					destObject = mappingInfo.generateMappedObject(rec, srcConn, srcApp, dstApp);
+					
+					if (destObject != null) {
+						destObject.loadObjectIdData(mappingInfo);
+						
+						MergingRecord mr = new MergingRecord(destObject, mappingInfo, srcApp, dstApp, false);
+						
+						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
+							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
+						}
+						
+						mergingRecs.get(mappingInfo.getTableName()).add(mr);
+					}
+				}
+			}
+			
+			MergingRecord.mergeAll(mergingRecs, srcConn, dstConn);
+			
+			dstConn.markAsSuccessifullyTerminated();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally {
+			dstConn.finalizeConnection();
+		}
 	}
 	
 	public static void countAll() throws IOException, DBException {

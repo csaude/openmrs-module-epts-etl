@@ -87,7 +87,8 @@ public class RefInfo {
 		}
 		
 		if (this.fieldsMapping.contains(mapping))
-			throw new DuplicateMappingException("The maaping you tried to add alredy exists on mapping field on table [" + this.getChildTableName() + "]");
+			throw new DuplicateMappingException("The maaping you tried to add alredy exists on mapping field on table ["
+			        + this.getChildTableName() + "]");
 		
 		this.fieldsMapping.add(mapping);
 	}
@@ -112,11 +113,11 @@ public class RefInfo {
 		return childTableConf;
 	}
 	
-	public Class<DatabaseObject> getParentSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	public Class<? extends DatabaseObject> getParentSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		return this.parentTableConf.getSyncRecordClass(application);
 	}
 	
-	public Class<DatabaseObject> getChildSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	public Class<? extends DatabaseObject> getChildSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		return this.childTableConf.getSyncRecordClass(application);
 	}
 	
@@ -266,6 +267,5 @@ public class RefInfo {
 		
 		return keys;
 	}
-	
 	
 }

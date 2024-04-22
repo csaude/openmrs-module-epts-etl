@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
@@ -183,8 +183,8 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void refreshLastSyncDateOnDestination(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
-	        Connection conn) {
+	public void refreshLastSyncDateOnDestination(AbstractTableConfiguration tableConfiguration,
+	        String recordOriginLocationCode, Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -295,7 +295,8 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public Map<RefInfo, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn) throws DBException {
+	public Map<RefInfo, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
+	        throws DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -314,8 +315,8 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo, Connection conn)
-	        throws DBException {
+	public void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo,
+	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
@@ -333,11 +334,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public Object[] getFieldValues(String... fieldName) {
-		return null;
-	}
-	
-	@Override
 	public Object getFieldValue(String fieldName) {
 		return null;
 	}
@@ -345,37 +341,37 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	@Override
 	public void setFieldValue(String fieldName, Object value) {
 	}
-
+	
 	@Override
 	public void loadObjectIdData(AbstractTableConfiguration tabConf) {
 		this.objectId = tabConf.getPrimaryKey().generateOid(this);
 	}
-
+	
 	@Override
 	public void fastCreateSimpleNumericKey(long i) {
 		Oid oid = new Oid();
 		
 		oid.addKey(new Key("", i));
 	}
-
+	
 	@Override
 	public void changeParentValue(RefInfo refInfo, DatabaseObject newParent) {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public void setParentToNull(RefInfo refInfo) {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public String generateInsertValuesWithoutObjectId() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public String generateInsertValuesWithObjectId() {
 		// TODO Auto-generated method stub

@@ -10,9 +10,10 @@ import org.openmrs.module.epts.etl.detectgapes.model.GapeDAO;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -38,9 +39,8 @@ public class DetectGapesEngine extends Engine {
 	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
 		List<SyncRecord> records = new ArrayList<SyncRecord>();
 		
-		records = utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), SyncRecord.class);
-		
-		return records;
+		return utilities.parseList(
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
 	}
 	
 	@Override
@@ -73,7 +73,8 @@ public class DetectGapesEngine extends Engine {
 			if (diff > 1) {
 				logDebug("Found gape of " + diff + " between " + prevRec.getObjectId() + " and " + rec.getObjectId());
 				
-				for (int i = prevRec.getObjectId().getSimpleValueAsInt() + 1; i < rec.getObjectId().getSimpleValueAsInt(); i++) {
+				for (int i = prevRec.getObjectId().getSimpleValueAsInt() + 1; i < rec.getObjectId()
+				        .getSimpleValueAsInt(); i++) {
 					GapeDAO.insert(getMainSrcTableConf(), i, conn);
 				}
 			}
