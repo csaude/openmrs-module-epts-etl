@@ -789,24 +789,6 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		if (syncRecordClass == null)
 			this.syncRecordClass = GenericDatabaseObject.class;
 		
-		if (syncRecordClass == null)
-			this.syncRecordClass = DatabaseEntityPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application),
-			    getRelatedSyncConfiguration());
-		
-		if (syncRecordClass == null) {
-			OpenConnection conn = application.openConnection();
-			
-			try {
-				generateRecordClass(application, true);
-			}
-			finally {
-				conn.finalizeConnection();
-			}
-		}
-		
-		if (syncRecordClass == null)
-			throw new ForbiddenOperationException("The related pojo of table " + getTableName() + " was not found!!!!");
-		
 		return syncRecordClass;
 	}
 	

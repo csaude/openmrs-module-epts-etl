@@ -174,25 +174,6 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		if (syncRecordClass == null)
 			syncRecordClass = GenericDatabaseObject.class;
 		
-		if (syncRecordClass == null)
-			this.syncRecordClass = DatabaseEntityPOJOGenerator.tryToGetExistingCLass(generateFullClassName(application),
-			    getRelatedSyncConfiguration());
-		
-		if (syncRecordClass == null) {
-			OpenConnection conn = application.openConnection();
-			
-			try {
-				generateRecordClass(application, true);
-			}
-			finally {
-				conn.finalizeConnection();
-			}
-		}
-		
-		if (syncRecordClass == null) {
-			throw new ForbiddenOperationException("The related pojo of query " + getObjectName() + " was not found!!!!");
-		}
-		
 		return syncRecordClass;
 	}
 	

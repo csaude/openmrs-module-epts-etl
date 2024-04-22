@@ -67,8 +67,6 @@ public class AttDefinedElements {
 		
 		if (this.pojoble.getPrimaryKey() != null) {
 			this.isPartOfObjectId = this.pojoble.getPrimaryKey().containsKey(key);
-		} else {
-			System.out.println("Stop");
 		}
 	}
 	

@@ -240,7 +240,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 						if (getRelatedOperationController().mustRestartInTheEnd()) {
 							this.requestANewJob();
 						} else {
-							if (this.isMainEngine() && this.hasChild() && finalCheckStatus.notInitialized()) {
+							if (this.isMainEngine() && finalCheckStatus.notInitialized()) {
 								//Do the final check before finishing
 								
 								while (this.hasChild() && !isAllChildFinished()) {
