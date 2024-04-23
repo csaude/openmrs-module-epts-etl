@@ -48,7 +48,7 @@ public class DBQuickMergeEngine extends Engine {
 			OpenConnection dstConn = this.getDstApp().openConnection();
 			
 			try {
-				if (DBUtilities.isSameDatabaseServer(conn, dstConn) && getMainSrcTableConf().hasUniqueKeys()) {
+				if (DBUtilities.isSameDatabaseServer(conn, dstConn) && getEtlConfiguration().hasDstWithJoinFieldsToSrc()) {
 					this.searchParams.setExtraCondition(searchParams.generateDestinationExclusionClause(conn, dstConn));
 				}
 			}

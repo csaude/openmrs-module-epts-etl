@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.inconsistenceresolver.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
@@ -15,7 +15,7 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<DatabaseOb
 	
 	private boolean selectAllRecords;
 	
-	public InconsistenceSolverSearchParams(EtlConfiguration config, RecordLimits limits, Connection conn) {
+	public InconsistenceSolverSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn) {
 		super(config, limits);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());

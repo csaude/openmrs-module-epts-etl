@@ -78,7 +78,7 @@ public class MergingRecord {
 		try {
 			record.save(config, destConn);
 			
-			if (config.getPrimaryKey().isSimpleNumericKey()) {
+			if (config.useSimpleNumericPk()) {
 				this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
 			}
 			
@@ -96,7 +96,7 @@ public class MergingRecord {
 					
 					((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 					
-					if (config.getPrimaryKey().isSimpleNumericKey()) {
+					if (config.useSimpleNumericPk()) {
 						this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
 					}
 				}

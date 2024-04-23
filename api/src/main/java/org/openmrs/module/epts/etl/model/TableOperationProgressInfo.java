@@ -10,7 +10,7 @@ import java.util.Date;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.SyncProgressMeter;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
@@ -24,14 +24,14 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class TableOperationProgressInfo extends BaseVO {
 	
-	private EtlConfiguration etlConfiguration;
+	private EtlItemConfiguration etlItemConfiguration;
 	
 	private SyncProgressMeter progressMeter;
 	
 	private OperationController controller;
 	
 	/*
-	 * Since in destination site the etlConfiguration is aplayed to all sites, then it is needed to fix it to allow manual specification
+	 * Since in destination site the etlItemConfiguration is aplayed to all sites, then it is needed to fix it to allow manual specification
 	 */
 	private String originAppLocationCode;
 	
@@ -52,9 +52,9 @@ public class TableOperationProgressInfo extends BaseVO {
 		this.progressMeter = SyncProgressMeter.fullInit(status, startTime, lastRefreshAt, total, processed);
 	}
 	
-	public TableOperationProgressInfo(OperationController controller, EtlConfiguration etlConfiguration) {
+	public TableOperationProgressInfo(OperationController controller, EtlItemConfiguration etlItemConfiguration) {
 		this.controller = controller;
-		this.etlConfiguration = etlConfiguration;
+		this.etlItemConfiguration = etlItemConfiguration;
 		this.originAppLocationCode = determineAppLocationCode(controller);
 		this.progressMeter = SyncProgressMeter.defaultProgressMeter(getOperationId());
 	}
@@ -90,16 +90,16 @@ public class TableOperationProgressInfo extends BaseVO {
 	}
 	
 	@JsonIgnore
-	public EtlConfiguration getEtlConfiguration() {
-		return etlConfiguration;
+	public EtlItemConfiguration getEtlConfiguration() {
+		return etlItemConfiguration;
 	}
 	
-	public void setEtlConfiguration(EtlConfiguration etlConfiguration) {
-		this.etlConfiguration = etlConfiguration;
+	public void setEtlConfiguration(EtlItemConfiguration etlItemConfiguration) {
+		this.etlItemConfiguration = etlItemConfiguration;
 	}
 	
 	public String getOperationId() {
-		return generateOperationId(controller, etlConfiguration);
+		return generateOperationId(controller, etlItemConfiguration);
 	}
 	
 	public String getOperationName() {
@@ -107,7 +107,7 @@ public class TableOperationProgressInfo extends BaseVO {
 	}
 	
 	public String getOperationConfigCode() {
-		return this.etlConfiguration.getConfigCode();
+		return this.etlItemConfiguration.getConfigCode();
 	}
 	
 	public SyncProgressMeter getProgressMeter() {
@@ -122,7 +122,7 @@ public class TableOperationProgressInfo extends BaseVO {
 		this.originAppLocationCode = originAppLocationCode;
 	}
 	
-	public static String generateOperationId(OperationController operationController, EtlConfiguration config) {
+	public static String generateOperationId(OperationController operationController, EtlItemConfiguration config) {
 		return operationController.getControllerId() + "_" + config.getConfigCode();
 	}
 	
@@ -190,7 +190,7 @@ public class TableOperationProgressInfo extends BaseVO {
 	}
 	
 	public void clear(Connection conn) throws DBException {
-		TableOperationProgressInfoDAO.delete(this, this.etlConfiguration, conn);
+		TableOperationProgressInfoDAO.delete(this, this.etlItemConfiguration, conn);
 	}
 	
 }

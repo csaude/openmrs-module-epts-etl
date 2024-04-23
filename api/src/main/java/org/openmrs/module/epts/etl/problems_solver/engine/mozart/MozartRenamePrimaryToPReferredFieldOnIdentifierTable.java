@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.engine.mozart;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -48,7 +48,7 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Mozart
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<EtlConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
@@ -65,7 +65,7 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Mozart
 				continue;
 			}
 			
-			for (EtlConfiguration config : configs) {
+			for (EtlItemConfiguration config : configs) {
 				AbstractTableConfiguration configuredTable = config.getSrcConf();
 				
 				if (!configuredTable.getTableName().equals("identifier"))

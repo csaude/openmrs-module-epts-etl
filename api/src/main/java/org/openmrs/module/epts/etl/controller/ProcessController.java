@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.ProcessProgressInfo;
@@ -38,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class ProcessController implements Controller, ControllerStarter {
 	
-	private SyncConfiguration configuration;
+	private EtlConfiguration configuration;
 	
 	private int operationStatus;
 	
@@ -70,7 +70,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.progressInfo = new ProcessProgressInfo(this);
 	}
 	
-	public ProcessController(ProcessStarter starter, SyncConfiguration configuration) throws DBException {
+	public ProcessController(ProcessStarter starter, EtlConfiguration configuration) throws DBException {
 		this();
 		
 		this.starter = starter;
@@ -100,14 +100,14 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	public void init(File syncCongigurationFile) throws DBException {
 		try {
-			init(SyncConfiguration.loadFromFile(syncCongigurationFile));
+			init(EtlConfiguration.loadFromFile(syncCongigurationFile));
 		}
 		catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 	
-	public void init(SyncConfiguration configuration) throws DBException {
+	public void init(EtlConfiguration configuration) throws DBException {
 		this.configuration = configuration;
 		this.configuration.setRelatedController(this);
 		this.appsInfo = configuration.getAppsInfo();
@@ -134,7 +134,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		OpenConnection conn = getDefaultApp().openConnection();
 		
 		try {
-			for (SyncOperationConfig operation : configuration.getOperations()) {
+			for (EtlOperationConfig operation : configuration.getOperations()) {
 				List<OperationController> controller = operation.generateRelatedController(this,
 				    operation.getRelatedSyncConfig().getOriginAppLocationCode(), conn);
 				
@@ -208,11 +208,11 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	@JsonIgnore
-	public SyncConfiguration getConfiguration() {
+	public EtlConfiguration getConfiguration() {
 		return configuration;
 	}
 	
-	public void setConfiguration(SyncConfiguration configuration) {
+	public void setConfiguration(EtlConfiguration configuration) {
 		this.configuration = configuration;
 	}
 	
@@ -651,7 +651,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		return progressInfoLoaded;
 	}
 	
-	public static ProcessController retrieveRunningThread(SyncConfiguration configuration) {
+	public static ProcessController retrieveRunningThread(EtlConfiguration configuration) {
 		String controllerId = configuration.generateControllerId();
 		
 		//Thread runningThread = null;
@@ -762,7 +762,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	private void generateTableOperationProgressInfo() throws DBException {
 		
-		SyncConfiguration config = getConfiguration();
+		EtlConfiguration config = getConfiguration();
 		
 		OpenConnection conn = openConnection();
 		

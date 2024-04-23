@@ -127,7 +127,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public SyncConfiguration getRelatedSyncConfiguration() {
+	public EtlConfiguration getRelatedSyncConfiguration() {
 		return getParent().getRelatedSyncConfiguration();
 	}
 	

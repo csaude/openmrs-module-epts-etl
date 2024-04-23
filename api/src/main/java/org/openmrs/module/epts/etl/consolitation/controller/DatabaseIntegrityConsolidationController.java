@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.consolitation.controller;
 import org.openmrs.module.epts.etl.consolitation.engine.DatabaseIntegrityConsolidationEngine;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
@@ -21,7 +21,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 public class DatabaseIntegrityConsolidationController extends OperationController {
 	
 	public DatabaseIntegrityConsolidationController(ProcessController processController,
-	    SyncOperationConfig operationConfig) {
+	    EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
@@ -31,7 +31,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	}
 	
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -48,7 +48,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlConfiguration config) {
+	public long getMaxRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {

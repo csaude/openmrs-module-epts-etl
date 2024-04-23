@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.controller.conf.ParameterValueType;
 import org.openmrs.module.epts.etl.controller.conf.QueryParameter;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -1096,7 +1096,7 @@ public class DBUtilities {
 		return "CONSTRAINT " + keyName + " CHECK (" + checkCondition + ")";
 	}
 	
-	public static Object[] loadParamsValues(String query, SyncConfiguration relatedSyncConfiguration) {
+	public static Object[] loadParamsValues(String query, EtlConfiguration relatedSyncConfiguration) {
 		List<QueryParameter> paramConfig = new ArrayList<>();
 		
 		List<Field> params = extractAllParamNamesOnQuery(query);
@@ -1121,7 +1121,7 @@ public class DBUtilities {
 	 * @return
 	 */
 	public static Object[] loadParamsValues(String query, List<QueryParameter> paramConfig, DatabaseObject srcObject,
-	        SyncConfiguration configuration) {
+	        EtlConfiguration configuration) {
 		List<Field> queryParameters = null;
 		
 		queryParameters = DBUtilities.extractAllParamNamesOnQuery(query);
@@ -1182,7 +1182,7 @@ public class DBUtilities {
 	 * @return the configuration parameters loaded with values
 	 */
 	static List<QueryParameter> loadParamConfigValue(List<QueryParameter> paramConfig, DatabaseObject srcObject,
-	        SyncConfiguration configuration) {
+	        EtlConfiguration configuration) {
 		List<QueryParameter> params = null;
 		
 		if (utilities.arrayHasElement(paramConfig)) {
@@ -1254,7 +1254,7 @@ public class DBUtilities {
 		return params;
 	}
 	
-	static Object getParamValueFromSyncConfiguration(SyncConfiguration configuration, String param)
+	static Object getParamValueFromSyncConfiguration(EtlConfiguration configuration, String param)
 	        throws ForbiddenOperationException {
 		Object paramValue = configuration.getParamValue(param);
 		

@@ -5,7 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.controller.conf.SrcConf;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncDataConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncDataSource;
 import org.openmrs.module.epts.etl.controller.conf.TableDataSourceConfig;
@@ -107,7 +107,7 @@ public class EtlExtraDataSource extends SyncDataConfiguration {
 		}
 	}
 	
-	public SyncConfiguration getRelatedSyncConfiguration() {
+	public EtlConfiguration getRelatedSyncConfiguration() {
 		return this.relatedSrcConf.getRelatedSyncConfiguration();
 	}
 	

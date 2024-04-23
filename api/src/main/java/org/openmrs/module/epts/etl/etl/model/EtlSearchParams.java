@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.etl.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.AuxiliaryExtractionSrcTable;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
@@ -18,7 +18,7 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public EtlSearchParams(EtlConfiguration config, RecordLimits limits, EtlController relatedController) {
+	public EtlSearchParams(EtlItemConfiguration config, RecordLimits limits, EtlController relatedController) {
 		super(config, limits);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());

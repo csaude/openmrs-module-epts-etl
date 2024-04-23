@@ -1,12 +1,12 @@
 package org.openmrs.module.epts.etl.controller;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 
 public abstract class SiteOperationController extends OperationController{
 
 	protected String appOriginLocationCode;
 	
-	public SiteOperationController(ProcessController processController, SyncOperationConfig operationConfig, String appOriginLocationCode) {
+	public SiteOperationController(ProcessController processController, EtlOperationConfig operationConfig, String appOriginLocationCode) {
 		super(processController, operationConfig);
 		
 		this.appOriginLocationCode = appOriginLocationCode;

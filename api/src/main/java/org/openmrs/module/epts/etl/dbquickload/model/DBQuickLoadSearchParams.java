@@ -8,7 +8,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.dbquickload.engine.QuickLoadLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
@@ -21,7 +21,7 @@ public class DBQuickLoadSearchParams extends SyncSearchParams<DatabaseObject> im
 	
 	private DBQuickLoadController controller;
 	
-	public DBQuickLoadSearchParams(DBQuickLoadController controller, EtlConfiguration config, QuickLoadLimits limits) {
+	public DBQuickLoadSearchParams(DBQuickLoadController controller, EtlItemConfiguration config, QuickLoadLimits limits) {
 		super(config, limits);
 		
 		this.controller = controller;

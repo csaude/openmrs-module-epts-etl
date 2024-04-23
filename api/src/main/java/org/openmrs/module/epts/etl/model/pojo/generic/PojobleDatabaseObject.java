@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncDataConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -61,7 +61,7 @@ public interface PojobleDatabaseObject {
 	
 	void generateRecordClass(AppInfo app, boolean fullClass);
 	
-	SyncConfiguration getRelatedSyncConfiguration();
+	EtlConfiguration getRelatedSyncConfiguration();
 	
 	List<RefInfo> getParentRefInfo();
 	

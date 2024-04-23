@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -22,7 +22,7 @@ public class TransportSyncSearchParams extends SyncSearchParams<DatabaseObject> 
 	
 	private TransportController controller;
 	
-	public TransportSyncSearchParams(TransportController controller, EtlConfiguration config, RecordLimits limits) {
+	public TransportSyncSearchParams(TransportController controller, EtlItemConfiguration config, RecordLimits limits) {
 		super(config, limits);
 		
 		this.controller = controller;

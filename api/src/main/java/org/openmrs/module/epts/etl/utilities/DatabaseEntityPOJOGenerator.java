@@ -20,7 +20,7 @@ import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefMapping;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.exceptions.SyncExeption;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -417,19 +417,19 @@ public class DatabaseEntityPOJOGenerator {
 		return tryToGetExistingCLass(fullClassName, pojoable.getRelatedSyncConfiguration());
 	}
 	
-	public static Class<DatabaseObject> tryToGetExistingCLass(String fullClassName, SyncConfiguration syncConfiguration) {
+	public static Class<DatabaseObject> tryToGetExistingCLass(String fullClassName, EtlConfiguration etlConfiguration) {
 		Class<DatabaseObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
 		
 		if (clazz == null) {
-			if (syncConfiguration.getModuleRootDirectory() != null)
-				clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getModuleRootDirectory());
+			if (etlConfiguration.getModuleRootDirectory() != null)
+				clazz = tryToLoadFromClassPath(fullClassName, etlConfiguration.getModuleRootDirectory());
 			
 			if (clazz == null) {
-				clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getClassPathAsFile());
+				clazz = tryToLoadFromClassPath(fullClassName, etlConfiguration.getClassPathAsFile());
 			}
 			
 			if (clazz == null) {
-				clazz = tryToLoadFromClassPath(fullClassName, syncConfiguration.getPOJOCompiledFilesDirectory());
+				clazz = tryToLoadFromClassPath(fullClassName, etlConfiguration.getPOJOCompiledFilesDirectory());
 			}
 		}
 		

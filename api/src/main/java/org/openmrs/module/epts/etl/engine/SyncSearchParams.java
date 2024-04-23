@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AuxiliaryExtractionSrcTable;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -25,11 +25,11 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	
 	private RecordLimits limits;
 	
-	private EtlConfiguration config;
+	private EtlItemConfiguration config;
 	
 	private SearchSourceType searchSourceType;
 	
-	public SyncSearchParams(EtlConfiguration config, RecordLimits limits) {
+	public SyncSearchParams(EtlItemConfiguration config, RecordLimits limits) {
 		this.config = config;
 		this.limits = limits;
 		this.searchSourceType = SearchSourceType.SOURCE;
@@ -51,11 +51,11 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 		this.syncStartDate = syncStartDate;
 	}
 	
-	public EtlConfiguration getConfig() {
+	public EtlItemConfiguration getConfig() {
 		return config;
 	}
 	
-	public void setConfig(EtlConfiguration config) {
+	public void setConfig(EtlItemConfiguration config) {
 		this.config = config;
 	}
 	

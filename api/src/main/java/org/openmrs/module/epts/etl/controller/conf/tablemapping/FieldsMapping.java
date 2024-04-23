@@ -36,6 +36,14 @@ public class FieldsMapping {
 		this.dstField = destField;
 	}
 	
+	public static FieldsMapping fastCreate(String srcField, String destField) {
+		return new FieldsMapping(srcField, null, destField);
+	}
+	
+	public static FieldsMapping fastCreate(String fieldName) {
+		return fastCreate(fieldName, fieldName);
+	}
+	
 	public String getSrcValue() {
 		return srcValue;
 	}

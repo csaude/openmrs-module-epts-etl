@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.controller;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 
 public abstract class AbstractProcessFinalizer implements ProcessFinalizer{
 	protected ProcessController relatedProcessController;
@@ -17,7 +17,7 @@ public abstract class AbstractProcessFinalizer implements ProcessFinalizer{
 		this.relatedProcessController = relatedProcessController;
 	}
 	
-	public SyncConfiguration getConfiguration() {
+	public EtlConfiguration getConfiguration() {
 		return getRelatedProcessController().getConfiguration();
 	}
 }

@@ -4,8 +4,8 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -23,7 +23,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class ResolveConflictsInStageAreaController extends OperationController {
 	
-	public ResolveConflictsInStageAreaController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public ResolveConflictsInStageAreaController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
@@ -33,7 +33,7 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(config, null,
@@ -56,7 +56,7 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlConfiguration config) {
+	public long getMaxRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(config, null,

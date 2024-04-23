@@ -177,7 +177,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements PojobleD
 		return syncRecordClass;
 	}
 	
-	public SyncConfiguration getRelatedSyncConfiguration() {
+	public EtlConfiguration getRelatedSyncConfiguration() {
 		return relatedSrcExtraDataSrc.getRelatedSyncConfiguration();
 	}
 	

@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.problems_solver.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -16,7 +16,7 @@ public class ProblemsSolverSearchParams extends DatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public ProblemsSolverSearchParams(EtlConfiguration config, RecordLimits limits) {
+	public ProblemsSolverSearchParams(EtlItemConfiguration config, RecordLimits limits) {
 		super(config, limits);
 	}
 	

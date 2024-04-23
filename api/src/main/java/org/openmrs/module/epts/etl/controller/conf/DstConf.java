@@ -15,7 +15,11 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class DstConf extends AbstractTableConfiguration {
+	
+	private List<FieldsMapping> joinField;
 	
 	private List<FieldsMapping> allFieldsMapping;
 	
@@ -32,6 +36,14 @@ public class DstConf extends AbstractTableConfiguration {
 	private final String stringLock = new String("LOCK_STRING");
 	
 	public DstConf() {
+	}
+	
+	public List<FieldsMapping> getJoinField() {
+		return joinField;
+	}
+	
+	public void setJoinField(List<FieldsMapping> joinField) {
+		this.joinField = joinField;
 	}
 	
 	@Override
@@ -66,16 +78,6 @@ public class DstConf extends AbstractTableConfiguration {
 		this.allFieldsMapping.add(fm);
 	}
 	
-	public static DstConf generateDefaultDstConf(EtlConfiguration etlConf, Connection conn) throws DBException {
-		DstConf dstSyncConfiguration = new DstConf();
-		
-		dstSyncConfiguration.clone(etlConf.getSrcConf());
-		
-		dstSyncConfiguration.generateAllFieldsMapping(conn);
-		
-		return dstSyncConfiguration;
-	}
-	
 	public void generateAllFieldsMapping(Connection conn) throws DBException {
 		this.allFieldsMapping = new ArrayList<>();
 		
@@ -89,8 +91,7 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 		}
 		
-		List<Field> myFields = 	DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn);
-		
+		List<Field> myFields = DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn);
 		
 		for (Field field : myFields) {
 			FieldsMapping fm = new FieldsMapping(field.getName(), this.getTableName(), field.getName());
@@ -130,6 +131,7 @@ public class DstConf extends AbstractTableConfiguration {
 		this.relatedAppInfo = relatedAppInfo;
 	}
 	
+	@Override
 	public synchronized void fullLoad() throws DBException {
 		OpenConnection conn = this.relatedAppInfo.openConnection();
 		
@@ -138,6 +140,53 @@ public class DstConf extends AbstractTableConfiguration {
 		}
 		finally {
 			conn.finalizeConnection();
+		}
+	}
+	
+	@Override
+	public synchronized void fullLoad(Connection conn) {
+		super.fullLoad(conn);
+		
+		loadJoinFields(conn);
+	}
+	
+	private void loadJoinFields(Connection conn) {
+		if (this.joinField != null)
+			return;
+		
+		if (this.hasUniqueKeys()) {
+			//If no joinField is defined but the dst table has uk, tries to map the uk with src fields
+			tryToAutoGenerateJoinFields(this, this.getSrcConf());
+		} else if (this.getSrcConf().hasUniqueKeys()) {
+			//If no joinField is defined but the src table has uk, tries to map the uk with dst fields
+			tryToAutoGenerateJoinFields(this.getSrcConf(), this);
+		}
+	}
+	
+	/**
+	 * @param uk
+	 */
+	public void tryToAutoGenerateJoinFields(AbstractTableConfiguration ukTable, AbstractTableConfiguration targetTable) {
+		
+		for (UniqueKeyInfo uk : ukTable.getUniqueKeys()) {
+			
+			UniqueKeyInfo fakeSrcUk = new UniqueKeyInfo();
+			
+			for (Key key : uk.getFields()) {
+				if (targetTable.containsField(key.getName())) {
+					fakeSrcUk.addKey(key);
+				}
+			}
+			
+			if (uk.equals(fakeSrcUk)) {
+				if (this.joinField == null) {
+					this.joinField = new ArrayList<>();
+				}
+				
+				for (Key key : uk.getFields()) {
+					this.joinField.add(FieldsMapping.fastCreate(key.getName()));
+				}
+			}
 		}
 	}
 	
@@ -197,12 +246,12 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	@Override
 	public void setParent(SyncDataConfiguration parent) {
-		super.setParent((EtlConfiguration) parent);
+		super.setParent((EtlItemConfiguration) parent);
 	}
 	
 	@Override
-	public EtlConfiguration getParent() {
-		return (EtlConfiguration) super.getParent();
+	public EtlItemConfiguration getParent() {
+		return (EtlItemConfiguration) super.getParent();
 	}
 	
 	public int generateNextStartIdForThread(List<SyncRecord> syncRecords, Connection conn)
@@ -242,7 +291,37 @@ public class DstConf extends AbstractTableConfiguration {
 		
 		return currThreadStartId;
 	}
-
-
+	
+	/**
+	 * Generates SQL join condition between this destination table and its src table using the
+	 * {@link #joinField}
+	 * 
+	 * @param sourceTableAlias alias name for source table
+	 * @param destinationTableAlias alias name for destination table
+	 * @return the generated join condition based on {@link #joinField}
+	 */
+	@JsonIgnore
+	public String generateJoinConditionWithSrc(String sourceTableAlias, String destinationTableAlias) {
+		String joinCondition = "";
+		
+		for (int i = 0; i < this.joinField.size(); i++) {
+			if (i > 0)
+				joinCondition += " AND ";
+			
+			joinCondition += "dest_." + this.joinField.get(i).getDstField() + " = src_."
+			        + this.joinField.get(i).getSrcField();
+		}
+		
+		if (!utilities.stringHasValue(joinCondition) && this.isMetadata()) {
+			joinCondition = "dest_." + getPrimaryKey().retrieveSimpleKeyColumnName() + " = src_."
+			        + getPrimaryKey().retrieveSimpleKeyColumnName();
+		}
+		
+		return joinCondition;
+	}
+	
+	public boolean hasJoinFields() {
+		return utilities.arrayHasElement(this.joinField);
+	}
 	
 }

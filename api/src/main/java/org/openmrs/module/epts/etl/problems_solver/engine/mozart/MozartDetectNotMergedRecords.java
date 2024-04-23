@@ -3,10 +3,11 @@ package org.openmrs.module.epts.etl.problems_solver.engine.mozart;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
+import org.openmrs.module.epts.etl.controller.conf.DstConf;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
@@ -43,7 +44,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<EtlConfiguration> configuredTables = getRelatedOperationController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> configuredTables = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
@@ -59,7 +60,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 				continue;
 			}
 			
-			for (EtlConfiguration conf : configuredTables) {
+			for (EtlItemConfiguration conf : configuredTables) {
 				AbstractTableConfiguration configuredTable = conf.getSrcConf();
 				
 				if (!configuredTable.isFullLoaded()) {
@@ -71,7 +72,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 				if (!utilities.arrayHasElement(configuredTable.getUniqueKeys()))
 					continue;
 				
-				int notMergedRecord = determineNotMergedRecord(configuredTable, dbName, srcConn, conn);
+				int notMergedRecord = determineNotMergedRecord(conf, dbName, srcConn, conn);
 				
 				if (notMergedRecord > 0) {
 					logDebug(dbName + "." + configuredTable.getTableName() + " miss " + notMergedRecord + "records");
@@ -95,15 +96,20 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 		srcConn.finalizeConnection();
 	}
 	
-	private int determineNotMergedRecord(AbstractTableConfiguration tableInfo, String dbName, Connection srcConn,
+	private int determineNotMergedRecord(EtlItemConfiguration etlConf, String dbName, Connection srcConn,
 	        Connection destConn) throws DBException {
+		
+		AbstractTableConfiguration tableInfo = etlConf.getSrcConf();
+		DstConf dstInfo = etlConf.getDstConf().get(0);
+		
+		
 		String table = dbName + "." + tableInfo.getTableName();
 		
 		String sql = " SELECT count(*) value \n";
 		sql += " FROM   " + table + " src_\n";
 		sql += " WHERE  NOT EXISTS (	SELECT * \n";
 		sql += " 				   	FROM   " + tableInfo.getTableName() + " dest_\n";
-		sql += "						WHERE  " + tableInfo.generateUniqueKeysJoinCondition("src_", "dest_") + ")";
+		sql += "						WHERE  " + dstInfo.generateJoinConditionWithSrc("src_", "dest_") + ")";
 		
 		SimpleValue record = DatabaseObjectDAO.find(SimpleValue.class, sql, null, destConn);
 		

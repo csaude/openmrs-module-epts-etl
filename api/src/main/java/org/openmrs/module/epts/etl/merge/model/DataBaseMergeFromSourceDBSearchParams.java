@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.merge.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -15,7 +15,7 @@ public class DataBaseMergeFromSourceDBSearchParams extends SyncSearchParams<Sync
 	
 	private boolean selectAllRecords;
 	
-	public DataBaseMergeFromSourceDBSearchParams(EtlConfiguration config, RecordLimits limits, Connection conn) {
+	public DataBaseMergeFromSourceDBSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn) {
 		super(config, limits);
 	}
 	

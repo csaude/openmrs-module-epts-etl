@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.dbquickexport.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
@@ -17,7 +17,7 @@ public class DBQuickExportSearchParams extends SyncSearchParams<DatabaseObject> 
 	
 	private boolean selectAllRecords;
 	
-	public DBQuickExportSearchParams(EtlConfiguration config, RecordLimits limits) {
+	public DBQuickExportSearchParams(EtlItemConfiguration config, RecordLimits limits) {
 		super(config, limits);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());

@@ -7,8 +7,8 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -27,7 +27,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class CentralAndRemoteDataReconciliationController extends OperationController {
 		
-	public CentralAndRemoteDataReconciliationController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public CentralAndRemoteDataReconciliationController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
@@ -59,7 +59,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 	
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		if (config.getSrcConf().getTableName().equalsIgnoreCase("users")) return 0;
 		
 		OpenConnection conn = openConnection();
@@ -95,7 +95,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 
 	@Override
-	public long getMaxRecordId(EtlConfiguration config) {
+	public long getMaxRecordId(EtlItemConfiguration config) {
 		if (config.getSrcConf().getTableName().equalsIgnoreCase("users")) return 0;
 		
 		OpenConnection conn = openConnection();

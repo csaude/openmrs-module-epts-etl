@@ -16,15 +16,15 @@ import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsUtil;
 
 public class ModuleContentUpdater {
 	
-	public static void copyPOJOContentToModule(SyncConfiguration syncConfiguration, AppInfo app) throws IOException {
-		File jarTmpFolder = new File (syncConfiguration.getSyncRootDirectory() + FileUtilities.getPathSeparator() + "temp");
+	public static void copyPOJOContentToModule(EtlConfiguration etlConfiguration, AppInfo app) throws IOException {
+		File jarTmpFolder = new File (etlConfiguration.getSyncRootDirectory() + FileUtilities.getPathSeparator() + "temp");
 	
 		FileUtilities.tryToCreateDirectoryStructure(jarTmpFolder.getAbsolutePath());
 		
@@ -37,7 +37,7 @@ public class ModuleContentUpdater {
 		
 		FileUtilities.tryToCreateDirectoryStructure(classPathContentTempDir.getAbsolutePath());
 		
-		copyClassPathContentToFolder(syncConfiguration.getPojoPackageAsDirectory(app), new File(classPathContentTempDir.getAbsoluteFile() + FileUtilities.getPathSeparator() + syncConfiguration.getPojoPackageRelativePath(app)));
+		copyClassPathContentToFolder(etlConfiguration.getPojoPackageAsDirectory(app), new File(classPathContentTempDir.getAbsoluteFile() + FileUtilities.getPathSeparator() + etlConfiguration.getPojoPackageRelativePath(app)));
 	
 		for(File f : classPathContentTempDir.listFiles()) {
 			copyEntryToJar(f, newJar, classPathContentTempDir);
@@ -46,8 +46,8 @@ public class ModuleContentUpdater {
 		newJar.close();
 		newJarFileOut.close();
 		
-		FileUtilities.removeFile(syncConfiguration.getClassPath());
-		FileUtilities.copyFile(new File(omodFileName), syncConfiguration.getClassPathAsFile());
+		FileUtilities.removeFile(etlConfiguration.getClassPath());
+		FileUtilities.copyFile(new File(omodFileName), etlConfiguration.getClassPathAsFile());
 	}
 	
 	public static void copyEntryToJar(File source, JarOutputStream jarOut, File jarLocationRootFolder) throws IOException {
@@ -133,12 +133,12 @@ public class ModuleContentUpdater {
 		jar.close();
 	}
 	
-	public static void addToClasspath(File file, SyncConfiguration syncConfiguration, AppInfo app) throws IOException {
-		FileUtilities.copyFile(file, new File(retrievePojoFolderOnModuleDirectory(syncConfiguration, app) + FileUtilities.getPathSeparator() + file.getName()));
+	public static void addToClasspath(File file, EtlConfiguration etlConfiguration, AppInfo app) throws IOException {
+		FileUtilities.copyFile(file, new File(retrievePojoFolderOnModuleDirectory(etlConfiguration, app) + FileUtilities.getPathSeparator() + file.getName()));
 	}	
 	
-	public static void tryToAddAllPOJOToClassPath(SyncConfiguration syncConfiguration, AppInfo app) {
-		File pojoPackageDir = new File(syncConfiguration.getPOJOCompiledFilesDirectory().getAbsolutePath() + "/org/openmrs/module/epts/etl/model/pojo/" + syncConfiguration.getPojoPackage(app));
+	public static void tryToAddAllPOJOToClassPath(EtlConfiguration etlConfiguration, AppInfo app) {
+		File pojoPackageDir = new File(etlConfiguration.getPOJOCompiledFilesDirectory().getAbsolutePath() + "/org/openmrs/module/epts/etl/model/pojo/" + etlConfiguration.getPojoPackage(app));
 		
 		File[] existingClasses = pojoPackageDir.listFiles();
 		
@@ -182,13 +182,13 @@ public class ModuleContentUpdater {
 		return allFiles[0];
 	}
 	
-	protected static File retrievePojoFolderOnModuleDirectory(SyncConfiguration syncConfiguration, AppInfo app) {
+	protected static File retrievePojoFolderOnModuleDirectory(EtlConfiguration etlConfiguration, AppInfo app) {
 		String pojoFolderOnModule = "";
 		
-		pojoFolderOnModule += syncConfiguration.getModuleRootDirectory().getAbsoluteFile() + FileUtilities.getPathSeparator();
+		pojoFolderOnModule += etlConfiguration.getModuleRootDirectory().getAbsoluteFile() + FileUtilities.getPathSeparator();
 		pojoFolderOnModule += "epts" + FileUtilities.getPathSeparator();
 		pojoFolderOnModule += "etl" + FileUtilities.getPathSeparator();
-		pojoFolderOnModule += syncConfiguration.getPojoPackageRelativePath(app);
+		pojoFolderOnModule += etlConfiguration.getPojoPackageRelativePath(app);
 		
 		return new File( pojoFolderOnModule);
 	}

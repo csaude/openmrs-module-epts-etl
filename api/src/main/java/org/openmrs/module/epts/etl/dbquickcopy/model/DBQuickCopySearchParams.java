@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.dbquickcopy.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickload.model.LoadedRecordsSearchParams;
@@ -19,7 +19,7 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 	
 	private DBQuickCopyController relatedController;
 	
-	public DBQuickCopySearchParams(EtlConfiguration config, RecordLimits limits, DBQuickCopyController relatedController) {
+	public DBQuickCopySearchParams(EtlItemConfiguration config, RecordLimits limits, DBQuickCopyController relatedController) {
 		super(config, limits);
 		
 		this.relatedController = relatedController;

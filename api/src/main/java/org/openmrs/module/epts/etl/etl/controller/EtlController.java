@@ -5,8 +5,8 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
@@ -32,7 +32,7 @@ public class EtlController extends OperationController {
 	
 	private AppInfo srcApp;
 	
-	public EtlController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public EtlController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.srcApp = getConfiguration().find(AppInfo.init("main"));
@@ -53,7 +53,7 @@ public class EtlController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -70,7 +70,7 @@ public class EtlController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlConfiguration tableInfo) {
+	public long getMaxRecordId(EtlItemConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -86,7 +86,7 @@ public class EtlController extends OperationController {
 		}
 	}
 	
-	private long getExtremeRecord(EtlConfiguration config, String function, Connection conn) throws DBException {
+	private long getExtremeRecord(EtlItemConfiguration config, String function, Connection conn) throws DBException {
 		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
 			throw new ForbiddenOperationException("Composite and non numeric keys are not supported for src tables");
 		}

@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.dbcopy.controller;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.dbcopy.engine.DBCopyEngine;
 import org.openmrs.module.epts.etl.dbcopy.model.DBCopySearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -25,7 +25,7 @@ public class DBCopyController extends OperationController {
 	
 	private AppInfo dstAppInfo;
 	
-	public DBCopyController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public DBCopyController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.srcAppInfo = getConfiguration().getMainApp();
@@ -46,7 +46,7 @@ public class DBCopyController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openSrcConnection();
 		
 		try {
@@ -65,7 +65,7 @@ public class DBCopyController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlConfiguration config) {
+	public long getMaxRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openSrcConnection();
 		
 		DBCopySearchParams searchParams = new DBCopySearchParams(config, null, this);

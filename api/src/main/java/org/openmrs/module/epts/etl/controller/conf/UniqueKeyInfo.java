@@ -190,13 +190,13 @@ public class UniqueKeyInfo {
 		uk.fields = keyElements;
 		
 		//Don't add PK as uniqueKey
-		if (config.getPrimaryKey() != null && !config.getPrimaryKey().equals(uk)) {
+		if (config.getPrimaryKey() != null && config.getPrimaryKey().equals(uk)) {
+			return false;
+		} else {
 			uniqueKeys.add(uk);
 			
-			return false;
+			return true;
 		}
-		
-		return true;
 	}
 	
 	@Override

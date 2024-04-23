@@ -1,8 +1,5 @@
 package org.openmrs.module.epts.etl.controller.conf;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +34,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SyncOperationConfig extends BaseConfiguration {
+public class EtlOperationConfig extends BaseConfiguration {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -57,11 +54,11 @@ public class SyncOperationConfig extends BaseConfiguration {
 	
 	private boolean doIntegrityCheckInTheEnd;
 	
-	private SyncOperationConfig child;
+	private EtlOperationConfig child;
 	
-	private SyncOperationConfig parent;
+	private EtlOperationConfig parent;
 	
-	private SyncConfiguration relatedSyncConfig;
+	private EtlConfiguration relatedSyncConfig;
 	
 	private boolean disabled;
 	
@@ -90,7 +87,7 @@ public class SyncOperationConfig extends BaseConfiguration {
 	
 	private boolean nonResumable;
 	
-	public SyncOperationConfig() {
+	public EtlOperationConfig() {
 	}
 	
 	public boolean isNonResumable() {
@@ -218,12 +215,12 @@ public class SyncOperationConfig extends BaseConfiguration {
 	
 	@JsonIgnore
 	public boolean isParallelModeProcessing() {
-		return this.processingMode.equalsIgnoreCase(SyncConfiguration.PROCESSING_MODE_PARALLEL);
+		return this.processingMode.equalsIgnoreCase(EtlConfiguration.PROCESSING_MODE_PARALLEL);
 	}
 	
 	@JsonIgnore
 	public boolean isSequencialModeProcessing() {
-		return this.processingMode.equalsIgnoreCase(SyncConfiguration.PROCESSING_MODE_SEQUENCIAL);
+		return this.processingMode.equalsIgnoreCase(EtlConfiguration.PROCESSING_MODE_SEQUENCIAL);
 	}
 	
 	public String getProcessingMode() {
@@ -239,19 +236,19 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public SyncOperationConfig getParent() {
+	public EtlOperationConfig getParent() {
 		return parent;
 	}
 	
-	public void setParent(SyncOperationConfig parent) {
+	public void setParent(EtlOperationConfig parent) {
 		this.parent = parent;
 	}
 	
-	public SyncOperationConfig getChild() {
+	public EtlOperationConfig getChild() {
 		return child;
 	}
 	
-	public void setChild(SyncOperationConfig child) {
+	public void setChild(EtlOperationConfig child) {
 		this.child = child;
 		
 		if (this.child != null) {
@@ -268,11 +265,11 @@ public class SyncOperationConfig extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public SyncConfiguration getRelatedSyncConfig() {
+	public EtlConfiguration getRelatedSyncConfig() {
 		return relatedSyncConfig;
 	}
 	
-	public void setRelatedSyncConfig(SyncConfiguration relatedSyncConfig) {
+	public void setRelatedSyncConfig(EtlConfiguration relatedSyncConfig) {
 		this.relatedSyncConfig = relatedSyncConfig;
 	}
 	
@@ -319,8 +316,8 @@ public class SyncOperationConfig extends BaseConfiguration {
 		return doIntegrityCheckInTheEnd;
 	}
 	
-	public static SyncOperationConfig fastCreate(SyncOperationType operationType) {
-		SyncOperationConfig op = new SyncOperationConfig();
+	public static EtlOperationConfig fastCreate(SyncOperationType operationType) {
+		EtlOperationConfig op = new EtlOperationConfig();
 		op.setOperationType(operationType);
 		
 		return op;
@@ -442,10 +439,10 @@ public class SyncOperationConfig extends BaseConfiguration {
 		if (obj == null)
 			return false;
 		
-		if (!(obj instanceof SyncOperationConfig))
+		if (!(obj instanceof EtlOperationConfig))
 			return false;
 		
-		return this.operationType.equals(((SyncOperationConfig) obj).operationType);
+		return this.operationType.equals(((EtlOperationConfig) obj).operationType);
 	}
 	
 	public List<OperationController> generateRelatedController(ProcessController parent, String appOriginCode_,
@@ -846,18 +843,14 @@ public class SyncOperationConfig extends BaseConfiguration {
 	public <T extends Engine> void loadEngine() {
 		
 		try {
-			URL[] classPaths = new URL[] { getRelatedSyncConfig().getClassPathAsFile().toURI().toURL() };
 			
-			URLClassLoader loader = URLClassLoader.newInstance(classPaths);
+			ClassLoader loader = Engine.class.getClassLoader();
 			
 			Class<T> c = (Class<T>) loader.loadClass(this.getEngineFullClassName());
-			
-			loader.close();
 			
 			this.engineClazz = (Class<Engine>) c;
 		}
 		catch (ClassNotFoundException e) {}
-		catch (IOException e) {}
 	}
 	
 }

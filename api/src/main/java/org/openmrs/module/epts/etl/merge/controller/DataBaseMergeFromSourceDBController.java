@@ -5,8 +5,8 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.merge.engine.DataBasesMergeFromSourceEngine;
@@ -25,7 +25,7 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 	
 	private AppInfo remoteApp;
 	
-	public DataBaseMergeFromSourceDBController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public DataBaseMergeFromSourceDBController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 		
 		this.mainApp = getConfiguration().find(AppInfo.init("main"));
@@ -46,7 +46,7 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		Integer id = Integer.valueOf(0);
@@ -69,7 +69,7 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlConfiguration config) {
+	public long getMaxRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		Integer id = Integer.valueOf(0);

@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.util.Properties;
 
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
 import org.openmrs.module.epts.etl.controller.conf.SyncProcessType;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
@@ -24,12 +24,12 @@ public class ConfVM {
 	private static final String OPERATIONS_TAB = "2";
 	private static String TABLES_TAB = "3";
 	
-	private SyncConfiguration syncConfiguration;
-	private SyncConfiguration otherSyncConfiguration;
+	private EtlConfiguration etlConfiguration;
+	private EtlConfiguration otherSyncConfiguration;
 	
 	private String activeTab;
 	
-	private SyncOperationConfig selectedOperation;
+	private EtlOperationConfig selectedOperation;
 	
 	private AbstractTableConfiguration selectedTable;
 	
@@ -37,16 +37,16 @@ public class ConfVM {
 	private String statusMessage;
 	
 	private ConfVM(String installationType) throws IOException, DBException {
-		this.syncConfiguration = new SyncConfiguration();
+		this.etlConfiguration = new EtlConfiguration();
 		
 		SyncProcessType processType = installationType.equals("source") ? SyncProcessType.SOURCE_SYNC : SyncProcessType.DATABASE_MERGE_FROM_JSON;
 		
-		this.syncConfiguration.setProcessType(processType);
+		this.etlConfiguration.setProcessType(processType);
 		
 		reset();
 	}
 	
-	public SyncOperationConfig getSelectedOperation() {
+	public EtlOperationConfig getSelectedOperation() {
 		return selectedOperation;
 	}
 
@@ -54,11 +54,11 @@ public class ConfVM {
 		return selectedTable;
 	}
 	
-	public void setSyncConfiguration(SyncConfiguration syncConfiguration) {
-		this.syncConfiguration = syncConfiguration;
+	public void setSyncConfiguration(EtlConfiguration etlConfiguration) {
+		this.etlConfiguration = etlConfiguration;
 	}
 
-	public void setSelectedOperation(SyncOperationConfig selectedOperation) {
+	public void setSelectedOperation(EtlOperationConfig selectedOperation) {
 		this.selectedOperation = selectedOperation;
 	}
 
@@ -131,13 +131,13 @@ public class ConfVM {
 	private void determineOtherSyncConfiguration() throws DBException {
 		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
 		
-		String otherConfFile = this.syncConfiguration.getProcessType().isSourceSync() ? "dest_sync_config.json" : "source_sync_config.json";
+		String otherConfFile = this.etlConfiguration.getProcessType().isSourceSync() ? "dest_sync_config.json" : "source_sync_config.json";
 
 		File otherConfigFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "resources" + FileUtilities.getPathSeparator() + otherConfFile);
 		
 		if (otherConfigFile.exists()) {
 			try {
-				this.otherSyncConfiguration = ConfVM.getInstance(this.syncConfiguration.getProcessType().isDataBaseMergeFromJSON() ? "destination" : "source").getSyncConfiguration();
+				this.otherSyncConfiguration = ConfVM.getInstance(this.etlConfiguration.getProcessType().isDataBaseMergeFromJSON() ? "destination" : "source").getSyncConfiguration();
 			} catch (IOException e) {
 				throw new ForbiddenOperationException(e);
 			}
@@ -147,20 +147,20 @@ public class ConfVM {
 	private void reset() throws IOException, DBException {
 		this.activeTab = ConfVM.INSTALATION_TAB;
 		
-		SyncConfiguration reloadedSyncConfiguration = null;
+		EtlConfiguration reloadedSyncConfiguration = null;
 		
 		String rootDirectory = OpenmrsUtil.getApplicationDataDirectory();
 		
-		String configFileName = this.syncConfiguration.getProcessType().isSourceSync() ? "source_sync_config.json" : "dest_sync_config.json";
+		String configFileName = this.etlConfiguration.getProcessType().isSourceSync() ? "source_sync_config.json" : "dest_sync_config.json";
 
 		this.configFile = new File(rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "conf" + FileUtilities.getPathSeparator() + configFileName);
 
 		if (this.configFile.exists()) {
-			reloadedSyncConfiguration = SyncConfiguration.loadFromFile(this.configFile);
+			reloadedSyncConfiguration = EtlConfiguration.loadFromFile(this.configFile);
 		} else {
-			String json = this.syncConfiguration.getProcessType().isSourceSync() ? ConfigData.generateDefaultSourcetConfig() : ConfigData.generateDefaultDestinationConfig();
+			String json = this.etlConfiguration.getProcessType().isSourceSync() ? ConfigData.generateDefaultSourcetConfig() : ConfigData.generateDefaultDestinationConfig();
 		
-			reloadedSyncConfiguration = SyncConfiguration.loadFromJSON(json);
+			reloadedSyncConfiguration = EtlConfiguration.loadFromJSON(json);
 			
 			reloadedSyncConfiguration.setSyncRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "data");
 			reloadedSyncConfiguration.setRelatedConfFile(this.configFile);
@@ -176,17 +176,17 @@ public class ConfVM {
 			reloadedSyncConfiguration.getMainDBConnInfo().setDataBaseUserPassword(properties.getProperty("connection.password"));
 		}
 		
-		reloadedSyncConfiguration.setRelatedController(this.syncConfiguration.getRelatedController() == null ? new ProcessController(null, reloadedSyncConfiguration) : this.syncConfiguration.getRelatedController());
+		reloadedSyncConfiguration.setRelatedController(this.etlConfiguration.getRelatedController() == null ? new ProcessController(null, reloadedSyncConfiguration) : this.etlConfiguration.getRelatedController());
 		reloadedSyncConfiguration.getRelatedController().setConfiguration(reloadedSyncConfiguration);
 		reloadedSyncConfiguration.loadAllTables();
 		
 		reloadedSyncConfiguration.setClassPath(retrieveClassPath());
 		reloadedSyncConfiguration.setModuleRootDirectory(retrieveModuleFolder());
 		
-		this.syncConfiguration = reloadedSyncConfiguration;
+		this.etlConfiguration = reloadedSyncConfiguration;
 		
-		if (this.syncConfiguration.isSourceSyncProcess()) {
-			if (this.syncConfiguration.getOriginAppLocationCode() == null) {
+		if (this.etlConfiguration.isSourceSyncProcess()) {
+			if (this.etlConfiguration.getOriginAppLocationCode() == null) {
 				//this.syncConfiguration.tryToDetermineOriginAppLocationCode();
 			}
 		}
@@ -195,7 +195,7 @@ public class ConfVM {
 
 	public void selectOperation(SyncOperationType operationType) {
 		if (operationType != null) {
-			this.selectedOperation = syncConfiguration.findOperation(operationType);
+			this.selectedOperation = etlConfiguration.findOperation(operationType);
 		}
 		else {
 			this.selectedOperation = null;
@@ -203,9 +203,9 @@ public class ConfVM {
 	}
 	
 	public void selectTable(String tableName) {
-		this.selectedTable = syncConfiguration.findSyncTableConfigurationOnAllTables(tableName);
+		this.selectedTable = etlConfiguration.findSyncTableConfigurationOnAllTables(tableName);
 		
-		if (syncConfiguration.find(this.selectedTable) == null || !this.selectedTable.isFullLoaded()) {
+		if (etlConfiguration.find(this.selectedTable) == null || !this.selectedTable.isFullLoaded()) {
 			try {
 				this.selectedTable.fullLoad();
 			}
@@ -223,8 +223,8 @@ public class ConfVM {
 		this.activeTab = tab;
 	}
 	
-	public SyncConfiguration getSyncConfiguration() {
-		return syncConfiguration;
+	public EtlConfiguration getSyncConfiguration() {
+		return etlConfiguration;
 	}
 	
 	public boolean isInstallationTabActive() {
@@ -242,8 +242,8 @@ public class ConfVM {
 	public void save() {
 		FileUtilities.removeFile(this.configFile.getAbsolutePath());
 		
-		this.syncConfiguration.setAutomaticStart(true);
-		FileUtilities.write(this.configFile.getAbsolutePath(), this.syncConfiguration.parseToJSON());
+		this.etlConfiguration.setAutomaticStart(true);
+		FileUtilities.write(this.configFile.getAbsolutePath(), this.etlConfiguration.parseToJSON());
 		
 		//Make others not automcatic start
 		

@@ -4,7 +4,7 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -15,7 +15,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	
 	private boolean selectAllRecords;
 	
-	public ResolveConflictsInStageAreaSearchParams(EtlConfiguration config, RecordLimits limits, Connection conn) {
+	public ResolveConflictsInStageAreaSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn) {
 		super(config, limits, null);
 	}
 	

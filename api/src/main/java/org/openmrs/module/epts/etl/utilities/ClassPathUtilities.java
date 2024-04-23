@@ -18,8 +18,8 @@ import java.util.zip.ZipOutputStream;
 import org.openmrs.module.ModuleUtil;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.DstConf;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
@@ -231,10 +231,10 @@ public class ClassPathUtilities {
 		}
 	}
 	
-	public static void addClassToClassPath(File[] clazzFiless, String path, SyncConfiguration syncConfiguration) {
+	public static void addClassToClassPath(File[] clazzFiless, String path, EtlConfiguration etlConfiguration) {
 		try {
-			if (syncConfiguration.getClassPathAsFile().exists())
-				ClassPathUtilities.addFilesToZip(syncConfiguration.getClassPathAsFile(), clazzFiless, path);
+			if (etlConfiguration.getClassPathAsFile().exists())
+				ClassPathUtilities.addFilesToZip(etlConfiguration.getClassPathAsFile(), clazzFiless, path);
 		}
 		catch (Exception e) {}
 		
@@ -263,12 +263,12 @@ public class ClassPathUtilities {
 		catch (Exception e) {}
 	}
 	
-	public static void tryToCopyPOJOToClassPath(SyncConfiguration syncConfiguration, AppInfo app) {
-		if (syncConfiguration.getPojoPackageAsDirectory(app).exists()) {
+	public static void tryToCopyPOJOToClassPath(EtlConfiguration etlConfiguration, AppInfo app) {
+		if (etlConfiguration.getPojoPackageAsDirectory(app).exists()) {
 			
 			List<File> clazzListFiless = new ArrayList<File>();
 			
-			for (EtlConfiguration config : syncConfiguration.getEtlConfiguration()) {
+			for (EtlItemConfiguration config : etlConfiguration.getEtlConfiguration()) {
 				AbstractTableConfiguration tableConfiguration = config.getSrcConf();
 				
 				tryToCopyPOJOToClassPath(tableConfiguration, clazzListFiless, app);
@@ -279,7 +279,7 @@ public class ClassPathUtilities {
 			}
 			
 			addClassToClassPath(utilities.parseListToArray(clazzListFiless),
-			    syncConfiguration.getPojoPackageRelativePath(app), syncConfiguration);
+			    etlConfiguration.getPojoPackageRelativePath(app), etlConfiguration);
 		}
 	}
 	

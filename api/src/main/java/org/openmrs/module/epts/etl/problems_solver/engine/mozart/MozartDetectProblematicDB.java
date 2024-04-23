@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.Extension;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
@@ -57,7 +57,7 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<EtlConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		int i = 0;
 		
@@ -74,7 +74,7 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 				continue;
 			}
 			
-			for (EtlConfiguration conf : configs) {
+			for (EtlItemConfiguration conf : configs) {
 				
 				AbstractTableConfiguration configuredTable = conf.getSrcConf();
 				if (!configuredTable.isFullLoaded()) {

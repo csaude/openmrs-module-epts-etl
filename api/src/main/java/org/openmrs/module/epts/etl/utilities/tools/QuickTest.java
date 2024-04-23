@@ -13,8 +13,8 @@ import org.openmrs.module.epts.etl.controller.ProcessStarter;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.DstConf;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.dbquickmerge.model.MergingRecord;
@@ -64,9 +64,9 @@ public class QuickTest {
 		
 		String path = "D:\\ORG\\C-SAUDE\\PROJECTOS\\Mozart\\etl\\conf\\mpozart_etl.json";
 		
-		SyncConfiguration conf = SyncConfiguration.loadFromFile(new File(path));
+		EtlConfiguration conf = EtlConfiguration.loadFromFile(new File(path));
 		
-		EtlConfiguration etlConf = conf.getEtlConfiguration().get(0);
+		EtlItemConfiguration etlConf = conf.getEtlConfiguration().get(0);
 		
 		etlConf.fullLoad();
 		
@@ -197,9 +197,9 @@ public class QuickTest {
 	        throws IOException, ClassNotFoundException, ForbiddenOperationException, SQLException {
 		String path = "D:\\ORG\\C-SAUDE\\PROJECTOS\\Mozart\\etl\\conf\\testing.json";
 		
-		SyncConfiguration conf = SyncConfiguration.loadFromFile(new File(path));
+		EtlConfiguration conf = EtlConfiguration.loadFromFile(new File(path));
 		
-		EtlConfiguration etlConf = conf.getEtlConfiguration().get(1);
+		EtlItemConfiguration etlConf = conf.getEtlConfiguration().get(1);
 		
 		etlConf.fullLoad();
 		
@@ -233,11 +233,11 @@ public class QuickTest {
 		
 		ps.init();
 		
-		SyncConfiguration syncConfig = ps.getCurrentController().getConfiguration();
+		EtlConfiguration syncConfig = ps.getCurrentController().getConfiguration();
 		
 		OpenConnection conn = syncConfig.getMainApp().openConnection();
 		
-		EtlConfiguration tableInfo = syncConfig.find(EtlConfiguration.fastCreate("obs"));
+		EtlItemConfiguration tableInfo = syncConfig.find(EtlItemConfiguration.fastCreate("obs"));
 		
 		DBQuickMergeController controller = (DBQuickMergeController) ps.getCurrentController().getOperationsControllers()
 		        .get(0);

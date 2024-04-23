@@ -5,8 +5,8 @@ import java.io.IOException;
 
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickload.engine.DBQuickLoadEngine;
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
@@ -25,7 +25,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  */
 public class DBQuickLoadController extends SiteOperationController {
 	
-	public DBQuickLoadController(ProcessController processController, SyncOperationConfig operationConfig,
+	public DBQuickLoadController(ProcessController processController, EtlOperationConfig operationConfig,
 	    String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
 	}
@@ -36,7 +36,7 @@ public class DBQuickLoadController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, config,
 		        null);
 		
@@ -50,7 +50,7 @@ public class DBQuickLoadController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlConfiguration config) {
+	public long getMaxRecordId(EtlItemConfiguration config) {
 		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, config,
 		        null);
 		

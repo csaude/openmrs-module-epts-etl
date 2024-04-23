@@ -14,9 +14,11 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.Extension;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.problems_solver.model.MozartLInkedFileSearchParams;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -27,21 +29,32 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	
 	private String fileWithListOfDBs;
 	
-	private File destinationFolder;
+	private File workingDir;
+	
+	private String partner;
+	
+	private String province;
+	
+	private boolean done;
 	
 	public GenerateLinkedConfFiles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
-		Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("databaseListFile");
+		Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("partner");
 		
-		this.fileWithListOfDBs = exItem.getValueString();
+		this.partner = exItem.getValueString();
 		
-		this.destinationFolder = new File(this.fileWithListOfDBs).getParentFile();
+		exItem = this.getRelatedOperationController().getOperationConfig().findExtension("province");
 		
-		exItem = this.getRelatedOperationController().getOperationConfig().findExtension("templateFile");
+		this.province = exItem.getValueString();
 		
-		this.templateConfFilePath = exItem.getValueString();
+		this.workingDir = new File(
+		        getRelatedSyncConfiguration().getSyncRootDirectory() + File.separator + partner + File.separator + province);
 		
+		this.fileWithListOfDBs = workingDir + File.separator + "dbs.txt";
+		
+		this.templateConfFilePath = getRelatedSyncConfiguration().getSyncRootDirectory() + File.separator + "conf"
+		        + File.separator + "template.json";
 	}
 	
 	@Override
@@ -72,6 +85,10 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 		String nextConfigFileNamePathern = "next_config_file_name";
 		String dataBaseNamePathern = "db_name";
 		
+		String partnerPathern = "partner";
+		
+		String provincePathern = "province";
+		
 		try {
 			List<String> dumps = FileUtilities.readAllFileAsListOfString(fileWithListOfDBs);
 			
@@ -84,6 +101,8 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 				String content = new String(Files.readAllBytes(path), charset);
 				
 				content = content.replaceAll(dataBaseNamePathern, dataBaseName);
+				content = content.replaceAll(partnerPathern, this.partner);
+				content = content.replaceAll(provincePathern, this.province);
 				
 				String nextDataBaseName = i < dumps.size() - 1 ? FileUtilities.generateFileNameFromRealPath(dumps.get(i + 1))
 				        : null;
@@ -97,7 +116,9 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 				}
 				
 				Path destPath = Paths
-				        .get(this.destinationFolder.toString() + FileUtilities.getPathSeparator() + siteName + ".json");
+				        .get(this.workingDir.toString() + File.separator + "conf" + File.separator + siteName + ".json");
+				
+				FileUtilities.tryToCreateDirectoryStructure(this.workingDir.toString() + File.separator + "conf");
 				
 				Files.write(destPath, content.getBytes(charset));
 				
@@ -107,6 +128,8 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 		catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		
+		done = true;
 	}
 	
 	public static void generateUsingDumpDirectory(String[] args) throws IOException {
@@ -217,6 +240,19 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 		}
 		
 		return dumps;
+	}
+	
+	public boolean done() {
+		return this.done;
+	}
+	
+	@Override
+	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends SyncRecord> searchParams = new MozartLInkedFileSearchParams(this, null);
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
+		
+		return searchParams;
 	}
 	
 }

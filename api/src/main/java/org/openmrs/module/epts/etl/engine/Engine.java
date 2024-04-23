@@ -7,9 +7,9 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -108,11 +108,11 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return this.monitor.getController();
 	}
 	
-	public SyncOperationConfig getRelatedSyncOperationConfig() {
+	public EtlOperationConfig getRelatedSyncOperationConfig() {
 		return getRelatedOperationController().getOperationConfig();
 	}
 	
-	public SyncConfiguration getRelatedSyncConfiguration() {
+	public EtlConfiguration getRelatedSyncConfiguration() {
 		return getRelatedOperationController().getConfiguration();
 	}
 	
@@ -128,7 +128,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return searchParams;
 	}
 	
-	public EtlConfiguration getEtlConfiguration() {
+	public EtlItemConfiguration getEtlConfiguration() {
 		return monitor.getEtlConfiguration();
 	}
 	

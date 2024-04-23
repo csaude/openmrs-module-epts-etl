@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.consolitation.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -14,7 +14,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 	
 	private boolean selectAllRecords;
 	
-	public DatabaseIntegrityConsolidationSearchParams(EtlConfiguration config, RecordLimits limits, Connection conn) {
+	public DatabaseIntegrityConsolidationSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn) {
 		super(config, limits);
 		
 		setOrderByFields(config.getSrcConf().getPrimaryKey().parseFieldNamesToArray());

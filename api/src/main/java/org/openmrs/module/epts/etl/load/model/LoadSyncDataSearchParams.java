@@ -8,7 +8,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
@@ -28,7 +28,7 @@ public class LoadSyncDataSearchParams extends SyncSearchParams<DatabaseObject> i
 	
 	private DataLoadController controller;
 	
-	public LoadSyncDataSearchParams(DataLoadController controller, EtlConfiguration config, RecordLimits limits) {
+	public LoadSyncDataSearchParams(DataLoadController controller, EtlItemConfiguration config, RecordLimits limits) {
 		super(config, limits);
 		
 		this.controller = controller;

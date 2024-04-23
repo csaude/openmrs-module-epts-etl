@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.changedrecordsdetector.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -21,7 +21,7 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 	
 	private SyncOperationType type;
 	
-	public ChangedRecordsDetectorSearchParams(EtlConfiguration config, String appCode, RecordLimits limits,
+	public ChangedRecordsDetectorSearchParams(EtlItemConfiguration config, String appCode, RecordLimits limits,
 	    SyncOperationType type, Connection conn) {
 		super(config, limits);
 		

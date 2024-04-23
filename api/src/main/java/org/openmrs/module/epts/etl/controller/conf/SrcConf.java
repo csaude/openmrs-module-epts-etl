@@ -146,13 +146,13 @@ public class SrcConf extends AbstractTableConfiguration {
 	
 	@Override
 	public void setParent(SyncDataConfiguration parent) {
-		super.setParent((EtlConfiguration) parent);
+		super.setParent((EtlItemConfiguration) parent);
 	}
 	
 	@Override
 	@JsonIgnore
-	public EtlConfiguration getParent() {
-		return (EtlConfiguration) super.getParent();
+	public EtlItemConfiguration getParent() {
+		return (EtlItemConfiguration) super.getParent();
 	}
 	
 	@Override

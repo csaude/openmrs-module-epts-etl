@@ -2,13 +2,13 @@ package org.openmrs.module.epts.etl.controller.conf;
 
 public abstract class SyncDataConfiguration extends BaseConfiguration {
 	
-	private SyncConfiguration relatedSyncConfiguration;
+	private EtlConfiguration relatedSyncConfiguration;
 	
-	public SyncConfiguration getRelatedSyncConfiguration() {
+	public EtlConfiguration getRelatedSyncConfiguration() {
 		return relatedSyncConfiguration;
 	}
 	
-	public void setRelatedSyncConfiguration(SyncConfiguration relatedSyncConfiguration) {
+	public void setRelatedSyncConfiguration(EtlConfiguration relatedSyncConfiguration) {
 		this.relatedSyncConfiguration = relatedSyncConfiguration;
 	}
 	

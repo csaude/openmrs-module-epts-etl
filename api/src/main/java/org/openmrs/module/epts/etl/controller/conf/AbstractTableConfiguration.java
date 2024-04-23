@@ -1033,6 +1033,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 			
 			loadAttDefinition(conn);
 			
+			
 			//If was not specifically set to true
 			if (!this.autoIncrementId) {
 				this.autoIncrementId = useAutoIncrementId(conn);
@@ -1046,7 +1047,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	private void loadAttDefinition(Connection conn) {
 		int qtyAttrs = this.fields.size();
 		
@@ -1229,50 +1230,6 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	}
 	
 	/**
-	 * Generates SQL join condition between two tables (some table) one from source another from
-	 * destination database based on the {@link #uniqueKeys}
-	 * 
-	 * @param sourceTableAlias alias name for source table
-	 * @param destinationTableAlias alias name for destination table
-	 * @return the generated join condition based on {@link #uniqueKeys}
-	 */
-	@JsonIgnore
-	public String generateUniqueKeysJoinCondition(String sourceTableAlias, String destinationTableAlias) {
-		String joinCondition = "";
-		
-		for (int i = 0; i < this.getUniqueKeys().size(); i++) {
-			
-			String uniqueKeyJoinField = generateUniqueKeyJoinField(this.getUniqueKeys().get(i));
-			
-			if (i > 0)
-				joinCondition += " OR ";
-			
-			joinCondition += "(" + uniqueKeyJoinField + ")";
-		}
-		
-		if (!utilities.stringHasValue(joinCondition) && this.isMetadata()) {
-			joinCondition = "dest_." + getPrimaryKey() + " = src_." + getPrimaryKey();
-		}
-		
-		return joinCondition;
-	}
-	
-	private String generateUniqueKeyJoinField(UniqueKeyInfo uk) {
-		List<Key> uniqueKeyFields = uk.getFields();
-		
-		String joinFields = "";
-		
-		for (int i = 0; i < uniqueKeyFields.size(); i++) {
-			if (i > 0)
-				joinFields += " AND ";
-			
-			joinFields += "dest_." + uniqueKeyFields.get(i).getName() + " = src_." + uniqueKeyFields.get(i).getName();
-		}
-		
-		return joinFields;
-	}
-	
-	/**
 	 * Generates SQL condition using the {@link #uniqueKeys} fulfilled with related values from
 	 * especific object
 	 * 
@@ -1372,7 +1329,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		return DBUtilities.checkIfTableUseAutoIcrement(this.tableName, conn);
 	}
 	
-	public SyncConfiguration getRelatedSyncConfiguration() {
+	public EtlConfiguration getRelatedSyncConfiguration() {
 		return this.parent.getRelatedSyncConfiguration();
 	}
 	
@@ -1601,4 +1558,14 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		return this.getPrimaryKey() != null && this.getPrimaryKey().isCompositeKey();
 	}
 	
+	
+	public boolean containsField(String fieldName) {
+		for (Field f : this.fields) {
+			if (f.getName().equals(fieldName)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
 }

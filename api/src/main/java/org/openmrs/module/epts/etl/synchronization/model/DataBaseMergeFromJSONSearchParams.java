@@ -4,7 +4,7 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -16,13 +16,13 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	private boolean forProgressMeter;
 	
-	public DataBaseMergeFromJSONSearchParams(EtlConfiguration config, RecordLimits limits) {
+	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, RecordLimits limits) {
 		super(config, limits);
 		
 		setOrderByFields("id");
 	}
 	
-	public DataBaseMergeFromJSONSearchParams(EtlConfiguration config, RecordLimits limits, String appOriginLocationCode) {
+	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, RecordLimits limits, String appOriginLocationCode) {
 		super(config, limits, appOriginLocationCode);
 		setOrderByFields("id");
 	}

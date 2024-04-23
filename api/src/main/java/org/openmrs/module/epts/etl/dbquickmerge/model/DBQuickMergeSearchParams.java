@@ -2,8 +2,9 @@ package org.openmrs.module.epts.etl.dbquickmerge.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.DstConf;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -18,7 +19,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public DBQuickMergeSearchParams(EtlConfiguration config, RecordLimits limits, DBQuickMergeController relatedController) {
+	public DBQuickMergeSearchParams(EtlItemConfiguration config, RecordLimits limits, DBQuickMergeController relatedController) {
 		super(config, limits);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
@@ -61,8 +62,27 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		if (!DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
 			throw new ForbiddenOperationException("The database server must be the same to generate exlusion clause!!!");
 		}
+	
+		String extraCondition = "";
 		
-		return " NOT EXISTS (" + generateDestinationJoinSubquery(dstConn) + ")";
+		for (DstConf dst : getConfig().getDstConf()) {
+			
+			if (!dst.hasJoinFields()) {
+				continue;
+			}
+			
+			if (!extraCondition.isEmpty()) {
+				extraCondition = " OR ";
+			}
+			else {
+				extraCondition = "(";
+			}
+			
+			extraCondition += " NOT EXISTS (" + generateDestinationJoinSubquery(dst, dstConn) + ")";
+		}
+		
+		return extraCondition + ")";
+		
 	}
 	
 	public String generateDestinationIntersetionClause(Connection srcConn, Connection dstConn) throws DBException {
@@ -71,10 +91,29 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 			throw new ForbiddenOperationException("The database server must be the same to generate exlusion clause!!!");
 		}
 		
-		return " EXISTS (" + generateDestinationJoinSubquery(dstConn) + ")";
+		String extraCondition = "";
+		
+		
+		for (DstConf dst : getConfig().getDstConf()) {
+			
+			if (!dst.hasJoinFields()) {
+				continue;
+			}
+			
+			if (!extraCondition.isEmpty()) {
+				extraCondition = " AND ";
+			}
+			else {
+				extraCondition = "(";
+			}	
+			
+			extraCondition += " EXISTS (" + generateDestinationJoinSubquery(dst, dstConn) + ")";
+		}
+		
+		return extraCondition += ")";
 	}
 	
-	private String generateDestinationJoinSubquery(Connection dstConn) throws DBException {
+	private String generateDestinationJoinSubquery(DstConf dstConf, Connection dstConn) throws DBException {
 		String dstSchema = DBUtilities.determineSchemaName(dstConn);
 		
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
@@ -94,16 +133,17 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		} else {
 			fromClause = normalFromClause;
 		}
-		
+
 		String dstJoinSubquery = "";
-		String joinCondition = tableInfo.generateUniqueKeysJoinCondition("src_", "dest_");
+		String joinCondition = dstConf.generateJoinConditionWithSrc("src_", "dest_");
 		
 		if (utilities.stringHasValue(joinCondition)) {
 			dstJoinSubquery += " SELECT * ";
 			dstJoinSubquery += " FROM    " + fromClause;
 			dstJoinSubquery += " WHERE " + joinCondition;
 		} else {
-			throw new ForbiddenOperationException("There is no join condition between the src [" + tableInfo.getTableName() + "] and it extra data src");
+			throw new ForbiddenOperationException("There is no join condition between the src [" + tableInfo.getTableName()
+			        + "] and it destination table [" + dstConf.getTableName() + "]");
 		}
 		
 		return dstJoinSubquery;

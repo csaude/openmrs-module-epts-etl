@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
@@ -15,7 +15,7 @@ public class DatabaseObjectSearchParams extends SyncSearchParams<DatabaseObject>
 	
 	private DatabaseObjectLoaderHelper loaderHealper;
 	
-	public DatabaseObjectSearchParams(EtlConfiguration config, RecordLimits limits) {
+	public DatabaseObjectSearchParams(EtlItemConfiguration config, RecordLimits limits) {
 		super(config, limits);
 		
 		this.loaderHealper = new DatabaseObjectLoaderHelper(config.getSrcConf());

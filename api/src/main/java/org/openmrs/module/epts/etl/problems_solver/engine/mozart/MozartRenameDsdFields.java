@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.engine.mozart;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
@@ -63,7 +63,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn, OpenConnection srcConn)
 	        throws DBException, LongTransactionException {
 		
-		List<EtlConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		for (int i = this.lasProcessedDBPos; i < dbInfo.getDbNames().size(); i++) {
 			
@@ -84,7 +84,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 				continue;
 			}
 			
-			for (EtlConfiguration config : configs) {
+			for (EtlItemConfiguration config : configs) {
 				AbstractTableConfiguration configuredTable = config.getSrcConf();
 				
 				if (!configuredTable.getTableName().equals("dsd"))

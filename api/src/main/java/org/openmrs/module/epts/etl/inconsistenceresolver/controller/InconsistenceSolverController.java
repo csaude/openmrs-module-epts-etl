@@ -2,8 +2,8 @@ package org.openmrs.module.epts.etl.inconsistenceresolver.controller;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.inconsistenceresolver.engine.InconsistenceSolverEngine;
@@ -21,7 +21,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  *
  */
 public class InconsistenceSolverController extends OperationController {
-	public InconsistenceSolverController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public InconsistenceSolverController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
@@ -31,7 +31,7 @@ public class InconsistenceSolverController extends OperationController {
 	}
 
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -51,7 +51,7 @@ public class InconsistenceSolverController extends OperationController {
 	}
 
 	@Override
-	public long getMaxRecordId(EtlConfiguration config) {
+	public long getMaxRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {

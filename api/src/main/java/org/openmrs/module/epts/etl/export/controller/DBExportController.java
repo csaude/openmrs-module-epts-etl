@@ -5,8 +5,8 @@ import java.io.IOException;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -28,7 +28,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  */
 public class DBExportController extends OperationController {
 	
-	public DBExportController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public DBExportController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 
@@ -38,7 +38,7 @@ public class DBExportController extends OperationController {
 	}
 
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		
 		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
 			throw new ForbiddenOperationException("Not supported composite primary key");
@@ -63,7 +63,7 @@ public class DBExportController extends OperationController {
 	}
 
 	@Override
-	public long getMaxRecordId(EtlConfiguration config) {
+	public long getMaxRecordId(EtlItemConfiguration config) {
 		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
 			throw new ForbiddenOperationException("Not supported composite primary key");
 		}

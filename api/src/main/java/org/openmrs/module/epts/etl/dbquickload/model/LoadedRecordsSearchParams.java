@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.dbquickload.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -14,7 +14,7 @@ public class LoadedRecordsSearchParams extends SyncSearchParams<SyncImportInfoVO
 	
 	private String appOriginLocationCode;
 	
-	public LoadedRecordsSearchParams(EtlConfiguration config, RecordLimits limits, String appOriginLocationCode) {
+	public LoadedRecordsSearchParams(EtlItemConfiguration config, RecordLimits limits, String appOriginLocationCode) {
 		super(config, limits);
 		
 		setOrderByFields("id");

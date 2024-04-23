@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.Date;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -26,14 +26,14 @@ public class ProcessInfo {
 	
 	private Date observationDate;
 	
-	private SyncConfiguration configuration;
+	private EtlConfiguration configuration;
 	
 	private boolean loadeFromFile;
 	
 	public ProcessInfo() {
 	}
 	
-	public ProcessInfo(SyncConfiguration configuration) {
+	public ProcessInfo(EtlConfiguration configuration) {
 		this.configuration = configuration;
 		this.processId = this.configuration.generateControllerId();
 		this.observationDate = this.configuration.getStartDate();
@@ -81,7 +81,7 @@ public class ProcessInfo {
 	}
 	
 	@JsonIgnore
-	public SyncConfiguration getConfiguration() {
+	public EtlConfiguration getConfiguration() {
 		return configuration;
 	}
 	

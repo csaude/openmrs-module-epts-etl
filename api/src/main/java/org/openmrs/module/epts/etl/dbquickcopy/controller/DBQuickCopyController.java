@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.dbquickcopy.controller;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.dbquickcopy.engine.DBQuickCopyEngine;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -24,7 +24,7 @@ public class DBQuickCopyController extends SiteOperationController {
 	
 	private AppInfo srcApp;
 	
-	public DBQuickCopyController(ProcessController processController, SyncOperationConfig operationConfig,
+	public DBQuickCopyController(ProcessController processController, EtlOperationConfig operationConfig,
 	    String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
 		
@@ -38,7 +38,7 @@ public class DBQuickCopyController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -55,7 +55,7 @@ public class DBQuickCopyController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlConfiguration config) {
+	public long getMaxRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {

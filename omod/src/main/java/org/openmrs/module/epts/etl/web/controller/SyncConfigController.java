@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.ConfVM;
@@ -94,7 +94,7 @@ public class SyncConfigController {
 
 	@RequestMapping(value = "/module/epts/etl/saveConfig", method = RequestMethod.POST)
 	public ModelAndView save(@ModelAttribute("vm") ConfVM vm, Model model) {
-		SyncConfiguration confi = vm.getSyncConfiguration();
+		EtlConfiguration confi = vm.getSyncConfiguration();
 		confi.refreshTables();
 	
 		try {

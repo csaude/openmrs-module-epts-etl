@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.dbcopy.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -22,7 +22,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 	
 	private boolean forProgressMeter;
 	
-	public DBCopySearchParams(EtlConfiguration config, RecordLimits limits, DBCopyController relatedController) {
+	public DBCopySearchParams(EtlItemConfiguration config, RecordLimits limits, DBCopyController relatedController) {
 		super(config, limits);
 		
 		this.relatedController = relatedController;

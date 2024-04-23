@@ -5,12 +5,12 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncProgressMeter;
@@ -54,7 +54,7 @@ public abstract class OperationController implements Controller {
 	
 	protected boolean stopRequested;
 	
-	protected SyncOperationConfig operationConfig;
+	protected EtlOperationConfig operationConfig;
 	
 	protected OperationController parent;
 	
@@ -66,7 +66,7 @@ public abstract class OperationController implements Controller {
 	
 	protected OperationProgressInfo progressInfo;
 	
-	public OperationController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public OperationController(ProcessController processController, EtlOperationConfig operationConfig) {
 		this.logger = new EptsEtlLogger(OperationController.class);
 		
 		this.processController = processController;
@@ -129,7 +129,7 @@ public abstract class OperationController implements Controller {
 		this.parent = parent;
 	}
 	
-	public SyncOperationConfig getOperationConfig() {
+	public EtlOperationConfig getOperationConfig() {
 		return operationConfig;
 	}
 	
@@ -160,11 +160,11 @@ public abstract class OperationController implements Controller {
 	private synchronized void runInSequencialMode() {
 		changeStatusToRunning();
 		
-		List<EtlConfiguration> allSync = getProcessController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlConfiguration();
 		
 		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
 		
-		for (EtlConfiguration syncInfo : allSync) {
+		for (EtlItemConfiguration syncInfo : allSync) {
 			if (operationTableIsAlreadyFinished(syncInfo)) {
 				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Confinguration '"
 				        + syncInfo.getConfigCode() + "' was already finished!").toUpperCase());
@@ -261,11 +261,11 @@ public abstract class OperationController implements Controller {
 	}
 	
 	private synchronized void runInParallelMode() {
-		List<EtlConfiguration> allSync = getProcessController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlConfiguration();
 		
 		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
 		
-		for (EtlConfiguration config : allSync) {
+		for (EtlItemConfiguration config : allSync) {
 			if (operationTableIsAlreadyFinished(config)) {
 				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
 				        + config.getConfigCode() + "' was already finished!").toUpperCase());
@@ -304,7 +304,7 @@ public abstract class OperationController implements Controller {
 		changeStatusToRunning();
 	}
 	
-	public boolean operationTableIsAlreadyFinished(EtlConfiguration etlConfig) {
+	public boolean operationTableIsAlreadyFinished(EtlItemConfiguration etlConfig) {
 		try {
 			TableOperationProgressInfo tableOpPm = retrieveProgressInfo(etlConfig);
 			
@@ -465,7 +465,7 @@ public abstract class OperationController implements Controller {
 		}
 	}
 	
-	public synchronized void markTableOperationAsFinished(EtlConfiguration conf) {
+	public synchronized void markTableOperationAsFinished(EtlItemConfiguration conf) {
 		
 		logDebug("FINISHING OPERATION ON TABLE " + conf.getConfigCode().toUpperCase());
 		
@@ -487,11 +487,11 @@ public abstract class OperationController implements Controller {
 		}
 	}
 	
-	public SyncConfiguration getConfiguration() {
+	public EtlConfiguration getConfiguration() {
 		return this.getProcessController().getConfiguration();
 	}
 	
-	public List<EtlConfiguration> getEtlConfiguration() {
+	public List<EtlItemConfiguration> getEtlConfiguration() {
 		return getConfiguration().getEtlConfiguration();
 	}
 	
@@ -671,9 +671,9 @@ public abstract class OperationController implements Controller {
 	
 	public abstract Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits);
 	
-	public abstract long getMinRecordId(EtlConfiguration tableInfo);
+	public abstract long getMinRecordId(EtlItemConfiguration tableInfo);
 	
-	public abstract long getMaxRecordId(EtlConfiguration tableInfo);
+	public abstract long getMaxRecordId(EtlItemConfiguration tableInfo);
 	
 	public void refresh() {
 	}
@@ -714,7 +714,7 @@ public abstract class OperationController implements Controller {
 		this.getProcessController().requestStop();
 	}
 	
-	public TableOperationProgressInfo retrieveProgressInfo(EtlConfiguration config) {
+	public TableOperationProgressInfo retrieveProgressInfo(EtlItemConfiguration config) {
 		if (progressInfo != null && utilities().arrayHasElement(progressInfo.getItemsProgressInfo())) {
 			for (TableOperationProgressInfo item : progressInfo.getItemsProgressInfo()) {
 				if (item.getEtlConfiguration().equals(config))

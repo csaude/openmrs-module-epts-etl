@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.reconciliation.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
@@ -20,7 +20,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 	
 	private SyncOperationType type;
 	
-	public CentralAndRemoteDataReconciliationSearchParams(EtlConfiguration config, RecordLimits limits,
+	public CentralAndRemoteDataReconciliationSearchParams(EtlItemConfiguration config, RecordLimits limits,
 	    SyncOperationType type, Connection conn) {
 		super(config, limits);
 		

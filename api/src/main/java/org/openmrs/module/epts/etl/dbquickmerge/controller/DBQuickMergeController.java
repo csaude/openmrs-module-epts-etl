@@ -5,8 +5,8 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.dbquickmerge.engine.DBQuickMergeEngine;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -34,7 +34,7 @@ public class DBQuickMergeController extends SiteOperationController {
 	
 	private AppInfo srcApp;
 	
-	public DBQuickMergeController(ProcessController processController, SyncOperationConfig operationConfig,
+	public DBQuickMergeController(ProcessController processController, EtlOperationConfig operationConfig,
 	    String appOriginLocationCode) {
 		super(processController, operationConfig, appOriginLocationCode);
 		
@@ -56,7 +56,7 @@ public class DBQuickMergeController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -73,7 +73,7 @@ public class DBQuickMergeController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlConfiguration tableInfo) {
+	public long getMaxRecordId(EtlItemConfiguration tableInfo) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -89,7 +89,7 @@ public class DBQuickMergeController extends SiteOperationController {
 		}
 	}
 	
-	private long getExtremeRecord(EtlConfiguration config, String function, Connection conn) throws DBException {
+	private long getExtremeRecord(EtlItemConfiguration config, String function, Connection conn) throws DBException {
 		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
 			throw new ForbiddenOperationException("Composite and non numeric keys are not supported for src tables");
 		}

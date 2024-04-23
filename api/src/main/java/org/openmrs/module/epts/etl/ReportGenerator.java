@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.TableParent;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -22,7 +22,7 @@ public class ReportGenerator {
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public static void main(String[] synConfigFiles) throws IOException, DBException {
-		List<SyncConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);
+		List<EtlConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);
 		
 		ProcessController controller = new ProcessController(null, syncConfigs.get(0));
 		
@@ -34,11 +34,11 @@ public class ReportGenerator {
 		conn.finalizeConnection();
 	}
 	
-	private static void generateDataInconsistencyReport(SyncConfiguration syncConfiguration, Connection conn)
+	private static void generateDataInconsistencyReport(EtlConfiguration etlConfiguration, Connection conn)
 	        throws DBException {
-		syncConfiguration.fullLoad();
+		etlConfiguration.fullLoad();
 		
-		for (AbstractTableConfiguration config : syncConfiguration.getConfiguredTables()) {
+		for (AbstractTableConfiguration config : etlConfiguration.getConfiguredTables()) {
 			produceReport(config, conn);
 		}
 	}
@@ -110,9 +110,9 @@ public class ReportGenerator {
 		return BaseDAO.find(SimpleValue.class, sql, null, conn).intValue();
 	}
 	
-	private static List<SyncConfiguration> loadSyncConfig(String[] synConfigFiles)
+	private static List<EtlConfiguration> loadSyncConfig(String[] synConfigFiles)
 	        throws ForbiddenOperationException, IOException {
-		List<SyncConfiguration> syncConfigs = new ArrayList<SyncConfiguration>(synConfigFiles.length);
+		List<EtlConfiguration> syncConfigs = new ArrayList<EtlConfiguration>(synConfigFiles.length);
 		
 		for (String confFile : synConfigFiles) {
 			File file = new File(confFile);
@@ -128,7 +128,7 @@ public class ReportGenerator {
 				
 				syncConfigs.addAll(loadSyncConfig(paths));
 			} else {
-				SyncConfiguration conf = SyncConfiguration.loadFromFile(file);
+				EtlConfiguration conf = EtlConfiguration.loadFromFile(file);
 				
 				conf.validate();
 				

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -32,7 +32,7 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	private OperationController controller;
 	
-	private EtlConfiguration etlConfiguration;
+	private EtlItemConfiguration etlItemConfiguration;
 	
 	private List<Engine> ownEngines;
 	
@@ -48,11 +48,11 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	//private List<SyncRecord> recordsToBeReprocessed;
 	
-	public EngineMonitor(OperationController controller, EtlConfiguration etlConfiguration,
+	public EngineMonitor(OperationController controller, EtlItemConfiguration etlItemConfiguration,
 	    TableOperationProgressInfo tableOperationProgressInfo) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<Engine>();
-		this.etlConfiguration = etlConfiguration;
+		this.etlItemConfiguration = etlItemConfiguration;
 		
 		this.engineMonitorId = (controller.getControllerId() + "_" + this.getEtlConfigCode() + "_monitor").toLowerCase();
 		this.engineId = (getController().getControllerId() + "_" + this.getEtlConfigCode()).toLowerCase();
@@ -77,8 +77,8 @@ public class EngineMonitor implements MonitoredOperation {
 		return engineMonitorId;
 	}
 	
-	public EtlConfiguration getEtlConfiguration() {
-		return this.etlConfiguration;
+	public EtlItemConfiguration getEtlConfiguration() {
+		return this.etlItemConfiguration;
 	}
 	
 	public String getEtlConfigCode() {
@@ -468,9 +468,9 @@ public class EngineMonitor implements MonitoredOperation {
 		}
 	}
 	
-	public static EngineMonitor init(OperationController controller, EtlConfiguration etlConfiguration,
+	public static EngineMonitor init(OperationController controller, EtlItemConfiguration etlItemConfiguration,
 	        TableOperationProgressInfo tableOperationProgressInfo) {
-		EngineMonitor monitor = new EngineMonitor(controller, etlConfiguration, tableOperationProgressInfo);
+		EngineMonitor monitor = new EngineMonitor(controller, etlItemConfiguration, tableOperationProgressInfo);
 		
 		return monitor;
 	}

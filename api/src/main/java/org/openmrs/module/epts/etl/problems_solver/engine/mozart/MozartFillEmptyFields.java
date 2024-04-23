@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.engine.mozart;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.Extension;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
@@ -65,7 +65,7 @@ public class MozartFillEmptyFields extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<EtlConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
 		
 		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {
@@ -81,7 +81,7 @@ public class MozartFillEmptyFields extends MozartProblemSolverEngine {
 				continue;
 			}
 			
-			for (EtlConfiguration conf : configs) {
+			for (EtlItemConfiguration conf : configs) {
 				AbstractTableConfiguration configuredTable = conf.getSrcConf();
 				
 				if (!configuredTable.getTableName().equals(tableToFill))

@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.detectgapes.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -19,7 +19,7 @@ public class DetectGapesSearchParams extends DatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public DetectGapesSearchParams(EtlConfiguration config, RecordLimits limits, DetectGapesController relatedController) {
+	public DetectGapesSearchParams(EtlItemConfiguration config, RecordLimits limits, DetectGapesController relatedController) {
 		super(config, limits);
 		
 		this.relatedController = relatedController;

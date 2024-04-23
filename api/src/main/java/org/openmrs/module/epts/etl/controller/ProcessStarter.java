@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
@@ -76,12 +76,12 @@ public class ProcessStarter implements ControllerStarter {
 				throw new ForbiddenOperationException("The system currently doesn't support parallely processing");
 			}
 			
-			List<SyncConfiguration> syncConfigs = loadSyncConfig(this.synConfigFilesPaths);
+			List<EtlConfiguration> syncConfigs = loadSyncConfig(this.synConfigFilesPaths);
 			
 			if (countQtyDestination(syncConfigs) > 1)
 				throw new ForbiddenOperationException("You must define only one destination file");
 			
-			for (SyncConfiguration conf : syncConfigs) {
+			for (EtlConfiguration conf : syncConfigs) {
 				if (!conf.isAutomaticStart())
 					continue;
 				
@@ -135,7 +135,7 @@ public class ProcessStarter implements ControllerStarter {
 		if (c.isFinished()) {
 			if (controller.getConfiguration().getChildConfigFilePath() != null) {
 				try {
-					SyncConfiguration childConfig = SyncConfiguration
+					EtlConfiguration childConfig = EtlConfiguration
 					        .loadFromFile(new File(controller.getConfiguration().getChildConfigFilePath()));
 					
 					ProcessController child = new ProcessController(this, childConfig);
@@ -165,7 +165,7 @@ public class ProcessStarter implements ControllerStarter {
 		
 	}
 	
-	public List<SyncConfiguration> loadSyncConfig(File[] syncConfigFiles) throws ForbiddenOperationException, IOException {
+	public List<EtlConfiguration> loadSyncConfig(File[] syncConfigFiles) throws ForbiddenOperationException, IOException {
 		String[] pathToFiles = new String[syncConfigFiles.length];
 		
 		for (int i = 0; i < syncConfigFiles.length; i++) {
@@ -175,8 +175,8 @@ public class ProcessStarter implements ControllerStarter {
 		return loadSyncConfig(pathToFiles);
 	}
 	
-	public List<SyncConfiguration> loadSyncConfig(String[] synConfigFiles) throws ForbiddenOperationException {
-		List<SyncConfiguration> syncConfigs = new ArrayList<SyncConfiguration>(synConfigFiles.length);
+	public List<EtlConfiguration> loadSyncConfig(String[] synConfigFiles) throws ForbiddenOperationException {
+		List<EtlConfiguration> syncConfigs = new ArrayList<EtlConfiguration>(synConfigFiles.length);
 		
 		for (String confFile : synConfigFiles) {
 			File file = new File(confFile);
@@ -192,10 +192,10 @@ public class ProcessStarter implements ControllerStarter {
 				
 				syncConfigs.addAll(loadSyncConfig(paths));
 			} else {
-				SyncConfiguration conf;
+				EtlConfiguration conf;
 				
 				try {
-					conf = SyncConfiguration.loadFromFile(file);
+					conf = EtlConfiguration.loadFromFile(file);
 					
 					conf.validate();
 					
@@ -216,11 +216,11 @@ public class ProcessStarter implements ControllerStarter {
 		return syncConfigs;
 	}
 	
-	private int countQtyDestination(List<SyncConfiguration> confs) {
+	private int countQtyDestination(List<EtlConfiguration> confs) {
 		
 		int i = 0;
 		
-		for (SyncConfiguration conf : confs) {
+		for (EtlConfiguration conf : confs) {
 			if (conf.isDataBaseMergeFromJSONProcess()) {
 				i++;
 			}

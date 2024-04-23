@@ -3,14 +3,14 @@ package org.openmrs.module.epts.etl.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class TableOperationProgressInfoDAO extends BaseDAO {
 	
-	public static void insert(TableOperationProgressInfo record, EtlConfiguration config, Connection conn)
+	public static void insert(TableOperationProgressInfo record, EtlItemConfiguration config, Connection conn)
 	        throws DBException {
 		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		
@@ -43,7 +43,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void update(TableOperationProgressInfo record, EtlConfiguration config, Connection conn)
+	public static void update(TableOperationProgressInfo record, EtlItemConfiguration config, Connection conn)
 	        throws DBException {
 		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		
@@ -62,7 +62,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static TableOperationProgressInfo find(OperationController controller, EtlConfiguration config, Connection conn)
+	public static TableOperationProgressInfo find(OperationController controller, EtlItemConfiguration config, Connection conn)
 	        throws DBException {
 		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		
@@ -81,7 +81,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 		
 	}
 	
-	public static void delete(TableOperationProgressInfo record, EtlConfiguration config, Connection conn)
+	public static void delete(TableOperationProgressInfo record, EtlItemConfiguration config, Connection conn)
 	        throws DBException {
 		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		

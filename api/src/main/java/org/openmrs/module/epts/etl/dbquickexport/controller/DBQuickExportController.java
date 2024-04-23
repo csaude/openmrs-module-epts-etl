@@ -5,8 +5,8 @@ import java.io.IOException;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbquickexport.engine.DBQuickExportEngine;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -28,7 +28,7 @@ public class DBQuickExportController extends OperationController {
 	
 	private final String stringLock = new String("LOCK_STRING");
 	
-	public DBQuickExportController(ProcessController processController, SyncOperationConfig operationConfig) {
+	public DBQuickExportController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
@@ -38,7 +38,7 @@ public class DBQuickExportController extends OperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(EtlConfiguration config) {
+	public long getMinRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -55,7 +55,7 @@ public class DBQuickExportController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlConfiguration config) {
+	public long getMaxRecordId(EtlItemConfiguration config) {
 		OpenConnection conn = openConnection();
 		
 		try {

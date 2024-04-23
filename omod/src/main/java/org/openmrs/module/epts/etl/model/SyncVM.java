@@ -8,9 +8,9 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.openmrs.module.epts.etl.Main;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationConfig;
+import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
@@ -23,9 +23,9 @@ public class SyncVM {
 	@SuppressWarnings("unused")
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private List<SyncConfiguration> avaliableConfigurations;
+	private List<EtlConfiguration> avaliableConfigurations;
 	
-	private SyncConfiguration activeConfiguration;
+	private EtlConfiguration activeConfiguration;
 	
 	private File configFile;
 	
@@ -45,7 +45,7 @@ public class SyncVM {
 		
 		this.avaliableConfigurations = null;//Main.loadSyncConfig(confDir.listFiles());
 		
-		for (SyncConfiguration conf : this.avaliableConfigurations) {
+		for (EtlConfiguration conf : this.avaliableConfigurations) {
 			if (conf.isAutomaticStart()) {
 				this.activeConfiguration = conf;
 				break;
@@ -63,17 +63,17 @@ public class SyncVM {
 		//ZipUtilities.copyModuleTagsToOpenMRS();	
 	}
 	
-	public List<SyncOperationConfig> getOperations() {
+	public List<EtlOperationConfig> getOperations() {
 		return this.activeConfiguration.getOperationsAsList();
 	}
 	
 	@JsonIgnore
-	public SyncConfiguration getActiveConfiguration() {
+	public EtlConfiguration getActiveConfiguration() {
 		return activeConfiguration;
 	}
 	
 	@JsonIgnore
-	public List<SyncConfiguration> getAvaliableConfigurations() {
+	public List<EtlConfiguration> getAvaliableConfigurations() {
 		return avaliableConfigurations;
 	}
 	
@@ -99,11 +99,11 @@ public class SyncVM {
 		this.activeTab = tab;
 	}
 	
-	public boolean isActivatedOperationTab(SyncOperationConfig operation) {
+	public boolean isActivatedOperationTab(EtlOperationConfig operation) {
 		return this.activeTab.equals(operation.getOperationType());
 	}
 	
-	public TableOperationProgressInfo retrieveProgressInfo(SyncOperationConfig operation, EtlConfiguration item,
+	public TableOperationProgressInfo retrieveProgressInfo(EtlOperationConfig operation, EtlItemConfiguration item,
 	        String appOriginCode) {
 		OperationController controller = operation.getRelatedController(appOriginCode);
 		
@@ -113,12 +113,12 @@ public class SyncVM {
 		return controller.retrieveProgressInfo(item);
 	}
 	
-	public TableOperationProgressInfo retrieveProgressInfo(SyncOperationConfig operation, EtlConfiguration item) {
+	public TableOperationProgressInfo retrieveProgressInfo(EtlOperationConfig operation, EtlItemConfiguration item) {
 		return retrieveProgressInfo(operation, item, null);
 	}
 	
 	public OperationController getActiveOperationController() {
-		for (SyncOperationConfig syncConfig : this.getOperations()) {
+		for (EtlOperationConfig syncConfig : this.getOperations()) {
 			if (syncConfig.getOperationType().equals(this.activeTab)) {
 				return syncConfig.getRelatedController(null);
 			}
@@ -128,7 +128,7 @@ public class SyncVM {
 	}
 	
 	public void startSync(String selectedConfiguration) {
-		for (SyncConfiguration conf : this.avaliableConfigurations) {
+		for (EtlConfiguration conf : this.avaliableConfigurations) {
 			if (conf.getDesignation().equals(selectedConfiguration)) {
 				this.activeConfiguration = conf;
 				break;
@@ -169,10 +169,10 @@ public class SyncVM {
 		//tmpSync();
 	}
 	
-	public void saveConfigFile(SyncConfiguration syncConfiguration) {
+	public void saveConfigFile(EtlConfiguration etlConfiguration) {
 		FileUtilities.removeFile(this.configFile.getAbsolutePath());
 		
-		FileUtilities.write(this.configFile.getAbsolutePath(), syncConfiguration.parseToJSON());
+		FileUtilities.write(this.configFile.getAbsolutePath(), etlConfiguration.parseToJSON());
 	}
 	
 }

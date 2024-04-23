@@ -1,9 +1,9 @@
 package org.openmrs.module.epts.etl.engine;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 
 /**
- * On an {@link EtlConfiguration} Specify the search source type. The type could be SOURCE OR
+ * On an {@link EtlItemConfiguration} Specify the search source type. The type could be SOURCE OR
  * TARGET. SOURCE tells that the search will be performed on source table, and TARGET tell that the
  * search will be performed on target table
  */
