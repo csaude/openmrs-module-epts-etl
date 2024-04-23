@@ -63,7 +63,7 @@ public class CorrectLabTestResult extends MozartProblemSolverEngine {
 				logDebug(
 				    "Trying to update 'selected' field " + ++i + "/" + dbInfo.getDbNames().size() + " [" + dbName + "]");
 				
-				for (EtlItemConfiguration config : getRelatedSyncConfiguration().getEtlConfiguration()) {
+				for (EtlItemConfiguration config : getRelatedSyncConfiguration().getEtlItemConfiguration()) {
 					AbstractTableConfiguration configuredTable = config.getSrcConf();
 					
 					if (!configuredTable.getTableName().equals("location"))

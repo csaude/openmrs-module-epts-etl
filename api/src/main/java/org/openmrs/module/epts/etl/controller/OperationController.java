@@ -160,7 +160,7 @@ public abstract class OperationController implements Controller {
 	private synchronized void runInSequencialMode() {
 		changeStatusToRunning();
 		
-		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
 		
 		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
 		
@@ -261,7 +261,7 @@ public abstract class OperationController implements Controller {
 	}
 	
 	private synchronized void runInParallelMode() {
-		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
 		
 		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
 		
@@ -492,7 +492,7 @@ public abstract class OperationController implements Controller {
 	}
 	
 	public List<EtlItemConfiguration> getEtlConfiguration() {
-		return getConfiguration().getEtlConfiguration();
+		return getConfiguration().getEtlItemConfiguration();
 	}
 	
 	public File generateTableProcessStatusFile_(AbstractTableConfiguration conf) {

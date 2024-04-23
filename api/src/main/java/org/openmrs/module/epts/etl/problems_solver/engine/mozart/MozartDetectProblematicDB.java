@@ -57,7 +57,7 @@ public class MozartDetectProblematicDB extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<EtlItemConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlItemConfiguration();
 		
 		int i = 0;
 		

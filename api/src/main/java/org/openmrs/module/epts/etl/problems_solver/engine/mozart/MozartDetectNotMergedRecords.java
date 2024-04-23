@@ -44,7 +44,7 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<EtlItemConfiguration> configuredTables = getRelatedOperationController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> configuredTables = getRelatedOperationController().getConfiguration().getEtlItemConfiguration();
 		
 		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {

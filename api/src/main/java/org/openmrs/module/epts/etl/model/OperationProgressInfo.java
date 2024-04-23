@@ -106,7 +106,7 @@ public class OperationProgressInfo {
 	public void initProgressMeter(Connection conn) throws DBException {
 		this.itemsProgressInfo = new ArrayList<TableOperationProgressInfo>();
 		
-		for (EtlItemConfiguration tabConf : this.getConfiguration().getEtlConfiguration()) {
+		for (EtlItemConfiguration tabConf : this.getConfiguration().getEtlItemConfiguration()) {
 			TableOperationProgressInfo pm = null;
 			
 			try {

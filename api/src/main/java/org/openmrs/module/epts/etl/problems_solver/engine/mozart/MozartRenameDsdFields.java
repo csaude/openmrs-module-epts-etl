@@ -63,7 +63,7 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn, OpenConnection srcConn)
 	        throws DBException, LongTransactionException {
 		
-		List<EtlItemConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlItemConfiguration();
 		
 		for (int i = this.lasProcessedDBPos; i < dbInfo.getDbNames().size(); i++) {
 			

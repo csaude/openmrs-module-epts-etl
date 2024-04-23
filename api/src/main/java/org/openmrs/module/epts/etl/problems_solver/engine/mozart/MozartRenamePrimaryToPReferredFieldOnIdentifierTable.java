@@ -48,7 +48,7 @@ public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends Mozart
 	private void performeOnServer(DatabasesInfo dbInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = dbInfo.acquireConnection();
 		
-		List<EtlItemConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlConfiguration();
+		List<EtlItemConfiguration> configs = getRelatedOperationController().getConfiguration().getEtlItemConfiguration();
 		
 		int i = 0;
 		for (String dbName : dbInfo.getDbNames()) {

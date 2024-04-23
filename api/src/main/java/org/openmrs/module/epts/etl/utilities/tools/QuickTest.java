@@ -66,7 +66,7 @@ public class QuickTest {
 		
 		EtlConfiguration conf = EtlConfiguration.loadFromFile(new File(path));
 		
-		EtlItemConfiguration etlConf = conf.getEtlConfiguration().get(0);
+		EtlItemConfiguration etlConf = conf.getEtlItemConfiguration().get(0);
 		
 		etlConf.fullLoad();
 		
@@ -199,7 +199,7 @@ public class QuickTest {
 		
 		EtlConfiguration conf = EtlConfiguration.loadFromFile(new File(path));
 		
-		EtlItemConfiguration etlConf = conf.getEtlConfiguration().get(1);
+		EtlItemConfiguration etlConf = conf.getEtlItemConfiguration().get(1);
 		
 		etlConf.fullLoad();
 		

@@ -268,7 +268,7 @@ public class ClassPathUtilities {
 			
 			List<File> clazzListFiless = new ArrayList<File>();
 			
-			for (EtlItemConfiguration config : etlConfiguration.getEtlConfiguration()) {
+			for (EtlItemConfiguration config : etlConfiguration.getEtlItemConfiguration()) {
 				AbstractTableConfiguration tableConfiguration = config.getSrcConf();
 				
 				tryToCopyPOJOToClassPath(tableConfiguration, clazzListFiless, app);

@@ -369,15 +369,15 @@ public class EtlConfiguration extends BaseConfiguration {
 		return op.isDoIntegrityCheckInTheEnd();
 	}
 	
-	public List<EtlItemConfiguration> getEtlConfiguration() {
+	public List<EtlItemConfiguration> getEtlItemConfiguration() {
 		return etlItemConfiguration;
 	}
 	
 	public List<String> parseEtlConfigurationsToString_() {
 		List<String> tableConfigurationsAsString = new ArrayList<>();
 		
-		if (utilities.arrayHasElement(getEtlConfiguration())) {
-			for (EtlItemConfiguration tc : getEtlConfiguration()) {
+		if (utilities.arrayHasElement(getEtlItemConfiguration())) {
+			for (EtlItemConfiguration tc : getEtlItemConfiguration()) {
 				tableConfigurationsAsString.add(tc.getConfigCode());
 			}
 		}
@@ -406,7 +406,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		        + FileUtilities.getPathSeparator() + subFolder + FileUtilities.getPathSeparator() + this.getDesignation();
 	}
 	
-	public void setEtlConfigurations(List<EtlItemConfiguration> etlItemConfiguration) {
+	public void setEtlItemConfiguration(List<EtlItemConfiguration> etlItemConfiguration) {
 		if (etlItemConfiguration != null) {
 			for (EtlItemConfiguration config : etlItemConfiguration) {
 				config.setRelatedSyncConfiguration(this);
@@ -603,7 +603,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		initLogger();
 		
 		try {
-			for (EtlItemConfiguration conf : this.getEtlConfiguration()) {
+			for (EtlItemConfiguration conf : this.getEtlItemConfiguration()) {
 				if (!conf.isFullLoaded()) {
 					logDebug("PERFORMING FULL CONFIGURATION LOAD ON ETL '" + conf.getConfigCode() + "'");
 					conf.fullLoad();
@@ -812,7 +812,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		}
 		
 		if (!supportMultipleDestination()) {
-			for (EtlItemConfiguration config : this.getEtlConfiguration()) {
+			for (EtlItemConfiguration config : this.getEtlItemConfiguration()) {
 				if (utilities.arrayHasMoreThanOneElements(config.getDstConf())) {
 					errorMsg += ++errNum + ". The config for source " + config.getSrcConf().getTableName()
 					        + " has multiple destination \n";
