@@ -7,7 +7,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.controller.conf.Key;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 
 /**
  * Utilities class which help to define att elements for class like Att definition, getter and
@@ -51,13 +51,13 @@ public class AttDefinedElements {
 	
 	private boolean isLast;
 	
-	private PojobleDatabaseObject pojoble;
+	private DatabaseObjectConfiguration pojoble;
 	
 	static String aspasAbrir = "\"";
 	
 	static String aspasFechar = "\"";
 	
-	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, PojobleDatabaseObject pojoble) {
+	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, DatabaseObjectConfiguration pojoble) {
 		this.dbAttName = dbAttName;
 		this.dbAttType = dbAttType;
 		this.isLast = isLast;
@@ -319,7 +319,7 @@ public class AttDefinedElements {
 	}
 	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,
-	        PojobleDatabaseObject pojoble) {
+	        DatabaseObjectConfiguration pojoble) {
 		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, pojoble);
 		elements.generateElemets();
 		

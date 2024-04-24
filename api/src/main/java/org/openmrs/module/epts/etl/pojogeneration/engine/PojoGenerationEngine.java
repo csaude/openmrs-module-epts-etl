@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
@@ -88,7 +88,7 @@ public class PojoGenerationEngine extends Engine {
 		}
 	}
 	
-	private void generate(AppInfo app, PojobleDatabaseObject tableConfiguration) {
+	private void generate(AppInfo app, DatabaseObjectConfiguration tableConfiguration) {
 		if (!utilities.stringHasValue(app.getPojoPackageName())) {
 			throw new ForbiddenOperationException("The app " + app.getApplicationCode() + " has no package name!");
 		}

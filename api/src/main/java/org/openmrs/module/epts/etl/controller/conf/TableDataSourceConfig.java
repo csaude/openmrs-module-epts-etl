@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
-import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -18,7 +18,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents a query configuration. A query is used on data mapping between source and destination
  * table
  */
-public class TableDataSourceConfig extends AbstractTableConfiguration implements PojobleDatabaseObject, SyncDataSource {
+public class TableDataSourceConfig extends AbstractTableConfiguration implements DatabaseObjectConfiguration, SyncDataSource {
 	
 	private EtlExtraDataSource relatedSrcExtraDataSrc;
 	

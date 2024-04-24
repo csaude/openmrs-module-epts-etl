@@ -65,6 +65,7 @@ public class Field implements Serializable {
 		this.name = name;
 	}
 	
+	@JsonIgnore
 	public String getNameAsClassAtt() {
 		return AttDefinedElements.convertTableAttNameToClassAttName(this.name);
 	}
@@ -216,14 +217,17 @@ public class Field implements Serializable {
 		return (String) value;
 	}
 	
+	@JsonIgnore
 	public boolean isDateField() {
 		return AttDefinedElements.isDateType(this.type);
 	}
 	
+	@JsonIgnore
 	public boolean isNumericColumnType() {
 		return AttDefinedElements.isNumeric(this.type);
 	}
 	
+	@JsonIgnore
 	public Field createACopy() {
 		Field f = new Field(this.name);
 		

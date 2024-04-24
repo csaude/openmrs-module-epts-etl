@@ -212,6 +212,7 @@ public class DstConf extends AbstractTableConfiguration {
 							return null;
 						} else {
 							relatedSrcObject = mappingInfo.getSyncRecordClass(srcAppInfo).newInstance();
+							relatedSrcObject.setRelatedConfiguration(mappingInfo.getAvaliableSrc());
 						}
 					}
 					
@@ -222,7 +223,7 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			DatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
 			
-			mappedObject.setTableConfiguration(this);
+			mappedObject.setRelatedConfiguration(this);
 			
 			for (FieldsMapping fieldsMapping : this.allFieldsMapping) {
 				

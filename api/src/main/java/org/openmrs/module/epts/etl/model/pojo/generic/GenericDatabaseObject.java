@@ -15,17 +15,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
-	private PojobleDatabaseObject tableConfiguration;
+	private DatabaseObjectConfiguration relatedConfiguration;
 	
 	private List<Field> fields;
 	
 	public GenericDatabaseObject() {
 	}
 	
-	public GenericDatabaseObject(PojobleDatabaseObject tableConfiguration) {
-		this.tableConfiguration = tableConfiguration;
+	public GenericDatabaseObject(DatabaseObjectConfiguration relatedConfiguration) {
+		this.relatedConfiguration = relatedConfiguration;
 		
-		this.fields = this.tableConfiguration.cloneFields();
+		this.fields = this.relatedConfiguration.cloneFields();
 	}
 	
 	@Override
@@ -55,22 +55,22 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
-	public void setTableConfiguration(PojobleDatabaseObject tableConfiguration) {
-		this.tableConfiguration = tableConfiguration;
+	public void setRelatedConfiguration(DatabaseObjectConfiguration tableConfiguration) {
+		this.relatedConfiguration = tableConfiguration;
 		
-		this.fields = this.tableConfiguration.cloneFields();
+		this.fields = this.relatedConfiguration.cloneFields();
 	}
 	
 	@Override
-	public PojobleDatabaseObject getTableConfiguration() {
-		return this.tableConfiguration;
+	public DatabaseObjectConfiguration getRelatedConfiguration() {
+		return this.relatedConfiguration;
 	}
 	
 	public void load(ResultSet rs) throws SQLException {
 		try {
 			
-			if (this.tableConfiguration == null) {
-				throw new ForbiddenOperationException("The tableConfiguration  is not set");
+			if (this.relatedConfiguration == null) {
+				throw new ForbiddenOperationException("The relatedConfiguration  is not set");
 			}
 			
 			super.load(rs);
@@ -79,8 +79,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 				field.setValue(retrieveFieldValue(field.getName(), field.getType(), rs));
 			}
 			
-			if (this.tableConfiguration instanceof AbstractTableConfiguration) {
-				loadObjectIdData((AbstractTableConfiguration) this.tableConfiguration);
+			if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
+				loadObjectIdData((AbstractTableConfiguration) this.relatedConfiguration);
 			}
 		}
 		catch (SQLException e) {}
@@ -89,8 +89,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	@JsonIgnore
 	public Object[] getInsertParamsWithoutObjectId() {
-		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
-			return ((AbstractTableConfiguration) this.tableConfiguration).generateInsertParamsWithoutObjectId(this);
+		if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.relatedConfiguration).generateInsertParamsWithoutObjectId(this);
 		}
 		
 		return null;
@@ -99,8 +99,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId() {
-		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
-			return ((AbstractTableConfiguration) this.tableConfiguration).generateInsertValuesWithoutObjectId(this);
+		if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.relatedConfiguration).generateInsertValuesWithoutObjectId(this);
 		}
 		
 		return null;
@@ -109,8 +109,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	@JsonIgnore
 	public Object[] getInsertParamsWithObjectId() {
-		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
-			return ((AbstractTableConfiguration) this.tableConfiguration).generateInsertParamsWithObjectId(this);
+		if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.relatedConfiguration).generateInsertParamsWithObjectId(this);
 		}
 		
 		return null;
@@ -119,8 +119,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	@JsonIgnore
 	public String getInsertSQLWithObjectId() {
-		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
-			return ((AbstractTableConfiguration) this.tableConfiguration).getInsertSQLWithObjectId();
+		if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.relatedConfiguration).getInsertSQLWithObjectId();
 		}
 		
 		return null;
@@ -129,8 +129,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	@JsonIgnore
 	public String getUpdateSQL() {
-		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
-			return ((AbstractTableConfiguration) this.tableConfiguration).getUpdateSQL();
+		if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.relatedConfiguration).getUpdateSQL();
 		}
 		
 		return null;
@@ -139,8 +139,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	@JsonIgnore
 	public Object[] getUpdateParams() {
-		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
-			return ((AbstractTableConfiguration) this.tableConfiguration).generateUpdateParams(this);
+		if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.relatedConfiguration).generateUpdateParams(this);
 		}
 		
 		return null;
@@ -148,8 +148,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public String generateInsertValuesWithoutObjectId() {
-		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
-			return ((AbstractTableConfiguration) this.tableConfiguration).generateInsertValuesWithoutObjectId(this);
+		if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.relatedConfiguration).generateInsertValuesWithoutObjectId(this);
 		}
 		
 		return null;
@@ -157,8 +157,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public String generateInsertValuesWithObjectId() {
-		if (this.tableConfiguration instanceof AbstractTableConfiguration) {
-			return ((AbstractTableConfiguration) this.tableConfiguration).generateInsertValuesWithObjectId(this);
+		if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
+			return ((AbstractTableConfiguration) this.relatedConfiguration).generateInsertValuesWithObjectId(this);
 		}
 		
 		return null;
@@ -167,8 +167,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	@JsonIgnore
 	public boolean hasParents() {
-		if (utilities.arrayHasElement(this.tableConfiguration.getParentRefInfo())) {
-			for (RefInfo refInfo : this.tableConfiguration.getParentRefInfo()) {
+		if (utilities.arrayHasElement(this.relatedConfiguration.getParentRefInfo())) {
+			for (RefInfo refInfo : this.relatedConfiguration.getParentRefInfo()) {
 				for (RefMapping map : refInfo.getFieldsMapping()) {
 					if (getFieldValue(map.getChildFieldName()) != null) {
 						return true;
@@ -182,8 +182,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public Integer getParentValue(String parentAttName) {
-		if (utilities.arrayHasElement(this.tableConfiguration.getParentRefInfo())) {
-			for (RefInfo refInfo : this.tableConfiguration.getParentRefInfo()) {
+		if (utilities.arrayHasElement(this.relatedConfiguration.getParentRefInfo())) {
+			for (RefInfo refInfo : this.relatedConfiguration.getParentRefInfo()) {
 				for (RefMapping map : refInfo.getFieldsMapping()) {
 					
 					if (map.getChildFieldName().equals(parentAttName)) {
@@ -198,17 +198,20 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public String generateTableName() {
-		return this.tableConfiguration.getObjectName();
+		if (this.relatedConfiguration == null) {
+			throw new ForbiddenOperationException("The relatedConfiguration  is not set for record [" + this + "]");
+		}
+		
+		return this.relatedConfiguration.getObjectName();
 	}
 	
 	public static GenericDatabaseObject fastCreate(SyncImportInfoVO syncImportInfo, AbstractTableConfiguration tableConf) {
 		GenericDatabaseObject obj = new GenericDatabaseObject();
 		
-		obj.setTableConfiguration(tableConf);
+		obj.setRelatedConfiguration(tableConf);
 		
 		obj.setObjectId(Oid.fastCreate("", syncImportInfo.getRecordOriginId()));
 		
 		return obj;
 	}
-	
 }

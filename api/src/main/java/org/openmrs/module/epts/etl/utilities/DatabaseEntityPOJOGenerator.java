@@ -24,7 +24,7 @@ import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.exceptions.SyncExeption;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DatabaseEntityPOJOGenerator {
@@ -33,7 +33,7 @@ public class DatabaseEntityPOJOGenerator {
 	
 	static final String[] ignorableFields = { "date_changed", "date_created", "uuid" };
 	
-	public static Class<DatabaseObject> generate(PojobleDatabaseObject pojoble, AppInfo application)
+	public static Class<DatabaseObject> generate(DatabaseObjectConfiguration pojoble, AppInfo application)
 	        throws IOException, SQLException, ClassNotFoundException {
 		if (!pojoble.isFullLoaded())
 			pojoble.fullLoad();
@@ -365,7 +365,7 @@ public class DatabaseEntityPOJOGenerator {
 		return false;
 	}
 	
-	public static Class<DatabaseObject> generateSkeleton(PojobleDatabaseObject pojoable, AppInfo application)
+	public static Class<DatabaseObject> generateSkeleton(DatabaseObjectConfiguration pojoable, AppInfo application)
 	        throws IOException, SQLException, ClassNotFoundException {
 		if (!pojoable.isFullLoaded())
 			pojoable.fullLoad();
@@ -486,7 +486,7 @@ public class DatabaseEntityPOJOGenerator {
 		}
 	}
 	
-	public static void compile(File sourceFile, PojobleDatabaseObject pojoble, AppInfo app) throws IOException {
+	public static void compile(File sourceFile, DatabaseObjectConfiguration pojoble, AppInfo app) throws IOException {
 		File destinationFile = pojoble.getPOJOCopiledFilesDirectory();
 		
 		if (!destinationFile.exists())

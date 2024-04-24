@@ -62,7 +62,7 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		
 		for (DatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
-				((GenericDatabaseObject) obj).setTableConfiguration(getMainSrcTableConf());
+				((GenericDatabaseObject) obj).setRelatedConfiguration(getMainSrcTableConf());
 				
 				processedRecords.add(DetectedRecordInfo.generate(obj,
 				    getRelatedOperationController().getActionPerformeApp().getApplicationCode(),

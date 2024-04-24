@@ -228,10 +228,10 @@ public interface DatabaseObject extends SyncRecord {
 		return utils.parseListToArray(values);
 	}
 	
-	default void setTableConfiguration(PojobleDatabaseObject tableConfiguration) {
+	default void setRelatedConfiguration(DatabaseObjectConfiguration config) {
 	}
 	
-	default PojobleDatabaseObject getTableConfiguration() {
+	default DatabaseObjectConfiguration getRelatedConfiguration() {
 		return null;
 	}
 	

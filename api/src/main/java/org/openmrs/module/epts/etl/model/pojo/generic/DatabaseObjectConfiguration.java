@@ -14,10 +14,10 @@ import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
- * Represents a data base which can be represented by a Pojo. The {@link PojobleDatabaseObject} can
+ * Represents a data base which can be represented by a Pojo. The {@link DatabaseObjectConfiguration} can
  * be a database table or a query result
  */
-public interface PojobleDatabaseObject {
+public interface DatabaseObjectConfiguration {
 	
 	boolean isFullLoaded();
 	

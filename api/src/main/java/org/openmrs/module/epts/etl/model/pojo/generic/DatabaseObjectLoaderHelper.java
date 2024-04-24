@@ -6,9 +6,9 @@ import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 
 public class DatabaseObjectLoaderHelper implements VOLoaderHelper {
 	
-	private PojobleDatabaseObject tableConf;
+	private DatabaseObjectConfiguration tableConf;
 	
-	public DatabaseObjectLoaderHelper(PojobleDatabaseObject tableConf) {
+	public DatabaseObjectLoaderHelper(DatabaseObjectConfiguration tableConf) {
 		this.tableConf = tableConf;
 	}
 	
@@ -18,7 +18,7 @@ public class DatabaseObjectLoaderHelper implements VOLoaderHelper {
 			throw new ForbiddenOperationException("This method is only applied to DatabaseObject instances");
 		}
 		
-		((DatabaseObject) vo).setTableConfiguration(this.tableConf);
+		((DatabaseObject) vo).setRelatedConfiguration(this.tableConf);
 	}
 	
 	@Override

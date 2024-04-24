@@ -22,7 +22,7 @@ import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.pojo.generic.PojobleDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsClassLoader;
 
@@ -218,7 +218,7 @@ public class ClassPathUtilities {
 		}
 	}
 	
-	public static void addClassToClassPath(PojobleDatabaseObject pojoble, AppInfo app) {
+	public static void addClassToClassPath(DatabaseObjectConfiguration pojoble, AppInfo app) {
 		String pojoPackageDir = pojoble.getRelatedSyncConfiguration().getPojoPackageAsDirectory(app).getAbsolutePath();
 		
 		File clazzFile = new File(
