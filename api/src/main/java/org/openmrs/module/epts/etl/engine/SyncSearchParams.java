@@ -4,10 +4,10 @@ import java.sql.Connection;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.AuxiliaryExtractionSrcTable;
+import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.SrcConf;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -129,8 +129,8 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	/**
 	 * @return
 	 */
-	public List<AuxiliaryExtractionSrcTable> getAuxiliaryExtractionSrcTable() {
-		return this.getConfig().getSrcConf().getAuxiliaryExtractionSrcTable();
+	public List<TableDataSourceConfig> getExtraTableDataSource() {
+		return this.getConfig().getSrcConf().getExtraTableDataSource();
 	}
 	/**
 	 * @return

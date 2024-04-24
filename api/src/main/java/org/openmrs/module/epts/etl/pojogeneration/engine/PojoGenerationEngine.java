@@ -5,9 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.AuxiliaryExtractionSrcTable;
 import org.openmrs.module.epts.etl.controller.conf.DstConf;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
+import org.openmrs.module.epts.etl.controller.conf.SyncDataSource;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
@@ -60,16 +59,10 @@ public class PojoGenerationEngine extends Engine {
 		
 		generate(mainApp, getMainSrcTableConf());
 		
-		if (getEtlConfiguration().getSrcConf().getAuxiliaryExtractionSrcTable() != null) {
-			for (AuxiliaryExtractionSrcTable t : getEtlConfiguration().getSrcConf().getAuxiliaryExtractionSrcTable()) {
-				generate(mainApp, t);
-			}
-		}
+		List<SyncDataSource> allAvaliableDataSources = getEtlConfiguration().getSrcConf().getAvaliableExtraDataSource();
 		
-		if (getEtlConfiguration().getSrcConf().getExtraDataSource() != null) {
-			for (EtlExtraDataSource src : getEtlConfiguration().getSrcConf().getExtraDataSource()) {
-				generate(mainApp, src.getAvaliableSrc());
-			}
+		for (SyncDataSource t : allAvaliableDataSources) {
+			generate(mainApp, t);
 		}
 		
 		List<AppInfo> otherApps = getEtlConfiguration().getRelatedSyncConfiguration().exposeAllAppsNotMain();

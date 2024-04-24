@@ -2,7 +2,6 @@ package org.openmrs.module.epts.etl.controller.conf;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
@@ -10,9 +9,9 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public interface SyncDataSource extends DatabaseObjectConfiguration {
 	
-	EtlExtraDataSource getRelatedSrcExtraDataSrc();
+	SrcConf getRelatedSrcConf();
 	
-	void setRelatedSrcExtraDataSrc(EtlExtraDataSource relatedSrcExtraDataSrc);
+	void setRelatedSrcConf(SrcConf relatedSrcConf);
 	
 	DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, Connection conn, AppInfo srcAppInfo) throws DBException;
 	

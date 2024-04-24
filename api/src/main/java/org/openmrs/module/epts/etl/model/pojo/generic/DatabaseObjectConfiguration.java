@@ -14,8 +14,8 @@ import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
- * Represents a data base which can be represented by a Pojo. The {@link DatabaseObjectConfiguration} can
- * be a database table or a query result
+ * Represents a data base which can be represented by a Pojo. The
+ * {@link DatabaseObjectConfiguration} can be a database table or a query result
  */
 public interface DatabaseObjectConfiguration {
 	
@@ -72,4 +72,14 @@ public interface DatabaseObjectConfiguration {
 	DatabaseObjectLoaderHelper getLoadHealper();
 	
 	List<Field> cloneFields();
+	
+	default boolean containsField(String fieldName) {
+		for (Field f : this.getFields()) {
+			if (f.getName().equals(fieldName)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
 }

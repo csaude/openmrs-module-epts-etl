@@ -99,7 +99,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	private Map<String, String> params;
 	
 	private boolean initialized;
-
+	
 	private String classPath;
 	
 	public EtlConfiguration() {
@@ -413,13 +413,12 @@ public class EtlConfiguration extends BaseConfiguration {
 				
 				addToTableConfigurationPull(config.getSrcConf());
 				
-				if (config.getSrcConf().getAuxiliaryExtractionSrcTable() != null
-				        && config.getSrcConf().getAuxiliaryExtractionSrcTable() != null) {
-					
-					for (AuxiliaryExtractionSrcTable t : config.getSrcConf().getAuxiliaryExtractionSrcTable()) {
-						addToTableConfigurationPull(t);
+				List<SyncDataSource> allAvaliableDataSources = config.getSrcConf().getAvaliableExtraDataSource();
+				
+				for (SyncDataSource t : allAvaliableDataSources) {
+					if (t instanceof AbstractTableConfiguration) {
+						addToTableConfigurationPull((AbstractTableConfiguration) t);
 					}
-					
 				}
 			}
 		}
@@ -554,12 +553,13 @@ public class EtlConfiguration extends BaseConfiguration {
 				addConfiguredTable(tc.getSrcConf());
 				addToTableConfigurationPull(tc.getSrcConf());
 				
-				if (tc.getSrcConf().getAuxiliaryExtractionSrcTable() != null) {
-					
-					for (AuxiliaryExtractionSrcTable t : tc.getSrcConf().getAuxiliaryExtractionSrcTable()) {
-						addConfiguredTable(t);
-						addToTableConfigurationPull(t);
-						t.setParent(tc.getSrcConf());
+				List<SyncDataSource> allAvaliableDataSources = tc.getSrcConf().getAvaliableExtraDataSource();
+				
+				for (SyncDataSource t : allAvaliableDataSources) {
+					if (t instanceof AbstractTableConfiguration) {
+						addConfiguredTable((AbstractTableConfiguration) t);
+						addToTableConfigurationPull((AbstractTableConfiguration) t);
+						t.setRelatedSrcConf(tc.getSrcConf());
 					}
 				}
 				
@@ -1120,12 +1120,12 @@ public class EtlConfiguration extends BaseConfiguration {
 	public String getClassPath() {
 		return this.classPath;
 	}
-
+	
 	public File getClassPathAsFile() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	public void setClassPath(String retrieveClassPath) {
 		// TODO Auto-generated method stub
 		

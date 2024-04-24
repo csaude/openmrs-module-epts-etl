@@ -12,9 +12,9 @@ import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -1033,7 +1033,6 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 			
 			loadAttDefinition(conn);
 			
-			
 			//If was not specifically set to true
 			if (!this.autoIncrementId) {
 				this.autoIncrementId = useAutoIncrementId(conn);
@@ -1047,7 +1046,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	private void loadAttDefinition(Connection conn) {
 		int qtyAttrs = this.fields.size();
 		
@@ -1556,16 +1555,5 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	
 	public boolean hasCompositeKey() {
 		return this.getPrimaryKey() != null && this.getPrimaryKey().isCompositeKey();
-	}
-	
-	
-	public boolean containsField(String fieldName) {
-		for (Field f : this.fields) {
-			if (f.getName().equals(fieldName)) {
-				return true;
-			}
-		}
-		
-		return false;
 	}
 }

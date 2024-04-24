@@ -4,31 +4,35 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 /**
- * Represents a query configuration. A query is used on data mapping between source and destination
- * table
+ * Represents a source table configuration. A {@link TableDataSourceConfig} is used as an auxiliary
+ * extraction table as well as an extra datasource
  */
 public class TableDataSourceConfig extends AbstractTableConfiguration implements DatabaseObjectConfiguration, SyncDataSource {
-	
-	private EtlExtraDataSource relatedSrcExtraDataSrc;
 	
 	private List<FieldsMapping> joinFields;
 	
 	private String joinExtraCondition;
 	
-	private boolean required;
+	private SrcConf relatedSrcConf;
 	
 	private DatabaseObjectLoaderHelper loadHealper;
+	
+	/*
+	 * The join type between this additional src table with the main src table. It could be INNER or LEFT.
+	 * If empty, a INNER join will be applied if the main table has only one additional src, and will be LEFT join if there are more than one additional src tables 
+	 */
+	private JoinType joinType;
 	
 	@Override
 	public DatabaseObjectLoaderHelper getLoadHealper() {
@@ -39,9 +43,17 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		this.loadHealper = loadHealper;
 	}
 	
+	public JoinType getJoinType() {
+		return joinType;
+	}
+	
+	public void setJoinType(JoinType joinType) {
+		this.joinType = joinType;
+	}
+	
 	@Override
 	public boolean isRequired() {
-		return this.required;
+		return this.joinType.isLeftJoin();
 	}
 	
 	@Override
@@ -54,7 +66,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			List<FieldsMapping> fm = new ArrayList<>();
 			
 			//Assuming that this datasource is parent
-			List<RefInfo> pInfo = this.relatedSrcExtraDataSrc.getRelatedSrcConf().findAllRefToParent(this.getTableName());
+			List<RefInfo> pInfo = this.relatedSrcConf.findAllRefToParent(this.getTableName());
 			
 			if (pInfo != null) {
 				for (RefInfo ref : pInfo) {
@@ -65,7 +77,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			} else {
 				
 				//Assuning that the this data src is child
-				pInfo = this.findAllRefToParent(this.relatedSrcExtraDataSrc.getRelatedSrcConf().getTableName());
+				pInfo = this.findAllRefToParent(this.relatedSrcConf.getTableName());
 				
 				if (pInfo != null) {
 					for (RefInfo ref : pInfo) {
@@ -85,15 +97,19 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		}
 		
 		if (utilities.arrayHasNoElement(this.joinFields)) {
-			throw new ForbiddenOperationException("No join fields were difined between "
-			        + this.relatedSrcExtraDataSrc.getRelatedSrcConf().getTableName() + " And " + this.getTableName());
+			throw new ForbiddenOperationException("No join fields were difined between " + this.relatedSrcConf.getTableName()
+			        + " And " + this.getTableName());
+		}
+		
+		if (this.joinType == null) {
+			if (utilities.arrayHasMoreThanOneElements(this.getParent().getExtraTableDataSource())) {
+				this.joinType = JoinType.LEFT;
+			} else {
+				this.joinType = JoinType.INNER;
+			}
 		}
 		
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
-	}
-	
-	public void setRequired(boolean required) {
-		this.required = required;
 	}
 	
 	public String getJoinExtraCondition() {
@@ -112,18 +128,19 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		this.joinFields = joinFields;
 	}
 	
-	public EtlExtraDataSource getRelatedSrcExtraDataSrc() {
-		return relatedSrcExtraDataSrc;
-	}
-	
-	public void setRelatedSrcExtraDataSrc(EtlExtraDataSource relatedSrcExtraDataSrc) {
-		this.relatedSrcExtraDataSrc = relatedSrcExtraDataSrc;
-		setParent(relatedSrcExtraDataSrc);
+	@Override
+	public SrcConf getRelatedSrcConf() {
+		return relatedSrcConf;
 	}
 	
 	@Override
-	public EtlExtraDataSource getParent() {
-		return this.relatedSrcExtraDataSrc;
+	public void setRelatedSrcConf(SrcConf relatedSrcConf) {
+		this.relatedSrcConf = relatedSrcConf;
+	}
+	
+	@Override
+	public SrcConf getParent() {
+		return this.relatedSrcConf;
 	}
 	
 	@Override
@@ -167,6 +184,35 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		return conditionFields;
 	}
 	
+	public String generateConditionsFields() {
+		String conditionFields = "";
+		
+		for (int i = 0; i < this.joinFields.size(); i++) {
+			if (i > 0)
+				conditionFields += " AND ";
+			
+			FieldsMapping field = this.joinFields.get(i);
+			
+			String tableName = DBUtilities.extractTableNameFromFullTableName(getTableName());
+			
+			conditionFields += "src_." + field.getSrcField() + " = " + tableName + "." + field.getDstField();
+		}
+		
+		if (utilities.stringHasValue(this.getJoinExtraCondition())) {
+			conditionFields += " AND (" + this.getJoinExtraCondition() + ")";
+		}
+		
+		return conditionFields;
+	}
+	
+	public void addJoinField(FieldsMapping fm) {
+		if (this.joinFields == null) {
+			this.joinFields = new ArrayList<>();
+		}
+		
+		this.joinFields.add(fm);
+	}
+	
 	@Override
 	public String getName() {
 		return super.getTableName();
@@ -174,7 +220,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public AppInfo getRelatedAppInfo() {
-		return this.relatedSrcExtraDataSrc.getRelatedSrcConf().getRelatedAppInfo();
+		return this.relatedSrcConf.getRelatedAppInfo();
 	}
 	
 	@Override

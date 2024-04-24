@@ -9,14 +9,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -40,7 +39,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	
 	private boolean fullLoaded;
 	
-	private EtlExtraDataSource relatedSrcExtraDataSrc;
+	private SrcConf relatedSrcConf;
 	
 	private Class<? extends DatabaseObject> syncRecordClass;
 	
@@ -76,12 +75,14 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 		this.paramConfig = paramConfig;
 	}
 	
-	public EtlExtraDataSource getRelatedSrcExtraDataSrc() {
-		return relatedSrcExtraDataSrc;
+	@Override
+	public SrcConf getRelatedSrcConf() {
+		return relatedSrcConf;
 	}
 	
-	public void setRelatedSrcExtraDataSrc(EtlExtraDataSource relatedSrcExtraDataSrc) {
-		this.relatedSrcExtraDataSrc = relatedSrcExtraDataSrc;
+	@Override
+	public void setRelatedSrcConf(SrcConf relatedSrcConf) {
+		this.relatedSrcConf = relatedSrcConf;
 	}
 	
 	public String getScript() {
@@ -142,7 +143,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	
 	@Override
 	public void fullLoad() throws DBException {
-		OpenConnection conn = getRelatedSrcExtraDataSrc().getRelatedSrcConf().getMainApp().openConnection();
+		OpenConnection conn = this.relatedSrcConf.getRelatedAppInfo().openConnection();
 		
 		try {
 			fullLoad(conn);
@@ -159,14 +160,14 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 		setFields(DBUtilities.determineFieldsFromQuery(query, conn));
 		
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
-
+		
 		this.fullLoaded = true;
 	}
 	
 	@JsonIgnore
 	@Override
 	public Class<? extends DatabaseObject> getSyncRecordClass() throws ForbiddenOperationException {
-		return this.getSyncRecordClass(relatedSrcExtraDataSrc.getMainApp());
+		return this.getSyncRecordClass(this.relatedSrcConf.getRelatedAppInfo());
 	}
 	
 	@Override
@@ -178,7 +179,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	}
 	
 	public EtlConfiguration getRelatedSyncConfiguration() {
-		return relatedSrcExtraDataSrc.getRelatedSyncConfiguration();
+		return this.relatedSrcConf.getRelatedSyncConfiguration();
 	}
 	
 	@JsonIgnore
@@ -197,11 +198,13 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	}
 	
 	@JsonIgnore
+	@Override
 	public String getClasspackage(AppInfo application) {
 		return application.getPojoPackageName() + "._query_result";
 	}
 	
 	@JsonIgnore
+	@Override
 	public String generateFullClassName(AppInfo application) {
 		String rootPackageName = "org.openmrs.module.epts.etl.model.pojo";
 		
@@ -289,7 +292,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	
 	@Override
 	public SyncDataConfiguration getParent() {
-		return this.relatedSrcExtraDataSrc;
+		return this.relatedSrcConf;
 	}
 	
 	@Override

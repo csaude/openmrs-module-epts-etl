@@ -2,9 +2,9 @@ package org.openmrs.module.epts.etl.etl.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.AuxiliaryExtractionSrcTable;
-import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -35,11 +35,11 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 		
 		String clauseFrom = srcSchema + "." + tableInfo.getTableName() + " src_ ";
 		
-		if (getAuxiliaryExtractionSrcTable() != null) {
+		if (getExtraTableDataSource() != null) {
 			
 			String additionalLeftJoinFields = "";
 			
-			for (AuxiliaryExtractionSrcTable t : getAuxiliaryExtractionSrcTable()) {
+			for (TableDataSourceConfig t : getExtraTableDataSource()) {
 				String joinType = t.getJoinType().toString();
 				
 				String extraJoinQuery = t.generateConditionsFields();

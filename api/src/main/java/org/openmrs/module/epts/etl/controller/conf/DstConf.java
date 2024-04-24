@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
@@ -12,7 +11,6 @@ import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -63,10 +61,6 @@ public class DstConf extends AbstractTableConfiguration {
 		return allFieldsMapping;
 	}
 	
-	private void addMapping(String srcField, String destField) {
-		addMapping(new FieldsMapping(srcField, this.getSrcConf().getTableName(), destField));
-	}
-	
 	private void addMapping(FieldsMapping fm) throws ForbiddenOperationException {
 		if (this.allFieldsMapping == null) {
 			this.allFieldsMapping = new ArrayList<FieldsMapping>();
@@ -91,14 +85,49 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 		}
 		
-		List<Field> myFields = DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn);
+		List<Field> myFields = this.getFields();
+		
+		List<String> notAutomaticalMappedFields = new ArrayList<>();
 		
 		for (Field field : myFields) {
-			FieldsMapping fm = new FieldsMapping(field.getName(), this.getTableName(), field.getName());
+			FieldsMapping fm = FieldsMapping.fastCreate(field.getName(), field.getName());
 			
 			if (!this.allFieldsMapping.contains(fm)) {
-				this.addMapping(field.getName(), field.getName());
+				
+				//The main src has high priority for being the source of any field os dst table
+				if (this.getSrcConf().containsField(field.getName())) {
+					fm.setDataSourceName(this.getSrcConf().getTableName());
+					
+					this.addMapping(fm);
+				} else {
+					//Continue looking for the field on extra sources
+					
+					List<SyncDataSource> avaliableDs = this.getSrcConf().getAvaliableExtraDataSource();
+					
+					int qtyDsContainingField = 0;
+					
+					for (SyncDataSource ds : avaliableDs) {
+						if (ds.containsField(field.getName())) {
+							qtyDsContainingField++;
+							
+							if (qtyDsContainingField > 1) {
+								notAutomaticalMappedFields.add(field.getName());
+								
+								break;
+							} else {
+								fm.setDataSourceName(ds.getName());
+								
+								this.addMapping(fm);
+							}
+						}
+					}
+				}
 			}
+		}
+		
+		if (!notAutomaticalMappedFields.isEmpty()) {
+			throw new ForbiddenOperationException("The destination fields " + notAutomaticalMappedFields.toString()
+			        + " cannot be automatically mapped as them occurrs in multiple src. Please configure them manually");
 		}
 	}
 	
@@ -202,17 +231,19 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			srcObjects.add(srcObject);
 			
-			if (utilities.arrayHasElement(this.getParent().getSrcConf().getExtraDataSource())) {
-				for (EtlExtraDataSource mappingInfo : this.getSrcConf().getExtraDataSource()) {
+			List<SyncDataSource> allAvaliableDataSources = this.getParent().getSrcConf().getAvaliableExtraDataSource();
+			
+			if (utilities.arrayHasElement(allAvaliableDataSources)) {
+				for (SyncDataSource mappingInfo : allAvaliableDataSources) {
 					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
 					
 					if (relatedSrcObject == null) {
 						
-						if (mappingInfo.getAvaliableSrc().isRequired()) {
+						if (mappingInfo.isRequired()) {
 							return null;
 						} else {
 							relatedSrcObject = mappingInfo.getSyncRecordClass(srcAppInfo).newInstance();
-							relatedSrcObject.setRelatedConfiguration(mappingInfo.getAvaliableSrc());
+							relatedSrcObject.setRelatedConfiguration(mappingInfo);
 						}
 					}
 					

@@ -3,7 +3,6 @@ package org.openmrs.module.epts.etl.controller.conf;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.EtlExtraDataSource;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -13,24 +12,24 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class SrcConf extends AbstractTableConfiguration {
 	
-	private List<AuxiliaryExtractionSrcTable> auxiliaryExtractionSrcTable;
+	private List<TableDataSourceConfig> extraTableDataSource;
 	
-	private List<EtlExtraDataSource> extraDataSource;
+	private List<QueryDataSourceConfig> extraQueryDataSource;
 	
-	public List<AuxiliaryExtractionSrcTable> getAuxiliaryExtractionSrcTable() {
-		return auxiliaryExtractionSrcTable;
+	public List<QueryDataSourceConfig> getExtraQueryDataSource() {
+		return extraQueryDataSource;
 	}
 	
-	public void setAuxilliaryExtractionSrcTable(List<AuxiliaryExtractionSrcTable> auxiliaryExtractionSrcTable) {
-		this.auxiliaryExtractionSrcTable = auxiliaryExtractionSrcTable;
+	public void setExtraQueryDataSource(List<QueryDataSourceConfig> extraQueryDataSource) {
+		this.extraQueryDataSource = extraQueryDataSource;
 	}
 	
-	public List<EtlExtraDataSource> getExtraDataSource() {
-		return extraDataSource;
+	public List<TableDataSourceConfig> getExtraTableDataSource() {
+		return extraTableDataSource;
 	}
 	
-	public void setExtraDataSource(List<EtlExtraDataSource> extraDataSource) {
-		this.extraDataSource = extraDataSource;
+	public void setExtraTableDataSource(List<TableDataSourceConfig> extraTableDataSource) {
+		this.extraTableDataSource = extraTableDataSource;
 	}
 	
 	@Override
@@ -46,12 +45,12 @@ public class SrcConf extends AbstractTableConfiguration {
 		
 		super.fullLoad();
 		
-		OpenConnection srcConn = this.getMainApp().openConnection();
+		OpenConnection srcConn = this.getRelatedAppInfo().openConnection();
 		
 		try {
 			
-			if (utilities.arrayHasElement(this.auxiliaryExtractionSrcTable)) {
-				for (AuxiliaryExtractionSrcTable t : this.auxiliaryExtractionSrcTable) {
+			if (utilities.arrayHasElement(this.extraTableDataSource)) {
+				for (TableDataSourceConfig t : this.extraTableDataSource) {
 					t.fullLoad(srcConn);
 					
 					if (!utilities.arrayHasElement(t.getJoinFields())) {
@@ -102,10 +101,10 @@ public class SrcConf extends AbstractTableConfiguration {
 				
 			}
 			
-			if (utilities.arrayHasElement(this.getExtraDataSource())) {
-				for (EtlExtraDataSource s : this.getExtraDataSource()) {
-					s.setRelatedSrcConf(this);
-					s.fullLoad(srcConn);
+			if (utilities.arrayHasElement(this.extraQueryDataSource)) {
+				for (QueryDataSourceConfig query : this.extraQueryDataSource) {
+					query.setRelatedSrcConf(this);
+					query.fullLoad(srcConn);
 				}
 			}
 		}
@@ -118,18 +117,18 @@ public class SrcConf extends AbstractTableConfiguration {
 		this.fullLoaded = true;
 	}
 	
-	public EtlExtraDataSource findAdditionalDataSrc(String tableName) {
-		if (!utilities.arrayHasElement(this.extraDataSource)) {
+	public QueryDataSourceConfig findAdditionalDataSrc(String dsName) {
+		if (!utilities.arrayHasElement(this.extraQueryDataSource)) {
 			return null;
 		}
 		
-		for (EtlExtraDataSource src : this.extraDataSource) {
-			if (src.getName().equals(tableName)) {
+		for (QueryDataSourceConfig src : this.extraQueryDataSource) {
+			if (src.getName().equals(dsName)) {
 				return src;
 			}
 		}
 		
-		throw new ForbiddenOperationException("The table '" + tableName + "'cannot be foud on the mapping src tables");
+		throw new ForbiddenOperationException("The table '" + dsName + "'cannot be foud on the mapping src tables");
 	}
 	
 	public boolean isFullLoaded() {
@@ -158,6 +157,21 @@ public class SrcConf extends AbstractTableConfiguration {
 	@Override
 	public AppInfo getRelatedAppInfo() {
 		return getMainApp();
+	}
+	
+	@JsonIgnore
+	public List<SyncDataSource> getAvaliableExtraDataSource() {
+		List<SyncDataSource> ds = new ArrayList<>();
+		
+		if (utilities.arrayHasElement(this.extraTableDataSource)) {
+			ds.addAll(utilities.parseList(this.extraTableDataSource, SyncDataSource.class));
+		}
+		
+		if (utilities.arrayHasElement(this.extraQueryDataSource)) {
+			ds.addAll(utilities.parseList(this.extraQueryDataSource, SyncDataSource.class));
+		}
+	
+		return ds;
 	}
 	
 }

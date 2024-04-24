@@ -107,11 +107,13 @@ public class EtlItemConfiguration extends SyncDataConfiguration {
 					
 					map.setParent(this);
 					
-					map.generateAllFieldsMapping(dstConn);
-					
 					if (DBUtilities.isTableExists(dstConn.getSchema(), map.getTableName(), dstConn)) {
 						map.fullLoad(dstConn);
 					}
+					
+					map.generateAllFieldsMapping(dstConn);
+					
+
 				}
 			}
 			

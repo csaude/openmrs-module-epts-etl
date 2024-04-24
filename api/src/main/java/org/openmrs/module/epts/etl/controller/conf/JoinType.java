@@ -8,4 +8,8 @@ public enum JoinType {
 	public boolean isLeftJoin() {
 		return this.equals(LEFT);
 	}
+	
+	public boolean isInnerJoin() {
+		return this.equals(INNER);
+	}
 }
