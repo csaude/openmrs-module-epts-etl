@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
 import java.io.File;
 import java.io.IOException;
@@ -363,7 +363,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public boolean isDoIntegrityCheckInTheEnd(SyncOperationType operationType) {
+	public boolean isDoIntegrityCheckInTheEnd(EtlOperationType operationType) {
 		EtlOperationConfig op = findOperation(operationType);
 		
 		return op.isDoIntegrityCheckInTheEnd();
@@ -413,9 +413,9 @@ public class EtlConfiguration extends BaseConfiguration {
 				
 				addToTableConfigurationPull(config.getSrcConf());
 				
-				List<SyncDataSource> allAvaliableDataSources = config.getSrcConf().getAvaliableExtraDataSource();
+				List<EtlDataSource> allAvaliableDataSources = config.getSrcConf().getAvaliableExtraDataSource();
 				
-				for (SyncDataSource t : allAvaliableDataSources) {
+				for (EtlDataSource t : allAvaliableDataSources) {
 					if (t instanceof AbstractTableConfiguration) {
 						addToTableConfigurationPull((AbstractTableConfiguration) t);
 					}
@@ -553,9 +553,9 @@ public class EtlConfiguration extends BaseConfiguration {
 				addConfiguredTable(tc.getSrcConf());
 				addToTableConfigurationPull(tc.getSrcConf());
 				
-				List<SyncDataSource> allAvaliableDataSources = tc.getSrcConf().getAvaliableExtraDataSource();
+				List<EtlDataSource> allAvaliableDataSources = tc.getSrcConf().getAvaliableExtraDataSource();
 				
-				for (SyncDataSource t : allAvaliableDataSources) {
+				for (EtlDataSource t : allAvaliableDataSources) {
 					if (t instanceof AbstractTableConfiguration) {
 						addConfiguredTable((AbstractTableConfiguration) t);
 						addToTableConfigurationPull((AbstractTableConfiguration) t);
@@ -735,7 +735,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		this.operations = operations;
 	}
 	
-	public EtlOperationConfig findOperation(SyncOperationType operationType) {
+	public EtlOperationConfig findOperation(EtlOperationType operationType) {
 		EtlOperationConfig toFind = EtlOperationConfig.fastCreate(operationType);
 		
 		for (EtlOperationConfig op : this.operations) {
@@ -820,7 +820,7 @@ public class EtlConfiguration extends BaseConfiguration {
 			}
 		}
 		
-		List<SyncOperationType> supportedOperations = null;
+		List<EtlOperationType> supportedOperations = null;
 		
 		if (isEtl()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInEtlProcess();
@@ -859,7 +859,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		}
 		
 		if (supportedOperations != null) {
-			for (SyncOperationType operationType : supportedOperations) {
+			for (EtlOperationType operationType : supportedOperations) {
 				if (!isOperationConfigured(operationType))
 					errorMsg += ++errNum + ". The operation '" + operationType + " is not configured\n";
 			}
@@ -902,7 +902,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		catch (ClassNotFoundException e) {}
 	}
 	
-	private boolean isOperationConfigured(SyncOperationType operationType) {
+	private boolean isOperationConfigured(EtlOperationType operationType) {
 		EtlOperationConfig operation = new EtlOperationConfig();
 		operation.setOperationType(operationType);
 		

@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationType;
+import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.MetadataInconsistentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
@@ -266,7 +266,7 @@ public class SyncImportInfoVO extends BaseVO implements SyncRecord {
 		source.setRelatedSyncInfo(this);
 		try {
 			
-			if (tableInfo.isDoIntegrityCheckInTheEnd(SyncOperationType.DB_MERGE_FROM_JSON)) {
+			if (tableInfo.isDoIntegrityCheckInTheEnd(EtlOperationType.DB_MERGE_FROM_JSON)) {
 				if (source.hasParents()) {
 					this.markAsConsistent(tableInfo, conn);
 				}

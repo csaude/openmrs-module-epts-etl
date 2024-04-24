@@ -16,11 +16,11 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
-import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.Key;
-import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.RefMapping;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.Key;
+import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.exceptions.SyncExeption;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;

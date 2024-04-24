@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.engine;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 
 /**
  * On an {@link EtlItemConfiguration} Specify the search source type. The type could be SOURCE OR

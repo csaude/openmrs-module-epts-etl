@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.Date;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 

@@ -5,11 +5,11 @@ import java.sql.Statement;
 
 import org.openmrs.module.epts.etl.changedrecordsdetector.engine.ChangedRecordsDetectorEngine;
 import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordInfoDAO;
+import org.openmrs.module.epts.etl.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;

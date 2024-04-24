@@ -2,8 +2,8 @@ package org.openmrs.module.epts.etl.detectgapes.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;

@@ -6,11 +6,11 @@ import java.util.List;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.openmrs.module.epts.etl.Main;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;

@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.dbcopy.model.DBCopySearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;

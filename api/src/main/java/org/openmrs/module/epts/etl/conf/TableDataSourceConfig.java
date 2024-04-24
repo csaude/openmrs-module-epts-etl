@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
  * Represents a source table configuration. A {@link TableDataSourceConfig} is used as an auxiliary
  * extraction table as well as an extra datasource
  */
-public class TableDataSourceConfig extends AbstractTableConfiguration implements DatabaseObjectConfiguration, SyncDataSource {
+public class TableDataSourceConfig extends AbstractTableConfiguration implements DatabaseObjectConfiguration, EtlDataSource {
 	
 	private List<FieldsMapping> joinFields;
 	

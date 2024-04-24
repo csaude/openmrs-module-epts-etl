@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.exceptions;
 
-import org.openmrs.module.epts.etl.controller.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.RefInfo;
 
 public class MissingParentException extends SyncExeption {
 	private static final long serialVersionUID = -2435762700151634050L;

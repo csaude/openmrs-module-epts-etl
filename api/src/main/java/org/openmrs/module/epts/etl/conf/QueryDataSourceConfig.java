@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * Represents a query configuration. A query is used on data mapping between source and destination
  * table
  */
-public class QueryDataSourceConfig extends BaseConfiguration implements DatabaseObjectConfiguration, SyncDataSource {
+public class QueryDataSourceConfig extends BaseConfiguration implements DatabaseObjectConfiguration, EtlDataSource {
 	
 	private String name;
 	
@@ -291,7 +291,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	}
 	
 	@Override
-	public SyncDataConfiguration getParent() {
+	public EtlDataConfiguration getParent() {
 		return this.relatedSrcConf;
 	}
 	

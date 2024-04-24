@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.controller.conf.tablemapping;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;

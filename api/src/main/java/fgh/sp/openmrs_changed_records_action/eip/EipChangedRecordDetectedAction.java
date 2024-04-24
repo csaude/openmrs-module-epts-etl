@@ -3,7 +3,7 @@ package fgh.sp.openmrs_changed_records_action.eip;
 
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;

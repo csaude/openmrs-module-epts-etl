@@ -4,11 +4,11 @@ import java.io.File;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncDataConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.EtlDataConfiguration;
+import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -35,7 +35,7 @@ public interface DatabaseObjectConfiguration {
 	
 	String generateClassName();
 	
-	SyncDataConfiguration getParent();
+	EtlDataConfiguration getParent();
 	
 	String getObjectName();
 	

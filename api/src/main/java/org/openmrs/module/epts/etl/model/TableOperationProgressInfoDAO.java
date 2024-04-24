@@ -2,8 +2,8 @@ package org.openmrs.module.epts.etl.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.OperationController;
-import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;

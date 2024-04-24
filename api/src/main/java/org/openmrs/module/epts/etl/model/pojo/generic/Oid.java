@@ -1,7 +1,7 @@
 package org.openmrs.module.epts.etl.model.pojo.generic;
 
-import org.openmrs.module.epts.etl.controller.conf.Key;
-import org.openmrs.module.epts.etl.controller.conf.PrimaryKey;
+import org.openmrs.module.epts.etl.conf.Key;
+import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 
 public class Oid extends PrimaryKey {

@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -102,11 +102,11 @@ public class DstConf extends AbstractTableConfiguration {
 				} else {
 					//Continue looking for the field on extra sources
 					
-					List<SyncDataSource> avaliableDs = this.getSrcConf().getAvaliableExtraDataSource();
+					List<EtlDataSource> avaliableDs = this.getSrcConf().getAvaliableExtraDataSource();
 					
 					int qtyDsContainingField = 0;
 					
-					for (SyncDataSource ds : avaliableDs) {
+					for (EtlDataSource ds : avaliableDs) {
 						if (ds.containsField(field.getName())) {
 							qtyDsContainingField++;
 							
@@ -284,7 +284,7 @@ public class DstConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public void setParent(SyncDataConfiguration parent) {
+	public void setParent(EtlDataConfiguration parent) {
 		super.setParent((EtlItemConfiguration) parent);
 	}
 	

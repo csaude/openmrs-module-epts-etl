@@ -4,9 +4,9 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.DstConf;
-import org.openmrs.module.epts.etl.controller.conf.SyncDataSource;
+import org.openmrs.module.epts.etl.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.EtlDataSource;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
@@ -59,9 +59,9 @@ public class PojoGenerationEngine extends Engine {
 		
 		generate(mainApp, getMainSrcTableConf());
 		
-		List<SyncDataSource> allAvaliableDataSources = getEtlConfiguration().getSrcConf().getAvaliableExtraDataSource();
+		List<EtlDataSource> allAvaliableDataSources = getEtlConfiguration().getSrcConf().getAvaliableExtraDataSource();
 		
-		for (SyncDataSource t : allAvaliableDataSources) {
+		for (EtlDataSource t : allAvaliableDataSources) {
 			generate(mainApp, t);
 		}
 		

@@ -2,9 +2,9 @@ package org.openmrs.module.epts.etl.reconciliation.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -18,10 +18,10 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 	
 	private boolean selectAllRecords;
 	
-	private SyncOperationType type;
+	private EtlOperationType type;
 	
 	public CentralAndRemoteDataReconciliationSearchParams(EtlItemConfiguration config, RecordLimits limits,
-	    SyncOperationType type, Connection conn) {
+	    EtlOperationType type, Connection conn) {
 		super(config, limits);
 		
 		this.type = type;

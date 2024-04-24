@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.utilities.db.conn;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.openmrs.module.epts.etl.controller.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.RefInfo;
 import org.openmrs.module.epts.etl.exceptions.SyncExeption;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;

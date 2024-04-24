@@ -13,10 +13,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.openmrs.module.epts.etl.controller.conf.ParameterValueType;
-import org.openmrs.module.epts.etl.controller.conf.QueryParameter;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.ParameterValueType;
+import org.openmrs.module.epts.etl.conf.QueryParameter;
+import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;

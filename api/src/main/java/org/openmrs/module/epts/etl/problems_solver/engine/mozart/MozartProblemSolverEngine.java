@@ -7,10 +7,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.Extension;
-import org.openmrs.module.epts.etl.controller.conf.Key;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.Extension;
+import org.openmrs.module.epts.etl.conf.Key;
+import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;

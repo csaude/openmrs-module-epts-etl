@@ -5,10 +5,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.detectgapes.engine.DetectGapesEngine;
 import org.openmrs.module.epts.etl.detectgapes.model.DetectGapesSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;

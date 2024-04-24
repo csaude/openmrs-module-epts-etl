@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.controller;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 
 public abstract class SiteOperationController extends OperationController{
 

@@ -5,13 +5,13 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.controller.OperationController;
-import org.openmrs.module.epts.etl.controller.conf.AppInfo;
-import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -29,7 +29,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * producing or consuming the synchronization info.
  * <p>
  * There are several kinds of engines that performes diferents kind of operations. All the avaliable
- * operations are listed in {@link SyncOperationType} enum
+ * operations are listed in {@link EtlOperationType} enum
  * 
  * @author jpboane
  */

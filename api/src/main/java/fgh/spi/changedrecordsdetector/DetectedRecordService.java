@@ -2,7 +2,7 @@ package fgh.spi.changedrecordsdetector;
 
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 
 import fgh.sp.openmrs_changed_records_action.eip.EipChangedRecordDetectedAction;

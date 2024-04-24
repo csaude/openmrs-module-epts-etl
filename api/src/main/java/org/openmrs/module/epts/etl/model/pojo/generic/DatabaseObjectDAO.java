@@ -3,9 +3,9 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.Key;
-import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.Key;
+import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -15,7 +15,6 @@ import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DatabaseObjectDAO extends BaseDAO {
 	

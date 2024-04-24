@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ public class EtlOperationConfig extends BaseConfiguration {
 	
 	private static final String[] supportedProcessingModes = { PROCESSING_MODE_SEQUENCIAL, PROCESSING_MODE_PARALLEL };
 	
-	private SyncOperationType operationType;
+	private EtlOperationType operationType;
 	
 	private int maxRecordPerProcessing;
 	
@@ -273,11 +273,11 @@ public class EtlOperationConfig extends BaseConfiguration {
 		this.relatedSyncConfig = relatedSyncConfig;
 	}
 	
-	public SyncOperationType getOperationType() {
+	public EtlOperationType getOperationType() {
 		return operationType;
 	}
 	
-	public void setOperationType(SyncOperationType operationType) {
+	public void setOperationType(EtlOperationType operationType) {
 		if (operationType != null && !operationType.isSupportedOperation())
 			throw new ForbiddenOperationException("Operation '" + operationType + "' nor supported!");
 		
@@ -316,7 +316,7 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return doIntegrityCheckInTheEnd;
 	}
 	
-	public static EtlOperationConfig fastCreate(SyncOperationType operationType) {
+	public static EtlOperationConfig fastCreate(EtlOperationType operationType) {
 		EtlOperationConfig op = new EtlOperationConfig();
 		op.setOperationType(operationType);
 		
@@ -630,14 +630,14 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInResolveProblemsProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInResolveProblemsProcess() {
-		SyncOperationType[] supported = { SyncOperationType.GENERIC_OPERATION };
+	public static List<EtlOperationType> getSupportedOperationsInResolveProblemsProcess() {
+		EtlOperationType[] supported = { EtlOperationType.GENERIC_OPERATION };
 		
 		return utilities.parseArrayToList(supported);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDetectGapesOnDbTables() {
-		SyncOperationType[] supported = { SyncOperationType.DETECT_GAPES };
+	public static List<EtlOperationType> getSupportedOperationsInDetectGapesOnDbTables() {
+		EtlOperationType[] supported = { EtlOperationType.DETECT_GAPES };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -647,29 +647,29 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInSourceSyncProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInSourceSyncProcess() {
-		SyncOperationType[] supported = { SyncOperationType.EXPORT, SyncOperationType.TRANSPORT,
-		        SyncOperationType.INCONSISTENCY_SOLVER, SyncOperationType.DATABASE_PREPARATION,
-		        SyncOperationType.POJO_GENERATION };
+	public static List<EtlOperationType> getSupportedOperationsInSourceSyncProcess() {
+		EtlOperationType[] supported = { EtlOperationType.EXPORT, EtlOperationType.TRANSPORT,
+		        EtlOperationType.INCONSISTENCY_SOLVER, EtlOperationType.DATABASE_PREPARATION,
+		        EtlOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInPojoGenerationProcess() {
-		SyncOperationType[] supported = { SyncOperationType.POJO_GENERATION };
+	public static List<EtlOperationType> getSupportedOperationsInPojoGenerationProcess() {
+		EtlOperationType[] supported = { EtlOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInEtlProcess() {
-		SyncOperationType[] supported = { SyncOperationType.ETL };
+	public static List<EtlOperationType> getSupportedOperationsInEtlProcess() {
+		EtlOperationType[] supported = { EtlOperationType.ETL };
 		
 		return utilities.parseArrayToList(supported);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDbCopyProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DATABASE_PREPARATION, SyncOperationType.POJO_GENERATION,
-		        SyncOperationType.DB_COPY };
+	public static List<EtlOperationType> getSupportedOperationsInDbCopyProcess() {
+		EtlOperationType[] supported = { EtlOperationType.DATABASE_PREPARATION, EtlOperationType.POJO_GENERATION,
+		        EtlOperationType.DB_COPY };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -694,9 +694,9 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInDBInconsistencyCheckProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDBInconsistencyCheckProcess() {
-		SyncOperationType[] supported = { SyncOperationType.INCONSISTENCY_SOLVER, SyncOperationType.DATABASE_PREPARATION,
-		        SyncOperationType.POJO_GENERATION };
+	public static List<EtlOperationType> getSupportedOperationsInDBInconsistencyCheckProcess() {
+		EtlOperationType[] supported = { EtlOperationType.INCONSISTENCY_SOLVER, EtlOperationType.DATABASE_PREPARATION,
+		        EtlOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -706,9 +706,9 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInDBReSyncProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDBReSyncProcess() {
-		SyncOperationType[] supported = { SyncOperationType.NEW_RECORDS_DETECTOR,
-		        SyncOperationType.CHANGED_RECORDS_DETECTOR };
+	public static List<EtlOperationType> getSupportedOperationsInDBReSyncProcess() {
+		EtlOperationType[] supported = { EtlOperationType.NEW_RECORDS_DETECTOR,
+		        EtlOperationType.CHANGED_RECORDS_DETECTOR };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -718,8 +718,8 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInDBQuickLoadProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDBQuickLoadProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DATABASE_PREPARATION, SyncOperationType.QUICK_LOAD };
+	public static List<EtlOperationType> getSupportedOperationsInDBQuickLoadProcess() {
+		EtlOperationType[] supported = { EtlOperationType.DATABASE_PREPARATION, EtlOperationType.QUICK_LOAD };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -729,8 +729,8 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInDBQuickExportProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDBQuickExportProcess() {
-		SyncOperationType[] supported = { SyncOperationType.QUICK_EXPORT };
+	public static List<EtlOperationType> getSupportedOperationsInDBQuickExportProcess() {
+		EtlOperationType[] supported = { EtlOperationType.QUICK_EXPORT };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -740,8 +740,8 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInDBQuickCopyProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDBQuickCopyProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_COPY };
+	public static List<EtlOperationType> getSupportedOperationsInDBQuickCopyProcess() {
+		EtlOperationType[] supported = { EtlOperationType.DB_QUICK_COPY };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -751,10 +751,10 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInDataReconciliationProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDataReconciliationProcess() {
-		SyncOperationType[] supported = { SyncOperationType.POJO_GENERATION, SyncOperationType.RESOLVE_CONFLICTS,
-		        SyncOperationType.MISSING_RECORDS_DETECTOR, SyncOperationType.OUTDATED_RECORDS_DETECTOR,
-		        SyncOperationType.PHANTOM_RECORDS_DETECTOR };
+	public static List<EtlOperationType> getSupportedOperationsInDataReconciliationProcess() {
+		EtlOperationType[] supported = { EtlOperationType.POJO_GENERATION, EtlOperationType.RESOLVE_CONFLICTS,
+		        EtlOperationType.MISSING_RECORDS_DETECTOR, EtlOperationType.OUTDATED_RECORDS_DETECTOR,
+		        EtlOperationType.PHANTOM_RECORDS_DETECTOR };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -764,8 +764,8 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInDBQuickMergeProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDBQuickMergeProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE };
+	public static List<EtlOperationType> getSupportedOperationsInDBQuickMergeProcess() {
+		EtlOperationType[] supported = { EtlOperationType.DB_QUICK_MERGE };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -775,15 +775,15 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInDBQuickMergeWithEntityGenerationProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDBQuickMergeWithEntityGenerationProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE, SyncOperationType.DATABASE_PREPARATION,
-		        SyncOperationType.POJO_GENERATION };
+	public static List<EtlOperationType> getSupportedOperationsInDBQuickMergeWithEntityGenerationProcess() {
+		EtlOperationType[] supported = { EtlOperationType.DB_QUICK_MERGE, EtlOperationType.DATABASE_PREPARATION,
+		        EtlOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDBQuickMergeWithDatabaseGenerationProcess() {
-		SyncOperationType[] supported = { SyncOperationType.DB_QUICK_MERGE, SyncOperationType.DATABASE_PREPARATION };
+	public static List<EtlOperationType> getSupportedOperationsInDBQuickMergeWithDatabaseGenerationProcess() {
+		EtlOperationType[] supported = { EtlOperationType.DB_QUICK_MERGE, EtlOperationType.DATABASE_PREPARATION };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -799,9 +799,9 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInDataBasesMergeFromSourceDBProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDataBasesMergeFromSourceDBProcess() {
-		SyncOperationType[] supported = { SyncOperationType.POJO_GENERATION, SyncOperationType.RESOLVE_CONFLICTS,
-		        SyncOperationType.DB_MERGE_FROM_SOURCE_DB };
+	public static List<EtlOperationType> getSupportedOperationsInDataBasesMergeFromSourceDBProcess() {
+		EtlOperationType[] supported = { EtlOperationType.POJO_GENERATION, EtlOperationType.RESOLVE_CONFLICTS,
+		        EtlOperationType.DB_MERGE_FROM_SOURCE_DB };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -816,9 +816,9 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInEtlProcess(), this.operationType);
 	}
 	
-	public static List<SyncOperationType> getSupportedOperationsInDestinationSyncProcess() {
-		SyncOperationType[] supported = { SyncOperationType.CONSOLIDATION, SyncOperationType.DB_MERGE_FROM_JSON,
-		        SyncOperationType.LOAD, SyncOperationType.DATABASE_PREPARATION, SyncOperationType.POJO_GENERATION };
+	public static List<EtlOperationType> getSupportedOperationsInDestinationSyncProcess() {
+		EtlOperationType[] supported = { EtlOperationType.CONSOLIDATION, EtlOperationType.DB_MERGE_FROM_JSON,
+		        EtlOperationType.LOAD, EtlOperationType.DATABASE_PREPARATION, EtlOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);
 	}

@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
  * 
  * @author jpboane
  */
-public enum SyncOperationType {
+public enum EtlOperationType {
 	
 	CONSOLIDATION,
 	EXPORT,
@@ -35,100 +35,100 @@ public enum SyncOperationType {
 	ETL;
 	
 	public static boolean isEtl(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(ETL);
+		return EtlOperationType.valueOf(operationType).equals(ETL);
 	}
 	
 	public static boolean isDetectGapesOperation(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(DETECT_GAPES);
+		return EtlOperationType.valueOf(operationType).equals(DETECT_GAPES);
 	}
 	
 	public static boolean isDbCopyOperation(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(DB_COPY);
+		return EtlOperationType.valueOf(operationType).equals(DB_COPY);
 	}
 	
 	public static boolean isGenericOperation(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(GENERIC_OPERATION);
+		return EtlOperationType.valueOf(operationType).equals(GENERIC_OPERATION);
 	}
 	
 	public static boolean isDBQuickMerge(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(DB_QUICK_MERGE);
+		return EtlOperationType.valueOf(operationType).equals(DB_QUICK_MERGE);
 	}
 	
 	public static boolean isDBMerge(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(DB_MERGE_FROM_SOURCE_DB);
+		return EtlOperationType.valueOf(operationType).equals(DB_MERGE_FROM_SOURCE_DB);
 	}
 	
 	public static boolean isDatabasePreparation(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(DATABASE_PREPARATION);
+		return EtlOperationType.valueOf(operationType).equals(DATABASE_PREPARATION);
 	}
 	
 	public static boolean isPojoGeneration(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(POJO_GENERATION);
+		return EtlOperationType.valueOf(operationType).equals(POJO_GENERATION);
 	}
 	
 	public static boolean isInconsistencySolver(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(INCONSISTENCY_SOLVER);
+		return EtlOperationType.valueOf(operationType).equals(INCONSISTENCY_SOLVER);
 	}
 	
 	public static boolean isExport(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(EXPORT);
+		return EtlOperationType.valueOf(operationType).equals(EXPORT);
 	}
 	
 	public static boolean isSynchronization(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(DB_MERGE_FROM_JSON);
+		return EtlOperationType.valueOf(operationType).equals(DB_MERGE_FROM_JSON);
 	}
 	
 	public static boolean isLoad(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(LOAD);
+		return EtlOperationType.valueOf(operationType).equals(LOAD);
 	}
 	
 	public static boolean isTransport(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(TRANSPORT);
+		return EtlOperationType.valueOf(operationType).equals(TRANSPORT);
 	}
 	
 	public static boolean isConsolidation(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(CONSOLIDATION);
+		return EtlOperationType.valueOf(operationType).equals(CONSOLIDATION);
 	}
 	
 	public static boolean isChangedRecordsDetector(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(CHANGED_RECORDS_DETECTOR);
+		return EtlOperationType.valueOf(operationType).equals(CHANGED_RECORDS_DETECTOR);
 	}
 	
 	public static boolean isNewRecordsDetector(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(NEW_RECORDS_DETECTOR);
+		return EtlOperationType.valueOf(operationType).equals(NEW_RECORDS_DETECTOR);
 	}
 	
 	public static boolean isDbQuickExport(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(QUICK_EXPORT);
+		return EtlOperationType.valueOf(operationType).equals(QUICK_EXPORT);
 	}
 	
 	public static boolean isDbQuickLoad(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(QUICK_LOAD);
+		return EtlOperationType.valueOf(operationType).equals(QUICK_LOAD);
 	}
 	
 	public static boolean isResolveConflicts(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(RESOLVE_CONFLICTS);
+		return EtlOperationType.valueOf(operationType).equals(RESOLVE_CONFLICTS);
 	}
 	
 	public static boolean isMissingRecordsDetector(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(MISSING_RECORDS_DETECTOR);
+		return EtlOperationType.valueOf(operationType).equals(MISSING_RECORDS_DETECTOR);
 	}
 	
 	public static boolean isOutdatedRecordsDetector(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(OUTDATED_RECORDS_DETECTOR);
+		return EtlOperationType.valueOf(operationType).equals(OUTDATED_RECORDS_DETECTOR);
 	}
 	
 	public static boolean isPhantomRecordsDetector(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(PHANTOM_RECORDS_DETECTOR);
+		return EtlOperationType.valueOf(operationType).equals(PHANTOM_RECORDS_DETECTOR);
 	}
 	
 	public static boolean isDbQuickCopy(String operationType) {
-		return SyncOperationType.valueOf(operationType).equals(DB_QUICK_COPY);
+		return EtlOperationType.valueOf(operationType).equals(DB_QUICK_COPY);
 	}
 	
 	public static boolean isSupportedOperation(String operationType) {
-		return CommonUtilities.getInstance().getPosOnArray(SyncOperationType.values(),
-		    SyncOperationType.valueOf(operationType)) >= 0;
+		return CommonUtilities.getInstance().getPosOnArray(EtlOperationType.values(),
+		    EtlOperationType.valueOf(operationType)) >= 0;
 	}
 	
 	public boolean isDatabasePreparation() {
@@ -224,6 +224,6 @@ public enum SyncOperationType {
 	}
 	
 	public boolean isSupportedOperation() {
-		return CommonUtilities.getInstance().getPosOnArray(SyncOperationType.values(), this) >= 0;
+		return CommonUtilities.getInstance().getPosOnArray(EtlOperationType.values(), this) >= 0;
 	}
 }

@@ -1,7 +1,7 @@
 package org.openmrs.module.epts.etl.merge.model;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.RefInfo;
 
 public class ParentInfo {
 	private SyncImportInfoVO parentStageInfo;

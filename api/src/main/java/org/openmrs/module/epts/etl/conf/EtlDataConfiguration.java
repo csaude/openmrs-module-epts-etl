@@ -1,6 +1,6 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
-public abstract class SyncDataConfiguration extends BaseConfiguration {
+public abstract class EtlDataConfiguration extends BaseConfiguration {
 	
 	private EtlConfiguration relatedSyncConfiguration;
 	

@@ -4,8 +4,8 @@ import java.sql.Connection;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -63,31 +63,31 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 	}
 	
 	public static int getFirstNewRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationType.NEW_RECORDS_DETECTOR, conn);
+		return getChangedRecord(tableConf, appCode, observationDate, "min", EtlOperationType.NEW_RECORDS_DETECTOR, conn);
 	}
 	
 	public static int getLastNewRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "max",  SyncOperationType.NEW_RECORDS_DETECTOR, conn);
+		return getChangedRecord(tableConf, appCode, observationDate, "max",  EtlOperationType.NEW_RECORDS_DETECTOR, conn);
 	}
 	
 	public static int getFirstChangedRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "min", SyncOperationType.CHANGED_RECORDS_DETECTOR, conn);
+		return getChangedRecord(tableConf, appCode, observationDate, "min", EtlOperationType.CHANGED_RECORDS_DETECTOR, conn);
 	}
 	
 	public static int getLastChangedRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "max",  SyncOperationType.CHANGED_RECORDS_DETECTOR, conn);
+		return getChangedRecord(tableConf, appCode, observationDate, "max",  EtlOperationType.CHANGED_RECORDS_DETECTOR, conn);
 	}
 	
-	public static int getChangedRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, String function, SyncOperationType type, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getChangedRecord(AbstractTableConfiguration tableConf, String appCode, Date observationDate, String function, EtlOperationType type, Connection conn) throws DBException, ForbiddenOperationException {
 		
 		List<String> excludedtablesOnVoided =  utilities.parseToList("users", "provider", "location", "orders", "note");
 		
-		String dateCreatedCondition = type.equals(SyncOperationType.NEW_RECORDS_DETECTOR) ? "date_created >= ?" : ""; 
-		String dateChangedCondition = type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !tableConf.getTableName().equalsIgnoreCase("obs") ? "date_changed >= ?" : "";
+		String dateCreatedCondition = type.equals(EtlOperationType.NEW_RECORDS_DETECTOR) ? "date_created >= ?" : ""; 
+		String dateChangedCondition = type.equals(EtlOperationType.CHANGED_RECORDS_DETECTOR) && !tableConf.getTableName().equalsIgnoreCase("obs") ? "date_changed >= ?" : "";
 		
 		String dateVoidedCondition  = ""; 
 		
-		if (type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !tableConf.isMetadata() && !excludedtablesOnVoided.contains(tableConf.getTableName())) {
+		if (type.equals(EtlOperationType.CHANGED_RECORDS_DETECTOR) && !tableConf.isMetadata() && !excludedtablesOnVoided.contains(tableConf.getTableName())) {
 			dateVoidedCondition = "date_voided >= ?";
 		}
 		
@@ -105,9 +105,9 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 						
 		Object[] params = {};
 		
-		if (type.equals(SyncOperationType.NEW_RECORDS_DETECTOR)) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
-		if (type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !dateVoidedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
-		if (type.equals(SyncOperationType.CHANGED_RECORDS_DETECTOR) && !dateChangedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
+		if (type.equals(EtlOperationType.NEW_RECORDS_DETECTOR)) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
+		if (type.equals(EtlOperationType.CHANGED_RECORDS_DETECTOR) && !dateVoidedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
+		if (type.equals(EtlOperationType.CHANGED_RECORDS_DETECTOR) && !dateChangedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
 		
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
 		

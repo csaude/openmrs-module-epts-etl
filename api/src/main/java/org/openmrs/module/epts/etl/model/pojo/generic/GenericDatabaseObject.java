@@ -5,11 +5,11 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.RefInfo;
-import org.openmrs.module.epts.etl.controller.conf.RefMapping;
-import org.openmrs.module.epts.etl.controller.conf.SrcConf;
-import org.openmrs.module.epts.etl.controller.conf.TableDataSourceConfig;
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.RefMapping;
+import org.openmrs.module.epts.etl.conf.SrcConf;
+import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 

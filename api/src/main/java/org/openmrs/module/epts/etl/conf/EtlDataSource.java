@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
 import java.sql.Connection;
 
@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public interface SyncDataSource extends DatabaseObjectConfiguration {
+public interface EtlDataSource extends DatabaseObjectConfiguration {
 	public static final String MAIN_DATA_SRC = "main_ds";
 	
 	SrcConf getRelatedSrcConf();

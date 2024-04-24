@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class EtlItemConfiguration extends SyncDataConfiguration {
+public class EtlItemConfiguration extends EtlDataConfiguration {
 	
 	private String configCode;
 	

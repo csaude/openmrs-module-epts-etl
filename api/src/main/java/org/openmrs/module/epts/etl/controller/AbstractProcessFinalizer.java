@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.controller;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 
 public abstract class AbstractProcessFinalizer implements ProcessFinalizer{
 	protected ProcessController relatedProcessController;

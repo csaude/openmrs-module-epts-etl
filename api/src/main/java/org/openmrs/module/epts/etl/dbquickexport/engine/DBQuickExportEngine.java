@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportController;
 import org.openmrs.module.epts.etl.dbquickexport.model.DBQuickExportSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;

@@ -2,8 +2,8 @@ package org.openmrs.module.epts.etl.dbquickcopy.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickload.model.LoadedRecordsSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;

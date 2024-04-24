@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +23,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public abstract class AbstractTableConfiguration extends SyncDataConfiguration implements Comparable<AbstractTableConfiguration>, DatabaseObjectConfiguration {
+public abstract class AbstractTableConfiguration extends EtlDataConfiguration implements Comparable<AbstractTableConfiguration>, DatabaseObjectConfiguration {
 	
 	private String tableName;
 	
@@ -35,7 +35,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	
 	private Class<? extends DatabaseObject> syncRecordClass;
 	
-	private SyncDataConfiguration parent;
+	private EtlDataConfiguration parent;
 	
 	private PrimaryKey primaryKey;
 	
@@ -231,7 +231,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		return application.getPojoPackageName();
 	}
 	
-	public boolean isDoIntegrityCheckInTheEnd(SyncOperationType operationType) {
+	public boolean isDoIntegrityCheckInTheEnd(EtlOperationType operationType) {
 		return getRelatedSyncConfiguration().isDoIntegrityCheckInTheEnd(operationType);
 	}
 	
@@ -277,11 +277,11 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	}
 	
 	@Override
-	public SyncDataConfiguration getParent() {
+	public EtlDataConfiguration getParent() {
 		return parent;
 	}
 	
-	public void setParent(SyncDataConfiguration parent) {
+	public void setParent(EtlDataConfiguration parent) {
 		this.parent = parent;
 	}
 	
@@ -764,7 +764,7 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 		return ref;
 	}
 	
-	public static AbstractTableConfiguration initGenericTabConf(String tableName, SyncDataConfiguration parent) {
+	public static AbstractTableConfiguration initGenericTabConf(String tableName, EtlDataConfiguration parent) {
 		AbstractTableConfiguration tableInfo = parent.getRelatedSyncConfiguration().findPulledTableConfiguration(tableName);
 		
 		if (tableInfo == null) {

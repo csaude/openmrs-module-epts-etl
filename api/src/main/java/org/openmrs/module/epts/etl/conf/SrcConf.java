@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.controller.conf;
+package org.openmrs.module.epts.etl.conf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -145,7 +145,7 @@ public class SrcConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public void setParent(SyncDataConfiguration parent) {
+	public void setParent(EtlDataConfiguration parent) {
 		super.setParent((EtlItemConfiguration) parent);
 	}
 	
@@ -161,15 +161,15 @@ public class SrcConf extends AbstractTableConfiguration {
 	}
 	
 	@JsonIgnore
-	public List<SyncDataSource> getAvaliableExtraDataSource() {
-		List<SyncDataSource> ds = new ArrayList<>();
+	public List<EtlDataSource> getAvaliableExtraDataSource() {
+		List<EtlDataSource> ds = new ArrayList<>();
 		
 		if (utilities.arrayHasElement(this.extraTableDataSource)) {
-			ds.addAll(utilities.parseList(this.extraTableDataSource, SyncDataSource.class));
+			ds.addAll(utilities.parseList(this.extraTableDataSource, EtlDataSource.class));
 		}
 		
 		if (utilities.arrayHasElement(this.extraQueryDataSource)) {
-			ds.addAll(utilities.parseList(this.extraQueryDataSource, SyncDataSource.class));
+			ds.addAll(utilities.parseList(this.extraQueryDataSource, EtlDataSource.class));
 		}
 		
 		return ds;
@@ -191,7 +191,7 @@ public class SrcConf extends AbstractTableConfiguration {
 		
 		if (this.extraTableDataSource != null) {
 			
-			for (SyncDataSource ds : this.extraTableDataSource) {
+			for (EtlDataSource ds : this.extraTableDataSource) {
 				for (Field f : ds.getFields()) {
 					
 					if (!fields.contains(f)) {

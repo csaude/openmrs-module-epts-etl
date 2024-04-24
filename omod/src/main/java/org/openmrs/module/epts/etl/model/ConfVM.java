@@ -4,12 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.conf.EtlOperationType;
+import org.openmrs.module.epts.etl.conf.SyncProcessType;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.controller.conf.EtlOperationConfig;
-import org.openmrs.module.epts.etl.controller.conf.SyncOperationType;
-import org.openmrs.module.epts.etl.controller.conf.SyncProcessType;
-import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.ClassPathUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -193,7 +193,7 @@ public class ConfVM {
 		
 	}
 
-	public void selectOperation(SyncOperationType operationType) {
+	public void selectOperation(EtlOperationType operationType) {
 		if (operationType != null) {
 			this.selectedOperation = etlConfiguration.findOperation(operationType);
 		}
