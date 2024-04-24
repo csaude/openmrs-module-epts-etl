@@ -1,0 +1,61 @@
+	
+	{
+	   "processType":"",
+	   "modelType":"",
+	   "syncRootDirectory":"",
+	   
+	   "appsInfo":[
+		  
+	   ], 
+	   
+	   "operations":[
+		  
+	   ],  
+	   
+	   "etlItemConfiguration":[
+		  
+	   ]
+	}
+
+		{
+		   "srcConf":{
+			  "tableName":"",
+			  "parents":[],
+			  "sharePkWith":"",
+			  "metadata":"",
+			  "removeForbidden":"",
+			  "extraConditionForExtract":"",
+			  "observationDateFields":[
+				 
+			  ],
+			  "winningRecordFieldsInfo":[
+				 
+			  ],
+
+			  "uniqueKeys":[
+				 
+			  ],
+			  "extraTableDataSource":[
+				 
+			  ],
+			  "extraQueryDataSource":[
+				 
+			  ]
+		   },
+		   
+		   
+		   "dstConf":[
+			  
+		   ]
+		}
+	  
+	        
+			"dstConf":[
+            "tableName": "",
+			"joinField": [],
+			"manualFieldsMapping": []
+         ]
+		 
+	When merge existing records, the incoming record will win if the listed fields have the specified values. Note that, for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND"
+		 
+		 - *conditionalParents*: the conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the 
