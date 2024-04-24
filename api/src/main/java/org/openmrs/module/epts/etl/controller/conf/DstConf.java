@@ -115,7 +115,16 @@ public class DstConf extends AbstractTableConfiguration {
 								
 								break;
 							} else {
-								fm.setDataSourceName(ds.getName());
+								
+								if (ds instanceof QueryDataSourceConfig) {
+									fm.setDataSourceName(ds.getName());
+								} else if (ds instanceof TableDataSourceConfig) {
+									//All the tableSrcData are loaded with the src
+									fm.setDataSourceName(this.getSrcConf().getTableName());
+								} else {
+									throw new ForbiddenOperationException(
+									        "Unkown data source type " + ds.getClass().getCanonicalName());
+								}
 								
 								this.addMapping(fm);
 							}
@@ -231,10 +240,8 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			srcObjects.add(srcObject);
 			
-			List<SyncDataSource> allAvaliableDataSources = this.getParent().getSrcConf().getAvaliableExtraDataSource();
-			
-			if (utilities.arrayHasElement(allAvaliableDataSources)) {
-				for (SyncDataSource mappingInfo : allAvaliableDataSources) {
+			if (utilities.arrayHasElement(this.getSrcConf().getExtraQueryDataSource())) {
+				for (QueryDataSourceConfig mappingInfo : this.getSrcConf().getExtraQueryDataSource()) {
 					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
 					
 					if (relatedSrcObject == null) {

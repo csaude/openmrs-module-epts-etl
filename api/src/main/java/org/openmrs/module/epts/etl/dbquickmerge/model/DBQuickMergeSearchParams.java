@@ -5,9 +5,11 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.DstConf;
 import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -19,7 +21,8 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public DBQuickMergeSearchParams(EtlItemConfiguration config, RecordLimits limits, DBQuickMergeController relatedController) {
+	public DBQuickMergeSearchParams(EtlItemConfiguration config, RecordLimits limits,
+	    DBQuickMergeController relatedController) {
 		super(config, limits);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
@@ -28,25 +31,61 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		String srcSchema = DBUtilities.determineSchemaName(conn);
-		AbstractTableConfiguration tableInfo = getSrcTableConf();
+		AbstractTableConfiguration srcConfig = getSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
-			searchClauses.addToClauseFrom(
-			    srcSchema + ".patient inner join " + srcSchema + ".person src_ on person_id = patient_id");
-			searchClauses.addColumnToSelect("patient.*, src_.uuid");
-		} else {
-			searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_");
-			
-			searchClauses.addColumnToSelect("src_.*");
+		searchClauses.addColumnToSelect("distinct src_.*");
+		
+		if (getExtraTableDataSource() != null) {
+			for (TableDataSourceConfig t : getExtraTableDataSource()) {
+				for (Field f : t.getFields()) {
+					if (!srcConfig.containsField(f.getName()) && !searchClauses.isToSelectColumn(f.getName())) {
+						searchClauses.addColumnToSelect(t.getTableName() + "." + f.getName());
+					}
+				}
+				
+			}
 		}
+		
+		String clauseFrom = srcSchema + "." + srcConfig.getTableName() + " src_ ";
+		
+		if (getExtraTableDataSource() != null) {
+			
+			String additionalLeftJoinFields = "";
+			
+			for (TableDataSourceConfig t : getExtraTableDataSource()) {
+				
+				String joinType = t.getJoinType().toString();
+				
+				String extraJoinQuery = t.generateConditionsFields();
+				
+				if (utilities.stringHasValue(extraJoinQuery)) {
+					Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,
+					    getConfig().getRelatedSyncConfiguration());
+					
+					extraJoinQuery = DBUtilities.replaceSqlParametersWithQuestionMarks(extraJoinQuery);
+					
+					searchClauses.addToParameters(params);
+				}
+				
+				clauseFrom = clauseFrom + " " + joinType + " join " + t.getTableName() + " on " + extraJoinQuery;
+				
+				if (t.getJoinType().isLeftJoin()) {
+					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
+					    t.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
+				}
+			}
+			
+			if (utilities.stringHasValue(additionalLeftJoinFields)) {
+				searchClauses.addToClauses(additionalLeftJoinFields);
+			}
+			
+		}
+		
+		searchClauses.addToClauseFrom(clauseFrom);
 		
 		tryToAddLimits(searchClauses);
-		
-		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
-			searchClauses.replaceColumnOnClause("patient_id", "person_id");
-		}
 		
 		tryToAddExtraConditionForExport(searchClauses);
 		
@@ -62,7 +101,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		if (!DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
 			throw new ForbiddenOperationException("The database server must be the same to generate exlusion clause!!!");
 		}
-	
+		
 		String extraCondition = "";
 		
 		for (DstConf dst : getConfig().getDstConf()) {
@@ -73,8 +112,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 			
 			if (!extraCondition.isEmpty()) {
 				extraCondition = " OR ";
-			}
-			else {
+			} else {
 				extraCondition = "(";
 			}
 			
@@ -93,7 +131,6 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		
 		String extraCondition = "";
 		
-		
 		for (DstConf dst : getConfig().getDstConf()) {
 			
 			if (!dst.hasJoinFields()) {
@@ -102,10 +139,9 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 			
 			if (!extraCondition.isEmpty()) {
 				extraCondition = " AND ";
-			}
-			else {
+			} else {
 				extraCondition = "(";
-			}	
+			}
 			
 			extraCondition += " EXISTS (" + generateDestinationJoinSubquery(dst, dstConn) + ")";
 		}
@@ -133,7 +169,7 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 		} else {
 			fromClause = normalFromClause;
 		}
-
+		
 		String dstJoinSubquery = "";
 		String joinCondition = dstConf.generateJoinConditionWithSrc("src_", "dest_");
 		

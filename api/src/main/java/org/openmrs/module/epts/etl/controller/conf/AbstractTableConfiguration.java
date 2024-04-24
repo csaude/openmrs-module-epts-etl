@@ -1164,6 +1164,10 @@ public abstract class AbstractTableConfiguration extends SyncDataConfiguration i
 	}
 	
 	public List<RefInfo> findAllRefToParent(String parentTableName) {
+		if (!utilities.arrayHasElement(this.parentRefInfo)) {
+			return null;
+		}
+		
 		List<RefInfo> references = new ArrayList<>();
 		
 		for (RefInfo ref : this.parentRefInfo) {

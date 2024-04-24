@@ -8,6 +8,8 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.controller.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.RefInfo;
 import org.openmrs.module.epts.etl.controller.conf.RefMapping;
+import org.openmrs.module.epts.etl.controller.conf.SrcConf;
+import org.openmrs.module.epts.etl.controller.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 
@@ -23,9 +25,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	public GenericDatabaseObject(DatabaseObjectConfiguration relatedConfiguration) {
-		this.relatedConfiguration = relatedConfiguration;
-		
-		this.fields = this.relatedConfiguration.cloneFields();
+		setRelatedConfiguration(relatedConfiguration);
 	}
 	
 	@Override
@@ -59,6 +59,21 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		this.relatedConfiguration = tableConfiguration;
 		
 		this.fields = this.relatedConfiguration.cloneFields();
+		
+		if (this.relatedConfiguration instanceof SrcConf) {
+			List<TableDataSourceConfig> allDs = ((SrcConf) this.relatedConfiguration).getExtraTableDataSource();
+			
+			if (utilities.arrayHasElement(allDs)) {
+				for (TableDataSourceConfig ds : allDs) {
+					for (Field f : ds.getFields()) {
+						if (!this.fields.contains(f)) {
+							this.fields.add(f.createACopy());
+						}
+					}
+				}
+			}
+			
+		}
 	}
 	
 	@Override

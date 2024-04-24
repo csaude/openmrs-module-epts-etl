@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -170,8 +171,37 @@ public class SrcConf extends AbstractTableConfiguration {
 		if (utilities.arrayHasElement(this.extraQueryDataSource)) {
 			ds.addAll(utilities.parseList(this.extraQueryDataSource, SyncDataSource.class));
 		}
-	
+		
 		return ds;
+	}
+	
+	/**
+	 * Generate all avaliable fields on this srcConf, this fields will include all field from
+	 * {@link #getFields()} and the fields from all {@link #extraTableDataSource} Note that the
+	 * duplicated fields will only be included once
+	 * 
+	 * @return
+	 */
+	public List<Field> generateAllAvaliableFields() {
+		List<Field> fields = new ArrayList<>();
+		
+		for (Field f : this.getFields()) {
+			fields.add(f);
+		}
+		
+		if (this.extraTableDataSource != null) {
+			
+			for (SyncDataSource ds : this.extraTableDataSource) {
+				for (Field f : ds.getFields()) {
+					
+					if (!fields.contains(f)) {
+						fields.add(f);
+					}
+				}
+			}
+		}
+		
+		return fields;
 	}
 	
 }

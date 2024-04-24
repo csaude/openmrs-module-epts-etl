@@ -478,4 +478,8 @@ public class SearchClauses<T extends VO> {
 		
 		this.addToClauses(auxCondition);
 	}
+
+	public boolean isToSelectColumn(String name) {
+		return this.columnsToSelect.contains(name);
+	}
 }

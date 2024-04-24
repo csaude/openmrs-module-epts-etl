@@ -8,6 +8,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguratio
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public interface SyncDataSource extends DatabaseObjectConfiguration {
+	public static final String MAIN_DATA_SRC = "main_ds";
 	
 	SrcConf getRelatedSrcConf();
 	

@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.controller.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -27,13 +28,23 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		String srcSchema = DBUtilities.determineSchemaName(conn);
-		AbstractTableConfiguration tableInfo = getSrcTableConf();
+		AbstractTableConfiguration srcConfig = getSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		searchClauses.addColumnToSelect("distinct src_.*");
 		
-		String clauseFrom = srcSchema + "." + tableInfo.getTableName() + " src_ ";
+		if (getExtraTableDataSource() != null) {
+			for (TableDataSourceConfig t : getExtraTableDataSource()) {
+				for (Field f : t.getFields()) {
+					if (!srcConfig.containsField(f.getName()) && !searchClauses.isToSelectColumn(f.getName())) {
+						searchClauses.addColumnToSelect(t.getTableName() + "." + f.getName());
+					}
+				}
+			}
+		}
+		
+		String clauseFrom = srcSchema + "." + srcConfig.getTableName() + " src_ ";
 		
 		if (getExtraTableDataSource() != null) {
 			

@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class Field implements Serializable {
 	
+	static CommonUtilities utilities = CommonUtilities.getInstance();
+	
 	private static final long serialVersionUID = 1L;
 	
 	private String name;
@@ -234,5 +236,23 @@ public class Field implements Serializable {
 		f.setType(this.type);
 		
 		return f;
+	}
+	
+	public static String parseAllToCommaSeparatedName(List<Field> fields) {
+		
+		if (!utilities.arrayHasElement(fields))
+			return null;
+		
+		String commaSeparatedNames = "";
+		
+		for (Field f : fields) {
+			if (!commaSeparatedNames.isEmpty()) {
+				commaSeparatedNames += ", ";
+			}
+			
+			commaSeparatedNames += f.getName();
+		}
+		
+		return commaSeparatedNames;
 	}
 }
