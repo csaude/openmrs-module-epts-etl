@@ -956,8 +956,7 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	public String resolveScapeCharacter(String str) {
-		if (!stringHasValue(str))
-			return str;
+		if (!stringHasValue(str)) return str;
 		
 		char scapeCaracter = '\\';
 		
@@ -969,6 +968,8 @@ public class CommonUtilities implements Serializable {
 					if (!isSpecialCharacter(str.charAt(i + 1))) {
 						//Force to be scaped
 						resolved += str.charAt(i) + "\\";
+					}else {
+						resolved += str.charAt(i);
 					}
 				} else {
 					//Force to be scaped
