@@ -20,19 +20,17 @@
 		{
 		   "srcConf":{
 			  "tableName":"",
-			  "parents":[],
-			  "sharePkWith":"",
-			  "metadata":"",
-			  "removeForbidden":"",
 			  "extraConditionForExtract":"",
 			  "observationDateFields":[
 				 
 			  ],
-			  "winningRecordFieldsInfo":[
+			  "sharePkWith":"",
+			  "metadata":"",
+			  "removeForbidden":"",
+			  "uniqueKeys":[
 				 
 			  ],
-
-			  "uniqueKeys":[
+			  "parents":[
 				 
 			  ],
 			  "extraTableDataSource":[
@@ -42,18 +40,49 @@
 				 
 			  ]
 		   },
-		   
-		   
 		   "dstConf":[
 			  
 		   ]
 		}
-	  
+		{
+		   "srcConf":{
+			  "parents":[
+				 {
+					"tableName":"",
+					"ref":{
+					   "mapping":[
+						  {
+							 "childFieldName":"",
+							 "parentFieldName":"",
+							 "defaultValueDueInconsistency":"",
+							 "setNullDueInconsistency":"",
+							 "ignorable":""
+						  }
+					   ],
+					   "conditionalFields":[
+						  {
+							 "name":"",
+							 "value":""
+						  }
+					   ]
+					}
+				 }
+			  ]
+		   }
+		}
+		
+		
+		
 	        
-			"dstConf":[
-            "tableName": "",
+		"dstConf":[
+            {
+			"tableName": "",
 			"joinField": [],
-			"manualFieldsMapping": []
+			"mapping": []
+			"winningRecordFieldsInfo":[
+				 
+			  ]
+			 }
          ]
 		 
 	When merge existing records, the incoming record will win if the listed fields have the specified values. Note that, for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND"
