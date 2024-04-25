@@ -52,7 +52,7 @@ The dstConf define the configuration of the source of etl process for an item an
 
 Bellow are explained the relevant configuration for "srcConf" and "dstConf".
 
-#### The "srcConf"
+### The "srcConf"
 The "srcConf" allow the configuration of datasource in an etl process. The relevant configuration fields are explained bellow
 - *tableName*: table name of the main data source.
 - *parents*: list of configured parents. Note that if there is no additional configuration for the parent, there is no need to include this properitie as it will automatically loaded using the information schema;
@@ -68,13 +68,13 @@ The "srcConf" allow the configuration of datasource in an etl process. The relev
 
 Bellow are additional explanation of complex configuration on "srcConf"
 
-######## Parents configuration
+#### Parents configuration
 A parent if configured as an object and can have additional properties. Note that when there are no additional properties you can omit the parent on the list of parents. When the parent appear on the table configuration it can have below properties:
 - *tableName*: the table name
 - *defaultValueDueInconsistency*: default value which will be used when the inconsistency check find any orphan record of this parent
 - *setNullDueInconsistency*: a boolean which indicate that if the record is orphan of this parent then the field can be nulled
 
-######## Conditional parents configuration
+#### Conditional parents configuration
 The conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the person_attribute.value=7)  
 A conditional parent is configured as an object and can have bellow properties:  
 - *tableName*: the parent table name
