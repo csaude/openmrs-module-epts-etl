@@ -61,7 +61,6 @@ The "srcConf" allow the configuration of datasource in an etl process. The relev
 - *observationDateFields*: opetional list of date fields which will be checked when an operation need to look for records which had some action in certain period (ex. records created or updated within a period)
 - *sharePkWith*: optional param indicating if the primary key of this table is shared with a parent. In this case that parent should be mentioned here.
 - *extraConditionForExport*: optional param which contains the extra sql condition to be injected when the operation queries for records to process.
-- *winningRecordFieldsInfo*: optional list indicating the fields to be checked when there are conflict between an record with existing one on the etl process
 - *uniqueKeys*: optional list containing the unique key info. This is unnecessary if the table has explicit unique keys
 - *extraTableDataSource*: optional list of auxiliary tables to be used as data source or auxiliary extraction condition
 - *extraQueryDataSource*: option list of auxiliary queries to be used as databa source
@@ -72,7 +71,16 @@ Bellow are additional explanation of complex configuration on "srcConf"
 A parent if configured as an object and can have additional properties. Note that when there are no additional properties you can omit the parent on the list of parents. When you whant to manualy add parent on the etl item configuration it should have the apearence bellow:
  ![config-sections](docs/parents-conf.png)
 
-As can be seen on the image, each parent can have the **tableName** with represents the name of parent table and the **ref** which has the information of references between the main table and its parents. Note that the ref is defined by the *"fieldsMapping"* list which allow the mapping of main table and it parent. Each mapping have optional attribute *"defaultValueDueInconsistency"* which allow to specify a default value when the main table is orphan of that parent. This is important in a merge or copy process. Another property is *"setNullDueInconsistency"* which is a boolean properity which indicate if the parent can be set to null if it is missing. The *"conditionalFields"*  helps to create conditional reference between the main table and its parent. The conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the person_attribute.value=7)  
+As can be seen on the image, each parent can have the **tableName** with represents the name of parent table and the **ref** which has the information of references between the main table and its parents. Note that the ref is defined by the *"mapping"* list which allow the mapping of fields between the main table and its parent. Each mapping have optional attribute *"defaultValueDueInconsistency"* which allow to specify a default value when the main table is orphan of that parent. This is important in a merge or copy process. Another property is *"setNullDueInconsistency"* which is a boolean properity which indicate if the parent can be set to null if it is missing. The *"conditionalFields"*  helps to create conditional reference between the main table and its parent. The conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the person_attribute.value=7)  
+
+
+### DstConf
+
+#### Winning Record Fields Info
+
+In The *"winningRecordFieldsInfo"*
+
+- *winningRecordFieldsInfo*: optional list indicating the fields to be checked when there are conflict between an record with existing one on the etl process
 
 
 ## Supported processes and its configuration files
