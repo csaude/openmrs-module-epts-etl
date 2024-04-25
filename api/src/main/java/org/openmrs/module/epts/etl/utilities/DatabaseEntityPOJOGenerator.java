@@ -270,7 +270,7 @@ public class DatabaseEntityPOJOGenerator {
 		if (utilities.arrayHasElement(pojoble.getParentRefInfo())) {
 			for (RefInfo refInfo : pojoble.getParentRefInfo()) {
 				
-				for (RefMapping map : refInfo.getFieldsMapping()) {
+				for (RefMapping map : refInfo.getMapping()) {
 					
 					if (map.isPrimitieveRefColumn()) {
 						methodFromSuperClass += "		if (this." + map.getChildFieldNameAsAttClass()

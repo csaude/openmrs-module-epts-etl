@@ -184,7 +184,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	public boolean hasParents() {
 		if (utilities.arrayHasElement(this.relatedConfiguration.getParentRefInfo())) {
 			for (RefInfo refInfo : this.relatedConfiguration.getParentRefInfo()) {
-				for (RefMapping map : refInfo.getFieldsMapping()) {
+				for (RefMapping map : refInfo.getMapping()) {
 					if (getFieldValue(map.getChildFieldName()) != null) {
 						return true;
 					}
@@ -199,7 +199,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	public Integer getParentValue(String parentAttName) {
 		if (utilities.arrayHasElement(this.relatedConfiguration.getParentRefInfo())) {
 			for (RefInfo refInfo : this.relatedConfiguration.getParentRefInfo()) {
-				for (RefMapping map : refInfo.getFieldsMapping()) {
+				for (RefMapping map : refInfo.getMapping()) {
 					
 					if (map.getChildFieldName().equals(parentAttName)) {
 						return (Integer) getFieldValue(map.getChildFieldName());

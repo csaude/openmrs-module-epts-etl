@@ -1054,14 +1054,14 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	
 	@Override
 	public void setParentToNull(RefInfo refInfo) {
-		for (RefMapping map : refInfo.getFieldsMapping()) {
+		for (RefMapping map : refInfo.getMapping()) {
 			setFieldValue(map.getChildFieldNameAsAttClass(), null);
 		}
 	}
 	
 	@Override
 	public void changeParentValue(RefInfo refInfo, DatabaseObject newParent) {
-		for (RefMapping map : refInfo.getFieldsMapping()) {
+		for (RefMapping map : refInfo.getMapping()) {
 			Object parentValue = newParent.getFieldValue(map.getChildFieldNameAsAttClass());
 			this.setFieldValue(map.getChildFieldNameAsAttClass(), parentValue);
 		}
