@@ -48,41 +48,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	public synchronized void fullLoad(Connection conn) {
 		super.fullLoad(conn);
 		
-		if (!utilities.arrayHasElement(this.joinFields)) {
-			//Try to autoload join fields
-			
-			List<FieldsMapping> fm = new ArrayList<>();
-			
-			//Assuming that this datasource is parent
-			List<RefInfo> pInfo = this.relatedSrcConf.findAllRefToParent(this.getTableName());
-			
-			if (pInfo != null) {
-				for (RefInfo ref : pInfo) {
-					for (RefMapping map : ref.getMapping()) {
-						fm.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
-					}
-				}
-			} else {
-				
-				//Assuning that the this data src is child
-				pInfo = this.findAllRefToParent(this.relatedSrcConf.getTableName());
-				
-				if (pInfo != null) {
-					for (RefInfo ref : pInfo) {
-						for (RefMapping map : ref.getMapping()) {
-							fm.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
-						}
-					}
-				}
-			}
-			
-			if (fm != null) {
-				this.joinFields = new ArrayList<>();
-				for (FieldsMapping f : fm) {
-					this.joinFields.add(f);
-				}
-			}
-		}
+		tryToLoadJoinFields();
 		
 		if (utilities.arrayHasNoElement(this.joinFields)) {
 			throw new ForbiddenOperationException("No join fields were difined between " + this.relatedSrcConf.getTableName()
@@ -94,6 +60,47 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 				this.joinType = JoinType.LEFT;
 			} else {
 				this.joinType = JoinType.INNER;
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public void tryToLoadJoinFields() {
+		if (!utilities.arrayHasElement(this.joinFields)) {
+			//Try to autoload join fields
+			
+			List<FieldsMapping> fm = new ArrayList<>();
+			
+			//Assuming that this datasource is parent
+			List<RefInfo> pInfo = this.relatedSrcConf.findAllRefToParent(this.getTableName());
+			
+			if (utilities.arrayHasElement(pInfo)) {
+				for (RefInfo ref : pInfo) {
+					for (RefMapping map : ref.getMapping()) {
+						fm.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
+					}
+				}
+			} else {
+				
+				//Assuning that the this data src is child
+				pInfo = this.findAllRefToParent(this.relatedSrcConf.getTableName());
+				
+				if (utilities.arrayHasElement(pInfo)) {
+					for (RefInfo ref : pInfo) {
+						for (RefMapping map : ref.getMapping()) {
+							fm.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
+						}
+					}
+				}
+			}
+			
+			if (fm != null) {
+				this.joinFields = new ArrayList<>();
+				for (FieldsMapping f : fm) {
+					this.joinFields.add(f);
+				}
 			}
 		}
 	}
@@ -122,6 +129,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	@Override
 	public void setRelatedSrcConf(SrcConf relatedSrcConf) {
 		this.relatedSrcConf = relatedSrcConf;
+		
+		setParent(relatedSrcConf);
 	}
 	
 	@Override

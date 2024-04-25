@@ -115,7 +115,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@JsonIgnore
 	public String getInsertSQLWithoutObjectId() {
 		if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
-			return ((AbstractTableConfiguration) this.relatedConfiguration).generateInsertValuesWithoutObjectId(this);
+			return ((AbstractTableConfiguration) this.relatedConfiguration).getInsertSQLWithoutObjectId();
 		}
 		
 		return null;

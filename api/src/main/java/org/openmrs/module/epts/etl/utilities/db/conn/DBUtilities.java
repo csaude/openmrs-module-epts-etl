@@ -1209,7 +1209,7 @@ public class DBUtilities {
 					if (srcObject == null)
 						throw new ForbiddenOperationException("The source object is null!");
 					
-					paramName = AttDefinedElements.convertTableAttNameToClassAttName(fieldValueName);
+					paramName = fieldValueName;
 					
 					paramValue = getParamValueFromSourceMainObject(srcObject, paramName);
 				} else if (field.getValueType().isConstant()) {
@@ -1227,7 +1227,7 @@ public class DBUtilities {
 					catch (ForbiddenOperationException e) {}
 					
 					//Then get from main object
-					paramName = AttDefinedElements.convertTableAttNameToClassAttName(fieldValueName);
+					paramName = fieldValueName;
 					
 					Object paramValueFromMainObject = null;
 					

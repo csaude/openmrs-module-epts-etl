@@ -149,9 +149,8 @@ public class UniqueKeyInfo {
 			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);
 			
 			if (tableConfiguration.useSharedPKKey()) {
-				AbstractTableConfiguration parentTableInfo = new GenericTabableConfiguration();
+				AbstractTableConfiguration parentTableInfo = new GenericTabableConfiguration(tableConfiguration);
 				
-				parentTableInfo = new GenericTabableConfiguration();
 				parentTableInfo.setTableName(tableConfiguration.getSharePkWith());
 				parentTableInfo.setParent(tableConfiguration.getParent());
 				
@@ -450,5 +449,9 @@ public class UniqueKeyInfo {
 	
 	public boolean containsKey(Key key) {
 		return getKey(key.getName()) != null;
+	}
+	
+	public boolean hasFields() {
+		return utilities.arrayHasElement(this.fields);
 	}
 }

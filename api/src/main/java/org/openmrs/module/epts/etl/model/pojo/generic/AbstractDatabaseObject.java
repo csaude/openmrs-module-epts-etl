@@ -274,12 +274,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			}
 		} else {
 			try {
-				
-				if (tableConfiguration.isAutoIncrementId()) {
-					DatabaseObjectDAO.insertWithObjectId(this, conn);
-				} else {
-					DatabaseObjectDAO.insert(this, tableConfiguration, conn);
-				}
+				DatabaseObjectDAO.insert(this, tableConfiguration, conn);
 			}
 			catch (DBException e) {
 				

@@ -112,6 +112,8 @@ public class SrcConf extends AbstractTableConfiguration {
 		catch (Exception e) {
 			srcConn.finalizeConnection();
 			
+			e.printStackTrace();
+			
 			throw new RuntimeException(e);
 		}
 		

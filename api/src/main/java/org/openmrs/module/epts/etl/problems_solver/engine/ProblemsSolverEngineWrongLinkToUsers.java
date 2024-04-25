@@ -13,7 +13,6 @@ import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
@@ -75,7 +74,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					logDebug(startingStrLog + " STARTING RESOLVE PROBLEMS OF RECORD [" + record + "]");
 					
 					AbstractTableConfiguration personTabConf = AbstractTableConfiguration
-					        .initGenericTabConf("person", getEtlConfiguration().getSrcConf());
+					        .initGenericTabConf("person", getEtlConfiguration().getSrcConf(), getEtlConfiguration().getSrcConf());
 					
 					DatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(getMainSrcTableConf(),
 					    ((DatabaseObject) record).getObjectId(), conn);

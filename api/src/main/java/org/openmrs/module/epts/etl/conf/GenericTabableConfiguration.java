@@ -1,11 +1,25 @@
 package org.openmrs.module.epts.etl.conf;
 
-import java.sql.Connection;
-
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 
 public class GenericTabableConfiguration extends AbstractTableConfiguration {
+	
+	private AbstractTableConfiguration relatedTableConf;
+	
+	public GenericTabableConfiguration() {
+	}
+	
+	public GenericTabableConfiguration(AbstractTableConfiguration relatedTableConf) {
+		this.relatedTableConf = relatedTableConf;
+		
+		if (this.relatedTableConf.isGeneric()) {
+			throw new ForbiddenOperationException(
+			        "The generic table Conf cannot be related to another generic configuration");
+		}
+		
+	}
 	
 	@Override
 	public boolean isGeneric() {
@@ -14,16 +28,17 @@ public class GenericTabableConfiguration extends AbstractTableConfiguration {
 	
 	@Override
 	public AppInfo getRelatedAppInfo() {
-		throw new ForbiddenOperationException("Method forbiden on generic table configuration!");
+		
+		if (this.relatedTableConf == null) {
+			throw new ForbiddenOperationException("The generic table Conf should have a related to use this method");
+			
+		}
+		
+		return this.relatedTableConf.getRelatedAppInfo();
 	}
 	
 	@Override
-	public synchronized void fullLoad(Connection conn) {
-		throw new ForbiddenOperationException("Method forbiden on generic table configuration!");
-	}
-	
-	@Override
-	public Class<DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
-		throw new ForbiddenOperationException("Method forbiden on generic table configuration!");
+	public Class<? extends DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+		return GenericDatabaseObject.class;
 	}
 }

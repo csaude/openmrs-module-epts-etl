@@ -75,6 +75,7 @@ public class MergingRecord {
 		MergingRecord.loadDestParentInfo(this, srcConn, destConn);
 		MergingRecord.loadDestConditionalParentInfo(this, srcConn, destConn);
 		
+		
 		try {
 			record.save(config, destConn);
 			

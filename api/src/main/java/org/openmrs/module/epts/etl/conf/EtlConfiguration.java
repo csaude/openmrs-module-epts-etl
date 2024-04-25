@@ -561,6 +561,8 @@ public class EtlConfiguration extends BaseConfiguration {
 						addToTableConfigurationPull((AbstractTableConfiguration) t);
 						t.setRelatedSrcConf(tc.getSrcConf());
 					}
+					
+					t.setRelatedSrcConf(tc.getSrcConf());
 				}
 				
 				String code = "";

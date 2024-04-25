@@ -92,7 +92,7 @@ public abstract class BaseDAO {
 	        Connection conn) throws DBException {
 		
 		List<T> result;
-		result = search(voClass, sql, params, conn);
+		result = search(loaderHelper, voClass, sql, params, conn);
 		
 		if (utilities.arrayHasElement(result))
 			return result.get(0);

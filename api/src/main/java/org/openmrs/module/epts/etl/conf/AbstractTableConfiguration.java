@@ -550,7 +550,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 					String parentTableName = foreignKeyRS.getString("PKTABLE_NAME");
 					
 					AbstractTableConfiguration referencedTabConf = AbstractTableConfiguration
-					        .initGenericTabConf(parentTableName, this.parent);
+					        .initGenericTabConf(parentTableName, this, this.parent);
 					
 					addParentRefInfo(refCode, childFieldName, referencedTabConf, parentFieldName, conn);
 					
@@ -660,7 +660,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 					String parentFieldName = foreignKeyRS.getString("PKCOLUMN_NAME");
 					
 					AbstractTableConfiguration childTabConf = AbstractTableConfiguration.initGenericTabConf(childTableName,
-					    this.parent);
+					    this, this.parent);
 					
 					addChildRefInfo(refCode, childTabConf, childFieldName, parentFieldName, conn);
 					
@@ -765,14 +765,16 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		return ref;
 	}
 	
-	public static AbstractTableConfiguration initGenericTabConf(String tableName, EtlDataConfiguration parent) {
-		AbstractTableConfiguration tableInfo = parent.getRelatedSyncConfiguration().findPulledTableConfiguration(tableName);
+	public static AbstractTableConfiguration initGenericTabConf(String tableName, AbstractTableConfiguration relatedTabConf,
+	        EtlDataConfiguration parent) {
+		AbstractTableConfiguration tableInfo = null;
+		
+		tableInfo = parent.getRelatedSyncConfiguration().findPulledTableConfiguration(tableName);
 		
 		if (tableInfo == null) {
-			tableInfo = new GenericTabableConfiguration();
+			tableInfo = new GenericTabableConfiguration(relatedTabConf);
 			tableInfo.setTableName(tableName);
 			tableInfo.setParent(parent);
-			
 			parent.getRelatedSyncConfiguration().addToTableConfigurationPull(tableInfo);
 		}
 		
@@ -1405,15 +1407,14 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		return params;
 	}
 	
-	@JsonIgnore
-	public void generateInsertSQLWithoutObjectId() {
+	private void generateInsertSQLWithoutObjectId() {
 		String insertSQLFieldsWithoutObjectId = "";
 		String insertSQLQuestionMarksWithoutObjectId = "";
 		
 		for (Field field : this.fields) {
 			AttDefinedElements attElements = field.getAttDefinedElements();
 			
-			if (attElements.isPartOfObjectId()) {
+			if (!attElements.isPartOfObjectId()) {
 				insertSQLFieldsWithoutObjectId = utilities.concatStrings(insertSQLFieldsWithoutObjectId,
 				    attElements.getSqlInsertFirstPartDefinition());
 				

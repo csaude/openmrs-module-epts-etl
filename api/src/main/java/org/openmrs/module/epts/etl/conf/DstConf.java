@@ -49,11 +49,11 @@ public class DstConf extends AbstractTableConfiguration {
 		return false;
 	}
 	
-	public List<FieldsMapping> getManualFieldsMapping() {
+	public List<FieldsMapping> getMapping() {
 		return mapping;
 	}
 	
-	public void setManualFieldsMapping(List<FieldsMapping> manualFieldsMapping) {
+	public void setMapping(List<FieldsMapping> manualFieldsMapping) {
 		this.mapping = manualFieldsMapping;
 	}
 	
@@ -88,6 +88,10 @@ public class DstConf extends AbstractTableConfiguration {
 		List<Field> myFields = this.getFields();
 		
 		List<String> notAutomaticalMappedFields = new ArrayList<>();
+		
+		if (myFields == null) {
+			System.out.println("Stop");
+		}
 		
 		for (Field field : myFields) {
 			FieldsMapping fm = FieldsMapping.fastCreate(field.getName(), field.getName());
@@ -216,7 +220,7 @@ public class DstConf extends AbstractTableConfiguration {
 				}
 			}
 			
-			if (uk.equals(fakeSrcUk)) {
+			if (fakeSrcUk.hasFields() && uk.equals(fakeSrcUk)) {
 				if (this.joinField == null) {
 					this.joinField = new ArrayList<>();
 				}
@@ -264,8 +268,13 @@ public class DstConf extends AbstractTableConfiguration {
 			mappedObject.setRelatedConfiguration(this);
 			
 			for (FieldsMapping fieldsMapping : this.allMapping) {
+				Object srcValue;
 				
-				Object srcValue = fieldsMapping.retrieveValue(mappedObject, srcObjects, dstAppInfo, srcConn);
+				if (fieldsMapping.getSrcValue() != null) {
+					srcValue = fieldsMapping.getSrcValue();
+				} else {
+					srcValue = fieldsMapping.retrieveValue(mappedObject, srcObjects, dstAppInfo, srcConn);
+				}
 				
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
 			}

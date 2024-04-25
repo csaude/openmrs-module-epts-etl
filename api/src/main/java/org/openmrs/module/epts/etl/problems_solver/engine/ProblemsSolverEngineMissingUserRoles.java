@@ -45,7 +45,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 		super(monitor, limits);
 		
 		this.userRoleTableConf = AbstractTableConfiguration.initGenericTabConf("user_role",
-		    getEtlConfiguration().getSrcConf());
+			getEtlConfiguration().getSrcConf(), getEtlConfiguration().getSrcConf());
 		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());
 	}
 	
