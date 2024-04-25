@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -37,7 +38,8 @@ public class ProcessProgressInfo {
 		
 		File operationStatusFile = operationController.generateOperationStatusFile();
 		
-		if (operationController.isResumable() && operationStatusFile.exists()) {
+		if (operationController.isResumable() && operationStatusFile.exists() && !FileUtilities.isEmpty(operationStatusFile) ) {
+			
 			progressInfo = OperationProgressInfo.loadFromFile(operationController.generateOperationStatusFile());
 			progressInfo.setController(operationController);
 		} else {

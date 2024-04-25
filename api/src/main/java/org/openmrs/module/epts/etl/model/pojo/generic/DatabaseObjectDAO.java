@@ -15,6 +15,7 @@ import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DatabaseObjectDAO extends BaseDAO {
 	
@@ -583,7 +584,14 @@ public class DatabaseObjectDAO extends BaseDAO {
 		if (utilities.stringHasValue(values)) {
 			sql += utilities.removeLastChar(values);
 			
-			executeQueryWithRetryOnError(sql, null, conn);
+			try {
+				executeQueryWithRetryOnError(sql, null, conn);
+			}
+			catch (DBException e) {
+				FileUtilities.write("/data/work/2024q2_data/insert.sql", "============================================================================================================");
+				FileUtilities.write("/data/work/2024q2_data/insert.sql", e.getLocalizedMessage());
+				FileUtilities.write("/data/work/2024q2_data/insert.sql", sql);
+			}
 		}
 	}
 	

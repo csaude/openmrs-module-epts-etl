@@ -80,6 +80,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	private DatabaseObjectLoaderHelper loadHealper;
 	
 	public AbstractTableConfiguration() {
+		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
 	
 	public void clone(AbstractTableConfiguration toCloneFrom) {

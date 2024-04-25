@@ -49,6 +49,10 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	
 	private DatabaseObjectLoaderHelper loadHealper;
 	
+	public QueryDataSourceConfig() {
+		this.loadHealper = new DatabaseObjectLoaderHelper(this);
+	}
+	
 	@Override
 	public DatabaseObjectLoaderHelper getLoadHealper() {
 		return this.loadHealper;
@@ -158,8 +162,6 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 		String query = DBUtilities.replaceSqlParametersWithQuestionMarks(this.getQuery());
 		
 		setFields(DBUtilities.determineFieldsFromQuery(query, conn));
-		
-		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 		
 		this.fullLoaded = true;
 	}

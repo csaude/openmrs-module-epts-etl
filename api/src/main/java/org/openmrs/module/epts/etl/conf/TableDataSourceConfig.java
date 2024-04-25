@@ -9,7 +9,6 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -26,22 +25,11 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	private SrcConf relatedSrcConf;
 	
-	private DatabaseObjectLoaderHelper loadHealper;
-	
 	/*
 	 * The join type between this additional src table with the main src table. It could be INNER or LEFT.
 	 * If empty, a INNER join will be applied if the main table has only one additional src, and will be LEFT join if there are more than one additional src tables 
 	 */
 	private JoinType joinType;
-	
-	@Override
-	public DatabaseObjectLoaderHelper getLoadHealper() {
-		return this.loadHealper;
-	}
-	
-	public void setLoadHealper(DatabaseObjectLoaderHelper loadHealper) {
-		this.loadHealper = loadHealper;
-	}
 	
 	public JoinType getJoinType() {
 		return joinType;
@@ -108,8 +96,6 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 				this.joinType = JoinType.INNER;
 			}
 		}
-		
-		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
 	
 	public String getJoinExtraCondition() {
@@ -153,7 +139,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	        throws DBException {
 		String condition = generateConditionsFields(mainObject);
 		
-		return DatabaseObjectDAO.find(this.loadHealper, this.getSyncRecordClass(srcAppInfo), condition, srcConn);
+		return DatabaseObjectDAO.find(this.getLoadHealper(), this.getSyncRecordClass(srcAppInfo), condition, srcConn);
 	}
 	
 	private String generateConditionsFields(DatabaseObject dbObject) {

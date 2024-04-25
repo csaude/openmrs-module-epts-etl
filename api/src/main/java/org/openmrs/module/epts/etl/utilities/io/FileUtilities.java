@@ -524,11 +524,10 @@ public class FileUtilities {
 		return f.getParentFile();
 	}
 	
-	
 	public static void replaceAllInFile(File file, String toFind, String replacement) {
 		try {
 			Charset charset = StandardCharsets.UTF_8;
-
+			
 			String content = IOUtils.toString(new FileInputStream(file), charset);
 			content = content.replaceAll(toFind, replacement);
 			IOUtils.write(content, new FileOutputStream(file), charset);
@@ -536,5 +535,9 @@ public class FileUtilities {
 		catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public static boolean isEmpty(File file) {
+		return file.length() == 0;
 	}
 }
