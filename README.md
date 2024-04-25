@@ -48,11 +48,11 @@ The etl item configuration section defines the rules of extration, transformatio
 
  ![config-sections](docs/etl-item-conf-overview.png)
 
-The dstConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be ommited if there is no transformation in the process and the destination table field can automatically mapped from the data source.
+The dstConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source.
 
 Bellow are explained the relevant configuration for "srcConf" and "dstConf".
 
-#### The "srcConf"
+### The "srcConf"
 The "srcConf" allow the configuration of datasource in an etl process. The relevant configuration fields are explained bellow
 - *tableName*: table name of the main data source.
 - *parents*: list of configured parents. Note that if there is no additional configuration for the parent, there is no need to include this properitie as it will automatically loaded using the information schema;
@@ -68,19 +68,12 @@ The "srcConf" allow the configuration of datasource in an etl process. The relev
 
 Bellow are additional explanation of complex configuration on "srcConf"
 
-######## Parents configuration
-A parent if configured as an object and can have additional properties. Note that when there are no additional properties you can omit the parent on the list of parents. When the parent appear on the table configuration it can have below properties:
-- *tableName*: the table name
-- *defaultValueDueInconsistency*: default value which will be used when the inconsistency check find any orphan record of this parent
-- *setNullDueInconsistency*: a boolean which indicate that if the record is orphan of this parent then the field can be nulled
+#### Parents configuration
+A parent if configured as an object and can have additional properties. Note that when there are no additional properties you can omit the parent on the list of parents. When you whant to manualy add parent on the etl item configuration it should have the apearence bellow:
+ ![config-sections](docs/parents-conf.png)
 
-######## Conditional parents configuration
-The conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the person_attribute.value=7)  
-A conditional parent is configured as an object and can have bellow properties:  
-- *tableName*: the parent table name
-- *refColumnName*: the name of column which has conditional relationship
-- *conditionField*: the name of column which determines the conditional relationship;
-- *conditionValue*: the conditional value for *conditionField*.
+As can be seen on the image, each parent can have the **tableName** with represents the name of parent table and the **ref** which has the information of references between the main table and its parents. Note that the ref is defined by the *"fieldsMapping"* list which allow the mapping of main table and it parent. Each mapping have optional attribute *"defaultValueDueInconsistency"* which allow to specify a default value when the main table is orphan of that parent. This is important in a merge or copy process. Another property is *"setNullDueInconsistency"* which is a boolean properity which indicate if the parent can be set to null if it is missing. The *"conditionalFields"*  helps to create conditional reference between the main table and its parent. The conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the person_attribute.value=7)  
+
 
 ## Supported processes and its configuration files
 In this section are listed all the avaliable process and the template of its configuration files.
