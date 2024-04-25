@@ -46,7 +46,35 @@ As said before the appsInfo section contains the configurations of source and/or
 ## The etl item configuration
 The etl item configuration section defines the rules of extration, transformation and load. Each operation in a process will perform its task on these item. Below are listed the properties which can appear in an item configuration. Each item can contains two objects representing the data source configuration and destination configuration.
 
- ![config-sections](docs/etl-item-conf-overview.png)
+```
+{
+   "srcConf":{
+      "tableName":"",
+      "extraConditionForExtract":"",
+      "observationDateFields":[
+         
+      ],
+      "sharePkWith":"",
+      "metadata":"",
+      "removeForbidden":"",
+      "uniqueKeys":[
+         
+      ],
+      "parents":[
+         
+      ],
+      "extraTableDataSource":[
+         
+      ],
+      "extraQueryDataSource":[
+         
+      ]
+   },
+   "dstConf":[
+      
+   ]
+}
+```
 
 The dstConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source.
 
@@ -67,12 +95,60 @@ The "srcConf" allow the configuration of datasource in an etl process. The relev
 
 Bellow are additional explanation of complex configuration on "srcConf"
 
+#### Unique Keys
+The *"uniqueKeys"* allow the configuration of src table unique keys. If the table define the unique keys in its metadata then there is no need to manual configure the unique keys. But when needed, the unique keys can be configured following bellow pathern.
+
+``` {
+   "srcConf":{
+      "uniqueKeys":[
+         {
+            "fields":[
+               {
+                  "name":""
+               }
+            ]
+         }
+      ]
+   }
+}
+```
+
 #### Parents configuration
 A parent if configured as an object and can have additional properties. Note that when there are no additional properties you can omit the parent on the list of parents. When you whant to manualy add parent on the etl item configuration it should have the apearence bellow:
- ![config-sections](docs/parents-conf.png)
+```
+		{
+		   "srcConf":{
+			  "parents":[
+				 {
+					"tableName":"",
+					"ref":{
+					   "mapping":[
+						  {
+							 "childFieldName":"",
+							 "parentFieldName":"",
+							 "defaultValueDueInconsistency":"",
+							 "setNullDueInconsistency":"",
+							 "ignorable":""
+						  }
+					   ],
+					   "conditionalFields":[
+						  {
+							 "name":"",
+							 "value":""
+						  }
+					   ]
+					}
+				 }
+			  ]
+		   }
+		}
+```
 
-As can be seen on the image, each parent can have the **tableName** with represents the name of parent table and the **ref** which has the information of references between the main table and its parents. Note that the ref is defined by the *"mapping"* list which allow the mapping of fields between the main table and its parent. Each mapping have optional attribute *"defaultValueDueInconsistency"* which allow to specify a default value when the main table is orphan of that parent. This is important in a merge or copy process. Another property is *"setNullDueInconsistency"* which is a boolean properity which indicate if the parent can be set to null if it is missing. The *"conditionalFields"*  helps to create conditional reference between the main table and its parent. The conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the person_attribute.value=7)  
+#### The extra datasource table configuration
 
+The **"extraTableDataSource"** element, allow the specification of extra tables to be used as data source in addition of the main table. There relevant configuration info for extra table dasource is shown bellow    
+
+As can be seen on the code above, each parent can have the **tableName** with represents the name of parent table and the **ref** which has the information of references between the main table and its parents. Note that the ref is defined by the *"mapping"* list which allow the mapping of fields between the main table and its parent. Each mapping have optional attribute *"defaultValueDueInconsistency"* which allow to specify a default value when the main table is orphan of that parent. This is important in a merge or copy process. Another property is *"setNullDueInconsistency"* which is a boolean properity which indicate if the parent can be set to null if it is missing. The *"conditionalFields"*  helps to create conditional reference between the main table and its parent. The conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the person_attribute.value=7)  
 
 ### DstConf
 
