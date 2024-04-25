@@ -66,7 +66,7 @@ public class SrcConf extends AbstractTableConfiguration {
 							fm = new ArrayList<>();
 							
 							for (RefInfo ref : pInfo) {
-								for (RefMapping map : ref.getFieldsMapping()) {
+								for (RefMapping map : ref.getMapping()) {
 									fm.add(new FieldsMapping(map.getChildField().getName(), "",
 									        map.getParentField().getName()));
 								}
@@ -79,7 +79,7 @@ public class SrcConf extends AbstractTableConfiguration {
 							
 							if (pInfo != null) {
 								for (RefInfo ref : pInfo) {
-									for (RefMapping map : ref.getFieldsMapping()) {
+									for (RefMapping map : ref.getMapping()) {
 										fm.add(new FieldsMapping(map.getParentField().getName(), "",
 										        map.getChildField().getName()));
 									}

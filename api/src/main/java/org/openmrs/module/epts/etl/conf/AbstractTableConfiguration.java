@@ -507,7 +507,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 				r.setChildTableConf(this);
 				r.setParentTableConf(p);
 				
-				for (RefMapping map : r.getFieldsMapping()) {
+				for (RefMapping map : r.getMapping()) {
 					map.setRefInfo(r);
 					
 					Field field = utilities.findOnArray(this.fields, new Field(map.getChildFieldName()));
@@ -569,7 +569,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 							if (ref.equals(configuredRef)) {
 								ref.setConditionalFields(configuredRef.getConditionalFields());
 								
-								for (RefMapping map : ref.getFieldsMapping()) {
+								for (RefMapping map : ref.getMapping()) {
 									RefMapping configuredMap = configuredRef.findRefMapping(map.getChildFieldName(),
 									    map.getParentFieldName());
 									

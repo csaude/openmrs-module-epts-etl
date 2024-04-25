@@ -58,7 +58,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			
 			if (pInfo != null) {
 				for (RefInfo ref : pInfo) {
-					for (RefMapping map : ref.getFieldsMapping()) {
+					for (RefMapping map : ref.getMapping()) {
 						fm.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
 					}
 				}
@@ -69,7 +69,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 				
 				if (pInfo != null) {
 					for (RefInfo ref : pInfo) {
-						for (RefMapping map : ref.getFieldsMapping()) {
+						for (RefMapping map : ref.getMapping()) {
 							fm.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
 						}
 					}

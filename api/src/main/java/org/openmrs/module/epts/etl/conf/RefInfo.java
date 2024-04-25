@@ -26,7 +26,7 @@ public class RefInfo {
 	
 	private String refCode;
 	
-	private List<RefMapping> fieldsMapping;
+	private List<RefMapping> mapping;
 	
 	private AbstractTableConfiguration childTableConf;
 	
@@ -70,7 +70,7 @@ public class RefInfo {
 	}
 	
 	public boolean isSimpleMapping() {
-		return utilities.arraySize(this.fieldsMapping) <= 1;
+		return utilities.arraySize(this.mapping) <= 1;
 	}
 	
 	public RefMapping getSimpleRefMapping() {
@@ -78,19 +78,19 @@ public class RefInfo {
 			throw new ForbiddenOperationException("The ref is not simple!");
 		}
 		
-		return this.fieldsMapping.get(0);
+		return this.mapping.get(0);
 	}
 	
 	public void addMapping(RefMapping mapping) {
-		if (this.fieldsMapping == null) {
-			this.fieldsMapping = new ArrayList<>();
+		if (this.mapping == null) {
+			this.mapping = new ArrayList<>();
 		}
 		
-		if (this.fieldsMapping.contains(mapping))
+		if (this.mapping.contains(mapping))
 			throw new DuplicateMappingException("The maaping you tried to add alredy exists on mapping field on table ["
 			        + this.getChildTableName() + "]");
 		
-		this.fieldsMapping.add(mapping);
+		this.mapping.add(mapping);
 	}
 	
 	public String getRefCode() {
@@ -150,12 +150,12 @@ public class RefInfo {
 		        + " of table " + this.parentTableConf.getTableName() + " is not listed inparents!");
 	}
 	
-	public List<RefMapping> getFieldsMapping() {
-		return fieldsMapping;
+	public List<RefMapping> getMapping() {
+		return mapping;
 	}
 	
-	public void setFieldsMapping(List<RefMapping> fieldsMapping) {
-		this.fieldsMapping = fieldsMapping;
+	public void setMapping(List<RefMapping> mapping) {
+		this.mapping = mapping;
 	}
 	
 	@Override
@@ -163,7 +163,7 @@ public class RefInfo {
 	public String toString() {
 		String str = "";
 		
-		for (RefMapping map : this.fieldsMapping) {
+		for (RefMapping map : this.mapping) {
 			if (utilities.stringHasValue(str)) {
 				str += ",";
 			}
@@ -195,14 +195,14 @@ public class RefInfo {
 			return false;
 		}
 		
-		for (RefMapping map : this.fieldsMapping) {
-			if (!other.fieldsMapping.contains(map)) {
+		for (RefMapping map : this.mapping) {
+			if (!other.mapping.contains(map)) {
 				return false;
 			}
 		}
 		
-		for (RefMapping map : other.fieldsMapping) {
-			if (!this.fieldsMapping.contains(map)) {
+		for (RefMapping map : other.mapping) {
+			if (!this.mapping.contains(map)) {
 				return false;
 			}
 		}
@@ -212,7 +212,7 @@ public class RefInfo {
 	
 	public RefMapping getRefMappingByChildClassAttName(String attName) {
 		
-		for (RefMapping map : this.fieldsMapping) {
+		for (RefMapping map : this.mapping) {
 			if (map.getChildField().getNameAsClassAtt().equals(attName)) {
 				return map;
 			}
@@ -224,7 +224,7 @@ public class RefInfo {
 	public List<RefMapping> getRefMappingByParentTableAtt(String attName) {
 		List<RefMapping> referenced = new ArrayList<>();
 		
-		for (RefMapping map : this.fieldsMapping) {
+		for (RefMapping map : this.mapping) {
 			if (map.getParentField().getName().equals(attName)) {
 				referenced.add(map);
 			}
@@ -240,7 +240,7 @@ public class RefInfo {
 	public RefMapping findRefMapping(String childField, String parentField) {
 		RefMapping toFind = RefMapping.fastCreate(childField, parentField);
 		
-		for (RefMapping map : this.fieldsMapping) {
+		for (RefMapping map : this.mapping) {
 			if (map.equals(toFind))
 				return map;
 		}
@@ -251,7 +251,7 @@ public class RefInfo {
 	public List<Key> extractParentFieldsFromRefMapping() {
 		List<Key> keys = new ArrayList<>();
 		
-		for (RefMapping f : this.fieldsMapping) {
+		for (RefMapping f : this.mapping) {
 			keys.add(f.getParentField());
 		}
 		
@@ -261,7 +261,7 @@ public class RefInfo {
 	public List<Key> extractChildFieldsFromRefMapping() {
 		List<Key> keys = new ArrayList<>();
 		
-		for (RefMapping f : this.fieldsMapping) {
+		for (RefMapping f : this.mapping) {
 			keys.add(f.getChildField());
 		}
 		

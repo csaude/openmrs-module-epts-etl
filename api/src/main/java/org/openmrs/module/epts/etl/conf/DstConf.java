@@ -19,9 +19,9 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private List<FieldsMapping> joinField;
 	
-	private List<FieldsMapping> allFieldsMapping;
+	private List<FieldsMapping> allMapping;
 	
-	private List<FieldsMapping> manualFieldsMapping;
+	private List<FieldsMapping> mapping;
 	
 	private AppInfo relatedAppInfo;
 	
@@ -50,33 +50,33 @@ public class DstConf extends AbstractTableConfiguration {
 	}
 	
 	public List<FieldsMapping> getManualFieldsMapping() {
-		return manualFieldsMapping;
+		return mapping;
 	}
 	
 	public void setManualFieldsMapping(List<FieldsMapping> manualFieldsMapping) {
-		this.manualFieldsMapping = manualFieldsMapping;
+		this.mapping = manualFieldsMapping;
 	}
 	
-	public List<FieldsMapping> getAllFieldsMapping() {
-		return allFieldsMapping;
+	public List<FieldsMapping> getAllMapping() {
+		return allMapping;
 	}
 	
 	private void addMapping(FieldsMapping fm) throws ForbiddenOperationException {
-		if (this.allFieldsMapping == null) {
-			this.allFieldsMapping = new ArrayList<FieldsMapping>();
+		if (this.allMapping == null) {
+			this.allMapping = new ArrayList<FieldsMapping>();
 		}
 		
-		if (this.allFieldsMapping.contains(fm))
+		if (this.allMapping.contains(fm))
 			throw new ForbiddenOperationException("The field [" + fm + "] already exists on mapping");
 		
-		this.allFieldsMapping.add(fm);
+		this.allMapping.add(fm);
 	}
 	
 	public void generateAllFieldsMapping(Connection conn) throws DBException {
-		this.allFieldsMapping = new ArrayList<>();
+		this.allMapping = new ArrayList<>();
 		
-		if (utilities.arrayHasElement(this.manualFieldsMapping)) {
-			for (FieldsMapping fm : this.manualFieldsMapping) {
+		if (utilities.arrayHasElement(this.mapping)) {
+			for (FieldsMapping fm : this.mapping) {
 				if (!utilities.stringHasValue(fm.getDataSourceName())) {
 					fm.setDataSourceName(getParent().getSrcConf().getTableName());
 				}
@@ -92,7 +92,7 @@ public class DstConf extends AbstractTableConfiguration {
 		for (Field field : myFields) {
 			FieldsMapping fm = FieldsMapping.fastCreate(field.getName(), field.getName());
 			
-			if (!this.allFieldsMapping.contains(fm)) {
+			if (!this.allMapping.contains(fm)) {
 				
 				//The main src has high priority for being the source of any field os dst table
 				if (this.getSrcConf().containsField(field.getName())) {
@@ -143,7 +143,7 @@ public class DstConf extends AbstractTableConfiguration {
 	public String getMappedField(String srcField) {
 		List<FieldsMapping> machedFields = new ArrayList<FieldsMapping>();
 		
-		for (FieldsMapping field : this.allFieldsMapping) {
+		for (FieldsMapping field : this.allMapping) {
 			if (field.getSrcField().equals(srcField)) {
 				machedFields.add(field);
 				
@@ -263,7 +263,7 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			mappedObject.setRelatedConfiguration(this);
 			
-			for (FieldsMapping fieldsMapping : this.allFieldsMapping) {
+			for (FieldsMapping fieldsMapping : this.allMapping) {
 				
 				Object srcValue = fieldsMapping.retrieveValue(mappedObject, srcObjects, dstAppInfo, srcConn);
 				
