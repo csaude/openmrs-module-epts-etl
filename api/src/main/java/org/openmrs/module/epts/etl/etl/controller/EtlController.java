@@ -5,8 +5,8 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
-import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
@@ -26,14 +26,14 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class EtlController extends OperationController {
+public class EtlController extends SiteOperationController {
 	
 	private AppInfo dstApp;
 	
 	private AppInfo srcApp;
 	
-	public EtlController(ProcessController processController, EtlOperationConfig operationConfig) {
-		super(processController, operationConfig);
+	public EtlController(ProcessController processController, EtlOperationConfig operationConfig, String originLocationCode) {
+		super(processController, operationConfig, originLocationCode);
 		
 		this.srcApp = getConfiguration().find(AppInfo.init("main"));
 		this.dstApp = getConfiguration().find(AppInfo.init("destination"));

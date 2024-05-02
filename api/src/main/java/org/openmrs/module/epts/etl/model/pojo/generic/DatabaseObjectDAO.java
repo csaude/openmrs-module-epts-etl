@@ -548,6 +548,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		sql += " VALUES";
 		
+		sql = sql.toLowerCase();
+		
 		String values = "";
 		
 		for (int i = 0; i < objects.size(); i++) {

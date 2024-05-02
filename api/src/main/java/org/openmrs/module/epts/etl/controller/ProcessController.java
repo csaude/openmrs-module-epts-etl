@@ -160,6 +160,8 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	public void finalize() {
 		setFinalized(true);
+		
+		getConfiguration().finalizeAllApps();
 	}
 	
 	@Override
@@ -614,7 +616,14 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	@JsonIgnore
 	public boolean processIsAlreadyFinished() {
-		return this.processInfo.generateProcessStatusFile().exists();
+		for (OperationController controller : this.operationsControllers) {
+			if (!controller.operationIsAlreadyFinished()) {
+				return false;
+			}
+		}
+		
+		return true;
+		
 	}
 	
 	@Override

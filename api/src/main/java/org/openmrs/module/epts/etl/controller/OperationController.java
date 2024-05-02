@@ -164,18 +164,18 @@ public abstract class OperationController implements Controller {
 		
 		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
 		
-		for (EtlItemConfiguration syncInfo : allSync) {
-			if (operationTableIsAlreadyFinished(syncInfo)) {
+		for (EtlItemConfiguration config : allSync) {
+			if (operationTableIsAlreadyFinished(config)) {
 				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Confinguration '"
-				        + syncInfo.getConfigCode() + "' was already finished!").toUpperCase());
+				        + config.getConfigCode() + "' was already finished!").toUpperCase());
 			} else if (stopRequested()) {
 				logWarn("ABORTING THE ENGINE PROCESS DUE STOP REQUESTED!");
 				break;
 			} else {
 				
-				if (!syncInfo.isFullLoaded()) {
+				if (!config.isFullLoaded()) {
 					try {
-						syncInfo.fullLoad();
+						config.fullLoad();
 					}
 					catch (DBException e) {
 						e.printStackTrace();
@@ -185,16 +185,16 @@ public abstract class OperationController implements Controller {
 				}
 				
 				logInfo(("Starting operation '" + getOperationType().name().toLowerCase() + "' On Etl Confinguration '"
-				        + syncInfo.getConfigCode() + "'").toUpperCase());
+				        + config.getConfigCode() + "'").toUpperCase());
 				
 				TableOperationProgressInfo progressInfo = null;
 				
 				try {
-					progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
+					progressInfo = this.progressInfo.retrieveProgressInfo(config);
 				}
 				catch (NullPointerException e) {
 					logErr("Error on thread " + this.getControllerId()
-					        + ": Progress meter not found for Etl Confinguration [" + syncInfo.getConfigCode() + "].");
+					        + ": Progress meter not found for Etl Confinguration [" + config.getConfigCode() + "].");
 					
 					e.printStackTrace();
 					
@@ -202,10 +202,10 @@ public abstract class OperationController implements Controller {
 				}
 				
 				if (this.progressInfo.getItemsProgressInfo() == null) {
-					progressInfo = this.progressInfo.retrieveProgressInfo(syncInfo);
+					progressInfo = this.progressInfo.retrieveProgressInfo(config);
 				}
 				
-				EngineMonitor engineMonitor = EngineMonitor.init(this, syncInfo, progressInfo);
+				EngineMonitor engineMonitor = EngineMonitor.init(this, config, progressInfo);
 				
 				OpenConnection conn = getDefaultApp().openConnection();
 				
@@ -229,22 +229,22 @@ public abstract class OperationController implements Controller {
 				
 				if (stopRequested() && engineMonitor.isStopped()) {
 					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
-					        + syncInfo.getConfigCode() + "' is stopped successifuly!").toUpperCase());
+					        + config.getConfigCode() + "' is stopped successifuly!").toUpperCase());
 					break;
 				} else {
 					if (engineMonitor.getMainEngine() != null) {
 						
 						if (!getOperationConfig().isRunOnce()) {
-							markTableOperationAsFinished(syncInfo);
+							markTableOperationAsFinished(config);
 						}
 					} else {
 						if (!getOperationConfig().isRunOnce()) {
-							markTableOperationAsFinished(syncInfo);
+							markTableOperationAsFinished(config);
 						}
 					}
 					
 					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
-					        + syncInfo.getConfigCode() + "' is finished!").toUpperCase());
+					        + config.getConfigCode() + "' is finished!").toUpperCase());
 					
 					if (getOperationConfig().isRunOnce()) {
 						break;
@@ -325,8 +325,16 @@ public abstract class OperationController implements Controller {
 		return false;
 	}
 	
-	private boolean operationIsAlreadyFinished() {
-		return this.progressInfo.isFinished();
+	public boolean operationIsAlreadyFinished() {
+		
+		for (EtlItemConfiguration config : getEtlConfiguration()) {
+			if (!operationTableIsAlreadyFinished(config)) {
+				return false;
+			}
+		}
+		
+		return true;
+		
 	}
 	
 	public String getControllerId() {

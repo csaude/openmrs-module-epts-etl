@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 
-import javax.ws.rs.ForbiddenException;
-
 import org.apache.commons.io.IOUtils;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
@@ -254,7 +252,8 @@ public class EtlConfiguration extends BaseConfiguration {
 	public void setProcessType(SyncProcessType processType) {
 		
 		if (processType != null && !processType.isSupportedProcessType()) {
-			throw new ForbiddenException("The 'processType' of syncConf file must be in " + SyncProcessType.values());
+			throw new ForbiddenOperationException(
+			        "The 'processType' of syncConf file must be in " + SyncProcessType.values());
 		}
 		
 		this.processType = processType;
@@ -280,7 +279,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public boolean isEtl() {
+	public boolean isEtlProcess() {
 		return processType.isEtl();
 	}
 	
@@ -589,7 +588,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	}
 	
 	public boolean supportMultipleDestination() {
-		return this.isEtl();
+		return this.isEtlProcess();
 	}
 	
 	private void addConfiguredTable(AbstractTableConfiguration tableConfiguration) {
@@ -824,7 +823,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		
 		List<EtlOperationType> supportedOperations = null;
 		
-		if (isEtl()) {
+		if (isEtlProcess()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInEtlProcess();
 		} else if (isPojoGeneration()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInPojoGenerationProcess();
@@ -1086,7 +1085,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	public boolean isSupposedToHaveOriginAppCode() {
 		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isDBQuickMergeProcess()
 		        || this.isDBQuickMergeWithEntityGenerationDBProcess() || this.isDBInconsistencyCheckProcess()
-		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess();
+		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess() || this.isEtlProcess();
 	}
 	
 	public boolean isSupposedToRunInDestination() {
@@ -1111,12 +1110,40 @@ public class EtlConfiguration extends BaseConfiguration {
 		}
 	}
 	
+	@SuppressWarnings("rawtypes")
 	public String getParamValue(String paramName) {
 		if (this.params != null) {
 			return this.params.get(paramName);
 		}
 		
-		return null;
+		String[] paramElements = paramName.split("\\.");
+		
+		Object paramValue = this;
+		
+		//Try to lookup for parameter inside the configuration fields
+		for (String paramElement : paramElements) {
+			
+			String[] arrayParamElements = paramElement.split("\\[");
+			
+			String simpleParamName = arrayParamElements[0];
+			
+			try {
+				if (paramValue instanceof List) {
+					
+					int pos = Integer.parseInt((arrayParamElements[1]).split("\\]")[0]);
+					
+					paramValue = ((List) paramValue).get(pos);
+				} else {
+					paramValue = utilities.getFieldValue(paramValue, simpleParamName);
+				}
+				
+			}
+			catch (ForbiddenOperationException e) {
+				return null;
+			}
+		}
+		
+		return paramValue.toString();
 	}
 	
 	public String getClassPath() {

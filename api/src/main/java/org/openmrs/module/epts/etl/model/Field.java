@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class Field implements Serializable {
 	
-	static CommonUtilities utilities = CommonUtilities.getInstance();
+	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private static final long serialVersionUID = 1L;
 	

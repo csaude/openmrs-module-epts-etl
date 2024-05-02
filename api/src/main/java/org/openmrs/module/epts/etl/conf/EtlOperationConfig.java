@@ -474,7 +474,7 @@ public class EtlOperationConfig extends BaseConfiguration {
 	private OperationController generateSingle(ProcessController parent, String appOriginCode, Connection conn) {
 		
 		if (isEtl()) {
-			return new EtlController(parent, this);
+			return new EtlController(parent, this, appOriginCode);
 		} else if (isDatabasePreparationOperation()) {
 			return new DatabasePreparationController(parent, this);
 		} else if (isPojoGeneration()) {
@@ -523,7 +523,7 @@ public class EtlOperationConfig extends BaseConfiguration {
 		String errorMsg = "";
 		int errNum = 0;
 		
-		if (this.getRelatedSyncConfig().isEtl()) {
+		if (this.getRelatedSyncConfig().isEtlProcess()) {
 			if (!this.canBeRunInEtlProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in Etl process\n";

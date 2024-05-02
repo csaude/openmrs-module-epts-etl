@@ -155,6 +155,9 @@ public class ProcessStarter implements ControllerStarter {
 				catch (IOException e) {
 					throw new RuntimeException(e);
 				}
+				finally {
+					controller.finalize();
+				}
 			} else {
 				controller.finalize();
 			}

@@ -57,7 +57,8 @@ public class QuickTest {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		searchRecords();
+		filderTokenToFile();
+		
 	}
 	
 	public static void searchRecords() throws IOException, DBException {
@@ -121,6 +122,17 @@ public class QuickTest {
 		finally {
 			dstConn.finalizeConnection();
 		}
+	}
+	
+	public static void filderTokenToFile() throws IOException {
+		List<String> allLines = FileUtilities.readAllFileAsListOfString("D:/ORG/C-SAUDE/PROJECTOS/Mozart/etl/dbs.txt");
+		
+		for (String str : allLines) {
+			if (str.endsWith("new")) {
+				FileUtilities.write("D:/ORG/C-SAUDE/PROJECTOS/Mozart/etl/dbs_new.txt", str);
+			}
+		}
+		
 	}
 	
 	public static void countAll() throws IOException, DBException {
