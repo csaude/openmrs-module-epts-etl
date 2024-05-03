@@ -21,29 +21,20 @@
 		   "srcConf":{
 			  "tableName":"",
 			  "extraConditionForExtract":"",
-			  "observationDateFields":[
-				 
-			  ],
+			  "observationDateFields":[],
 			  "sharePkWith":"",
 			  "metadata":"",
 			  "removeForbidden":"",
-			  "uniqueKeys":[
-				 
-			  ],
-			  "parents":[
-				 
-			  ],
-			  "extraTableDataSource":[
-				 
-			  ],
-			  "extraQueryDataSource":[
-				 
-			  ]
+			  "uniqueKeys":[],
+			  "parents":[],
+			  "extraTableDataSource":[],
+			  "extraQueryDataSource":[]
 		   },
-		   "dstConf":[
-			  
-		   ]
+		   
+		   "dstConf":[]
 		}
+		
+		
 		{
 		   "srcConf":{
 			  "parents":[
@@ -70,9 +61,33 @@
 			  ]
 		   }
 		}
+		{
+		   "srcConf":{
+			"uniqueKeys": [
+				{
+					"fields": [
+									{
+										"name": ""
+									}
+					]
+				}
+			]
+			}
+			
 		
 		
-		
+            "extraTableDataSource":[
+               {
+                  "tableName":"",
+                  "joinFields":[
+                     {
+                        "srcField":"",
+                        "dstField":""
+                     }
+                  ]
+               }
+            ]
+			
 	        
 		"dstConf":[
             {
