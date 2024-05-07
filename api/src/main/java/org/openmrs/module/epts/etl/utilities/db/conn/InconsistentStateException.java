@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.openmrs.module.epts.etl.conf.RefInfo;
-import org.openmrs.module.epts.etl.exceptions.SyncExeption;
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
  * 
  * @author jpboane
  */
-public class InconsistentStateException extends SyncExeption {
+public class InconsistentStateException extends EtlException {
 	
 	private static final long serialVersionUID = 4995578586770680131L;
 	

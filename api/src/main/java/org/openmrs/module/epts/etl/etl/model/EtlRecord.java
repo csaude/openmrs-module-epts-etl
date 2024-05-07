@@ -36,8 +36,9 @@ public class EtlRecord {
 		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(this.config.getUniqueKeys(), this.record));
 	}
 	
-	public void load(Connection srcConn, Connection destConn) throws DBException {
-		doSave(srcConn, destConn);
+	public void merge(Connection srcConn, Connection destConn) throws DBException {
+		
+		consolidateAndSaveData(srcConn, destConn);
 		
 		if (writeOperationHistory) {
 			save(srcConn);
@@ -48,14 +49,15 @@ public class EtlRecord {
 		return config;
 	}
 	
-	private void doSave(Connection srcConn, Connection destConn) throws DBException {
+	private void consolidateAndSaveData(Connection srcConn, Connection destConn)
+	        throws ParentNotYetMigratedException, DBException {
 		if (!config.isFullLoaded())
 			config.fullLoad();
 		
 		try {
 			record.save(config, destConn);
 			
-			if (record.getObjectId().isSimpleNumericKey()) {
+			if (config.useSimpleNumericPk()) {
 				this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
 			}
 			
@@ -73,13 +75,15 @@ public class EtlRecord {
 					
 					((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 					
-					if (record.getObjectId().isSimpleNumericKey()) {
+					if (config.useSimpleNumericPk()) {
 						this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
 					}
 				}
+				
 			} else
 				throw e;
 		}
+		
 	}
 	
 	public void resolveConflict(Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException {
@@ -106,7 +110,7 @@ public class EtlRecord {
 		return record;
 	}
 	
-	public static void loadAll(List<EtlRecord> mergingRecs, Connection srcConn, OpenConnection dstConn)
+	public static void mergeAll(List<EtlRecord> mergingRecs, Connection srcConn, OpenConnection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		if (!utilities.arrayHasElement(mergingRecs)) {
 			return;
@@ -125,12 +129,13 @@ public class EtlRecord {
 		}
 		
 		DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn);
+		
 	}
 	
-	public static void loadAll(Map<String, List<EtlRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn)
+	public static void mergeAll(Map<String, List<EtlRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		for (String key : mergingRecs.keySet()) {
-			loadAll(mergingRecs.get(key), srcConn, dstConn);
+			mergeAll(mergingRecs.get(key), srcConn, dstConn);
 		}
 	}
 }

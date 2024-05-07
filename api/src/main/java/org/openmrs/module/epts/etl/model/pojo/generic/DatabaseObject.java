@@ -12,7 +12,7 @@ import org.openmrs.module.epts.etl.conf.RefInfo;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.epts.etl.exceptions.SyncExeption;
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -88,6 +88,8 @@ public interface DatabaseObject extends SyncRecord {
 	 * @param tabConf the table configuration
 	 */
 	public abstract void loadObjectIdData(AbstractTableConfiguration tabConf);
+	
+	public abstract DatabaseObject getSharedPkObj();
 	
 	/**
 	 * Consolidate data for database consistency
@@ -191,7 +193,7 @@ public interface DatabaseObject extends SyncRecord {
 				tableConfiguration.fullLoad();
 			}
 			catch (DBException e) {
-				throw new SyncExeption(e) {
+				throw new EtlException(e) {
 					
 					private static final long serialVersionUID = 6237531946353999983L;
 				};
@@ -227,6 +229,14 @@ public interface DatabaseObject extends SyncRecord {
 		
 		return utils.parseListToArray(values);
 	}
+	
+	/**
+	 * Retrieves the objects from extra-data source related to this object if table Configuration of
+	 * this object is the main source and it has extra data source configuration
+	 * 
+	 * @return the list of extra datasource objects
+	 */
+	List<DatabaseObject> getExtraDataSourceObjects();
 	
 	default void setRelatedConfiguration(DatabaseObjectConfiguration config) {
 	}
@@ -268,5 +278,51 @@ public interface DatabaseObject extends SyncRecord {
 	}
 	
 	public abstract void fastCreateSimpleNumericKey(long i);
+	
+	public abstract void loadWithDefaultValues();
+	
+	/**
+	 * Checks if there are recursive relashioship between the {@link #getRelatedConfiguration()} and
+	 * the one passed by parameter
+	 * 
+	 * @param otherTabConf the related configuration against what the recursive relationship will be
+	 *            checked
+	 * @param conn
+	 * @return true if the recursive relationship can be resolved
+	 * @throws ForbiddenOperationException
+	 * @throws DBException
+	 */
+	public default boolean checkIfAllRelationshipCanBeresolved(AbstractTableConfiguration otherTabConf, Connection conn)
+	        throws DBException, ForbiddenOperationException {
+		
+		if (otherTabConf.getDefaultObject(conn) != null) {
+			return true;
+		}
+		
+		if (getRelatedConfiguration() == null) {
+			throw new ForbiddenOperationException("The related table configuration is not set");
+		}
+		
+		if (!(getRelatedConfiguration() instanceof AbstractTableConfiguration)) {
+			throw new ForbiddenOperationException("The related configuration should be type of AbstractTableConfiguration");
+		}
+		
+		AbstractTableConfiguration thisTabConf = (AbstractTableConfiguration) getRelatedConfiguration();
+		
+		if (!thisTabConf.isFullLoaded()) {
+			thisTabConf.fullLoad(conn);
+		}
+		
+		if (utils.arrayHasElement(thisTabConf.getParentRefInfo())) {
+			for (RefInfo ref : thisTabConf.getParentRefInfo()) {
+				//Recursive relashionship
+				if (ref.getParentTableName().equals(otherTabConf.getTableName())) {
+					return false;
+				}
+			}
+		}
+		
+		return true;
+	}
 	
 }

@@ -124,11 +124,15 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 		
 		if (!existInconsistenceInfoTable()) {
-			generateInconsistenceInfoTable();
+			createInconsistenceInfoTable();
 		}
 		
 		if (!existOperationProgressInfoTable()) {
-			generateTableOperationProgressInfo();
+			createTableOperationProgressInfo();
+		}
+		
+		if (!existsDefaultGeneratedObjectKeyTable()) {
+			createDefaultGeneratedObjectKeyTable();
 		}
 		
 		OpenConnection conn = getDefaultApp().openConnection();
@@ -748,6 +752,27 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
+	public boolean existsDefaultGeneratedObjectKeyTable() {
+		OpenConnection conn = openConnection();
+		
+		String schema = getConfiguration().getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY;
+		
+		try {
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminated();
+			conn.finalizeConnection();
+		}
+	}
+	
 	public boolean existOperationProgressInfoTable() {
 		OpenConnection conn = openConnection();
 		
@@ -769,7 +794,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-	private void generateTableOperationProgressInfo() throws DBException {
+	private void createTableOperationProgressInfo() throws DBException {
 		
 		EtlConfiguration config = getConfiguration();
 		
@@ -812,7 +837,48 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-	private void generateInconsistenceInfoTable() throws DBException {
+	private void createDefaultGeneratedObjectKeyTable() throws DBException {
+		OpenConnection conn = openConnection();
+		
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		String schema = getConfiguration().getSyncStageSchema();
+		
+		String tableName = EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY;
+		
+		sql += "CREATE TABLE " + schema + "." + tableName + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("table_name", 30, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("column_name", 30, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_value", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_key".toLowerCase(), "table_name, column_name",
+		    conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
+		
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+			
+			st.close();
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void createInconsistenceInfoTable() throws DBException {
 		OpenConnection conn = openConnection();
 		
 		String notNullConstraint = "NOT NULL";

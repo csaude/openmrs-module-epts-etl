@@ -3,8 +3,11 @@ package org.openmrs.module.epts.etl.conf;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
+import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
@@ -33,7 +36,23 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private final String stringLock = new String("LOCK_STRING");
 	
+	private List<String> prefferredDataSource;
+	
+	private List<EtlDataSource> allAvaliableDataSource;
+	
+	private List<EtlDataSource> allNotPrefferredDataSource;
+	
+	private List<EtlDataSource> allPrefferredDataSource;
+	
 	public DstConf() {
+	}
+	
+	public List<String> getPrefferredDataSource() {
+		return prefferredDataSource;
+	}
+	
+	public void setPrefferredDataSource(List<String> prefferredDataSource) {
+		this.prefferredDataSource = prefferredDataSource;
 	}
 	
 	public List<FieldsMapping> getJoinField() {
@@ -72,76 +91,130 @@ public class DstConf extends AbstractTableConfiguration {
 		this.allMapping.add(fm);
 	}
 	
+	private EtlDataSource findDataSource(String dsName) {
+		for (EtlDataSource ds : this.allAvaliableDataSource) {
+			if (ds.getName().equals(dsName)) {
+				return ds;
+			}
+		}
+		
+		return null;
+	}
+	
 	public void generateAllFieldsMapping(Connection conn) throws DBException {
 		this.allMapping = new ArrayList<>();
 		
+		List<String> avaliableInMultiDataSources = new ArrayList<>();
+		List<String> notAvaliableInSpecifiedDataSource = new ArrayList<>();
+		List<String> notAvaliableInAnyDataSource = new ArrayList<>();
+		
 		if (utilities.arrayHasElement(this.mapping)) {
 			for (FieldsMapping fm : this.mapping) {
+				
 				if (!utilities.stringHasValue(fm.getDataSourceName())) {
-					fm.setDataSourceName(getParent().getSrcConf().getTableName());
+					try {
+						tryToLoadDataSourceToFieldMapping(fm);
+						
+						addMapping(fm);
+						
+					}
+					catch (FieldNotAvaliableInAnyDataSource e) {
+						notAvaliableInAnyDataSource.add(fm.getSrcField());
+					}
+					catch (FieldAvaliableInMultipleDataSources e) {
+						avaliableInMultiDataSources.add(fm.getSrcField());
+					}
+					
+				} else {
+					EtlDataSource ds = findDataSource(fm.getDataSourceName());
+					
+					if (ds == null) {
+						throw new NoSuchElementException("The DataSource '" + fm.getDataSourceName() + "' cannot be found!");
+					}
+					
+					if (!ds.containsField(fm.getSrcField())) {
+						notAvaliableInSpecifiedDataSource.add(fm.getSrcField());
+					}
+					
+					addMapping(fm);
 				}
 				
-				addMapping(fm);
 			}
 		}
 		
 		List<Field> myFields = this.getFields();
 		
-		List<String> notAutomaticalMappedFields = new ArrayList<>();
-		
-		if (myFields == null) {
-			System.out.println("Stop");
-		}
-		
 		for (Field field : myFields) {
 			FieldsMapping fm = FieldsMapping.fastCreate(field.getName(), field.getName());
 			
 			if (!this.allMapping.contains(fm)) {
+				try {
+					tryToLoadDataSourceToFieldMapping(fm);
+					
+					addMapping(fm);
+				}
+				catch (FieldNotAvaliableInAnyDataSource e) {
+					notAvaliableInAnyDataSource.add(fm.getSrcField());
+				}
+				catch (FieldAvaliableInMultipleDataSources e) {
+					avaliableInMultiDataSources.add(fm.getSrcField());
+				}
+			}
+			
+		}
+		
+		if (!avaliableInMultiDataSources.isEmpty()) {
+			throw new ForbiddenOperationException("The destination fields " + avaliableInMultiDataSources.toString()
+			        + " cannot be automatically mapped as them occurrs in multiple src. Please configure them manually or specify the datasource order preference in prefferredDataSource array ");
+		}
+		
+		if (!notAvaliableInAnyDataSource.isEmpty()) {
+			throw new ForbiddenOperationException("The destination fields " + notAvaliableInAnyDataSource.toString()
+			        + " cannot be automatically mapped as them do not occurr in any src. Please configure them manually!");
+		}
+		
+		if (!notAvaliableInSpecifiedDataSource.isEmpty()) {
+			throw new ForbiddenOperationException("The source fields for destination fields ["
+			        + notAvaliableInSpecifiedDataSource.toString() + "] do not occurs in specified data sources !");
+		}
+	}
+	
+	private void tryToLoadDataSourceToFieldMapping(FieldsMapping fm)
+	        throws FieldNotAvaliableInAnyDataSource, FieldAvaliableInMultipleDataSources {
+		int qtyOccurences = 0;
+		
+		for (EtlDataSource pref : this.allPrefferredDataSource) {
+			if (pref.containsField(fm.getSrcField())) {
+				fm.setDataSourceName(pref.getName());
 				
-				//The main src has high priority for being the source of any field os dst table
-				if (this.getSrcConf().containsField(field.getName())) {
-					fm.setDataSourceName(this.getSrcConf().getTableName());
+				qtyOccurences++;
+				
+				break;
+			}
+		}
+		
+		if (qtyOccurences == 0) {
+			for (EtlDataSource notPref : this.allNotPrefferredDataSource) {
+				if (notPref.containsField(fm.getSrcField())) {
+					qtyOccurences++;
 					
-					this.addMapping(fm);
-				} else {
-					//Continue looking for the field on extra sources
-					
-					List<EtlDataSource> avaliableDs = this.getSrcConf().getAvaliableExtraDataSource();
-					
-					int qtyDsContainingField = 0;
-					
-					for (EtlDataSource ds : avaliableDs) {
-						if (ds.containsField(field.getName())) {
-							qtyDsContainingField++;
-							
-							if (qtyDsContainingField > 1) {
-								notAutomaticalMappedFields.add(field.getName());
-								
-								break;
-							} else {
-								
-								if (ds instanceof QueryDataSourceConfig) {
-									fm.setDataSourceName(ds.getName());
-								} else if (ds instanceof TableDataSourceConfig) {
-									//All the tableSrcData are loaded with the src
-									fm.setDataSourceName(this.getSrcConf().getTableName());
-								} else {
-									throw new ForbiddenOperationException(
-									        "Unkown data source type " + ds.getClass().getCanonicalName());
-								}
-								
-								this.addMapping(fm);
-							}
-						}
+					if (qtyOccurences > 1) {
+						break;
+					} else {
+						fm.setDataSourceName(notPref.getName());
 					}
 				}
 			}
 		}
 		
-		if (!notAutomaticalMappedFields.isEmpty()) {
-			throw new ForbiddenOperationException("The destination fields " + notAutomaticalMappedFields.toString()
-			        + " cannot be automatically mapped as them occurrs in multiple src. Please configure them manually");
+		if (qtyOccurences == 0) {
+			throw new FieldNotAvaliableInAnyDataSource(fm.getSrcField());
 		}
+		
+		if (qtyOccurences > 1) {
+			throw new FieldAvaliableInMultipleDataSources(fm.getSrcField());
+		}
+		
 	}
 	
 	public String getMappedField(String srcField) {
@@ -190,6 +263,57 @@ public class DstConf extends AbstractTableConfiguration {
 		super.fullLoad(conn);
 		
 		loadJoinFields(conn);
+		
+		this.allAvaliableDataSource = new ArrayList<>();
+		this.allAvaliableDataSource.add(getSrcConf());
+		
+		if (utilities.arrayHasElement(getSrcConf().getAvaliableExtraDataSource())) {
+			allAvaliableDataSource
+			        .addAll(utilities.parseList(getSrcConf().getAvaliableExtraDataSource(), EtlDataSource.class));
+		}
+		
+		determinePrefferredDataSources();
+		
+	}
+	
+	private void determinePrefferredDataSources() {
+		if (this.prefferredDataSource == null) {
+			String prefferredDs = null;
+			
+			for (EtlDataSource tDs : this.allAvaliableDataSource) {
+				if (tDs.getName().equals(this.getTableName())) {
+					prefferredDs = this.getTableName();
+					
+					break;
+				}
+			}
+			
+			this.prefferredDataSource = new ArrayList<>();
+			
+			if (prefferredDs != null) {
+				this.prefferredDataSource.add(prefferredDs);
+				
+				if (!prefferredDs.equals(getSrcConf().getTableName())) {
+					this.prefferredDataSource.add(getSrcConf().getTableName());
+				}
+			} else {
+				this.prefferredDataSource.add(getSrcConf().getTableName());
+			}
+		}
+		
+		this.allNotPrefferredDataSource = new ArrayList<>();
+		this.allPrefferredDataSource = new ArrayList<>();
+		
+		for (String dsName : this.prefferredDataSource) {
+			for (EtlDataSource ds : allAvaliableDataSource) {
+				if (dsName.equals(ds.getName())) {
+					allPrefferredDataSource.add(ds);
+				} else {
+					allNotPrefferredDataSource.add(ds);
+				}
+			}
+		}
+		
 	}
 	
 	private void loadJoinFields(Connection conn) {
@@ -212,7 +336,7 @@ public class DstConf extends AbstractTableConfiguration {
 		
 		for (UniqueKeyInfo uk : ukTable.getUniqueKeys()) {
 			
-			UniqueKeyInfo fakeSrcUk = new UniqueKeyInfo();
+			UniqueKeyInfo fakeSrcUk = new UniqueKeyInfo(targetTable);
 			
 			for (Key key : uk.getFields()) {
 				if (targetTable.containsField(key.getName())) {
@@ -236,13 +360,20 @@ public class DstConf extends AbstractTableConfiguration {
 		return this.getParent().getSrcConf();
 	}
 	
-	public DatabaseObject generateMappedObject(DatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
+	public DatabaseObject generateDstObject(DatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
 	        AppInfo dstAppInfo) throws DBException, ForbiddenOperationException {
 		try {
 			
 			List<DatabaseObject> srcObjects = new ArrayList<>();
 			
 			srcObjects.add(srcObject);
+			
+			if (srcObject.getExtraDataSourceObjects() != null) {
+				for (DatabaseObject obj : srcObject.getExtraDataSourceObjects()) {
+					srcObjects.add(obj);
+				}
+			}
+			
 			
 			if (utilities.arrayHasElement(this.getSrcConf().getExtraQueryDataSource())) {
 				for (QueryDataSourceConfig mappingInfo : this.getSrcConf().getExtraQueryDataSource()) {
@@ -277,6 +408,24 @@ public class DstConf extends AbstractTableConfiguration {
 				}
 				
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
+			}
+			
+			if (this.getSharePkWith() != null) {
+				for (RefInfo ref : this.getParentRefInfo()) {
+					if (ref.getParentTableConf().getTableName().equals(this.getSharePkWith())) {
+						
+						if (utilities.arrayHasElement(ref.getParentTableConf().getUniqueKeys())) {
+							for (UniqueKeyInfo uk : ref.getParentTableConf().getUniqueKeys()) {
+								for (Key key : uk.getFields()) {
+									Object srcValue = srcObject.getFieldValue(key.getName());
+									
+									mappedObject.setFieldValue(key.getName(), srcValue);
+								}
+							}
+						}
+						
+					}
+				}
 			}
 			
 			mappedObject.loadObjectIdData(this);

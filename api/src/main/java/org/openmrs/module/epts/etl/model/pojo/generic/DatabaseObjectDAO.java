@@ -160,11 +160,67 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return getByUniqueKeys(tableConfiguration, DBUtilities.determineSchemaName(conn), obj, conn);
 	}
 	
+	public static <T extends DatabaseObject> T getByUniqueKey(AbstractTableConfiguration tableConfiguration,
+	        UniqueKeyInfo uk, Connection conn) throws DBException {
+		return getByUniqueKey(tableConfiguration, uk, DBUtilities.determineSchemaName(conn), conn);
+	}
+	
 	public static <T extends DatabaseObject> T getByUniqueKeysOnSpecificSchema(AbstractTableConfiguration tableConfiguration,
 	        T obj, String schema, Connection conn) throws DBException {
 		List<T> result = getByUniqueKeys(tableConfiguration, schema, obj, conn);
 		
 		return utilities.arrayHasElement(result) ? result.get(0) : null;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static <T extends DatabaseObject> T getByUniqueKey(AbstractTableConfiguration tableConfiguration,
+	        UniqueKeyInfo uniqueKey, String schema, Connection conn) throws DBException {
+		if (!tableConfiguration.isFullLoaded())
+			tableConfiguration.fullLoad();
+		
+		Object[] params = {};
+		
+		String conditionSQL = "";
+		
+		List<Key> ukFields = uniqueKey.getFields();
+		
+		try {
+			params = utilities.setParam(params, uniqueKey.parseValuesToArray());
+			
+			for (Field field : ukFields) {
+				if (!conditionSQL.isEmpty())
+					conditionSQL += " AND ";
+				
+				conditionSQL += field.getName() + " = ?";
+			}
+		}
+		catch (ForbiddenOperationException e) {}
+		
+		if (conditionSQL.isEmpty())
+			return null;
+		
+		String sql = "";
+		String SCHEMA = schema != null ? schema + "." : "";
+		
+		sql += " SELECT " + tableConfiguration.getTableName() + ".*"
+		        + (tableConfiguration.isFromOpenMRSModel() && tableConfiguration.getTableName().equals("patient") ? ", uuid"
+		                : "")
+		        + "\n";
+		sql += " FROM     " + SCHEMA + tableConfiguration.getTableName()
+		        + (tableConfiguration.isFromOpenMRSModel() && tableConfiguration.getTableName().equals("patient")
+		                ? " inner join " + SCHEMA + "person on person_id = patient_id "
+		                : "")
+		        + "\n";
+		sql += " WHERE 	" + conditionSQL;
+		
+		T recOnDb = (T) find(tableConfiguration.getLoadHealper(), tableConfiguration.getSyncRecordClass(), sql, params,
+		    conn);
+		
+		if (recOnDb != null) {
+			recOnDb.loadObjectIdData(tableConfiguration);
+		}
+		
+		return recOnDb;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -273,9 +329,15 @@ public class DatabaseObjectDAO extends BaseDAO {
 	        throws DBException {
 		try {
 			
+			if (!tabConf.isFullLoaded()) {
+				tabConf.fullLoad(conn);
+			}
+			
 			Class<T> openMRSClass = (Class<T>) tabConf.getSyncRecordClass(tabConf.getRelatedAppInfo());
 			
 			T obj = openMRSClass.newInstance();
+			
+			obj.setRelatedConfiguration(tabConf);
 			
 			Object[] params = oid.parseValuesToArray();
 			
@@ -317,6 +379,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 			Class<T> openMRSClass = (Class<T>) tabConf.getSyncRecordClass(tabConf.getRelatedAppInfo());
 			
 			T obj = openMRSClass.newInstance();
+			
+			obj.setRelatedConfiguration(tabConf);
 			
 			Object[] params = oid.parseValuesToArray();
 			
@@ -546,6 +610,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = DBUtilities
 		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0], conn);
 		
+		sql = objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
+		
 		sql += " VALUES";
 		
 		sql = sql.toLowerCase();
@@ -570,6 +636,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = DBUtilities.addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0],
 		    conn);
 		
+		sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
+		
 		sql += " VALUES";
 		
 		sql = sql.toLowerCase();
@@ -586,14 +654,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		if (utilities.stringHasValue(values)) {
 			sql += utilities.removeLastChar(values);
 			
-			try {
-				executeQueryWithRetryOnError(sql, null, conn);
-			}
-			catch (DBException e) {
-				FileUtilities.write("/data/work/2024q2_data/insert.sql", "============================================================================================================");
-				FileUtilities.write("/data/work/2024q2_data/insert.sql", e.getLocalizedMessage());
-				FileUtilities.write("/data/work/2024q2_data/insert.sql", sql);
-			}
+			executeQueryWithRetryOnError(sql, null, conn);
 		}
 	}
 	

@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * Represents a query configuration. A query is used on data mapping between source and destination
  * table
  */
-public class QueryDataSourceConfig extends BaseConfiguration implements DatabaseObjectConfiguration, EtlDataSource {
+public class QueryDataSourceConfig extends BaseConfiguration implements DatabaseObjectConfiguration, EtlAdditionalDataSource {
 	
 	private String name;
 	

@@ -32,7 +32,12 @@ public enum EtlOperationType {
 	DB_QUICK_MERGE,
 	GENERIC_OPERATION,
 	DETECT_GAPES,
-	ETL;
+	ETL,
+	DB_EXTRACT;
+	
+	public static boolean isDbExtract(String operationType) {
+		return EtlOperationType.valueOf(operationType).equals(DB_EXTRACT);
+	}
 	
 	public static boolean isEtl(String operationType) {
 		return EtlOperationType.valueOf(operationType).equals(ETL);
@@ -221,6 +226,10 @@ public enum EtlOperationType {
 	
 	public boolean isEtl() {
 		return this.equals(ETL);
+	}
+	
+	public boolean isDbExtract() {
+		return this.equals(DB_EXTRACT);
 	}
 	
 	public boolean isSupportedOperation() {

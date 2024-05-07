@@ -9,13 +9,13 @@ import java.util.Map;
 
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
-import org.openmrs.module.epts.etl.dbquickmerge.model.MergingRecord;
+import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
-import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
@@ -31,7 +31,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
  * @author jpboane
- * @see EtlController
+ * @see DbExtractController
  */
 public class DBQuickMergeEngine extends Engine {
 	
@@ -126,7 +126,7 @@ public class DBQuickMergeEngine extends Engine {
 		
 		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
 		
-		Map<String, List<MergingRecord>> mergingRecs = new HashMap<>();
+		Map<String, List<QuickMergeRecord>> mergingRecs = new HashMap<>();
 		
 		try {
 			
@@ -137,7 +137,7 @@ public class DBQuickMergeEngine extends Engine {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
 						if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
@@ -150,7 +150,7 @@ public class DBQuickMergeEngine extends Engine {
 							destObject.loadObjectIdData(mappingInfo);
 						}
 						
-						MergingRecord mr = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
+						QuickMergeRecord mr = new QuickMergeRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
 						        false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
@@ -167,7 +167,7 @@ public class DBQuickMergeEngine extends Engine {
 				syncRecords.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			MergingRecord.mergeAll(mergingRecs, srcConn, dstConn);
+			QuickMergeRecord.mergeAll(mergingRecs, srcConn, dstConn);
 			
 			logInfo("MERGE DONE ON " + syncRecords.size() + " " + getMainSrcTableName());
 			
@@ -208,7 +208,7 @@ public class DBQuickMergeEngine extends Engine {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject == null) {
 						continue;
@@ -225,7 +225,7 @@ public class DBQuickMergeEngine extends Engine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					MergingRecord data = new MergingRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(), wrt);
+					QuickMergeRecord data = new QuickMergeRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(), wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -310,7 +310,7 @@ public class DBQuickMergeEngine extends Engine {
 		}
 	}
 	
-	private void process(MergingRecord mergingData, String startingStrLog, int reprocessingCount, Connection srcConn,
+	private void process(QuickMergeRecord mergingData, String startingStrLog, int reprocessingCount, Connection srcConn,
 	        Connection destConn) throws DBException {
 		String reprocessingMessage = reprocessingCount == 0 ? "Merging Record"
 		        : "Re-merging " + reprocessingCount + " Record";

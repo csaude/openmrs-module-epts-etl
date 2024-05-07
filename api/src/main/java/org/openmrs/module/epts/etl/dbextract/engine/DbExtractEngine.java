@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.etl.engine;
+package org.openmrs.module.epts.etl.dbextract.engine;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -10,12 +10,11 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.dbextract.model.DbExtractRecord;
+import org.openmrs.module.epts.etl.dbextract.model.DbExtractSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
-import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.etl.model.EtlRecord;
-import org.openmrs.module.epts.etl.etl.model.EtlSearchParams;
+import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
@@ -23,7 +22,6 @@ import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
-import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -33,9 +31,9 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * @author jpboane
  * @see DbExtractController
  */
-public class EtlEngine extends Engine {
+public class DbExtractEngine extends EtlEngine {
 	
-	public EtlEngine(EngineMonitor monitor, RecordLimits limits) {
+	public DbExtractEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
@@ -59,8 +57,8 @@ public class EtlEngine extends Engine {
 	}
 	
 	@Override
-	public EtlController getRelatedOperationController() {
-		return (EtlController) super.getRelatedOperationController();
+	public DbExtractController getRelatedOperationController() {
+		return (DbExtractController) super.getRelatedOperationController();
 	}
 	
 	@Override
@@ -78,14 +76,14 @@ public class EtlEngine extends Engine {
 	}
 	
 	public void performeBatchSync(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + syncRecords.size()
+		logInfo("PERFORMING DB EXTRACT OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + syncRecords.size()
 		        + "' RECORDS");
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
 		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
 		
-		Map<String, List<EtlRecord>> mergingRecs = new HashMap<>();
+		Map<String, List<DbExtractRecord>> mergingRecs = new HashMap<>();
 		
 		try {
 			
@@ -99,23 +97,16 @@ public class EtlEngine extends Engine {
 					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
-						if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
-							
-							int currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
-							
-							destObject.setObjectId(Oid.fastCreate(
-							    mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
-						} else {
-							destObject.loadObjectIdData(mappingInfo);
-						}
+						destObject.loadObjectIdData(mappingInfo);
 						
-						EtlRecord etlRec = new EtlRecord(destObject, mappingInfo, false);
+						DbExtractRecord mr = new DbExtractRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
+						        false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
 						}
 						
-						mergingRecs.get(mappingInfo.getTableName()).add(etlRec);
+						mergingRecs.get(mappingInfo.getTableName()).add(mr);
 					}
 				}
 			}
@@ -125,18 +116,21 @@ public class EtlEngine extends Engine {
 				syncRecords.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			EtlRecord.mergeAll(mergingRecs, srcConn, dstConn);
+			DbExtractRecord.extractAll(mergingRecs, srcConn, dstConn);
 			
-			logInfo(
-			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + syncRecords.size() + "' RECORDS");
+			logInfo("EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + syncRecords.size()
+			        + "' RECORDS");
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}
 		catch (Exception e) {
-			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits()
-			        + "]... \n Try to performe merge record by record...");
+			e.printStackTrace();
 			
-			performeSyncOneByOne(syncRecords, srcConn);
+			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits()
+			        + "]... \n Try to performe extraction record by record...");
+			
+			throw e;
+			//performeSyncOneByOne(syncRecords, srcConn);
 		}
 		finally {
 			dstConn.finalizeConnection();
@@ -144,7 +138,7 @@ public class EtlEngine extends Engine {
 	}
 	
 	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + syncRecords.size()
+		logInfo("PERFORMING EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + syncRecords.size()
 		        + "' RECORDS");
 		
 		int i = 1;
@@ -172,19 +166,12 @@ public class EtlEngine extends Engine {
 						continue;
 					}
 					
-					if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
-						
-						int currObjectId = mappingInfo.generateNextStartIdForThread(syncRecords, dstConn);
-						
-						destObject.setObjectId(Oid.fastCreate(
-						    mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
-					} else {
-						destObject.loadObjectIdData(mappingInfo);
-					}
+					destObject.loadObjectIdData(mappingInfo);
 					
 					boolean wrt = writeOperationHistory();
 					
-					EtlRecord data = new EtlRecord(destObject, mappingInfo, wrt);
+					DbExtractRecord data = new DbExtractRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
+					        wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -202,18 +189,18 @@ public class EtlEngine extends Engine {
 						wentWrong = false;
 					}
 					catch (ConflictWithRecordNotYetAvaliableException e) {
-						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+						logWarn(startingStrLog + ".  Problem while extracting record: [" + data.getRecord() + "]! "
 						        + e.getLocalizedMessage() + ". Skipping... ");
 					}
 					catch (DBException e) {
 						if (e.isDuplicatePrimaryOrUniqueKeyException()) {
-							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+							logWarn(startingStrLog + ".  Problem while extracting record: [" + data.getRecord() + "]! "
 							        + e.getLocalizedMessage() + ". Skipping... ");
 						} else if (e.isIntegrityConstraintViolationException()) {
-							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+							logWarn(startingStrLog + ".  Problem while extracting record: [" + data.getRecord() + "]! "
 							        + e.getLocalizedMessage() + ". Skipping... ");
 						} else {
-							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+							logWarn(startingStrLog + ".  Problem while extracting record: [" + data.getRecord() + "]! "
 							        + e.getLocalizedMessage() + ". Skipping... ");
 							
 							throw e;
@@ -221,7 +208,7 @@ public class EtlEngine extends Engine {
 					}
 					catch (Exception e) {
 						e.printStackTrace();
-						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+						logWarn(startingStrLog + ".  Problem while extracting record: [" + data.getRecord() + "]! "
 						        + e.getLocalizedMessage());
 						
 						throw e;
@@ -260,8 +247,8 @@ public class EtlEngine extends Engine {
 				syncRecords.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			logInfo(
-			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + syncRecords.size() + "' RECORDS");
+			logInfo("EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + syncRecords.size()
+			        + "' RECORDS");
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}
@@ -270,19 +257,19 @@ public class EtlEngine extends Engine {
 		}
 	}
 	
-	private void process(EtlRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
+	private void process(DbExtractRecord extractionData, String startingStrLog, int reprocessingCount, Connection srcConn,
 	        Connection destConn) throws DBException {
-		String reprocessingMessage = reprocessingCount == 0 ? "Merging Record"
-		        : "Re-merging " + reprocessingCount + " Record";
+		String reprocessingMessage = reprocessingCount == 0 ? "Extracting Record"
+		        : "Re-extracting " + reprocessingCount + " Record";
 		
-		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + etlData.getRecord() + "]");
+		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + extractionData.getRecord() + "]");
 		
-		etlData.merge(srcConn, destConn);
+		extractionData.merge(srcConn, destConn);
 	}
 	
 	@Override
 	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new EtlSearchParams(this.getEtlConfiguration(), limits,
+		SyncSearchParams<? extends SyncRecord> searchParams = new DbExtractSearchParams(this.getEtlConfiguration(), limits,
 		        getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

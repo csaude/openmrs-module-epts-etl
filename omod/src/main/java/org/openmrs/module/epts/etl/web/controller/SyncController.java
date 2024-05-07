@@ -8,7 +8,6 @@ import org.openmrs.api.AdministrationService;
 import org.openmrs.messagesource.MessageSourceService;
 import org.openmrs.module.epts.etl.model.SyncVM;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

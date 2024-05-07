@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
@@ -21,11 +22,31 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	private List<Field> fields;
 	
+	/*
+	 * Objects from extraDataSource
+	 */
+	private List<GenericDatabaseObject> extraDataSourceObjects;
+	
+	private GenericDatabaseObject sharedPkObj;
+	
+	private boolean loadedFromDb;
+	
 	public GenericDatabaseObject() {
+	}
+	
+	@Override
+	public GenericDatabaseObject getSharedPkObj() {
+		return sharedPkObj;
+	}
+	
+	@Override
+	public List<DatabaseObject> getExtraDataSourceObjects() {
+		return utilities.parseList(extraDataSourceObjects, DatabaseObject.class);
 	}
 	
 	public GenericDatabaseObject(DatabaseObjectConfiguration relatedConfiguration) {
 		setRelatedConfiguration(relatedConfiguration);
+		
 	}
 	
 	@Override
@@ -37,6 +58,19 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			return super.getFieldValue(fieldName);
 		}
 		
+	}
+	
+	@Override
+	public void loadWithDefaultValues() {
+		if (this.relatedConfiguration == null) {
+			throw new ForbiddenOperationException("The relatedConfiguration  is not set");
+		}
+		
+		for (Field f : this.fields) {
+			if (!f.allowNull()) {
+				f.loadWithDefaultValue();
+			}
+		}
 	}
 	
 	@Override
@@ -60,16 +94,38 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		
 		this.fields = this.relatedConfiguration.cloneFields();
 		
-		if (this.relatedConfiguration instanceof SrcConf) {
-			List<TableDataSourceConfig> allDs = ((SrcConf) this.relatedConfiguration).getExtraTableDataSource();
+		if (relatedConfiguration instanceof SrcConf) {
+			SrcConf srcConf = (SrcConf) relatedConfiguration;
 			
-			if (utilities.arrayHasElement(allDs)) {
-				for (TableDataSourceConfig ds : allDs) {
-					for (Field f : ds.getFields()) {
-						if (!this.fields.contains(f)) {
-							this.fields.add(f.createACopy());
+			if (srcConf.getExtraTableDataSource() != null) {
+				
+				for (TableDataSourceConfig tsrc : srcConf.getExtraTableDataSource()) {
+					
+					if (extraDataSourceObjects == null) {
+						extraDataSourceObjects = new ArrayList<>();
+					}
+					
+					extraDataSourceObjects.add(new GenericDatabaseObject(tsrc));
+				}
+			}
+		}
+		
+		if (relatedConfiguration instanceof AbstractTableConfiguration) {
+			
+			AbstractTableConfiguration tabConf = (AbstractTableConfiguration) relatedConfiguration;
+			
+			if (tabConf.getSharePkWith() != null) {
+				
+				if (extraDataSourceObjects != null) {
+					for (GenericDatabaseObject obj : this.extraDataSourceObjects) {
+						if (obj.getRelatedConfiguration().equals(tabConf.getSharedKeyRefInfo().getParentTableConf())) {
+							this.sharedPkObj = obj;
 						}
 					}
+				}
+				
+				if (this.sharedPkObj == null) {
+					this.sharedPkObj = new GenericDatabaseObject(tabConf.getSharedKeyRefInfo().getParentTableConf());
 				}
 			}
 			
@@ -81,24 +137,62 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		return this.relatedConfiguration;
 	}
 	
+	@Override
 	public void load(ResultSet rs) throws SQLException {
 		try {
+			super.load(rs);
 			
 			if (this.relatedConfiguration == null) {
 				throw new ForbiddenOperationException("The relatedConfiguration  is not set");
 			}
 			
-			super.load(rs);
-			
 			for (Field field : this.fields) {
-				field.setValue(retrieveFieldValue(field.getName(), field.getType(), rs));
+				field.setValue(
+				    retrieveFieldValue(field.generateAliasedColumn((AbstractTableConfiguration) this.relatedConfiguration),
+				        field.getType(), rs));
 			}
 			
-			if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
-				loadObjectIdData((AbstractTableConfiguration) this.relatedConfiguration);
-			}
+			loadAdditionInfo(rs);
+			
+			loadedFromDb = true;
 		}
 		catch (SQLException e) {}
+	}
+	
+	/**
+	 * @param rs
+	 * @throws SQLException
+	 */
+	private void loadAdditionInfo(ResultSet rs) throws SQLException {
+		if (this.relatedConfiguration instanceof SrcConf) {
+			List<TableDataSourceConfig> allDs = ((SrcConf) this.relatedConfiguration).getExtraTableDataSource();
+			
+			if (utilities.arrayHasElement(allDs)) {
+				for (TableDataSourceConfig ds : allDs) {
+					GenericDatabaseObject dbo = findExtraObject(ds);
+					
+					dbo.load(rs);
+				}
+			}
+		}
+		
+		if (this.sharedPkObj != null && !this.sharedPkObj.loadedFromDb) {
+			this.sharedPkObj.load(rs);
+		}
+		
+		if (this.relatedConfiguration instanceof AbstractTableConfiguration) {
+			this.loadObjectIdData((AbstractTableConfiguration) this.relatedConfiguration);
+		}
+	}
+	
+	private GenericDatabaseObject findExtraObject(AbstractTableConfiguration tabConf) {
+		for (GenericDatabaseObject dbo : this.extraDataSourceObjects) {
+			if (dbo.relatedConfiguration.equals(tabConf)) {
+				return dbo;
+			}
+		}
+		
+		throw new ForbiddenOperationException("No extra object found for " + tabConf.getTableName());
 	}
 	
 	@Override
@@ -228,5 +322,21 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		obj.setObjectId(Oid.fastCreate("", syncImportInfo.getRecordOriginId()));
 		
 		return obj;
+	}
+	
+	@Override
+	public void setParentToNull(RefInfo refInfo) {
+		for (RefMapping map : refInfo.getMapping()) {
+			setFieldValue(map.getChildFieldName(), null);
+		}
+	}
+	
+	@Override
+	public void changeParentValue(RefInfo refInfo, DatabaseObject newParent) {
+		for (RefMapping map : refInfo.getMapping()) {
+			Object parentValue = newParent.getFieldValue(map.getChildFieldName());
+			this.setFieldValue(map.getChildFieldName(), parentValue);
+		}
+		
 	}
 }

@@ -377,4 +377,22 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	public void loadWithDefaultValues() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public List<DatabaseObject> getExtraDataSourceObjects() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public DatabaseObject getSharedPkObj() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

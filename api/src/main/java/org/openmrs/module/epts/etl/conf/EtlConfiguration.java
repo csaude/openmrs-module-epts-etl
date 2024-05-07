@@ -35,6 +35,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class EtlConfiguration extends BaseConfiguration {
+	public static final String DEFAULT_GENERATED_OBJECT_KEY = "default_generated_object_key";
 	
 	private String syncRootDirectory;
 	
@@ -48,7 +49,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private SyncProcessType processType;
+	private EtlProcessType processType;
 	
 	private File relatedConfFile;
 	
@@ -100,6 +101,8 @@ public class EtlConfiguration extends BaseConfiguration {
 	
 	private String classPath;
 	
+	private EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf;
+	
 	public EtlConfiguration() {
 		syncTableConfigurationPull = new HashMap<String, AbstractTableConfiguration>();
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
@@ -109,6 +112,13 @@ public class EtlConfiguration extends BaseConfiguration {
 		this.qtyLoadedTables = new HashMap<>();
 		
 		this.configuredTables = new ArrayList<>();
+		
+		this.defaultGeneratedObjectKeyTabConf = new EtlConfigurationTableConf(EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY,
+		        this);
+	}
+	
+	public EtlConfigurationTableConf getDefaultGeneratedObjectKeyTabConf() {
+		return defaultGeneratedObjectKeyTabConf;
 	}
 	
 	public Map<String, String> getParams() {
@@ -245,15 +255,15 @@ public class EtlConfiguration extends BaseConfiguration {
 		this.automaticStart = automaticStart;
 	}
 	
-	public SyncProcessType getProcessType() {
+	public EtlProcessType getProcessType() {
 		return processType;
 	}
 	
-	public void setProcessType(SyncProcessType processType) {
+	public void setProcessType(EtlProcessType processType) {
 		
 		if (processType != null && !processType.isSupportedProcessType()) {
 			throw new ForbiddenOperationException(
-			        "The 'processType' of syncConf file must be in " + SyncProcessType.values());
+			        "The 'processType' of syncConf file must be in " + EtlProcessType.values());
 		}
 		
 		this.processType = processType;
@@ -281,6 +291,11 @@ public class EtlConfiguration extends BaseConfiguration {
 	@JsonIgnore
 	public boolean isEtlProcess() {
 		return processType.isEtl();
+	}
+	
+	@JsonIgnore
+	public boolean isDbExtractProcess() {
+		return processType.isDbExtract();
 	}
 	
 	@JsonIgnore
@@ -412,9 +427,9 @@ public class EtlConfiguration extends BaseConfiguration {
 				
 				addToTableConfigurationPull(config.getSrcConf());
 				
-				List<EtlDataSource> allAvaliableDataSources = config.getSrcConf().getAvaliableExtraDataSource();
+				List<EtlAdditionalDataSource> allAvaliableDataSources = config.getSrcConf().getAvaliableExtraDataSource();
 				
-				for (EtlDataSource t : allAvaliableDataSources) {
+				for (EtlAdditionalDataSource t : allAvaliableDataSources) {
 					if (t instanceof AbstractTableConfiguration) {
 						addToTableConfigurationPull((AbstractTableConfiguration) t);
 					}
@@ -552,9 +567,9 @@ public class EtlConfiguration extends BaseConfiguration {
 				addConfiguredTable(tc.getSrcConf());
 				addToTableConfigurationPull(tc.getSrcConf());
 				
-				List<EtlDataSource> allAvaliableDataSources = tc.getSrcConf().getAvaliableExtraDataSource();
+				List<EtlAdditionalDataSource> allAvaliableDataSources = tc.getSrcConf().getAvaliableExtraDataSource();
 				
-				for (EtlDataSource t : allAvaliableDataSources) {
+				for (EtlAdditionalDataSource t : allAvaliableDataSources) {
 					if (t instanceof AbstractTableConfiguration) {
 						addConfiguredTable((AbstractTableConfiguration) t);
 						addToTableConfigurationPull((AbstractTableConfiguration) t);
@@ -585,10 +600,6 @@ public class EtlConfiguration extends BaseConfiguration {
 				tc.setConfigCode(code);
 			}
 		}
-	}
-	
-	public boolean supportMultipleDestination() {
-		return this.isEtlProcess();
 	}
 	
 	private void addConfiguredTable(AbstractTableConfiguration tableConfiguration) {
@@ -685,7 +696,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	}
 	
 	public AbstractTableConfiguration findSyncTableConfigurationOnAllTables(String tableName) {
-		AbstractTableConfiguration tableConfiguration = new GenericTabableConfiguration();
+		AbstractTableConfiguration tableConfiguration = new GenericTableConfiguration();
 		tableConfiguration.setTableName(tableName);
 		
 		return utilities.findOnList(this.allTables, tableConfiguration);
@@ -809,15 +820,6 @@ public class EtlConfiguration extends BaseConfiguration {
 			
 			if (this.finalizerClazz == null) {
 				errorMsg += ++errNum + ". The Finalizer class [" + this.getFinalizerFullClassName() + "] cannot be found\n";
-			}
-		}
-		
-		if (!supportMultipleDestination()) {
-			for (EtlItemConfiguration config : this.getEtlItemConfiguration()) {
-				if (utilities.arrayHasMoreThanOneElements(config.getDstConf())) {
-					errorMsg += ++errNum + ". The config for source " + config.getSrcConf().getTableName()
-					        + " has multiple destination \n";
-				}
 			}
 		}
 		
@@ -1085,7 +1087,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	public boolean isSupposedToHaveOriginAppCode() {
 		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isDBQuickMergeProcess()
 		        || this.isDBQuickMergeWithEntityGenerationDBProcess() || this.isDBInconsistencyCheckProcess()
-		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess() || this.isEtlProcess();
+		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess() || this.isEtlProcess() || this.isDbExtractProcess();
 	}
 	
 	public boolean isSupposedToRunInDestination() {

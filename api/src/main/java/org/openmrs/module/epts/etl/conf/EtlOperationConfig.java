@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.databasepreparation.controller.DatabasePreparationController;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
+import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportController;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
@@ -400,6 +401,11 @@ public class EtlOperationConfig extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
+	public boolean isDBExtract() {
+		return this.operationType.isDbExtract();
+	}
+	
+	@JsonIgnore
 	public boolean isMissingRecordsDetector() {
 		return this.operationType.isMissingRecordsDetector();
 	}
@@ -472,8 +478,9 @@ public class EtlOperationConfig extends BaseConfiguration {
 	}
 	
 	private OperationController generateSingle(ProcessController parent, String appOriginCode, Connection conn) {
-		
-		if (isEtl()) {
+		if (isDBExtract()) {
+			return new DbExtractController(parent, this, appOriginCode);
+		} else if (isEtl()) {
 			return new EtlController(parent, this, appOriginCode);
 		} else if (isDatabasePreparationOperation()) {
 			return new DatabasePreparationController(parent, this);
@@ -527,9 +534,10 @@ public class EtlOperationConfig extends BaseConfiguration {
 			if (!this.canBeRunInEtlProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in Etl process\n";
-			
-			if (this.isLoadOperation() && (this.getSourceFolders() == null || this.getSourceFolders().size() == 0))
-				errorMsg += ++errNum + ". There is no source folder defined";
+		} else if (this.getRelatedSyncConfig().isDbExtractProcess()) {
+			if (!this.canBeRunInDbExtractProcess())
+				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
+				        + "] Cannot be configured in Db Extract process\n";
 		} else if (this.getRelatedSyncConfig().isDataBaseMergeFromJSONProcess()) {
 			if (!this.canBeRunInDestinationSyncProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
@@ -630,6 +638,11 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInResolveProblemsProcess(), this.operationType);
 	}
 	
+	@JsonIgnore
+	public boolean canBeRunInDbExtractProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDbExtractProcess(), this.operationType);
+	}
+	
 	public static List<EtlOperationType> getSupportedOperationsInResolveProblemsProcess() {
 		EtlOperationType[] supported = { EtlOperationType.GENERIC_OPERATION };
 		
@@ -701,14 +714,19 @@ public class EtlOperationConfig extends BaseConfiguration {
 		return utilities.parseArrayToList(supported);
 	}
 	
+	public static List<EtlOperationType> getSupportedOperationsInDbExtractProcess() {
+		EtlOperationType[] supported = { EtlOperationType.DB_EXTRACT };
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
 	@JsonIgnore
 	public boolean canBeRunInReSyncProcess() {
 		return utilities.existOnArray(getSupportedOperationsInDBReSyncProcess(), this.operationType);
 	}
 	
 	public static List<EtlOperationType> getSupportedOperationsInDBReSyncProcess() {
-		EtlOperationType[] supported = { EtlOperationType.NEW_RECORDS_DETECTOR,
-		        EtlOperationType.CHANGED_RECORDS_DETECTOR };
+		EtlOperationType[] supported = { EtlOperationType.NEW_RECORDS_DETECTOR, EtlOperationType.CHANGED_RECORDS_DETECTOR };
 		
 		return utilities.parseArrayToList(supported);
 	}

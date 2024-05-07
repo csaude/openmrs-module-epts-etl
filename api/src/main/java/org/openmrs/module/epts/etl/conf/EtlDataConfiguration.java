@@ -15,4 +15,5 @@ public abstract class EtlDataConfiguration extends BaseConfiguration {
 	public AppInfo getMainApp() {
 		return this.relatedSyncConfiguration.getMainApp();
 	}
+
 }

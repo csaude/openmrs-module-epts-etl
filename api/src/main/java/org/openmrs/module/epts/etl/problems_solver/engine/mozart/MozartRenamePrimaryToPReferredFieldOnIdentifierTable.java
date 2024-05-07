@@ -20,7 +20,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
  * @author jpboane
- * @see EtlController
+ * @see DbExtractController
  */
 public class MozartRenamePrimaryToPReferredFieldOnIdentifierTable extends MozartProblemSolverEngine {
 	

@@ -20,7 +20,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
  * @author jpboane
- * @see EtlController
+ * @see DbExtractController
  */
 public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	

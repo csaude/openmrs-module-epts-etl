@@ -753,6 +753,10 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	public String capitalize(String str) {
+		if (str.startsWith("unknown")) {
+			System.out.println("Stop");
+		}
+		
 		if (!stringHasValue(str))
 			return str;
 		

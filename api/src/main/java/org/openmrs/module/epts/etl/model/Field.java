@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
@@ -31,7 +32,27 @@ public class Field implements Serializable {
 	
 	private AttDefinedElements attDefinedElements;
 	
+	private boolean allowNull;
+	
+	public static final Integer DEFAULT_INT_VALUE = -1;
+	
+	public static final Date DEFAULT_DATE_VALUE = DateAndTimeUtilities.createDate("1975-01-01");
+	
+	public static final String DEFAULT_STRING_VALUE = "UNDEFINED";
+	
 	public Field() {
+	}
+	
+	public boolean allowNull() {
+		return this.allowNull;
+	}
+	
+	public boolean isAllowNull() {
+		return allowNull;
+	}
+	
+	public void setAllowNull(boolean allowNull) {
+		this.allowNull = allowNull;
 	}
 	
 	public AttDefinedElements getAttDefinedElements() {
@@ -238,6 +259,27 @@ public class Field implements Serializable {
 		return f;
 	}
 	
+	public void clone(Field f) {
+		this.type = f.type;
+		this.name = f.name;
+		this.value = f.value;
+	}
+	
+	@JsonIgnore
+	public Field createACopyWithDefaultValue() {
+		Field f = createACopy();
+		
+		if (f.isDateField()) {
+			f.setValue(DEFAULT_DATE_VALUE);
+		} else if (f.isNumericColumnType()) {
+			f.setValue(DEFAULT_INT_VALUE);
+		} else {
+			f.setValue(DEFAULT_STRING_VALUE);
+		}
+		
+		return f;
+	}
+	
 	public static String parseAllToCommaSeparatedName(List<Field> fields) {
 		
 		if (!utilities.arrayHasElement(fields))
@@ -255,4 +297,22 @@ public class Field implements Serializable {
 		
 		return commaSeparatedNames;
 	}
+	
+	public void loadWithDefaultValue() {
+		if (isDateField()) {
+			setValue(DEFAULT_DATE_VALUE);
+		} else if (isNumericColumnType()) {
+			setValue(DEFAULT_INT_VALUE);
+		} else {
+			setValue(DEFAULT_STRING_VALUE);
+		}
+	}
+	
+	public String generateAliasedSelectColumn(AbstractTableConfiguration tabConf) {
+		return tabConf.getTableAlias() + "." + this.name + " " + tabConf.getTableAlias() + "_" + this.name;
+	}
+	
+	public String generateAliasedColumn(AbstractTableConfiguration tabConf) {
+		return  tabConf.getTableAlias() + "_" + this.name;
+	}	
 }

@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.exceptions;
 
-public class ParentNotYetMigratedException extends SyncExeption {
+public class ParentNotYetMigratedException extends EtlException {
 	private static final long serialVersionUID = 1L;
 
 	public ParentNotYetMigratedException() {

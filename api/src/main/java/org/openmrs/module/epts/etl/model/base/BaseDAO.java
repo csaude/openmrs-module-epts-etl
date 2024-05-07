@@ -225,6 +225,8 @@ public abstract class BaseDAO {
 			throw new DBException(e);
 		}
 		catch (Exception e) {
+			e.printStackTrace();
+			
 			throw new RuntimeException(e);
 		}
 		finally {

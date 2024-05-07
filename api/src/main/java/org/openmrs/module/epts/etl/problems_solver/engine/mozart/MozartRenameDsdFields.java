@@ -6,7 +6,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
-import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
+import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -25,7 +25,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
  * @author jpboane
- * @see EtlController
+ * @see DbExtractController
  */
 public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 	
@@ -177,10 +177,10 @@ public class MozartRenameDsdFields extends MozartProblemSolverEngine {
 			return false;
 	}
 	
-	private boolean checkIfDsdUuidFieldHasUniqueKey(String dbName, AbstractTableConfiguration configuredTable, Connection conn)
-	        throws DBException, LongTransactionException {
+	private boolean checkIfDsdUuidFieldHasUniqueKey(String dbName, AbstractTableConfiguration configuredTable,
+	        Connection conn) throws DBException, LongTransactionException {
 		
-		List<UniqueKeyInfo> uniqueKeys = DBUtilities.getUniqueKeys("dsd", dbName, conn);
+		List<UniqueKeyInfo> uniqueKeys = DBUtilities.getUniqueKeys(configuredTable, dbName, conn);
 		
 		for (UniqueKeyInfo key : uniqueKeys) {
 			

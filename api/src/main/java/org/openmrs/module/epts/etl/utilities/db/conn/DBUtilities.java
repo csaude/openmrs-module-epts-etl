@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.ParameterValueType;
 import org.openmrs.module.epts.etl.conf.QueryParameter;
@@ -22,7 +23,6 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
@@ -705,7 +705,10 @@ public class DBUtilities {
 		return att;
 	}
 	
-	public static List<UniqueKeyInfo> getUniqueKeys(String tableName, String schema, Connection conn) throws DBException {
+	public static List<UniqueKeyInfo> getUniqueKeys(AbstractTableConfiguration tabConf, String schema, Connection conn)
+	        throws DBException {
+		String tableName = tabConf.getTableName();
+		
 		List<UniqueKeyInfo> uniqueKeys = new ArrayList<UniqueKeyInfo>();
 		
 		try {
@@ -729,7 +732,7 @@ public class DBUtilities {
 					if (starting) {
 						starting = false;
 					} else {
-						addUniqueKey(prevIndexName, keyElements, uniqueKeys, primaryKey.getName());
+						addUniqueKey(tabConf, prevIndexName, keyElements, uniqueKeys, primaryKey.getName());
 					}
 					
 					prevIndexName = indexName;
@@ -739,7 +742,7 @@ public class DBUtilities {
 				keyElements.add(rs.getString("COLUMN_NAME"));
 			}
 			
-			addUniqueKey(indexName, keyElements, uniqueKeys, primaryKey.getName());
+			addUniqueKey(tabConf, indexName, keyElements, uniqueKeys, primaryKey.getName());
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
@@ -748,7 +751,7 @@ public class DBUtilities {
 		return uniqueKeys;
 	}
 	
-	private static boolean addUniqueKey(String keyName, List<String> keyElements, List<UniqueKeyInfo> uniqueKeys,
+	private static boolean addUniqueKey(AbstractTableConfiguration tabConf, String keyName, List<String> keyElements, List<UniqueKeyInfo> uniqueKeys,
 	        String primaryKey) {
 		if (keyElements == null || keyElements.isEmpty())
 			return false;
@@ -758,7 +761,7 @@ public class DBUtilities {
 			return false;
 		}
 		
-		UniqueKeyInfo uk = UniqueKeyInfo.generateFromFieldList(keyElements);
+		UniqueKeyInfo uk = UniqueKeyInfo.generateFromFieldList(tabConf, keyElements);
 		uk.setKeyName(keyName);
 		
 		uniqueKeys.add(uk);
@@ -903,6 +906,8 @@ public class DBUtilities {
 			for (int i = 1; i <= qtyAttrs; i++) {
 				Field field = new Field(rsMetaData.getColumnName(i));
 				field.setType(rsMetaData.getColumnTypeName(i));
+				
+				field.setAllowNull(rsMetaData.isNullable(i) == ResultSetMetaData.columnNullable);
 				
 				fields.add(field);
 			}

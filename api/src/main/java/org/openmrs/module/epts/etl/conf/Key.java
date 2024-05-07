@@ -30,5 +30,23 @@ public class Key extends Field {
 		setType(type);
 		setValue(value);
 	}
+	
+	@Override
+	public Key createACopy() {
+		Key k = new Key();
 		
+		k.clone(this);
+		
+		return k;
+	}
+	
+	@Override
+	public Key createACopyWithDefaultValue() {
+		Key k = createACopy();
+		
+		k.loadWithDefaultValue();
+		
+		return k;
+	}
+	
 }

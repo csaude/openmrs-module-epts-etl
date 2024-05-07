@@ -7,17 +7,15 @@ import java.util.List;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 /**
  * Represents a source table configuration. A {@link TableDataSourceConfig} is used as an auxiliary
  * extraction table as well as an extra datasource
  */
-public class TableDataSourceConfig extends AbstractTableConfiguration implements DatabaseObjectConfiguration, EtlDataSource {
+public class TableDataSourceConfig extends AbstractTableConfiguration implements EtlAdditionalDataSource {
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -25,11 +23,21 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	private SrcConf relatedSrcConf;
 	
+	private List<AuxExtractTable> selfJoinTables;
+	
 	/*
 	 * The join type between this additional src table with the main src table. It could be INNER or LEFT.
 	 * If empty, a INNER join will be applied if the main table has only one additional src, and will be LEFT join if there are more than one additional src tables 
 	 */
 	private JoinType joinType;
+	
+	public List<AuxExtractTable> getSelfJoinTables() {
+		return selfJoinTables;
+	}
+	
+	public void setSelfJoinTables(List<AuxExtractTable> selfJoinTables) {
+		this.selfJoinTables = selfJoinTables;
+	}
 	
 	public JoinType getJoinType() {
 		return joinType;
@@ -50,6 +58,10 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		
 		tryToLoadJoinFields();
 		
+		if (utilities.stringHasValue(this.joinExtraCondition)) {
+			this.joinExtraCondition = this.joinExtraCondition.replaceAll(getTableName() + "\\.", getTableAlias() + "\\.");
+		}
+		
 		if (utilities.arrayHasNoElement(this.joinFields)) {
 			throw new ForbiddenOperationException("No join fields were difined between " + this.relatedSrcConf.getTableName()
 			        + " And " + this.getTableName());
@@ -61,6 +73,63 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			} else {
 				this.joinType = JoinType.INNER;
 			}
+		}
+		
+		if (utilities.arrayHasElement(this.selfJoinTables)) {
+			for (AuxExtractTable t : this.selfJoinTables) {
+				t.setParent(this);
+				
+				if (!utilities.stringHasValue(t.getTableAlias())) {
+					t.setTableAlias(this.getParent().generateAlias(t));
+				}
+				
+				t.fullLoad(conn);
+				
+				if (!utilities.arrayHasElement(t.getJoinFields())) {
+					//Try to autoload join fields
+					
+					List<FieldsMapping> fm = null;
+					
+					//Assuming that the aux src is parent
+					List<RefInfo> pInfo = this.findAllRefToParent(t.getTableName());
+					
+					if (utilities.arrayHasElement(pInfo)) {
+						fm = new ArrayList<>();
+						
+						for (RefInfo ref : pInfo) {
+							for (RefMapping map : ref.getMapping()) {
+								fm.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
+							}
+						}
+					} else {
+						fm = new ArrayList<>();
+						
+						//Assuning that the aux src is child
+						pInfo = t.findAllRefToParent(this.getTableName());
+						
+						if (pInfo != null) {
+							for (RefInfo ref : pInfo) {
+								for (RefMapping map : ref.getMapping()) {
+									fm.add(new FieldsMapping(map.getParentField().getName(), "",
+									        map.getChildField().getName()));
+								}
+							}
+						}
+					}
+					
+					if (fm != null) {
+						for (FieldsMapping f : fm) {
+							t.addJoinField(f);
+						}
+					}
+				}
+				
+				if (utilities.arrayHasNoElement(t.getJoinFields())) {
+					throw new ForbiddenOperationException(
+					        "No join fields were difined between " + this.getTableName() + " And " + t.getTableName());
+				}
+			}
+			
 		}
 	}
 	
@@ -188,9 +257,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			
 			FieldsMapping field = this.joinFields.get(i);
 			
-			String tableName = DBUtilities.extractTableNameFromFullTableName(getTableName());
-			
-			conditionFields += "src_." + field.getSrcField() + " = " + tableName + "." + field.getDstField();
+			conditionFields += getRelatedSrcConf().getTableAlias() + "." + field.getSrcField() + " = " + getTableAlias()
+			        + "." + field.getDstField();
 		}
 		
 		if (utilities.stringHasValue(this.getJoinExtraCondition())) {
@@ -222,4 +290,5 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	public boolean isGeneric() {
 		return false;
 	}
+	
 }

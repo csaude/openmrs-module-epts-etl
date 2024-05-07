@@ -6,6 +6,10 @@ import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 
 public class PrimaryKey extends UniqueKeyInfo {
 	
+	public PrimaryKey(AbstractTableConfiguration tabConf) {
+		super(tabConf);
+	}
+	
 	public boolean isSimpleNumericKey() {
 		return !isCompositeKey() && retrieveSimpleKey().isNumericColumnType();
 	}
@@ -27,6 +31,18 @@ public class PrimaryKey extends UniqueKeyInfo {
 		}
 		
 		return oid;
+	}
+	
+	public Oid generateDefaultOid(AbstractTableConfiguration config) {
+		
+		Oid oid = new Oid();
+		
+		for (Key key : this.getFields()) {
+			oid.addKey(key.createACopyWithDefaultValue());
+		}
+		
+		return oid;
+		
 	}
 	
 }

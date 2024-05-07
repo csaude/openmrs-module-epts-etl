@@ -27,14 +27,27 @@ public class UniqueKeyInfo {
 	
 	private List<Key> fields;
 	
-	public UniqueKeyInfo() {
+	private boolean fieldValuesLoaded;
+	
+	private AbstractTableConfiguration tabConf;
+	
+	public UniqueKeyInfo(AbstractTableConfiguration tabConf) {
+		this.tabConf = tabConf;
 	}
 	
-	public static UniqueKeyInfo init(String keyName) {
-		UniqueKeyInfo uk = new UniqueKeyInfo();
+	public static UniqueKeyInfo init(AbstractTableConfiguration tabConf, String keyName) {
+		UniqueKeyInfo uk = new UniqueKeyInfo(tabConf);
 		uk.keyName = keyName;
 		
 		return uk;
+	}
+	
+	public boolean isFieldValuesLoaded() {
+		return fieldValuesLoaded;
+	}
+	
+	public void setFieldValuesLoaded(boolean fieldValuesLoaded) {
+		this.fieldValuesLoaded = fieldValuesLoaded;
 	}
 	
 	public boolean isCompositeKey() {
@@ -102,6 +115,8 @@ public class UniqueKeyInfo {
 			
 			field.setValue(value);
 		}
+		
+		this.fieldValuesLoaded = true;
 	}
 	
 	public static List<UniqueKeyInfo> loadUniqueKeysInfo(AbstractTableConfiguration tableConfiguration, Connection conn)
@@ -149,7 +164,7 @@ public class UniqueKeyInfo {
 			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);
 			
 			if (tableConfiguration.useSharedPKKey()) {
-				AbstractTableConfiguration parentTableInfo = new GenericTabableConfiguration(tableConfiguration);
+				AbstractTableConfiguration parentTableInfo = new GenericTableConfiguration(tableConfiguration);
 				
 				parentTableInfo.setTableName(tableConfiguration.getSharePkWith());
 				parentTableInfo.setParent(tableConfiguration.getParent());
@@ -185,7 +200,7 @@ public class UniqueKeyInfo {
 		if (uniqueKeys == null)
 			uniqueKeys = new ArrayList<>();
 		
-		UniqueKeyInfo uk = UniqueKeyInfo.init(keyName);
+		UniqueKeyInfo uk = UniqueKeyInfo.init(config, keyName);
 		uk.fields = keyElements;
 		
 		//Don't add PK as uniqueKey
@@ -267,11 +282,11 @@ public class UniqueKeyInfo {
 		}
 	}
 	
-	public static UniqueKeyInfo generateFromFieldList(List<String> fields) {
+	public static UniqueKeyInfo generateFromFieldList(AbstractTableConfiguration tabConf, List<String> fields) {
 		if (!utilities.arrayHasElement(fields))
 			throw new ForbiddenOperationException("The list cannot be empty");
 		
-		UniqueKeyInfo uk = new UniqueKeyInfo();
+		UniqueKeyInfo uk = new UniqueKeyInfo(tabConf);
 		
 		for (String fieldName : fields) {
 			uk.addKey(new Key(fieldName));
@@ -281,7 +296,7 @@ public class UniqueKeyInfo {
 	}
 	
 	protected UniqueKeyInfo cloneMe() {
-		UniqueKeyInfo uk = UniqueKeyInfo.init(keyName);
+		UniqueKeyInfo uk = UniqueKeyInfo.init(this.tabConf, keyName);
 		
 		for (Field field : fields) {
 			uk.addKey(new Key(field.getName()));
@@ -401,7 +416,19 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
+	public AbstractTableConfiguration getTabConf() {
+		return tabConf;
+	}
+	
+	public void setTabConf(AbstractTableConfiguration tabConf) {
+		this.tabConf = tabConf;
+	}
+	
 	public String generateSqlNotNullCheckWithDisjunction() {
+		
+		if (tabConf == null)
+			throw new ForbiddenOperationException("The tabConf is not set");
+		
 		String fields = "";
 		
 		for (int i = 0; i < this.getFields().size(); i++) {
@@ -411,7 +438,7 @@ public class UniqueKeyInfo {
 				fields += " OR ";
 			}
 			
-			fields += key.getName() + " is not null ";
+			fields += this.tabConf.getTableAlias() + "." + key.getName() + " is not null ";
 		}
 		
 		return fields;
@@ -427,7 +454,7 @@ public class UniqueKeyInfo {
 				fields += " AND ";
 			}
 			
-			fields += key.getName() + " is not null ";
+			fields += this.tabConf.getTableAlias() + "." + key.getName() + " is not null ";
 		}
 		
 		return fields;
@@ -453,5 +480,19 @@ public class UniqueKeyInfo {
 	
 	public boolean hasFields() {
 		return utilities.arrayHasElement(this.fields);
+	}
+	
+	public boolean hasNullFields() {
+		if (!isFieldValuesLoaded())
+			throw new ForbiddenOperationException(
+			        "The values for the fields was not loaded. Please call loadValuesToFields(DatabaseObject object) before you try to call this method");
+		
+		for (Key k : this.fields) {
+			if (k.getValue() == null) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 }

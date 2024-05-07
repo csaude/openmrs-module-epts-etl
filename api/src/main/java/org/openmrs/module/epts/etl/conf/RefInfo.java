@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -71,6 +72,10 @@ public class RefInfo {
 	
 	public boolean isSimpleMapping() {
 		return utilities.arraySize(this.mapping) <= 1;
+	}
+	
+	public boolean isCompositeMapping() {
+		return utilities.arraySize(this.mapping) > 1;
 	}
 	
 	public RefMapping getSimpleRefMapping() {
@@ -266,6 +271,45 @@ public class RefInfo {
 		}
 		
 		return keys;
+	}
+	
+	public UniqueKeyInfo parseToKeyByChild() {
+		UniqueKeyInfo uk = new UniqueKeyInfo(this.childTableConf);
+		
+		for (RefMapping map : this.mapping) {
+			uk.addKey(new Key(map.getChildFieldName()));
+		}
+		
+		return uk;
+	}
+	
+	public UniqueKeyInfo parseToKeyByParent() {
+		UniqueKeyInfo uk = new UniqueKeyInfo(this.parentTableConf);
+		
+		for (RefMapping map : this.mapping) {
+			uk.addKey(new Key(map.getParentFieldName()));
+		}
+		
+		return uk;
+	}
+	
+	/**
+	 * Generates the parent oid based on data within a child record
+	 * 
+	 * @param obj
+	 * @return
+	 */
+	public Oid generateParentOidFromChild(DatabaseObject obj) {
+		
+		Oid oid = new Oid();
+		
+		for (RefMapping map : this.mapping) {
+			oid.addKey(new Key(map.getParentFieldName(), obj.getFieldValue(map.getChildFieldName())));
+		}
+		
+		oid.setFieldValuesLoaded(true);
+		
+		return oid;
 	}
 	
 }

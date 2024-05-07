@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
-import org.openmrs.module.epts.etl.conf.SyncProcessType;
+import org.openmrs.module.epts.etl.conf.EtlProcessType;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.ClassPathUtilities;
@@ -39,7 +39,7 @@ public class ConfVM {
 	private ConfVM(String installationType) throws IOException, DBException {
 		this.etlConfiguration = new EtlConfiguration();
 		
-		SyncProcessType processType = installationType.equals("source") ? SyncProcessType.SOURCE_SYNC : SyncProcessType.DATABASE_MERGE_FROM_JSON;
+		EtlProcessType processType = installationType.equals("source") ? EtlProcessType.SOURCE_SYNC : EtlProcessType.DATABASE_MERGE_FROM_JSON;
 		
 		this.etlConfiguration.setProcessType(processType);
 		

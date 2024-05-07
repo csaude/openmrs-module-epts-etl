@@ -66,7 +66,7 @@ public class DBCopyEngine extends Engine {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 						mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));

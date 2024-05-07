@@ -9,6 +9,8 @@ public class Oid extends PrimaryKey {
 	private boolean fullLoaded;
 	
 	public Oid() {
+		super(null);
+		
 		this.fullLoaded = false;
 	}
 	

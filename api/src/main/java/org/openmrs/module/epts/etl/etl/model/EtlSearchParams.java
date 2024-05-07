@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.etl.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -32,19 +33,23 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		searchClauses.addColumnToSelect("distinct src_.*");
+		searchClauses.addColumnToSelect("distinct " + srcConfig.getTableAlias() + " .*");
+		
+		for (Field f : srcConfig.getFields()) {
+			searchClauses.addColumnToSelect( f.generateAliasedSelectColumn(srcConfig));
+		}
 		
 		if (getExtraTableDataSource() != null) {
 			for (TableDataSourceConfig t : getExtraTableDataSource()) {
 				for (Field f : t.getFields()) {
 					if (!srcConfig.containsField(f.getName()) && !searchClauses.isToSelectColumn(f.getName())) {
-						searchClauses.addColumnToSelect(t.getTableName() + "." + f.getName());
+						searchClauses.addColumnToSelect(f.generateAliasedSelectColumn(t));
 					}
 				}
 			}
 		}
 		
-		String clauseFrom = srcSchema + "." + srcConfig.getTableName() + " src_ ";
+		String clauseFrom = srcSchema + "." + srcConfig.getTableName() + " " + srcConfig.getTableAlias();
 		
 		if (getExtraTableDataSource() != null) {
 			
@@ -64,18 +69,46 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 					searchClauses.addToParameters(params);
 				}
 				
-				clauseFrom = clauseFrom + " " + joinType + " join " + t.getTableName() + " on " + extraJoinQuery;
+				clauseFrom = clauseFrom + " " + joinType + " join " + t.getTableName() + " " + t.getTableAlias() + " on "
+				        + extraJoinQuery;
 				
-				if (t.getJoinType().isLeftJoin()) {
+				if (utilities.arrayHasElement(t.getSelfJoinTables())) {
+					for (AuxExtractTable aux : t.getSelfJoinTables()) {
+						
+						joinType = aux.getJoinType().toString();
+						
+						extraJoinQuery = aux.generateConditionsFields();
+						
+						if (utilities.stringHasValue(extraJoinQuery)) {
+							Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,
+							    getConfig().getRelatedSyncConfiguration());
+							
+							extraJoinQuery = DBUtilities.replaceSqlParametersWithQuestionMarks(extraJoinQuery);
+							
+							searchClauses.addToParameters(params);
+						}
+						
+						clauseFrom = clauseFrom + " " + joinType + " join " + aux.getTableName() + " " + aux.getTableAlias()
+						        + " on " + extraJoinQuery;
+						
+						if (aux.getJoinType().isLeftJoin()) {
+							additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
+							    aux.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
+						}
+					}
+					
+				}
+				
+				if (t.getJoinType().isLeftJoin() && !utilities.arrayHasElement(t.getSelfJoinTables())) {
 					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
 					    t.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
 				}
+				
 			}
 			
 			if (utilities.stringHasValue(additionalLeftJoinFields)) {
 				searchClauses.addToClauses(additionalLeftJoinFields);
 			}
-			
 		}
 		
 		searchClauses.addToClauseFrom(clauseFrom);

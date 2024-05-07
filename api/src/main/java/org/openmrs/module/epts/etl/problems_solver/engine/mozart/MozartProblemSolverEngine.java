@@ -150,8 +150,8 @@ public abstract class MozartProblemSolverEngine extends GenericEngine {
 			
 			Extension knownKeys = configuredTable.findExtension("knownKeys");
 			
-			for (Extension keyInfo: knownKeys.getExtension()) {
-				UniqueKeyInfo uk = new UniqueKeyInfo();
+			for (Extension keyInfo : knownKeys.getExtension()) {
+				UniqueKeyInfo uk = new UniqueKeyInfo(configuredTable);
 				
 				for (Extension keyPart : keyInfo.getExtension()) {
 					uk.addKey(new Key(keyPart.getValueString()));
@@ -163,20 +163,21 @@ public abstract class MozartProblemSolverEngine extends GenericEngine {
 			return knownKeys_;
 		}
 		catch (ForbiddenOperationException e1) {
-			return  null;
+			return null;
 		}
 	}
 	
-	protected List<UniqueKeyInfo> generateMissingUniqueKeys(String dbName, AbstractTableConfiguration configuredTable, Connection conn)
-	        throws DBException, LongTransactionException {
+	protected List<UniqueKeyInfo> generateMissingUniqueKeys(String dbName, AbstractTableConfiguration configuredTable,
+	        Connection conn) throws DBException, LongTransactionException {
 		
 		List<UniqueKeyInfo> missing = new ArrayList<UniqueKeyInfo>();
 		
 		List<UniqueKeyInfo> knownKeys = generateKnownUk(configuredTable);
 		
-		if (knownKeys == null) return missing;
+		if (knownKeys == null)
+			return missing;
 		
-		List<UniqueKeyInfo> existingKeys = DBUtilities.getUniqueKeys(configuredTable.getTableName(), dbName, conn);
+		List<UniqueKeyInfo> existingKeys = DBUtilities.getUniqueKeys(configuredTable, dbName, conn);
 		
 		for (UniqueKeyInfo knownKey : knownKeys) {
 			if (!existingKeys.contains(knownKey)) {

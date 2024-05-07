@@ -13,6 +13,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
@@ -26,6 +27,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public abstract class AbstractTableConfiguration extends EtlDataConfiguration implements Comparable<AbstractTableConfiguration>, DatabaseObjectConfiguration {
 	
 	private String tableName;
+	
+	private String tableAlias;
 	
 	private List<TableParent> parents;
 	
@@ -104,6 +107,14 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		this.insertSQLWithObjectId = toCloneFrom.insertSQLWithObjectId;
 		this.insertSQLWithoutObjectId = toCloneFrom.insertSQLWithoutObjectId;
 		this.updateSQL = toCloneFrom.updateSQL;
+	}
+	
+	public String getTableAlias() {
+		return tableAlias;
+	}
+	
+	public void setTableAlias(String tableAlias) {
+		this.tableAlias = tableAlias;
 	}
 	
 	@Override
@@ -339,7 +350,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 				while (rs.next()) {
 					
 					if (this.primaryKey == null) {
-						this.primaryKey = new PrimaryKey();
+						this.primaryKey = new PrimaryKey(this);
 					}
 					
 					Key pk = new Key();
@@ -359,6 +370,69 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		}
 		
 		return this.primaryKey;
+	}
+	
+	public synchronized DatabaseObject generateAndSaveDefaultObject(Connection conn) throws DBException {
+		try {
+			DatabaseObject defaultObject = getDefaultObject(conn);
+			
+			if (defaultObject != null) {
+				return defaultObject;
+			} else {
+				defaultObject = getSyncRecordClass().newInstance();
+				defaultObject.setRelatedConfiguration(this);
+				
+				defaultObject.loadWithDefaultValues();
+				
+				for (RefInfo p : this.parentRefInfo) {
+					
+					DatabaseObject defaultParent = p.getParentTableConf().getDefaultObject(conn);
+					
+					if (defaultParent == null) {
+						defaultParent = getSyncRecordClass().newInstance();
+						defaultParent.setRelatedConfiguration(p.getParentTableConf());
+						
+						if (defaultParent.checkIfAllRelationshipCanBeresolved(this, conn)) {
+							defaultParent = p.getParentTableConf().generateAndSaveDefaultObject(conn);
+						} else {
+							throw new ForbiddenOperationException("There are recursive relationship between "
+							        + this.tableName + " and " + p.getParentTableConf().getTableName()
+							        + " which cannot automatically resolved...! Please manual create default record for one of thise table using id '-1'");
+						}
+						
+						defaultObject.changeParentValue(p, defaultParent);
+					}
+					
+				}
+				
+				defaultObject.save(this, conn);
+				
+				defaultObject.loadObjectIdData(this);
+				
+				EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf = getRelatedSyncConfiguration()
+				        .getDefaultGeneratedObjectKeyTabConf();
+				
+				for (Key key : defaultObject.getObjectId().getFields()) {
+					DatabaseObject keyInfo = defaultGeneratedObjectKeyTabConf.getSyncRecordClass().newInstance();
+					
+					keyInfo.setFieldValue("tableName", defaultGeneratedObjectKeyTabConf.getTableName());
+					keyInfo.setFieldValue("column_name", key.getName());
+					keyInfo.setFieldValue("key_value", key.getValue());
+					
+					keyInfo.save(defaultGeneratedObjectKeyTabConf, conn);
+				}
+				
+				return defaultObject;
+			}
+		}
+		catch (InstantiationException | IllegalAccessException | ForbiddenOperationException e) {
+			throw new RuntimeException(e);
+		}
+		
+	}
+	
+	public DatabaseObject getDefaultObject(Connection conn) throws DBException, ForbiddenOperationException {
+		return DatabaseObjectDAO.getDefaultRecord(this, conn);
 	}
 	
 	@JsonIgnore
@@ -491,6 +565,19 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		
 	}
 	
+	private boolean checkIfRefIsManualyConfigured(RefInfo ref) {
+		if (this.parents == null)
+			return false;
+		
+		for (TableParent p : this.parents) {
+			if (p.getRef() != null && p.getRef().equals(ref)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
 	protected synchronized void loadParents(Connection conn) throws SQLException {
 		logDebug("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
 		
@@ -502,7 +589,12 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		
 		if (utilities.arrayHasElement(this.parents)) {
 			for (TableParent p : this.parents) {
+				
 				RefInfo r = p.getRef();
+				
+				if (r == null) {
+					continue;
+				}
 				
 				r.setChildTableConf(this);
 				r.setParentTableConf(p);
@@ -566,6 +658,31 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 						for (TableParent p : this.parents) {
 							RefInfo configuredRef = p.getRef();
 							
+							if (configuredRef == null && !checkIfRefIsManualyConfigured(ref)
+							        && ref.getParentTableConf().equals(p)) {
+								
+								if (ref.isCompositeMapping()) {
+									throw new ForbiddenOperationException(
+									        "You must manual configure the ref info for parent " + p.getTableName()
+									                + " on table " + this.getTableName()
+									                + ". Optionaly you can remove the manual parent specification");
+								}
+								
+								//create default refInfo to force the copy of shared ref info
+								
+								configuredRef = new RefInfo();
+								
+								configuredRef.setChildTableConf(this);
+								configuredRef.setParentTableConf(p);
+								
+								configuredRef.setMapping(ref.getMapping());
+								
+								configuredRef.getSimpleRefMapping()
+								        .setDefaultValueDueInconsistency(p.getDefaultValueDueInconsistency());
+								configuredRef.getSimpleRefMapping()
+								        .setSetNullDueInconsistency(p.isSetNullDueInconsistency());
+							}
+							
 							if (ref.equals(configuredRef)) {
 								ref.setConditionalFields(configuredRef.getConditionalFields());
 								
@@ -596,8 +713,10 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 						
 						RefInfo r = configuredParent.getRef();
 						
-						if (!this.parentRefInfo.contains(r)) {
-							this.parentRefInfo.add(r);
+						if (r != null) {
+							if (!this.parentRefInfo.contains(r)) {
+								this.parentRefInfo.add(r);
+							}
 						}
 					}
 				}
@@ -772,7 +891,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		tableInfo = parent.getRelatedSyncConfiguration().findPulledTableConfiguration(tableName);
 		
 		if (tableInfo == null) {
-			tableInfo = new GenericTabableConfiguration(relatedTabConf);
+			tableInfo = new GenericTableConfiguration(relatedTabConf);
 			tableInfo.setTableName(tableName);
 			tableInfo.setParent(parent);
 			parent.getRelatedSyncConfiguration().addToTableConfigurationPull(tableInfo);
@@ -1041,6 +1160,11 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 				this.autoIncrementId = useAutoIncrementId(conn);
 			}
 			
+			if (utilities.stringHasValue(this.extraConditionForExtract)) {
+				this.extraConditionForExtract = this.extraConditionForExtract.replaceAll(tableName + "\\.",
+				    tableAlias + "\\.");
+			}
+			
 			this.fullLoaded = true;
 		}
 		catch (SQLException e) {
@@ -1074,15 +1198,17 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 				
 				ref.getParentTableConf().getPrimaryKey(conn);
 				
-				PrimaryKey parentRefInfoAskey = new PrimaryKey();
+				PrimaryKey parentRefInfoAskey = new PrimaryKey(ref.getParentTableConf());
 				parentRefInfoAskey.setFields(ref.extractParentFieldsFromRefMapping());
 				
-				PrimaryKey childRefInfoAskey = new PrimaryKey();
+				PrimaryKey childRefInfoAskey = new PrimaryKey(ref.getChildTableConf());
 				childRefInfoAskey.setFields(ref.extractChildFieldsFromRefMapping());
 				
 				if (ref.getParentTableConf().primaryKey.equals(parentRefInfoAskey)
 				        && ref.getChildTableConf().primaryKey.equals(childRefInfoAskey)) {
 					this.sharePkWith = ref.getParentTableName();
+					
+					break;
 				}
 			}
 		}
@@ -1116,7 +1242,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 					
 					PrimaryKey pk = refInfo.getParentTableConf().getPrimaryKey();
 					
-					PrimaryKey refInfoKey = new PrimaryKey();
+					PrimaryKey refInfoKey = new PrimaryKey(refInfo.getParentTableConf());
 					refInfoKey.setFields(refInfo.extractParentFieldsFromRefMapping());
 					
 					if (pk.hasSameFields(refInfoKey)) {
@@ -1562,4 +1688,5 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	public boolean hasCompositeKey() {
 		return this.getPrimaryKey() != null && this.getPrimaryKey().isCompositeKey();
 	}
+	
 }

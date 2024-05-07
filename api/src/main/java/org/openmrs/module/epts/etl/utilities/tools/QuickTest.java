@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.ProcessStarter;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
-import org.openmrs.module.epts.etl.dbquickmerge.model.MergingRecord;
+import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
@@ -85,7 +85,7 @@ public class QuickTest {
 		
 		OpenConnection dstConn = dstApp.openConnection();
 		
-		Map<String, List<MergingRecord>> mergingRecs = new HashMap<>();
+		Map<String, List<QuickMergeRecord>> mergingRecs = new HashMap<>();
 		
 		try {
 			
@@ -96,12 +96,12 @@ public class QuickTest {
 					
 					DatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateMappedObject(rec, srcConn, srcApp, dstApp);
+					destObject = mappingInfo.generateDstObject(rec, srcConn, srcApp, dstApp);
 					
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);
 						
-						MergingRecord mr = new MergingRecord(destObject, mappingInfo, srcApp, dstApp, false);
+						QuickMergeRecord mr = new QuickMergeRecord(destObject, mappingInfo, srcApp, dstApp, false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
@@ -112,7 +112,7 @@ public class QuickTest {
 				}
 			}
 			
-			MergingRecord.mergeAll(mergingRecs, srcConn, dstConn);
+			QuickMergeRecord.mergeAll(mergingRecs, srcConn, dstConn);
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}

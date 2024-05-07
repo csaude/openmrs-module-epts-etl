@@ -32,7 +32,8 @@ public class EtlController extends SiteOperationController {
 	
 	private AppInfo srcApp;
 	
-	public EtlController(ProcessController processController, EtlOperationConfig operationConfig, String originLocationCode) {
+	public EtlController(ProcessController processController, EtlOperationConfig operationConfig,
+	    String originLocationCode) {
 		super(processController, operationConfig, originLocationCode);
 		
 		this.srcApp = getConfiguration().find(AppInfo.init("main"));
@@ -98,8 +99,8 @@ public class EtlController extends SiteOperationController {
 		
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		
-		searchClauses.setColumnsToSelect(
-		    function + "(src_." + config.getSrcConf().getPrimaryKey().retrieveSimpleKeyColumnName() + ") as value");
+		searchClauses.setColumnsToSelect(function + "(" + config.getSrcConf().getTableAlias() + "."
+		        + config.getSrcConf().getPrimaryKey().retrieveSimpleKeyColumnName() + ") as value");
 		
 		String sql = searchClauses.generateSQL(conn);
 		

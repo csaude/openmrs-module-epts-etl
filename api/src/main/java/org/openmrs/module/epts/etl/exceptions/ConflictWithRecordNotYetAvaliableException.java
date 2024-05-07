@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.exceptions;
 
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 
-public class ConflictWithRecordNotYetAvaliableException extends SyncExeption {
+public class ConflictWithRecordNotYetAvaliableException extends EtlException {
 	private static final long serialVersionUID = 1L;
 	private SyncRecord record;
 	

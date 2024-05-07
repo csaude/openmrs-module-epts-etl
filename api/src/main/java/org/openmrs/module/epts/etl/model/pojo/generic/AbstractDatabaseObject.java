@@ -21,10 +21,11 @@ import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.RefInfo;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.epts.etl.exceptions.SyncExeption;
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
@@ -52,6 +53,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	protected SyncImportInfoVO relatedSyncInfo;
 	
 	protected List<UniqueKeyInfo> uniqueKeysInfo;
+	
+	protected List<ParentInfo> parentsWithDefaultValues;
 	
 	public AbstractDatabaseObject() {
 		this.objectId = new Oid();
@@ -613,14 +616,14 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		}
 		
 		if (!syncTableInfo.getRelatedSyncConfiguration().isSourceSyncProcess())
-			throw new SyncExeption("You cannot move record to stage area in a installation different to source") {
+			throw new EtlException("You cannot move record to stage area in a installation different to source") {
 				
 				private static final long serialVersionUID = 1L;
 				
 			};
 		
 		if ((syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) && !syncTableInfo.isRemovableMetadata())
-			throw new SyncExeption("This metadata metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId()
+			throw new EtlException("This metadata metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId()
 			        + ". is missing its some parents [" + generateMissingInfo(missingParents)
 			        + "] You must resolve this inconsistence manual") {
 				
@@ -807,7 +810,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			throw new ForbiddenOperationException("Review this method!");
 		/*
 		if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden())
-			throw new SyncExeption("This metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId()
+			throw new EtlException("This metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId()
 			        + ". is missing its some parents [" + generateMissingInfo(missingParents)
 			        + "] You must resolve this inconsistence manual") {
 				
@@ -1062,5 +1065,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		}
 		
 	}
+	
+
 	
 }
