@@ -2,7 +2,6 @@ package org.openmrs.module.epts.etl.dbquickexport.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
@@ -11,7 +10,6 @@ import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public class DBQuickExportSearchParams extends SyncSearchParams<DatabaseObject> {
 	
@@ -26,20 +24,9 @@ public class DBQuickExportSearchParams extends SyncSearchParams<DatabaseObject> 
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
-		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
-		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
-		
-		srsFullTableName += tableInfo.getTableName();
-		
-		searchClauses.addToClauseFrom(srsFullTableName);
-		
-		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
-			searchClauses.addColumnToSelect("patient.*, person.uuid");
-			searchClauses.addToClauseFrom("inner join person on person.person_id = patient_id");
-		} else {
-			searchClauses.addColumnToSelect("*");
-		}
+		searchClauses.addToClauseFrom(getSrcTableConf().generateSelectFromClauseContentOnSpecificSchema(conn));
+		searchClauses.addColumnToSelect(getSrcTableConf().generateFullAliasedSelectColumns());
 		
 		if (!this.selectAllRecords) {
 			tryToAddLimits(searchClauses);

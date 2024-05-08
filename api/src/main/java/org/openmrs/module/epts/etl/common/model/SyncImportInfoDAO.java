@@ -19,8 +19,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		insertAllBatch(records, tableInfo, conn);
 	}
 	
-	public static void insertAllOneByOne(List<SyncImportInfoVO> records, AbstractTableConfiguration tableInfo, Connection conn)
-	        throws DBException {
+	public static void insertAllOneByOne(List<SyncImportInfoVO> records, AbstractTableConfiguration tableInfo,
+	        Connection conn) throws DBException {
 		for (SyncImportInfoVO record : records) {
 			try {
 				insert(record, tableInfo, conn);
@@ -217,8 +217,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static SyncImportInfoVO getByOriginIdAndLocation(AbstractTableConfiguration tableConfiguration, long originRecordId,
-	        String originAppLocationCode, Connection conn) throws DBException {
+	public static SyncImportInfoVO getByOriginIdAndLocation(AbstractTableConfiguration tableConfiguration,
+	        long originRecordId, String originAppLocationCode, Connection conn) throws DBException {
 		Object[] params = { originRecordId, originAppLocationCode };
 		
 		String sql = "";
@@ -248,8 +248,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 	@SuppressWarnings("unused")
 	public static SyncImportInfoVO getWinRecord(AbstractTableConfiguration tableConfiguration, String originRecordUuid,
 	        Connection conn) throws DBException {
-		if (true)
-			throw new ForbiddenOperationException("Review this method");
+		
+		utilities.throwReviewMethodException();
 		
 		Object[] params = { originRecordUuid, 1 };
 		
@@ -292,12 +292,10 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + searchParams.getConfig().getSrcConf()
-		        .generateFullStageTableName() + "\n";
+		sql += " FROM  	" + searchParams.getConfig().getSrcConf().generateFullStageTableName() + "\n";
 		sql += " WHERE 	id = \n";
 		sql += " 			 (	SELECT " + function + "(id)\n";
-		sql += "				FROM   " + searchParams.getConfig().getSrcConf()
-		        .generateFullStageTableName();
+		sql += "				FROM   " + searchParams.getConfig().getSrcConf().generateFullStageTableName();
 		sql += "				WHERE " + extraCondition + ")";
 		
 		return find(SyncImportInfoVO.class, sql, params, conn);
@@ -323,8 +321,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return getMissingRecordInDestination(tableConfiguration, "max", conn);
 	}
 	
-	private static SyncImportInfoVO getMissingRecordInDestination(AbstractTableConfiguration tableConfiguration, String function,
-	        Connection conn) throws DBException {
+	private static SyncImportInfoVO getMissingRecordInDestination(AbstractTableConfiguration tableConfiguration,
+	        String function, Connection conn) throws DBException {
 		Object[] params = {};
 		
 		String sql = "";
@@ -332,11 +330,11 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String table = tableConfiguration.getTableName();
 		String stageTable = tableConfiguration.generateFullStageTableName();
 		
-		String tablesToSelect = stageTable + " src_ LEFT JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
+		String tablesToSelect = stageTable + " src LEFT JOIN " + table + " dest_ on dest_.uuid = src.record_uuid";
 		
-		if (tableConfiguration.isFromOpenMRSModel() && table.equalsIgnoreCase("patient")) {
-			tablesToSelect = stageTable
-			        + " src_ LEFT JOIN person dest_ on dest_.uuid = src_.record_uuid LEFT JOIN patient ON patient_id = person_id ";
+		if (tableConfiguration.useSharedPKKey()) {
+			tablesToSelect = "LEFT JOIN " + tableConfiguration.getSharedTableConf().generateTableNameWithAlias() + " ON "
+			        + tableConfiguration.getSharedKeyRefInfo().generateJoinCondition();
 		}
 		
 		sql += " SELECT * \n";
@@ -369,11 +367,11 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String table = tableConfiguration.getTableName();
 		String stageTable = tableConfiguration.generateFullStageTableName();
 		
-		String tablesToSelect = stageTable + " src_ INNER JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
+		String tablesToSelect = stageTable + " src INNER JOIN " + table + " dest_ on dest_.uuid = src.record_uuid";
 		
-		if (tableConfiguration.isFromOpenMRSModel() && table.equalsIgnoreCase("patient")) {
-			tablesToSelect = stageTable
-			        + " src_ INNER JOIN person dest_ on dest_.uuid = src_.record_uuid LEFT JOIN patient ON patient_id = person_id ";
+		if (tableConfiguration.useSharedPKKey()) {
+			tablesToSelect = "LEFT JOIN " + tableConfiguration.getSharedTableConf().generateTableNameWithAlias() + " ON "
+			        + tableConfiguration.getSharedKeyRefInfo().generateJoinCondition();
 		}
 		
 		sql += " SELECT * \n";
@@ -443,8 +441,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void refreshLastMigrationTrySyncDate(AbstractTableConfiguration tableInfo, List<SyncImportInfoVO> syncRecords,
-	        Connection conn) throws DBException {
+	public static void refreshLastMigrationTrySyncDate(AbstractTableConfiguration tableInfo,
+	        List<SyncImportInfoVO> syncRecords, Connection conn) throws DBException {
 		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), syncRecords.get(0).getId(),
 		        syncRecords.get(syncRecords.size() - 1).getId() };
 		
@@ -534,8 +532,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		markAsToBeCompletedInFuture(record, tableInfo, null, conn);
 	}
 	
-	private static void markAsToBeCompletedInFuture(SyncImportInfoVO record, AbstractTableConfiguration tableInfo, String msg,
-	        Connection conn) throws DBException {
+	private static void markAsToBeCompletedInFuture(SyncImportInfoVO record, AbstractTableConfiguration tableInfo,
+	        String msg, Connection conn) throws DBException {
 		Object[] params = { SyncImportInfoVO.MIGRATION_STATUS_INCOMPLETE,
 		        msg == null ? "Migrated BUT still miss some parent info" : msg, DateAndTimeUtilities.getCurrentDate(),
 		        record.getId() };

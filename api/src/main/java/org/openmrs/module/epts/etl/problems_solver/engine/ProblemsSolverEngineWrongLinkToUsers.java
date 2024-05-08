@@ -6,11 +6,11 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
-import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.conf.RefMapping;
+import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
-import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
@@ -73,9 +73,12 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					
 					logDebug(startingStrLog + " STARTING RESOLVE PROBLEMS OF RECORD [" + record + "]");
 					
+					
+					AbstractTableConfiguration personTabConf = null;
+					/*
 					AbstractTableConfiguration personTabConf = AbstractTableConfiguration
 					        .initGenericTabConf("person", getEtlConfiguration().getSrcConf(), getEtlConfiguration().getSrcConf());
-					
+					*/
 					DatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(getMainSrcTableConf(),
 					    ((DatabaseObject) record).getObjectId(), conn);
 					
@@ -104,7 +107,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 							
 							List<DatabaseObject> relatedPersonOnDestDB = null;//DatabaseObjectDAO.getByUuid(prsonRecordClass, relatedPersonOnSrcDB.getUuid(), conn);
 							
-							RefInfo r = new RefInfo();
+							ParentTable r = new ParentTable();
 							
 							r.addMapping(RefMapping.fastCreate("person_id", "person_id"));
 							

@@ -8,7 +8,7 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
-import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
@@ -283,27 +283,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public String generateMissingInfo(Map<RefInfo, Integer> missingParents) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
 	public void remove(Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public Map<RefInfo, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
-	        throws DBException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	public void removeDueInconsistency(AbstractTableConfiguration syncTableInfo, Map<RefInfo, Integer> missingParents,
-	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
@@ -355,18 +335,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void changeParentValue(RefInfo refInfo, DatabaseObject newParent) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public void setParentToNull(RefInfo refInfo) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
 	public String generateInsertValuesWithoutObjectId() {
 		// TODO Auto-generated method stub
 		return null;
@@ -383,16 +351,48 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public List<DatabaseObject> getExtraDataSourceObjects() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public DatabaseObject getSharedPkObj() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public String generateMissingInfo(Map<ParentTable, Integer> missingParents) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Map<ParentTable, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
+	        throws DBException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void removeDueInconsistency(AbstractTableConfiguration syncTableInfo, Map<ParentTable, Integer> missingParents,
+	        Connection conn) throws DBException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void changeParentValue(ParentTable refInfo, DatabaseObject newParent) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setParentToNull(ParentTable refInfo) {
+		// TODO Auto-generated method stub
+		
 	}
 }

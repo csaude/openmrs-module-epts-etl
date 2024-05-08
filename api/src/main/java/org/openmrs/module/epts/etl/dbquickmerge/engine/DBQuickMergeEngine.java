@@ -7,15 +7,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
-import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
@@ -33,7 +32,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * @author jpboane
  * @see DbExtractController
  */
-public class DBQuickMergeEngine extends Engine {
+public class DBQuickMergeEngine extends EtlEngine {
 	
 	public DBQuickMergeEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
@@ -60,14 +59,6 @@ public class DBQuickMergeEngine extends Engine {
 		return utilities.parseList(
 		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
 		
-	}
-	
-	public AppInfo getDstApp() {
-		return this.getRelatedOperationController().getDstApp();
-	}
-	
-	public AppInfo getSrcApp() {
-		return this.getRelatedOperationController().getSrcApp();
 	}
 	
 	@Override
@@ -104,11 +95,7 @@ public class DBQuickMergeEngine extends Engine {
 	public DBQuickMergeController getRelatedOperationController() {
 		return (DBQuickMergeController) super.getRelatedOperationController();
 	}
-	
-	@Override
-	protected void restart() {
-	}
-	
+
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
 		if (getRelatedSyncOperationConfig().writeOperationHistory()
@@ -150,8 +137,8 @@ public class DBQuickMergeEngine extends Engine {
 							destObject.loadObjectIdData(mappingInfo);
 						}
 						
-						QuickMergeRecord mr = new QuickMergeRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
-						        false);
+						QuickMergeRecord mr = new QuickMergeRecord(destObject, mappingInfo, this.getSrcApp(),
+						        this.getDstApp(), false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
@@ -225,7 +212,8 @@ public class DBQuickMergeEngine extends Engine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					QuickMergeRecord data = new QuickMergeRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(), wrt);
+					QuickMergeRecord data = new QuickMergeRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
+					        wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);

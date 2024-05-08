@@ -83,7 +83,8 @@ public class TmpUserVO extends GenericDatabaseObject {
 	}
 	
 	public void harmonize(Connection conn) throws DBException {
-		throw new ForbiddenOperationException("Review this method!");
+		utilities.throwReviewMethodException();
+
 
 		/*
 		for (RefInfo child : this.usersSyncTableConfiguration.getChildRefInfo()) {

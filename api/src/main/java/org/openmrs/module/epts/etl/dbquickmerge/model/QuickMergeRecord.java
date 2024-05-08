@@ -9,8 +9,7 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
-import org.openmrs.module.epts.etl.conf.RefInfo;
-import org.openmrs.module.epts.etl.conf.TableParent;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -138,21 +137,17 @@ public class QuickMergeRecord {
 	        throws ParentNotYetMigratedException, DBException {
 		for (ParentInfo parentInfo : this.parentsWithDefaultValues) {
 			
-			RefInfo refInfo = parentInfo.getRefInfo();
-			
-			DatabaseObject parent = parentInfo.getParent();
-			
-			QuickMergeRecord parentData = new QuickMergeRecord(parent, refInfo.getParentTableConf(), srcApp, destApp,
-			        this.writeOperationHistory);
+			QuickMergeRecord parentData = new QuickMergeRecord(parentInfo.getParent(), parentInfo.getParentTableConf(),
+			        srcApp, destApp, this.writeOperationHistory);
 			
 			parentData.merge(srcConn, destConn);
 			
-			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getChildTableConf(), this.record,
-			    destConn);
+			List<DatabaseObject> recs = DatabaseObjectDAO
+			        .getByUniqueKeys(parentInfo.getParentTableConf().getChildTableConf(), this.record, destConn);
 			
-			parent = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+			DatabaseObject parent = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 			
-			record.changeParentValue(refInfo, parent);
+			record.changeParentValue(parentInfo.getParentTableConf(), parent);
 		}
 	}
 	
@@ -165,8 +160,8 @@ public class QuickMergeRecord {
 		
 		DatabaseObject record = quickMergeRecord.record;
 		
-		for (RefInfo refInfo : config.getParentRefInfo()) {
-			if (refInfo.getParentTableConf().isMetadata())
+		for (ParentTable refInfo : config.getParentRefInfo()) {
+			if (refInfo.isMetadata())
 				continue;
 			
 			String fieldNameOnParentTable = refInfo.getSimpleRefMapping().getParentField().getNameAsClassAtt();
@@ -177,29 +172,29 @@ public class QuickMergeRecord {
 			if (oParentIdInOrigin != null) {
 				Integer parentIdInOrigin = (Integer) oParentIdInOrigin;
 				
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getParentTableConf(),
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo,
 				    Oid.fastCreate(fieldNameOnParentTable, parentIdInOrigin), srcConn);
 				
 				if (parentInOrigin == null) {
 					
 					if (refInfo.getSimpleRefMapping().getDefaultValueDueInconsistency() == null) {
-						throw new MissingParentException(parentIdInOrigin, refInfo.getParentTableName(),
+						throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(),
 						        quickMergeRecord.config.getOriginAppLocationCode(), refInfo);
 					} else {
 						
 						parentIdInOrigin = refInfo.getSimpleRefMapping().getDefaultValueDueInconsistencyAsInt();
 						
-						parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getParentTableConf(),
+						parentInOrigin = DatabaseObjectDAO.getByOid(refInfo,
 						    Oid.fastCreate(fieldNameOnParentTable, parentIdInOrigin), srcConn);
 						
 						if (parentInOrigin == null) {
-							throw new MissingParentException(parentIdInOrigin, refInfo.getParentTableName(),
+							throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(),
 							        quickMergeRecord.config.getOriginAppLocationCode(), refInfo);
 						}
 					}
 				}
 				
-				AbstractTableConfiguration parentTabConf = refInfo.getParentTableConf();
+				AbstractTableConfiguration parentTabConf = refInfo;
 				
 				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parentTabConf, parentInOrigin, destConn);
 				
@@ -233,8 +228,8 @@ public class QuickMergeRecord {
 		
 		DatabaseObject record = quickMergeRecord.record;
 		
-		for (RefInfo refInfo : config.getParentRefInfo()) {
-			if (!refInfo.getParentTableConf().isMetadata())
+		for (ParentTable refInfo : config.getParentRefInfo()) {
+			if (!refInfo.isMetadata())
 				continue;
 			
 			Object oParentId = record.getParentValue(refInfo.getChildColumnAsClassAttOnSimpleMapping());
@@ -242,11 +237,11 @@ public class QuickMergeRecord {
 			if (oParentId != null) {
 				Integer parentId = (Integer) oParentId;
 				
-				DatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo.getParentTableConf(),
+				DatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo,
 				    Oid.fastCreate(refInfo.getParentColumnOnSimpleMapping(), parentId), destConn);
 				
 				if (parent == null)
-					throw new MissingParentException(parentId, refInfo.getParentTableName(),
+					throw new MissingParentException(parentId, refInfo.getTableName(),
 					        quickMergeRecord.config.getOriginAppLocationCode(), refInfo);
 			}
 		}
@@ -260,18 +255,16 @@ public class QuickMergeRecord {
 		DatabaseObject record = quickMergeRecord.record;
 		AbstractTableConfiguration config = quickMergeRecord.config;
 		
-		for (TableParent parent : config.getConditionalParents()) {
+		for (ParentTable parent : config.getConditionalParents()) {
 			if (parent.isMetadata())
 				continue;
 			
-			RefInfo refInfo = parent.getRef();
-			
-			if (utilities.arrayHasMoreThanOneElements(refInfo.getConditionalFields())) {
+			if (utilities.arrayHasMoreThanOneElements(parent.getConditionalFields())) {
 				throw new ForbiddenOperationException("Currently not supported multiple conditional fields");
 			}
 			
-			String conditionalFieldName = refInfo.getConditionalFields().get(0).getNameAsClassAtt();
-			Object conditionalvalue = refInfo.getConditionalFields().get(0).getValue();
+			String conditionalFieldName = parent.getConditionalFields().get(0).getNameAsClassAtt();
+			Object conditionalvalue = parent.getConditionalFields().get(0).getValue();
 			
 			if (!conditionalvalue.equals(record.getFieldValue(conditionalFieldName)))
 				continue;
@@ -279,31 +272,30 @@ public class QuickMergeRecord {
 			Integer parentIdInOrigin = null;
 			
 			try {
-				parentIdInOrigin = (Integer) record.getParentValue(refInfo.getChildColumnAsClassAttOnSimpleMapping());
+				parentIdInOrigin = (Integer) record.getParentValue(parent.getChildColumnAsClassAttOnSimpleMapping());
 			}
 			catch (NullPointerException | NumberFormatException e) {}
 			
 			if (parentIdInOrigin != null) {
-				Oid objectId = Oid.fastCreate(refInfo.getParentColumnOnSimpleMapping(), parentIdInOrigin);
+				Oid objectId = Oid.fastCreate(parent.getParentColumnOnSimpleMapping(), parentIdInOrigin);
 				
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getParentTableConf(), objectId, srcConn);
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(parent, objectId, srcConn);
 				
 				if (parentInOrigin == null)
 					throw new MissingParentException(parentIdInOrigin, parent.getTableName(),
-					        quickMergeRecord.config.getOriginAppLocationCode(), refInfo);
+					        quickMergeRecord.config.getOriginAppLocationCode(), parent);
 				
-				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getParentTableConf(), parentInOrigin,
-				    destConn);
+				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parent, parentInOrigin, destConn);
 				
 				DatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 				
 				if (parentInDest == null) {
-					quickMergeRecord.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInOrigin));
+					quickMergeRecord.parentsWithDefaultValues.add(new ParentInfo(parent, parentInOrigin));
 					
-					parentInDest = DatabaseObjectDAO.getDefaultRecord(refInfo.getParentTableConf(), destConn);
+					parentInDest = DatabaseObjectDAO.getDefaultRecord(parent, destConn);
 				}
 				
-				record.changeParentValue(refInfo, parentInDest);
+				record.changeParentValue(parent, parentInDest);
 			}
 		}
 	}

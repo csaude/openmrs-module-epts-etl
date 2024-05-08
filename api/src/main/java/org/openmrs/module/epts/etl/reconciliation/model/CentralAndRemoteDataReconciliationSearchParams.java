@@ -2,7 +2,6 @@ package org.openmrs.module.epts.etl.reconciliation.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
@@ -16,6 +15,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchParams<DatabaseObject> {
 	
+	@SuppressWarnings("unused")
 	private boolean selectAllRecords;
 	
 	private EtlOperationType type;
@@ -29,6 +29,10 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		
+		utilities.throwReviewMethodException();
+		
+		/*
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		AbstractTableConfiguration tableInfo = this.getSrcTableConf();
@@ -104,7 +108,9 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 			}
 		}
 		
-		return searchClauses;
+		return searchClauses;*/
+		
+		return null;
 	}
 	
 	@SuppressWarnings("unchecked")

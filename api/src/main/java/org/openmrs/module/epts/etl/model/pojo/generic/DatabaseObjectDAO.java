@@ -2,12 +2,11 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.UUID;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -15,7 +14,6 @@ import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DatabaseObjectDAO extends BaseDAO {
 	
@@ -122,21 +120,31 @@ public class DatabaseObjectDAO extends BaseDAO {
 	public static DatabaseObject thinGetByRecordOrigin(Integer recordOriginId, String recordOriginLocationCode,
 	        AbstractTableConfiguration parentTableConfiguration, Connection conn) throws DBException {
 		
+		if (UUID.randomUUID() != null) {
+			throw new ForbiddenOperationException("rever este methodo");
+		}
+		
 		try {
 			Object[] params = { recordOriginId, recordOriginLocationCode };
 			
 			String tableName = parentTableConfiguration.getTableName();
 			
+			String columnsToSelect = parentTableConfiguration.generateFullAliasedSelectColumns();
+			
 			String clauseFromStarting = tableName;
 			
-			if (parentTableConfiguration.isFromOpenMRSModel() && tableName.equals("patient")) {
-				clauseFromStarting += " INNER JOIN person on person_id = patient_id \n";
+			if (parentTableConfiguration.useSharedPKKey()) {
+				AbstractTableConfiguration sharedTabConf = parentTableConfiguration.getSharedTableConf();
+				
+				clauseFromStarting += " INNER JOIN " + sharedTabConf.generateTableNameWithAlias() + " ON "
+				        + parentTableConfiguration.getSharedKeyRefInfo().generateJoinCondition() + "\n";
+				
+				columnsToSelect += ", \n" + sharedTabConf.generateFullAliasedSelectColumns();
 			}
 			
 			String sql = "";
 			
-			sql += " SELECT " + tableName + ".*"
-			        + (parentTableConfiguration.isFromOpenMRSModel() && tableName.equals("patient") ? ", uuid" : "") + "\n";
+			sql += " SELECT " + columnsToSelect + "\n";
 			sql += " FROM  	" + clauseFromStarting + " INNER JOIN " + parentTableConfiguration.generateFullStageTableName()
 			        + " ON record_uuid = uuid\n";
 			sql += " WHERE 	record_origin_id = ? and record_origin_location_code = ? ";
@@ -182,17 +190,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String conditionSQL = "";
 		
-		List<Key> ukFields = uniqueKey.getFields();
-		
 		try {
 			params = utilities.setParam(params, uniqueKey.parseValuesToArray());
 			
-			for (Field field : ukFields) {
-				if (!conditionSQL.isEmpty())
-					conditionSQL += " AND ";
-				
-				conditionSQL += field.getName() + " = ?";
-			}
+			conditionSQL = uniqueKey.parseToParametrizedStringCondition();
 		}
 		catch (ForbiddenOperationException e) {}
 		
@@ -200,17 +201,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 			return null;
 		
 		String sql = "";
-		String SCHEMA = schema != null ? schema + "." : "";
 		
-		sql += " SELECT " + tableConfiguration.getTableName() + ".*"
-		        + (tableConfiguration.isFromOpenMRSModel() && tableConfiguration.getTableName().equals("patient") ? ", uuid"
-		                : "")
-		        + "\n";
-		sql += " FROM     " + SCHEMA + tableConfiguration.getTableName()
-		        + (tableConfiguration.isFromOpenMRSModel() && tableConfiguration.getTableName().equals("patient")
-		                ? " inner join " + SCHEMA + "person on person_id = patient_id "
-		                : "")
-		        + "\n";
+		sql += " SELECT " + tableConfiguration.generateFullAliasedSelectColumns() + "\n";
+		sql += " FROM     " + tableConfiguration.generateFullTableNameWithAlias(schema) + "\n";
 		sql += " WHERE 	" + conditionSQL;
 		
 		T recOnDb = (T) find(tableConfiguration.getLoadHealper(), tableConfiguration.getSyncRecordClass(), sql, params,
@@ -238,19 +231,12 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		for (UniqueKeyInfo uniqueKey : tableConfiguration.getUniqueKeys()) {
 			
-			List<Key> ukFields = uniqueKey.getFields();
-			
 			String tmpCodition = "";
 			
 			try {
-				params = utilities.setParam(params, obj.getUniqueKeysFieldValues(uniqueKey));
+				params = utilities.setParam(params, uniqueKey.parseValuesToArray());
 				
-				for (Field field : ukFields) {
-					if (!tmpCodition.isEmpty())
-						tmpCodition += " AND ";
-					
-					tmpCodition += field.getName() + " = ?";
-				}
+				tmpCodition = uniqueKey.parseToParametrizedStringCondition();
 			}
 			catch (ForbiddenOperationException e) {}
 			
@@ -266,16 +252,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 			return null;
 		
 		String sql = "";
-		String SCHEMA = schema != null ? schema + "." : "";
 		
-		sql += " SELECT " + obj.generateTableName() + ".*"
-		        + (tableConfiguration.isFromOpenMRSModel() && obj.generateTableName().equals("patient") ? ", uuid" : "")
-		        + "\n";
-		sql += " FROM     " + SCHEMA + obj.generateTableName()
-		        + (tableConfiguration.isFromOpenMRSModel() && obj.generateTableName().equals("patient")
-		                ? " inner join " + SCHEMA + "person on person_id = patient_id "
-		                : "")
-		        + "\n";
+		sql += " SELECT " + tableConfiguration.generateFullAliasedSelectColumns() + "\n";
+		sql += " FROM     " + tableConfiguration.generateFullTableNameWithAlias(schema) + "\n";
 		sql += " WHERE 	" + conditionSQL;
 		
 		List<T> objs = (List<T>) search(tableConfiguration.getLoadHealper(), obj.getClass(), sql, params, conn);
@@ -444,6 +423,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 	
 	private static GenericDatabaseObject getConsistentRecordInOrigin(AbstractTableConfiguration tableConfiguration,
 	        String function, Connection conn) throws DBException {
+		
+		utilities.throwReviewMethodException();
+		
 		Object[] params = {};
 		
 		String sql = "";
@@ -453,15 +435,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String tablesToSelect = stageTable + " stage_ INNER JOIN " + table + " src_ on src_.uuid = stage_.record_uuid";
 		
-		if (tableConfiguration.isFromOpenMRSModel() && table.equalsIgnoreCase("patient")) {
-			tablesToSelect = stageTable
-			        + " src_ INNER JOIN person on person.uuid = src_.record_uuid INNER JOIN patient dest_ ON patient_id = person_id ";
-		}
+		String simplePk = tableConfiguration.getTableAlias() + "."
+		        + tableConfiguration.getPrimaryKey().retrieveSimpleKeyColumnName();
 		
-		sql += " SELECT " + tableConfiguration.getPrimaryKey() + " object_id \n";
-		sql += " FROM  	" + table + "\n";
+		sql += " SELECT " + simplePk + " object_id \n";
+		sql += " FROM  	" + tableConfiguration.generateSelectFromClauseContent() + "\n";
 		sql += " WHERE 	1 = 1 \n";
-		sql += "		AND " + tableConfiguration.getPrimaryKey() + " = ";
+		sql += "		AND " + simplePk + " = ";
 		sql += " 			 (	SELECT " + function + "(" + tableConfiguration.getPrimaryKey() + ")\n";
 		sql += "				FROM   " + tablesToSelect + "\n";
 		sql += "				WHERE consistent = 1;\n";
@@ -786,11 +766,12 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String table = tableConfiguration.getTableName();
 		String stageTable = tableConfiguration.generateFullStageTableName();
 		
-		String tablesToSelect = stageTable + " src_ INNER JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
+		String tablesToSelect = stageTable + " src_ INNER JOIN " + tableConfiguration.generateTableNameWithAlias() + "  ON "
+		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
 		
-		if (tableConfiguration.isFromOpenMRSModel() && table.equalsIgnoreCase("patient")) {
-			tablesToSelect = stageTable
-			        + " src_ INNER JOIN person on person.uuid = src_.record_uuid INNER JOIN patient dest_ ON patient_id = person_id ";
+		if (tableConfiguration.useSharedPKKey()) {
+			tablesToSelect += "INNER JOIN " + tableConfiguration.getSharedTableConf().generateTableNameWithAlias() + " ON "
+			        + tableConfiguration.getSharedKeyRefInfo().generateJoinCondition();
 		}
 		
 		String startingClause = "1 != 1 ";
@@ -809,11 +790,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 			dateChangedClause += " or (dest_.date_changed < src_.record_date_changed)";
 		}
 		
-		sql += " SELECT " + tableConfiguration.getPrimaryKey() + " object_id \n";
+		String simpleKey = tableConfiguration.getPrimaryKey().retrieveSimpleKeyColumnName();
+		
+		sql += " SELECT " + simpleKey + " object_id \n";
 		sql += " FROM  	" + table + "\n";
 		sql += " WHERE 	1 = 1 \n";
-		sql += "		AND " + tableConfiguration.getPrimaryKey() + " = ";
-		sql += " 			 (	SELECT " + function + "(" + tableConfiguration.getPrimaryKey() + ")\n";
+		sql += "		AND " + simpleKey + " = ";
+		sql += " 			 (	SELECT " + function + "(" + simpleKey + ")\n";
 		sql += "				FROM   " + tablesToSelect + "\n";
 		sql += "				WHERE 1= 1\n";
 		sql += "					AND (" + startingClause + dateVoidedClause + dateChangedClause + "))";
@@ -840,18 +823,20 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String table = tableConfiguration.getTableName();
 		String stageTable = tableConfiguration.generateFullStageTableName();
 		
-		String tablesToSelect = stageTable + " src_ RIGHT JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
+		String tablesToSelect = stageTable + " src_ RIGHT JOIN " + tableConfiguration.generateTableNameWithAlias() + "  on "
+		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
 		
-		if (tableConfiguration.isFromOpenMRSModel() && table.equalsIgnoreCase("patient")) {
-			tablesToSelect = stageTable
-			        + " src_ RIGHT JOIN person dest_ on dest_.uuid = src_.record_uuid RIGHT JOIN patient ON patient_id = person_id ";
+		if (tableConfiguration.useSharedPKKey()) {
+			tablesToSelect += "\n RIGHT JOIN " + tableConfiguration.getSharedTableConf().generateTableNameWithAlias()
+			        + " ON " + tableConfiguration.getSharedKeyRefInfo().generateJoinCondition();
 		}
 		
-		sql += " SELECT " + tableConfiguration.getPrimaryKey() + " object_id \n";
+		sql += " SELECT " + tableConfiguration.getPrimaryKey().retrieveSimpleKeyColumnName() + " object_id \n";
 		sql += " FROM  	" + table + "\n";
 		sql += " WHERE 	1 = 1 \n";
 		sql += "		AND " + tableConfiguration.getPrimaryKey() + " = ";
-		sql += " 			 (	SELECT " + function + "(" + tableConfiguration.getPrimaryKey() + ")\n";
+		sql += " 			 (	SELECT " + function + "(" + tableConfiguration.getPrimaryKey().retrieveSimpleKeyColumnName()
+		        + ")\n";
 		sql += "				FROM   " + tablesToSelect + "\n";
 		sql += "				WHERE id IS NULL\n)";
 		
@@ -877,13 +862,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String table = tableConfiguration.getTableName();
 		String stageTable = tableConfiguration.generateFullStageTableName();
 		
-		String tablesToSelect = stageTable + " src_ INNER JOIN " + table + " dest_ on dest_.uuid = src_.record_uuid";
+		String tablesToSelect = stageTable + " src_ INNER JOIN " + tableConfiguration.generateTableNameWithAlias() + "  on "
+		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
 		
-		if (tableConfiguration.isFromOpenMRSModel() && table.equalsIgnoreCase("patient")) {
-			tablesToSelect = stageTable
-			        + " src_ INNER JOIN person on person.uuid = src_.record_uuid INNER JOIN patient dest_ ON patient_id = person_id ";
+		if (tableConfiguration.useSharedPKKey()) {
+			tablesToSelect += "\n INNER JOIN " + tableConfiguration.getSharedTableConf().generateTableNameWithAlias()
+			        + " ON " + tableConfiguration.getSharedKeyRefInfo().generateJoinCondition();
 		}
-		
 		String startingClause = "1 != 1 ";
 		String dateVoidedClause = "";
 		String dateChangedClause = "";

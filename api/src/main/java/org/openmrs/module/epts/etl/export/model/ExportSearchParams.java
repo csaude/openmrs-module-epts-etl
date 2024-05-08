@@ -10,7 +10,6 @@ import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public class ExportSearchParams extends SyncSearchParams<DatabaseObject> {
 	
@@ -27,15 +26,9 @@ public class ExportSearchParams extends SyncSearchParams<DatabaseObject> {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
-		
-		String schema = DBUtilities.determineSchemaName(conn);
-		
-		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
-			searchClauses.addColumnToSelect("patient.*, person.uuid");
-			searchClauses.addToClauseFrom("inner join " + schema + ".person on person.person_id = patient_id");
-		} else {
-			searchClauses.addColumnToSelect("*");
-		}
+	
+		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
+		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContentOnSpecificSchema(conn));
 		
 		searchClauses.addToClauseFrom(
 		    "inner join " + tableInfo.generateFullStageTableName() + " on record_origin_id  = " + tableInfo.getPrimaryKey());

@@ -24,16 +24,11 @@ public class DatabaseIntegrityConsolidationSearchParams extends SyncSearchParams
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		searchClauses.addColumnToSelect(getSrcTableConf().getTableName() + ".*");
-		searchClauses.addToClauseFrom(getSrcTableConf().getTableName());
+		searchClauses.addColumnToSelect(getSrcTableConf().generateFullAliasedSelectColumns());
+		searchClauses.addToClauseFrom(getSrcTableConf().generateSelectFromClauseContent());
 		
-		if (getSrcTableConf().isFromOpenMRSModel()
-		        && getSrcTableConf().getTableName().equalsIgnoreCase("patient")) {
-			searchClauses.addToClauseFrom("INNER JOIN person ON person.person_id = patient.patient_id");
-		}
-		
-		searchClauses.addToClauseFrom(
-		    "INNER JOIN " + getSrcTableConf().generateFullStageTableName() + " ON record_uuid = uuid");
+		searchClauses
+		        .addToClauseFrom("INNER JOIN " + getSrcTableConf().generateFullStageTableName() + " ON record_uuid = uuid");
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("consistent = -1");

@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
@@ -118,14 +118,14 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 				
 				if (extraDataSourceObjects != null) {
 					for (GenericDatabaseObject obj : this.extraDataSourceObjects) {
-						if (obj.getRelatedConfiguration().equals(tabConf.getSharedKeyRefInfo().getParentTableConf())) {
+						if (obj.getRelatedConfiguration().equals(tabConf.getSharedKeyRefInfo())) {
 							this.sharedPkObj = obj;
 						}
 					}
 				}
 				
 				if (this.sharedPkObj == null) {
-					this.sharedPkObj = new GenericDatabaseObject(tabConf.getSharedKeyRefInfo().getParentTableConf());
+					this.sharedPkObj = new GenericDatabaseObject(tabConf.getSharedKeyRefInfo());
 				}
 			}
 			
@@ -147,16 +147,24 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			}
 			
 			for (Field field : this.fields) {
-				field.setValue(
-				    retrieveFieldValue(field.generateAliasedColumn((AbstractTableConfiguration) this.relatedConfiguration),
-				        field.getType(), rs));
+				try {
+					field.setValue(retrieveFieldValue(
+					    field.generateAliasedColumn((AbstractTableConfiguration) this.relatedConfiguration), field.getType(),
+					    rs));
+				}
+				catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			
 			loadAdditionInfo(rs);
 			
 			loadedFromDb = true;
 		}
-		catch (SQLException e) {}
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -187,7 +195,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	private GenericDatabaseObject findExtraObject(AbstractTableConfiguration tabConf) {
 		for (GenericDatabaseObject dbo : this.extraDataSourceObjects) {
-			if (dbo.relatedConfiguration.equals(tabConf)) {
+			if (dbo.relatedConfiguration.getAlias().equals(tabConf.getTableAlias())) {
 				return dbo;
 			}
 		}
@@ -277,7 +285,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@JsonIgnore
 	public boolean hasParents() {
 		if (utilities.arrayHasElement(this.relatedConfiguration.getParentRefInfo())) {
-			for (RefInfo refInfo : this.relatedConfiguration.getParentRefInfo()) {
+			for (ParentTable refInfo : this.relatedConfiguration.getParentRefInfo()) {
 				for (RefMapping map : refInfo.getMapping()) {
 					if (getFieldValue(map.getChildFieldName()) != null) {
 						return true;
@@ -292,7 +300,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	public Integer getParentValue(String parentAttName) {
 		if (utilities.arrayHasElement(this.relatedConfiguration.getParentRefInfo())) {
-			for (RefInfo refInfo : this.relatedConfiguration.getParentRefInfo()) {
+			for (ParentTable refInfo : this.relatedConfiguration.getParentRefInfo()) {
 				for (RefMapping map : refInfo.getMapping()) {
 					
 					if (map.getChildFieldName().equals(parentAttName)) {
@@ -325,18 +333,26 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
-	public void setParentToNull(RefInfo refInfo) {
+	public void setParentToNull(ParentTable refInfo) {
 		for (RefMapping map : refInfo.getMapping()) {
 			setFieldValue(map.getChildFieldName(), null);
 		}
 	}
 	
 	@Override
-	public void changeParentValue(RefInfo refInfo, DatabaseObject newParent) {
+	public void changeParentValue(ParentTable refInfo, DatabaseObject newParent) {
 		for (RefMapping map : refInfo.getMapping()) {
 			Object parentValue = newParent.getFieldValue(map.getChildFieldName());
 			this.setFieldValue(map.getChildFieldName(), parentValue);
 		}
 		
+	}
+	
+	@Override
+	public String toString() {
+		
+		String tableName = this.relatedConfiguration != null ? this.relatedConfiguration.getObjectName() : "Aknown Object";
+		
+		return tableName + ": " + super.toString();
 	}
 }

@@ -1,20 +1,20 @@
 package org.openmrs.module.epts.etl.dbquickmerge.model;
 
-import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 
 public class ParentInfo {
 	private DatabaseObject parent;
-	private RefInfo refInfo;
+	private ParentTable parentTableConf;
 	
-	public ParentInfo(RefInfo refInfo, DatabaseObject parent) {
-		this.refInfo = refInfo;
+	public ParentInfo(ParentTable refInfo, DatabaseObject parent) {
+		this.parentTableConf = refInfo;
 		this.parent = parent;
 	}
 	
 	
-	public RefInfo getRefInfo() {
-		return refInfo;
+	public ParentTable getParentTableConf() {
+		return parentTableConf;
 	}
 	
 	public DatabaseObject getParent() {

@@ -44,7 +44,8 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		throw new ForbiddenOperationException("Review this method");
+		utilities.throwReviewMethodException();
+
 		
 		/*		logDebug("RESOLVING PROBLEM ON " + syncRecords.size() + "' " + getMainSrcTableName());
 				

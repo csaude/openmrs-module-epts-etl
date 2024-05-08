@@ -8,11 +8,11 @@ import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -133,19 +133,19 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public abstract void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo);
 	
-	public abstract String generateMissingInfo(Map<RefInfo, Integer> missingParents);
+	public abstract String generateMissingInfo(Map<ParentTable, Integer> missingParents);
 	
 	public abstract void remove(Connection conn) throws DBException;
 	
-	public abstract Map<RefInfo, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
+	public abstract Map<ParentTable, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws DBException;
 	
 	public abstract void removeDueInconsistency(AbstractTableConfiguration syncTableInfo,
-	        Map<RefInfo, Integer> missingParents, Connection conn) throws DBException;
+	        Map<ParentTable, Integer> missingParents, Connection conn) throws DBException;
 	
-	public abstract void changeParentValue(RefInfo refInfo, DatabaseObject newParent);
+	public abstract void changeParentValue(ParentTable refInfo, DatabaseObject newParent);
 	
-	public abstract void setParentToNull(RefInfo refInfo);
+	public abstract void setParentToNull(ParentTable refInfo);
 	
 	public abstract void changeObjectId(AbstractTableConfiguration abstractTableConfiguration, Connection conn)
 	        throws DBException;
@@ -314,9 +314,9 @@ public interface DatabaseObject extends SyncRecord {
 		}
 		
 		if (utils.arrayHasElement(thisTabConf.getParentRefInfo())) {
-			for (RefInfo ref : thisTabConf.getParentRefInfo()) {
+			for (ParentTable ref : thisTabConf.getParentRefInfo()) {
 				//Recursive relashionship
-				if (ref.getParentTableName().equals(otherTabConf.getTableName())) {
+				if (ref.getTableName().equals(otherTabConf.getTableName())) {
 					return false;
 				}
 			}

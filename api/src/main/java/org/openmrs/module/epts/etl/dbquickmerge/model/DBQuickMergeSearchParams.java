@@ -5,95 +5,23 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.model.EtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
-public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
+public class DBQuickMergeSearchParams extends EtlSearchParams {
 	
 	private int savedCount;
 	
 	public DBQuickMergeSearchParams(EtlItemConfiguration config, RecordLimits limits,
 	    DBQuickMergeController relatedController) {
-		super(config, limits);
 		
-		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
-	}
-	
-	@Override
-	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		String srcSchema = DBUtilities.determineSchemaName(conn);
-		AbstractTableConfiguration srcConfig = getSrcTableConf();
+		super(config, limits, relatedController);
 		
-		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
-		
-		searchClauses.addColumnToSelect("distinct src_.*");
-		
-		if (getExtraTableDataSource() != null) {
-			for (TableDataSourceConfig t : getExtraTableDataSource()) {
-				for (Field f : t.getFields()) {
-					if (!srcConfig.containsField(f.getName()) && !searchClauses.isToSelectColumn(f.getName())) {
-						searchClauses.addColumnToSelect(t.getTableName() + "." + f.getName());
-					}
-				}
-				
-			}
-		}
-		
-		String clauseFrom = srcSchema + "." + srcConfig.getTableName() + " src_ ";
-		
-		if (getExtraTableDataSource() != null) {
-			
-			String additionalLeftJoinFields = "";
-			
-			for (TableDataSourceConfig t : getExtraTableDataSource()) {
-				
-				String joinType = t.getJoinType().toString();
-				
-				String extraJoinQuery = t.generateConditionsFields();
-				
-				if (utilities.stringHasValue(extraJoinQuery)) {
-					Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,
-					    getConfig().getRelatedSyncConfiguration());
-					
-					extraJoinQuery = DBUtilities.replaceSqlParametersWithQuestionMarks(extraJoinQuery);
-					
-					searchClauses.addToParameters(params);
-				}
-				
-				clauseFrom = clauseFrom + " " + joinType + " join " + t.getTableName() + " on " + extraJoinQuery;
-				
-				if (t.getJoinType().isLeftJoin()) {
-					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
-					    t.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
-				}
-			}
-			
-			if (utilities.stringHasValue(additionalLeftJoinFields)) {
-				searchClauses.addToClauses(additionalLeftJoinFields);
-			}
-			
-		}
-		
-		searchClauses.addToClauseFrom(clauseFrom);
-		
-		tryToAddLimits(searchClauses);
-		
-		tryToAddExtraConditionForExport(searchClauses);
-		
-		if (utilities.stringHasValue(getExtraCondition())) {
-			searchClauses.addToClauses(getExtraCondition());
-		}
-		
-		return searchClauses;
 	}
 	
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
@@ -150,35 +78,24 @@ public class DBQuickMergeSearchParams extends DatabaseObjectSearchParams {
 	}
 	
 	private String generateDestinationJoinSubquery(DstConf dstConf, Connection dstConn) throws DBException {
-		String dstSchema = DBUtilities.determineSchemaName(dstConn);
 		
-		AbstractTableConfiguration tableInfo = getSrcTableConf();
+		AbstractTableConfiguration srcTabConf = getSrcTableConf();
 		
-		String dstFullTableName = dstSchema + ".";
-		dstFullTableName += tableInfo.getTableName();
+		String fromClause = dstConf.generateFullTableNameWithAlias(dstConn);
 		
-		String normalFromClause;
-		String patientFromClause;
-		String fromClause;
-		
-		normalFromClause = dstFullTableName + " dest_";
-		patientFromClause = dstSchema + ".patient inner join " + dstSchema + ".person dest_ on person_id = patient_id ";
-		
-		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equals("patient")) {
-			fromClause = patientFromClause;
-		} else {
-			fromClause = normalFromClause;
+		if (dstConf.useSharedPKKey()) {
+			fromClause += " inner join " + dstConf.getSharedTableConf().generateFullTableNameWithAlias(dstConn) + " on " + dstConf.getSharedKeyRefInfo().generateJoinCondition();
 		}
 		
 		String dstJoinSubquery = "";
-		String joinCondition = dstConf.generateJoinConditionWithSrc("src_", "dest_");
+		String joinCondition = dstConf.generateJoinConditionWithSrc();
 		
 		if (utilities.stringHasValue(joinCondition)) {
 			dstJoinSubquery += " SELECT * ";
 			dstJoinSubquery += " FROM    " + fromClause;
 			dstJoinSubquery += " WHERE " + joinCondition;
 		} else {
-			throw new ForbiddenOperationException("There is no join condition between the src [" + tableInfo.getTableName()
+			throw new ForbiddenOperationException("There is no join condition between the src [" + srcTabConf.getTableName()
 			        + "] and it destination table [" + dstConf.getTableName() + "]");
 		}
 		

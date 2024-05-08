@@ -96,7 +96,7 @@ public class FieldsMapping {
 	
 	@Override
 	public String toString() {
-		return "[srcField: " + srcField + ", dstField: " + dstField + "]";
+		return "[srcField: " + srcField + ", dstField: " + dstField + ", dataSourceName: " + this.dataSourceName + "]";
 	}
 	
 	public Object retrieveValue(DatabaseObject dstObject, List<DatabaseObject> srcObjects, AppInfo appInfo, Connection conn)
@@ -107,7 +107,7 @@ public class FieldsMapping {
 		}
 		
 		for (DatabaseObject srcObject : srcObjects) {
-			if (this.getDataSourceName().equals(srcObject.generateTableName())) {
+			if (this.getDataSourceName().equals(srcObject.getRelatedConfiguration().getAlias())) {
 				try {
 					return srcObject.getFieldValue(this.getSrcField());
 				}

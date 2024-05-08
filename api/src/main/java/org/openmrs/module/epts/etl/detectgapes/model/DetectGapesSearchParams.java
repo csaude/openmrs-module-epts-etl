@@ -19,7 +19,8 @@ public class DetectGapesSearchParams extends DatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public DetectGapesSearchParams(EtlItemConfiguration config, RecordLimits limits, DetectGapesController relatedController) {
+	public DetectGapesSearchParams(EtlItemConfiguration config, RecordLimits limits,
+	    DetectGapesController relatedController) {
 		super(config, limits);
 		
 		this.relatedController = relatedController;
@@ -32,13 +33,12 @@ public class DetectGapesSearchParams extends DatabaseObjectSearchParams {
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		String srcSchema = DBUtilities.determineSchemaName(conn);
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		searchClauses.addToClauseFrom(srcSchema + "." + tableInfo.getTableName() + " src_");
-		searchClauses.addColumnToSelect("src_.*");
+		searchClauses.addToClauseFrom(tableInfo.generateFullTableNameWithAlias(conn));
+		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
 		
 		tryToAddLimits(searchClauses);
 		

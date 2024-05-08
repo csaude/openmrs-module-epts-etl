@@ -355,12 +355,12 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	}
 
 	@Override
-	public List<RefInfo> getParentRefInfo() {
+	public List<ParentTable> getParentRefInfo() {
 		return null;
 	}
 
 	@Override
-	public List<RefInfo> getChildRefInfo() {
+	public List<ChildTable> getChildRefInfo() {
 		return null;
 	}
 	
@@ -386,6 +386,11 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 		}
 		
 		return clonedFields;
+	}
+	
+	@Override
+	public String getAlias() {
+		return getName();
 	}
 	
 }

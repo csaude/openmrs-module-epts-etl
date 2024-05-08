@@ -27,13 +27,8 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<DatabaseOb
 		
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
-		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
-			searchClauses.addColumnToSelect("patient.*, person.uuid");
-			searchClauses.addToClauseFrom("patient left join person on patient_id = person_id");
-		} else {
-			searchClauses.addColumnToSelect("*");
-			searchClauses.addToClauseFrom(tableInfo.getTableName());
-		}
+		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
+		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContentOnSpecificSchema(conn));
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("NOT EXISTS (SELECT 	id " + "			FROM    "

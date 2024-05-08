@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
-import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
@@ -36,6 +36,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 			//new DatabasesInfo("Echo Central Server", DatabasesInfo.DB_NAMES_ECHO, new DBConnectionInfo("root", "root", "jdbc:mysql://10.0.0.24:3307/openmrs_gile_alto_ligonha?autoReconnect=true&useSSL=false", "com.mysql.jdbc.Driver")),
 	};
 	
+	@SuppressWarnings("unused")
 	private AbstractTableConfiguration userRoleTableConf;
 	
 	@SuppressWarnings("unused")
@@ -44,9 +45,12 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	public ProblemsSolverEngineMissingUserRoles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 		
+		utilities.throwReviewMethodException();
+		
+		/*
 		this.userRoleTableConf = AbstractTableConfiguration.initGenericTabConf("user_role",
 			getEtlConfiguration().getSrcConf(), getEtlConfiguration().getSrcConf());
-		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());
+		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());*/
 	}
 	
 	@Override
@@ -105,8 +109,9 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	}
 	
 	private boolean performeOnServer(TmpUserVO record, DatabasesInfo dbInfo, Connection conn) throws DBException {
-		throw new ForbiddenOperationException("Review this method");
-		
+		utilities.throwReviewMethodException();
+
+		return false;
 		/*
 		boolean found = false;
 		

@@ -35,13 +35,14 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class EtlConfiguration extends BaseConfiguration {
+	
 	public static final String DEFAULT_GENERATED_OBJECT_KEY = "default_generated_object_key";
 	
 	private String syncRootDirectory;
 	
 	private String originAppLocationCode;
 	
-	private Map<String, AbstractTableConfiguration> syncTableConfigurationPull;
+	//private Map<String, AbstractTableConfiguration> syncTableConfigurationPull;
 	
 	private List<EtlItemConfiguration> etlItemConfiguration;
 	
@@ -104,7 +105,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	private EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf;
 	
 	public EtlConfiguration() {
-		syncTableConfigurationPull = new HashMap<String, AbstractTableConfiguration>();
+		//syncTableConfigurationPull = new HashMap<String, AbstractTableConfiguration>();
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
 		this.initialized = false;
@@ -425,13 +426,13 @@ public class EtlConfiguration extends BaseConfiguration {
 			for (EtlItemConfiguration config : etlItemConfiguration) {
 				config.setRelatedSyncConfiguration(this);
 				
-				addToTableConfigurationPull(config.getSrcConf());
+				//addToTableConfigurationPull(config.getSrcConf());
 				
 				List<EtlAdditionalDataSource> allAvaliableDataSources = config.getSrcConf().getAvaliableExtraDataSource();
 				
 				for (EtlAdditionalDataSource t : allAvaliableDataSources) {
 					if (t instanceof AbstractTableConfiguration) {
-						addToTableConfigurationPull((AbstractTableConfiguration) t);
+						//addToTableConfigurationPull((AbstractTableConfiguration) t);
 					}
 				}
 			}
@@ -440,6 +441,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		this.etlItemConfiguration = etlItemConfiguration;
 	}
 	
+	/*
 	public void addToTableConfigurationPull(AbstractTableConfiguration tableConfiguration) {
 		syncTableConfigurationPull.put(tableConfiguration.getTableName(), tableConfiguration);
 	}
@@ -447,6 +449,7 @@ public class EtlConfiguration extends BaseConfiguration {
 	public AbstractTableConfiguration findPulledTableConfiguration(String tableName) {
 		return syncTableConfigurationPull.get(tableName);
 	}
+	*/
 	
 	public String getSyncStageSchema() {
 		String schema;
@@ -565,14 +568,14 @@ public class EtlConfiguration extends BaseConfiguration {
 				tc.getSrcConf().setParent(tc);
 				
 				addConfiguredTable(tc.getSrcConf());
-				addToTableConfigurationPull(tc.getSrcConf());
+				//addToTableConfigurationPull(tc.getSrcConf());
 				
 				List<EtlAdditionalDataSource> allAvaliableDataSources = tc.getSrcConf().getAvaliableExtraDataSource();
 				
 				for (EtlAdditionalDataSource t : allAvaliableDataSources) {
 					if (t instanceof AbstractTableConfiguration) {
 						addConfiguredTable((AbstractTableConfiguration) t);
-						addToTableConfigurationPull((AbstractTableConfiguration) t);
+						//addToTableConfigurationPull((AbstractTableConfiguration) t);
 						t.setRelatedSrcConf(tc.getSrcConf());
 					}
 					
@@ -585,7 +588,7 @@ public class EtlConfiguration extends BaseConfiguration {
 					for (DstConf dst : tc.getDstConf()) {
 						addConfiguredTable(dst);
 						
-						addToTableConfigurationPull(dst);
+						//addToTableConfigurationPull(dst);
 						
 						dst.setParent(tc);
 						

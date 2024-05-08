@@ -42,43 +42,35 @@ public class ChangedRecordsDetectorSearchParams extends SyncSearchParams<Databas
 		
 		AbstractTableConfiguration tableInfo = getConfig().getSrcConf();
 		
-		searchClauses.addToClauseFrom(tableInfo.getTableName());
+		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContent());
 		
-		if (tableInfo.isFromOpenMRSModel()) {
+		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
+		
+		if (this.type.isNewRecordsDetector()) {
+			searchClauses.addToClauses(tableInfo.getTableName() + ".date_created >= ?");
 			
-			if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
-				searchClauses.addColumnToSelect("patient.*, person.uuid");
-				searchClauses.addToClauseFrom("inner join person on person.person_id = patient_id");
-			} else {
-				searchClauses.addColumnToSelect("*");
-			}
+			searchClauses.addToParameters(this.getSyncStartDate());
+		} else if (!tableInfo.isMetadata() && !tableInfo.getTableName().equalsIgnoreCase("users")
+		        && !tableInfo.getTableName().equalsIgnoreCase("obs")) {
+			searchClauses.addToClauses(tableInfo.getTableName() + ".date_created < ? and (" + tableInfo.getTableName()
+			        + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_voided >= ?)");
 			
-			if (this.type.isNewRecordsDetector()) {
-				searchClauses.addToClauses(tableInfo.getTableName() + ".date_created >= ?");
-				
-				searchClauses.addToParameters(this.getSyncStartDate());
-			} else if (!tableInfo.isMetadata() && !tableInfo.getTableName().equalsIgnoreCase("users")
-			        && !tableInfo.getTableName().equalsIgnoreCase("obs")) {
-				searchClauses.addToClauses(tableInfo.getTableName() + ".date_created < ? and (" + tableInfo.getTableName()
-				        + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_voided >= ?)");
-				
-				searchClauses.addToParameters(this.getSyncStartDate());
-				searchClauses.addToParameters(this.getSyncStartDate());
-				searchClauses.addToParameters(this.getSyncStartDate());
-			} else if (tableInfo.getTableName().equalsIgnoreCase("obs")) {
-				searchClauses.addToClauses(
-				    tableInfo.getTableName() + ".date_created < ? and " + tableInfo.getTableName() + ".date_voided >= ?");
-				
-				searchClauses.addToParameters(this.getSyncStartDate());
-				searchClauses.addToParameters(this.getSyncStartDate());
-			} else {
-				searchClauses.addToClauses(tableInfo.getTableName() + ".date_created < ? and (" + tableInfo.getTableName()
-				        + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_retired >= ?)");
-				
-				searchClauses.addToParameters(this.getSyncStartDate());
-				searchClauses.addToParameters(this.getSyncStartDate());
-				searchClauses.addToParameters(this.getSyncStartDate());
-			}
+			searchClauses.addToParameters(this.getSyncStartDate());
+			searchClauses.addToParameters(this.getSyncStartDate());
+			searchClauses.addToParameters(this.getSyncStartDate());
+		} else if (tableInfo.getTableName().equalsIgnoreCase("obs")) {
+			searchClauses.addToClauses(
+			    tableInfo.getTableName() + ".date_created < ? and " + tableInfo.getTableName() + ".date_voided >= ?");
+			
+			searchClauses.addToParameters(this.getSyncStartDate());
+			searchClauses.addToParameters(this.getSyncStartDate());
+		} else {
+			searchClauses.addToClauses(tableInfo.getTableName() + ".date_created < ? and (" + tableInfo.getTableName()
+			        + ".date_changed >= ? or " + tableInfo.getTableName() + ".date_retired >= ?)");
+			
+			searchClauses.addToParameters(this.getSyncStartDate());
+			searchClauses.addToParameters(this.getSyncStartDate());
+			searchClauses.addToParameters(this.getSyncStartDate());
 		}
 		
 		if (!this.selectAllRecords) {

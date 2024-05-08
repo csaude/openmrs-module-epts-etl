@@ -1,22 +1,27 @@
 package org.openmrs.module.epts.etl.exceptions;
 
-import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 
 public class MissingParentException extends EtlException {
+	
 	private static final long serialVersionUID = -2435762700151634050L;
 	
 	private Integer parentId;
+	
 	private String parentTable;
+	
 	private String originAppLocationConde;
-	private RefInfo refInfo;
+	
+	private ParentTable refInfo;
 	
 	public MissingParentException() {
 		super("On or more parents are missing");
 	}
 	
-	public MissingParentException(Integer parentId, String parentTable, String originAppLocationConde, RefInfo refInfo) {
-		super("Missing parent! Parent: [table: " + parentTable +", id: " + parentId + ", from:" +originAppLocationConde +  "]");
+	public MissingParentException(Integer parentId, String parentTable, String originAppLocationConde, ParentTable refInfo) {
+		super("Missing parent! Parent: [table: " + parentTable + ", id: " + parentId + ", from:" + originAppLocationConde
+		        + "]");
 		
 		this.parentId = parentId;
 		this.parentTable = parentTable;
@@ -24,9 +29,9 @@ public class MissingParentException extends EtlException {
 		this.refInfo = refInfo;
 	}
 	
-	
-	public MissingParentException(Oid parentId, String parentTable, String originAppLocationConde, RefInfo refInfo) {
-		super("Missing parent! Parent: [table: " + parentTable +", id: " + parentId + ", from:" +originAppLocationConde +  "]");
+	public MissingParentException(Oid parentId, String parentTable, String originAppLocationConde, ParentTable refInfo) {
+		super("Missing parent! Parent: [table: " + parentTable + ", id: " + parentId + ", from:" + originAppLocationConde
+		        + "]");
 		
 		this.parentTable = parentTable;
 		this.originAppLocationConde = originAppLocationConde;
@@ -57,15 +62,15 @@ public class MissingParentException extends EtlException {
 		this.originAppLocationConde = originAppLocationConde;
 	}
 	
-	public RefInfo getRefInfo() {
+	public ParentTable getRefInfo() {
 		return refInfo;
 	}
 	
-	public void setRefInfo(RefInfo refInfo) {
+	public void setRefInfo(ParentTable refInfo) {
 		this.refInfo = refInfo;
 	}
-
+	
 	public MissingParentException(String msg) {
 		super(msg);
-	}	
+	}
 }

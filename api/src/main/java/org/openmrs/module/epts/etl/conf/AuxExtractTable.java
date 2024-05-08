@@ -49,44 +49,9 @@ public class AuxExtractTable extends AbstractTableConfiguration {
 		this.joinType = JoinType.LEFT;
 	}
 	
-	/**
-	 * 
-	 */
 	public void tryToLoadJoinFields() {
 		if (!utilities.arrayHasElement(this.joinFields)) {
-			//Try to autoload join fields
-			
-			List<FieldsMapping> fm = new ArrayList<>();
-			
-			//Assuming that this datasource is parent
-			List<RefInfo> pInfo = this.getParent().findAllRefToParent(this.getTableName());
-			
-			if (utilities.arrayHasElement(pInfo)) {
-				for (RefInfo ref : pInfo) {
-					for (RefMapping map : ref.getMapping()) {
-						fm.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
-					}
-				}
-			} else {
-				
-				//Assuning that the this data src is child
-				pInfo = this.findAllRefToParent(this.getParent().getTableName());
-				
-				if (utilities.arrayHasElement(pInfo)) {
-					for (RefInfo ref : pInfo) {
-						for (RefMapping map : ref.getMapping()) {
-							fm.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
-						}
-					}
-				}
-			}
-			
-			if (fm != null) {
-				this.joinFields = new ArrayList<>();
-				for (FieldsMapping f : fm) {
-					this.joinFields.add(f);
-				}
-			}
+			this.joinFields = tryToLoadJoinFields(this.getParent());
 		}
 	}
 	

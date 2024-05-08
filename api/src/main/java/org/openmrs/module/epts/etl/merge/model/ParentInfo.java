@@ -1,19 +1,19 @@
 package org.openmrs.module.epts.etl.merge.model;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 
 public class ParentInfo {
 	private SyncImportInfoVO parentStageInfo;
-	private RefInfo refInfo;
+	private ParentTable refInfo;
 	
-	public ParentInfo(RefInfo refInfo, SyncImportInfoVO parentStageInfo) {
+	public ParentInfo(ParentTable refInfo, SyncImportInfoVO parentStageInfo) {
 		this.refInfo = refInfo;
 		this.parentStageInfo = parentStageInfo;
 	}
 	
 	
-	public RefInfo getRefInfo() {
+	public ParentTable getRefInfo() {
 		return refInfo;
 	}
 	

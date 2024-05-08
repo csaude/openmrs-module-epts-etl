@@ -36,11 +36,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
-		
-		srsFullTableName += tableInfo.getTableName();
-		
-		searchClauses.addToClauseFrom(srsFullTableName + " src_");
+		searchClauses.addToClauseFrom(tableInfo.generateFullTableNameWithAlias(srcConn));
 		
 		searchClauses.addColumnToSelect("*");
 		
@@ -69,7 +65,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 					
 					excludeExisting += "not exists (	select * ";
 					excludeExisting += "				from " + destFullTableName + " dest_";
-					excludeExisting += "				where dest_." + dstPK + " = src_." + srcPK + ")";
+					excludeExisting += "				where dest_." + dstPK + " = src." + srcPK + ")";
 					
 					searchClauses.addToClauses(excludeExisting);*/
 				}

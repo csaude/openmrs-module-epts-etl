@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
-import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -38,8 +38,8 @@ public class DbExtractRecord extends QuickMergeRecord {
 		
 		DatabaseObject record = this.record;
 		
-		for (RefInfo refInfo : config.getParentRefInfo()) {
-			if (refInfo.getParentTableConf().isMetadata())
+		for (ParentTable refInfo : config.getParentRefInfo()) {
+			if (refInfo.isMetadata())
 				continue;
 			
 			Oid key = refInfo.generateParentOidFromChild(record);
@@ -48,13 +48,13 @@ public class DbExtractRecord extends QuickMergeRecord {
 				continue;
 			}
 			
-			DatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo.getParentTableConf(), key, dstConn);
+			DatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo, key, dstConn);
 			
 			if (parent == null) {
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo.getParentTableConf(), key, srcConn);
+				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo, key, srcConn);
 				
 				if (parentInOrigin == null) {
-					throw new MissingParentException(key, refInfo.getParentTableName(),
+					throw new MissingParentException(key, refInfo.getTableName(),
 					        this.config.getOriginAppLocationCode(), refInfo);
 				}
 				
@@ -107,16 +107,13 @@ public class DbExtractRecord extends QuickMergeRecord {
 	        throws ParentNotYetMigratedException, DBException {
 		
 		for (ParentInfo parentInfo : this.parentsWithDefaultValues) {
-			RefInfo refInfo = parentInfo.getRefInfo();
 			
-			DatabaseObject parent = parentInfo.getParent();
-			
-			DbExtractRecord parentData = new DbExtractRecord(parent, refInfo.getParentTableConf(), srcApp, destApp,
+			DbExtractRecord parentData = new DbExtractRecord(parentInfo.getParent(), parentInfo.getParentTableConf(), srcApp, destApp,
 			        this.writeOperationHistory);
 			
 			parentData.extract(srcConn, destConn);
 			
-			record.changeParentValue(refInfo, parent);
+			record.changeParentValue(parentInfo.getParentTableConf(), parentInfo.getParent());
 		}
 	}
 	

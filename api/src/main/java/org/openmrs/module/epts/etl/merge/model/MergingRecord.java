@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
-import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -58,17 +58,17 @@ public class MergingRecord {
 	private void reloadParentsWithDefaultValues(Connection conn) throws ParentNotYetMigratedException, DBException {
 		for (ParentInfo parentInfo: this.parentsWithDefaultValues) {
 			
-			RefInfo refInfo = parentInfo.getRefInfo();
+			ParentTable refInfo = parentInfo.getRefInfo();
 			
 			SyncImportInfoVO parentStageInfo = parentInfo.getParentStageInfo();
 			
-			MergingRecord parentData = new MergingRecord(parentStageInfo, refInfo.getParentTableConf(), this.srcApp, this.destApp);
-			parentData.record = DatabaseObjectDAO.getByIdOnSpecificSchema(refInfo.getParentTableConf(), parentStageInfo.getRecordOriginIdAsOid(),  parentStageInfo.getRecordOriginLocationCode(), conn);
+			MergingRecord parentData = new MergingRecord(parentStageInfo, refInfo, this.srcApp, this.destApp);
+			parentData.record = DatabaseObjectDAO.getByIdOnSpecificSchema(refInfo, parentStageInfo.getRecordOriginIdAsOid(),  parentStageInfo.getRecordOriginLocationCode(), conn);
 			parentData.merge(conn);
 			
 			DatabaseObject parent = parentData.record;
 			
-			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo.getParentTableConf(), parentData.record, conn);
+			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo, parentData.record, conn);
 			
 			parent = recs != null && recs.size() > 0 ? recs.get(0) : null;
 			
@@ -84,23 +84,23 @@ public class MergingRecord {
 		DatabaseObject record = mergingRecord.record;
 		SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
 		
-		for (RefInfo refInfo: config.getParentRefInfo()) {
-			if (refInfo.getParentTableConf().isMetadata()) continue;
+		for (ParentTable refInfo: config.getParentRefInfo()) {
+			if (refInfo.isMetadata()) continue;
 			
 			Object parentIdInOrigin = record.getParentValue(refInfo.getChildColumnAsClassAttOnSimpleMapping());
 				 
 			if (parentIdInOrigin != null) {
-				DatabaseObject parent = record.retrieveParentInDestination(Integer.parseInt(parentIdInOrigin.toString()), stageInfo.getRecordOriginLocationCode(), refInfo.getParentTableConf(),  true, conn);
+				DatabaseObject parent = record.retrieveParentInDestination(Integer.parseInt(parentIdInOrigin.toString()), stageInfo.getRecordOriginLocationCode(), refInfo,  true, conn);
 		
 				if (parent == null) {
-					SyncImportInfoVO parentStageInfo = SyncImportInfoDAO.getByOriginIdAndLocation(refInfo.getParentTableConf(), Integer.parseInt(parentIdInOrigin.toString()), stageInfo.getRecordOriginLocationCode(), conn);
+					SyncImportInfoVO parentStageInfo = SyncImportInfoDAO.getByOriginIdAndLocation(refInfo, Integer.parseInt(parentIdInOrigin.toString()), stageInfo.getRecordOriginLocationCode(), conn);
 					
 					if (parentStageInfo != null) {
 						mergingRecord.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentStageInfo));
 					}
 					else throw new MissingParentException("Missing parent "+ refInfo + " with value [" + parentIdInOrigin + "] from [" + stageInfo.getRecordOriginLocationCode() + "]");
 					
-					parent = DatabaseObjectDAO.getDefaultRecord(refInfo.getParentTableConf(), conn);
+					parent = DatabaseObjectDAO.getDefaultRecord(refInfo, conn);
 				}
 				
 				record.changeParentValue(refInfo, parent);

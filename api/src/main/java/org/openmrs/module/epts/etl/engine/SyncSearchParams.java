@@ -101,7 +101,7 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 		if (this.getLimits() != null) {
 			
 			if (getSrcTableConf().getPrimaryKey().isSimpleNumericKey()) {
-				searchClauses.addToClauses("src_." + getSrcTableConf().getPrimaryKey().retrieveSimpleKeyColumnName() + " between ? and ?");
+				searchClauses.addToClauses( getSrcConf().getTableAlias() + "." + getSrcTableConf().getPrimaryKey().retrieveSimpleKeyColumnName() + " between ? and ?");
 				searchClauses.addToParameters(this.getLimits().getCurrentFirstRecordId());
 				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
 			}else {

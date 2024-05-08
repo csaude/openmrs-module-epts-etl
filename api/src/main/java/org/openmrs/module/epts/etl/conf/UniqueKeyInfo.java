@@ -70,6 +70,7 @@ public class UniqueKeyInfo {
 	public String retrieveSimpleKeyColumnName() {
 		return retrieveSimpleKey().getName();
 	}
+
 	
 	public String retrieveSimpleKeyColumnNameAsClassAtt() {
 		return retrieveSimpleKey().getNameAsClassAtt();
@@ -344,6 +345,7 @@ public class UniqueKeyInfo {
 		return values;
 	}
 	
+	@JsonIgnore
 	public String[] parseFieldNamesToArray() {
 		String[] fields = new String[this.getFields().size()];
 		
@@ -351,6 +353,19 @@ public class UniqueKeyInfo {
 			Key key = this.getFields().get(i);
 			
 			fields[i] = key.getName();
+		}
+		
+		return fields;
+	}
+	
+	@JsonIgnore
+	public String[] parseFieldNamesToArray(String tableAlias) {
+		String[] fields = new String[this.getFields().size()];
+		
+		for (int i = 0; i < this.getFields().size(); i++) {
+			Key key = this.getFields().get(i);
+			
+			fields[i] = tableAlias + "." + key.getName();
 		}
 		
 		return fields;

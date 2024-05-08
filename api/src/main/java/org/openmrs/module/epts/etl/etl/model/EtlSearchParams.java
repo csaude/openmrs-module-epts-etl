@@ -8,7 +8,6 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
@@ -23,33 +22,24 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 	public EtlSearchParams(EtlItemConfiguration config, RecordLimits limits, EtlController relatedController) {
 		super(config, limits);
 		
-		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
+		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray(getSrcTableConf().getTableAlias()));
 	}
 	
 	@Override
 	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		String srcSchema = DBUtilities.determineSchemaName(conn);
 		AbstractTableConfiguration srcConfig = getSrcTableConf();
 		
 		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
 		
-		searchClauses.addColumnToSelect("distinct " + srcConfig.getTableAlias() + " .*");
-		
-		for (Field f : srcConfig.getFields()) {
-			searchClauses.addColumnToSelect( f.generateAliasedSelectColumn(srcConfig));
-		}
+		searchClauses.addColumnToSelect("distinct " + srcConfig.generateFullAliasedSelectColumns());
 		
 		if (getExtraTableDataSource() != null) {
 			for (TableDataSourceConfig t : getExtraTableDataSource()) {
-				for (Field f : t.getFields()) {
-					if (!srcConfig.containsField(f.getName()) && !searchClauses.isToSelectColumn(f.getName())) {
-						searchClauses.addColumnToSelect(f.generateAliasedSelectColumn(t));
-					}
-				}
+				searchClauses.addColumnToSelect(t.generateFullAliasedSelectColumns());
 			}
 		}
 		
-		String clauseFrom = srcSchema + "." + srcConfig.getTableName() + " " + srcConfig.getTableAlias();
+		String clauseFrom = srcConfig.generateFullTableNameWithAlias(conn);
 		
 		if (getExtraTableDataSource() != null) {
 			
@@ -58,7 +48,7 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 			for (TableDataSourceConfig t : getExtraTableDataSource()) {
 				String joinType = t.getJoinType().toString();
 				
-				String extraJoinQuery = t.generateConditionsFields();
+				String extraJoinQuery = t.generateJoinCondition();
 				
 				if (utilities.stringHasValue(extraJoinQuery)) {
 					Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,

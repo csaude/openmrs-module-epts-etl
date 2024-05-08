@@ -54,6 +54,11 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) {
+		
+		if (!utilities.stringHasValue(this.getTableAlias())) {
+			this.setTableAlias(getRelatedSrcConf().generateAlias(this));
+		}
+		
 		super.fullLoad(conn);
 		
 		tryToLoadJoinFields();
@@ -84,94 +89,19 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 				}
 				
 				t.fullLoad(conn);
-				
-				if (!utilities.arrayHasElement(t.getJoinFields())) {
-					//Try to autoload join fields
-					
-					List<FieldsMapping> fm = null;
-					
-					//Assuming that the aux src is parent
-					List<RefInfo> pInfo = this.findAllRefToParent(t.getTableName());
-					
-					if (utilities.arrayHasElement(pInfo)) {
-						fm = new ArrayList<>();
-						
-						for (RefInfo ref : pInfo) {
-							for (RefMapping map : ref.getMapping()) {
-								fm.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
-							}
-						}
-					} else {
-						fm = new ArrayList<>();
-						
-						//Assuning that the aux src is child
-						pInfo = t.findAllRefToParent(this.getTableName());
-						
-						if (pInfo != null) {
-							for (RefInfo ref : pInfo) {
-								for (RefMapping map : ref.getMapping()) {
-									fm.add(new FieldsMapping(map.getParentField().getName(), "",
-									        map.getChildField().getName()));
-								}
-							}
-						}
-					}
-					
-					if (fm != null) {
-						for (FieldsMapping f : fm) {
-							t.addJoinField(f);
-						}
-					}
-				}
-				
-				if (utilities.arrayHasNoElement(t.getJoinFields())) {
-					throw new ForbiddenOperationException(
-					        "No join fields were difined between " + this.getTableName() + " And " + t.getTableName());
-				}
 			}
 			
 		}
 	}
 	
-	/**
-	 * 
-	 */
 	public void tryToLoadJoinFields() {
 		if (!utilities.arrayHasElement(this.joinFields)) {
-			//Try to autoload join fields
-			
-			List<FieldsMapping> fm = new ArrayList<>();
-			
-			//Assuming that this datasource is parent
-			List<RefInfo> pInfo = this.relatedSrcConf.findAllRefToParent(this.getTableName());
-			
-			if (utilities.arrayHasElement(pInfo)) {
-				for (RefInfo ref : pInfo) {
-					for (RefMapping map : ref.getMapping()) {
-						fm.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
-					}
-				}
-			} else {
-				
-				//Assuning that the this data src is child
-				pInfo = this.findAllRefToParent(this.relatedSrcConf.getTableName());
-				
-				if (utilities.arrayHasElement(pInfo)) {
-					for (RefInfo ref : pInfo) {
-						for (RefMapping map : ref.getMapping()) {
-							fm.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
-						}
-					}
-				}
-			}
-			
-			if (fm != null) {
-				this.joinFields = new ArrayList<>();
-				for (FieldsMapping f : fm) {
-					this.joinFields.add(f);
-				}
-			}
+			this.joinFields = tryToLoadJoinFields(this.relatedSrcConf);
 		}
+	}
+	
+	public boolean hasJoinFields() {
+		return utilities.arrayHasElement(this.joinFields);
 	}
 	
 	public String getJoinExtraCondition() {
@@ -248,7 +178,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		return conditionFields;
 	}
 	
-	public String generateConditionsFields() {
+	public String generateJoinCondition() {
 		String conditionFields = "";
 		
 		for (int i = 0; i < this.joinFields.size(); i++) {

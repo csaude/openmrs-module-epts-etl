@@ -16,7 +16,9 @@ public class RefMapping {
 	
 	private Object defaultValueDueInconsistency;
 	
-	private RefInfo refInfo;
+	private ParentTable parentTabConf;
+	
+	private ChildTable childTabConf;
 	
 	private boolean setNullDueInconsistency;
 	
@@ -24,6 +26,22 @@ public class RefMapping {
 	 * Indicate if this parent can be ignored if not found in referenced table or not
 	 */
 	private boolean ignorable;
+	
+	public ParentTable getParentTabConf() {
+		return parentTabConf;
+	}
+	
+	public void setParentTabConf(ParentTable parentTabConf) {
+		this.parentTabConf = parentTabConf;
+	}
+	
+	public ChildTable getChildTabConf() {
+		return childTabConf;
+	}
+	
+	public void setChildTabConf(ChildTable childTabConf) {
+		this.childTabConf = childTabConf;
+	}
 	
 	public String getChildFieldName() {
 		return childFieldName;
@@ -64,14 +82,6 @@ public class RefMapping {
 	
 	public void setSetNullDueInconsistency(boolean setNullDueInconsistency) {
 		this.setNullDueInconsistency = setNullDueInconsistency;
-	}
-	
-	public RefInfo getRefInfo() {
-		return refInfo;
-	}
-	
-	public void setRefInfo(RefInfo refInfo) {
-		this.refInfo = refInfo;
 	}
 	
 	public Object getDefaultValueDueInconsistency() {
@@ -142,9 +152,11 @@ public class RefMapping {
 		String referencingTableName = "";
 		String referencedTableName = "";
 		
-		if (this.refInfo != null) {
-			referencingTableName = this.refInfo.getChildTableName() + ".";
-			referencedTableName = this.refInfo.getParentTableName() + ".";
+		if (this.childTabConf != null) {
+			referencingTableName = this.childTabConf.getTableName() + ".";
+		}
+		if (this.parentTabConf != null) {
+			referencedTableName = this.parentTabConf.getTableName() + ".";
 		}
 		
 		str += referencingTableName + this.childField.getName() + ">";
@@ -171,6 +183,28 @@ public class RefMapping {
 	@JsonIgnore
 	public boolean isPrimitieveRefColumn() {
 		return AttDefinedElements.isPrimitive(this.childField.getType());
+	}
+	
+	public RefMapping clone() {
+		RefMapping ref = new RefMapping();
+		
+		ref.childField = this.childField;
+		
+		ref.parentField = this.parentField;
+		
+		ref.childFieldName = this.childFieldName;
+		
+		ref.parentFieldName = this.parentFieldName;
+		
+		ref.defaultValueDueInconsistency = this.defaultValueDueInconsistency;
+		
+		ref.parentTabConf = this.parentTabConf;
+		
+		ref.childTabConf = this.childTabConf;
+		
+		ref.setNullDueInconsistency = this.setNullDueInconsistency;
+		
+		return ref;
 	}
 	
 }

@@ -132,7 +132,9 @@ public class DstConf extends AbstractTableConfiguration {
 						throw new NoSuchElementException("The DataSource '" + fm.getDataSourceName() + "' cannot be found!");
 					}
 					
-					if (!ds.containsField(fm.getSrcField())) {
+					if (ds.containsField(fm.getSrcField())) {
+						fm.setDataSourceName(ds.getAlias());
+					} else {
 						notAvaliableInSpecifiedDataSource.add(fm.getSrcField());
 					}
 					
@@ -185,7 +187,7 @@ public class DstConf extends AbstractTableConfiguration {
 		
 		for (EtlDataSource pref : this.allPrefferredDataSource) {
 			if (pref.containsField(fm.getSrcField())) {
-				fm.setDataSourceName(pref.getName());
+				fm.setDataSourceName(pref.getAlias());
 				
 				qtyOccurences++;
 				
@@ -201,7 +203,7 @@ public class DstConf extends AbstractTableConfiguration {
 					if (qtyOccurences > 1) {
 						break;
 					} else {
-						fm.setDataSourceName(notPref.getName());
+						fm.setDataSourceName(notPref.getAlias());
 					}
 				}
 			}
@@ -260,6 +262,8 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) {
+		setTableAlias(getSrcConf().generateAlias(this));
+		
 		super.fullLoad(conn);
 		
 		loadJoinFields(conn);
@@ -374,7 +378,6 @@ public class DstConf extends AbstractTableConfiguration {
 				}
 			}
 			
-			
 			if (utilities.arrayHasElement(this.getSrcConf().getExtraQueryDataSource())) {
 				for (QueryDataSourceConfig mappingInfo : this.getSrcConf().getExtraQueryDataSource()) {
 					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
@@ -408,24 +411,6 @@ public class DstConf extends AbstractTableConfiguration {
 				}
 				
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
-			}
-			
-			if (this.getSharePkWith() != null) {
-				for (RefInfo ref : this.getParentRefInfo()) {
-					if (ref.getParentTableConf().getTableName().equals(this.getSharePkWith())) {
-						
-						if (utilities.arrayHasElement(ref.getParentTableConf().getUniqueKeys())) {
-							for (UniqueKeyInfo uk : ref.getParentTableConf().getUniqueKeys()) {
-								for (Key key : uk.getFields()) {
-									Object srcValue = srcObject.getFieldValue(key.getName());
-									
-									mappedObject.setFieldValue(key.getName(), srcValue);
-								}
-							}
-						}
-						
-					}
-				}
 			}
 			
 			mappedObject.loadObjectIdData(this);
@@ -498,20 +483,20 @@ public class DstConf extends AbstractTableConfiguration {
 	 * @return the generated join condition based on {@link #joinField}
 	 */
 	@JsonIgnore
-	public String generateJoinConditionWithSrc(String sourceTableAlias, String destinationTableAlias) {
+	public String generateJoinConditionWithSrc() {
 		String joinCondition = "";
 		
 		for (int i = 0; i < this.joinField.size(); i++) {
 			if (i > 0)
 				joinCondition += " AND ";
 			
-			joinCondition += "dest_." + this.joinField.get(i).getDstField() + " = src_."
-			        + this.joinField.get(i).getSrcField();
+			joinCondition += getTableAlias() + "." + this.joinField.get(i).getDstField() + " = "
+			        + getSrcConf().getTableAlias() + "." + this.joinField.get(i).getSrcField();
 		}
 		
 		if (!utilities.stringHasValue(joinCondition) && this.isMetadata()) {
-			joinCondition = "dest_." + getPrimaryKey().retrieveSimpleKeyColumnName() + " = src_."
-			        + getPrimaryKey().retrieveSimpleKeyColumnName();
+			joinCondition = getTableAlias() + "." + getPrimaryKey().retrieveSimpleKeyColumnName() + " = "
+			        + getSrcConf().getTableAlias() + "." + getPrimaryKey().retrieveSimpleKeyColumnName();
 		}
 		
 		return joinCondition;

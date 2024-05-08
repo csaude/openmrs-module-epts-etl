@@ -5,9 +5,10 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.conf.RefInfo;
 import org.openmrs.module.epts.etl.conf.EtlDataConfiguration;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
@@ -63,9 +64,9 @@ public interface DatabaseObjectConfiguration {
 	
 	EtlConfiguration getRelatedSyncConfiguration();
 	
-	List<RefInfo> getParentRefInfo();
+	List<ParentTable> getParentRefInfo();
 	
-	List<RefInfo> getChildRefInfo();
+	List<ChildTable> getChildRefInfo();
 	
 	boolean hasDateFields();
 	
@@ -82,4 +83,6 @@ public interface DatabaseObjectConfiguration {
 		
 		return false;
 	}
+	
+	String getAlias();
 }

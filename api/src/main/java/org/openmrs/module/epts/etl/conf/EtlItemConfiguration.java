@@ -72,7 +72,6 @@ public class EtlItemConfiguration extends EtlDataConfiguration {
 	}
 	
 	public synchronized void fullLoad() throws DBException {
-		
 		if (this.fullLoaded) {
 			return;
 		}
@@ -113,7 +112,6 @@ public class EtlItemConfiguration extends EtlDataConfiguration {
 					
 					map.generateAllFieldsMapping(dstConn);
 					
-
 				}
 			}
 			

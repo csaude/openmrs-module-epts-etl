@@ -43,7 +43,8 @@ public class ResolveConflictsInStageAreaEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		throw new ForbiddenOperationException("Review this method");
+		utilities.throwReviewMethodException();
+
 		
 		/*List<SyncImportInfoVO> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, SyncImportInfoVO.class);
 		

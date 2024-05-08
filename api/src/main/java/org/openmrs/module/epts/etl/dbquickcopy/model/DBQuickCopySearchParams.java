@@ -13,13 +13,13 @@ import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 	
 	private DBQuickCopyController relatedController;
 	
-	public DBQuickCopySearchParams(EtlItemConfiguration config, RecordLimits limits, DBQuickCopyController relatedController) {
+	public DBQuickCopySearchParams(EtlItemConfiguration config, RecordLimits limits,
+	    DBQuickCopyController relatedController) {
 		super(config, limits);
 		
 		this.relatedController = relatedController;
@@ -32,18 +32,9 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 		
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
-		String srsFullTableName = DBUtilities.determineSchemaName(conn) + ".";
+		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContentOnSpecificSchema(conn));
 		
-		srsFullTableName += tableInfo.getTableName();
-		
-		searchClauses.addToClauseFrom(srsFullTableName);
-		
-		if (tableInfo.isFromOpenMRSModel() && tableInfo.getTableName().equalsIgnoreCase("patient")) {
-			searchClauses.addColumnToSelect("patient.*, person.uuid");
-			searchClauses.addToClauseFrom("inner join person on person.person_id = patient_id");
-		} else {
-			searchClauses.addColumnToSelect("*");
-		}
+		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
 		
 		tryToAddLimits(searchClauses);
 		

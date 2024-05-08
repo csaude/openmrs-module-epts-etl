@@ -960,7 +960,8 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	public String resolveScapeCharacter(String str) {
-		if (!stringHasValue(str)) return str;
+		if (!stringHasValue(str))
+			return str;
 		
 		char scapeCaracter = '\\';
 		
@@ -972,7 +973,7 @@ public class CommonUtilities implements Serializable {
 					if (!isSpecialCharacter(str.charAt(i + 1))) {
 						//Force to be scaped
 						resolved += str.charAt(i) + "\\";
-					}else {
+					} else {
 						resolved += str.charAt(i);
 					}
 				} else {
@@ -1165,6 +1166,10 @@ public class CommonUtilities implements Serializable {
 			cl = cl.getSuperclass();
 		}
 		return utilities.parseListToArray(fields);
+	}
+	
+	public void throwReviewMethodException() {
+		throw new ForbiddenOperationException("Review the method calling me");
 	}
 	
 }

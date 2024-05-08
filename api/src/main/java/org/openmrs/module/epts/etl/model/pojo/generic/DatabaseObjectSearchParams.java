@@ -28,14 +28,9 @@ public class DatabaseObjectSearchParams extends SyncSearchParams<DatabaseObject>
 		AbstractTableConfiguration tbConfig = getSearchSourceType().isSource() ? getSrcTableConf()
 		        : getDstLastTableConfiguration();
 		
-		if (tbConfig.isFromOpenMRSModel() && tbConfig.getTableName().equalsIgnoreCase("patient")) {
-			searchClauses.addToClauseFrom("patient inner join person src_ on person_id = patient_id");
-			searchClauses.addColumnToSelect("patient.*, src_.uuid");
-		} else {
-			searchClauses.addToClauseFrom(tbConfig.generateFullTableName(conn) + " src_");
-			
-			searchClauses.addColumnToSelect("src_.*");
-		}
+		
+		searchClauses.addColumnToSelect(tbConfig.generateFullAliasedSelectColumns());
+		searchClauses.addToClauseFrom(tbConfig.generateSelectFromClauseContent());
 		
 		tryToAddLimits(searchClauses);
 		

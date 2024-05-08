@@ -19,7 +19,7 @@ import javax.tools.ToolProvider;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
-import org.openmrs.module.epts.etl.conf.RefInfo;
+import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.model.Field;
@@ -268,7 +268,7 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	public boolean hasParents() {\n";
 		
 		if (utilities.arrayHasElement(pojoble.getParentRefInfo())) {
-			for (RefInfo refInfo : pojoble.getParentRefInfo()) {
+			for (ParentTable refInfo : pojoble.getParentRefInfo()) {
 				
 				for (RefMapping map : refInfo.getMapping()) {
 					
@@ -291,7 +291,7 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	public Integer getParentValue(String parentAttName) {";
 		
 		if (utilities.arrayHasElement(pojoble.getParentRefInfo())) {
-			for (RefInfo refInfo : pojoble.getParentRefInfo()) {
+			for (ParentTable refInfo : pojoble.getParentRefInfo()) {
 				methodFromSuperClass += "		\n		if (parentAttName.equals(\""
 				        + refInfo.getChildColumnAsClassAttOnSimpleMapping() + "\")) return this."
 				        + refInfo.getChildColumnAsClassAttOnSimpleMapping() + ";";

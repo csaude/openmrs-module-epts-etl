@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
@@ -30,11 +31,11 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	
 	private String tableAlias;
 	
-	private List<TableParent> parents;
+	private List<ParentTable> parents;
 	
-	private List<RefInfo> parentRefInfo;
+	private List<ParentTable> parentRefInfo;
 	
-	private List<RefInfo> childRefInfo;
+	private List<ChildTable> childRefInfo;
 	
 	private Class<? extends DatabaseObject> syncRecordClass;
 	
@@ -86,6 +87,12 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
 	
+	public AbstractTableConfiguration(String tableName) {
+		this();
+		
+		this.tableName = tableName;
+	}
+	
 	public void clone(AbstractTableConfiguration toCloneFrom) {
 		this.tableName = toCloneFrom.tableName;
 		this.parents = toCloneFrom.parents;
@@ -111,6 +118,11 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	
 	public String getTableAlias() {
 		return tableAlias;
+	}
+	
+	@Override
+	public String getAlias() {
+		return getTableAlias();
 	}
 	
 	public void setTableAlias(String tableAlias) {
@@ -175,15 +187,15 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	}
 	
 	@Override
-	public List<RefInfo> getParentRefInfo() {
+	public List<ParentTable> getParentRefInfo() {
 		return parentRefInfo;
 	}
 	
-	public void setParentRefInfo(List<RefInfo> parentRefInfo) {
+	public void setParentRefInfo(List<ParentTable> parentRefInfo) {
 		this.parentRefInfo = parentRefInfo;
 	}
 	
-	public void setChildRefInfo(List<RefInfo> childRefInfo) {
+	public void setChildRefInfo(List<ChildTable> childRefInfo) {
 		this.childRefInfo = childRefInfo;
 	}
 	
@@ -211,11 +223,6 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		this.observationDateFields = observationDateFields;
 	}
 	
-	@JsonIgnore
-	public boolean isFromOpenMRSModel() {
-		return this.getRelatedSyncConfiguration().isOpenMRSModel();
-	}
-	
 	public boolean isRemoveForbidden() {
 		return removeForbidden;
 	}
@@ -225,7 +232,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	}
 	
 	@Override
-	public List<RefInfo> getChildRefInfo() {
+	public List<ChildTable> getChildRefInfo() {
 		if (!this.mustLoadChildrenInfo) {
 			throw new ForbiddenOperationException(
 			        "The table configuration is set to not load Children. Please change configuration if you what to access Children ifo.");
@@ -253,11 +260,6 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	}
 	
 	@JsonIgnore
-	public boolean isUuidColumnNotExists() {
-		return this.isFromOpenMRSModel() && this.tableName.equals("patient") ? true : false;
-	}
-	
-	@JsonIgnore
 	public String getParentsAsString() {
 		String sourceFoldersAsString = "";
 		
@@ -272,11 +274,11 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		return sourceFoldersAsString;
 	}
 	
-	public List<TableParent> getParents() {
+	public List<ParentTable> getParents() {
 		return parents;
 	}
 	
-	public void setParents(List<TableParent> parents) {
+	public void setParents(List<ParentTable> parents) {
 		this.parents = parents;
 	}
 	
@@ -384,19 +386,19 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 				
 				defaultObject.loadWithDefaultValues();
 				
-				for (RefInfo p : this.parentRefInfo) {
+				for (ParentTable p : this.parentRefInfo) {
 					
-					DatabaseObject defaultParent = p.getParentTableConf().getDefaultObject(conn);
+					DatabaseObject defaultParent = p.getDefaultObject(conn);
 					
 					if (defaultParent == null) {
 						defaultParent = getSyncRecordClass().newInstance();
-						defaultParent.setRelatedConfiguration(p.getParentTableConf());
+						defaultParent.setRelatedConfiguration(p);
 						
 						if (defaultParent.checkIfAllRelationshipCanBeresolved(this, conn)) {
-							defaultParent = p.getParentTableConf().generateAndSaveDefaultObject(conn);
+							defaultParent = p.generateAndSaveDefaultObject(conn);
 						} else {
 							throw new ForbiddenOperationException("There are recursive relationship between "
-							        + this.tableName + " and " + p.getParentTableConf().getTableName()
+							        + this.tableName + " and " + p.getTableName()
 							        + " which cannot automatically resolved...! Please manual create default record for one of thise table using id '-1'");
 						}
 						
@@ -478,7 +480,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	}
 	
 	public boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
-		for (RefInfo parent : this.parentRefInfo) {
+		for (ParentTable parent : this.parentRefInfo) {
 			RefMapping map = parent.getRefMappingByChildClassAttName(parentAttName);
 			
 			return map.isIgnorable();
@@ -565,19 +567,6 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		
 	}
 	
-	private boolean checkIfRefIsManualyConfigured(RefInfo ref) {
-		if (this.parents == null)
-			return false;
-		
-		for (TableParent p : this.parents) {
-			if (p.getRef() != null && p.getRef().equals(ref)) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
 	protected synchronized void loadParents(Connection conn) throws SQLException {
 		logDebug("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
 		
@@ -588,24 +577,19 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		//First load all necessary info on configured parents
 		
 		if (utilities.arrayHasElement(this.parents)) {
-			for (TableParent p : this.parents) {
+			for (ParentTable p : this.parents) {
 				
-				RefInfo r = p.getRef();
+				p.setChildTableConf(this);
 				
-				if (r == null) {
-					continue;
-				}
-				
-				r.setChildTableConf(this);
-				r.setParentTableConf(p);
-				
-				for (RefMapping map : r.getMapping()) {
-					map.setRefInfo(r);
+				if (p.getMapping() != null) {
 					
-					Field field = utilities.findOnArray(this.fields, new Field(map.getChildFieldName()));
-					map.getChildField().setType(field.getType());
+					for (RefMapping map : p.getMapping()) {
+						map.setParentTabConf(p);
+						
+						Field field = utilities.findOnArray(this.fields, new Field(map.getChildFieldName()));
+						map.getChildField().setType(field.getType());
+					}
 				}
-				
 			}
 		}
 		
@@ -641,10 +625,12 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 					String parentFieldName = foreignKeyRS.getString("PKCOLUMN_NAME");
 					String parentTableName = foreignKeyRS.getString("PKTABLE_NAME");
 					
-					AbstractTableConfiguration referencedTabConf = AbstractTableConfiguration
-					        .initGenericTabConf(parentTableName, this, this.parent);
+					ParentTable parentTabConf = ParentTable.init(parentTableName, refCode);
 					
-					addParentRefInfo(refCode, childFieldName, referencedTabConf, parentFieldName, conn);
+					parentTabConf.setParent(this.parent);
+					parentTabConf.setChildTableConf(this);
+					
+					addParentMappingInfo(refCode, childFieldName, parentTabConf, parentFieldName, conn);
 					
 					logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName()
 					        + "' CONFIGURED");
@@ -653,69 +639,71 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 				//Copy additional configured Info
 				if (this.parentRefInfo != null && this.parents != null) {
 					
-					for (RefInfo ref : this.parentRefInfo) {
+					for (ParentTable autoLoadedRefInfo : this.parentRefInfo) {
 						
-						for (TableParent p : this.parents) {
-							RefInfo configuredRef = p.getRef();
+						for (ParentTable manualConfiguredRefInfo : this.parents) {
 							
-							if (configuredRef == null && !checkIfRefIsManualyConfigured(ref)
-							        && ref.getParentTableConf().equals(p)) {
-								
-								if (ref.isCompositeMapping()) {
-									throw new ForbiddenOperationException(
-									        "You must manual configure the ref info for parent " + p.getTableName()
-									                + " on table " + this.getTableName()
-									                + ". Optionaly you can remove the manual parent specification");
-								}
-								
-								//create default refInfo to force the copy of shared ref info
-								
-								configuredRef = new RefInfo();
-								
-								configuredRef.setChildTableConf(this);
-								configuredRef.setParentTableConf(p);
-								
-								configuredRef.setMapping(ref.getMapping());
-								
-								configuredRef.getSimpleRefMapping()
-								        .setDefaultValueDueInconsistency(p.getDefaultValueDueInconsistency());
-								configuredRef.getSimpleRefMapping()
-								        .setSetNullDueInconsistency(p.isSetNullDueInconsistency());
-							}
+							ParentTable mixedConfiguredRef = manualConfiguredRefInfo;
 							
-							if (ref.equals(configuredRef)) {
-								ref.setConditionalFields(configuredRef.getConditionalFields());
+							if (autoLoadedRefInfo.getTableName().equals(manualConfiguredRefInfo.getTableName())) {
 								
-								for (RefMapping map : ref.getMapping()) {
-									RefMapping configuredMap = configuredRef.findRefMapping(map.getChildFieldName(),
-									    map.getParentFieldName());
-									
-									if (configuredMap == null) {
+								if (!manualConfiguredRefInfo.hasMapping()) {
+									if (autoLoadedRefInfo.isCompositeMapping()) {
 										throw new ForbiddenOperationException(
-										        "The mapping [" + map.getChildFieldName() + " : " + map.getParentFieldName()
-										                + "] was not found on configured mapping!");
+										        "You must manual configure the ref info for parent "
+										                + manualConfiguredRefInfo.getTableName() + " on table "
+										                + this.getTableName()
+										                + ". Optionaly you can remove the manual parent specification");
 									}
 									
-									map.setIgnorable(map.isIgnorable() ? configuredMap.isIgnorable() : map.isIgnorable());
-									map.setDefaultValueDueInconsistency(configuredMap.getDefaultValueDueInconsistency());
-									map.setSetNullDueInconsistency(configuredMap.isSetNullDueInconsistency());
+									//create default refInfo to force the copy of shared ref info
+									
+									mixedConfiguredRef = ParentTable.init(manualConfiguredRefInfo.getTableName(), "");
+									
+									mixedConfiguredRef.setConditionalFields(manualConfiguredRefInfo.getConditionalFields());
+									
+									mixedConfiguredRef.setChildTableConf(this);
+									
+									mixedConfiguredRef.setMapping(autoLoadedRefInfo.cloneAllMapping());
+									
+									mixedConfiguredRef.getSimpleRefMapping().setDefaultValueDueInconsistency(
+									    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
+									mixedConfiguredRef.getSimpleRefMapping()
+									        .setSetNullDueInconsistency(manualConfiguredRefInfo.isSetNullDueInconsistency());
+								}
+								
+								if (autoLoadedRefInfo.equals(mixedConfiguredRef)) {
+									autoLoadedRefInfo.setConditionalFields(mixedConfiguredRef.getConditionalFields());
+									
+									for (RefMapping map : autoLoadedRefInfo.getMapping()) {
+										RefMapping configuredMap = mixedConfiguredRef.findRefMapping(map.getChildFieldName(),
+										    map.getParentFieldName());
+										
+										if (configuredMap == null) {
+											throw new ForbiddenOperationException("The mapping [" + map.getChildFieldName()
+											        + " : " + map.getParentFieldName()
+											        + "] was not found on configured mapping!");
+										}
+										
+										map.setIgnorable(
+										    map.isIgnorable() ? configuredMap.isIgnorable() : map.isIgnorable());
+										map.setDefaultValueDueInconsistency(configuredMap.getDefaultValueDueInconsistency());
+										map.setSetNullDueInconsistency(configuredMap.isSetNullDueInconsistency());
+									}
 								}
 							}
 						}
 					}
 				}
-				
 				//Check if there is a configured parent but not defined on the db schema
 				
 				if (utilities.arrayHasElement(this.parents)) {
 					
-					for (TableParent configuredParent : this.parents) {
+					for (ParentTable configuredParent : this.parents) {
 						
-						RefInfo r = configuredParent.getRef();
-						
-						if (r != null) {
-							if (!this.parentRefInfo.contains(r)) {
-								this.parentRefInfo.add(r);
+						if (configuredParent.hasMapping()) {
+							if (!this.parentRefInfo.contains(configuredParent)) {
+								this.parentRefInfo.add(configuredParent);
 							}
 						}
 					}
@@ -739,7 +727,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		
 		logDebug("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
 		
-		this.childRefInfo = new ArrayList<RefInfo>();
+		this.childRefInfo = new ArrayList<ChildTable>();
 		
 		int count = countChildren(conn);
 		
@@ -778,10 +766,13 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 					
 					String parentFieldName = foreignKeyRS.getString("PKCOLUMN_NAME");
 					
-					AbstractTableConfiguration childTabConf = AbstractTableConfiguration.initGenericTabConf(childTableName,
-					    this, this.parent);
+					ChildTable childTabConf = ChildTable.init(childTableName, refCode);
 					
-					addChildRefInfo(refCode, childTabConf, childFieldName, parentFieldName, conn);
+					childTabConf.setParentTableConf(this);
+					
+					childTabConf.setParent(this.parent);
+					
+					addChildMappingInfo(refCode, childTabConf, childFieldName, parentFieldName, conn);
 					
 					logDebug("CHILDREN " + i + " [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
 					        + getTableName() + "' CONFIGURED");
@@ -797,28 +788,24 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		}
 	}
 	
-	private void addChildRefInfo(String refCode, AbstractTableConfiguration childTabConf, String childFieldName,
-	        String parentFieldName, Connection conn) throws DBException {
+	private void addChildMappingInfo(String refCode, ChildTable childTabConf, String childFieldName, String parentFieldName,
+	        Connection conn) throws DBException {
 		
 		AbstractTableConfiguration parentTabConf = this;
 		
 		initRefInfo(RefType.EXPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
 	}
 	
-	private void addParentRefInfo(String refCode, String childFieldName, AbstractTableConfiguration parentTabConf,
+	private void addParentMappingInfo(String refCode, String childFieldName, ParentTable parentTabConf,
 	        String parentFieldName, Connection conn) throws DBException {
 		
 		AbstractTableConfiguration childTabConf = this;
 		
-		@SuppressWarnings("unused")
-		RefInfo ref = initRefInfo(RefType.IMPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName,
-		    conn);
-		
+		initRefInfo(RefType.IMPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
 	}
 	
-	private RefInfo initRefInfo(RefType refType, String refCode, AbstractTableConfiguration childTabConf,
-	        String childFieldname, AbstractTableConfiguration parentTabConf, String parentFieldName, Connection conn)
-	        throws DBException {
+	private void initRefInfo(RefType refType, String refCode, AbstractTableConfiguration childTabConf, String childFieldname,
+	        AbstractTableConfiguration parentTabConf, String parentFieldName, Connection conn) throws DBException {
 		
 		String fieldName = null;
 		
@@ -851,29 +838,28 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 			this.childRefInfo = new ArrayList<>();
 		}
 		
-		List<RefInfo> allRef = null;
-		RefInfo ref = null;
+		RelatedTable ref = null;
+		RelatedTable existingRef = null;
 		
 		if (refType.isImported()) {
-			allRef = this.parentRefInfo;
-		} else {
-			allRef = this.childRefInfo;
-		}
-		
-		ref = utilities.findOnList(allRef, RefInfo.init(refCode));
-		
-		if (ref == null) {
-			ref = RefInfo.init(refCode);
+			existingRef = utilities.findOnList(this.parentRefInfo, refCode);
 			
-			ref.setParentTableConf(parentTabConf);
-			ref.setChildTableConf(childTabConf);
-			
-			//Mark as metadata if is not specificaly mapped as parent in conf file
-			if (!ref.getParentTableConf().isConfigured()) {
-				ref.getParentTableConf().setMetadata(true);
+			if (existingRef == null) {
+				ref = (RelatedTable) parentTabConf;
+				
+				this.parentRefInfo.add((ParentTable) ref);
 			}
 			
-			allRef.add(ref);
+		} else {
+			existingRef = utilities.findOnList(this.childRefInfo, refCode);
+			
+			if (existingRef == null) {
+				ref = (RelatedTable) childTabConf;
+				
+				ref.setRelatedTabConf(parentTabConf);
+				this.childRefInfo.add((ChildTable) ref);
+			}
+			
 		}
 		
 		try {
@@ -881,23 +867,6 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		}
 		catch (DuplicateMappingException e) {}
 		
-		return ref;
-	}
-	
-	public static AbstractTableConfiguration initGenericTabConf(String tableName, AbstractTableConfiguration relatedTabConf,
-	        EtlDataConfiguration parent) {
-		AbstractTableConfiguration tableInfo = null;
-		
-		tableInfo = parent.getRelatedSyncConfiguration().findPulledTableConfiguration(tableName);
-		
-		if (tableInfo == null) {
-			tableInfo = new GenericTableConfiguration(relatedTabConf);
-			tableInfo.setTableName(tableName);
-			tableInfo.setParent(parent);
-			parent.getRelatedSyncConfiguration().addToTableConfigurationPull(tableInfo);
-		}
-		
-		return tableInfo;
 	}
 	
 	@JsonIgnore
@@ -1072,6 +1041,18 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		return DBUtilities.tryToPutSchemaOnDatabaseObject(getTableName(), conn);
 	}
 	
+	public String generateFullTableNameWithAlias(Connection conn) throws DBException {
+		return generateFullTableName(conn) + " " + this.tableAlias;
+	}
+	
+	public String generateFullTableNameWithAlias(String schema) {
+		return utilities.stringHasValue(schema) ? schema + "." + generateTableNameWithAlias() : generateTableNameWithAlias();
+	}
+	
+	public String generateTableNameWithAlias() {
+		return this.tableName + " " + this.tableAlias;
+	}
+	
 	@JsonIgnore
 	public String generateFullStageUniqueKeysTableName() {
 		return getSyncStageSchema() + "." + generateRelatedStageUniqueKeysTableName();
@@ -1194,19 +1175,19 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		//Discovery shared pk
 		
 		if (this.parentRefInfo != null) {
-			for (RefInfo ref : this.parentRefInfo) {
+			for (ParentTable ref : this.parentRefInfo) {
 				
-				ref.getParentTableConf().getPrimaryKey(conn);
+				ref.getPrimaryKey(conn);
 				
-				PrimaryKey parentRefInfoAskey = new PrimaryKey(ref.getParentTableConf());
+				PrimaryKey parentRefInfoAskey = new PrimaryKey(ref);
 				parentRefInfoAskey.setFields(ref.extractParentFieldsFromRefMapping());
 				
 				PrimaryKey childRefInfoAskey = new PrimaryKey(ref.getChildTableConf());
 				childRefInfoAskey.setFields(ref.extractChildFieldsFromRefMapping());
 				
-				if (ref.getParentTableConf().primaryKey.equals(parentRefInfoAskey)
+				if (ref.getPrimaryKey().equals(parentRefInfoAskey)
 				        && ref.getChildTableConf().primaryKey.equals(childRefInfoAskey)) {
-					this.sharePkWith = ref.getParentTableName();
+					this.sharePkWith = ref.getTableName();
 					
 					break;
 				}
@@ -1232,21 +1213,29 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		}
 	}
 	
-	public RefInfo getSharedKeyRefInfo() {
+	public AbstractTableConfiguration getSharedTableConf() {
+		if (getSharedKeyRefInfo() != null) {
+			return getSharedKeyRefInfo();
+		}
+		
+		return null;
+	}
+	
+	public ParentTable getSharedKeyRefInfo() {
 		if (sharePkWith == null) {
 			return null;
 		} else if (utilities.arrayHasElement(this.getParents())) {
 			
-			for (RefInfo refInfo : this.parentRefInfo) {
-				if (refInfo.getParentTableConf().getTableName().equalsIgnoreCase(this.sharePkWith)) {
+			for (ParentTable parent : this.parentRefInfo) {
+				if (parent.getTableName().equalsIgnoreCase(this.sharePkWith)) {
 					
-					PrimaryKey pk = refInfo.getParentTableConf().getPrimaryKey();
+					PrimaryKey pk = parent.getPrimaryKey();
 					
-					PrimaryKey refInfoKey = new PrimaryKey(refInfo.getParentTableConf());
-					refInfoKey.setFields(refInfo.extractParentFieldsFromRefMapping());
+					PrimaryKey refInfoKey = new PrimaryKey(parent);
+					refInfoKey.setFields(parent.extractParentFieldsFromRefMapping());
 					
 					if (pk.hasSameFields(refInfoKey)) {
-						return refInfo;
+						return parent;
 					}
 				}
 			}
@@ -1259,7 +1248,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	@Override
 	@JsonIgnore
 	public String toString() {
-		return "Table [name:" + this.tableName + ", pk: " + this.primaryKey + "]";
+		return "Table [name:" + this.tableName + ", Alias:" + this.tableAlias + ",   pk: " + this.primaryKey + "]";
 	}
 	
 	@Override
@@ -1283,8 +1272,8 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	}
 	
 	public AbstractTableConfiguration findParentOnChildRefInfo(String parentTableName) {
-		for (RefInfo ref : this.childRefInfo) {
-			if (parentTableName.equals(ref.getParentTableName())) {
+		for (ChildTable ref : this.childRefInfo) {
+			if (parentTableName.equals(ref.getParentTableConf().getTableName())) {
 				return ref.getParentTableConf();
 			}
 		}
@@ -1292,16 +1281,16 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		return null;
 	}
 	
-	public List<RefInfo> findAllRefToParent(String parentTableName) {
+	public List<ParentTable> findAllRefToParent(String parentTableName) {
 		if (!utilities.arrayHasElement(this.parentRefInfo)) {
 			return null;
 		}
 		
-		List<RefInfo> references = new ArrayList<>();
+		List<ParentTable> references = new ArrayList<>();
 		
-		for (RefInfo ref : this.parentRefInfo) {
-			if (parentTableName.equals(ref.getParentTableName())) {
-				references.add(ref);
+		for (ParentTable parent : this.parentRefInfo) {
+			if (parentTableName.equals(parent.getTableName())) {
+				references.add(parent);
 			}
 		}
 		
@@ -1476,15 +1465,15 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		return false;
 	}
 	
-	public List<TableParent> getConditionalParents() {
-		List<TableParent> conditionalParents = null;
+	public List<ParentTable> getConditionalParents() {
+		List<ParentTable> conditionalParents = null;
 		
 		if (utilities.arrayHasElement(this.parents)) {
 			
 			conditionalParents = new ArrayList<>();
 			
-			for (TableParent p : this.parents) {
-				if (utilities.arrayHasElement(p.getRef().getConditionalFields())) {
+			for (ParentTable p : this.parents) {
+				if (p.hasConditionalFields()) {
 					conditionalParents.add(p);
 				}
 			}
@@ -1689,4 +1678,112 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		return this.getPrimaryKey() != null && this.getPrimaryKey().isCompositeKey();
 	}
 	
+	@JsonIgnore
+	public String generateFullAliasedSelectColumns() {
+		String fullSelectColumns = "";
+		
+		for (Field f : this.getFields()) {
+			fullSelectColumns = utilities.concatStringsWithSeparator(fullSelectColumns, f.generateAliasedSelectColumn(this),
+			    ",");
+		}
+		
+		if (this.useSharedPKKey()) {
+			fullSelectColumns += "," + this.getSharedTableConf().generateFullAliasedSelectColumns();
+		}
+		
+		return fullSelectColumns;
+	}
+	
+	/**
+	 * Generates the content for SELECT FROM clause content.
+	 * 
+	 * @return
+	 */
+	public String generateSelectFromClauseContent() {
+		return generateSelectFromClauseContentOnSpecificSchema("");
+	}
+	
+	/**
+	 * Generates the content for SELECT FROM clause content.
+	 * 
+	 * @return
+	 * @throws DBException
+	 */
+	public String generateSelectFromClauseContentOnSpecificSchema(Connection conn) throws DBException {
+		return generateSelectFromClauseContentOnSpecificSchema(DBUtilities.determineSchemaName(conn));
+	}
+	
+	/**
+	 * Generates the content for SELECT FROM clause content.
+	 * 
+	 * @return
+	 */
+	public String generateSelectFromClauseContentOnSpecificSchema(String schema) {
+		String fromClause = generateFullTableNameWithAlias(schema);
+		
+		if (useSharedPKKey()) {
+			fromClause += " INNER JOIN " + this.getSharedTableConf().generateFullTableNameWithAlias(schema) + " ON "
+			        + this.getSharedKeyRefInfo().generateJoinCondition() + "\n";
+		}
+		
+		return fromClause;
+	}
+	
+	public boolean hasParentRefInfo() {
+		return utilities.arrayHasElement(this.parentRefInfo);
+	}
+	
+	public boolean hasChildRefInfo() {
+		return utilities.arrayHasElement(this.childRefInfo);
+	}
+	
+	public List<FieldsMapping> tryToLoadJoinFields(AbstractTableConfiguration relatedTabConf) {
+		
+		List<FieldsMapping> joinFields = new ArrayList<>();
+		
+		//Assuming that this datasource is parent
+		List<ParentTable> pInfo = relatedTabConf.findAllRefToParent(this.getTableName());
+		
+		if (utilities.arrayHasElement(pInfo)) {
+			
+			if (utilities.arrayHasExactlyOneElement(pInfo)) {
+				
+				ParentTable ref = pInfo.get(0);
+				
+				for (RefMapping map : ref.getMapping()) {
+					joinFields.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
+				}
+			} else {
+				throw new ForbiddenOperationException(
+				        "The mapping cannot be auto generated! Multiple references were found between " + this.getTableName()
+				                + " And " + relatedTabConf.getTableName());
+				
+			}
+		} else {
+			
+			//Assuning that the this data src is child
+			pInfo = this.findAllRefToParent(relatedTabConf.getTableName());
+			
+			if (utilities.arrayHasExactlyOneElement(pInfo)) {
+				
+				ParentTable ref = pInfo.get(0);
+				
+				for (RefMapping map : ref.getMapping()) {
+					joinFields.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
+				}
+			} else {
+				throw new ForbiddenOperationException(
+				        "The mapping cannot be auto generated! Multiple references were found between " + this.getTableName()
+				                + " And " + relatedTabConf.getTableName());
+				
+			}
+		}
+		
+		if (utilities.arrayHasElement(joinFields)) {
+			throw new ForbiddenOperationException(
+			        "No join fields were difined between " + this.getTableName() + " And " + relatedTabConf.getTableName());
+		}
+		
+		return joinFields;
+	}
 }

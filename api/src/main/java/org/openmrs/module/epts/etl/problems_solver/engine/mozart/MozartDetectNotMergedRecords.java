@@ -106,10 +106,10 @@ public class MozartDetectNotMergedRecords extends MozartProblemSolverEngine {
 		String table = dbName + "." + tableInfo.getTableName();
 		
 		String sql = " SELECT count(*) value \n";
-		sql += " FROM   " + table + " src_\n";
+		sql += " FROM   " + tableInfo.generateTableNameWithAlias() + " \n";
 		sql += " WHERE  NOT EXISTS (	SELECT * \n";
 		sql += " 				   	FROM   " + tableInfo.getTableName() + " dest_\n";
-		sql += "						WHERE  " + dstInfo.generateJoinConditionWithSrc("src_", "dest_") + ")";
+		sql += "						WHERE  " + dstInfo.generateJoinConditionWithSrc();
 		
 		SimpleValue record = DatabaseObjectDAO.find(SimpleValue.class, sql, null, destConn);
 		

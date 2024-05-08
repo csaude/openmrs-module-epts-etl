@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -13,11 +12,9 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Define the specific refencial information between one table with onother;
- * 
- * @author jpboane
+ * Represents an related table, to an {@link AbstractTableConfiguration}
  */
-public class RefInfo {
+public abstract class RelatedTable extends AbstractTableConfiguration {
 	
 	public static final String PARENT_REF_TYPE = "PARENT";
 	
@@ -29,53 +26,13 @@ public class RefInfo {
 	
 	private List<RefMapping> mapping;
 	
-	private AbstractTableConfiguration childTableConf;
-	
-	private AbstractTableConfiguration parentTableConf;
-	
-	private List<Field> conditionalFields;
-	
-	public RefInfo() {
+	public RelatedTable() {
 	}
 	
-	public static RefInfo init(String refCode) {
-		RefInfo ref = new RefInfo();
+	public RelatedTable(String tableName, String refCode) {
+		super(tableName);
 		
-		ref.refCode = refCode;
-		
-		return ref;
-	}
-	
-	public List<Field> getConditionalFields() {
-		return conditionalFields;
-	}
-	
-	public void setConditionalFields(List<Field> conditionalFields) {
-		this.conditionalFields = conditionalFields;
-	}
-	
-	public String getParentColumnOnSimpleMapping() {
-		return getSimpleRefMapping().getParentField().getName();
-	}
-	
-	public String getChildColumnOnSimpleMapping() {
-		return getSimpleRefMapping().getChildField().getName();
-	}
-	
-	public String getParentColumnAsClassAttOnSimpleMapping() {
-		return getSimpleRefMapping().getParentField().getNameAsClassAtt();
-	}
-	
-	public String getChildColumnAsClassAttOnSimpleMapping() {
-		return getSimpleRefMapping().getChildField().getNameAsClassAtt();
-	}
-	
-	public boolean isSimpleMapping() {
-		return utilities.arraySize(this.mapping) <= 1;
-	}
-	
-	public boolean isCompositeMapping() {
-		return utilities.arraySize(this.mapping) > 1;
+		this.refCode = refCode;
 	}
 	
 	public RefMapping getSimpleRefMapping() {
@@ -93,7 +50,7 @@ public class RefInfo {
 		
 		if (this.mapping.contains(mapping))
 			throw new DuplicateMappingException("The maaping you tried to add alredy exists on mapping field on table ["
-			        + this.getChildTableName() + "]");
+			        + this.getRelatedTabConf().getTableName() + "]");
 		
 		this.mapping.add(mapping);
 	}
@@ -104,55 +61,6 @@ public class RefInfo {
 	
 	public void setRefCode(String refCode) {
 		this.refCode = refCode;
-	}
-	
-	public String getChildTableName() {
-		return childTableConf.getTableName();
-	}
-	
-	public String getParentTableName() {
-		return getParentTableConf().getTableName();
-	}
-	
-	public AbstractTableConfiguration getChildTableConf() {
-		return childTableConf;
-	}
-	
-	public Class<? extends DatabaseObject> getParentSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
-		return this.parentTableConf.getSyncRecordClass(application);
-	}
-	
-	public Class<? extends DatabaseObject> getChildSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
-		return this.childTableConf.getSyncRecordClass(application);
-	}
-	
-	public void setChildTableConf(AbstractTableConfiguration childTableConf) {
-		this.childTableConf = childTableConf;
-	}
-	
-	public AbstractTableConfiguration getParentTableConf() {
-		return parentTableConf;
-	}
-	
-	public void setParentTableConf(AbstractTableConfiguration parentTableConf) {
-		this.parentTableConf = parentTableConf;
-	}
-	
-	@JsonIgnore
-	public boolean isSharedPk() {
-		if (this.childTableConf.getSharePkWith() == null) {
-			return false;
-		} else if (utilities.arrayHasElement(childTableConf.getParentRefInfo())) {
-			
-			for (RefInfo refInfo : this.childTableConf.getParentRefInfo()) {
-				if (refInfo.parentTableConf.getTableName().equalsIgnoreCase(this.parentTableConf.getSharePkWith())) {
-					return true;
-				}
-			}
-		}
-		
-		throw new ForbiddenOperationException("The related table of shared pk " + this.parentTableConf.getSharePkWith()
-		        + " of table " + this.parentTableConf.getTableName() + " is not listed inparents!");
 	}
 	
 	public List<RefMapping> getMapping() {
@@ -183,20 +91,21 @@ public class RefInfo {
 	public boolean equals(Object obj) {
 		if (obj == null)
 			return false;
-		if (!(obj instanceof RefInfo))
+		
+		if (obj instanceof String) {
+			return this.refCode.equals(obj);
+		}
+		
+		if (!(obj instanceof RelatedTable))
 			return false;
 		
-		RefInfo other = (RefInfo) obj;
+		RelatedTable other = (RelatedTable) obj;
 		
 		if (utilities.stringHasValue(this.refCode) && utilities.stringHasValue(other.refCode)) {
 			return this.refCode.equals(other.refCode);
 		}
 		
-		if (!this.childTableConf.equals(other.childTableConf)) {
-			return false;
-		}
-		
-		if (!this.parentTableConf.equals(other.parentTableConf)) {
+		if (!this.getRelatedTabConf().equals(other.getRelatedTabConf())) {
 			return false;
 		}
 		
@@ -215,6 +124,31 @@ public class RefInfo {
 		return true;
 	}
 	
+	public String getParentColumnOnSimpleMapping() {
+		return getSimpleRefMapping().getParentField().getName();
+	}
+	
+	public String getChildColumnOnSimpleMapping() {
+		return getSimpleRefMapping().getChildField().getName();
+	}
+	
+	public String getParentColumnAsClassAttOnSimpleMapping() {
+		return getSimpleRefMapping().getParentField().getNameAsClassAtt();
+	}
+	
+	public String getChildColumnAsClassAttOnSimpleMapping() {
+		return getSimpleRefMapping().getChildField().getNameAsClassAtt();
+	}
+	
+	public boolean isSimpleMapping() {
+		return utilities.arraySize(this.mapping) <= 1;
+	}
+	
+	public boolean isCompositeMapping() {
+		return utilities.arraySize(this.mapping) > 1;
+	}
+	
+	@JsonIgnore
 	public RefMapping getRefMappingByChildClassAttName(String attName) {
 		
 		for (RefMapping map : this.mapping) {
@@ -273,26 +207,6 @@ public class RefInfo {
 		return keys;
 	}
 	
-	public UniqueKeyInfo parseToKeyByChild() {
-		UniqueKeyInfo uk = new UniqueKeyInfo(this.childTableConf);
-		
-		for (RefMapping map : this.mapping) {
-			uk.addKey(new Key(map.getChildFieldName()));
-		}
-		
-		return uk;
-	}
-	
-	public UniqueKeyInfo parseToKeyByParent() {
-		UniqueKeyInfo uk = new UniqueKeyInfo(this.parentTableConf);
-		
-		for (RefMapping map : this.mapping) {
-			uk.addKey(new Key(map.getParentFieldName()));
-		}
-		
-		return uk;
-	}
-	
 	/**
 	 * Generates the parent oid based on data within a child record
 	 * 
@@ -311,5 +225,30 @@ public class RefInfo {
 		
 		return oid;
 	}
+	
+	public boolean hasMapping() {
+		return utilities.arrayHasElement(this.mapping);
+	}
+	
+	public List<RefMapping> cloneAllMapping() {
+		if (!hasMapping())
+			return null;
+		
+		List<RefMapping> cloned = new ArrayList<>(this.mapping.size());
+		
+		for (RefMapping map : this.mapping) {
+			cloned.add(map.clone());
+		}
+		
+		return cloned;
+	}
+	
+	public abstract AbstractTableConfiguration getRelatedTabConf();
+	
+	public abstract void setRelatedTabConf(AbstractTableConfiguration  relatedTabConf);
+	
+	public abstract UniqueKeyInfo parseRelationshipToSelfKey();
+	
+	public abstract String generateJoinCondition();
 	
 }

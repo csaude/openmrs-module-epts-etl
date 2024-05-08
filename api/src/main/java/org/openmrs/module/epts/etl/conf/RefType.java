@@ -13,4 +13,13 @@ public enum RefType {
 		return this.equals(EXPORTED);
 	}
 	
+	
+	public boolean isChild() {
+		return isImported();
+	}
+	
+	public boolean isParent() {
+		return isExported();
+	}
+	
 }
