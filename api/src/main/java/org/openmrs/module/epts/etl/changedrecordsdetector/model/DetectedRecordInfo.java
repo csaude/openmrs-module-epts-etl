@@ -363,35 +363,41 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public String generateMissingInfo(Map<ParentTable, Integer> missingParents) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public Map<ParentTable, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public void removeDueInconsistency(AbstractTableConfiguration syncTableInfo, Map<ParentTable, Integer> missingParents,
 	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public void changeParentValue(ParentTable refInfo, DatabaseObject newParent) {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public void setParentToNull(ParentTable refInfo) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void update(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}

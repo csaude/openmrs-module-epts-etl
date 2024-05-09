@@ -104,10 +104,15 @@ public class EtlItemConfiguration extends EtlDataConfiguration {
 					
 					map.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
 					
-					map.setParent(this);
+					map.setParentConf(this);
 					
 					if (DBUtilities.isTableExists(dstConn.getSchema(), map.getTableName(), dstConn)) {
 						map.fullLoad(dstConn);
+						
+						if (map.useSharedPKKey()) {
+							map.getSharedKeyRefInfo().fullLoad(dstConn);
+						}
+						
 					}
 					
 					map.generateAllFieldsMapping(dstConn);
@@ -177,5 +182,10 @@ public class EtlItemConfiguration extends EtlDataConfiguration {
 		}
 		
 		return false;
+	}
+	
+	@Override
+	public String toString() {
+		return  this.configCode;
 	}
 }

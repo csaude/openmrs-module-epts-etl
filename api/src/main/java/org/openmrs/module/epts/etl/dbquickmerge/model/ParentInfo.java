@@ -4,20 +4,26 @@ import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 
 public class ParentInfo {
-	private DatabaseObject parent;
+	
+	private DatabaseObject parentRecord;
+	
 	private ParentTable parentTableConf;
 	
-	public ParentInfo(ParentTable refInfo, DatabaseObject parent) {
+	public ParentInfo(ParentTable refInfo, DatabaseObject parentRecord) {
 		this.parentTableConf = refInfo;
-		this.parent = parent;
+		this.parentRecord = parentRecord;
 	}
-	
 	
 	public ParentTable getParentTableConf() {
 		return parentTableConf;
 	}
 	
-	public DatabaseObject getParent() {
-		return parent;
+	public DatabaseObject getParentRecord() {
+		return parentRecord;
+	}
+	
+	@Override
+	public String toString() {
+		return "parentTable:" + parentTableConf.getTableName() + ", parentId " + parentRecord;
 	}
 }

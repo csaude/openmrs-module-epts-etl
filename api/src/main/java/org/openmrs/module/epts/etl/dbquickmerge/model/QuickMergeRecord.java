@@ -137,7 +137,7 @@ public class QuickMergeRecord {
 	        throws ParentNotYetMigratedException, DBException {
 		for (ParentInfo parentInfo : this.parentsWithDefaultValues) {
 			
-			QuickMergeRecord parentData = new QuickMergeRecord(parentInfo.getParent(), parentInfo.getParentTableConf(),
+			QuickMergeRecord parentData = new QuickMergeRecord(parentInfo.getParentRecord(), parentInfo.getParentTableConf(),
 			        srcApp, destApp, this.writeOperationHistory);
 			
 			parentData.merge(srcConn, destConn);

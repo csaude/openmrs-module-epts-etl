@@ -42,7 +42,7 @@ public class AuxExtractTable extends AbstractTableConfiguration {
 		}
 		
 		if (utilities.arrayHasNoElement(this.joinFields)) {
-			throw new ForbiddenOperationException("No join fields were difined between " + this.getParent().getTableName()
+			throw new ForbiddenOperationException("No join fields were difined between " + this.getParentConf().getTableName()
 			        + " And " + this.getTableName());
 		}
 		
@@ -51,7 +51,7 @@ public class AuxExtractTable extends AbstractTableConfiguration {
 	
 	public void tryToLoadJoinFields() {
 		if (!utilities.arrayHasElement(this.joinFields)) {
-			this.joinFields = tryToLoadJoinFields(this.getParent());
+			this.joinFields = tryToLoadJoinFields(this.getParentConf());
 		}
 	}
 	
@@ -72,13 +72,13 @@ public class AuxExtractTable extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public TableDataSourceConfig getParent() {
-		return (TableDataSourceConfig) super.getParent();
+	public TableDataSourceConfig getParentConf() {
+		return (TableDataSourceConfig) super.getParentConf();
 	}
 	
 	@Override
 	public EtlConfiguration getRelatedSyncConfiguration() {
-		return getParent().getRelatedSyncConfiguration();
+		return getParentConf().getRelatedSyncConfiguration();
 	}
 	
 	public String generateConditionsFields() {
@@ -90,7 +90,7 @@ public class AuxExtractTable extends AbstractTableConfiguration {
 			
 			FieldsMapping field = this.joinFields.get(i);
 			
-			conditionFields += getParent().getTableAlias() + "." + field.getSrcField() + " = " + getTableAlias() + "."
+			conditionFields += getParentConf().getTableAlias() + "." + field.getSrcField() + " = " + getTableAlias() + "."
 			        + field.getDstField();
 		}
 		
@@ -111,7 +111,7 @@ public class AuxExtractTable extends AbstractTableConfiguration {
 	
 	@Override
 	public AppInfo getRelatedAppInfo() {
-		return this.getParent().getRelatedAppInfo();
+		return this.getParentConf().getRelatedAppInfo();
 	}
 	
 	@Override

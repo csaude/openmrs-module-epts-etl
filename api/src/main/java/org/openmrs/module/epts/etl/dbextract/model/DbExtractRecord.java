@@ -8,6 +8,7 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.ParentTable;
+import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -23,10 +24,14 @@ public class DbExtractRecord extends QuickMergeRecord {
 	
 	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	public DbExtractRecord(DatabaseObject record, AbstractTableConfiguration config, AppInfo srcApp, AppInfo destApp,
-	    boolean writeOperationHistory) {
+	public SrcConf srcConf;
+	
+	public DbExtractRecord(DatabaseObject record, SrcConf srcConf, AbstractTableConfiguration config, AppInfo srcApp,
+	    AppInfo destApp, boolean writeOperationHistory) {
 		
 		super(record, config, srcApp, destApp, writeOperationHistory);
+		
+		this.srcConf = srcConf;
 	}
 	
 	private void tryToLoadDefaultParents(Connection srcConn, Connection dstConn)
@@ -42,6 +47,18 @@ public class DbExtractRecord extends QuickMergeRecord {
 			if (refInfo.isMetadata())
 				continue;
 			
+			if (refInfo.getTableName().equals("person")) {
+				System.out.println("Stop");
+			}
+			
+			if (!refInfo.isFullLoaded()) {
+				refInfo.fullLoad(dstConn);
+				
+				if (!refInfo.hasAlias()) {
+					refInfo.setTableAlias(srcConf.generateAlias(refInfo));
+				}
+			}
+			
 			Oid key = refInfo.generateParentOidFromChild(record);
 			
 			if (key.hasNullFields()) {
@@ -54,8 +71,8 @@ public class DbExtractRecord extends QuickMergeRecord {
 				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo, key, srcConn);
 				
 				if (parentInOrigin == null) {
-					throw new MissingParentException(key, refInfo.getTableName(),
-					        this.config.getOriginAppLocationCode(), refInfo);
+					throw new MissingParentException(key, refInfo.getTableName(), this.config.getOriginAppLocationCode(),
+					        refInfo);
 				}
 				
 				DatabaseObject defaultParentInDst = config.getDefaultObject(dstConn);
@@ -108,13 +125,17 @@ public class DbExtractRecord extends QuickMergeRecord {
 		
 		for (ParentInfo parentInfo : this.parentsWithDefaultValues) {
 			
-			DbExtractRecord parentData = new DbExtractRecord(parentInfo.getParent(), parentInfo.getParentTableConf(), srcApp, destApp,
-			        this.writeOperationHistory);
+			DbExtractRecord parentData = new DbExtractRecord(parentInfo.getParentRecord(), this.srcConf,
+			        parentInfo.getParentTableConf(), srcApp, destApp, this.writeOperationHistory);
 			
 			parentData.extract(srcConn, destConn);
 			
-			record.changeParentValue(parentInfo.getParentTableConf(), parentInfo.getParent());
+			record.changeParentValue(parentInfo.getParentTableConf(), parentInfo.getParentRecord());
 		}
+		
+		
+		record.update(srcConf, destConn);
+		
 	}
 	
 	public static void extractAll(List<DbExtractRecord> extractRecs, Connection srcConn, OpenConnection dstConn)
@@ -151,5 +172,11 @@ public class DbExtractRecord extends QuickMergeRecord {
 		for (String key : mergingRecs.keySet()) {
 			extractAll(utilities.parseList(mergingRecs.get(key), DbExtractRecord.class), srcConn, dstConn);
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return "[" + this.record.toString() + ", from " + this.srcConf.getTableName() + " to "
+		        + this.getRecord().getRelatedConfiguration().getObjectName();
 	}
 }

@@ -39,7 +39,7 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 			}
 		}
 		
-		String clauseFrom = srcConfig.generateFullTableNameWithAlias(conn);
+		String clauseFrom = srcConfig.generateSelectFromClauseContentOnSpecificSchema(conn);
 		
 		if (getExtraTableDataSource() != null) {
 			

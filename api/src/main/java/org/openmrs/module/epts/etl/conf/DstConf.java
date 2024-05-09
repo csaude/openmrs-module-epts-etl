@@ -276,6 +276,8 @@ public class DstConf extends AbstractTableConfiguration {
 			        .addAll(utilities.parseList(getSrcConf().getAvaliableExtraDataSource(), EtlDataSource.class));
 		}
 		
+		this.fullLoadAllRelatedTables(getSrcConf(), null, conn);
+		
 		determinePrefferredDataSources();
 		
 	}
@@ -361,7 +363,7 @@ public class DstConf extends AbstractTableConfiguration {
 	}
 	
 	private SrcConf getSrcConf() {
-		return this.getParent().getSrcConf();
+		return this.getParentConf().getSrcConf();
 	}
 	
 	public DatabaseObject generateDstObject(DatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
@@ -371,6 +373,10 @@ public class DstConf extends AbstractTableConfiguration {
 			List<DatabaseObject> srcObjects = new ArrayList<>();
 			
 			srcObjects.add(srcObject);
+			
+			if (srcObject.shasSharedPkObj()) {
+				srcObjects.add(srcObject.getSharedPkObj());
+			}
 			
 			if (srcObject.getExtraDataSourceObjects() != null) {
 				for (DatabaseObject obj : srcObject.getExtraDataSourceObjects()) {
@@ -396,7 +402,6 @@ public class DstConf extends AbstractTableConfiguration {
 					
 				}
 			}
-			
 			DatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
 			
 			mappedObject.setRelatedConfiguration(this);
@@ -413,6 +418,28 @@ public class DstConf extends AbstractTableConfiguration {
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
 			}
 			
+			if (this.useSharedPKKey() && srcObject.shasSharedPkObj()) {
+				//Force same fields copy as there is no mapping for sharedPktable
+				
+				//TODO: create mapped dst configuration for shared pk table in destination
+				
+				for (Field field : this.getSharedKeyRefInfo().getFields()) {
+					DatabaseObject sharedDstObj = mappedObject.getSharedPkObj();
+					DatabaseObject sharedSrcObj = srcObject.getSharedPkObj();
+					
+					try {
+						sharedDstObj.setFieldValue(field.getName(), sharedSrcObj.getFieldValue(field.getName()));
+					}
+					catch (ForbiddenOperationException e) {
+						try {
+							sharedDstObj.setFieldValue(field.getNameAsClassAtt(),
+							    sharedSrcObj.getFieldValue(field.getNameAsClassAtt()));
+						}
+						catch (ForbiddenOperationException e1) {}
+					}
+				}
+			}
+			
 			mappedObject.loadObjectIdData(this);
 			
 			return mappedObject;
@@ -427,13 +454,13 @@ public class DstConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public void setParent(EtlDataConfiguration parent) {
-		super.setParent((EtlItemConfiguration) parent);
+	public void setParentConf(EtlDataConfiguration parent) {
+		super.setParentConf((EtlItemConfiguration) parent);
 	}
 	
 	@Override
-	public EtlItemConfiguration getParent() {
-		return (EtlItemConfiguration) super.getParent();
+	public EtlItemConfiguration getParentConf() {
+		return (EtlItemConfiguration) super.getParentConf();
 	}
 	
 	public int generateNextStartIdForThread(List<SyncRecord> syncRecords, Connection conn)

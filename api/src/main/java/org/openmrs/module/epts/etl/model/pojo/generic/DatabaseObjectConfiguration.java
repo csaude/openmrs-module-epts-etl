@@ -36,7 +36,7 @@ public interface DatabaseObjectConfiguration {
 	
 	String generateClassName();
 	
-	EtlDataConfiguration getParent();
+	EtlDataConfiguration getParentConf();
 	
 	String getObjectName();
 	

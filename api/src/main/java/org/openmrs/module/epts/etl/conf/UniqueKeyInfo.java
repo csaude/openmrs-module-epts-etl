@@ -108,7 +108,20 @@ public class UniqueKeyInfo {
 			Object value;
 			
 			try {
-				value = object.getFieldValue(field.getName());
+				try {
+					value = object.getFieldValue(field.getName());
+				}
+				catch (ForbiddenOperationException e) {
+					if (object.shasSharedPkObj()) {
+						try {
+							value = object.getSharedPkObj().getFieldValue(field.getName());
+						}
+						catch (ForbiddenOperationException e1) {
+							value = object.getSharedPkObj().getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(field.getName()));
+						}	
+					}
+					else throw e;
+				}
 			}
 			catch (ForbiddenOperationException e) {
 				value = object.getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(field.getName()));
@@ -119,6 +132,7 @@ public class UniqueKeyInfo {
 		
 		this.fieldValuesLoaded = true;
 	}
+	
 	
 	public static List<UniqueKeyInfo> loadUniqueKeysInfo(AbstractTableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
@@ -168,7 +182,7 @@ public class UniqueKeyInfo {
 				AbstractTableConfiguration parentTableInfo = new GenericTableConfiguration(tableConfiguration);
 				
 				parentTableInfo.setTableName(tableConfiguration.getSharePkWith());
-				parentTableInfo.setParent(tableConfiguration.getParent());
+				parentTableInfo.setParentConf(tableConfiguration.getParentConf());
 				
 				List<UniqueKeyInfo> parentUniqueKeys = loadUniqueKeysInfo(parentTableInfo, conn);
 				

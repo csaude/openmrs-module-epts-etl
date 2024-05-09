@@ -565,7 +565,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		synchronized (STRING_LOCK) {
 			for (EtlItemConfiguration tc : this.etlItemConfiguration) {
 				tc.setRelatedSyncConfiguration(this);
-				tc.getSrcConf().setParent(tc);
+				tc.getSrcConf().setParentConf(tc);
 				
 				addConfiguredTable(tc.getSrcConf());
 				//addToTableConfigurationPull(tc.getSrcConf());
@@ -590,9 +590,9 @@ public class EtlConfiguration extends BaseConfiguration {
 						
 						//addToTableConfigurationPull(dst);
 						
-						dst.setParent(tc);
+						dst.setParentConf(tc);
 						
-						code = utilities.stringHasValue(code) ? "_and_" + dst.getTableName() : dst.getTableName();
+						code = utilities.stringHasValue(code) ?  code + "_and_" + dst.getTableName() : dst.getTableName();
 					}
 				}
 				

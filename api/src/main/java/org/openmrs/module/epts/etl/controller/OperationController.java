@@ -109,7 +109,7 @@ public abstract class OperationController implements Controller {
 		return logger;
 	}
 	
-	public OperationController getParent() {
+	public OperationController getParentConf() {
 		return parent;
 	}
 	

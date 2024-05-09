@@ -43,6 +43,17 @@ public abstract class RelatedTable extends AbstractTableConfiguration {
 		return this.mapping.get(0);
 	}
 	
+	
+	@Override
+	public void clone(AbstractTableConfiguration toCloneFrom) {
+		super.clone(toCloneFrom);
+		
+		RelatedTable toCloneFromAsRelated = (RelatedTable)toCloneFrom;
+		
+		this.refCode = toCloneFromAsRelated.refCode;
+		this.mapping = toCloneFromAsRelated.mapping;
+		}
+	
 	public void addMapping(RefMapping mapping) {
 		if (this.mapping == null) {
 			this.mapping = new ArrayList<>();
@@ -71,20 +82,8 @@ public abstract class RelatedTable extends AbstractTableConfiguration {
 		this.mapping = mapping;
 	}
 	
-	@Override
-	@JsonIgnore
-	public String toString() {
-		String str = "";
-		
-		for (RefMapping map : this.mapping) {
-			if (utilities.stringHasValue(str)) {
-				str += ",";
-			}
-			
-			str += map.toString();
-		}
-		
-		return str;
+	public boolean hasRelated() {
+		return this.getRelatedTabConf() != null;
 	}
 	
 	@Override
@@ -245,7 +244,7 @@ public abstract class RelatedTable extends AbstractTableConfiguration {
 	
 	public abstract AbstractTableConfiguration getRelatedTabConf();
 	
-	public abstract void setRelatedTabConf(AbstractTableConfiguration  relatedTabConf);
+	public abstract void setRelatedTabConf(AbstractTableConfiguration relatedTabConf);
 	
 	public abstract UniqueKeyInfo parseRelationshipToSelfKey();
 	

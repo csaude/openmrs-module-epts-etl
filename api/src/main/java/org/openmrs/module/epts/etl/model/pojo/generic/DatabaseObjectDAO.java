@@ -270,37 +270,20 @@ public class DatabaseObjectDAO extends BaseDAO {
 	
 	public static <T extends DatabaseObject> List<T> getByField(AbstractTableConfiguration tableConfiguration,
 	        String fieldName, String fieldValue, Connection conn) throws DBException {
-		try {
-			Object[] params = { fieldValue };
-			
-			@SuppressWarnings("unchecked")
-			Class<T> openMRSClass = (Class<T>) tableConfiguration.getSyncRecordClass(tableConfiguration.getRelatedAppInfo());
-			
-			T obj = openMRSClass.newInstance();
-			
-			String sql = "";
-			
-			sql += " SELECT " + obj.generateTableName() + ".*" + (obj.generateTableName().equals("patient") ? ", uuid" : "")
-			        + "\n";
-			sql += " FROM     " + obj.generateTableName()
-			        + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id " : "")
-			        + "\n";
-			sql += " WHERE 	" + fieldName + " = ?";
-			sql += " ORDER BY " + fieldName;
-			
-			return search(tableConfiguration.getLoadHealper(), openMRSClass, sql, params, conn);
-			
-		}
-		catch (InstantiationException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		catch (IllegalAccessException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
+		
+		Object[] params = { fieldValue };
+		
+		@SuppressWarnings("unchecked")
+		Class<T> openMRSClass = (Class<T>) tableConfiguration.getSyncRecordClass(tableConfiguration.getRelatedAppInfo());
+		
+		String sql = "";
+		
+		sql += " SELECT " + tableConfiguration.generateFullAliasedSelectColumns() + "\n";
+		sql += " FROM     " + tableConfiguration.generateSelectFromClauseContent() + "\n";
+		sql += " WHERE 	" + fieldName + " = ?";
+		sql += " ORDER BY " + fieldName;
+		
+		return search(tableConfiguration.getLoadHealper(), openMRSClass, sql, params, conn);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -322,11 +305,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 			
 			String sql = "";
 			
-			sql += " SELECT " + obj.generateTableName() + ".* "
-			        + (obj.generateTableName().equals("patient") ? ", person.uuid" : "") + "\n";
-			sql += " FROM  	" + obj.generateTableName()
-			        + (obj.generateTableName().equals("patient") ? " inner join person on person_id = patient_id" : "")
-			        + "\n";
+			sql += " SELECT " + tabConf.generateFullAliasedSelectColumns() + "\n";
+			sql += " FROM  	" + tabConf.generateSelectFromClauseContent() + "\n";
 			sql += " WHERE 	" + oid.parseToParametrizedStringCondition();
 			
 			obj = find(tabConf.getLoadHealper(), openMRSClass, sql, params, conn);
@@ -363,13 +343,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 			
 			Object[] params = oid.parseValuesToArray();
 			
-			String tableName = obj.generateTableName();
-			
 			String sql = "";
 			
-			sql += " SELECT " + tableName + ".*" + (tableName.equals("patient") ? ", uuid" : "") + "\n";
-			sql += " FROM  	" + schema + "." + tableName
-			        + (tableName.equals("patient") ? " left join person on person_id = patient_id" : "") + "\n";
+			sql += " SELECT " + tabConf.generateFullAliasedSelectColumns() + "\n";
+			sql += " FROM  	" + tabConf.generateSelectFromClauseContentOnSpecificSchema(schema) + "\n";
 			sql += " WHERE 	" + oid.parseToParametrizedStringCondition();
 			
 			return find(tabConf.getLoadHealper(), openMRSClass, sql, params, conn);
@@ -403,8 +380,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " SELECT *\n";
-		sql += " FROM  	" + tableConfiguration.getTableName() + "\n";
+		sql += " SELECT " + tableConfiguration.generateFullAliasedSelectColumns() + "\n";
+		sql += " FROM  	" + tableConfiguration.generateSelectFromClauseContent() + "\n";
 		sql += " LIMIT 0, 1";
 		
 		return find(tableConfiguration.getLoadHealper(),
@@ -465,8 +442,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " SELECT * \n";
-		sql += " FROM  	" + tabConf.getTableName() + "\n";
+		sql += " SELECT " + tabConf.generateFullAliasedSelectColumns();
+		sql += " FROM  	" + tabConf.generateSelectFromClauseContent() + "\n";
 		sql += " WHERE 	" + tabConf.getPrimaryKey() + "	=	 (	SELECT " + function + "(" + tabConf.getPrimaryKey() + ")\n";
 		sql += "													FROM   " + tabConf.getTableName() + " \n";
 		sql += "													WHERE  NOT EXISTS ( SELECT * \n";
@@ -590,7 +567,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = DBUtilities
 		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0], conn);
 		
-		sql = objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
+		//sql = objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
 		
 		sql += " VALUES";
 		
@@ -616,7 +593,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = DBUtilities.addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0],
 		    conn);
 		
-		sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
+		//sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
 		
 		sql += " VALUES";
 		

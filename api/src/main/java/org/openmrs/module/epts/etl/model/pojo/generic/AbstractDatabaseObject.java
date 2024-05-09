@@ -325,6 +325,11 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		}
 	}
 	
+	@Override
+	public void update(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException {
+		DatabaseObjectDAO.update(this, conn);
+	}
+	
 	public void resolveConflictWithExistingRecord(DatabaseObject recordOnDB, AbstractTableConfiguration tableConfiguration,
 	        Connection conn) throws DBException, ForbiddenOperationException {
 		boolean existingRecordIsOutdated = false;

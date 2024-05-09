@@ -2,6 +2,8 @@ package org.openmrs.module.epts.etl.conf;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Represents a child table
  */
@@ -92,6 +94,28 @@ public class ChildTable extends RelatedTable {
 	@Override
 	public void setRelatedTabConf(AbstractTableConfiguration relatedTabConf) {
 		this.parentTableConf = relatedTabConf;
+	}
+	
+	@Override
+	@JsonIgnore
+	public String toString() {
+		String str = this.hasRelated() ? this.getRelatedTabConf().getTableName() + " >> " : "";
+		
+		str += this.getTableName();
+		
+		if (hasMapping()) {
+			str += ": ";
+			
+			for (RefMapping map : this.getMapping()) {
+				if (utilities.stringHasValue(str)) {
+					str += ",";
+				}
+				
+				str += map.toString();
+			}
+		}
+		
+		return str;
 	}
 	
 }

@@ -237,7 +237,7 @@ public class EtlOperationConfig extends BaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public EtlOperationConfig getParent() {
+	public EtlOperationConfig getParentConf() {
 		return parent;
 	}
 	

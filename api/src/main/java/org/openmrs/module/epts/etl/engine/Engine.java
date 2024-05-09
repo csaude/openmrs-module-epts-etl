@@ -5,12 +5,12 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
+import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.SyncRecord;
@@ -136,7 +136,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return getMainSrcTableConf().getTableName();
 	}
 	
-	public AbstractTableConfiguration getMainSrcTableConf() {
+	public SrcConf getMainSrcTableConf() {
 		return monitor.getSrcMainTableConf();
 	}
 	
@@ -148,7 +148,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return getRelatedOperationController().openConnection();
 	}
 	
-	public Engine getParent() {
+	public Engine getParentConf() {
 		return parent;
 	}
 	
@@ -332,7 +332,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	}
 	
 	public boolean isMainEngine() {
-		return this.getParent() == null;
+		return this.getParentConf() == null;
 	}
 	
 	private int performe(Connection conn) throws DBException {

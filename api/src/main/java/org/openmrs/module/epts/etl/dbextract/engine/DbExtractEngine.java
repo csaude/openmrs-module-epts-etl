@@ -99,7 +99,7 @@ public class DbExtractEngine extends EtlEngine {
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);
 						
-						DbExtractRecord mr = new DbExtractRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
+						DbExtractRecord mr = new DbExtractRecord(destObject, getMainSrcTableConf(), mappingInfo, this.getSrcApp(), this.getDstApp(),
 						        false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
@@ -170,7 +170,7 @@ public class DbExtractEngine extends EtlEngine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					DbExtractRecord data = new DbExtractRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
+					DbExtractRecord data = new DbExtractRecord(destObject, getMainSrcTableConf(), mappingInfo, this.getSrcApp(), this.getDstApp(),
 					        wrt);
 					
 					try {

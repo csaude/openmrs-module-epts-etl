@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.model.Field;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Represents a parent table.
  */
@@ -34,6 +36,18 @@ public class ParentTable extends RelatedTable {
 		ParentTable p = new ParentTable(tableName, refCode);
 		
 		return p;
+	}
+	
+	@Override
+	public void clone(AbstractTableConfiguration toCloneFrom) {
+		super.clone(toCloneFrom);
+		
+		ParentTable toCloneFromAsParent = (ParentTable)toCloneFrom;
+		
+		this.childTableConf = toCloneFromAsParent.childTableConf;
+		this.conditionalFields = toCloneFromAsParent.conditionalFields;
+		this.defaultValueDueInconsistency = toCloneFromAsParent.defaultValueDueInconsistency;
+		this.setNullDueInconsistency = toCloneFromAsParent.setNullDueInconsistency;
 	}
 	
 	public AbstractTableConfiguration getChildTableConf() {
@@ -122,4 +136,28 @@ public class ParentTable extends RelatedTable {
 		return utilities.arrayHasElement(this.conditionalFields);
 	}
 	
+	@Override
+	@JsonIgnore
+	public String toString() {
+		String str = this.getTableName();
+		
+		str += this.hasRelated() ? ">>" + this.getRelatedTabConf().getTableName() : "";
+		
+		String mappingStr = "";
+		
+		if (hasMapping()) {
+			
+			for (RefMapping map : this.getMapping()) {
+				if (utilities.stringHasValue(mappingStr)) {
+					mappingStr += ",";
+				}
+				
+				mappingStr += map.toString();
+			}
+			
+			str += ": " + mappingStr;
+		}
+		
+		return str;
+	}
 }

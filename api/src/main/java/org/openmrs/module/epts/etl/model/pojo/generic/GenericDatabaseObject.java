@@ -151,6 +151,8 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 					field.setValue(retrieveFieldValue(
 					    field.generateAliasedColumn((AbstractTableConfiguration) this.relatedConfiguration), field.getType(),
 					    rs));
+					
+					super.setFieldValue(field.getNameAsClassAtt(), field.getValue());
 				}
 				catch (Exception e) {
 					// TODO Auto-generated catch block

@@ -293,7 +293,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	}
 	
 	@Override
-	public EtlDataConfiguration getParent() {
+	public EtlDataConfiguration getParentConf() {
 		return this.relatedSrcConf;
 	}
 	

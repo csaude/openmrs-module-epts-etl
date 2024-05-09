@@ -8,7 +8,6 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
@@ -30,6 +29,9 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	 * If empty, a INNER join will be applied if the main table has only one additional src, and will be LEFT join if there are more than one additional src tables 
 	 */
 	private JoinType joinType;
+	
+	public TableDataSourceConfig() {
+	}
 	
 	public List<AuxExtractTable> getSelfJoinTables() {
 		return selfJoinTables;
@@ -73,7 +75,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		}
 		
 		if (this.joinType == null) {
-			if (utilities.arrayHasMoreThanOneElements(this.getParent().getExtraTableDataSource())) {
+			if (utilities.arrayHasMoreThanOneElements(this.getParentConf().getExtraTableDataSource())) {
 				this.joinType = JoinType.LEFT;
 			} else {
 				this.joinType = JoinType.INNER;
@@ -82,10 +84,10 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		
 		if (utilities.arrayHasElement(this.selfJoinTables)) {
 			for (AuxExtractTable t : this.selfJoinTables) {
-				t.setParent(this);
+				t.setParentConf(this);
 				
 				if (!utilities.stringHasValue(t.getTableAlias())) {
-					t.setTableAlias(this.getParent().generateAlias(t));
+					t.setTableAlias(this.getParentConf().generateAlias(t));
 				}
 				
 				t.fullLoad(conn);
@@ -129,73 +131,29 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	public void setRelatedSrcConf(SrcConf relatedSrcConf) {
 		this.relatedSrcConf = relatedSrcConf;
 		
-		setParent(relatedSrcConf);
+		setParentConf(relatedSrcConf);
 	}
 	
 	@Override
-	public SrcConf getParent() {
+	public SrcConf getParentConf() {
 		return this.relatedSrcConf;
 	}
 	
 	@Override
 	public EtlConfiguration getRelatedSyncConfiguration() {
-		return getParent().getRelatedSyncConfiguration();
+		return getParentConf().getRelatedSyncConfiguration();
 	}
 	
 	@Override
 	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
 	        throws DBException {
-		String condition = generateConditionsFields(mainObject);
+		String condition = super.generateConditionsFields(mainObject, this.joinFields, this.joinExtraCondition);
 		
 		return DatabaseObjectDAO.find(this.getLoadHealper(), this.getSyncRecordClass(srcAppInfo), condition, srcConn);
 	}
 	
-	private String generateConditionsFields(DatabaseObject dbObject) {
-		String conditionFields = "";
-		
-		for (int i = 0; i < this.joinFields.size(); i++) {
-			if (i > 0)
-				conditionFields += " AND ";
-			
-			FieldsMapping field = this.joinFields.get(i);
-			
-			Object value;
-			
-			try {
-				value = dbObject.getFieldValue(field.getSrcField());
-			}
-			catch (ForbiddenOperationException e) {
-				value = dbObject.getFieldValue(field.getSrcFieldAsClassField());
-			}
-			
-			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getDstField(), value);
-		}
-		
-		if (utilities.stringHasValue(this.getJoinExtraCondition())) {
-			conditionFields += " AND (" + this.getJoinExtraCondition() + ")";
-		}
-		
-		return conditionFields;
-	}
-	
 	public String generateJoinCondition() {
-		String conditionFields = "";
-		
-		for (int i = 0; i < this.joinFields.size(); i++) {
-			if (i > 0)
-				conditionFields += " AND ";
-			
-			FieldsMapping field = this.joinFields.get(i);
-			
-			conditionFields += getRelatedSrcConf().getTableAlias() + "." + field.getSrcField() + " = " + getTableAlias()
-			        + "." + field.getDstField();
-		}
-		
-		if (utilities.stringHasValue(this.getJoinExtraCondition())) {
-			conditionFields += " AND (" + this.getJoinExtraCondition() + ")";
-		}
-		
-		return conditionFields;
+		return super.generateJoinCondition(this.relatedSrcConf, this.joinFields, this.joinExtraCondition);
 	}
 	
 	public void addJoinField(FieldsMapping fm) {

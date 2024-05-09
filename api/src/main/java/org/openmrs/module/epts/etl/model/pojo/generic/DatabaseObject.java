@@ -29,19 +29,19 @@ public interface DatabaseObject extends SyncRecord {
 	
 	public static final int INCONSISTENCE_STATUS = -1;
 	
-	public abstract void refreshLastSyncDateOnOrigin(AbstractTableConfiguration tableConfiguration,
-	        String recordOriginLocationCode, Connection conn);
+	void refreshLastSyncDateOnOrigin(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
+	        Connection conn);
 	
-	public abstract void refreshLastSyncDateOnDestination(AbstractTableConfiguration tableConfiguration,
-	        String recordOriginLocationCode, Connection conn);
+	void refreshLastSyncDateOnDestination(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
+	        Connection conn);
 	
-	public abstract Oid getObjectId();
+	Oid getObjectId();
 	
-	public abstract void setObjectId(Oid objectId);
+	void setObjectId(Oid objectId);
 	
-	public abstract List<UniqueKeyInfo> getUniqueKeysInfo();
+	List<UniqueKeyInfo> getUniqueKeysInfo();
 	
-	public abstract void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo);
+	void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo);
 	
 	/**
 	 * Load the destination parents id to this object
@@ -49,47 +49,53 @@ public interface DatabaseObject extends SyncRecord {
 	 * @param conn
 	 * @throws DBException
 	 */
-	public void loadDestParentInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
+	void loadDestParentInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws ParentNotYetMigratedException, DBException;
 	
-	public abstract Object[] getInsertParamsWithoutObjectId();
+	Object[] getInsertParamsWithoutObjectId();
 	
-	public abstract String getInsertSQLWithoutObjectId();
+	String getInsertSQLWithoutObjectId();
 	
-	public abstract Object[] getInsertParamsWithObjectId();
+	Object[] getInsertParamsWithObjectId();
 	
-	public abstract String getInsertSQLWithObjectId();
+	String getInsertSQLWithObjectId();
 	
-	public abstract String getUpdateSQL();
+	String getUpdateSQL();
 	
-	public abstract Object[] getUpdateParams();
+	Object[] getUpdateParams();
 	
-	public abstract String generateInsertValuesWithoutObjectId();
+	String generateInsertValuesWithoutObjectId();
 	
-	public abstract String generateInsertValuesWithObjectId();
+	String generateInsertValuesWithObjectId();
 	
-	public abstract boolean hasIgnoredParent();
+	boolean hasIgnoredParent();
 	
-	public abstract void save(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException;
+	void save(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	
-	public abstract String getUuid();
+	void update(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException;
 	
-	public abstract void setUuid(String uuid);
+	String getUuid();
 	
-	public abstract boolean hasParents();
+	void setUuid(String uuid);
 	
-	public abstract Object getParentValue(String parentAttName);
+	boolean hasParents();
 	
-	public abstract String generateTableName();
+	Object getParentValue(String parentAttName);
+	
+	String generateTableName();
 	
 	/**
 	 * Load the objectId info
 	 * 
 	 * @param tabConf the table configuration
 	 */
-	public abstract void loadObjectIdData(AbstractTableConfiguration tabConf);
+	void loadObjectIdData(AbstractTableConfiguration tabConf);
 	
-	public abstract DatabaseObject getSharedPkObj();
+	DatabaseObject getSharedPkObj();
+	
+	default boolean shasSharedPkObj() {
+		return getSharedPkObj() != null;
+	}
 	
 	/**
 	 * Consolidate data for database consistency
@@ -104,7 +110,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws InconsistentStateException
 	 * @throws DBException
 	 */
-	public abstract void consolidateData(AbstractTableConfiguration tableInfo, Connection conn)
+	void consolidateData(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException;
 	
 	/**
@@ -119,45 +125,43 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws InconsistentStateException
 	 * @throws DBException
 	 */
-	public abstract void resolveInconsistence(AbstractTableConfiguration tableInfo, Connection conn)
+	void resolveInconsistence(AbstractTableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException;
 	
-	public abstract SyncImportInfoVO retrieveRelatedSyncInfo(AbstractTableConfiguration tableInfo,
-	        String recordOriginLocationCode, Connection conn) throws DBException;
+	SyncImportInfoVO retrieveRelatedSyncInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode,
+	        Connection conn) throws DBException;
 	
-	public abstract DatabaseObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode,
+	DatabaseObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode,
 	        AbstractTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
 	        throws ParentNotYetMigratedException, DBException;
 	
-	public abstract SyncImportInfoVO getRelatedSyncInfo();
+	SyncImportInfoVO getRelatedSyncInfo();
 	
-	public abstract void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo);
+	void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo);
 	
-	public abstract String generateMissingInfo(Map<ParentTable, Integer> missingParents);
+	String generateMissingInfo(Map<ParentTable, Integer> missingParents);
 	
-	public abstract void remove(Connection conn) throws DBException;
+	void remove(Connection conn) throws DBException;
 	
-	public abstract Map<ParentTable, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
-	        throws DBException;
+	Map<ParentTable, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn) throws DBException;
 	
-	public abstract void removeDueInconsistency(AbstractTableConfiguration syncTableInfo,
-	        Map<ParentTable, Integer> missingParents, Connection conn) throws DBException;
-	
-	public abstract void changeParentValue(ParentTable refInfo, DatabaseObject newParent);
-	
-	public abstract void setParentToNull(ParentTable refInfo);
-	
-	public abstract void changeObjectId(AbstractTableConfiguration abstractTableConfiguration, Connection conn)
-	        throws DBException;
-	
-	public abstract void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo,
+	void removeDueInconsistency(AbstractTableConfiguration syncTableInfo, Map<ParentTable, Integer> missingParents,
 	        Connection conn) throws DBException;
 	
-	public abstract Date getDateChanged();
+	void changeParentValue(ParentTable refInfo, DatabaseObject newParent);
 	
-	public abstract Date getDateVoided();
+	void setParentToNull(ParentTable refInfo);
 	
-	public abstract Date getDateCreated();
+	void changeObjectId(AbstractTableConfiguration abstractTableConfiguration, Connection conn) throws DBException;
+	
+	void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo, Connection conn)
+	        throws DBException;
+	
+	Date getDateChanged();
+	
+	Date getDateVoided();
+	
+	Date getDateCreated();
 	
 	/**
 	 * Check if this record has exactily the same values in all fields with a given object
@@ -165,7 +169,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @param srcObj
 	 * @return true if this record has exactily the same values in all fields with the given object
 	 */
-	public abstract boolean hasExactilyTheSameDataWith(DatabaseObject srcObj);
+	boolean hasExactilyTheSameDataWith(DatabaseObject srcObj);
 	
 	/**
 	 * Return a value of given field
@@ -173,9 +177,9 @@ public interface DatabaseObject extends SyncRecord {
 	 * @param fieldName of field to retrieve
 	 * @return Return a value of given field
 	 */
-	public abstract Object getFieldValue(String fieldName) throws ForbiddenOperationException;
+	Object getFieldValue(String fieldName) throws ForbiddenOperationException;
 	
-	public abstract void setFieldValue(String fieldName, Object value);
+	void setFieldValue(String fieldName, Object value);
 	
 	/**
 	 * Retrive values for all {@link AbstractTableConfiguration#getUniqueKeys()} fields. The values
@@ -186,7 +190,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @return values for all {@link AbstractTableConfiguration#getUniqueKeys()} field.
 	 * @throws ForbiddenOperationException if one or more fields in any key have null value
 	 */
-	public default Object[] getUniqueKeysFieldValues(AbstractTableConfiguration tableConfiguration)
+	default Object[] getUniqueKeysFieldValues(AbstractTableConfiguration tableConfiguration)
 	        throws ForbiddenOperationException {
 		if (!tableConfiguration.isFullLoaded()) {
 			try {
@@ -252,7 +256,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @return values for all fields in a unique key.
 	 * @throws ForbiddenOperationException if one or more fields in any key have null value
 	 */
-	public default Object[] getUniqueKeysFieldValues(UniqueKeyInfo uniqueKey) throws ForbiddenOperationException {
+	default Object[] getUniqueKeysFieldValues(UniqueKeyInfo uniqueKey) throws ForbiddenOperationException {
 		Object[] fieldValues = new Object[uniqueKey.getFields().size()];
 		
 		for (int i = 0; i < uniqueKey.getFields().size(); i++) {
@@ -277,9 +281,9 @@ public interface DatabaseObject extends SyncRecord {
 		return fieldValues;
 	}
 	
-	public abstract void fastCreateSimpleNumericKey(long i);
+	void fastCreateSimpleNumericKey(long i);
 	
-	public abstract void loadWithDefaultValues();
+	void loadWithDefaultValues();
 	
 	/**
 	 * Checks if there are recursive relashioship between the {@link #getRelatedConfiguration()} and
@@ -292,7 +296,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws ForbiddenOperationException
 	 * @throws DBException
 	 */
-	public default boolean checkIfAllRelationshipCanBeresolved(AbstractTableConfiguration otherTabConf, Connection conn)
+	default boolean checkIfAllRelationshipCanBeresolved(AbstractTableConfiguration otherTabConf, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
 		if (otherTabConf.getDefaultObject(conn) != null) {

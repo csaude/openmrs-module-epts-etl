@@ -39,7 +39,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	
 	private Class<? extends DatabaseObject> syncRecordClass;
 	
-	private EtlDataConfiguration parent;
+	private EtlDataConfiguration parentConf;
 	
 	private PrimaryKey primaryKey;
 	
@@ -95,11 +95,12 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	
 	public void clone(AbstractTableConfiguration toCloneFrom) {
 		this.tableName = toCloneFrom.tableName;
+		this.tableAlias = toCloneFrom.tableAlias;
 		this.parents = toCloneFrom.parents;
 		this.childRefInfo = toCloneFrom.childRefInfo;
 		this.parentRefInfo = toCloneFrom.parentRefInfo;
 		this.syncRecordClass = toCloneFrom.syncRecordClass;
-		this.parent = toCloneFrom.parent;
+		this.parentConf = toCloneFrom.parentConf;
 		this.primaryKey = toCloneFrom.primaryKey;
 		this.sharePkWith = toCloneFrom.sharePkWith;
 		this.metadata = toCloneFrom.metadata;
@@ -180,6 +181,10 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	
 	public void setWinningRecordFieldsInfo(List<List<Field>> winningRecordFieldsInfo) {
 		this.winningRecordFieldsInfo = winningRecordFieldsInfo;
+	}
+	
+	public boolean hasAlias() {
+		return utilities.stringHasValue(this.tableAlias);
 	}
 	
 	public boolean hasWinningRecordsInfo() {
@@ -291,12 +296,12 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	}
 	
 	@Override
-	public EtlDataConfiguration getParent() {
-		return parent;
+	public EtlDataConfiguration getParentConf() {
+		return parentConf;
 	}
 	
-	public void setParent(EtlDataConfiguration parent) {
-		this.parent = parent;
+	public void setParentConf(EtlDataConfiguration parentConf) {
+		this.parentConf = parentConf;
 	}
 	
 	public String getTableName() {
@@ -627,7 +632,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 					
 					ParentTable parentTabConf = ParentTable.init(parentTableName, refCode);
 					
-					parentTabConf.setParent(this.parent);
+					parentTabConf.setParentConf(this.parentConf);
 					parentTabConf.setChildTableConf(this);
 					
 					addParentMappingInfo(refCode, childFieldName, parentTabConf, parentFieldName, conn);
@@ -770,7 +775,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 					
 					childTabConf.setParentTableConf(this);
 					
-					childTabConf.setParent(this.parent);
+					childTabConf.setParentConf(this.parentConf);
 					
 					addChildMappingInfo(refCode, childTabConf, childFieldName, parentFieldName, conn);
 					
@@ -847,6 +852,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 			if (existingRef == null) {
 				ref = (RelatedTable) parentTabConf;
 				
+				ref.setMetadata(!ref.isConfigured());
 				this.parentRefInfo.add((ParentTable) ref);
 			}
 			
@@ -857,6 +863,8 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 				ref = (RelatedTable) childTabConf;
 				
 				ref.setRelatedTabConf(parentTabConf);
+				ref.setMetadata(!ref.isConfigured());
+				
 				this.childRefInfo.add((ChildTable) ref);
 			}
 			
@@ -1041,15 +1049,27 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		return DBUtilities.tryToPutSchemaOnDatabaseObject(getTableName(), conn);
 	}
 	
-	public String generateFullTableNameWithAlias(Connection conn) throws DBException {
+	public String generateFullTableNameWithAlias(Connection conn) throws DBException, ForbiddenOperationException {
+		if (!hasAlias()) {
+			throw new ForbiddenOperationException("No alias is defined for table " + this.tableName);
+		}
+		
 		return generateFullTableName(conn) + " " + this.tableAlias;
 	}
 	
 	public String generateFullTableNameWithAlias(String schema) {
+		if (!hasAlias()) {
+			throw new ForbiddenOperationException("No alias is defined for table " + this.tableName);
+		}
+		
 		return utilities.stringHasValue(schema) ? schema + "." + generateTableNameWithAlias() : generateTableNameWithAlias();
 	}
 	
 	public String generateTableNameWithAlias() {
+		if (!hasAlias()) {
+			throw new ForbiddenOperationException("No alias is defined for table " + this.tableName);
+		}
+		
 		return this.tableName + " " + this.tableAlias;
 	}
 	
@@ -1121,7 +1141,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 			boolean exists = DBUtilities.isTableExists(conn.getSchema(), getTableName(), conn);
 			
 			if (!exists)
-				throw new ForbiddenOperationException("The table '" + getTableName() + "' does not exist!!!");
+				throw new ForbiddenOperationException("The table '" + generateFullTableName(conn) + "' does not exist!!!");
 			
 			setFields(DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn));
 			
@@ -1171,7 +1191,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		generateSQLElemenets();
 	}
 	
-	private void tryToDiscoverySharedKeyInfo(Connection conn) throws DBException {
+	protected void tryToDiscoverySharedKeyInfo(Connection conn) throws DBException {
 		//Discovery shared pk
 		
 		if (this.parentRefInfo != null) {
@@ -1224,7 +1244,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	public ParentTable getSharedKeyRefInfo() {
 		if (sharePkWith == null) {
 			return null;
-		} else if (utilities.arrayHasElement(this.getParents())) {
+		} else if (utilities.arrayHasElement(this.parentRefInfo)) {
 			
 			for (ParentTable parent : this.parentRefInfo) {
 				if (parent.getTableName().equalsIgnoreCase(this.sharePkWith)) {
@@ -1307,7 +1327,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	
 	@JsonIgnore
 	public File getClassPath() {
-		return new File(this.parent.getRelatedSyncConfiguration().getClassPath());
+		return new File(this.parentConf.getRelatedSyncConfiguration().getClassPath());
 	}
 	
 	@JsonIgnore
@@ -1451,7 +1471,7 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 	}
 	
 	public EtlConfiguration getRelatedSyncConfiguration() {
-		return this.parent.getRelatedSyncConfiguration();
+		return this.parentConf.getRelatedSyncConfiguration();
 	}
 	
 	@Override
@@ -1678,8 +1698,19 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 		return this.getPrimaryKey() != null && this.getPrimaryKey().isCompositeKey();
 	}
 	
+	/**
+	 * Generate a select columns content using the alias {@link #tableAlias}
+	 * 
+	 * @return
+	 * @throws ForbiddenOperationException if the table does not have alias
+	 */
 	@JsonIgnore
-	public String generateFullAliasedSelectColumns() {
+	public String generateFullAliasedSelectColumns() throws ForbiddenOperationException {
+		
+		if (!hasAlias()) {
+			throw new ForbiddenOperationException("No alias is defined for table " + this.tableName);
+		}
+		
 		String fullSelectColumns = "";
 		
 		for (Field f : this.getFields()) {
@@ -1779,11 +1810,127 @@ public abstract class AbstractTableConfiguration extends EtlDataConfiguration im
 			}
 		}
 		
-		if (utilities.arrayHasElement(joinFields)) {
+		if (!utilities.arrayHasElement(joinFields)) {
 			throw new ForbiddenOperationException(
 			        "No join fields were difined between " + this.getTableName() + " And " + relatedTabConf.getTableName());
 		}
 		
 		return joinFields;
+	}
+	
+	protected String generateConditionsFields(DatabaseObject dbObject, List<FieldsMapping> joinFields,
+	        String joinExtraCondition) {
+		String conditionFields = "";
+		
+		for (int i = 0; i < joinFields.size(); i++) {
+			if (i > 0)
+				conditionFields += " AND ";
+			
+			FieldsMapping field = joinFields.get(i);
+			
+			Object value;
+			
+			try {
+				value = dbObject.getFieldValue(field.getSrcField());
+			}
+			catch (ForbiddenOperationException e) {
+				value = dbObject.getFieldValue(field.getSrcFieldAsClassField());
+			}
+			
+			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getDstField(), value);
+		}
+		
+		if (utilities.stringHasValue(joinExtraCondition)) {
+			conditionFields += " AND (" + joinExtraCondition + ")";
+		}
+		
+		return conditionFields;
+	}
+	
+	public String generateJoinCondition(AbstractTableConfiguration joiningTable, List<FieldsMapping> joinFields,
+	        String joinExtraCondition) {
+		String conditionFields = "";
+		
+		for (int i = 0; i < joinFields.size(); i++) {
+			if (i > 0)
+				conditionFields += " AND ";
+			
+			FieldsMapping field = joinFields.get(i);
+			
+			conditionFields += joiningTable.getTableAlias() + "." + field.getSrcField() + " = " + getTableAlias() + "."
+			        + field.getDstField();
+		}
+		
+		if (utilities.stringHasValue(joinExtraCondition)) {
+			conditionFields += " AND (" + joinExtraCondition + ")";
+		}
+		
+		return conditionFields;
+	}
+	
+	public AbstractTableConfiguration findFullConfiguredConfInAllRelatedTable(String tableName) {
+		if (this.getTableName().equals(tableName) && this.isFullLoaded()) {
+			return this;
+		}
+		
+		if (this.hasParentRefInfo()) {
+			for (ParentTable p : this.getParentRefInfo()) {
+				AbstractTableConfiguration fullLoaded = p.findFullConfiguredConfInAllRelatedTable(tableName);
+				
+				if (fullLoaded != null) {
+					return fullLoaded;
+				}
+			}
+		}
+		
+		if (this.hasChildRefInfo()) {
+			for (ChildTable p : this.getChildRefInfo()) {
+				AbstractTableConfiguration fullLoaded = p.findFullConfiguredConfInAllRelatedTable(tableName);
+				
+				if (fullLoaded != null) {
+					return fullLoaded;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	private boolean allRelatedTablesFullLoaded;
+	
+	public void fullLoadAllRelatedTables(TableAliasesGenerator aliasGenerator, AbstractTableConfiguration related,
+	        Connection conn) {
+		if (allRelatedTablesFullLoaded == true) {
+			return;
+		}
+		
+		if (this.hasParentRefInfo()) {
+			for (ParentTable ref : this.getParentRefInfo()) {
+				
+				if (!ref.isMetadata()) {
+					AbstractTableConfiguration existingConf = null;
+					
+					if (related != null) {
+						existingConf = related.findFullConfiguredConfInAllRelatedTable(ref.getTableName());
+					}
+					
+					if (existingConf == null) {
+						existingConf = this.findFullConfiguredConfInAllRelatedTable(ref.getTableName());
+					}
+					
+					if (existingConf != null) {
+						ref.clone(ref);
+					} else {
+						ref.fullLoad(conn);
+					}
+					
+					ref.fullLoadAllRelatedTables(aliasGenerator, this, conn);
+				}
+				
+				ref.setTableAlias(aliasGenerator.generateAlias(ref));
+			}
+			
+			this.allRelatedTablesFullLoaded = true;
+		}
 	}
 }
