@@ -116,32 +116,32 @@ The *"uniqueKeys"* allow the configuration of src table unique keys. If the tabl
 #### Parents configuration
 A parent if configured as an object and can have additional properties. Note that when there are no additional properties you can omit the parent on the list of parents. When you whant to manualy add parent on the etl item configuration it should have the apearence bellow:
 ```
-		{
-		   "srcConf":{
-			  "parents":[
-				 {
-					"tableName":"",
-					"ref":{
-					   "mapping":[
-						  {
-							 "childFieldName":"",
-							 "parentFieldName":"",
-							 "defaultValueDueInconsistency":"",
-							 "setNullDueInconsistency":"",
-							 "ignorable":""
-						  }
-					   ],
-					   "conditionalFields":[
-						  {
-							 "name":"",
-							 "value":""
-						  }
-					   ]
-					}
-				 }
-			  ]
-		   }
-		}
+{
+   "srcConf":{
+      "parents":[
+         {
+            "tableName":"",
+            "mapping":[
+               {
+                  "childFieldName":"",
+                  "parentFieldName":"",
+                  "defaultValueDueInconsistency":"",
+                  "setNullDueInconsistency":"",
+                  "ignorable":""
+               }
+            ],
+            "conditionalFields":[
+               {
+                  "name":"",
+                  "value":""
+               }
+            ],
+            "defaultValueDueInconsistency":"",
+            "setNullDueInconsistency":""
+         }
+      ]
+   }
+}
 ```
 
 #### The extra datasource table configuration
