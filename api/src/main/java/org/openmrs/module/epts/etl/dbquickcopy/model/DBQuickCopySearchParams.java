@@ -8,13 +8,13 @@ import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickload.model.LoadedRecordsSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
+public class DBQuickCopySearchParams extends SyncSearchParams<EtlDatabaseObject> {
 	
 	private DBQuickCopyController relatedController;
 	
@@ -27,8 +27,8 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 	}
 	
 	@Override
-	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
@@ -44,7 +44,7 @@ public class DBQuickCopySearchParams extends SyncSearchParams<DatabaseObject> {
 	}
 	
 	@Override
-	public Class<DatabaseObject> getRecordClass() {
+	public Class<EtlDatabaseObject> getRecordClass() {
 		return DatabaseEntityPOJOGenerator
 		        .tryToGetExistingCLass("org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject");
 	}

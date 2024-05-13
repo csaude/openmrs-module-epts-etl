@@ -11,7 +11,7 @@ import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.reconciliation.engine.CentralAndRemoteDataReconciliationEngine;
@@ -78,7 +78,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			}
 			else
 			if (isPhantomRecordsDetector()){
-				DatabaseObject record = DatabaseObjectDAO.getFirstPhantomRecordInDestination(config.getSrcConf(), conn);
+				EtlDatabaseObject record = DatabaseObjectDAO.getFirstPhantomRecordInDestination(config.getSrcConf(), conn);
 				
 				id = record != null ? record.getObjectId().getSimpleValueAsInt() : 0;
 			}
@@ -114,7 +114,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			}
 			else
 			if (isPhantomRecordsDetector()){
-				DatabaseObject record = DatabaseObjectDAO.getLastPhantomRecordInDestination(config.getSrcConf(), conn);
+				EtlDatabaseObject record = DatabaseObjectDAO.getLastPhantomRecordInDestination(config.getSrcConf(), conn);
 				
 				id = record != null ? record.getObjectId().getSimpleValueAsInt() : 0;
 			}

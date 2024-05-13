@@ -35,7 +35,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class EtlOperationConfig extends BaseConfiguration {
+public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	

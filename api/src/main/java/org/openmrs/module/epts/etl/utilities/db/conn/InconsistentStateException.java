@@ -3,9 +3,9 @@ package org.openmrs.module.epts.etl.utilities.db.conn;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.openmrs.module.epts.etl.conf.ParentTable;
+import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
@@ -20,22 +20,22 @@ public class InconsistentStateException extends EtlException {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	Map<ParentTable, Integer> missingParents;
+	Map<ParentTableImpl, Integer> missingParents;
 	
 	public InconsistentStateException() {
 		super("The record is in inconsistent state. There are missing some parents");
 	}
 	
-	public InconsistentStateException(DatabaseObject obj, Map<ParentTable, Integer> missingParents) {
+	public InconsistentStateException(EtlDatabaseObject obj, Map<ParentTableImpl, Integer> missingParents) {
 		super(generateMissingInfo(obj, missingParents));
 		
 		this.missingParents = missingParents;
 	}
 	
-	public static String generateMissingInfo(DatabaseObject obj, Map<ParentTable, Integer> missingParents) {
+	public static String generateMissingInfo(EtlDatabaseObject obj, Map<ParentTableImpl, Integer> missingParents) {
 		String missingInfo = "";
 		
-		for (Entry<ParentTable, Integer> missing : missingParents.entrySet()) {
+		for (Entry<ParentTableImpl, Integer> missing : missingParents.entrySet()) {
 			missingInfo = utilities.concatStringsWithSeparator(missingInfo,
 			    "[" + missing.getKey().getTableName() + ": " + missing.getValue() + "]", ";");
 		}

@@ -6,9 +6,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -29,13 +30,13 @@ public class UniqueKeyInfo {
 	
 	private boolean fieldValuesLoaded;
 	
-	private AbstractTableConfiguration tabConf;
+	private TableConfiguration tabConf;
 	
-	public UniqueKeyInfo(AbstractTableConfiguration tabConf) {
+	public UniqueKeyInfo(TableConfiguration tabConf) {
 		this.tabConf = tabConf;
 	}
 	
-	public static UniqueKeyInfo init(AbstractTableConfiguration tabConf, String keyName) {
+	public static UniqueKeyInfo init(TableConfiguration tabConf, String keyName) {
 		UniqueKeyInfo uk = new UniqueKeyInfo(tabConf);
 		uk.keyName = keyName;
 		
@@ -103,7 +104,7 @@ public class UniqueKeyInfo {
 		this.fields = fields;
 	}
 	
-	public void loadValuesToFields(DatabaseObject object) {
+	public void loadValuesToFields(EtlDatabaseObject object) {
 		for (Field field : this.fields) {
 			Object value;
 			
@@ -134,7 +135,7 @@ public class UniqueKeyInfo {
 	}
 	
 	
-	public static List<UniqueKeyInfo> loadUniqueKeysInfo(AbstractTableConfiguration tableConfiguration, Connection conn)
+	public static List<UniqueKeyInfo> loadUniqueKeysInfo(TableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
 		
 		List<UniqueKeyInfo> uniqueKeysInfo = new ArrayList<UniqueKeyInfo>();
@@ -179,7 +180,7 @@ public class UniqueKeyInfo {
 			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);
 			
 			if (tableConfiguration.useSharedPKKey()) {
-				AbstractTableConfiguration parentTableInfo = new GenericTableConfiguration(tableConfiguration);
+				TableConfiguration parentTableInfo = new GenericTableConfiguration(tableConfiguration);
 				
 				parentTableInfo.setTableName(tableConfiguration.getSharePkWith());
 				parentTableInfo.setParentConf(tableConfiguration.getParentConf());
@@ -207,7 +208,7 @@ public class UniqueKeyInfo {
 	}
 	
 	private static boolean addUniqueKey(String keyName, List<Key> keyElements, List<UniqueKeyInfo> uniqueKeys,
-	        AbstractTableConfiguration config, Connection conn) {
+	        TableConfiguration config, Connection conn) {
 		
 		if (keyElements == null || keyElements.isEmpty())
 			return false;
@@ -319,7 +320,7 @@ public class UniqueKeyInfo {
 		return uk;
 	}
 	
-	public static List<UniqueKeyInfo> cloneAllAndLoadValues(List<UniqueKeyInfo> uniqueKeysInfo, DatabaseObject obj) {
+	public static List<UniqueKeyInfo> cloneAllAndLoadValues(List<UniqueKeyInfo> uniqueKeysInfo, EtlDatabaseObject obj) {
 		List<UniqueKeyInfo> uks = cloneAll_(uniqueKeysInfo);
 		
 		if (utilities.arrayHasElement(uks)) {
@@ -445,7 +446,7 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
-	public AbstractTableConfiguration getTabConf() {
+	public TableConfiguration getTabConf() {
 		return tabConf;
 	}
 	
@@ -514,7 +515,7 @@ public class UniqueKeyInfo {
 	public boolean hasNullFields() {
 		if (!isFieldValuesLoaded())
 			throw new ForbiddenOperationException(
-			        "The values for the fields was not loaded. Please call loadValuesToFields(DatabaseObject object) before you try to call this method");
+			        "The values for the fields was not loaded. Please call loadValuesToFields(EtlDatabaseObject object) before you try to call this method");
 		
 		for (Key k : this.fields) {
 			if (k.getValue() == null) {

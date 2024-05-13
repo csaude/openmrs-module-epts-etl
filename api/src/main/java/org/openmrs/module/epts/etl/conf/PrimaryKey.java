@@ -1,12 +1,13 @@
 package org.openmrs.module.epts.etl.conf;
 
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 
 public class PrimaryKey extends UniqueKeyInfo {
 	
-	public PrimaryKey(AbstractTableConfiguration tabConf) {
+	public PrimaryKey(TableConfiguration tabConf) {
 		super(tabConf);
 	}
 	
@@ -14,7 +15,7 @@ public class PrimaryKey extends UniqueKeyInfo {
 		return !isCompositeKey() && retrieveSimpleKey().isNumericColumnType();
 	}
 	
-	public Oid generateOid(DatabaseObject obj) {
+	public Oid generateOid(EtlDatabaseObject obj) {
 		Oid oid = new Oid();
 		
 		for (Key key : this.getFields()) {

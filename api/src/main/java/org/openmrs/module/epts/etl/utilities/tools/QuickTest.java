@@ -21,10 +21,10 @@ import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.SimpleValue;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -80,7 +80,7 @@ public class QuickTest {
 		
 		OpenConnection srcConn = conf.getMainApp().openConnection();
 		
-		List<DatabaseObject> syncRecords = DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) searchParams,
+		List<EtlDatabaseObject> syncRecords = DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) searchParams,
 		    srcConn);
 		
 		OpenConnection dstConn = dstApp.openConnection();
@@ -89,12 +89,12 @@ public class QuickTest {
 		
 		try {
 			
-			for (SyncRecord record : syncRecords) {
-				DatabaseObject rec = (DatabaseObject) record;
+			for (EtlObject record : syncRecords) {
+				EtlDatabaseObject rec = (EtlDatabaseObject) record;
 				
 				for (DstConf mappingInfo : etlConf.getDstConf()) {
 					
-					DatabaseObject destObject = null;
+					EtlDatabaseObject destObject = null;
 					
 					destObject = mappingInfo.generateDstObject(rec, srcConn, srcApp, dstApp);
 					
@@ -260,7 +260,7 @@ public class QuickTest {
 		
 		//tableInfo.setExtraConditionForExport("value_datetime is not null");
 		
-		List<DatabaseObject> a = SearchParamsDAO.search(searchParams, conn);
+		List<EtlDatabaseObject> a = SearchParamsDAO.search(searchParams, conn);
 		
 		System.out.println(a);
 	}

@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.transport.controller.TransportController;
 import org.openmrs.module.epts.etl.transport.model.TransportRecord;
@@ -38,7 +38,7 @@ public class TransportEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) {
+	public void performeSync(List<EtlObject> migrationRecords, Connection conn) {
 		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords,
 		    TransportRecord.class);
 		
@@ -67,17 +67,17 @@ public class TransportEngine extends Engine {
 	}
 	
 	@Override
-	protected List<SyncRecord> searchNextRecords(Connection conn) {
+	protected List<EtlObject> searchNextRecords(Connection conn) {
 		try {
 			File[] files = getSyncDirectory().listFiles(this.getSearchParams());
 			
-			List<SyncRecord> syncRecords = new ArrayList<SyncRecord>();
+			List<EtlObject> etlObjects = new ArrayList<EtlObject>();
 			
 			if (files != null && files.length > 0) {
-				syncRecords.add(new TransportRecord(files[0], getSyncDestinationDirectory(), getSyncBkpDirectory()));
+				etlObjects.add(new TransportRecord(files[0], getSyncDestinationDirectory(), getSyncBkpDirectory()));
 			}
 			
-			return syncRecords;
+			return etlObjects;
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -92,8 +92,8 @@ public class TransportEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new TransportSyncSearchParams(getRelatedOperationController(),
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new TransportSyncSearchParams(getRelatedOperationController(),
 		        this.getEtlConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
 		

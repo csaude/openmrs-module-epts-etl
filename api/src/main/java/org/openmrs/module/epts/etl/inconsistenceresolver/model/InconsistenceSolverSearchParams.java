@@ -6,12 +6,12 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class InconsistenceSolverSearchParams extends SyncSearchParams<DatabaseObject> {
+public class InconsistenceSolverSearchParams extends SyncSearchParams<EtlDatabaseObject> {
 	
 	private boolean selectAllRecords;
 	
@@ -22,8 +22,8 @@ public class InconsistenceSolverSearchParams extends SyncSearchParams<DatabaseOb
 	}
 	
 	@Override
-	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		

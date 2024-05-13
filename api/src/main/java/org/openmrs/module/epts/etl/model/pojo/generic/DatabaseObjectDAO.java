@@ -4,9 +4,10 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.UUID;
 
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -17,7 +18,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public class DatabaseObjectDAO extends BaseDAO {
 	
-	private static void refreshLastSyncDate(DatabaseObject syncRecord, AbstractTableConfiguration tableConfiguration,
+	private static void refreshLastSyncDate(EtlDatabaseObject syncRecord, TableConfiguration tableConfiguration,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
 		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), recordOriginLocationCode,
 		        syncRecord.getObjectId() };
@@ -35,18 +36,18 @@ public class DatabaseObjectDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void refreshLastSyncDateOnDestination(DatabaseObject syncRecord,
-	        AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
+	public static void refreshLastSyncDateOnDestination(EtlDatabaseObject syncRecord,
+	        TableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
 	        throws DBException {
 		refreshLastSyncDate(syncRecord, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
-	public static void refreshLastSyncDateOnOrigin(DatabaseObject syncRecord, AbstractTableConfiguration tableConfiguration,
+	public static void refreshLastSyncDateOnOrigin(EtlDatabaseObject syncRecord, TableConfiguration tableConfiguration,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
 		refreshLastSyncDate(syncRecord, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
-	private static void refreshLastSyncDate(List<DatabaseObject> syncRecords, AbstractTableConfiguration tableConfiguration,
+	private static void refreshLastSyncDate(List<EtlDatabaseObject> syncRecords, TableConfiguration tableConfiguration,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
 		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), recordOriginLocationCode,
 		        syncRecords.get(0).getObjectId(), syncRecords.get(syncRecords.size() - 1).getObjectId() };
@@ -64,19 +65,19 @@ public class DatabaseObjectDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void refreshLastSyncDateOnDestination(List<DatabaseObject> syncRecords,
-	        AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
+	public static void refreshLastSyncDateOnDestination(List<EtlDatabaseObject> syncRecords,
+	        TableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
 	        throws DBException {
 		refreshLastSyncDate(syncRecords, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
-	public static void refreshLastSyncDateOnOrigin(List<DatabaseObject> syncRecords,
-	        AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
+	public static void refreshLastSyncDateOnOrigin(List<EtlDatabaseObject> syncRecords,
+	        TableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
 	        throws DBException {
 		refreshLastSyncDate(syncRecords, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
-	public static void insert(DatabaseObject record, AbstractTableConfiguration tableConfiguration, Connection conn)
+	public static void insert(EtlDatabaseObject record, TableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
 		Object[] params = null;
 		String sql = null;
@@ -99,7 +100,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 	}
 	
-	public static void insertWithObjectId(DatabaseObject record, Connection conn) throws DBException {
+	public static void insertWithObjectId(EtlDatabaseObject record, Connection conn) throws DBException {
 		Object[] params = record.getInsertParamsWithObjectId();
 		String sql = record.getInsertSQLWithObjectId();
 		
@@ -108,7 +109,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void update(DatabaseObject record, Connection conn) throws DBException {
+	public static void update(EtlDatabaseObject record, Connection conn) throws DBException {
 		Object[] params = record.getUpdateParams();
 		String sql = record.getUpdateSQL();
 		
@@ -117,8 +118,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static DatabaseObject thinGetByRecordOrigin(Integer recordOriginId, String recordOriginLocationCode,
-	        AbstractTableConfiguration parentTableConfiguration, Connection conn) throws DBException {
+	public static EtlDatabaseObject thinGetByRecordOrigin(Integer recordOriginId, String recordOriginLocationCode,
+	        TableConfiguration parentTableConfiguration, Connection conn) throws DBException {
 		
 		if (UUID.randomUUID() != null) {
 			throw new ForbiddenOperationException("rever este methodo");
@@ -134,7 +135,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			String clauseFromStarting = tableName;
 			
 			if (parentTableConfiguration.useSharedPKKey()) {
-				AbstractTableConfiguration sharedTabConf = parentTableConfiguration.getSharedTableConf();
+				TableConfiguration sharedTabConf = parentTableConfiguration.getSharedTableConf();
 				
 				clauseFromStarting += " INNER JOIN " + sharedTabConf.generateTableNameWithAlias() + " ON "
 				        + parentTableConfiguration.getSharedKeyRefInfo().generateJoinCondition() + "\n";
@@ -163,17 +164,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static <T extends DatabaseObject> List<T> getByUniqueKeys(AbstractTableConfiguration tableConfiguration, T obj,
+	public static <T extends EtlDatabaseObject> List<T> getByUniqueKeys(TableConfiguration tableConfiguration, T obj,
 	        Connection conn) throws DBException {
 		return getByUniqueKeys(tableConfiguration, DBUtilities.determineSchemaName(conn), obj, conn);
 	}
 	
-	public static <T extends DatabaseObject> T getByUniqueKey(AbstractTableConfiguration tableConfiguration,
+	public static <T extends EtlDatabaseObject> T getByUniqueKey(TableConfiguration tableConfiguration,
 	        UniqueKeyInfo uk, Connection conn) throws DBException {
 		return getByUniqueKey(tableConfiguration, uk, DBUtilities.determineSchemaName(conn), conn);
 	}
 	
-	public static <T extends DatabaseObject> T getByUniqueKeysOnSpecificSchema(AbstractTableConfiguration tableConfiguration,
+	public static <T extends EtlDatabaseObject> T getByUniqueKeysOnSpecificSchema(TableConfiguration tableConfiguration,
 	        T obj, String schema, Connection conn) throws DBException {
 		List<T> result = getByUniqueKeys(tableConfiguration, schema, obj, conn);
 		
@@ -181,7 +182,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static <T extends DatabaseObject> T getByUniqueKey(AbstractTableConfiguration tableConfiguration,
+	private static <T extends EtlDatabaseObject> T getByUniqueKey(TableConfiguration tableConfiguration,
 	        UniqueKeyInfo uniqueKey, String schema, Connection conn) throws DBException {
 		if (!tableConfiguration.isFullLoaded())
 			tableConfiguration.fullLoad();
@@ -217,7 +218,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static <T extends DatabaseObject> List<T> getByUniqueKeys(AbstractTableConfiguration tableConfiguration,
+	private static <T extends EtlDatabaseObject> List<T> getByUniqueKeys(TableConfiguration tableConfiguration,
 	        String schema, T obj, Connection conn) throws DBException {
 		if (!tableConfiguration.isFullLoaded())
 			tableConfiguration.fullLoad();
@@ -268,7 +269,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return objs;
 	}
 	
-	public static <T extends DatabaseObject> List<T> getByField(AbstractTableConfiguration tableConfiguration,
+	public static <T extends EtlDatabaseObject> List<T> getByField(TableConfiguration tableConfiguration,
 	        String fieldName, String fieldValue, Connection conn) throws DBException {
 		
 		Object[] params = { fieldValue };
@@ -287,7 +288,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends DatabaseObject> T getByOid(AbstractTableConfiguration tabConf, Oid oid, Connection conn)
+	public static <T extends EtlDatabaseObject> T getByOid(TableConfiguration tabConf, Oid oid, Connection conn)
 	        throws DBException {
 		try {
 			
@@ -331,7 +332,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends DatabaseObject> T getByIdOnSpecificSchema(AbstractTableConfiguration tabConf, Oid oid,
+	public static <T extends EtlDatabaseObject> T getByIdOnSpecificSchema(TableConfiguration tabConf, Oid oid,
 	        String schema, Connection conn) throws DBException {
 		try {
 			
@@ -363,7 +364,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static List<DatabaseObject> getByParentId(AbstractTableConfiguration tableConfiguration, String parentField,
+	public static List<EtlDatabaseObject> getByParentId(TableConfiguration tableConfiguration, String parentField,
 	        Integer parentId, Connection conn) throws DBException {
 		Object[] params = { parentField };
 		
@@ -371,10 +372,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		return utilities.parseList(
 		    search(tableConfiguration.getLoadHealper(), GenericDatabaseObject.class, sql, params, conn),
-		    DatabaseObject.class);
+		    EtlDatabaseObject.class);
 	}
 	
-	public static DatabaseObject getDefaultRecord(AbstractTableConfiguration tableConfiguration, Connection conn)
+	public static EtlDatabaseObject getDefaultRecord(TableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
 		Object[] params = {};
 		
@@ -388,17 +389,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		    tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
 	}
 	
-	public static DatabaseObject getFirstConsistentRecordInOrigin(AbstractTableConfiguration tableInfo, Connection conn)
+	public static EtlDatabaseObject getFirstConsistentRecordInOrigin(TableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		return getConsistentRecordInOrigin(tableInfo, "min", conn);
 	}
 	
-	public static DatabaseObject getLastConsistentRecordOnOrigin(AbstractTableConfiguration tableInfo, Connection conn)
+	public static EtlDatabaseObject getLastConsistentRecordOnOrigin(TableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		return getConsistentRecordInOrigin(tableInfo, "max", conn);
 	}
 	
-	private static GenericDatabaseObject getConsistentRecordInOrigin(AbstractTableConfiguration tableConfiguration,
+	private static GenericDatabaseObject getConsistentRecordInOrigin(TableConfiguration tableConfiguration,
 	        String function, Connection conn) throws DBException {
 		
 		utilities.throwReviewMethodException();
@@ -426,17 +427,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return find(tableConfiguration.getLoadHealper(), GenericDatabaseObject.class, sql, params, conn);
 	}
 	
-	public static DatabaseObject getFirstNeverProcessedRecordOnOrigin(AbstractTableConfiguration tableInfo, Connection conn)
+	public static EtlDatabaseObject getFirstNeverProcessedRecordOnOrigin(TableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		return getExtremeNeverProcessedRecordOnOrigin(tableInfo, "min", conn);
 	}
 	
-	public static DatabaseObject getLastNeverProcessedRecordOnOrigin(AbstractTableConfiguration tableInfo, Connection conn)
+	public static EtlDatabaseObject getLastNeverProcessedRecordOnOrigin(TableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		return getExtremeNeverProcessedRecordOnOrigin(tableInfo, "max", conn);
 	}
 	
-	private static DatabaseObject getExtremeNeverProcessedRecordOnOrigin(AbstractTableConfiguration tabConf, String function,
+	private static EtlDatabaseObject getExtremeNeverProcessedRecordOnOrigin(TableConfiguration tabConf, String function,
 	        Connection conn) throws DBException {
 		Object[] params = {};
 		
@@ -456,7 +457,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return find(tabConf.getLoadHealper(), tabConf.getSyncRecordClass(tabConf.getMainApp()), sql, params, conn);
 	}
 	
-	public static void remove(DatabaseObject record, Connection conn) throws DBException {
+	public static void remove(EtlDatabaseObject record, Connection conn) throws DBException {
 		Object[] params = record.getObjectId().parseValuesToArray();
 		
 		String sql = " DELETE" + " FROM " + record.generateTableName() + " WHERE  "
@@ -466,7 +467,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static int countAllOfOriginParentId(String parentField, Integer parentOriginId, String appOriginCode,
-	        AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	        TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		
 		Object[] params = { parentOriginId, appOriginCode };
 		
@@ -482,11 +483,11 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return v.intValue();
 	}
 	
-	public static Integer countAllOfParentId(Class<? extends DatabaseObject> clazz, String parentField, Integer parentId,
+	public static Integer countAllOfParentId(Class<? extends EtlDatabaseObject> clazz, String parentField, Integer parentId,
 	        Connection conn) throws DBException {
 		Object[] params = { parentId };
 		
-		DatabaseObject obj = utilities.createInstance(clazz);
+		EtlDatabaseObject obj = utilities.createInstance(clazz);
 		
 		String sql = " SELECT count(*) value" + " FROM     " + obj.generateTableName() + " WHERE 	" + parentField
 		        + " = ? ";
@@ -496,8 +497,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return v.IntegerValue();
 	}
 	
-	public static List<? extends DatabaseObject> getByOriginParentId(String parentField, Integer parentOriginId,
-	        String appOriginCode, AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public static List<? extends EtlDatabaseObject> getByOriginParentId(String parentField, Integer parentOriginId,
+	        String appOriginCode, TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		Object[] params = { parentOriginId, appOriginCode };
 		
 		String sql = " SELECT * ";
@@ -510,13 +511,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		    tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
 	}
 	
-	public static List<? extends DatabaseObject> getByParentIdOnSpecificSchema(AbstractTableConfiguration tabConf,
+	public static List<? extends EtlDatabaseObject> getByParentIdOnSpecificSchema(TableConfiguration tabConf,
 	        String parentField, Integer parentId, String schema, Connection conn) throws DBException {
 		Object[] params = { parentId };
 		
-		Class<? extends DatabaseObject> clazz = tabConf.getSyncRecordClass();
+		Class<? extends EtlDatabaseObject> clazz = tabConf.getSyncRecordClass();
 		
-		DatabaseObject obj = utilities.createInstance(clazz);
+		EtlDatabaseObject obj = utilities.createInstance(clazz);
 		
 		String sql = " SELECT " + obj.generateTableName() + ".*"
 		        + (obj.generateTableName().equals("patient") ? ", uuid" : "") + " FROM     " + schema + "."
@@ -528,18 +529,18 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return search(tabConf.getLoadHealper(), clazz, sql, params, conn);
 	}
 	
-	private static void insertAllMetadata(List<DatabaseObject> records, AbstractTableConfiguration tableInfo,
+	private static void insertAllMetadata(List<EtlDatabaseObject> records, TableConfiguration tableInfo,
 	        Connection conn) throws DBException {
 		if (!tableInfo.isMetadata())
 			throw new ForbiddenOperationException(
 			        "You tried to insert " + tableInfo.getTableName() + " as metadata but it is not a metadata!!!");
 		
-		for (DatabaseObject record : records) {
+		for (EtlDatabaseObject record : records) {
 			record.save(tableInfo, conn);
 		}
 	}
 	
-	public static void insertAll(List<DatabaseObject> objects, AbstractTableConfiguration abstractTableConfiguration,
+	public static void insertAll(List<EtlDatabaseObject> objects, TableConfiguration abstractTableConfiguration,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
 		boolean isInMetadata = utilities.isStringIn(abstractTableConfiguration.getTableName(), "location",
 		    "concept_datatype", "concept", "person_attribute_type", "provider_attribute_type", "program", "program_workflow",
@@ -563,7 +564,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static void insertAllDataWithoutId(List<DatabaseObject> objects, Connection conn) throws DBException {
+	public static void insertAllDataWithoutId(List<EtlDatabaseObject> objects, Connection conn) throws DBException {
 		String sql = DBUtilities
 		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0], conn);
 		
@@ -589,7 +590,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static void insertAllDataWithId(List<DatabaseObject> objects, Connection conn) throws DBException {
+	public static void insertAllDataWithId(List<EtlDatabaseObject> objects, Connection conn) throws DBException {
 		String sql = DBUtilities.addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0],
 		    conn);
 		
@@ -616,7 +617,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unused")
-	private static DatabaseObject retrieveProblematicObjectFromExceptionInfo(AbstractTableConfiguration tableConfiguration,
+	private static EtlDatabaseObject retrieveProblematicObjectFromExceptionInfo(TableConfiguration tableConfiguration,
 	        DBException e, Connection conn) throws DBException {
 		//UUID duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
 		String s = e.getLocalizedMessage().split("'")[1];
@@ -626,7 +627,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		//Check if is uuid duplication
 		if (utilities.isValidUUID(s)) {
-			List<DatabaseObject> recs = getByUniqueKeys(tableConfiguration, obj, conn);
+			List<EtlDatabaseObject> recs = getByUniqueKeys(tableConfiguration, obj, conn);
 			
 			if (utilities.arrayHasElement(recs)) {
 				return recs.get(0);
@@ -636,7 +637,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return null;
 	}
 	
-	public static Integer getAvaliableObjectId(AbstractTableConfiguration tabConf, Integer maxAcceptableId, Connection conn)
+	public static Integer getAvaliableObjectId(TableConfiguration tabConf, Integer maxAcceptableId, Connection conn)
 	        throws DBException {
 		if (maxAcceptableId <= 0)
 			throw new ForbiddenOperationException("There was not find any avaliable id for " + tabConf.getTableName());
@@ -657,7 +658,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += " SELECT max(" + pkName + ") " + pkName + " \n";
 		sql += " FROM  	" + tabConf.getTableName() + ";\n";
 		
-		DatabaseObject maxObj = find(GenericDatabaseObject.class, sql, null, conn);
+		EtlDatabaseObject maxObj = find(GenericDatabaseObject.class, sql, null, conn);
 		
 		if (maxObj != null) {
 			if (maxObj.getObjectId().getSimpleValueAsInt() < maxAcceptableId) {
@@ -676,17 +677,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static Integer getFirstRecord(AbstractTableConfiguration tableConf, Connection conn)
+	public static Integer getFirstRecord(TableConfiguration tableConf, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		return getSpecificRecord(tableConf, "min", conn);
 	}
 	
-	public static Integer getLastRecord(AbstractTableConfiguration tableConf, Connection conn)
+	public static Integer getLastRecord(TableConfiguration tableConf, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		return getSpecificRecord(tableConf, "max", conn);
 	}
 	
-	public static Integer getSpecificRecord(AbstractTableConfiguration tableConf, String function, Connection conn)
+	public static Integer getSpecificRecord(TableConfiguration tableConf, String function, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
 		String sql = " SELECT " + function + "(" + tableConf.getPrimaryKey() + ") value\n";
@@ -713,7 +714,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	public static Integer getSpecificRecord(DatabaseObjectSearchParams searchParams, String function, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
-		SearchClauses<DatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
+		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
 		
 		searchClauses.setColumnsToSelect(function + "(" + searchParams.getConfig().getSrcConf().getPrimaryKey() + ") value");
 		
@@ -724,17 +725,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return v != null && v.hasValue() ? v.IntegerValue() : 0;
 	}
 	
-	public static DatabaseObject getFirstOutDatedRecordInDestination(AbstractTableConfiguration tableConfiguration,
+	public static EtlDatabaseObject getFirstOutDatedRecordInDestination(TableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getOutDatedRecordInDestination(tableConfiguration, "min", conn);
 	}
 	
-	public static DatabaseObject getLastOutDatedRecordInDestination(AbstractTableConfiguration tableConfiguration,
+	public static EtlDatabaseObject getLastOutDatedRecordInDestination(TableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getOutDatedRecordInDestination(tableConfiguration, "max", conn);
 	}
 	
-	private static GenericDatabaseObject getOutDatedRecordInDestination(AbstractTableConfiguration tableConfiguration,
+	private static GenericDatabaseObject getOutDatedRecordInDestination(TableConfiguration tableConfiguration,
 	        String function, Connection conn) throws DBException {
 		Object[] params = {};
 		
@@ -781,17 +782,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return find(GenericDatabaseObject.class, sql, params, conn);
 	}
 	
-	public static DatabaseObject getFirstPhantomRecordInDestination(AbstractTableConfiguration tableConfiguration,
+	public static EtlDatabaseObject getFirstPhantomRecordInDestination(TableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getPhantomRecordInDestination(tableConfiguration, "min", conn);
 	}
 	
-	public static DatabaseObject getLastPhantomRecordInDestination(AbstractTableConfiguration tableConfiguration,
+	public static EtlDatabaseObject getLastPhantomRecordInDestination(TableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getPhantomRecordInDestination(tableConfiguration, "max", conn);
 	}
 	
-	private static DatabaseObject getPhantomRecordInDestination(AbstractTableConfiguration tableConfiguration,
+	private static EtlDatabaseObject getPhantomRecordInDestination(TableConfiguration tableConfiguration,
 	        String function, Connection conn) throws DBException {
 		Object[] params = {};
 		
@@ -820,17 +821,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return find(GenericDatabaseObject.class, sql, params, conn);
 	}
 	
-	public static DatabaseObject getFirstOutDatedRecordInDestination_(AbstractTableConfiguration tableConfiguration,
+	public static EtlDatabaseObject getFirstOutDatedRecordInDestination_(TableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getOutDatedRecordInDestination_(tableConfiguration, "min", conn);
 	}
 	
-	public static DatabaseObject getLastOutDatedRecordInDestination_(AbstractTableConfiguration tableConfiguration,
+	public static EtlDatabaseObject getLastOutDatedRecordInDestination_(TableConfiguration tableConfiguration,
 	        Connection conn) throws DBException {
 		return getOutDatedRecordInDestination_(tableConfiguration, "max", conn);
 	}
 	
-	private static GenericDatabaseObject getOutDatedRecordInDestination_(AbstractTableConfiguration tableConfiguration,
+	private static GenericDatabaseObject getOutDatedRecordInDestination_(TableConfiguration tableConfiguration,
 	        String function, Connection conn) throws DBException {
 		Object[] params = {};
 		

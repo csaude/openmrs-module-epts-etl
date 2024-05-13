@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
@@ -26,7 +27,7 @@ public class TmpUserVO extends GenericDatabaseObject {
 	
 	public void load(ResultSet rs) throws SQLException {
 		try {
-			 setObjectId( Oid.fastCreate("user_id", rs.getInt("user_id")));
+			setObjectId(Oid.fastCreate("user_id", rs.getInt("user_id")));
 		}
 		catch (SQLException e) {}
 		try {
@@ -37,6 +38,10 @@ public class TmpUserVO extends GenericDatabaseObject {
 			setUuid(rs.getString("user_uuid"));
 		}
 		catch (SQLException e) {}
+	}
+	
+	public AbstractTableConfiguration getUsersSyncTableConfiguration() {
+		return usersSyncTableConfiguration;
 	}
 	
 	public void setDeletable(int deletable) {
@@ -77,15 +82,14 @@ public class TmpUserVO extends GenericDatabaseObject {
 	}
 	
 	@Override
-	public void save(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		BaseDAO.executeQueryWithRetryOnError(
 		    "update tmp_user set deletable = " + this.deletable + " where user_id = " + getObjectId(), null, conn);
 	}
 	
 	public void harmonize(Connection conn) throws DBException {
 		utilities.throwReviewMethodException();
-
-
+		
 		/*
 		for (RefInfo child : this.usersSyncTableConfiguration.getChildRefInfo()) {
 			

@@ -5,13 +5,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
 import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -276,6 +278,14 @@ public class DstConf extends AbstractTableConfiguration {
 			        .addAll(utilities.parseList(getSrcConf().getAvaliableExtraDataSource(), EtlDataSource.class));
 		}
 		
+		if (useSharedPKKey()) {
+			SharedPkDstConf sharedAsDst = SharedPkDstConf.generateFromSrcConfSharedPkParent(this);
+			
+			sharedAsDst.setTableAlias(getSrcConf().generateAlias(sharedAsDst));
+			
+			utilities.updateOnArray(getParentRefInfo(), getSharedKeyRefInfo(), sharedAsDst);
+		}
+		
 		this.fullLoadAllRelatedTables(getSrcConf(), null, conn);
 		
 		determinePrefferredDataSources();
@@ -366,11 +376,11 @@ public class DstConf extends AbstractTableConfiguration {
 		return this.getParentConf().getSrcConf();
 	}
 	
-	public DatabaseObject generateDstObject(DatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
+	public EtlDatabaseObject generateDstObject(EtlDatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
 	        AppInfo dstAppInfo) throws DBException, ForbiddenOperationException {
 		try {
 			
-			List<DatabaseObject> srcObjects = new ArrayList<>();
+			List<EtlDatabaseObject> srcObjects = new ArrayList<>();
 			
 			srcObjects.add(srcObject);
 			
@@ -379,14 +389,14 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 			
 			if (srcObject.getExtraDataSourceObjects() != null) {
-				for (DatabaseObject obj : srcObject.getExtraDataSourceObjects()) {
+				for (EtlDatabaseObject obj : srcObject.getExtraDataSourceObjects()) {
 					srcObjects.add(obj);
 				}
 			}
 			
 			if (utilities.arrayHasElement(this.getSrcConf().getExtraQueryDataSource())) {
 				for (QueryDataSourceConfig mappingInfo : this.getSrcConf().getExtraQueryDataSource()) {
-					DatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
+					EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
 					
 					if (relatedSrcObject == null) {
 						
@@ -402,7 +412,7 @@ public class DstConf extends AbstractTableConfiguration {
 					
 				}
 			}
-			DatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
+			EtlDatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
 			
 			mappedObject.setRelatedConfiguration(this);
 			
@@ -424,8 +434,8 @@ public class DstConf extends AbstractTableConfiguration {
 				//TODO: create mapped dst configuration for shared pk table in destination
 				
 				for (Field field : this.getSharedKeyRefInfo().getFields()) {
-					DatabaseObject sharedDstObj = mappedObject.getSharedPkObj();
-					DatabaseObject sharedSrcObj = srcObject.getSharedPkObj();
+					EtlDatabaseObject sharedDstObj = mappedObject.getSharedPkObj();
+					EtlDatabaseObject sharedSrcObj = srcObject.getSharedPkObj();
 					
 					try {
 						sharedDstObj.setFieldValue(field.getName(), sharedSrcObj.getFieldValue(field.getName()));
@@ -463,13 +473,13 @@ public class DstConf extends AbstractTableConfiguration {
 		return (EtlItemConfiguration) super.getParentConf();
 	}
 	
-	public int generateNextStartIdForThread(List<SyncRecord> syncRecords, Connection conn)
+	public int generateNextStartIdForThread(List<EtlObject> etlObjects, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
 		synchronized (stringLock) {
 			
 			if (this.currThreadStartId == DEFAULT_NEXT_TREAD_ID) {
-				this.currQtyRecords = syncRecords.size();
+				this.currQtyRecords = etlObjects.size();
 				
 				this.currThreadStartId = DatabaseObjectDAO.getLastRecord(this, conn);
 				
@@ -477,7 +487,7 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 			
 			this.currThreadStartId += this.currQtyRecords;
-			this.currQtyRecords = syncRecords.size();
+			this.currQtyRecords = etlObjects.size();
 			
 			return this.currThreadStartId;
 		}

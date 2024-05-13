@@ -19,11 +19,11 @@ import javax.tools.ToolProvider;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
-import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.conf.RefMapping;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -33,7 +33,7 @@ public class DatabaseEntityPOJOGenerator {
 	
 	static final String[] ignorableFields = { "date_changed", "date_created", "uuid" };
 	
-	public static Class<DatabaseObject> generate(DatabaseObjectConfiguration pojoble, AppInfo application)
+	public static Class<EtlDatabaseObject> generate(DatabaseObjectConfiguration pojoble, AppInfo application)
 	        throws IOException, SQLException, ClassNotFoundException {
 		if (!pojoble.isFullLoaded())
 			pojoble.fullLoad();
@@ -47,7 +47,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		String fullClassName = pojoble.generateFullClassName(application);
 		
-		Class<DatabaseObject> existingCLass = null;
+		Class<EtlDatabaseObject> existingCLass = null;
 		
 		String attsDefinition = "";
 		String gettersAndSetterDefinition = "";
@@ -270,7 +270,7 @@ public class DatabaseEntityPOJOGenerator {
 		if (utilities.arrayHasElement(pojoble.getParentRefInfo())) {
 			for (ParentTable refInfo : pojoble.getParentRefInfo()) {
 				
-				for (RefMapping map : refInfo.getMapping()) {
+				for (RefMapping map : refInfo.getRefMapping()) {
 					
 					if (map.isPrimitieveRefColumn()) {
 						methodFromSuperClass += "		if (this." + map.getChildFieldNameAsAttClass()
@@ -324,7 +324,7 @@ public class DatabaseEntityPOJOGenerator {
 		classDefinition += "import com.fasterxml.jackson.annotation.JsonIgnore; \n \n";
 		
 		classDefinition += "public class " + pojoble.generateClassName()
-		        + " extends AbstractDatabaseObject implements DatabaseObject { \n";
+		        + " extends AbstractDatabaseObject implements EtlDatabaseObject { \n";
 		classDefinition += attsDefinition + "\n \n";
 		classDefinition += "	public " + pojoble.generateClassName() + "() { \n";
 		classDefinition += "		this.metadata = " + pojoble.isMetadata() + ";\n";
@@ -365,7 +365,7 @@ public class DatabaseEntityPOJOGenerator {
 		return false;
 	}
 	
-	public static Class<DatabaseObject> generateSkeleton(DatabaseObjectConfiguration pojoable, AppInfo application)
+	public static Class<EtlDatabaseObject> generateSkeleton(DatabaseObjectConfiguration pojoable, AppInfo application)
 	        throws IOException, SQLException, ClassNotFoundException {
 		if (!pojoable.isFullLoaded())
 			pojoable.fullLoad();
@@ -385,7 +385,8 @@ public class DatabaseEntityPOJOGenerator {
 		fullClassName += pojoable.getClasspackage(application) + "."
 		        + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
 		
-		Class<DatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName, pojoable.getRelatedSyncConfiguration());
+		Class<EtlDatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName,
+		    pojoable.getRelatedSyncConfiguration());
 		
 		if (existingCLass != null)
 			return existingCLass;
@@ -399,7 +400,7 @@ public class DatabaseEntityPOJOGenerator {
 		classDefinition += "import org.openmrs.module.epts.etl.model.pojo.generic.*; \n \n";
 		
 		classDefinition += "public abstract class " + pojoable.generateClassName()
-		        + " extends AbstractDatabaseObject implements DatabaseObject { \n";
+		        + " extends AbstractDatabaseObject implements EtlDatabaseObject { \n";
 		classDefinition += "	public " + pojoable.generateClassName() + "() { \n";
 		classDefinition += "	} \n \n";
 		classDefinition += "}";
@@ -417,8 +418,8 @@ public class DatabaseEntityPOJOGenerator {
 		return tryToGetExistingCLass(fullClassName, pojoable.getRelatedSyncConfiguration());
 	}
 	
-	public static Class<DatabaseObject> tryToGetExistingCLass(String fullClassName, EtlConfiguration etlConfiguration) {
-		Class<DatabaseObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
+	public static Class<EtlDatabaseObject> tryToGetExistingCLass(String fullClassName, EtlConfiguration etlConfiguration) {
+		Class<EtlDatabaseObject> clazz = tryToLoadFromOpenMRSClassLoader(fullClassName);
 		
 		if (clazz == null) {
 			if (etlConfiguration.getModuleRootDirectory() != null)
@@ -436,14 +437,14 @@ public class DatabaseEntityPOJOGenerator {
 		return clazz;
 	}
 	
-	public static Class<DatabaseObject> tryToGetExistingCLass(String fullClassName) {
+	public static Class<EtlDatabaseObject> tryToGetExistingCLass(String fullClassName) {
 		return tryToLoadFromOpenMRSClassLoader(fullClassName);
 	}
 	
 	@SuppressWarnings({ "unchecked" })
-	private static Class<DatabaseObject> tryToLoadFromOpenMRSClassLoader(String fullClassName) {
+	private static Class<EtlDatabaseObject> tryToLoadFromOpenMRSClassLoader(String fullClassName) {
 		try {
-			return (Class<DatabaseObject>) DatabaseObject.class.getClassLoader().loadClass(fullClassName);
+			return (Class<EtlDatabaseObject>) EtlDatabaseObject.class.getClassLoader().loadClass(fullClassName);
 		}
 		catch (ClassNotFoundException e) {
 			return null;
@@ -451,16 +452,16 @@ public class DatabaseEntityPOJOGenerator {
 	}
 	
 	@SuppressWarnings({ "unchecked" })
-	private static Class<DatabaseObject> tryToLoadFromClassPath(String fullClassName, File classPath) {
+	private static Class<EtlDatabaseObject> tryToLoadFromClassPath(String fullClassName, File classPath) {
 		
 		try {
 			URL[] classPaths = new URL[] { classPath.toURI().toURL() };
 			
 			URLClassLoader loader = URLClassLoader.newInstance(classPaths);
 			
-			Class<DatabaseObject> c = null;
+			Class<EtlDatabaseObject> c = null;
 			
-			c = (Class<DatabaseObject>) loader.loadClass(fullClassName);
+			c = (Class<EtlDatabaseObject>) loader.loadClass(fullClassName);
 			
 			loader.close();
 			

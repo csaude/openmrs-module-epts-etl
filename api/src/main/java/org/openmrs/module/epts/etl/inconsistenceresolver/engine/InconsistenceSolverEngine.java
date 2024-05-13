@@ -9,8 +9,8 @@ import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.inconsistenceresolver.controller.InconsistenceSolverController;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceSolverSearchParams;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -22,9 +22,9 @@ public class InconsistenceSolverEngine extends Engine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	@Override
@@ -37,12 +37,12 @@ public class InconsistenceSolverEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		List<DatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, DatabaseObject.class);
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+		List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
 		
-		logInfo("DOING INCONSISTENCE SOLVER FOR '" + syncRecords.size() + "' " + getMainSrcTableName());
+		logInfo("DOING INCONSISTENCE SOLVER FOR '" + etlObjects.size() + "' " + getMainSrcTableName());
 		
-		for (DatabaseObject obj : syncRecordsAsOpenMRSObjects) {
+		for (EtlDatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
 				obj.resolveInconsistence(getMainSrcTableConf(), conn);
 			}
@@ -54,12 +54,12 @@ public class InconsistenceSolverEngine extends Engine {
 			}
 		}
 		
-		logInfo("INCONSISTENCE SOLVED FOR '" + syncRecords.size() + "' " + getMainSrcTableName() + "!");
+		logInfo("INCONSISTENCE SOLVED FOR '" + etlObjects.size() + "' " + getMainSrcTableName() + "!");
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new InconsistenceSolverSearchParams(this.getEtlConfiguration(),
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new InconsistenceSolverSearchParams(this.getEtlConfiguration(),
 		        limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());

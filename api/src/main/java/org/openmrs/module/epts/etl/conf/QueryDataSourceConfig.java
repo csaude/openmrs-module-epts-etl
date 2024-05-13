@@ -9,9 +9,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
@@ -27,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * Represents a query configuration. A query is used on data mapping between source and destination
  * table
  */
-public class QueryDataSourceConfig extends BaseConfiguration implements DatabaseObjectConfiguration, EtlAdditionalDataSource {
+public class QueryDataSourceConfig extends AbstractBaseConfiguration implements DatabaseObjectConfiguration, EtlAdditionalDataSource {
 	
 	private String name;
 	
@@ -41,7 +43,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	
 	private SrcConf relatedSrcConf;
 	
-	private Class<? extends DatabaseObject> syncRecordClass;
+	private Class<? extends EtlDatabaseObject> syncRecordClass;
 	
 	private List<QueryParameter> paramConfig;
 	
@@ -168,12 +170,12 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	
 	@JsonIgnore
 	@Override
-	public Class<? extends DatabaseObject> getSyncRecordClass() throws ForbiddenOperationException {
+	public Class<? extends EtlDatabaseObject> getSyncRecordClass() throws ForbiddenOperationException {
 		return this.getSyncRecordClass(this.relatedSrcConf.getRelatedAppInfo());
 	}
 	
 	@Override
-	public Class<? extends DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	public Class<? extends EtlDatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		if (syncRecordClass == null)
 			syncRecordClass = GenericDatabaseObject.class;
 		
@@ -195,7 +197,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 		}
 	}
 	
-	public void setSyncRecordClass(Class<DatabaseObject> syncRecordClass) {
+	public void setSyncRecordClass(Class<? extends EtlDatabaseObject> syncRecordClass) {
 		this.syncRecordClass = syncRecordClass;
 	}
 	
@@ -293,7 +295,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	}
 	
 	@Override
-	public EtlDataConfiguration getParentConf() {
+	public AbstractEtlDataConfiguration getParentConf() {
 		return this.relatedSrcConf;
 	}
 	
@@ -343,7 +345,7 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	}
 	
 	@Override
-	public DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
+	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
 	        throws DBException {
 		
 		//@formatter:off
@@ -391,6 +393,21 @@ public class QueryDataSourceConfig extends BaseConfiguration implements Database
 	@Override
 	public String getAlias() {
 		return getName();
+	}
+
+	@Override
+	public void setRelatedSyncConfiguration(EtlConfiguration relatedSyncConfiguration) {
+	}
+	
+
+	@Override
+	public boolean hasPK(Connection conn) {
+		return false;
+	}
+
+	@Override
+	public AppInfo getRelatedAppInfo() {
+		return getRelatedSrcConf().getMainApp();
 	}
 	
 }

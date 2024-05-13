@@ -2,15 +2,16 @@ package org.openmrs.module.epts.etl.etl.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -26,26 +27,46 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 	}
 	
 	@Override
-	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		AbstractTableConfiguration srcConfig = getSrcTableConf();
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		SrcConf srcConfig = getSrcTableConf();
 		
-		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
-		searchClauses.addColumnToSelect("distinct " + srcConfig.generateFullAliasedSelectColumns());
-		
-		if (getExtraTableDataSource() != null) {
-			for (TableDataSourceConfig t : getExtraTableDataSource()) {
-				searchClauses.addColumnToSelect(t.generateFullAliasedSelectColumns());
-			}
-		}
+		searchClauses.addColumnToSelect("distinct " + srcConfig.generateFullAliasedSelectColumns() + "\n");
 		
 		String clauseFrom = srcConfig.generateSelectFromClauseContentOnSpecificSchema(conn);
 		
-		if (getExtraTableDataSource() != null) {
+		String additionalLeftJoinFields = "";
+		
+		if (utilities.arrayHasElement(srcConfig.getSelfJoinTables())) {
+			for (AuxExtractTable aux : srcConfig.getSelfJoinTables()) {
+				String joinType = aux.getJoinType().toString();
+				String extraJoinQuery = aux.generateConditionsFields();
+				
+				if (utilities.stringHasValue(extraJoinQuery)) {
+					Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,
+					    getConfig().getRelatedSyncConfiguration());
+					
+					extraJoinQuery = DBUtilities.replaceSqlParametersWithQuestionMarks(extraJoinQuery);
+					
+					searchClauses.addToParameters(params);
+				}
+				
+				clauseFrom = clauseFrom + " " + joinType + " join " + aux.getTableName() + " " + aux.getTableAlias() + " on "
+				        + extraJoinQuery;
+				
+				if (aux.getJoinType().isLeftJoin()) {
+					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
+					    aux.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
+				}
+			}
 			
-			String additionalLeftJoinFields = "";
-			
+		}
+		
+		if (srcConfig.hasExtraTableDataSourceConfig()) {
 			for (TableDataSourceConfig t : getExtraTableDataSource()) {
+				searchClauses.addColumnToSelect(t.generateFullAliasedSelectColumns());
+				
 				String joinType = t.getJoinType().toString();
 				
 				String extraJoinQuery = t.generateJoinCondition();
@@ -60,7 +81,15 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 				}
 				
 				clauseFrom = clauseFrom + " " + joinType + " join " + t.getTableName() + " " + t.getTableAlias() + " on "
-				        + extraJoinQuery;
+				        + extraJoinQuery + "\n";
+				
+				if (t.useSharedPKKey()) {
+					
+					ParentTable tshared = t.getSharedKeyRefInfo();
+					
+					clauseFrom += "LEFT join " + tshared.generateFullTableNameWithAlias(conn) + " ON "
+					        + tshared.generateJoinCondition() + "\n";
+				}
 				
 				if (utilities.arrayHasElement(t.getSelfJoinTables())) {
 					for (AuxExtractTable aux : t.getSelfJoinTables()) {
@@ -81,19 +110,9 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 						clauseFrom = clauseFrom + " " + joinType + " join " + aux.getTableName() + " " + aux.getTableAlias()
 						        + " on " + extraJoinQuery;
 						
-						if (aux.getJoinType().isLeftJoin()) {
-							additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
-							    aux.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
-						}
 					}
 					
 				}
-				
-				if (t.getJoinType().isLeftJoin() && !utilities.arrayHasElement(t.getSelfJoinTables())) {
-					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
-					    t.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
-				}
-				
 			}
 			
 			if (utilities.stringHasValue(additionalLeftJoinFields)) {

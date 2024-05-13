@@ -1,5 +1,7 @@
 package org.openmrs.module.epts.etl.conf;
 
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -7,9 +9,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 /**
  * Represents a child table
  */
-public class ChildTable extends RelatedTable {
+public class ChildTable extends AbstractRelatedTable {
 	
-	private AbstractTableConfiguration parentTableConf;
+	private TableConfiguration parentTableConf;
 	
 	public ChildTable() {
 	}
@@ -22,11 +24,11 @@ public class ChildTable extends RelatedTable {
 		return new ChildTable(tableName, refCoString);
 	}
 	
-	public AbstractTableConfiguration getParentTableConf() {
+	public TableConfiguration getParentTableConf() {
 		return parentTableConf;
 	}
 	
-	public void setParentTableConf(AbstractTableConfiguration parentTableConf) {
+	public void setParentTableConf(TableConfiguration parentTableConf) {
 		this.parentTableConf = parentTableConf;
 		
 		this.setRelatedSyncConfiguration(parentTableConf.getRelatedSyncConfiguration());
@@ -48,7 +50,7 @@ public class ChildTable extends RelatedTable {
 		} else if (utilities.arrayHasElement(this.getParentRefInfo())) {
 			
 			for (ParentTable parent : this.getParentRefInfo()) {
-				if (parent.equals(this.parentTableConf.getSharePkWith())) {
+				if (parent.equals(this.parentTableConf.getSharedKeyRefInfo())) {
 					return true;
 				}
 			}
@@ -62,7 +64,7 @@ public class ChildTable extends RelatedTable {
 	public UniqueKeyInfo parseRelationshipToSelfKey() {
 		UniqueKeyInfo uk = new UniqueKeyInfo(this);
 		
-		for (RefMapping map : this.getMapping()) {
+		for (RefMapping map : this.getRefMapping()) {
 			uk.addKey(new Key(map.getChildFieldName()));
 		}
 		
@@ -73,11 +75,11 @@ public class ChildTable extends RelatedTable {
 	public String generateJoinCondition() {
 		String conditionFields = "";
 		
-		for (int i = 0; i < this.getMapping().size(); i++) {
+		for (int i = 0; i < this.getRefMapping().size(); i++) {
 			if (i > 0)
 				conditionFields += " AND ";
 			
-			RefMapping field = this.getMapping().get(i);
+			RefMapping field = this.getRefMapping().get(i);
 			
 			conditionFields += this.getTableAlias() + "." + field.getChildFieldName() + " = "
 			        + getRelatedTabConf().getTableAlias() + "." + field.getParentFieldName();
@@ -87,12 +89,12 @@ public class ChildTable extends RelatedTable {
 	}
 	
 	@Override
-	public AbstractTableConfiguration getRelatedTabConf() {
+	public TableConfiguration getRelatedTabConf() {
 		return this.parentTableConf;
 	}
 	
 	@Override
-	public void setRelatedTabConf(AbstractTableConfiguration relatedTabConf) {
+	public void setRelatedTabConf(TableConfiguration relatedTabConf) {
 		this.parentTableConf = relatedTabConf;
 	}
 	
@@ -106,7 +108,7 @@ public class ChildTable extends RelatedTable {
 		if (hasMapping()) {
 			str += ": ";
 			
-			for (RefMapping map : this.getMapping()) {
+			for (RefMapping map : this.getRefMapping()) {
 				if (utilities.stringHasValue(str)) {
 					str += ",";
 				}

@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 
 /**
@@ -196,7 +196,7 @@ public class AttDefinedElements {
 		this.sqlInsertValues = "(" + this.sqlInsertValues + (isLast ? ")" : ") + \",\" + ");
 	}
 	
-	public String defineSqlInsertValue(DatabaseObject obj) {
+	public String defineSqlInsertValue(EtlDatabaseObject obj) {
 		String sqlInsertValues = "";
 		
 		Object value = null;

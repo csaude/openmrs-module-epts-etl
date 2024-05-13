@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.engine.DatabasesInfo;
 import org.openmrs.module.epts.etl.problems_solver.model.mozart.DBValidateInfo;
@@ -29,7 +29,7 @@ public class MozartRenamePatientStateFields extends MozartProblemSolverEngine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
 		if (done)
 			return;
 		

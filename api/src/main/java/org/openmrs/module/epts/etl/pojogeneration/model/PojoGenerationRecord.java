@@ -4,9 +4,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 
-public class PojoGenerationRecord implements SyncRecord{
+public class PojoGenerationRecord implements EtlObject{
 
 	private AbstractTableConfiguration tableConfiguration;
 	

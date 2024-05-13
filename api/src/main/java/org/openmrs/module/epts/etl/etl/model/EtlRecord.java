@@ -9,8 +9,8 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -20,7 +20,7 @@ public class EtlRecord {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private DatabaseObject record;
+	private EtlDatabaseObject record;
 	
 	private AbstractTableConfiguration config;
 	
@@ -28,7 +28,7 @@ public class EtlRecord {
 	
 	private long destinationRecordId;
 	
-	public EtlRecord(DatabaseObject record, AbstractTableConfiguration config, boolean writeOperationHistory) {
+	public EtlRecord(EtlDatabaseObject record, AbstractTableConfiguration config, boolean writeOperationHistory) {
 		this.record = record;
 		this.config = config;
 		this.writeOperationHistory = writeOperationHistory;
@@ -69,9 +69,9 @@ public class EtlRecord {
 				boolean existObservationDateFields = utilities.arrayHasElement(config.getObservationDateFields());
 				
 				if (existObservationDateFields || existWinningRecInfo) {
-					List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
+					List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
 					
-					DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+					EtlDatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 					
 					((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 					
@@ -90,9 +90,9 @@ public class EtlRecord {
 		if (!config.isFullLoaded())
 			config.fullLoad();
 		
-		List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
+		List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
 		
-		DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+		EtlDatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 		
 		((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 	}
@@ -106,7 +106,7 @@ public class EtlRecord {
 		syncInfo.save(getConfig(), conn);
 	}
 	
-	public DatabaseObject getRecord() {
+	public EtlDatabaseObject getRecord() {
 		return record;
 	}
 	
@@ -122,7 +122,7 @@ public class EtlRecord {
 			config.fullLoad();
 		}
 		
-		List<DatabaseObject> objects = new ArrayList<DatabaseObject>(mergingRecs.size());
+		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
 		
 		for (EtlRecord etlRecord : mergingRecs) {
 			objects.add(etlRecord.record);

@@ -1,6 +1,8 @@
 package org.openmrs.module.epts.etl.conf;
 
-public abstract class EtlDataConfiguration extends BaseConfiguration {
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
+
+public abstract class AbstractEtlDataConfiguration extends AbstractBaseConfiguration implements EtlDataConfiguration {
 	
 	private EtlConfiguration relatedSyncConfiguration;
 	

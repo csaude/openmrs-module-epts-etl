@@ -21,6 +21,10 @@ public class ObjectMapperProvider implements ContextResolver<ObjectMapper> {
 		defaultObjectMapper = createDefaultMapper();
 	}
 	
+	public ObjectMapperProvider(Class<?> ...types) {
+		defaultObjectMapper = createDefaultMapper(types);
+	}
+	
 	/*
 	public ObjectMapperProvider(File openMrsTargetDirectory, String classesPackage) {
 		defaultObjectMapper = createDefaultMapper(openMrsTargetDirectory, classesPackage);
@@ -31,7 +35,7 @@ public class ObjectMapperProvider implements ContextResolver<ObjectMapper> {
 		return defaultObjectMapper;
 	}
 
-	private static ObjectMapper createDefaultMapper() {
+	private static ObjectMapper createDefaultMapper(Class<?> ...types) {
 		final ObjectMapper result = new ObjectMapper();
 		result.configure(SerializationFeature.INDENT_OUTPUT, true);
 		result.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
@@ -40,33 +44,10 @@ public class ObjectMapperProvider implements ContextResolver<ObjectMapper> {
 		result.configure(Feature.ALLOW_UNQUOTED_FIELD_NAMES , true);
 		result.configure(Feature.ALLOW_UNQUOTED_CONTROL_CHARS , true);
 		result.setSerializationInclusion(Include.NON_NULL);
+	
+		result.registerSubtypes(types);
 		
 		return result;
 	}
 	
-	/*
-	private static ObjectMapper createDefaultMapper(File targetDirectory, String classesPackage) {
-		final ObjectMapper result = new ObjectMapper();
-		result.configure(SerializationFeature.INDENT_OUTPUT, true);
-		result.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-		result.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		result.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-		result.configure(Feature.ALLOW_UNQUOTED_FIELD_NAMES , true);
-		result.configure(Feature.ALLOW_UNQUOTED_CONTROL_CHARS , true);
-		
-		
-		if (targetDirectory != null) {
-			Class<?>[] classes = new Class<?>[targetDirectory.list().length];
-			
-			File[] files = targetDirectory.listFiles();
-			
-			for (int i =0; i < files.length; i++) {
-				classes[i] = OpenMRSClassGenerator.tryToGetExistingCLass(targetDirectory, classesPackage + "." + FileUtilities.generateFileNameFromRealPathWithoutExtension(files[i].getAbsolutePath()));
-			}
-			
-			result.registerSubtypes(classes);
-		}
-		
-		return result;
-	}*/
 }

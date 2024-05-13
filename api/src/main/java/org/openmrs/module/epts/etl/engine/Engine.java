@@ -13,8 +13,8 @@ import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
@@ -43,7 +43,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected EngineMonitor monitor;
 	
-	protected SyncSearchParams<? extends SyncRecord> searchParams;
+	protected SyncSearchParams<? extends EtlObject> searchParams;
 	
 	private int operationStatus;
 	
@@ -124,7 +124,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		this.children = children;
 	}
 	
-	public SyncSearchParams<? extends SyncRecord> getSearchParams() {
+	public SyncSearchParams<? extends EtlObject> getSearchParams() {
 		return searchParams;
 	}
 	
@@ -342,7 +342,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 			logDebug("SERCHING NEXT RECORDS");
 		}
 		
-		List<SyncRecord> records = searchNextRecords(conn);
+		List<EtlObject> records = searchNextRecords(conn);
 		
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
 		        + getMainSrcTableConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records)
@@ -360,10 +360,10 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return utilities.arraySize(records);
 	}
 	
-	private void beforeSync(List<SyncRecord> records, Connection conn) {
-		for (SyncRecord rec : records) {
-			if (rec instanceof DatabaseObject) {
-				((DatabaseObject) rec).loadObjectIdData(getMainSrcTableConf());
+	private void beforeSync(List<EtlObject> records, Connection conn) {
+		for (EtlObject rec : records) {
+			if (rec instanceof EtlDatabaseObject) {
+				((EtlDatabaseObject) rec).loadObjectIdData(getMainSrcTableConf());
 			}
 		}
 	}
@@ -720,10 +720,10 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected abstract void restart();
 	
-	protected abstract SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn);
+	protected abstract SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn);
 	
-	public abstract void performeSync(List<SyncRecord> records, Connection conn) throws DBException;
+	public abstract void performeSync(List<EtlObject> records, Connection conn) throws DBException;
 	
-	protected abstract List<SyncRecord> searchNextRecords(Connection conn) throws DBException;
+	protected abstract List<EtlObject> searchNextRecords(Connection conn) throws DBException;
 	
 }

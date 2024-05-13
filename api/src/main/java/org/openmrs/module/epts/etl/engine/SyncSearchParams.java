@@ -10,14 +10,14 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
-public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSearchParams<T> {
+public abstract class SyncSearchParams<T extends EtlObject> extends AbstractSearchParams<T> {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -78,7 +78,7 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	/**
 	 * @param searchClauses
 	 */
-	public void tryToAddExtraConditionForExport(SearchClauses<DatabaseObject> searchClauses) {
+	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses) {
 		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
 			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
 			
@@ -97,7 +97,7 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	 * @param searchClauses
 	 * @param tableInfo
 	 */
-	public void tryToAddLimits(SearchClauses<DatabaseObject> searchClauses) {
+	public void tryToAddLimits(SearchClauses<EtlDatabaseObject> searchClauses) {
 		if (this.getLimits() != null) {
 			
 			if (getSrcTableConf().getPrimaryKey().isSimpleNumericKey()) {
@@ -122,7 +122,7 @@ public abstract class SyncSearchParams<T extends SyncRecord> extends AbstractSea
 	/**
 	 * @return
 	 */
-	public AbstractTableConfiguration getSrcTableConf() {
+	public SrcConf getSrcTableConf() {
 		return this.getConfig().getSrcConf();
 	}
 	

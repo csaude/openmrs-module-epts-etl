@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.synchronization.controller.DatabaseMergeFromJSONController;
@@ -23,9 +23,9 @@ public class DataBaseMergeFromJSONEngine extends Engine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	@Override
@@ -39,7 +39,7 @@ public class DataBaseMergeFromJSONEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
 		throw new ForbiddenOperationException("Rever este metodo!");
 		
 		/*getRelatedOperationController().logInfo("SYNCHRONIZING '"+syncRecords.size() + "' "+ getSyncTableConfiguration().getTableName().toUpperCase());
@@ -52,7 +52,7 @@ public class DataBaseMergeFromJSONEngine extends Engine {
 			SyncImportInfoDAO.markAsToBeCompletedInFuture(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
 		}
 		else{
-			for (SyncRecord record : syncRecords) {
+			for (EtlObject record : syncRecords) {
 				((SyncImportInfoVO)record).sync(this.getSyncTableConfiguration(), conn);
 			}
 		}
@@ -66,8 +66,8 @@ public class DataBaseMergeFromJSONEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		/*SyncSearchParams<? extends SyncRecord> searchParams = new DataBaseMergeFromJSONSearchParams(this.getSyncTableConfiguration(), limits, this.getRelatedOperationController().getAppOriginLocationCode());
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		/*SyncSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromJSONSearchParams(this.getSyncTableConfiguration(), limits, this.getRelatedOperationController().getAppOriginLocationCode());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
 		

@@ -7,11 +7,12 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DatabaseObjectSearchParams extends SyncSearchParams<DatabaseObject> {
+public class DatabaseObjectSearchParams extends SyncSearchParams<EtlDatabaseObject> {
 	
 	public DatabaseObjectSearchParams(EtlItemConfiguration config, RecordLimits limits) {
 		super(config, limits);
@@ -22,8 +23,8 @@ public class DatabaseObjectSearchParams extends SyncSearchParams<DatabaseObject>
 	}
 	
 	@Override
-	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		AbstractTableConfiguration tbConfig = getSearchSourceType().isSource() ? getSrcTableConf()
 		        : getDstLastTableConfiguration();

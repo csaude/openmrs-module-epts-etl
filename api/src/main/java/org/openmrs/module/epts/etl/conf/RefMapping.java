@@ -16,7 +16,7 @@ public class RefMapping {
 	
 	private Object defaultValueDueInconsistency;
 	
-	private ParentTable parentTabConf;
+	private ParentTableImpl parentTabConf;
 	
 	private ChildTable childTabConf;
 	
@@ -27,11 +27,11 @@ public class RefMapping {
 	 */
 	private boolean ignorable;
 	
-	public ParentTable getParentTabConf() {
+	public ParentTableImpl getParentTabConf() {
 		return parentTabConf;
 	}
 	
-	public void setParentTabConf(ParentTable parentTabConf) {
+	public void setParentTabConf(ParentTableImpl parentTabConf) {
 		this.parentTabConf = parentTabConf;
 	}
 	

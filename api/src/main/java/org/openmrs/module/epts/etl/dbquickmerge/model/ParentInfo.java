@@ -1,15 +1,15 @@
 package org.openmrs.module.epts.etl.dbquickmerge.model;
 
-import org.openmrs.module.epts.etl.conf.ParentTable;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
 public class ParentInfo {
 	
-	private DatabaseObject parentRecord;
+	private EtlDatabaseObject parentRecord;
 	
 	private ParentTable parentTableConf;
 	
-	public ParentInfo(ParentTable refInfo, DatabaseObject parentRecord) {
+	public ParentInfo(ParentTable refInfo, EtlDatabaseObject parentRecord) {
 		this.parentTableConf = refInfo;
 		this.parentRecord = parentRecord;
 	}
@@ -18,7 +18,7 @@ public class ParentInfo {
 		return parentTableConf;
 	}
 	
-	public DatabaseObject getParentRecord() {
+	public EtlDatabaseObject getParentRecord() {
 		return parentRecord;
 	}
 	

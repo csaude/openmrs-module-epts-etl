@@ -7,13 +7,13 @@ import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchParams<DatabaseObject> {
+public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchParams<EtlDatabaseObject> {
 	
 	@SuppressWarnings("unused")
 	private boolean selectAllRecords;
@@ -28,12 +28,12 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 	}
 	
 	@Override
-	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		
 		utilities.throwReviewMethodException();
 		
 		/*
-		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		AbstractTableConfiguration tableInfo = this.getSrcTableConf();
 		
@@ -115,15 +115,15 @@ public class CentralAndRemoteDataReconciliationSearchParams extends SyncSearchPa
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public Class<DatabaseObject> getRecordClass() {
+	public Class<EtlDatabaseObject> getRecordClass() {
 		if (type.isMissingRecordsDetector()) {
 			return DatabaseEntityPOJOGenerator
 			        .tryToGetExistingCLass("org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject");
 		} else if (type.isOutdatedRecordsDetector()) {
-			return (Class<DatabaseObject>) getSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
+			return (Class<EtlDatabaseObject>) getSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
 			
 		} else if (type.isPhantomRecordsDetector()) {
-			return (Class<DatabaseObject>) this.getSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
+			return (Class<EtlDatabaseObject>) this.getSrcTableConf().getSyncRecordClass(this.getConfig().getMainApp());
 		}
 		
 		throw new ForbiddenOperationException("Unsupported operation type '" + type + "'");

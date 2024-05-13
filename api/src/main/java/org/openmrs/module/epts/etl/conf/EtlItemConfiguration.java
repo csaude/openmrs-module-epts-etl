@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class EtlItemConfiguration extends EtlDataConfiguration {
+public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private String configCode;
 	

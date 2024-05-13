@@ -13,10 +13,10 @@ import org.openmrs.module.epts.etl.detectgapes.engine.DetectGapesEngine;
 import org.openmrs.module.epts.etl.detectgapes.model.DetectGapesSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -81,7 +81,7 @@ public class DetectGapesController extends OperationController {
 		        this);
 		searchParams.setSyncStartDate(getConfiguration().getStartDate());
 		
-		SearchClauses<DatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
+		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
 		
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		

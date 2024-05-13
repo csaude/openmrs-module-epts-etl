@@ -6,12 +6,12 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
-import org.openmrs.module.epts.etl.conf.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -20,15 +20,15 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 public class MergingRecord {
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private DatabaseObject record;
-	private AbstractTableConfiguration config;
+	private EtlDatabaseObject record;
+	private TableConfiguration config;
 	private SyncImportInfoVO stageInfo;
 	private List<ParentInfo>  parentsWithDefaultValues;
 
 	private AppInfo srcApp;
 	private AppInfo destApp;
 	
-	public MergingRecord(SyncImportInfoVO stageInfo, AbstractTableConfiguration config, AppInfo srcApp, AppInfo destApp) {
+	public MergingRecord(SyncImportInfoVO stageInfo, TableConfiguration config, AppInfo srcApp, AppInfo destApp) {
 		this.srcApp = srcApp;
 		this.destApp = destApp;
 		this.stageInfo = stageInfo;
@@ -66,9 +66,9 @@ public class MergingRecord {
 			parentData.record = DatabaseObjectDAO.getByIdOnSpecificSchema(refInfo, parentStageInfo.getRecordOriginIdAsOid(),  parentStageInfo.getRecordOriginLocationCode(), conn);
 			parentData.merge(conn);
 			
-			DatabaseObject parent = parentData.record;
+			EtlDatabaseObject parent = parentData.record;
 			
-			List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo, parentData.record, conn);
+			List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo, parentData.record, conn);
 			
 			parent = recs != null && recs.size() > 0 ? recs.get(0) : null;
 			
@@ -77,11 +77,11 @@ public class MergingRecord {
 	}
 	
 	private static void loadDestParentInfo(MergingRecord mergingRecord, Connection conn) throws ParentNotYetMigratedException, DBException {
-		AbstractTableConfiguration config = mergingRecord.config;
+		TableConfiguration config = mergingRecord.config;
 		
 		if (!utilities.arrayHasElement(config.getParents())) return;
 		
-		DatabaseObject record = mergingRecord.record;
+		EtlDatabaseObject record = mergingRecord.record;
 		SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
 		
 		for (ParentTable refInfo: config.getParentRefInfo()) {
@@ -90,7 +90,7 @@ public class MergingRecord {
 			Object parentIdInOrigin = record.getParentValue(refInfo.getChildColumnAsClassAttOnSimpleMapping());
 				 
 			if (parentIdInOrigin != null) {
-				DatabaseObject parent = record.retrieveParentInDestination(Integer.parseInt(parentIdInOrigin.toString()), stageInfo.getRecordOriginLocationCode(), refInfo,  true, conn);
+				EtlDatabaseObject parent = record.retrieveParentInDestination(Integer.parseInt(parentIdInOrigin.toString()), stageInfo.getRecordOriginLocationCode(), refInfo,  true, conn);
 		
 				if (parent == null) {
 					SyncImportInfoVO parentStageInfo = SyncImportInfoDAO.getByOriginIdAndLocation(refInfo, Integer.parseInt(parentIdInOrigin.toString()), stageInfo.getRecordOriginLocationCode(), conn);

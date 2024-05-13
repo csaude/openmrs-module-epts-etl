@@ -10,8 +10,8 @@ import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
@@ -40,7 +40,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	private AbstractTableConfiguration userRoleTableConf;
 	
 	@SuppressWarnings("unused")
-	private Class<? extends DatabaseObject> userRoleRecordClass;
+	private Class<? extends EtlDatabaseObject> userRoleRecordClass;
 	
 	public ProblemsSolverEngineMissingUserRoles(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
@@ -54,9 +54,9 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	@Override
@@ -69,18 +69,18 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logInfo("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getMainSrcTableName());
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+		logInfo("RESOLVING PROBLEM MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
 		
-		for (TmpUserVO record : utilities.parseList(syncRecords, TmpUserVO.class)) {
+		for (TmpUserVO record : utilities.parseList(etlObjects, TmpUserVO.class)) {
 			boolean found = false;
 			
 			try {
 				for (DatabasesInfo dbsInfo : DBsInfo) {
 					String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-					    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+					    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 					
 					logInfo(startingStrLog + " TRYING TO RETRIVE DATA FOR RECORD [" + record + "] ON SERVER "
 					        + dbsInfo.getServerName());
@@ -131,7 +131,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 				continue;
 			}
 			
-			List<DatabaseObject> roles = DatabaseObjectDAO.getByParentIdOnSpecificSchema(this.userRoleRecordClass, "user_id",
+			List<EtlDatabaseObject> roles = DatabaseObjectDAO.getByParentIdOnSpecificSchema(this.userRoleRecordClass, "user_id",
 			    userOnSrc.getObjectId(), dbName, srcConn);
 			
 			if (utilities.arrayHasElement(roles)) {
@@ -163,26 +163,26 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 		return found;*/
 	}
 	
-	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)
+	protected void resolveDuplicatedUuidOnUserTable(List<EtlObject> etlObjects, Connection conn)
 	        throws DBException, ForbiddenOperationException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getMainSrcTableName());
+		logDebug("RESOLVING PROBLEM MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
 		
-		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
+		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
 		
-		for (SyncRecord record : syncRecords) {
+		for (EtlObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
-			DatabaseObject rec = (DatabaseObject) record;
+			EtlDatabaseObject rec = (EtlDatabaseObject) record;
 			
-			List<DatabaseObject> dups = new ArrayList<DatabaseObject>();//DatabaseObjectDAO.getByUuid(getSyncTableConfiguration().getSyncRecordClass(getDefaultApp()), rec.getUuid(), conn);
+			List<EtlDatabaseObject> dups = new ArrayList<EtlDatabaseObject>();//DatabaseObjectDAO.getByUuid(getSyncTableConfiguration().getSyncRecordClass(getDefaultApp()), rec.getUuid(), conn);
 			
 			logDebug(startingStrLog + " RESOLVING..." + rec);
 			
 			for (int j = 1; j < dups.size(); j++) {
-				DatabaseObject dup = dups.get(j);
+				EtlDatabaseObject dup = dups.get(j);
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
@@ -194,10 +194,10 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 		
 		if (utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
 			logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
-			syncRecords.removeAll(recordsToIgnoreOnStatistics);
+			etlObjects.removeAll(recordsToIgnoreOnStatistics);
 		}
 		
-		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getMainSrcTableName() + "!");
+		logDebug("MERGE DONE ON " + etlObjects.size() + " " + getMainSrcTableName() + "!");
 	}
 	
 	@Override
@@ -205,8 +205,8 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getEtlConfiguration(),
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParams(this.getEtlConfiguration(),
 		        null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

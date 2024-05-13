@@ -7,8 +7,8 @@ import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.reconciliation.controller.CentralAndRemoteDataReconciliationController;
@@ -24,9 +24,9 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	@Override
@@ -44,34 +44,34 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
 		if (getMainSrcTableName().equalsIgnoreCase("users"))
 			return;
 		
 		this.getMonitor()
-		        .logInfo("PERFORMING DATA RECONCILIATION ON " + syncRecords.size() + "' " + this.getMainSrcTableName());
+		        .logInfo("PERFORMING DATA RECONCILIATION ON " + etlObjects.size() + "' " + this.getMainSrcTableName());
 		
 		if (getRelatedOperationController().isMissingRecordsDetector()) {
-			performeMissingRecordsCreation(syncRecords, conn);
+			performeMissingRecordsCreation(etlObjects, conn);
 		} else if (getRelatedOperationController().isOutdateRecordsDetector()) {
-			performeOutdatedRecordsUpdate(syncRecords, conn);
+			performeOutdatedRecordsUpdate(etlObjects, conn);
 		} else if (getRelatedOperationController().isPhantomRecordsDetector()) {
-			performePhantomRecordsRemotion(syncRecords, conn);
+			performePhantomRecordsRemotion(etlObjects, conn);
 		}
 		
-		this.getMonitor().logInfo("RECONCILIATION DONE ON " + syncRecords.size() + " " + getMainSrcTableName() + "!");
+		this.getMonitor().logInfo("RECONCILIATION DONE ON " + etlObjects.size() + " " + getMainSrcTableName() + "!");
 	}
 	
-	private void performeMissingRecordsCreation(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	private void performeMissingRecordsCreation(List<EtlObject> etlObjects, Connection conn) throws DBException {
 		int i = 1;
 		
-		for (SyncRecord record : syncRecords) {
+		for (EtlObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
 			logInfo(startingStrLog + ": Restoring record: [" + record + "]");
 			
-			DataReconciliationRecord data = new DataReconciliationRecord((DatabaseObject) record, getMainSrcTableConf(),
+			DataReconciliationRecord data = new DataReconciliationRecord((EtlDatabaseObject) record, getMainSrcTableConf(),
 			        ConciliationReasonType.MISSING);
 			
 			data.reloadRelatedRecordDataFromRemote(conn);
@@ -84,31 +84,31 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		}
 	}
 	
-	private void performeOutdatedRecordsUpdate(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	private void performeOutdatedRecordsUpdate(List<EtlObject> etlObjects, Connection conn) throws DBException {
 		int i = 1;
 		
-		for (SyncRecord record : syncRecords) {
+		for (EtlObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
 			logInfo(startingStrLog + ": Updating record: [" + record + "]");
 			
-			DataReconciliationRecord.tryToReconciliate((DatabaseObject) record, getMainSrcTableConf(), conn);
+			DataReconciliationRecord.tryToReconciliate((EtlDatabaseObject) record, getMainSrcTableConf(), conn);
 			
 			i++;
 		}
 	}
 	
-	private void performePhantomRecordsRemotion(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	private void performePhantomRecordsRemotion(List<EtlObject> etlObjects, Connection conn) throws DBException {
 		int i = 1;
 		
-		for (SyncRecord record : syncRecords) {
+		for (EtlObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
 			logInfo(startingStrLog + ": Removing record: [" + record + "]");
 			
-			DataReconciliationRecord data = new DataReconciliationRecord(((DatabaseObject) record).getUuid(),
+			DataReconciliationRecord data = new DataReconciliationRecord(((EtlDatabaseObject) record).getUuid(),
 			        getMainSrcTableConf(), ConciliationReasonType.PHANTOM);
 			data.reloadRelatedRecordDataFromDestination(conn);
 			data.removeRelatedRecord(conn);
@@ -119,8 +119,8 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new CentralAndRemoteDataReconciliationSearchParams(
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new CentralAndRemoteDataReconciliationSearchParams(
 		        this.getEtlConfiguration(), limits, getRelatedOperationController().getOperationType(), conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

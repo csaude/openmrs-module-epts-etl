@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.inconsistenceresolver.engine.InconsistenceSolverEngine;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -35,7 +35,7 @@ public class InconsistenceSolverController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObject obj = DatabaseObjectDAO.getFirstNeverProcessedRecordOnOrigin(config.getSrcConf(), conn);
+			EtlDatabaseObject obj = DatabaseObjectDAO.getFirstNeverProcessedRecordOnOrigin(config.getSrcConf(), conn);
 		
 			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
 			
@@ -55,7 +55,7 @@ public class InconsistenceSolverController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObject obj = DatabaseObjectDAO.getLastNeverProcessedRecordOnOrigin(config.getSrcConf(), conn);
+			EtlDatabaseObject obj = DatabaseObjectDAO.getLastNeverProcessedRecordOnOrigin(config.getSrcConf(), conn);
 		
 			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
 			

@@ -11,9 +11,8 @@ import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -25,8 +24,8 @@ public class DBQuickCopyEngine extends Engine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
+		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	@Override
@@ -44,12 +43,12 @@ public class DBQuickCopyEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
 		try {
-			List<DatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, DatabaseObject.class);
+			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
 			
 			logInfo(
-			    "LOADING  '" + syncRecords.size() + "' " + getMainSrcTableConf().getTableName() + " TO DESTINATION DB");
+			    "LOADING  '" + etlObjects.size() + "' " + getMainSrcTableConf().getTableName() + " TO DESTINATION DB");
 			
 			List<SyncImportInfoVO> records = SyncImportInfoVO.generateFromSyncRecord(syncRecordsAsOpenMRSObjects,
 			    getRelatedOperationController().getAppOriginLocationCode(), false);
@@ -69,8 +68,8 @@ public class DBQuickCopyEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickCopySearchParams(this.getEtlConfiguration(), limits,
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new DBQuickCopySearchParams(this.getEtlConfiguration(), limits,
 		        getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

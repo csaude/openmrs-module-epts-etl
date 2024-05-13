@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -18,7 +18,7 @@ public class DataReconciliationRecord {
 	
 	public static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private DatabaseObject record;
+	private EtlDatabaseObject record;
 	
 	private AbstractTableConfiguration config;
 	
@@ -35,7 +35,7 @@ public class DataReconciliationRecord {
 		this.reasonType = reasonType;
 	}
 	
-	public DataReconciliationRecord(DatabaseObject record, AbstractTableConfiguration config,
+	public DataReconciliationRecord(EtlDatabaseObject record, AbstractTableConfiguration config,
 	    ConciliationReasonType reasonType) {
 		this.record = record;
 		this.recordUuid = record.getUuid();
@@ -44,7 +44,7 @@ public class DataReconciliationRecord {
 		this.reasonType = reasonType;
 	}
 	
-	public static void tryToReconciliate(DatabaseObject record, AbstractTableConfiguration config, Connection conn)
+	public static void tryToReconciliate(EtlDatabaseObject record, AbstractTableConfiguration config, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		DataReconciliationRecord dataReciliationRecord = new DataReconciliationRecord(record.getUuid(), config,
 		        ConciliationReasonType.OUTDATED);
@@ -53,7 +53,7 @@ public class DataReconciliationRecord {
 		dataReciliationRecord.config = config;
 		dataReciliationRecord.stageInfo = record.getRelatedSyncInfo();
 		
-		DatabaseObject srcObj = DatabaseObjectDAO.getByIdOnSpecificSchema(config,
+		EtlDatabaseObject srcObj = DatabaseObjectDAO.getByIdOnSpecificSchema(config,
 		    dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginIdAsOid(),
 		    dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
 		
@@ -144,7 +144,7 @@ public class DataReconciliationRecord {
 		
 	}
 	
-	private static void loadDestParentInfo(DatabaseObject record, AbstractTableConfiguration config, Connection conn)
+	private static void loadDestParentInfo(EtlDatabaseObject record, AbstractTableConfiguration config, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		utilities.throwReviewMethodException();
 		
@@ -157,7 +157,7 @@ public class DataReconciliationRecord {
 				Integer parentIdInOrigin = record.getParentValue(refInfo.getRefColumnAsClassAttName());
 					 
 				if (parentIdInOrigin != null) {
-					DatabaseObject parent;
+					EtlDatabaseObject parent;
 				
 					parent = record.retrieveParentInDestination(parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  true, conn);
 				
@@ -200,10 +200,10 @@ public class DataReconciliationRecord {
 			if (!refInfo.isConfigured())
 				continue;
 			
-			List<DatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo,
+			List<EtlDatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo,
 			    refInfo.getChildColumnOnSimpleMapping(), this.record.getObjectId().getSimpleValueAsInt(), conn);
 			
-			for (DatabaseObject child : children) {
+			for (EtlDatabaseObject child : children) {
 				DataReconciliationRecord childDataInfo = new DataReconciliationRecord(child.getUuid(),
 				        refInfo, ConciliationReasonType.WRONG_RELATIONSHIPS);
 				

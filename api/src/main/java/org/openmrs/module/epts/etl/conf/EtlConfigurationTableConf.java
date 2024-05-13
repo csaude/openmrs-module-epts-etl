@@ -1,7 +1,7 @@
 package org.openmrs.module.epts.etl.conf;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 
 /**
@@ -34,7 +34,7 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public Class<? extends DatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	public Class<? extends EtlDatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		return GenericDatabaseObject.class;
 	}
 }

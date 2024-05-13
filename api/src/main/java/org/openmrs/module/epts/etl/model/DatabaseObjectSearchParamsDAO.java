@@ -3,15 +3,14 @@ package org.openmrs.module.epts.etl.model;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabaseObjectSearchParamsDAO extends SearchParamsDAO {
 	
-	public static List<DatabaseObject> search(DatabaseObjectSearchParams searchParams, Connection conn) throws DBException {
+	public static List<EtlDatabaseObject> search(DatabaseObjectSearchParams searchParams, Connection conn) throws DBException {
 		
-		SearchClauses<DatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
+		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
 		
 		if (searchParams.getOrderByFields() != null) {
 			searchClauses.addToOrderByFields(searchParams.getOrderByFields());

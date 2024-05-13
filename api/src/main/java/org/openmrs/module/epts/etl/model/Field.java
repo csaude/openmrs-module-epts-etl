@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
@@ -308,11 +308,11 @@ public class Field implements Serializable {
 		}
 	}
 	
-	public String generateAliasedSelectColumn(AbstractTableConfiguration tabConf) {
+	public String generateAliasedSelectColumn(TableConfiguration tabConf) {
 		return tabConf.getTableAlias() + "." + this.name + " " + tabConf.getTableAlias() + "_" + this.name;
 	}
 	
-	public String generateAliasedColumn(AbstractTableConfiguration tabConf) {
+	public String generateAliasedColumn(TableConfiguration tabConf) {
 		return  tabConf.getTableAlias() + "_" + this.name;
 	}	
 }

@@ -16,7 +16,7 @@ import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.model.MozartLInkedFileSearchParams;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -58,7 +58,7 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> searchNextRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> searchNextRecords, Connection conn) throws DBException {
 		if (this.templateConfFilePath == null || fileWithListOfDBs == null) {
 			throw new ForbiddenOperationException(
 			        "One o all params were not specified! Please specify to params 1. Template conf file path 2. File With List of DB names");
@@ -247,8 +247,8 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new MozartLInkedFileSearchParams(this, null);
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new MozartLInkedFileSearchParams(this, null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

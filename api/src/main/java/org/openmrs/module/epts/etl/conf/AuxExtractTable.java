@@ -49,8 +49,12 @@ public class AuxExtractTable extends AbstractTableConfiguration {
 		this.joinType = JoinType.LEFT;
 	}
 	
+	public boolean hasJoinFields() {
+		return utilities.arrayHasElement(this.joinFields);
+	}
+	
 	public void tryToLoadJoinFields() {
-		if (!utilities.arrayHasElement(this.joinFields)) {
+		if (!hasJoinFields()) {
 			this.joinFields = tryToLoadJoinFields(this.getParentConf());
 		}
 	}
@@ -72,8 +76,8 @@ public class AuxExtractTable extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public TableDataSourceConfig getParentConf() {
-		return (TableDataSourceConfig) super.getParentConf();
+	public AbstractTableConfiguration getParentConf() {
+		return (AbstractTableConfiguration) super.getParentConf();
 	}
 	
 	@Override

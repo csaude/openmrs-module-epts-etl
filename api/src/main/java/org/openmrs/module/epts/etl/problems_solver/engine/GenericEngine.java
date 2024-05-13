@@ -8,7 +8,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParams;
@@ -35,8 +35,8 @@ public abstract class GenericEngine extends Engine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		SyncRecord rec = new SyncRecord() {
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
+		EtlObject rec = new EtlObject() {
 			
 			@Override
 			public void setExcluded(boolean excluded) {
@@ -65,8 +65,8 @@ public abstract class GenericEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParams(
 		        this.getEtlConfiguration(), null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

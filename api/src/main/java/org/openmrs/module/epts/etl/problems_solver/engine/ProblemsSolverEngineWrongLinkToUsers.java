@@ -6,15 +6,15 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
-import org.openmrs.module.epts.etl.conf.ParentTable;
+import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
@@ -43,8 +43,8 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
+		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	@Override
@@ -58,18 +58,18 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	
 	@SuppressWarnings({ "null", "unused" })
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + this.getMainSrcTableName());
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+		logDebug("RESOLVING PROBLEM MERGE ON " + etlObjects.size() + "' " + this.getMainSrcTableName());
 		
 		OpenConnection srcConn = remoteApp.openConnection();
 		
 		try {
 			int i = 1;
-			for (SyncRecord record : syncRecords) {
+			for (EtlObject record : etlObjects) {
 				try {
 					
 					String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-					    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+					    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 					
 					logDebug(startingStrLog + " STARTING RESOLVE PROBLEMS OF RECORD [" + record + "]");
 					
@@ -79,8 +79,8 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					AbstractTableConfiguration personTabConf = AbstractTableConfiguration
 					        .initGenericTabConf("person", getEtlConfiguration().getSrcConf(), getEtlConfiguration().getSrcConf());
 					*/
-					DatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(getMainSrcTableConf(),
-					    ((DatabaseObject) record).getObjectId(), conn);
+					EtlDatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(getMainSrcTableConf(),
+					    ((EtlDatabaseObject) record).getObjectId(), conn);
 					
 					if ((Integer) userOnDestDB.getParentValue("personId") != 1) {
 						logDebug("SKIPPING THE RECORD BECAUSE IT HAS THE CORRECT PERSON ["
@@ -96,18 +96,18 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					boolean found = false;
 					
 					for (String dbName : DB_NAMES) {
-						DatabaseObject userOnSrcDB = new GenericDatabaseObject();//DatabaseObjectDAO.getByUuidOnSpecificSchema(syncRecordClass, userOnDestDB.getUuid(), dbName, srcConn);
+						EtlDatabaseObject userOnSrcDB = new GenericDatabaseObject();//DatabaseObjectDAO.getByUuidOnSpecificSchema(syncRecordClass, userOnDestDB.getUuid(), dbName, srcConn);
 						
 						if (userOnSrcDB != null) {
 							
 							logDebug("RESOLVING USER PROBLEM USING DATA FROM [" + dbName + "]");
 							
-							DatabaseObject relatedPersonOnSrcDB = DatabaseObjectDAO.getByIdOnSpecificSchema(personTabConf,
+							EtlDatabaseObject relatedPersonOnSrcDB = DatabaseObjectDAO.getByIdOnSpecificSchema(personTabConf,
 							    Oid.fastCreate("", userOnSrcDB.getParentValue("personId")), dbName, srcConn);
 							
-							List<DatabaseObject> relatedPersonOnDestDB = null;//DatabaseObjectDAO.getByUuid(prsonRecordClass, relatedPersonOnSrcDB.getUuid(), conn);
+							List<EtlDatabaseObject> relatedPersonOnDestDB = null;//DatabaseObjectDAO.getByUuid(prsonRecordClass, relatedPersonOnSrcDB.getUuid(), conn);
 							
-							ParentTable r = new ParentTable();
+							ParentTableImpl r = new ParentTableImpl();
 							
 							r.addMapping(RefMapping.fastCreate("person_id", "person_id"));
 							
@@ -138,26 +138,26 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	}
 	
 	@SuppressWarnings("null")
-	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)
+	protected void resolveDuplicatedUuidOnUserTable(List<EtlObject> etlObjects, Connection conn)
 	        throws DBException, ForbiddenOperationException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + getMainSrcTableName());
+		logDebug("RESOLVING PROBLEM MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
 		
-		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
+		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
 		
-		for (SyncRecord record : syncRecords) {
+		for (EtlObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
-			DatabaseObject rec = (DatabaseObject) record;
+			EtlDatabaseObject rec = (EtlDatabaseObject) record;
 			
-			List<DatabaseObject> dups = null;//DatabaseObjectDAO.getByUuid(getSyncTableConfiguration().getSyncRecordClass(getDefaultApp()), rec.getUuid(), conn);
+			List<EtlDatabaseObject> dups = null;//DatabaseObjectDAO.getByUuid(getSyncTableConfiguration().getSyncRecordClass(getDefaultApp()), rec.getUuid(), conn);
 			
 			logDebug(startingStrLog + " RESOLVING..." + rec);
 			
 			for (int j = 1; j < dups.size(); j++) {
-				DatabaseObject dup = dups.get(j);
+				EtlDatabaseObject dup = dups.get(j);
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
@@ -169,10 +169,10 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 		
 		if (utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
 			logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
-			syncRecords.removeAll(recordsToIgnoreOnStatistics);
+			etlObjects.removeAll(recordsToIgnoreOnStatistics);
 		}
 		
-		logDebug("MERGE DONE ON " + syncRecords.size() + " " + getMainSrcTableName() + "!");
+		logDebug("MERGE DONE ON " + etlObjects.size() + " " + getMainSrcTableName() + "!");
 	}
 	
 	@Override
@@ -180,8 +180,8 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParams(this.getEtlConfiguration(),
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParams(this.getEtlConfiguration(),
 		        null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

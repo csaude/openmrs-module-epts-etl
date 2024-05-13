@@ -12,9 +12,9 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.export.controller.DBExportController;
 import org.openmrs.module.epts.etl.export.model.ExportSearchParams;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -29,9 +29,9 @@ public class DBExportEngine extends Engine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 		
 	}
 	
@@ -45,20 +45,20 @@ public class DBExportEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) {
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) {
 		try {
-			List<DatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, DatabaseObject.class);
+			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
 			
-			logDebug("GENERATING '" + syncRecords.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
+			logDebug("GENERATING '" + etlObjects.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
 			
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getMainSrcTableName(), syncRecordsAsOpenMRSObjects,
 			    getEtlConfiguration().getOriginAppLocationCode(), true);
 			
 			File jsonFIle = generateJSONTempFile(jsonInfo,
 			    syncRecordsAsOpenMRSObjects.get(0).getObjectId().getSimpleValueAsInt(),
-			    syncRecordsAsOpenMRSObjects.get(syncRecords.size() - 1).getObjectId().getSimpleValueAsInt());
+			    syncRecordsAsOpenMRSObjects.get(etlObjects.size() - 1).getObjectId().getSimpleValueAsInt());
 			
-			logInfo("WRITING '" + syncRecords.size() + "' " + getMainSrcTableName() + " TO JSON FILE ["
+			logInfo("WRITING '" + etlObjects.size() + "' " + getMainSrcTableName() + " TO JSON FILE ["
 			        + jsonFIle.getAbsolutePath() + ".json]");
 			
 			//Try to remove not terminate files
@@ -75,9 +75,9 @@ public class DBExportEngine extends Engine {
 			
 			this.getMonitor().logInfo("JSON [" + jsonFIle + ".json] CREATED!");
 			
-			logDebug("MARKING '" + syncRecords.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED");
+			logDebug("MARKING '" + etlObjects.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED");
 			
-			logDebug("MARKING '" + syncRecords.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED FINISHED");
+			logDebug("MARKING '" + etlObjects.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED FINISHED");
 			
 			logDebug("MAKING FILES AVALIABLE");
 			
@@ -95,7 +95,7 @@ public class DBExportEngine extends Engine {
 				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
 			}
 			
-			markAllAsSynchronized(utilities.parseList(syncRecords, DatabaseObject.class));
+			markAllAsSynchronized(utilities.parseList(etlObjects, EtlDatabaseObject.class));
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -113,7 +113,7 @@ public class DBExportEngine extends Engine {
 		return mainTempJSONInfoFile.getAbsolutePath() + "_minimal";
 	}
 	
-	private void markAllAsSynchronized(List<DatabaseObject> syncRecords) {
+	private void markAllAsSynchronized(List<EtlDatabaseObject> syncRecords) {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -138,8 +138,8 @@ public class DBExportEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ExportSearchParams(this.getEtlConfiguration(), limits,
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new ExportSearchParams(this.getEtlConfiguration(), limits,
 		        conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());

@@ -4,14 +4,13 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
-import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
@@ -29,8 +28,8 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
+		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	@Override
@@ -43,7 +42,7 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
 		utilities.throwReviewMethodException();
 
 		
@@ -51,11 +50,11 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 				
 				int i = 1;
 				
-				for (SyncRecord record : syncRecords) {
+				for (EtlObject record : syncRecords) {
 					String startingStrLog = utilities.garantirXCaracterOnNumber(i,
 					    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
 					
-					DatabaseObject rec = (DatabaseObject) record;
+					EtlDatabaseObject rec = (EtlDatabaseObject) record;
 					
 					AbstractTableConfiguration syncTableInfo = AbstractTableConfiguration.init("tmp_user",
 					    getEtlConfiguration().getSrcConf());
@@ -112,26 +111,26 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 				}*/
 	}
 	
-	protected void resolveDuplicatedUuidOnUserTable(List<SyncRecord> syncRecords, Connection conn)
+	protected void resolveDuplicatedUuidOnUserTable(List<EtlObject> etlObjects, Connection conn)
 	        throws DBException, ForbiddenOperationException {
-		logDebug("RESOLVING PROBLEM MERGE ON " + syncRecords.size() + "' " + this.getMainSrcTableName());
+		logDebug("RESOLVING PROBLEM MERGE ON " + etlObjects.size() + "' " + this.getMainSrcTableName());
 		
 		int i = 1;
 		
-		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
+		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
 		
-		for (SyncRecord record : syncRecords) {
+		for (EtlObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
-			DatabaseObject rec = (DatabaseObject) record;
+			EtlDatabaseObject rec = (EtlDatabaseObject) record;
 			
-			List<DatabaseObject> dups = new ArrayList<>();
+			List<EtlDatabaseObject> dups = new ArrayList<>();
 			
 			logDebug(startingStrLog + " RESOLVING..." + rec);
 			
 			for (int j = 1; j < dups.size(); j++) {
-				DatabaseObject dup = dups.get(j);
+				EtlDatabaseObject dup = dups.get(j);
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
@@ -143,10 +142,10 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 		
 		if (utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
 			logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
-			syncRecords.removeAll(recordsToIgnoreOnStatistics);
+			etlObjects.removeAll(recordsToIgnoreOnStatistics);
 		}
 		
-		logDebug("MERGE DONE ON " + syncRecords.size() + " " + this.getMainSrcTableName() + "!");
+		logDebug("MERGE DONE ON " + etlObjects.size() + " " + this.getMainSrcTableName() + "!");
 	}
 	
 	@Override
@@ -154,8 +153,8 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new ProblemsSolverSearchParamsUsersDupsUUID(
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParamsUsersDupsUUID(
 		        this.getEtlConfiguration(), null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

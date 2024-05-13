@@ -6,12 +6,12 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
-import org.openmrs.module.epts.etl.conf.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
@@ -48,7 +48,7 @@ public class PojoGenerationEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> migrationRecords, Connection conn) throws DBException {
 		this.pojoGenerated = true;
 		
 		AppInfo mainApp = getEtlConfiguration().getMainApp();
@@ -111,11 +111,11 @@ public class PojoGenerationEngine extends Engine {
 	}
 	
 	@Override
-	protected List<SyncRecord> searchNextRecords(Connection conn) {
+	protected List<EtlObject> searchNextRecords(Connection conn) {
 		if (pojoGenerated)
 			return null;
 		
-		List<SyncRecord> records = new ArrayList<SyncRecord>();
+		List<EtlObject> records = new ArrayList<EtlObject>();
 		
 		records.add(new PojoGenerationRecord(getMainSrcTableConf()));
 		
@@ -123,7 +123,7 @@ public class PojoGenerationEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		return new PojoGenerationSearchParams(this, limits, conn);
 	}
 	

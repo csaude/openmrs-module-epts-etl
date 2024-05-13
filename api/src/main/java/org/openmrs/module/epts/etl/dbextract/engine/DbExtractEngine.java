@@ -19,8 +19,8 @@ import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableE
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -38,9 +38,9 @@ public class DbExtractEngine extends EtlEngine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	public AppInfo getDstApp() {
@@ -66,33 +66,33 @@ public class DbExtractEngine extends EtlEngine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
 		if (getRelatedSyncOperationConfig().writeOperationHistory()
 		        || getEtlConfiguration().getSrcConf().hasWinningRecordsInfo()) {
-			performeSyncOneByOne(syncRecords, conn);
+			performeSyncOneByOne(etlObjects, conn);
 		} else {
-			performeBatchSync(syncRecords, conn);
+			performeBatchSync(etlObjects, conn);
 		}
 	}
 	
-	public void performeBatchSync(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING DB EXTRACT OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + syncRecords.size()
+	public void performeBatchSync(List<EtlObject> etlObjects, Connection srcConn) throws DBException {
+		logInfo("PERFORMING DB EXTRACT OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
-		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
+		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
 		
 		Map<String, List<DbExtractRecord>> mergingRecs = new HashMap<>();
 		
 		try {
 			
-			for (SyncRecord record : syncRecords) {
-				DatabaseObject rec = (DatabaseObject) record;
+			for (EtlObject record : etlObjects) {
+				EtlDatabaseObject rec = (EtlDatabaseObject) record;
 				
 				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
-					DatabaseObject destObject = null;
+					EtlDatabaseObject destObject = null;
 					
 					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
@@ -103,7 +103,7 @@ public class DbExtractEngine extends EtlEngine {
 						        false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
-							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
+							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(etlObjects.size()));
 						}
 						
 						mergingRecs.get(mappingInfo.getTableName()).add(mr);
@@ -113,12 +113,12 @@ public class DbExtractEngine extends EtlEngine {
 			
 			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
 				logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
-				syncRecords.removeAll(recordsToIgnoreOnStatistics);
+				etlObjects.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
 			DbExtractRecord.extractAll(mergingRecs, srcConn, dstConn);
 			
-			logInfo("EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + syncRecords.size()
+			logInfo("EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size()
 			        + "' RECORDS");
 			
 			dstConn.markAsSuccessifullyTerminated();
@@ -137,28 +137,28 @@ public class DbExtractEngine extends EtlEngine {
 		}
 	}
 	
-	private void performeSyncOneByOne(List<SyncRecord> syncRecords, Connection srcConn) throws DBException {
-		logInfo("PERFORMING EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + syncRecords.size()
+	private void performeSyncOneByOne(List<EtlObject> etlObjects, Connection srcConn) throws DBException {
+		logInfo("PERFORMING EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
 		int i = 1;
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
-		List<SyncRecord> recordsToIgnoreOnStatistics = new ArrayList<SyncRecord>();
+		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
 		
 		try {
-			for (SyncRecord record : syncRecords) {
+			for (EtlObject record : etlObjects) {
 				String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-				    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+				    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 				
 				boolean wentWrong = true;
 				
-				DatabaseObject rec = (DatabaseObject) record;
+				EtlDatabaseObject rec = (EtlDatabaseObject) record;
 				
 				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
-					DatabaseObject destObject = null;
+					EtlDatabaseObject destObject = null;
 					
 					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
@@ -244,10 +244,10 @@ public class DbExtractEngine extends EtlEngine {
 			
 			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
 				logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
-				syncRecords.removeAll(recordsToIgnoreOnStatistics);
+				etlObjects.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			logInfo("EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + syncRecords.size()
+			logInfo("EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size()
 			        + "' RECORDS");
 			
 			dstConn.markAsSuccessifullyTerminated();
@@ -268,8 +268,8 @@ public class DbExtractEngine extends EtlEngine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DbExtractSearchParams(this.getEtlConfiguration(), limits,
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new DbExtractSearchParams(this.getEtlConfiguration(), limits,
 		        getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

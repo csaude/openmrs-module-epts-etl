@@ -2,9 +2,9 @@ package org.openmrs.module.epts.etl.inconsistenceresolver.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -88,7 +88,7 @@ public class InconsistenceInfo extends BaseVO{
 		this.defaultParentId = defaultParentId;
 	}
 	
-	public static InconsistenceInfo generate(DatabaseObject record, DatabaseObject parent, Integer defaultParentId, String recordOriginLocationCode) {
+	public static InconsistenceInfo generate(EtlDatabaseObject record, EtlDatabaseObject parent, Integer defaultParentId, String recordOriginLocationCode) {
 		InconsistenceInfo info = new InconsistenceInfo(record.generateTableName(), record.getObjectId(), parent.generateTableName(), parent.getObjectId().getSimpleValueAsInt(), defaultParentId, recordOriginLocationCode);
 	
 		return info;
@@ -101,7 +101,7 @@ public class InconsistenceInfo extends BaseVO{
 	}
 
 
-	public void save(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		InconsistenceInfoDAO.insert(this, tableConfiguration, conn);
 	}
 }

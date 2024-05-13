@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -40,7 +40,7 @@ public class DBQuickLoadEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> migrationRecords, Connection conn) throws DBException {
 		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
 		
 		for (SyncImportInfoVO rec : migrationRecordAsSyncInfo)
@@ -91,7 +91,7 @@ public class DBQuickLoadEngine extends Engine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) {
+	public List<EtlObject> searchNextRecords(Connection conn) {
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
 		if (this.currJSONSourceFile == null)
@@ -109,7 +109,7 @@ public class DBQuickLoadEngine extends Engine {
 				rec.setRecordOriginLocationCode(this.currJSONInfo.getOriginAppLocationCode());
 			}
 			
-			return utilities.parseList(this.currJSONInfo.getSyncInfo(), SyncRecord.class);
+			return utilities.parseList(this.currJSONInfo.getSyncInfo(), EtlObject.class);
 			
 		}
 		catch (Exception e) {
@@ -137,11 +137,11 @@ public class DBQuickLoadEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		QuickLoadLimits loadLimits = new QuickLoadLimits();
 		loadLimits.copy(limits);
 		
-		SyncSearchParams<? extends SyncRecord> searchParams = new DBQuickLoadSearchParams(getRelatedOperationController(),
+		SyncSearchParams<? extends EtlObject> searchParams = new DBQuickLoadSearchParams(getRelatedOperationController(),
 		        this.getEtlConfiguration(), loadLimits);
 		
 		searchParams.setQtdRecordPerSelected(1);

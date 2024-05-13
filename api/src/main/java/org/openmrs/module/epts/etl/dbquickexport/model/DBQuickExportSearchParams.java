@@ -5,13 +5,13 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DBQuickExportSearchParams extends SyncSearchParams<DatabaseObject> {
+public class DBQuickExportSearchParams extends SyncSearchParams<EtlDatabaseObject> {
 	
 	private boolean selectAllRecords;
 	
@@ -22,8 +22,8 @@ public class DBQuickExportSearchParams extends SyncSearchParams<DatabaseObject> 
 	}
 	
 	@Override
-	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		searchClauses.addToClauseFrom(getSrcTableConf().generateSelectFromClauseContentOnSpecificSchema(conn));
 		searchClauses.addColumnToSelect(getSrcTableConf().generateFullAliasedSelectColumns());
@@ -37,7 +37,7 @@ public class DBQuickExportSearchParams extends SyncSearchParams<DatabaseObject> 
 	}
 	
 	@Override
-	public Class<DatabaseObject> getRecordClass() {
+	public Class<EtlDatabaseObject> getRecordClass() {
 		return DatabaseEntityPOJOGenerator
 		        .tryToGetExistingCLass("org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject");
 	}

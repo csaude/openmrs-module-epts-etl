@@ -16,7 +16,7 @@ import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.load.model.LoadSyncDataSearchParams;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -39,7 +39,7 @@ public class DataLoadEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> migrationRecords, Connection conn) throws DBException {
 		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
 		
 		logInfo("WRITING  '" + migrationRecords.size() + "' " + getMainSrcTableName() + " TO STAGING TABLE");
@@ -88,7 +88,7 @@ public class DataLoadEngine extends Engine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) {
+	public List<EtlObject> searchNextRecords(Connection conn) {
 		/*if (tmpPrintFiles()) {
 			return null;
 		}*/
@@ -106,7 +106,7 @@ public class DataLoadEngine extends Engine {
 			this.currJSONInfo = SyncJSONInfo.loadFromJSON(json);
 			this.currJSONInfo.setFileName(currJSONSourceFile.getAbsolutePath());
 			
-			return utilities.parseList(this.currJSONInfo.getSyncInfo(), SyncRecord.class);
+			return utilities.parseList(this.currJSONInfo.getSyncInfo(), EtlObject.class);
 			
 		}
 		catch (Exception e) {
@@ -153,8 +153,8 @@ public class DataLoadEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new LoadSyncDataSearchParams(getRelatedOperationController(),
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new LoadSyncDataSearchParams(getRelatedOperationController(),
 		        this.getEtlConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
 		

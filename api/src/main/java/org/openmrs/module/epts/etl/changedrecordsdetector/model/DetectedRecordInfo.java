@@ -6,13 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
-import org.openmrs.module.epts.etl.conf.ParentTable;
+import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
@@ -131,7 +132,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		this.recordOriginLocationCode = recordOriginLocationCode;
 	}
 	
-	public static DetectedRecordInfo generate(DatabaseObject record, String appCode, String recordOriginLocationCode) {
+	public static DetectedRecordInfo generate(EtlDatabaseObject record, String appCode, String recordOriginLocationCode) {
 		DetectedRecordInfo info = new DetectedRecordInfo();
 		
 		info.setTableName(record.generateTableName());
@@ -150,7 +151,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		return info;
 	}
 	
-	private static OperationInfo determineOperationType(DatabaseObject record) {
+	private static OperationInfo determineOperationType(EtlDatabaseObject record) {
 		if (record.getDateVoided() != null)
 			return OperationInfo.fastCreateVoidOperation(record.getDateVoided());
 		if (record.getDateChanged() != null)
@@ -166,7 +167,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		return info;
 	}
 	
-	public void save(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		DetectedRecordInfoDAO.insert(this, tableConfiguration, conn);
 	}
 	
@@ -176,21 +177,21 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void refreshLastSyncDateOnOrigin(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
+	public void refreshLastSyncDateOnOrigin(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void refreshLastSyncDateOnDestination(AbstractTableConfiguration tableConfiguration,
+	public void refreshLastSyncDateOnDestination(TableConfiguration tableConfiguration,
 	        String recordOriginLocationCode, Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void loadDestParentInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
+	public void loadDestParentInfo(TableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		// TODO Auto-generated method stub
 		
@@ -250,21 +251,21 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void consolidateData(AbstractTableConfiguration tableInfo, Connection conn)
+	public void consolidateData(TableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void resolveInconsistence(AbstractTableConfiguration tableInfo, Connection conn)
+	public void resolveInconsistence(TableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public SyncImportInfoVO retrieveRelatedSyncInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode,
+	public SyncImportInfoVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode,
 	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
@@ -289,27 +290,27 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void changeObjectId(AbstractTableConfiguration abstractTableConfiguration, Connection conn) throws DBException {
+	public void changeObjectId(TableConfiguration abstractTableConfiguration, Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo,
+	public void changeParentForAllChildren(EtlDatabaseObject newParent, TableConfiguration syncTableInfo,
 	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public DatabaseObject retrieveParentInDestination(Integer parentId, String a,
-	        AbstractTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
+	public EtlDatabaseObject retrieveParentInDestination(Integer parentId, String a,
+	        TableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		return null;
 	}
 	
 	@Override
-	public boolean hasExactilyTheSameDataWith(DatabaseObject srcObj) {
+	public boolean hasExactilyTheSameDataWith(EtlDatabaseObject srcObj) {
 		return false;
 	}
 	
@@ -323,7 +324,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void loadObjectIdData(AbstractTableConfiguration tabConf) {
+	public void loadObjectIdData(TableConfiguration tabConf) {
 		this.objectId = tabConf.getPrimaryKey().generateOid(this);
 	}
 	
@@ -353,51 +354,51 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public List<DatabaseObject> getExtraDataSourceObjects() {
+	public List<EtlDatabaseObject> getExtraDataSourceObjects() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public DatabaseObject getSharedPkObj() {
+	public EtlDatabaseObject getSharedPkObj() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public String generateMissingInfo(Map<ParentTable, Integer> missingParents) {
+	public String generateMissingInfo(Map<ParentTableImpl, Integer> missingParents) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public Map<ParentTable, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
+	public Map<ParentTableImpl, Integer> loadMissingParents(TableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public void removeDueInconsistency(AbstractTableConfiguration syncTableInfo, Map<ParentTable, Integer> missingParents,
+	public void removeDueInconsistency(TableConfiguration syncTableInfo, Map<ParentTableImpl, Integer> missingParents,
 	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void changeParentValue(ParentTable refInfo, DatabaseObject newParent) {
+	public void changeParentValue(ParentTable refInfo, EtlDatabaseObject newParent) {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void setParentToNull(ParentTable refInfo) {
+	public void setParentToNull(ParentTableImpl refInfo) {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void update(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException {
+	public void update(TableConfiguration syncTableInfo, Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}

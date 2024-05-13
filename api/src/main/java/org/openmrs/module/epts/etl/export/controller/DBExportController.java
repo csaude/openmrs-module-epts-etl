@@ -12,8 +12,8 @@ import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.export.engine.DBExportEngine;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -47,7 +47,7 @@ public class DBExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(config.getSrcConf(), conn);
+			EtlDatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(config.getSrcConf(), conn);
 		
 			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
 			
@@ -71,7 +71,7 @@ public class DBExportController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(config.getSrcConf(), conn);
+			EtlDatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(config.getSrcConf(), conn);
 		
 			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
 			

@@ -20,9 +20,9 @@ import org.openmrs.module.epts.etl.conf.QueryParameter;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
@@ -1113,7 +1113,7 @@ public class DBUtilities {
 			paramConfig.add(qp);
 		}
 		
-		DatabaseObject srcObject = null;
+		EtlDatabaseObject srcObject = null;
 		
 		return loadParamsValues(query, paramConfig, srcObject, relatedSyncConfiguration);
 	}
@@ -1125,7 +1125,7 @@ public class DBUtilities {
 	 * @param srcObject
 	 * @return
 	 */
-	public static Object[] loadParamsValues(String query, List<QueryParameter> paramConfig, DatabaseObject srcObject,
+	public static Object[] loadParamsValues(String query, List<QueryParameter> paramConfig, EtlDatabaseObject srcObject,
 	        EtlConfiguration configuration) {
 		List<Field> queryParameters = null;
 		
@@ -1186,7 +1186,7 @@ public class DBUtilities {
 	 * @param configuration the configuration holding configuration values
 	 * @return the configuration parameters loaded with values
 	 */
-	static List<QueryParameter> loadParamConfigValue(List<QueryParameter> paramConfig, DatabaseObject srcObject,
+	static List<QueryParameter> loadParamConfigValue(List<QueryParameter> paramConfig, EtlDatabaseObject srcObject,
 	        EtlConfiguration configuration) {
 		List<QueryParameter> params = null;
 		
@@ -1270,7 +1270,7 @@ public class DBUtilities {
 		return paramValue;
 	}
 	
-	static Object getParamValueFromSourceMainObject(DatabaseObject mainObject, String paramName)
+	static Object getParamValueFromSourceMainObject(EtlDatabaseObject mainObject, String paramName)
 	        throws ForbiddenOperationException {
 		
 		Object paramValue = mainObject.getFieldValue(paramName);

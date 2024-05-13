@@ -11,8 +11,8 @@ import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -29,18 +29,18 @@ public class DetectGapesEngine extends Engine {
 	/*
 	 * The previous record
 	 */
-	private DatabaseObject prevRec;
+	private EtlDatabaseObject prevRec;
 	
 	public DetectGapesEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
-		List<SyncRecord> records = new ArrayList<SyncRecord>();
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
+		List<EtlObject> records = new ArrayList<EtlObject>();
 		
 		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	@Override
@@ -58,15 +58,15 @@ public class DetectGapesEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logDebug("DETECTING GAPES ON " + syncRecords.size() + "' " + getMainSrcTableName());
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+		logDebug("DETECTING GAPES ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		if (this.prevRec == null) {
-			this.prevRec = (DatabaseObject) syncRecords.get(0);
+			this.prevRec = (EtlDatabaseObject) etlObjects.get(0);
 		}
 		
-		for (SyncRecord record : syncRecords) {
-			DatabaseObject rec = (DatabaseObject) record;
+		for (EtlObject record : etlObjects) {
+			EtlDatabaseObject rec = (EtlDatabaseObject) record;
 			
 			int diff = rec.getObjectId().getSimpleValueAsInt() - prevRec.getObjectId().getSimpleValueAsInt();
 			
@@ -84,8 +84,8 @@ public class DetectGapesEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DetectGapesSearchParams(this.getEtlConfiguration(), limits,
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new DetectGapesSearchParams(this.getEtlConfiguration(), limits,
 		        getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

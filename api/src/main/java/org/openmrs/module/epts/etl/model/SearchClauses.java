@@ -266,8 +266,10 @@ public class SearchClauses<T extends VO> {
 		                : "");
 		
 		if (this.searchParameters.isPhaseSelected() && !utilities.stringHasValue(groupingFields)) {
-			sql = SQLUtilitie.createPhasedSelect(sql, this.searchParameters.getStartAt(),
-			    this.searchParameters.getQtdRecordPerSelected(), conn);
+			
+			if (conn != null)
+				sql = SQLUtilitie.createPhasedSelect(sql, this.searchParameters.getStartAt(),
+				    this.searchParameters.getQtdRecordPerSelected(), conn);
 		}
 		
 		return sql;
@@ -478,8 +480,18 @@ public class SearchClauses<T extends VO> {
 		
 		this.addToClauses(auxCondition);
 	}
-
+	
 	public boolean isToSelectColumn(String name) {
 		return this.columnsToSelect.contains(name);
+	}
+	
+	@Override
+	public String toString() {
+		try {
+			return generateSQL(null);
+		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

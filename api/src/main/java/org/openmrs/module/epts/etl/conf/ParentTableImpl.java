@@ -2,6 +2,8 @@ package org.openmrs.module.epts.etl.conf;
 
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.model.Field;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -9,9 +11,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 /**
  * Represents a parent table.
  */
-public class ParentTable extends RelatedTable {
+public class ParentTableImpl extends AbstractRelatedTable implements ParentTable {
 	
-	private AbstractTableConfiguration childTableConf;
+	private TableConfiguration childTableConf;
 	
 	private List<Field> conditionalFields;
 	
@@ -25,24 +27,24 @@ public class ParentTable extends RelatedTable {
 	 */
 	private boolean setNullDueInconsistency;
 	
-	public ParentTable() {
+	public ParentTableImpl() {
 	}
 	
-	public ParentTable(String tableName, String refCode) {
+	public ParentTableImpl(String tableName, String refCode) {
 		super(tableName, refCode);
 	}
 	
-	public static ParentTable init(String tableName, String refCode) {
-		ParentTable p = new ParentTable(tableName, refCode);
+	public static ParentTableImpl init(String tableName, String refCode) {
+		ParentTableImpl p = new ParentTableImpl(tableName, refCode);
 		
 		return p;
 	}
 	
 	@Override
-	public void clone(AbstractTableConfiguration toCloneFrom) {
+	public void clone(TableConfiguration toCloneFrom) {
 		super.clone(toCloneFrom);
 		
-		ParentTable toCloneFromAsParent = (ParentTable)toCloneFrom;
+		ParentTableImpl toCloneFromAsParent = (ParentTableImpl)toCloneFrom;
 		
 		this.childTableConf = toCloneFromAsParent.childTableConf;
 		this.conditionalFields = toCloneFromAsParent.conditionalFields;
@@ -50,12 +52,12 @@ public class ParentTable extends RelatedTable {
 		this.setNullDueInconsistency = toCloneFromAsParent.setNullDueInconsistency;
 	}
 	
-	public AbstractTableConfiguration getChildTableConf() {
+	public TableConfiguration getChildTableConf() {
 		return childTableConf;
 	}
 	
-	public void setChildTableConf(AbstractTableConfiguration childTableConf) {
-		this.childTableConf = childTableConf;
+	public void setChildTableConf(TableConfiguration childTableConf) {
+		this.childTableConf = (TableConfiguration) childTableConf;
 		
 		this.setRelatedSyncConfiguration(childTableConf.getRelatedSyncConfiguration());
 	}
@@ -98,7 +100,7 @@ public class ParentTable extends RelatedTable {
 	public UniqueKeyInfo parseRelationshipToSelfKey() {
 		UniqueKeyInfo uk = new UniqueKeyInfo(this);
 		
-		for (RefMapping map : this.getMapping()) {
+		for (RefMapping map : this.getRefMapping()) {
 			uk.addKey(new Key(map.getParentFieldName()));
 		}
 		
@@ -109,11 +111,11 @@ public class ParentTable extends RelatedTable {
 	public String generateJoinCondition() {
 		String conditionFields = "";
 		
-		for (int i = 0; i < this.getMapping().size(); i++) {
+		for (int i = 0; i < this.getRefMapping().size(); i++) {
 			if (i > 0)
 				conditionFields += " AND ";
 			
-			RefMapping field = this.getMapping().get(i);
+			RefMapping field = this.getRefMapping().get(i);
 			
 			conditionFields += getRelatedTabConf().getTableAlias() + "." + field.getChildFieldName() + " = "
 			        + this.getTableAlias() + "." + field.getParentFieldName();
@@ -123,13 +125,13 @@ public class ParentTable extends RelatedTable {
 	}
 	
 	@Override
-	public AbstractTableConfiguration getRelatedTabConf() {
+	public TableConfiguration getRelatedTabConf() {
 		return this.childTableConf;
 	}
 	
 	@Override
-	public void setRelatedTabConf(AbstractTableConfiguration relatedTabConf) {
-		this.childTableConf = relatedTabConf;
+	public void setRelatedTabConf(TableConfiguration relatedTabConf) {
+		this.childTableConf = (TableConfiguration) relatedTabConf;
 	}
 	
 	public boolean hasConditionalFields() {
@@ -147,7 +149,7 @@ public class ParentTable extends RelatedTable {
 		
 		if (hasMapping()) {
 			
-			for (RefMapping map : this.getMapping()) {
+			for (RefMapping map : this.getRefMapping()) {
 				if (utilities.stringHasValue(mappingStr)) {
 					mappingStr += ",";
 				}

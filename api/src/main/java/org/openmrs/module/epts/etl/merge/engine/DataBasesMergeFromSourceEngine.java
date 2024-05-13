@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBCon
 import org.openmrs.module.epts.etl.merge.model.DataBaseMergeFromSourceDBSearchParams;
 import org.openmrs.module.epts.etl.merge.model.MergingRecord;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -29,9 +29,9 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	}
 	
 	@Override
-	public List<SyncRecord> searchNextRecords(Connection conn) throws DBException {
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), SyncRecord.class);
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 		
 	}
 	
@@ -50,14 +50,14 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> syncRecords, Connection conn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + syncRecords.size() + "' " + getMainSrcTableName());
+	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+		logInfo("PERFORMING MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
 		
-		for (SyncRecord record : syncRecords) {
+		for (EtlObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + syncRecords.size();
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
 			logDebug(startingStrLog + ": Merging Record: [" + record + "]");
 			
@@ -76,8 +76,8 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends SyncRecord> searchParams = new DataBaseMergeFromSourceDBSearchParams(
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		SyncSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromSourceDBSearchParams(
 		        this.getEtlConfiguration(), limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

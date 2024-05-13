@@ -5,15 +5,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
-import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.conf.SrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -26,7 +26,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 	
 	public SrcConf srcConf;
 	
-	public DbExtractRecord(DatabaseObject record, SrcConf srcConf, AbstractTableConfiguration config, AppInfo srcApp,
+	public DbExtractRecord(EtlDatabaseObject record, SrcConf srcConf, TableConfiguration config, AppInfo srcApp,
 	    AppInfo destApp, boolean writeOperationHistory) {
 		
 		super(record, config, srcApp, destApp, writeOperationHistory);
@@ -36,20 +36,16 @@ public class DbExtractRecord extends QuickMergeRecord {
 	
 	private void tryToLoadDefaultParents(Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
-		AbstractTableConfiguration config = this.config;
+		TableConfiguration config = this.config;
 		
 		if (!utilities.arrayHasElement(config.getParentRefInfo()))
 			return;
 		
-		DatabaseObject record = this.record;
+		EtlDatabaseObject record = this.record;
 		
 		for (ParentTable refInfo : config.getParentRefInfo()) {
 			if (refInfo.isMetadata())
 				continue;
-			
-			if (refInfo.getTableName().equals("person")) {
-				System.out.println("Stop");
-			}
 			
 			if (!refInfo.isFullLoaded()) {
 				refInfo.fullLoad(dstConn);
@@ -65,25 +61,36 @@ public class DbExtractRecord extends QuickMergeRecord {
 				continue;
 			}
 			
-			DatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo, key, dstConn);
+			EtlDatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo, key, dstConn);
 			
 			if (parent == null) {
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo, key, srcConn);
+				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo, key, srcConn);
 				
 				if (parentInOrigin == null) {
 					throw new MissingParentException(key, refInfo.getTableName(), this.config.getOriginAppLocationCode(),
 					        refInfo);
 				}
 				
-				DatabaseObject defaultParentInDst = config.getDefaultObject(dstConn);
+				if (this.config.getSharedTableConf().equals(refInfo)) {
+					
+					//EtlDatabaseObject dstParent = 
+					
+					DbExtractRecord parentData = new DbExtractRecord(parentInfo.getParentRecord(), this.srcConf,
+				        parentInfo.getParentTableConf(), srcApp, destApp, this.writeOperationHistory);
 				
-				if (defaultParentInDst == null) {
-					defaultParentInDst = config.generateAndSaveDefaultObject(dstConn);
+				parentData.extract(srcConn, destConn);
+			
+				} else {
+					EtlDatabaseObject defaultParentInDst = refInfo.getDefaultObject(dstConn);
+					
+					if (defaultParentInDst == null) {
+						defaultParentInDst = config.generateAndSaveDefaultObject(dstConn);
+					}
+					
+					record.changeParentValue(refInfo, defaultParentInDst);
+					
+					this.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInOrigin));
 				}
-				
-				record.changeParentValue(refInfo, defaultParentInDst);
-				
-				this.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInOrigin));
 			}
 		}
 	}
@@ -133,7 +140,6 @@ public class DbExtractRecord extends QuickMergeRecord {
 			record.changeParentValue(parentInfo.getParentTableConf(), parentInfo.getParentRecord());
 		}
 		
-		
 		record.update(srcConf, destConn);
 		
 	}
@@ -144,13 +150,13 @@ public class DbExtractRecord extends QuickMergeRecord {
 			return;
 		}
 		
-		AbstractTableConfiguration config = extractRecs.get(0).config;
+		TableConfiguration config = extractRecs.get(0).config;
 		
 		if (!config.isFullLoaded()) {
 			config.fullLoad();
 		}
 		
-		List<DatabaseObject> objects = new ArrayList<DatabaseObject>(extractRecs.size());
+		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(extractRecs.size());
 		
 		for (DbExtractRecord quickMergeRecord : extractRecs) {
 			quickMergeRecord.tryToLoadDefaultParents(srcConn, dstConn);

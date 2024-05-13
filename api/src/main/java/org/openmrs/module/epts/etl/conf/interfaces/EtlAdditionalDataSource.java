@@ -1,8 +1,10 @@
-package org.openmrs.module.epts.etl.conf;
+package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.SrcConf;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public interface EtlAdditionalDataSource extends EtlDataSource {
@@ -11,7 +13,7 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	
 	void setRelatedSrcConf(SrcConf relatedSrcConf);
 	
-	DatabaseObject loadRelatedSrcObject(DatabaseObject mainObject, Connection conn, AppInfo srcAppInfo) throws DBException;
+	EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection conn, AppInfo srcAppInfo) throws DBException;
 	
 	/**
 	 * Tels weather this source is mandatory or not. If it is required and it returns an empty

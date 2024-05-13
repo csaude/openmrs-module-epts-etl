@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.model.pojo.generic;
+package org.openmrs.module.epts.etl.model;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -7,14 +7,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.ParentTable;
+import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
-import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
 
@@ -23,16 +25,16 @@ import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
  * 
  * @author jpboane
  */
-public interface DatabaseObject extends SyncRecord {
+public interface EtlDatabaseObject extends EtlObject {
 	
 	public static final int CONSISTENCE_STATUS = 1;
 	
 	public static final int INCONSISTENCE_STATUS = -1;
 	
-	void refreshLastSyncDateOnOrigin(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
+	void refreshLastSyncDateOnOrigin(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn);
 	
-	void refreshLastSyncDateOnDestination(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
+	void refreshLastSyncDateOnDestination(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn);
 	
 	Oid getObjectId();
@@ -49,7 +51,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @param conn
 	 * @throws DBException
 	 */
-	void loadDestParentInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
+	void loadDestParentInfo(TableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws ParentNotYetMigratedException, DBException;
 	
 	Object[] getInsertParamsWithoutObjectId();
@@ -70,9 +72,9 @@ public interface DatabaseObject extends SyncRecord {
 	
 	boolean hasIgnoredParent();
 	
-	void save(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException;
+	void save(TableConfiguration syncTableInfo, Connection conn) throws DBException;
 	
-	void update(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException;
+	void update(TableConfiguration syncTableInfo, Connection conn) throws DBException;
 	
 	String getUuid();
 	
@@ -89,9 +91,9 @@ public interface DatabaseObject extends SyncRecord {
 	 * 
 	 * @param tabConf the table configuration
 	 */
-	void loadObjectIdData(AbstractTableConfiguration tabConf);
+	void loadObjectIdData(TableConfiguration tabConf);
 	
-	DatabaseObject getSharedPkObj();
+	EtlDatabaseObject getSharedPkObj();
 	
 	default boolean shasSharedPkObj() {
 		return getSharedPkObj() != null;
@@ -110,8 +112,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws InconsistentStateException
 	 * @throws DBException
 	 */
-	void consolidateData(AbstractTableConfiguration tableInfo, Connection conn)
-	        throws InconsistentStateException, DBException;
+	void consolidateData(TableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
 	
 	/**
 	 * Resolve the inconsistency of a record
@@ -125,36 +126,35 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws InconsistentStateException
 	 * @throws DBException
 	 */
-	void resolveInconsistence(AbstractTableConfiguration tableInfo, Connection conn)
-	        throws InconsistentStateException, DBException;
+	void resolveInconsistence(TableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
 	
-	SyncImportInfoVO retrieveRelatedSyncInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode,
-	        Connection conn) throws DBException;
+	SyncImportInfoVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
+	        throws DBException;
 	
-	DatabaseObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode,
-	        AbstractTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
+	EtlDatabaseObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode,
+	        TableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
 	        throws ParentNotYetMigratedException, DBException;
 	
 	SyncImportInfoVO getRelatedSyncInfo();
 	
 	void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo);
 	
-	String generateMissingInfo(Map<ParentTable, Integer> missingParents);
+	String generateMissingInfo(Map<ParentTableImpl, Integer> missingParents);
 	
 	void remove(Connection conn) throws DBException;
 	
-	Map<ParentTable, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn) throws DBException;
+	Map<ParentTableImpl, Integer> loadMissingParents(TableConfiguration tableInfo, Connection conn) throws DBException;
 	
-	void removeDueInconsistency(AbstractTableConfiguration syncTableInfo, Map<ParentTable, Integer> missingParents,
+	void removeDueInconsistency(TableConfiguration syncTableInfo, Map<ParentTableImpl, Integer> missingParents,
 	        Connection conn) throws DBException;
 	
-	void changeParentValue(ParentTable refInfo, DatabaseObject newParent);
+	void changeParentValue(ParentTable refInfo, EtlDatabaseObject newParent);
 	
-	void setParentToNull(ParentTable refInfo);
+	void setParentToNull(ParentTableImpl refInfo);
 	
-	void changeObjectId(AbstractTableConfiguration abstractTableConfiguration, Connection conn) throws DBException;
+	void changeObjectId(TableConfiguration abstractTableConfiguration, Connection conn) throws DBException;
 	
-	void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo, Connection conn)
+	void changeParentForAllChildren(EtlDatabaseObject newParent, TableConfiguration syncTableInfo, Connection conn)
 	        throws DBException;
 	
 	Date getDateChanged();
@@ -169,7 +169,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @param srcObj
 	 * @return true if this record has exactily the same values in all fields with the given object
 	 */
-	boolean hasExactilyTheSameDataWith(DatabaseObject srcObj);
+	boolean hasExactilyTheSameDataWith(EtlDatabaseObject srcObj);
 	
 	/**
 	 * Return a value of given field
@@ -182,16 +182,15 @@ public interface DatabaseObject extends SyncRecord {
 	void setFieldValue(String fieldName, Object value);
 	
 	/**
-	 * Retrive values for all {@link AbstractTableConfiguration#getUniqueKeys()} fields. The values
-	 * follow the very same sequence defined with {@link AbstractTableConfiguration#getUniqueKeys()}
+	 * Retrive values for all {@link TableConfiguration#getUniqueKeys()} fields. The values follow
+	 * the very same sequence defined with {@link TableConfiguration#getUniqueKeys()}
 	 * 
-	 * @param tableConfiguration the {@link AbstractTableConfiguration} from where the
-	 *            {@link AbstractTableConfiguration#getUniqueKeys()} will be retrieved from
-	 * @return values for all {@link AbstractTableConfiguration#getUniqueKeys()} field.
+	 * @param tableConfiguration the {@link TableConfiguration} from where the
+	 *            {@link TableConfiguration#getUniqueKeys()} will be retrieved from
+	 * @return values for all {@link TableConfiguration#getUniqueKeys()} field.
 	 * @throws ForbiddenOperationException if one or more fields in any key have null value
 	 */
-	default Object[] getUniqueKeysFieldValues(AbstractTableConfiguration tableConfiguration)
-	        throws ForbiddenOperationException {
+	default Object[] getUniqueKeysFieldValues(TableConfiguration tableConfiguration) throws ForbiddenOperationException {
 		if (!tableConfiguration.isFullLoaded()) {
 			try {
 				tableConfiguration.fullLoad();
@@ -240,7 +239,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * 
 	 * @return the list of extra datasource objects
 	 */
-	List<DatabaseObject> getExtraDataSourceObjects();
+	List<EtlDatabaseObject> getExtraDataSourceObjects();
 	
 	default void setRelatedConfiguration(DatabaseObjectConfiguration config) {
 	}
@@ -296,7 +295,7 @@ public interface DatabaseObject extends SyncRecord {
 	 * @throws ForbiddenOperationException
 	 * @throws DBException
 	 */
-	default boolean checkIfAllRelationshipCanBeresolved(AbstractTableConfiguration otherTabConf, Connection conn)
+	default boolean checkIfAllRelationshipCanBeresolved(TableConfiguration otherTabConf, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
 		if (otherTabConf.getDefaultObject(conn) != null) {
@@ -307,11 +306,11 @@ public interface DatabaseObject extends SyncRecord {
 			throw new ForbiddenOperationException("The related table configuration is not set");
 		}
 		
-		if (!(getRelatedConfiguration() instanceof AbstractTableConfiguration)) {
-			throw new ForbiddenOperationException("The related configuration should be type of AbstractTableConfiguration");
+		if (!(getRelatedConfiguration() instanceof TableConfiguration)) {
+			throw new ForbiddenOperationException("The related configuration should be type of TableConfiguration");
 		}
 		
-		AbstractTableConfiguration thisTabConf = (AbstractTableConfiguration) getRelatedConfiguration();
+		TableConfiguration thisTabConf = (TableConfiguration) getRelatedConfiguration();
 		
 		if (!thisTabConf.isFullLoaded()) {
 			thisTabConf.fullLoad(conn);

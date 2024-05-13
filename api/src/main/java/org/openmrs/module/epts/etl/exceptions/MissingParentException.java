@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.exceptions;
 
-import org.openmrs.module.epts.etl.conf.ParentTable;
+import org.openmrs.module.epts.etl.conf.ParentTableImpl;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 
 public class MissingParentException extends EtlException {
@@ -19,7 +20,8 @@ public class MissingParentException extends EtlException {
 		super("On or more parents are missing");
 	}
 	
-	public MissingParentException(Integer parentId, String parentTable, String originAppLocationConde, ParentTable refInfo) {
+	public MissingParentException(Integer parentId, String parentTable, String originAppLocationConde,
+	    ParentTable refInfo) {
 		super("Missing parent! Parent: [table: " + parentTable + ", id: " + parentId + ", from:" + originAppLocationConde
 		        + "]");
 		
@@ -66,7 +68,7 @@ public class MissingParentException extends EtlException {
 		return refInfo;
 	}
 	
-	public void setRefInfo(ParentTable refInfo) {
+	public void setRefInfo(ParentTableImpl refInfo) {
 		this.refInfo = refInfo;
 	}
 	

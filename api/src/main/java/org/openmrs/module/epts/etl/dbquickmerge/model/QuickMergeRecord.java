@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
-import org.openmrs.module.epts.etl.conf.ParentTable;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -26,9 +26,9 @@ public class QuickMergeRecord {
 	
 	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	protected DatabaseObject record;
+	protected EtlDatabaseObject record;
 	
-	protected AbstractTableConfiguration config;
+	protected TableConfiguration config;
 	
 	protected List<ParentInfo> parentsWithDefaultValues;
 	
@@ -40,7 +40,7 @@ public class QuickMergeRecord {
 	
 	protected long destinationRecordId;
 	
-	public QuickMergeRecord(DatabaseObject record, AbstractTableConfiguration config, AppInfo srcApp, AppInfo destApp,
+	public QuickMergeRecord(EtlDatabaseObject record, TableConfiguration config, AppInfo srcApp, AppInfo destApp,
 	    boolean writeOperationHistory) {
 		this.record = record;
 		this.config = config;
@@ -66,7 +66,7 @@ public class QuickMergeRecord {
 		}
 	}
 	
-	public AbstractTableConfiguration getConfig() {
+	public TableConfiguration getConfig() {
 		return config;
 	}
 	
@@ -93,9 +93,9 @@ public class QuickMergeRecord {
 				boolean existObservationDateFields = utilities.arrayHasElement(config.getObservationDateFields());
 				
 				if (existObservationDateFields || existWinningRecInfo) {
-					List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
+					List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
 					
-					DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+					EtlDatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 					
 					((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 					
@@ -122,9 +122,9 @@ public class QuickMergeRecord {
 		QuickMergeRecord.loadDestParentInfo(this, srcConn, destConn);
 		QuickMergeRecord.loadDestConditionalParentInfo(this, srcConn, destConn);
 		
-		List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
+		List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.config, this.record, destConn);
 		
-		DatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+		EtlDatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 		
 		((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.config, destConn);
 		
@@ -142,10 +142,10 @@ public class QuickMergeRecord {
 			
 			parentData.merge(srcConn, destConn);
 			
-			List<DatabaseObject> recs = DatabaseObjectDAO
+			List<EtlDatabaseObject> recs = DatabaseObjectDAO
 			        .getByUniqueKeys(parentInfo.getParentTableConf().getChildTableConf(), this.record, destConn);
 			
-			DatabaseObject parent = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+			EtlDatabaseObject parent = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 			
 			record.changeParentValue(parentInfo.getParentTableConf(), parent);
 		}
@@ -153,12 +153,12 @@ public class QuickMergeRecord {
 	
 	protected static void loadDestParentInfo(QuickMergeRecord quickMergeRecord, Connection srcConn, Connection destConn)
 	        throws ParentNotYetMigratedException, DBException {
-		AbstractTableConfiguration config = quickMergeRecord.config;
+		TableConfiguration config = quickMergeRecord.config;
 		
 		if (!utilities.arrayHasElement(config.getParents()))
 			return;
 		
-		DatabaseObject record = quickMergeRecord.record;
+		EtlDatabaseObject record = quickMergeRecord.record;
 		
 		for (ParentTable refInfo : config.getParentRefInfo()) {
 			if (refInfo.isMetadata())
@@ -172,7 +172,7 @@ public class QuickMergeRecord {
 			if (oParentIdInOrigin != null) {
 				Integer parentIdInOrigin = (Integer) oParentIdInOrigin;
 				
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo,
+				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo,
 				    Oid.fastCreate(fieldNameOnParentTable, parentIdInOrigin), srcConn);
 				
 				if (parentInOrigin == null) {
@@ -194,11 +194,11 @@ public class QuickMergeRecord {
 					}
 				}
 				
-				AbstractTableConfiguration parentTabConf = refInfo;
+				TableConfiguration parentTabConf = refInfo;
 				
-				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parentTabConf, parentInOrigin, destConn);
+				List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parentTabConf, parentInOrigin, destConn);
 				
-				DatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+				EtlDatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 				
 				if (parentInDest == null) {
 					quickMergeRecord.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInOrigin));
@@ -221,12 +221,12 @@ public class QuickMergeRecord {
 	 */
 	public static void determineMissingMetadataParent(QuickMergeRecord quickMergeRecord, Connection srcConn,
 	        Connection destConn) throws MissingParentException, DBException {
-		AbstractTableConfiguration config = quickMergeRecord.config;
+		TableConfiguration config = quickMergeRecord.config;
 		
 		if (!utilities.arrayHasElement(config.getParents()))
 			return;
 		
-		DatabaseObject record = quickMergeRecord.record;
+		EtlDatabaseObject record = quickMergeRecord.record;
 		
 		for (ParentTable refInfo : config.getParentRefInfo()) {
 			if (!refInfo.isMetadata())
@@ -237,7 +237,7 @@ public class QuickMergeRecord {
 			if (oParentId != null) {
 				Integer parentId = (Integer) oParentId;
 				
-				DatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo,
+				EtlDatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo,
 				    Oid.fastCreate(refInfo.getParentColumnOnSimpleMapping(), parentId), destConn);
 				
 				if (parent == null)
@@ -252,8 +252,8 @@ public class QuickMergeRecord {
 		if (!utilities.arrayHasElement(quickMergeRecord.config.getConditionalParents()))
 			return;
 		
-		DatabaseObject record = quickMergeRecord.record;
-		AbstractTableConfiguration config = quickMergeRecord.config;
+		EtlDatabaseObject record = quickMergeRecord.record;
+		TableConfiguration config = quickMergeRecord.config;
 		
 		for (ParentTable parent : config.getConditionalParents()) {
 			if (parent.isMetadata())
@@ -279,15 +279,15 @@ public class QuickMergeRecord {
 			if (parentIdInOrigin != null) {
 				Oid objectId = Oid.fastCreate(parent.getParentColumnOnSimpleMapping(), parentIdInOrigin);
 				
-				DatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(parent, objectId, srcConn);
+				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(parent, objectId, srcConn);
 				
 				if (parentInOrigin == null)
 					throw new MissingParentException(parentIdInOrigin, parent.getTableName(),
 					        quickMergeRecord.config.getOriginAppLocationCode(), parent);
 				
-				List<DatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parent, parentInOrigin, destConn);
+				List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parent, parentInOrigin, destConn);
 				
-				DatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+				EtlDatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 				
 				if (parentInDest == null) {
 					quickMergeRecord.parentsWithDefaultValues.add(new ParentInfo(parent, parentInOrigin));
@@ -309,7 +309,7 @@ public class QuickMergeRecord {
 		syncInfo.save(getConfig(), conn);
 	}
 	
-	public DatabaseObject getRecord() {
+	public EtlDatabaseObject getRecord() {
 		return record;
 	}
 	
@@ -319,13 +319,13 @@ public class QuickMergeRecord {
 			return;
 		}
 		
-		AbstractTableConfiguration config = mergingRecs.get(0).config;
+		TableConfiguration config = mergingRecs.get(0).config;
 		
 		if (!config.isFullLoaded()) {
 			config.fullLoad();
 		}
 		
-		List<DatabaseObject> objects = new ArrayList<DatabaseObject>(mergingRecs.size());
+		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
 		
 		for (QuickMergeRecord quickMergeRecord : mergingRecs) {
 			QuickMergeRecord.loadDestParentInfo(quickMergeRecord, srcConn, dstConn);

@@ -15,18 +15,20 @@ import java.util.Map.Entry;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.Key;
-import org.openmrs.module.epts.etl.conf.ParentTable;
+import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
@@ -37,7 +39,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseObject {
+public abstract class AbstractDatabaseObject extends BaseVO implements EtlDatabaseObject {
 	
 	protected boolean metadata;
 	
@@ -77,7 +79,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public void loadObjectIdData(AbstractTableConfiguration tabConf) {
+	public void loadObjectIdData(TableConfiguration tabConf) {
 		if (tabConf.getPrimaryKey() != null) {
 			this.objectId = tabConf.getPrimaryKey().generateOid(this);
 			
@@ -109,13 +111,13 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	 * @throws DBException
 	 */
 	@Override
-	public DatabaseObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode,
-	        AbstractTableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
+	public EtlDatabaseObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode,
+	        TableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		if (parentId == null)
 			return null;
 		
-		DatabaseObject parentOnDestination;
+		EtlDatabaseObject parentOnDestination;
 		
 		try {
 			parentOnDestination = DatabaseObjectDAO.thinGetByRecordOrigin(parentId, recordOriginLocationCode,
@@ -143,7 +145,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public boolean hasExactilyTheSameDataWith(DatabaseObject srcObj) {
+	public boolean hasExactilyTheSameDataWith(EtlDatabaseObject srcObj) {
 		Object[] fields = getFields();
 		
 		for (int i = 0; i < fields.length; i++) {
@@ -260,16 +262,16 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public void save(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		if (tableConfiguration.isMetadata()) {
-			List<DatabaseObject> recs = utilities
-			        .parseList(DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), DatabaseObject.class);
+			List<EtlDatabaseObject> recs = utilities
+			        .parseList(DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), EtlDatabaseObject.class);
 			
-			DatabaseObject recordOnDBByUuid = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+			EtlDatabaseObject recordOnDBByUuid = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 			
 			if (recordOnDBByUuid == null) {
 				//Check if ID is free 
-				DatabaseObject recOnDBById = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
+				EtlDatabaseObject recOnDBById = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
 				
 				if (recOnDBById == null) {
 					DatabaseObjectDAO.insertWithObjectId(this, conn);
@@ -301,15 +303,15 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					
 					//Try to resolve conflict if it is destination operation
 					
-					DatabaseObject recordOnDB = null;
+					EtlDatabaseObject recordOnDB = null;
 					
 					if (tableConfiguration.isAutoIncrementId()) {
 						recordOnDB = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
 					}
 					
 					if (recordOnDB == null) {
-						List<DatabaseObject> recs = utilities.parseList(
-						    DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), DatabaseObject.class);
+						List<EtlDatabaseObject> recs = utilities.parseList(
+						    DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), EtlDatabaseObject.class);
 						
 						recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 					}
@@ -326,11 +328,11 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public void update(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException {
+	public void update(TableConfiguration syncTableInfo, Connection conn) throws DBException {
 		DatabaseObjectDAO.update(this, conn);
 	}
 	
-	public void resolveConflictWithExistingRecord(DatabaseObject recordOnDB, AbstractTableConfiguration tableConfiguration,
+	public void resolveConflictWithExistingRecord(EtlDatabaseObject recordOnDB, TableConfiguration tableConfiguration,
 	        Connection conn) throws DBException, ForbiddenOperationException {
 		boolean existingRecordIsOutdated = false;
 		
@@ -419,7 +421,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	 * @throws DBException
 	 */
 	@SuppressWarnings("unused")
-	private void resolveMetadataCollision(DatabaseObject recordInConflict, AbstractTableConfiguration tableConfig,
+	private void resolveMetadataCollision(EtlDatabaseObject recordInConflict, TableConfiguration tableConfig,
 	        Connection conn) throws DBException {
 		//Object Id Collision
 		if (this.getObjectId() == recordInConflict.getObjectId()) {
@@ -435,7 +437,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			DatabaseObjectDAO.update(recordInConflict, conn);
 			
 			//2. Check if the new object id is avaliable
-			DatabaseObject recOnDBById = DatabaseObjectDAO.getByOid(tableConfig, this.getObjectId(), conn);
+			EtlDatabaseObject recOnDBById = DatabaseObjectDAO.getByOid(tableConfig, this.getObjectId(), conn);
 			
 			if (recOnDBById == null) {
 				//3. Save the new record
@@ -453,7 +455,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public void changeObjectId(AbstractTableConfiguration syncTableInfo, Connection conn) throws DBException {
+	public void changeObjectId(TableConfiguration syncTableInfo, Connection conn) throws DBException {
 		if (syncTableInfo.getPrimaryKey().isCompositeKey()) {
 			throw new ForbiddenOperationException("The related table (" + syncTableInfo.getTableName()
 			        + ") has composite pk. YOu cannot change the object Id!");
@@ -486,8 +488,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public void changeParentForAllChildren(DatabaseObject newParent, AbstractTableConfiguration syncTableInfo,
-	        Connection conn) throws DBException {
+	public void changeParentForAllChildren(EtlDatabaseObject newParent, TableConfiguration syncTableInfo, Connection conn)
+	        throws DBException {
 		
 		if (syncTableInfo.getPrimaryKey().isCompositeKey()) {
 			throw new ForbiddenOperationException("The related table (" + syncTableInfo.getTableName()
@@ -498,18 +500,18 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		
 		for (ChildTable refInfo : syncTableInfo.getChildRefInfo()) {
 			
-			List<DatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo.getParentTableConf(),
+			List<EtlDatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo.getParentTableConf(),
 			    refInfo.getSimpleRefMapping().getParentField().getName(), this.getObjectId().getSimpleValueAsInt(), conn);
 			
-			for (DatabaseObject child : children) {
-				child.changeParentValue((ParentTable) refInfo.getParentTableConf(), newParent);
+			for (EtlDatabaseObject child : children) {
+				child.changeParentValue((ParentTableImpl) refInfo.getParentTableConf(), newParent);
 				DatabaseObjectDAO.update(child, conn);
 			}
 		}
 	}
 	
 	@Override
-	public void refreshLastSyncDateOnOrigin(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
+	public void refreshLastSyncDateOnOrigin(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn) {
 		try {
 			DatabaseObjectDAO.refreshLastSyncDateOnOrigin(this, tableConfiguration, recordOriginLocationCode, conn);
@@ -520,8 +522,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public void refreshLastSyncDateOnDestination(AbstractTableConfiguration tableConfiguration,
-	        String recordOriginLocationCode, Connection conn) {
+	public void refreshLastSyncDateOnDestination(TableConfiguration tableConfiguration, String recordOriginLocationCode,
+	        Connection conn) {
 		try {
 			DatabaseObjectDAO.refreshLastSyncDateOnDestination(this, tableConfiguration, recordOriginLocationCode, conn);
 		}
@@ -530,29 +532,29 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		}
 	}
 	
-	private void generateRelatedSyncInfo(AbstractTableConfiguration tableConfiguration, String recordOriginLocationCode,
+	private void generateRelatedSyncInfo(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn) throws DBException {
 		this.relatedSyncInfo = SyncImportInfoVO.generateFromSyncRecord(this, recordOriginLocationCode, true);
 	}
 	
 	@Override
-	public void resolveInconsistence(AbstractTableConfiguration tableConfiguration, Connection conn)
+	public void resolveInconsistence(TableConfiguration tableConfiguration, Connection conn)
 	        throws InconsistentStateException, DBException {
 		if (!tableConfiguration.isFullLoaded())
 			tableConfiguration.fullLoad();
 		
 		this.generateRelatedSyncInfo(tableConfiguration, tableConfiguration.getOriginAppLocationCode(), conn);
 		
-		Map<ParentTable, Integer> missingParents = loadMissingParents(tableConfiguration, conn);
+		Map<ParentTableImpl, Integer> missingParents = loadMissingParents(tableConfiguration, conn);
 		
 		int qtyInconsistence = missingParents.size();
 		
 		if (qtyInconsistence == 0) {
-			getRelatedSyncInfo().setConsistent(DatabaseObject.CONSISTENCE_STATUS);
+			getRelatedSyncInfo().setConsistent(EtlDatabaseObject.CONSISTENCE_STATUS);
 		} else {
 			boolean solvedCurrentInconsistency = true;
 			
-			for (Entry<ParentTable, Integer> entry : missingParents.entrySet()) {
+			for (Entry<ParentTableImpl, Integer> entry : missingParents.entrySet()) {
 				//try to load the default parent
 				
 				if (entry.getKey().getSimpleRefMapping().isSetNullDueInconsistency()) {
@@ -564,7 +566,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					Oid oid = Oid.fastCreate(tableConfiguration.getPrimaryKey().retrieveSimpleKey().getNameAsClassAtt(),
 					    entry.getKey().getSimpleRefMapping().getDefaultValueDueInconsistency());
 					
-					DatabaseObject parent = DatabaseObjectDAO.getByOid(entry.getKey(), oid, conn);
+					EtlDatabaseObject parent = DatabaseObjectDAO.getByOid(entry.getKey(), oid, conn);
 					
 					if (parent == null) {
 						solvedCurrentInconsistency = false;
@@ -583,7 +585,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			}
 			
 			if (qtyInconsistence == 0) {
-				getRelatedSyncInfo().setConsistent(DatabaseObject.CONSISTENCE_STATUS);
+				getRelatedSyncInfo().setConsistent(EtlDatabaseObject.CONSISTENCE_STATUS);
 			} else {
 				getRelatedSyncInfo().setLastSyncTryErr(generateMissingInfo(missingParents));
 				this.remove(conn);
@@ -595,9 +597,9 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@SuppressWarnings("unused")
-	private void saveInconsistence(AbstractTableConfiguration tableConfiguration,
-	        Entry<ParentTable, Integer> inconsistenceInfoSource, boolean inconsistenceResoloved, String recordOriginLocationCode,
-	        Connection conn) throws DBException {
+	private void saveInconsistence(TableConfiguration tableConfiguration,
+	        Entry<ParentTableImpl, Integer> inconsistenceInfoSource, boolean inconsistenceResoloved,
+	        String recordOriginLocationCode, Connection conn) throws DBException {
 		
 		if (tableConfiguration.getPrimaryKey().isCompositeKey()) {
 			throw new ForbiddenOperationException("The related table (" + tableConfiguration.getTableName()
@@ -613,7 +615,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		info.save(tableConfiguration, conn);
 	}
 	
-	public void resolveChildrenInconsistences(AbstractTableConfiguration syncTableInfo, Map<ParentTable, Integer> missingParents,
+	public void resolveChildrenInconsistences(TableConfiguration syncTableInfo, Map<ParentTableImpl, Integer> missingParents,
 	        Connection conn) throws DBException {
 		
 		if (syncTableInfo.getPrimaryKey().isCompositeKey()) {
@@ -648,17 +650,17 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 				continue;
 			}
 			
-			List<DatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo,
+			List<EtlDatabaseObject> children = DatabaseObjectDAO.getByParentId(refInfo,
 			    refInfo.getSimpleRefMapping().getChildField().getName(), this.getObjectId().getSimpleValueAsInt(), conn);
 			
-			for (DatabaseObject child : children) {
+			for (EtlDatabaseObject child : children) {
 				child.resolveInconsistence(refInfo, conn);
 			}
 		}
 	}
 	
 	@Override
-	public void consolidateData(AbstractTableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public void consolidateData(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		utilities.throwReviewMethodException();
 		/*
 		if (!tableConfiguration.isFullLoaded())
@@ -683,7 +685,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					Oid oid = Oid.fastCreate(tableConfiguration.getPrimaryKey().retrieveSimpleKey().getName(),
 					    entry.getKey().getDefaultValueDueInconsistency());
 					
-					DatabaseObject parent = DatabaseObjectDAO
+					EtlDatabaseObject parent = DatabaseObjectDAO
 					        .getByOid(entry.getKey().getRefObjectClass(tableConfiguration.getMainApp()), oid, conn);
 					
 					if (parent == null) {
@@ -714,7 +716,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public void loadDestParentInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
+	public void loadDestParentInfo(TableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
 		
 		utilities.throwReviewMethodException();
@@ -740,7 +742,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			Integer parentId = getParentValue(refInfo.getSimpleRefMapping().getChildField().getNameAsClassAtt());
 			
 			if (parentId != null) {
-				DatabaseObject parent;
+				EtlDatabaseObject parent;
 				
 				if (refInfo.getParentTableCof().isMetadata()) {
 					Oid oid = Oid.fastCreate(refInfo.getParentTableCof().getPrimaryKey().retrieveSimpleKey().getName(),
@@ -761,7 +763,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					Oid oid = Oid.fastCreate(
 					    refInfo.getRefTableConfiguration().getPrimaryKey().retrieveSimpleKey().getName(), parentId);
 					
-					DatabaseObject parentFromSource = new GenericDatabaseObject(refInfo.getRefTableConfiguration());
+					EtlDatabaseObject parentFromSource = new GenericDatabaseObject(refInfo.getRefTableConfiguration());
 					parentFromSource.setObjectId(oid);
 					
 					parentFromSource.setRelatedSyncInfo(
@@ -772,7 +774,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 					
 					parentFromSource = sourceInfo.convertToOpenMRSObject(refInfo.getRefTableConfiguration(), conn);
 					
-					DatabaseObject parentFromDestionationSharingSameObjectId = DatabaseObjectDAO
+					EtlDatabaseObject parentFromDestionationSharingSameObjectId = DatabaseObjectDAO
 					        .getByOid(refInfo.getRefObjectClass(tableInfo.getMainApp()), oid, conn);
 					
 					boolean sameUuid = true;
@@ -802,12 +804,12 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public SyncImportInfoVO retrieveRelatedSyncInfo(AbstractTableConfiguration tableInfo, String recordOriginLocationCode,
+	public SyncImportInfoVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode,
 	        Connection conn) throws DBException {
 		return SyncImportInfoDAO.retrieveFromOpenMRSObject(tableInfo, this, recordOriginLocationCode, conn);
 	}
 	
-	public void removeDueInconsistency(AbstractTableConfiguration syncTableInfo, Map<ParentTable, Integer> missingParents,
+	public void removeDueInconsistency(TableConfiguration syncTableInfo, Map<ParentTableImpl, Integer> missingParents,
 	        Connection conn) throws DBException {
 		
 		utilities.throwReviewMethodException();
@@ -834,11 +836,11 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			if (qtyChildren == 0) {
 				continue;
 			} else {
-				List<DatabaseObject> children = DatabaseObjectDAO.getByOriginParentId(refInfo.getRefColumnName(),
+				List<EtlDatabaseObject> children = DatabaseObjectDAO.getByOriginParentId(refInfo.getRefColumnName(),
 				    getRelatedSyncInfo().getRecordOriginId(), getRelatedSyncInfo().getRecordOriginLocationCode(),
 				    refInfo.getRefTableConfiguration(), conn);
 				
-				for (DatabaseObject child : children) {
+				for (EtlDatabaseObject child : children) {
 					child.consolidateData(refInfo.getRefTableConfiguration(), conn);
 				}
 			}
@@ -849,7 +851,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		DatabaseObjectDAO.remove(this, conn);
 	}
 	
-	public Map<ParentTable, Integer> loadMissingParents(AbstractTableConfiguration tableInfo, Connection conn)
+	public Map<ParentTableImpl, Integer> loadMissingParents(TableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		
 		utilities.throwReviewMethodException();
@@ -874,7 +876,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 			
 			try {
 				if (parentId != null) {
-					DatabaseObject parent;
+					EtlDatabaseObject parent;
 					Oid oid = Oid.fastCreate(
 					    refInfo.getRefTableConfiguration().getPrimaryKey().retrieveSimpleKey().getName(), parentId);
 					
@@ -890,7 +892,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 							if (parent == null) {
 								//Try to recover the parent from stage_area and check if this record doesnt exist on destination with same uuid
 								
-								DatabaseObject parentFromSource = new GenericDatabaseObject(
+								EtlDatabaseObject parentFromSource = new GenericDatabaseObject(
 								        refInfo.getRefTableConfiguration());
 								parentFromSource.setObjectId(oid);
 								
@@ -904,7 +906,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 								parentFromSource = sourceInfo.convertToOpenMRSObject(refInfo.getRefTableConfiguration(),
 								    conn);
 								
-								DatabaseObject parentFromDestionationSharingSameObjectId = DatabaseObjectDAO
+								EtlDatabaseObject parentFromDestionationSharingSameObjectId = DatabaseObjectDAO
 								        .getByOid(refInfo.getRefObjectClass(tableInfo.getMainApp()), oid, conn);
 								
 								boolean sameUuid = true;
@@ -932,7 +934,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 				
 			}
 			catch (ParentNotYetMigratedException e) {
-				DatabaseObject parent = utilities.createInstance(refInfo.getRefObjectClass(tableInfo.getMainApp()));
+				EtlDatabaseObject parent = utilities.createInstance(refInfo.getRefObjectClass(tableInfo.getMainApp()));
 				parent.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(parent,
 				    getRelatedSyncInfo().getRecordOriginLocationCode(), true));
 				
@@ -976,10 +978,10 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		return super.equals(obj);
 	}
 	
-	public String generateMissingInfo(Map<ParentTable, Integer> missingParents) {
+	public String generateMissingInfo(Map<ParentTableImpl, Integer> missingParents) {
 		String missingInfo = "";
 		
-		for (Entry<ParentTable, Integer> missing : missingParents.entrySet()) {
+		for (Entry<ParentTableImpl, Integer> missing : missingParents.entrySet()) {
 			missingInfo = utilities.concatStringsWithSeparator(missingInfo,
 			    "[" + missing.getKey().getTableName() + ": " + missing.getValue() + "]", ";");
 		}
@@ -988,10 +990,10 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 		        + "] is in inconsistent state. There are missing these parents: " + missingInfo;
 	}
 	
-	public String generateMissingInfoForSolvedInconsistency(Map<ParentTable, Integer> missingParents) {
+	public String generateMissingInfoForSolvedInconsistency(Map<ParentTableImpl, Integer> missingParents) {
 		String missingInfo = "";
 		
-		for (Entry<ParentTable, Integer> missing : missingParents.entrySet()) {
+		for (Entry<ParentTableImpl, Integer> missing : missingParents.entrySet()) {
 			missingInfo = utilities.concatStringsWithSeparator(missingInfo,
 			    "[" + missing.getKey().getTableName() + ": " + missing.getValue() + "]", ";");
 		}
@@ -1002,11 +1004,11 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@SuppressWarnings("unchecked")
-	public Class<DatabaseObject> tryToGetExistingCLass(File targetDirectory, String fullClassName) {
+	public Class<EtlDatabaseObject> tryToGetExistingCLass(File targetDirectory, String fullClassName) {
 		try {
 			URLClassLoader loader = URLClassLoader.newInstance(new URL[] { targetDirectory.toURI().toURL() });
 			
-			Class<DatabaseObject> c = (Class<DatabaseObject>) loader.loadClass(fullClassName);
+			Class<EtlDatabaseObject> c = (Class<EtlDatabaseObject>) loader.loadClass(fullClassName);
 			
 			loader.close();
 			
@@ -1055,15 +1057,15 @@ public abstract class AbstractDatabaseObject extends BaseVO implements DatabaseO
 	}
 	
 	@Override
-	public void setParentToNull(ParentTable refInfo) {
-		for (RefMapping map : refInfo.getMapping()) {
+	public void setParentToNull(ParentTableImpl refInfo) {
+		for (RefMapping map : refInfo.getRefMapping()) {
 			setFieldValue(map.getChildFieldNameAsAttClass(), null);
 		}
 	}
 	
 	@Override
-	public void changeParentValue(ParentTable refInfo, DatabaseObject newParent) {
-		for (RefMapping map : refInfo.getMapping()) {
+	public void changeParentValue(ParentTable refInfo, EtlDatabaseObject newParent) {
+		for (RefMapping map : refInfo.getRefMapping()) {
 			Object parentValue = newParent.getFieldValue(map.getChildFieldNameAsAttClass());
 			this.setFieldValue(map.getChildFieldNameAsAttClass(), parentValue);
 		}

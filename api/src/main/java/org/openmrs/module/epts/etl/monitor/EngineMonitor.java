@@ -46,7 +46,7 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	protected TableOperationProgressInfo tableOperationProgressInfo;
 	
-	//private List<SyncRecord> recordsToBeReprocessed;
+	//private List<EtlObject> recordsToBeReprocessed;
 	
 	public EngineMonitor(OperationController controller, EtlItemConfiguration etlItemConfiguration,
 	    TableOperationProgressInfo tableOperationProgressInfo) {

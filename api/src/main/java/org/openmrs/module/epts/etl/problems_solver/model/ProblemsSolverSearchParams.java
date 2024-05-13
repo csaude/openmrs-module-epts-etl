@@ -5,9 +5,9 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -21,8 +21,8 @@ public class ProblemsSolverSearchParams extends DatabaseObjectSearchParams {
 	}
 	
 	@Override
-	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		String tableName = "tmp_user";
 		
@@ -68,9 +68,9 @@ public class ProblemsSolverSearchParams extends DatabaseObjectSearchParams {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public Class<DatabaseObject> getRecordClass() {
+	public Class<EtlDatabaseObject> getRecordClass() {
 		try {
-			return (Class<DatabaseObject>) GenericDatabaseObject.class.getClassLoader()
+			return (Class<EtlDatabaseObject>) GenericDatabaseObject.class.getClassLoader()
 			        .loadClass("org.openmrs.module.epts.etl.problems_solver.model.TmpUserVO");
 		}
 		catch (ClassNotFoundException e) {

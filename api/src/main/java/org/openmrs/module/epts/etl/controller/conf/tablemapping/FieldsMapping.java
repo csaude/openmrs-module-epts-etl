@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -99,14 +99,14 @@ public class FieldsMapping {
 		return "[srcField: " + srcField + ", dstField: " + dstField + ", dataSourceName: " + this.dataSourceName + "]";
 	}
 	
-	public Object retrieveValue(DatabaseObject dstObject, List<DatabaseObject> srcObjects, AppInfo appInfo, Connection conn)
+	public Object retrieveValue(EtlDatabaseObject dstObject, List<EtlDatabaseObject> srcObjects, AppInfo appInfo, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
 		if (this.srcValue != null) {
 			return utilities.parseValue(this.srcValue, utilities.getFieldType(dstObject, this.dstField));
 		}
 		
-		for (DatabaseObject srcObject : srcObjects) {
+		for (EtlDatabaseObject srcObject : srcObjects) {
 			if (this.getDataSourceName().equals(srcObject.getRelatedConfiguration().getAlias())) {
 				try {
 					return srcObject.getFieldValue(this.getSrcField());

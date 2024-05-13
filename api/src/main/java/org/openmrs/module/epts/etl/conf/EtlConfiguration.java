@@ -16,6 +16,8 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 
 import org.apache.commons.io.IOUtils;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -34,7 +36,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-public class EtlConfiguration extends BaseConfiguration {
+public class EtlConfiguration extends AbstractBaseConfiguration {
 	
 	public static final String DEFAULT_GENERATED_OBJECT_KEY = "default_generated_object_key";
 	
@@ -130,8 +132,8 @@ public class EtlConfiguration extends BaseConfiguration {
 		this.params = params;
 	}
 	
-	public List<AbstractTableConfiguration> getConfiguredTables() {
-		return configuredTables;
+	public List<TableConfiguration> getConfiguredTables() {
+		return utilities.parseList(configuredTables, TableConfiguration.class);
 	}
 	
 	public void setConfiguredTables(List<AbstractTableConfiguration> configuredTables) {
@@ -592,7 +594,7 @@ public class EtlConfiguration extends BaseConfiguration {
 						
 						dst.setParentConf(tc);
 						
-						code = utilities.stringHasValue(code) ?  code + "_and_" + dst.getTableName() : dst.getTableName();
+						code = utilities.stringHasValue(code) ? code + "_and_" + dst.getTableName() : dst.getTableName();
 					}
 				}
 				
@@ -667,7 +669,11 @@ public class EtlConfiguration extends BaseConfiguration {
 	
 	public static EtlConfiguration loadFromJSON(String json) {
 		try {
-			EtlConfiguration etlConfiguration = new ObjectMapperProvider().getContext(EtlConfiguration.class).readValue(json,
+			Class<?>[] types = new Class<?>[1];
+			
+			types[0] = ParentTableImpl.class;
+			
+			EtlConfiguration etlConfiguration = new ObjectMapperProvider(types).getContext(EtlConfiguration.class).readValue(json,
 			    EtlConfiguration.class);
 			
 			etlConfiguration.init();
@@ -1123,7 +1129,7 @@ public class EtlConfiguration extends BaseConfiguration {
 		
 		String[] paramElements = paramName.split("\\.");
 		
-		Object paramValue = this;
+		Object paramObject = this;
 		
 		//Try to lookup for parameter inside the configuration fields
 		for (String paramElement : paramElements) {
@@ -1133,13 +1139,13 @@ public class EtlConfiguration extends BaseConfiguration {
 			String simpleParamName = arrayParamElements[0];
 			
 			try {
-				if (paramValue instanceof List) {
+				if (paramObject instanceof List) {
 					
 					int pos = Integer.parseInt((arrayParamElements[1]).split("\\]")[0]);
 					
-					paramValue = ((List) paramValue).get(pos);
+					paramObject = ((List) paramObject).get(pos);
 				} else {
-					paramValue = utilities.getFieldValue(paramValue, simpleParamName);
+					paramObject = utilities.getFieldValue(paramObject, simpleParamName);
 				}
 				
 			}
@@ -1148,7 +1154,7 @@ public class EtlConfiguration extends BaseConfiguration {
 			}
 		}
 		
-		return paramValue.toString();
+		return paramObject.toString();
 	}
 	
 	public String getClassPath() {
@@ -1156,12 +1162,10 @@ public class EtlConfiguration extends BaseConfiguration {
 	}
 	
 	public File getClassPathAsFile() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	public void setClassPath(String retrieveClassPath) {
-		// TODO Auto-generated method stub
-		
 	}
+	
 }

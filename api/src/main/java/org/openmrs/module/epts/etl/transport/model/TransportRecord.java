@@ -8,14 +8,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.openmrs.module.epts.etl.model.base.BaseVO;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 /**
  * @author jpboane
  */
-public class TransportRecord extends BaseVO implements SyncRecord {
+public class TransportRecord extends BaseVO implements EtlObject {
 	private File file;
 	private File relatedMinimalInfoFile;
 	private File bkpDirectory;

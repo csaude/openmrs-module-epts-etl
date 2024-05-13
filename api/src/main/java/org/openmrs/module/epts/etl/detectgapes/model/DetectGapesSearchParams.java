@@ -6,12 +6,11 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public class DetectGapesSearchParams extends DatabaseObjectSearchParams {
 	
@@ -32,10 +31,10 @@ public class DetectGapesSearchParams extends DatabaseObjectSearchParams {
 	}
 	
 	@Override
-	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
-		SearchClauses<DatabaseObject> searchClauses = new SearchClauses<DatabaseObject>(this);
+		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		searchClauses.addToClauseFrom(tableInfo.generateFullTableNameWithAlias(conn));
 		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());

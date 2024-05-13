@@ -23,6 +23,7 @@ import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -95,7 +96,9 @@ public class CommonUtilities implements Serializable {
 		return FuncoesGenericas.parseObjectToList(obj);
 	}
 	
-	public <T> List<T> parseObjectToList(Object obj, Class<T> objClass_) {
+	public <T> List<T> parseObjectToList_(Object obj, Class<T> objClass_) {
+		if (obj == null) return null;
+		
 		List<Object> list = new ArrayList<Object>();
 		
 		list.add(obj);
@@ -1074,7 +1077,15 @@ public class CommonUtilities implements Serializable {
 		
 	}
 	
+	public Object getFieldValue(EtlObject obj, String fieldName) throws ForbiddenOperationException {
+		return getFieldValue(obj.getObjectName(),  obj, fieldName);
+	}
+	
 	public Object getFieldValue(Object obj, String fieldName) throws ForbiddenOperationException {
+		return getFieldValue(obj.getClass().getName(),  obj, fieldName);
+	}
+	
+	private Object getFieldValue(String objectName, Object obj, String fieldName) throws ForbiddenOperationException {
 		Object[] fields = getFields(obj);
 		
 		for (int i = 0; i < fields.length; i++) {
@@ -1096,8 +1107,7 @@ public class CommonUtilities implements Serializable {
 			}
 		}
 		
-		throw new ForbiddenOperationException(
-		        "The field '" + fieldName + "' was not found on object '" + obj.getClass().getName() + "'");
+		throw new ForbiddenOperationException("The field '" + fieldName + "' was not found on object '" + objectName + "'");
 	}
 	
 	public Field getField(Object obj, String fieldName) throws ForbiddenOperationException {

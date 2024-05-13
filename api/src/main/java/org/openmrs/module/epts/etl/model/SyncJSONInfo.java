@@ -5,7 +5,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
@@ -42,7 +41,7 @@ public class SyncJSONInfo {
 	public SyncJSONInfo() {
 	}
 	
-	public SyncJSONInfo(String tableName, List<DatabaseObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON)
+	public SyncJSONInfo(String tableName, List<EtlDatabaseObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON)
 	        throws DBException {
 		this.qtyRecords = utilities.arraySize(syncRecords);
 		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(syncRecords, recordOriginLocationCode, generateRecordJSON);
@@ -97,7 +96,7 @@ public class SyncJSONInfo {
 		this.dateGenerated = dateGenerated;
 	}
 	
-	public static SyncJSONInfo generate(String tableName, List<DatabaseObject> syncRecords, String recordOriginLocationCode,
+	public static SyncJSONInfo generate(String tableName, List<EtlDatabaseObject> syncRecords, String recordOriginLocationCode,
 	        boolean generateRecordJSON) throws DBException {
 		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(tableName, syncRecords, recordOriginLocationCode, generateRecordJSON);
 		

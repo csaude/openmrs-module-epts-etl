@@ -12,7 +12,7 @@ import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparation
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
-import org.openmrs.module.epts.etl.model.base.SyncRecord;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -38,7 +38,7 @@ public class DatabasePreparationEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<SyncRecord> migrationRecords, Connection conn) throws DBException {
+	public void performeSync(List<EtlObject> migrationRecords, Connection conn) throws DBException {
 		try {
 			updateTableInfo(conn);
 			
@@ -182,11 +182,11 @@ public class DatabasePreparationEngine extends Engine {
 	}
 	
 	@Override
-	protected List<SyncRecord> searchNextRecords(Connection conn) {
+	protected List<EtlObject> searchNextRecords(Connection conn) {
 		if (updateDone)
 			return null;
 		
-		List<SyncRecord> records = new ArrayList<SyncRecord>();
+		List<EtlObject> records = new ArrayList<EtlObject>();
 		
 		records.add(new DatabasePreparationRecord(getEtlConfiguration().getSrcConf()));
 		
@@ -194,7 +194,7 @@ public class DatabasePreparationEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends SyncRecord> initSearchParams(RecordLimits limits, Connection conn) {
+	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		return new DatabasePreparationSearchParams(this, limits, conn);
 	}
 	

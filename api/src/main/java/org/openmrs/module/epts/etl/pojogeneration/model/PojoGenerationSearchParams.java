@@ -4,12 +4,12 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObject;
 import org.openmrs.module.epts.etl.pojogeneration.engine.PojoGenerationEngine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class PojoGenerationSearchParams extends SyncSearchParams<DatabaseObject> {
+public class PojoGenerationSearchParams extends SyncSearchParams<EtlDatabaseObject> {
 	
 	private PojoGenerationEngine engine;
 	
@@ -20,7 +20,7 @@ public class PojoGenerationSearchParams extends SyncSearchParams<DatabaseObject>
 	}
 	
 	@Override
-	public SearchClauses<DatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		return null;
 	}
 	
