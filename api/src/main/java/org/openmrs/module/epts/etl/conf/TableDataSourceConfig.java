@@ -58,24 +58,26 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	@Override
 	public synchronized void fullLoad(Connection conn) {
 		
-		if (!utilities.stringHasValue(this.getTableAlias())) {
-			this.setTableAlias(getRelatedSrcConf().generateAlias(this));
+		if (isFullLoaded()) {
+			return;
 		}
+		
+		this.setTableAlias(getRelatedSrcConf().generateAlias(this));
 		
 		super.fullLoad(conn);
 		
 		tryToLoadJoinFields();
 		
-		if (utilities.stringHasValue(this.joinExtraCondition)) {
-			this.joinExtraCondition = this.joinExtraCondition.replaceAll(getTableName() + "\\.", getTableAlias() + "\\.");
+		if (hasExtraConditionForExtract()) {
+			this.setJoinExtraCondition(this.joinExtraCondition.replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
 		}
 		
-		if (utilities.arrayHasNoElement(this.joinFields)) {
+		if (!hasJoinFields()) {
 			throw new ForbiddenOperationException("No join fields were difined between " + this.relatedSrcConf.getTableName()
 			        + " And " + this.getTableName());
 		}
 		
-		if (this.joinType == null) {
+		if (!hasJoinType()) {
 			if (utilities.arrayHasMoreThanOneElements(this.getParentConf().getExtraTableDataSource())) {
 				this.joinType = JoinType.LEFT;
 			} else {
@@ -83,18 +85,25 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			}
 		}
 		
-		if (utilities.arrayHasElement(this.selfJoinTables)) {
-			for (AuxExtractTable t : this.selfJoinTables) {
+		if (hasSelfJoinTables()) {
+			for (AuxExtractTable t : this.getSelfJoinTables()) {
 				t.setParentConf(this);
+				t.setMainExtractTable(this);
 				
-				if (!utilities.stringHasValue(t.getTableAlias())) {
-					t.setTableAlias(this.getParentConf().generateAlias(t));
-				}
+				t.setTableAlias(this.getParentConf().generateAlias(t));
 				
 				t.fullLoad(conn);
 			}
 			
 		}
+	}
+	
+	public boolean hasJoinType() {
+		return this.joinType != null;
+	}
+	
+	public boolean hasSelfJoinTables() {
+		return utilities.arrayHasElement(this.selfJoinTables);
 	}
 	
 	public void tryToLoadJoinFields() {

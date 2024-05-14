@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -44,12 +46,14 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	public void clone(TableConfiguration toCloneFrom) {
 		super.clone(toCloneFrom);
 		
-		ParentTableImpl toCloneFromAsParent = (ParentTableImpl)toCloneFrom;
-		
-		this.childTableConf = toCloneFromAsParent.childTableConf;
-		this.conditionalFields = toCloneFromAsParent.conditionalFields;
-		this.defaultValueDueInconsistency = toCloneFromAsParent.defaultValueDueInconsistency;
-		this.setNullDueInconsistency = toCloneFromAsParent.setNullDueInconsistency;
+		if (toCloneFrom instanceof ParentTableImpl) {
+			ParentTableImpl toCloneFromAsParent = (ParentTableImpl) toCloneFrom;
+			
+			this.childTableConf = toCloneFromAsParent.childTableConf;
+			this.conditionalFields = toCloneFromAsParent.conditionalFields;
+			this.defaultValueDueInconsistency = toCloneFromAsParent.defaultValueDueInconsistency;
+			this.setNullDueInconsistency = toCloneFromAsParent.setNullDueInconsistency;
+		}
 	}
 	
 	public TableConfiguration getChildTableConf() {
@@ -141,9 +145,9 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	@Override
 	@JsonIgnore
 	public String toString() {
-		String str = this.getTableName();
+		String str = this.hasRelated() ? this.getRelatedTabConf().getTableName() + ">>" : "";
 		
-		str += this.hasRelated() ? ">>" + this.getRelatedTabConf().getTableName() : "";
+		str += this.getTableName();
 		
 		String mappingStr = "";
 		
@@ -161,5 +165,14 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 		}
 		
 		return str;
+	}
+	
+	@Override
+	public Oid generateParentOidFromChild(EtlDatabaseObject obj) {
+		Oid oid = super.generateParentOidFromChild(obj);
+		
+		oid.setTabConf(this);
+		
+		return oid;
 	}
 }

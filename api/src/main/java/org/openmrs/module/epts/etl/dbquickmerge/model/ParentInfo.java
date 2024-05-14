@@ -5,25 +5,33 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
 public class ParentInfo {
 	
-	private EtlDatabaseObject parentRecord;
+	private EtlDatabaseObject parentRecordInOrigin;
 	
-	private ParentTable parentTableConf;
+	private ParentTable parentTabConfInDst;
 	
-	public ParentInfo(ParentTable refInfo, EtlDatabaseObject parentRecord) {
-		this.parentTableConf = refInfo;
-		this.parentRecord = parentRecord;
+	public ParentInfo(ParentTable parentTableConfInDestination, EtlDatabaseObject parentRecordInOrigin) {
+		this.parentRecordInOrigin = parentRecordInOrigin;
+		this.parentTabConfInDst = parentTableConfInDestination;
 	}
 	
-	public ParentTable getParentTableConf() {
-		return parentTableConf;
+	public void setParentTableConfInDestination(ParentTable parentTableConfInDestination) {
+		this.parentTabConfInDst = parentTableConfInDestination;
 	}
 	
-	public EtlDatabaseObject getParentRecord() {
-		return parentRecord;
+	public EtlDatabaseObject getParentRecordInOrigin() {
+		return parentRecordInOrigin;
+	}
+	
+	public void setParentRecordInOrigin(EtlDatabaseObject parentRecordInOrigin) {
+		this.parentRecordInOrigin = parentRecordInOrigin;
 	}
 	
 	@Override
 	public String toString() {
-		return "parentTable:" + parentTableConf.getTableName() + ", parentId " + parentRecord;
+		return "parentTable:" + parentTabConfInDst.getTableName() + ", objectId " + parentRecordInOrigin;
+	}
+	
+	public ParentTable getParentTableConfInDst() {
+		return this.parentTabConfInDst;
 	}
 }

@@ -13,7 +13,8 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	
 	void setRelatedSrcConf(SrcConf relatedSrcConf);
 	
-	EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection conn, AppInfo srcAppInfo) throws DBException;
+	EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection conn, AppInfo srcAppInfo)
+	        throws DBException;
 	
 	/**
 	 * Tels weather this source is mandatory or not. If it is required and it returns an empty

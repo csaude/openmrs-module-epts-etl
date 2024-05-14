@@ -36,9 +36,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void refreshLastSyncDateOnDestination(EtlDatabaseObject syncRecord,
-	        TableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
-	        throws DBException {
+	public static void refreshLastSyncDateOnDestination(EtlDatabaseObject syncRecord, TableConfiguration tableConfiguration,
+	        String recordOriginLocationCode, Connection conn) throws DBException {
 		refreshLastSyncDate(syncRecord, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
@@ -66,14 +65,12 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static void refreshLastSyncDateOnDestination(List<EtlDatabaseObject> syncRecords,
-	        TableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
-	        throws DBException {
+	        TableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn) throws DBException {
 		refreshLastSyncDate(syncRecords, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
 	public static void refreshLastSyncDateOnOrigin(List<EtlDatabaseObject> syncRecords,
-	        TableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn)
-	        throws DBException {
+	        TableConfiguration tableConfiguration, String recordOriginLocationCode, Connection conn) throws DBException {
 		refreshLastSyncDate(syncRecords, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
@@ -169,8 +166,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return getByUniqueKeys(tableConfiguration, DBUtilities.determineSchemaName(conn), obj, conn);
 	}
 	
-	public static <T extends EtlDatabaseObject> T getByUniqueKey(TableConfiguration tableConfiguration,
-	        UniqueKeyInfo uk, Connection conn) throws DBException {
+	public static <T extends EtlDatabaseObject> T getByUniqueKey(TableConfiguration tableConfiguration, UniqueKeyInfo uk,
+	        Connection conn) throws DBException {
 		return getByUniqueKey(tableConfiguration, uk, DBUtilities.determineSchemaName(conn), conn);
 	}
 	
@@ -269,8 +266,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return objs;
 	}
 	
-	public static <T extends EtlDatabaseObject> List<T> getByField(TableConfiguration tableConfiguration,
-	        String fieldName, String fieldValue, Connection conn) throws DBException {
+	public static <T extends EtlDatabaseObject> List<T> getByField(TableConfiguration tableConfiguration, String fieldName,
+	        String fieldValue, Connection conn) throws DBException {
 		
 		Object[] params = { fieldValue };
 		
@@ -332,8 +329,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends EtlDatabaseObject> T getByIdOnSpecificSchema(TableConfiguration tabConf, Oid oid,
-	        String schema, Connection conn) throws DBException {
+	public static <T extends EtlDatabaseObject> T getByIdOnSpecificSchema(TableConfiguration tabConf, Oid oid, String schema,
+	        Connection conn) throws DBException {
 		try {
 			
 			Class<T> openMRSClass = (Class<T>) tabConf.getSyncRecordClass(tabConf.getRelatedAppInfo());
@@ -399,8 +396,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return getConsistentRecordInOrigin(tableInfo, "max", conn);
 	}
 	
-	private static GenericDatabaseObject getConsistentRecordInOrigin(TableConfiguration tableConfiguration,
-	        String function, Connection conn) throws DBException {
+	private static GenericDatabaseObject getConsistentRecordInOrigin(TableConfiguration tableConfiguration, String function,
+	        Connection conn) throws DBException {
 		
 		utilities.throwReviewMethodException();
 		
@@ -529,8 +526,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return search(tabConf.getLoadHealper(), clazz, sql, params, conn);
 	}
 	
-	private static void insertAllMetadata(List<EtlDatabaseObject> records, TableConfiguration tableInfo,
-	        Connection conn) throws DBException {
+	private static void insertAllMetadata(List<EtlDatabaseObject> records, TableConfiguration tableInfo, Connection conn)
+	        throws DBException {
 		if (!tableInfo.isMetadata())
 			throw new ForbiddenOperationException(
 			        "You tried to insert " + tableInfo.getTableName() + " as metadata but it is not a metadata!!!");
@@ -787,13 +784,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return getPhantomRecordInDestination(tableConfiguration, "min", conn);
 	}
 	
-	public static EtlDatabaseObject getLastPhantomRecordInDestination(TableConfiguration tableConfiguration,
-	        Connection conn) throws DBException {
+	public static EtlDatabaseObject getLastPhantomRecordInDestination(TableConfiguration tableConfiguration, Connection conn)
+	        throws DBException {
 		return getPhantomRecordInDestination(tableConfiguration, "max", conn);
 	}
 	
-	private static EtlDatabaseObject getPhantomRecordInDestination(TableConfiguration tableConfiguration,
-	        String function, Connection conn) throws DBException {
+	private static EtlDatabaseObject getPhantomRecordInDestination(TableConfiguration tableConfiguration, String function,
+	        Connection conn) throws DBException {
 		Object[] params = {};
 		
 		String sql = "";

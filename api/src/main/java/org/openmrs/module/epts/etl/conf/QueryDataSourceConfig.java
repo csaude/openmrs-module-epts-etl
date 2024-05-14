@@ -409,5 +409,14 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	public AppInfo getRelatedAppInfo() {
 		return getRelatedSrcConf().getMainApp();
 	}
+
+	@Override
+	public List<AuxExtractTable> getSelfJoinTables() {
+		return null;
+	}
+
+	@Override
+	public void setSelfJoinTables(List<AuxExtractTable> setSelfJoinTables) {
+	}
 	
 }

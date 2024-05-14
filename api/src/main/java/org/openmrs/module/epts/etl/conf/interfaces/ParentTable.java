@@ -3,6 +3,8 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
@@ -59,18 +61,28 @@ public interface ParentTable extends RelatedTable {
 		
 		return conditionFields;
 	}
-
 	
 	default boolean hasConditionalFields() {
 		return utilities.arrayHasElement(this.getConditionalFields());
 	}
 	
-
-	Object getDefaultValueDueInconsistency() ;
+	default DstConf findRelatedDstConf() {
+		for (EtlItemConfiguration conf : getRelatedSyncConfiguration().getEtlItemConfiguration()) {
+			for (DstConf dst : conf.getDstConf()) {
+				if (dst.getTableName().equals(this.getTableName())) {
+					return dst;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	Object getDefaultValueDueInconsistency();
 	
 	void setDefaultValueDueInconsistency(Object defaultValueDueInconsistency);
 	
-	boolean isSetNullDueInconsistency() ;
+	boolean isSetNullDueInconsistency();
 	
 	void setSetNullDueInconsistency(boolean setNullDueInconsistency);
 	

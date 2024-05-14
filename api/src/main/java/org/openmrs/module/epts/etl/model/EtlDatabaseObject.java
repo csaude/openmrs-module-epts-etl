@@ -279,7 +279,7 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		return fieldValues;
 	}
-	
+
 	void fastCreateSimpleNumericKey(long i);
 	
 	void loadWithDefaultValues();

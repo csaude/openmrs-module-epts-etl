@@ -86,13 +86,11 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public synchronized void fullLoad() throws DBException {
-		
-		if (this.fullLoaded) {
+		if (this.isFullLoaded()) {
 			return;
 		}
-		if (!utilities.stringHasValue(this.getTableAlias())) {
-			this.setTableAlias(generateAlias(this));
-		}
+		
+		this.setTableAlias(generateAlias(this));
 		
 		super.fullLoad();
 		
@@ -100,25 +98,25 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			for (ParentTable ref : this.getParentRefInfo()) {
 				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getTableName());
 				
+				ref.setTableAlias(generateAlias(ref));
+				
 				if (fullLoadedTab != null) {
 					ref.clone(fullLoadedTab);
 				} else {
-					ref.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
 					ref.fullLoad();
 				}
-				
-				ref.setTableAlias(generateAlias(ref));
 				
 				if (ref.useSharedPKKey()) {
 					fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getSharedKeyRefInfo().getTableName());
 					
+					if (!ref.getSharedKeyRefInfo().hasAlias()) {
+						ref.getSharedKeyRefInfo().setTableAlias(generateAlias(ref.getSharedKeyRefInfo()));
+					}
 					if (fullLoadedTab != null) {
 						ref.getSharedKeyRefInfo().clone(fullLoadedTab);
 					} else {
 						ref.getSharedKeyRefInfo().fullLoad();
 					}
-					
-					ref.getSharedKeyRefInfo().setTableAlias(generateAlias(ref.getSharedKeyRefInfo()));
 				}
 				
 			}
@@ -128,9 +126,11 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		try {
 			
-			if (utilities.arrayHasElement(this.selfJoinTables)) {
-				for (AuxExtractTable t : this.selfJoinTables) {
+			if (hasSelfJoinTables()) {
+				for (AuxExtractTable t : this.getSelfJoinTables()) {
 					t.setParentConf(this);
+					t.setTableAlias(this.generateAlias(t));
+					t.setMainExtractTable(this);
 					
 					TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getTableName());
 					
@@ -139,20 +139,18 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					} else {
 						t.fullLoad(srcConn);
 					}
-					
-					t.setTableAlias(this.generateAlias(t));
 				}
 			}
 			
-			if (utilities.arrayHasElement(this.extraTableDataSource)) {
-				for (TableDataSourceConfig t : this.extraTableDataSource) {
+			if (hasExtraTableDataSourceConfig()) {
+				for (TableDataSourceConfig t : this.getExtraTableDataSource()) {
 					
 					TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getTableName());
 					
+					t.setTableAlias(this.generateAlias(t));
+					
 					if (fullLoadedTab != null) {
 						t.clone(fullLoadedTab);
-						
-						t.setTableAlias(this.generateAlias(t));
 					} else {
 						t.fullLoad(srcConn);
 					}
@@ -160,6 +158,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					t.setRelatedSrcConf(this);
 					
 					if (t.useSharedPKKey()) {
+						t.getSharedKeyRefInfo().setTableAlias(generateAlias(t.getSharedKeyRefInfo()));
+						
 						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getSharedKeyRefInfo().getTableName());
 						
 						if (fullLoadedTab != null) {
@@ -167,30 +167,26 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 						} else {
 							t.getSharedKeyRefInfo().fullLoad();
 						}
-						
-						t.getSharedKeyRefInfo().setTableAlias(generateAlias(t.getSharedKeyRefInfo()));
 					}
-					
 				}
-				
 			}
 			
-			if (utilities.arrayHasElement(this.extraQueryDataSource)) {
-				for (QueryDataSourceConfig query : this.extraQueryDataSource) {
+			if (hasExtraQueryDataSourceConfig()) {
+				for (QueryDataSourceConfig query : this.getExtraQueryDataSource()) {
 					query.setRelatedSrcConf(this);
 					query.fullLoad(srcConn);
 				}
 			}
 		}
 		catch (Exception e) {
-			srcConn.finalizeConnection();
-			
 			e.printStackTrace();
+			
+			srcConn.finalizeConnection();
 			
 			throw new RuntimeException(e);
 		}
 		
-		this.fullLoaded = true;
+		this.setFullLoaded(true);
 	}
 	
 	public void setFullLoaded(boolean fullLoaded) {
@@ -198,11 +194,11 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public QueryDataSourceConfig findAdditionalDataSrc(String dsName) {
-		if (!utilities.arrayHasElement(this.extraQueryDataSource)) {
+		if (!hasExtraQueryDataSourceConfig()) {
 			return null;
 		}
 		
-		for (QueryDataSourceConfig src : this.extraQueryDataSource) {
+		for (QueryDataSourceConfig src : this.getExtraQueryDataSource()) {
 			if (src.getName().equals(dsName)) {
 				return src;
 			}
@@ -246,7 +242,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		if (useSharedPKKey()) {
 			//Parce the shared parent to datasource
 			utilities.updateOnArray(this.getParentRefInfo(), getSharedKeyRefInfo(),
-			    SharedPkDataSource.generateFromSrcConfSharedPkParent(this));
+			    ParentAsSrcDataSource.generateFromSrcConfSharedPkParent(this, getSharedKeyRefInfo()));
 		}
 	}
 	
@@ -258,12 +254,12 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			ds.add((EtlAdditionalDataSource) getSharedKeyRefInfo());
 		}
 		
-		if (utilities.arrayHasElement(this.extraTableDataSource)) {
-			ds.addAll(utilities.parseList(this.extraTableDataSource, EtlAdditionalDataSource.class));
+		if (hasExtraTableDataSourceConfig()) {
+			ds.addAll(this.getExtraTableDataSource());
 		}
 		
-		if (utilities.arrayHasElement(this.extraQueryDataSource)) {
-			ds.addAll(utilities.parseList(this.extraQueryDataSource, EtlAdditionalDataSource.class));
+		if (hasExtraQueryDataSourceConfig()) {
+			ds.addAll(this.getExtraQueryDataSource());
 		}
 		
 		return ds;
@@ -283,9 +279,9 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			fields.add(f);
 		}
 		
-		if (this.extraTableDataSource != null) {
+		if (hasExtraTableDataSourceConfig()) {
 			
-			for (EtlAdditionalDataSource ds : this.extraTableDataSource) {
+			for (EtlAdditionalDataSource ds : this.getExtraTableDataSource()) {
 				for (Field f : ds.getFields()) {
 					
 					if (!fields.contains(f)) {
@@ -304,6 +300,11 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	public boolean hasExtraQueryDataSourceConfig() {
 		return utilities.arrayHasElement(this.extraQueryDataSource);
+		
+	}
+	
+	public boolean hasSelfJoinTables() {
+		return utilities.arrayHasElement(getSelfJoinTables());
 	}
 	
 }

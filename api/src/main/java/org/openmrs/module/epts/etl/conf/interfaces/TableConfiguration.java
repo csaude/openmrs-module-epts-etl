@@ -144,7 +144,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default void clone(TableConfiguration toCloneFrom) {
 		this.setTableName(toCloneFrom.getTableName());
-		this.setTableAlias(toCloneFrom.getTableAlias());
 		this.setParents(toCloneFrom.getParents());
 		this.setMustLoadChildrenInfo(toCloneFrom.isMustLoadChildrenInfo());
 		
@@ -155,7 +154,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setParentRefInfo(toCloneFrom.getParentRefInfo());
 		this.setSyncRecordClass(toCloneFrom.getSyncRecordClass());
 		this.setParentConf(toCloneFrom.getParentConf());
+		
 		this.setPrimaryKey(toCloneFrom.getPrimaryKey());
+		
+		if (this.hasPrimaryKey()) {
+			this.getPrimaryKey().setTabConf(this);
+		}
+		
 		this.setSharePkWith(toCloneFrom.getSharePkWith());
 		this.setMetadata(toCloneFrom.isMetadata());
 		this.setFullLoaded(toCloneFrom.isFullLoaded());
@@ -169,6 +174,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setInsertSQLWithObjectId(toCloneFrom.getInsertSQLWithObjectId());
 		this.setInsertSQLWithoutObjectId(toCloneFrom.getInsertSQLWithoutObjectId());
 		this.setUpdateSql(toCloneFrom.getUpdateSql());
+		this.setRelatedSyncConfiguration(toCloneFrom.getRelatedSyncConfiguration());
+	}
+	
+	default boolean hasPrimaryKey() {
+		return this.getPrimaryKey() != null;
 	}
 	
 	void setParentConf(EtlDataConfiguration parentConf);
@@ -492,6 +502,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						
 						parentTabConf.setParentConf(this.getParentConf());
 						parentTabConf.setChildTableConf(this);
+						parentTabConf.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
 						
 						addParentMappingInfo(refCode, childFieldName, parentTabConf, parentFieldName, conn);
 						
@@ -644,8 +655,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						ChildTable childTabConf = ChildTable.init(childTableName, refCode);
 						
 						childTabConf.setParentTableConf(this);
-						
 						childTabConf.setParentConf(this.getParentConf());
+						childTabConf.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
 						
 						addChildMappingInfo(refCode, childTabConf, childFieldName, parentFieldName, conn);
 						
@@ -947,6 +958,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@Override
 	default void fullLoad(Connection conn) {
 		
+		if (!hasAlias())
+			throw new ForbiddenOperationException("The table alias is not defined!");
+		
 		synchronized (this) {
 			
 			try {
@@ -1060,7 +1074,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
-	default TableConfiguration getSharedTableConf() {
+	default ParentTable getSharedTableConf() {
 		if (getSharedKeyRefInfo() != null) {
 			return getSharedKeyRefInfo();
 		}
@@ -1680,6 +1694,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						existingConf = this.findFullConfiguredConfInAllRelatedTable(ref.getTableName());
 					}
 					
+					if (!ref.hasAlias()) {
+						ref.setTableAlias(aliasGenerator.generateAlias(ref));
+					}
+					
 					if (existingConf != null) {
 						ref.clone(ref);
 					} else {
@@ -1689,7 +1707,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					ref.fullLoadAllRelatedTables(aliasGenerator, this, conn);
 				}
 				
-				ref.setTableAlias(aliasGenerator.generateAlias(ref));
 			}
 			
 			this.setAllRelatedTablesFullLoaded(true);

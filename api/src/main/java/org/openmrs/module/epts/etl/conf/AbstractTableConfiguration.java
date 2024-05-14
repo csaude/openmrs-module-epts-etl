@@ -129,6 +129,9 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	public void setTableAlias(String tableAlias) {
+		if (hasAlias())
+			throw new ForbiddenOperationException("This table has already an alias and change is forbidden!");
+		
 		this.tableAlias = tableAlias;
 	}
 	

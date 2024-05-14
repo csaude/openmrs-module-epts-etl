@@ -1,9 +1,14 @@
 package org.openmrs.module.epts.etl.conf;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.etl.model.EtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.SearchClauses;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -72,7 +77,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	public synchronized void fullLoad() throws DBException {
-		if (this.fullLoaded) {
+		if (this.isFullLoaded()) {
 			return;
 		}
 		
@@ -108,19 +113,13 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 					
 					if (DBUtilities.isTableExists(dstConn.getSchema(), map.getTableName(), dstConn)) {
 						map.fullLoad(dstConn);
-						
-						if (map.useSharedPKKey()) {
-							map.getSharedKeyRefInfo().fullLoad(dstConn);
-						}
-						
 					}
 					
 					map.generateAllFieldsMapping(dstConn);
-					
 				}
 			}
 			
-			this.fullLoaded = true;
+			this.setFullLoaded(true);
 		}
 		catch (
 		
@@ -186,6 +185,26 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	@Override
 	public String toString() {
-		return  this.configCode;
+		return this.configCode;
+	}
+	
+	public EtlDatabaseObject retrieveRecordInSrc(EtlDatabaseObject parentRecordInOrigin, Connection srcConn)
+	        throws DBException {
+		EtlSearchParams searchParams = new EtlSearchParams(this, null, null);
+		
+		searchParams.setExtraCondition(this.getSrcConf().getPrimaryKey().parseToParametrizedStringCondition());
+		
+		searchParams.setSyncStartDate(getRelatedSyncConfiguration().getStartDate());
+		
+		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(srcConn);
+		
+		searchClauses.addToParameters(parentRecordInOrigin.getObjectId().parseValuesToArray());
+		
+		String sql = searchClauses.generateSQL(srcConn);
+		
+		EtlDatabaseObject simpleValue = DatabaseObjectDAO.find(getSrcConf().getLoadHealper(),
+		    getSrcConf().getSyncRecordClass(getMainApp()), sql, searchClauses.getParameters(), srcConn);
+		
+		return simpleValue;
 	}
 }

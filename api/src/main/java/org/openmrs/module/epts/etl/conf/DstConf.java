@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
@@ -264,7 +265,9 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) {
-		setTableAlias(getSrcConf().generateAlias(this));
+		if (!hasAlias()) {
+			setTableAlias(getSrcConf().generateAlias(this));
+		}
 		
 		super.fullLoad(conn);
 		
@@ -276,14 +279,6 @@ public class DstConf extends AbstractTableConfiguration {
 		if (utilities.arrayHasElement(getSrcConf().getAvaliableExtraDataSource())) {
 			allAvaliableDataSource
 			        .addAll(utilities.parseList(getSrcConf().getAvaliableExtraDataSource(), EtlDataSource.class));
-		}
-		
-		if (useSharedPKKey()) {
-			SharedPkDstConf sharedAsDst = SharedPkDstConf.generateFromSrcConfSharedPkParent(this);
-			
-			sharedAsDst.setTableAlias(getSrcConf().generateAlias(sharedAsDst));
-			
-			utilities.updateOnArray(getParentRefInfo(), getSharedKeyRefInfo(), sharedAsDst);
 		}
 		
 		this.fullLoadAllRelatedTables(getSrcConf(), null, conn);
@@ -394,24 +389,23 @@ public class DstConf extends AbstractTableConfiguration {
 				}
 			}
 			
-			if (utilities.arrayHasElement(this.getSrcConf().getExtraQueryDataSource())) {
-				for (QueryDataSourceConfig mappingInfo : this.getSrcConf().getExtraQueryDataSource()) {
-					EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
+			for (EtlAdditionalDataSource mappingInfo : this.getSrcConf().getAvaliableExtraDataSource()) {
+				EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
+				
+				if (relatedSrcObject == null) {
 					
-					if (relatedSrcObject == null) {
-						
-						if (mappingInfo.isRequired()) {
-							return null;
-						} else {
-							relatedSrcObject = mappingInfo.getSyncRecordClass(srcAppInfo).newInstance();
-							relatedSrcObject.setRelatedConfiguration(mappingInfo);
-						}
+					if (mappingInfo.isRequired()) {
+						return null;
+					} else {
+						relatedSrcObject = mappingInfo.getSyncRecordClass(srcAppInfo).newInstance();
+						relatedSrcObject.setRelatedConfiguration(mappingInfo);
 					}
-					
-					srcObjects.add(relatedSrcObject);
-					
 				}
+				
+				srcObjects.add(relatedSrcObject);
+				
 			}
+			
 			EtlDatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
 			
 			mappedObject.setRelatedConfiguration(this);

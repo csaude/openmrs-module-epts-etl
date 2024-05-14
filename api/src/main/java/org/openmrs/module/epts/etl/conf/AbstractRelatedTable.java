@@ -31,10 +31,12 @@ public abstract class AbstractRelatedTable extends AbstractTableConfiguration im
 	public void clone(TableConfiguration toCloneFrom) {
 		super.clone(toCloneFrom);
 		
-		AbstractRelatedTable toCloneFromAsRelated = (AbstractRelatedTable) toCloneFrom;
-		
-		this.refCode = toCloneFromAsRelated.refCode;
-		this.refMapping = toCloneFromAsRelated.refMapping;
+		if (toCloneFrom instanceof AbstractRelatedTable) {
+			AbstractRelatedTable toCloneFromAsRelated = (AbstractRelatedTable) toCloneFrom;
+			
+			this.refCode = toCloneFromAsRelated.refCode;
+			this.refMapping = toCloneFromAsRelated.refMapping;
+		}
 	}
 	
 	public String getRefCode() {

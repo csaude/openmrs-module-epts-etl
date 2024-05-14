@@ -350,7 +350,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	public void changeParentValue(ParentTable refInfo, EtlDatabaseObject newParent) {
 		for (RefMapping map : refInfo.getRefMapping()) {
-			Object parentValue = newParent.getFieldValue(map.getChildFieldName());
+			Object parentValue = newParent.getFieldValue(map.getParentFieldName());
 			this.setFieldValue(map.getChildFieldName(), parentValue);
 		}
 		

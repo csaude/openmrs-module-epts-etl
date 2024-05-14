@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.conf;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -8,11 +9,11 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class SharedPkDataSource extends ParentTableImpl implements EtlAdditionalDataSource {
+public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditionalDataSource {
 	
 	private SrcConf relatedSrcConf;
 	
-	public SharedPkDataSource() {
+	public ParentAsSrcDataSource() {
 	}
 	
 	@Override
@@ -42,20 +43,23 @@ public class SharedPkDataSource extends ParentTableImpl implements EtlAdditional
 		return true;
 	}
 	
-	public static SharedPkDataSource generateFromSrcConfSharedPkParent(SrcConf src) throws ForbiddenOperationException {
-		
-		if (!src.useSharedPKKey())
-			throw new ForbiddenOperationException("The source table '" + src.getTableName() + "' does not use shared pk!");
-		
-		
-		ParentTable parent = src.getSharedKeyRefInfo();
-		
-		SharedPkDataSource ds = new SharedPkDataSource();
+	public static ParentAsSrcDataSource generateFromSrcConfSharedPkParent(SrcConf mainSrcConf, ParentTable parent)
+	        throws ForbiddenOperationException {
+		ParentAsSrcDataSource ds = new ParentAsSrcDataSource();
 		
 		ds.clone(parent);
 		
-		ds.relatedSrcConf = src;
+		ds.relatedSrcConf = mainSrcConf;
 		
 		return ds;
+	}
+	
+	@Override
+	public List<AuxExtractTable> getSelfJoinTables() {
+		return null;
+	}
+	
+	@Override
+	public void setSelfJoinTables(List<AuxExtractTable> setSelfJoinTables) {
 	}
 }

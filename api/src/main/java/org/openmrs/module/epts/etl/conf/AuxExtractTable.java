@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 
@@ -23,12 +24,22 @@ public class AuxExtractTable extends AbstractTableConfiguration {
 	 */
 	private JoinType joinType;
 	
+	private EtlDataSource mainExtractTable;
+	
 	public JoinType getJoinType() {
 		return joinType;
 	}
 	
 	public void setJoinType(JoinType joinType) {
 		this.joinType = joinType;
+	}
+	
+	public void setMainExtractTable(EtlDataSource mainExtractTable) {
+		this.mainExtractTable = mainExtractTable;
+	}
+	
+	public EtlDataSource getMainExtractTable() {
+		return mainExtractTable;
 	}
 	
 	@Override
@@ -42,11 +53,21 @@ public class AuxExtractTable extends AbstractTableConfiguration {
 		}
 		
 		if (utilities.arrayHasNoElement(this.joinFields)) {
-			throw new ForbiddenOperationException("No join fields were difined between " + this.getParentConf().getTableName()
-			        + " And " + this.getTableName());
+			throw new ForbiddenOperationException("No join fields were difined between "
+			        + this.getParentConf().getTableName() + " And " + this.getTableName());
 		}
 		
-		this.joinType = JoinType.LEFT;
+		if (!hasJoinType()) {
+			if (getMainExtractTable().getSelfJoinTables().size() == 1) {
+				this.joinType = JoinType.INNER;
+			} else {
+				this.joinType = JoinType.LEFT;
+			}
+		}
+	}
+	
+	public boolean hasJoinType() {
+		return this.getJoinType() != null;
 	}
 	
 	public boolean hasJoinFields() {

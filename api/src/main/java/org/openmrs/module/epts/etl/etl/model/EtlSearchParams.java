@@ -5,8 +5,6 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
-import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
-import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -52,8 +50,10 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 					searchClauses.addToParameters(params);
 				}
 				
-				clauseFrom = clauseFrom + " " + joinType + " join " + aux.getTableName() + " " + aux.getTableAlias() + " on "
-				        + extraJoinQuery;
+				String newLine = clauseFrom.toUpperCase().contains("JOIN") ? "\n" : "";
+				
+				clauseFrom = clauseFrom + " " + newLine + joinType + " join " + aux.getTableName() + " "
+				        + aux.getTableAlias() + " on " + extraJoinQuery;
 				
 				if (aux.getJoinType().isLeftJoin()) {
 					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
@@ -63,6 +63,7 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 			
 		}
 		
+		/*
 		if (srcConfig.hasExtraTableDataSourceConfig()) {
 			for (TableDataSourceConfig t : getExtraTableDataSource()) {
 				searchClauses.addColumnToSelect(t.generateFullAliasedSelectColumns());
@@ -80,8 +81,10 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 					searchClauses.addToParameters(params);
 				}
 				
-				clauseFrom = clauseFrom + " " + joinType + " join " + t.getTableName() + " " + t.getTableAlias() + " on "
-				        + extraJoinQuery + "\n";
+				String newLine = clauseFrom.toUpperCase().contains("JOIN") ? "\n" : "";
+				
+				clauseFrom = clauseFrom + " " + newLine + joinType + " join " + t.getTableName() + " " + t.getTableAlias()
+				        + " on " + extraJoinQuery;
 				
 				if (t.useSharedPKKey()) {
 					
@@ -107,8 +110,10 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 							searchClauses.addToParameters(params);
 						}
 						
-						clauseFrom = clauseFrom + " " + joinType + " join " + aux.getTableName() + " " + aux.getTableAlias()
-						        + " on " + extraJoinQuery;
+						newLine = clauseFrom.toUpperCase().contains("JOIN") ? "\n" : "";
+						
+						clauseFrom = clauseFrom + " " + newLine + joinType + " join " + aux.getTableName() + " "
+						        + aux.getTableAlias() + " on " + extraJoinQuery;
 						
 					}
 					
@@ -119,6 +124,8 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 				searchClauses.addToClauses(additionalLeftJoinFields);
 			}
 		}
+		
+		*/
 		
 		searchClauses.addToClauseFrom(clauseFrom);
 		

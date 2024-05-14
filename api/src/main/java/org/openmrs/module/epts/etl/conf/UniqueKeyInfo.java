@@ -71,7 +71,6 @@ public class UniqueKeyInfo {
 	public String retrieveSimpleKeyColumnName() {
 		return retrieveSimpleKey().getName();
 	}
-
 	
 	public String retrieveSimpleKeyColumnNameAsClassAtt() {
 		return retrieveSimpleKey().getNameAsClassAtt();
@@ -118,10 +117,11 @@ public class UniqueKeyInfo {
 							value = object.getSharedPkObj().getFieldValue(field.getName());
 						}
 						catch (ForbiddenOperationException e1) {
-							value = object.getSharedPkObj().getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(field.getName()));
-						}	
-					}
-					else throw e;
+							value = object.getSharedPkObj()
+							        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(field.getName()));
+						}
+					} else
+						throw e;
 				}
 			}
 			catch (ForbiddenOperationException e) {
@@ -133,7 +133,6 @@ public class UniqueKeyInfo {
 		
 		this.fieldValuesLoaded = true;
 	}
-	
 	
 	public static List<UniqueKeyInfo> loadUniqueKeysInfo(TableConfiguration tableConfiguration, Connection conn)
 	        throws DBException {
@@ -348,18 +347,6 @@ public class UniqueKeyInfo {
 		return cloned;
 	}
 	
-	public Object[] parseValuesToArray() {
-		Object[] values = new Object[this.getFields().size()];
-		
-		for (int i = 0; i < this.getFields().size(); i++) {
-			Key key = this.getFields().get(i);
-			
-			values[i] = key.getValue();
-		}
-		
-		return values;
-	}
-	
 	@JsonIgnore
 	public String[] parseFieldNamesToArray() {
 		String[] fields = new String[this.getFields().size()];
@@ -416,7 +403,27 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
+	public Object[] parseValuesToArray() {
+		Object[] values = new Object[this.getFields().size()];
+		
+		for (int i = 0; i < this.getFields().size(); i++) {
+			Key key = this.getFields().get(i);
+			
+			values[i] = key.getValue();
+		}
+		
+		return values;
+	}
+	
 	public String parseToParametrizedStringCondition() {
+		if (getTabConf() == null) {
+			throw new ForbiddenOperationException("The tabConf is needed");
+		}
+		
+		if (!getTabConf().hasAlias()) {
+			throw new ForbiddenOperationException("The table " + getTabConf().getTableName() + " has no alias!");
+		}
+		
 		String fields = "";
 		
 		for (int i = 0; i < this.getFields().size(); i++) {
@@ -426,7 +433,7 @@ public class UniqueKeyInfo {
 				fields += " AND ";
 			}
 			
-			fields += key.getName() + " = ? ";
+			fields += tabConf.getAlias() + "." + key.getName() + " = ? ";
 		}
 		
 		return fields;
@@ -450,7 +457,7 @@ public class UniqueKeyInfo {
 		return tabConf;
 	}
 	
-	public void setTabConf(AbstractTableConfiguration tabConf) {
+	public void setTabConf(TableConfiguration tabConf) {
 		this.tabConf = tabConf;
 	}
 	

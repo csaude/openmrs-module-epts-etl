@@ -1,8 +1,15 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
+import java.util.List;
+
+import org.openmrs.module.epts.etl.conf.AuxExtractTable;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 
 public interface EtlDataSource extends DatabaseObjectConfiguration {
 	
 	String getName();
+	
+	List<AuxExtractTable> getSelfJoinTables();
+	
+	void setSelfJoinTables(List<AuxExtractTable> setSelfJoinTables);
 }
