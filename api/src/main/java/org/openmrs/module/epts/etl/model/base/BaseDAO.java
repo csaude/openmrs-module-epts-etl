@@ -43,43 +43,6 @@ public abstract class BaseDAO {
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	/**
-	 * The datasource (we need only one for the whole program).
-	 */
-	//private static List<DataSourceInfo> dataSources = new ArrayList<>();
-	
-	/**
-	 * Returns the datasource. Looks it up in context on the first call.
-	 * 
-	 * @return The datasource.
-	 * @throws DBException
-	 */
-	/*public static DataSource getDataSource(String  context) throws DBException{
-		return  tryToGetDataSourceFromContext(context);
-	}
-		
-	private static synchronized DataSource tryToGetDataSourceFromContext(String  context) throws DBException{
-		DataSource dataSource = DataSourceInfo.findDataSource(dataSources, context);
-		
-		if(dataSource == null){
-			try{
-				TimeZone timeZone = TimeZone.getTimeZone("Africa/Johannesburg");
-				TimeZone.setDefault(timeZone);
-			     
-				Context initContext = new InitialContext();				
-				dataSource = (DataSource) initContext.lookup(context);
-				
-				dataSources.add(new DataSourceInfo(dataSource, context));
-			}
-			catch(NamingException e){
-				throw new DBException(e.getMessage());
-			}
-			if(dataSource == null) throw new DBException("DataSource not found.");
-		}	
-		
-		return dataSource;
-	} */
-	
-	/**
 	 * Perform an SQL Select, using prepared statement.
 	 * 
 	 * @param loaderHelper the helper for loading extra information
@@ -99,6 +62,8 @@ public abstract class BaseDAO {
 		
 		return null;
 	}
+	
+
 	
 	/**
 	 * Perform an database querying on the table related to the passed class.

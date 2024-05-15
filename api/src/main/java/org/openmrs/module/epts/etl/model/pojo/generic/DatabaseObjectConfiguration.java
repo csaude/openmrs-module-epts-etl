@@ -156,6 +156,16 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 		return false;
 	}
 	
+	default Field getField(String fieldName) {
+		for (Field f : this.getFields()) {
+			if (f.getName().equals(fieldName)) {
+				return f;
+			}
+		}
+		
+		return null;
+	}
+	
 	String getAlias();
 	
 	default List<Field> cloneFields() {
@@ -177,4 +187,12 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	default boolean hasCompositeKey() {
 		return this.getPrimaryKey() != null && this.getPrimaryKey().isCompositeKey();
 	}
+	
+	/**
+	 * Generates a full sql select from query.
+	 * 
+	 * @return the generated select sql query
+	 */
+	String generateSelectFromQuery();
+	
 }

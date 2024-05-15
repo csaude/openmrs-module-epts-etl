@@ -81,11 +81,7 @@ public class DBQuickMergeSearchParams extends EtlSearchParams {
 		
 		AbstractTableConfiguration srcTabConf = getSrcTableConf();
 		
-		String fromClause = dstConf.generateFullTableNameWithAlias(dstConn);
-		
-		if (dstConf.useSharedPKKey()) {
-			fromClause += " inner join " + dstConf.getSharedTableConf().generateFullTableNameWithAlias(dstConn) + " on " + dstConf.getSharedKeyRefInfo().generateJoinCondition();
-		}
+		String fromClause = dstConf.generateSelectFromClauseContentOnSpecificSchema(dstConn);
 		
 		String dstJoinSubquery = "";
 		String joinCondition = dstConf.generateJoinConditionWithSrc();

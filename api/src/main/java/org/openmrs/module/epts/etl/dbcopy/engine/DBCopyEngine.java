@@ -66,7 +66,7 @@ public class DBCopyEngine extends Engine {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 						mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(etlObjects.size()));

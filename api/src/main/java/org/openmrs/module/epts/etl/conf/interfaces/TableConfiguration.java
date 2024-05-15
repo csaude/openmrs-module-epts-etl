@@ -142,7 +142,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return getTableName();
 	}
 	
-	default void clone(TableConfiguration toCloneFrom) {
+	default void clone(TableConfiguration toCloneFrom, Connection conn) throws DBException {
 		this.setTableName(toCloneFrom.getTableName());
 		this.setParents(toCloneFrom.getParents());
 		this.setMustLoadChildrenInfo(toCloneFrom.isMustLoadChildrenInfo());
@@ -175,6 +175,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setInsertSQLWithoutObjectId(toCloneFrom.getInsertSQLWithoutObjectId());
 		this.setUpdateSql(toCloneFrom.getUpdateSql());
 		this.setRelatedSyncConfiguration(toCloneFrom.getRelatedSyncConfiguration());
+		
+		loadOwnElements(conn);
 	}
 	
 	default boolean hasPrimaryKey() {
@@ -264,40 +266,28 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					defaultObject = getSyncRecordClass().newInstance();
 					defaultObject.setRelatedConfiguration(this);
 					
-					defaultObject.loadWithDefaultValues();
-					
-					for (ParentTable p : this.getParentRefInfo()) {
-						
-						EtlDatabaseObject defaultParent = p.getDefaultObject(conn);
-						
-						if (defaultParent == null) {
-							defaultParent = getSyncRecordClass().newInstance();
-							defaultParent.setRelatedConfiguration(p);
-							
-							if (defaultParent.checkIfAllRelationshipCanBeresolved(this, conn)) {
-								defaultParent = p.generateAndSaveDefaultObject(conn);
-							} else {
-								throw new ForbiddenOperationException("There are recursive relationship between "
-								        + this.getTableName() + " and " + p.getTableName()
-								        + " which cannot automatically resolved...! Please manual create default record for one of thise table using id '-1'");
-							}
-							
-							defaultObject.changeParentValue(p, defaultParent);
-						}
-						
-					}
+					defaultObject.loadWithDefaultValues(conn);
 					
 					defaultObject.save(this, conn);
 					
-					defaultObject.loadObjectIdData(this);
+					defaultObject = getDefaultObject(conn);
 					
 					EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf = getRelatedSyncConfiguration()
 					        .getDefaultGeneratedObjectKeyTabConf();
 					
+					if (!defaultGeneratedObjectKeyTabConf.isFullLoaded()) {
+						
+						defaultGeneratedObjectKeyTabConf.setTableName(getRelatedSyncConfiguration().getSyncStageSchema()
+						        + "." + defaultGeneratedObjectKeyTabConf.getTableName());
+						
+						defaultGeneratedObjectKeyTabConf.setTableAlias(defaultGeneratedObjectKeyTabConf.getTableName());
+						defaultGeneratedObjectKeyTabConf.fullLoad(conn);
+					}
+					
 					for (Key key : defaultObject.getObjectId().getFields()) {
 						EtlDatabaseObject keyInfo = defaultGeneratedObjectKeyTabConf.getSyncRecordClass().newInstance();
 						
-						keyInfo.setFieldValue("getTableName()", defaultGeneratedObjectKeyTabConf.getTableName());
+						keyInfo.setFieldValue("table_name", defaultObject.getObjectName());
 						keyInfo.setFieldValue("column_name", key.getName());
 						keyInfo.setFieldValue("key_value", key.getValue());
 						
@@ -956,7 +946,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	@Override
-	default void fullLoad(Connection conn) {
+	default void fullLoad(Connection conn) throws DBException {
 		
 		if (!hasAlias())
 			throw new ForbiddenOperationException("The table alias is not defined!");
@@ -998,7 +988,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					    this.getExtraConditionForExtract().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
 				}
 				
+				loadOwnElements(conn);
+				
 				this.setFullLoaded(true);
+				
 			}
 			catch (SQLException e) {
 				e.printStackTrace();
@@ -1312,19 +1305,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default Object[] generateInsertParamsWithoutObjectId(EtlDatabaseObject obj) {
-		int qtyAttrs = this.getFields().size();
+		int qtyAttrs = this.getFields().size() - this.getPrimaryKey().getFields().size();
 		
 		Object[] params = new Object[qtyAttrs];
 		
 		AttDefinedElements attElements;
 		
-		for (int i = 0; i < this.getFields().size(); i++) {
-			Field field = this.getFields().get(i);
-			
+		int i = 0;
+		
+		for (Field field : this.getFields()) {
 			attElements = field.getAttDefinedElements();
 			
 			if (!attElements.isPartOfObjectId()) {
-				params[i] = obj.getFieldValue(field.getName());
+				params[i++] = obj.getFieldValue(field.getName());
 			}
 		}
 		
@@ -1554,7 +1547,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				ParentTable ref = pInfo.get(0);
 				
 				for (RefMapping map : ref.getRefMapping()) {
-					joinFields.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
+					joinFields.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
 				}
 			} else {
 				throw new ForbiddenOperationException(
@@ -1573,7 +1566,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					ParentTable ref = pInfo.get(0);
 					
 					for (RefMapping map : ref.getRefMapping()) {
-						joinFields.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
+						joinFields.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
 					}
 				} else {
 					throw new ForbiddenOperationException(
@@ -1631,7 +1624,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			
 			FieldsMapping field = joinFields.get(i);
 			
-			conditionFields += joiningTable.getTableAlias() + "." + field.getSrcField() + " = " + getTableAlias() + "."
+			conditionFields += getTableAlias() + "." + field.getSrcField() + " = " + joiningTable.getTableAlias() + "."
 			        + field.getDstField();
 		}
 		
@@ -1674,8 +1667,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	void setAllRelatedTablesFullLoaded(boolean b);
 	
-	default void fullLoadAllRelatedTables(TableAliasesGenerator aliasGenerator, TableConfiguration related,
-	        Connection conn) {
+	default void fullLoadAllRelatedTables(TableAliasesGenerator aliasGenerator, TableConfiguration related, Connection conn)
+	        throws DBException {
 		if (isAllRelatedTablesFullLoaded()) {
 			return;
 		}
@@ -1683,30 +1676,28 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		if (this.hasParentRefInfo()) {
 			for (ParentTable ref : this.getParentRefInfo()) {
 				
-				if (!ref.isMetadata()) {
-					TableConfiguration existingConf = null;
-					
-					if (related != null) {
-						existingConf = related.findFullConfiguredConfInAllRelatedTable(ref.getTableName());
-					}
-					
-					if (existingConf == null) {
-						existingConf = this.findFullConfiguredConfInAllRelatedTable(ref.getTableName());
-					}
-					
-					if (!ref.hasAlias()) {
-						ref.setTableAlias(aliasGenerator.generateAlias(ref));
-					}
-					
-					if (existingConf != null) {
-						ref.clone(ref);
-					} else {
-						ref.fullLoad(conn);
-					}
-					
-					ref.fullLoadAllRelatedTables(aliasGenerator, this, conn);
+				TableConfiguration existingConf = null;
+				
+				if (related != null) {
+					existingConf = related.findFullConfiguredConfInAllRelatedTable(ref.getTableName());
 				}
 				
+				if (existingConf == null) {
+					existingConf = this.findFullConfiguredConfInAllRelatedTable(ref.getTableName());
+				}
+				
+				if (!ref.hasAlias()) {
+					ref.setTableAlias(aliasGenerator.generateAlias(ref));
+				}
+				
+				if (existingConf != null) {
+					ref.clone(existingConf, conn);
+					
+				} else {
+					ref.fullLoad(conn);
+				}
+				
+				//ref.fullLoadAllRelatedTables(aliasGenerator, this, conn);
 			}
 			
 			this.setAllRelatedTablesFullLoaded(true);
@@ -1721,5 +1712,51 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * Usually called after a call to {@link #fullLoad()}, allow the loading of own elements. Eg.
+	 * the join fields,etc
+	 */
+	void loadOwnElements(Connection conn) throws DBException;
+	
+	/**
+	 * Generates a full sql select from query.
+	 * 
+	 * @return the generated select sql query
+	 */
+	default String generateSelectFromQuery() {
+		String sql = " SELECT " + generateFullAliasedSelectColumns() + "\n";
+		sql += " FROM " + generateTableNameWithAlias() + "\n";
+		
+		return sql;
+	}
+	
+	default boolean checkIfFieldIsForeignKey(Field field) {
+		
+		if (!this.hasParentRefInfo())
+			return false;
+		
+		for (ParentTable p : this.getParentRefInfo()) {
+			if (p.checkIfContainsRefMappingByChildName(field.getName())) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	default ParentTable getFieldIsRelatedParent(Field field) {
+		
+		if (!this.hasParentRefInfo())
+			return null;
+		
+		for (ParentTable p : this.getParentRefInfo()) {
+			if (p.checkIfContainsRefMappingByChildName(field.getName())) {
+				return p;
+			}
+		}
+		
+		return null;
 	}
 }

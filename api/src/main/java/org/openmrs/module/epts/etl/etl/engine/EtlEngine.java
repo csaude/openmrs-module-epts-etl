@@ -96,7 +96,7 @@ public class EtlEngine extends Engine {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
 						if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
@@ -166,7 +166,7 @@ public class EtlEngine extends Engine {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject == null) {
 						continue;

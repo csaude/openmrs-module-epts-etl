@@ -44,10 +44,11 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.dstConf = dstConf;
 	}
 	
-	public static EtlItemConfiguration fastCreate(AbstractTableConfiguration tableConfig) {
+	public static EtlItemConfiguration fastCreate(AbstractTableConfiguration tableConfig, Connection conn)
+	        throws DBException {
 		EtlItemConfiguration etl = new EtlItemConfiguration();
 		
-		SrcConf src = SrcConf.fastCreate(tableConfig);
+		SrcConf src = SrcConf.fastCreate(tableConfig, conn);
 		
 		etl.setSrcConf(src);
 		

@@ -251,10 +251,16 @@ public class Field implements Serializable {
 	}
 	
 	@JsonIgnore
+	public boolean isSmallIntType() {
+		return AttDefinedElements.isSmallInt(this.type);
+	}
+	
+	@JsonIgnore
 	public Field createACopy() {
 		Field f = new Field(this.name);
 		
-		f.setType(this.type);
+		f.setType(this.getType());
+		f.setAllowNull(this.allowNull());
 		
 		return f;
 	}
@@ -263,6 +269,7 @@ public class Field implements Serializable {
 		this.type = f.type;
 		this.name = f.name;
 		this.value = f.value;
+		this.allowNull = f.allowNull;
 	}
 	
 	@JsonIgnore
@@ -313,6 +320,7 @@ public class Field implements Serializable {
 	}
 	
 	public String generateAliasedColumn(TableConfiguration tabConf) {
-		return  tabConf.getTableAlias() + "_" + this.name;
-	}	
+		return tabConf.getTableAlias() + "_" + this.name;
+	}
+	
 }

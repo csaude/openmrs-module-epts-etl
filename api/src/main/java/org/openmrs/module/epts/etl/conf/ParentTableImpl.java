@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.conf;
 
+import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -7,6 +8,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -40,20 +42,6 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 		ParentTableImpl p = new ParentTableImpl(tableName, refCode);
 		
 		return p;
-	}
-	
-	@Override
-	public void clone(TableConfiguration toCloneFrom) {
-		super.clone(toCloneFrom);
-		
-		if (toCloneFrom instanceof ParentTableImpl) {
-			ParentTableImpl toCloneFromAsParent = (ParentTableImpl) toCloneFrom;
-			
-			this.childTableConf = toCloneFromAsParent.childTableConf;
-			this.conditionalFields = toCloneFromAsParent.conditionalFields;
-			this.defaultValueDueInconsistency = toCloneFromAsParent.defaultValueDueInconsistency;
-			this.setNullDueInconsistency = toCloneFromAsParent.setNullDueInconsistency;
-		}
 	}
 	
 	public TableConfiguration getChildTableConf() {
@@ -145,9 +133,11 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	@Override
 	@JsonIgnore
 	public String toString() {
-		String str = this.hasRelated() ? this.getRelatedTabConf().getTableName() + ">>" : "";
+		String str = super.toString();
 		
-		str += this.getTableName();
+		if (this.hasRelated()) {
+			str += " Parent of " + this.getRelatedTabConf().getTableName();
+		}
 		
 		String mappingStr = "";
 		
@@ -174,5 +164,11 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 		oid.setTabConf(this);
 		
 		return oid;
+	}
+	
+	@Override
+	public void loadOwnElements(Connection conn) throws DBException {
+		// TODO Auto-generated method stub
+		
 	}
 }

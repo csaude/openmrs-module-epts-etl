@@ -1,8 +1,11 @@
 package org.openmrs.module.epts.etl.conf;
 
+import java.sql.Connection;
+
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -118,5 +121,11 @@ public class ChildTable extends AbstractRelatedTable {
 		}
 		
 		return str;
+	}
+
+	@Override
+	public void loadOwnElements(Connection conn) throws DBException {
+		// TODO Auto-generated method stub
+		
 	}
 }

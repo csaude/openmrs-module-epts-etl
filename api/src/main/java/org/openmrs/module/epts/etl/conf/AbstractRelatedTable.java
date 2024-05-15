@@ -3,7 +3,6 @@ package org.openmrs.module.epts.etl.conf;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.RelatedTable;
-import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 
 /**
  * Represents an related table, to an {@link AbstractTableConfiguration}
@@ -25,18 +24,6 @@ public abstract class AbstractRelatedTable extends AbstractTableConfiguration im
 		super(tableName);
 		
 		this.refCode = refCode;
-	}
-	
-	@Override
-	public void clone(TableConfiguration toCloneFrom) {
-		super.clone(toCloneFrom);
-		
-		if (toCloneFrom instanceof AbstractRelatedTable) {
-			AbstractRelatedTable toCloneFromAsRelated = (AbstractRelatedTable) toCloneFrom;
-			
-			this.refCode = toCloneFromAsRelated.refCode;
-			this.refMapping = toCloneFromAsRelated.refMapping;
-		}
 	}
 	
 	public String getRefCode() {

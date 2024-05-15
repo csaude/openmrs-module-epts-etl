@@ -43,13 +43,22 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 		return true;
 	}
 	
-	public static ParentAsSrcDataSource generateFromSrcConfSharedPkParent(SrcConf mainSrcConf, ParentTable parent)
-	        throws ForbiddenOperationException {
+	public static ParentAsSrcDataSource generateFromSrcConfSharedPkParent(SrcConf mainSrcConf, ParentTable parent,
+	        Connection conn) throws ForbiddenOperationException, DBException {
 		ParentAsSrcDataSource ds = new ParentAsSrcDataSource();
 		
-		ds.clone(parent);
+		ds.clone(parent, conn);
 		
 		ds.relatedSrcConf = mainSrcConf;
+		
+		ds.setRefCode(parent.getRefCode());
+		ds.setRefMapping(parent.getRefMapping());
+		
+		ds.setChildTableConf(parent.getChildTableConf());
+		;
+		ds.setConditionalFields(parent.getConditionalFields());
+		ds.setDefaultValueDueInconsistency(parent.getDefaultValueDueInconsistency());
+		ds.setSetNullDueInconsistency(parent.isSetNullDueInconsistency());
 		
 		return ds;
 	}

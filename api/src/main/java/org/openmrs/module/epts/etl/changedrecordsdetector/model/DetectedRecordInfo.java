@@ -354,12 +354,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> getExtraDataSourceObjects() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
 	public EtlDatabaseObject getSharedPkObj() {
 		// TODO Auto-generated method stub
 		return null;

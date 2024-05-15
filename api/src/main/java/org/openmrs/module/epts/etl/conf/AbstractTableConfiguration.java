@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
+import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -99,6 +100,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	public Class<? extends EtlDatabaseObject> getSyncRecordClass() {
+		
+		if (syncRecordClass == null) {
+			this.syncRecordClass = GenericDatabaseObject.class;
+		}
+		
 		return syncRecordClass;
 	}
 	

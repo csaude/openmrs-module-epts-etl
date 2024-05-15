@@ -95,7 +95,7 @@ public class DBQuickMergeEngine extends EtlEngine {
 	public DBQuickMergeController getRelatedOperationController() {
 		return (DBQuickMergeController) super.getRelatedOperationController();
 	}
-
+	
 	@Override
 	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
 		if (getRelatedSyncOperationConfig().writeOperationHistory()
@@ -114,6 +114,7 @@ public class DBQuickMergeEngine extends EtlEngine {
 		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
 		
 		Map<String, List<QuickMergeRecord>> mergingRecs = new HashMap<>();
+		List<String> mapOrder = new ArrayList<>();
 		
 		try {
 			
@@ -124,7 +125,7 @@ public class DBQuickMergeEngine extends EtlEngine {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
 						if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
@@ -141,6 +142,8 @@ public class DBQuickMergeEngine extends EtlEngine {
 						        this.getDstApp(), false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
+							mapOrder.add(mappingInfo.getTableName());
+							
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(etlObjects.size()));
 						}
 						
@@ -154,7 +157,7 @@ public class DBQuickMergeEngine extends EtlEngine {
 				etlObjects.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			QuickMergeRecord.mergeAll(mergingRecs, srcConn, dstConn);
+			QuickMergeRecord.mergeAll(mapOrder, mergingRecs, srcConn, dstConn);
 			
 			logInfo("MERGE DONE ON " + etlObjects.size() + " " + getMainSrcTableName());
 			
@@ -195,7 +198,7 @@ public class DBQuickMergeEngine extends EtlEngine {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject == null) {
 						continue;
@@ -310,8 +313,8 @@ public class DBQuickMergeEngine extends EtlEngine {
 	
 	@Override
 	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends EtlObject> searchParams = new DBQuickMergeSearchParams(this.getEtlConfiguration(),
-		        limits, getRelatedOperationController());
+		SyncSearchParams<? extends EtlObject> searchParams = new DBQuickMergeSearchParams(this.getEtlConfiguration(), limits,
+		        getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

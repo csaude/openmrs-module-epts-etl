@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
@@ -233,14 +234,6 @@ public interface EtlDatabaseObject extends EtlObject {
 		return utils.parseListToArray(values);
 	}
 	
-	/**
-	 * Retrieves the objects from extra-data source related to this object if table Configuration of
-	 * this object is the main source and it has extra data source configuration
-	 * 
-	 * @return the list of extra datasource objects
-	 */
-	List<EtlDatabaseObject> getExtraDataSourceObjects();
-	
 	default void setRelatedConfiguration(DatabaseObjectConfiguration config) {
 	}
 	
@@ -282,7 +275,7 @@ public interface EtlDatabaseObject extends EtlObject {
 
 	void fastCreateSimpleNumericKey(long i);
 	
-	void loadWithDefaultValues();
+	void loadWithDefaultValues(Connection conn) throws DBException;
 	
 	/**
 	 * Checks if there are recursive relashioship between the {@link #getRelatedConfiguration()} and
@@ -326,6 +319,21 @@ public interface EtlDatabaseObject extends EtlObject {
 		}
 		
 		return true;
+	}
+
+	default EtlDatabaseObject findOnDB(Connection conn) throws DBException, ForbiddenOperationException {
+		 TableConfiguration tabConf = (TableConfiguration) this.getRelatedConfiguration();
+		
+		Oid pk = this.getObjectId();
+		
+		pk.setTabConf(tabConf);
+		
+		String sql =   this.getRelatedConfiguration().generateSelectFromQuery();
+		
+		sql += " WHERE " + pk.parseToParametrizedStringCondition();
+		
+		return DatabaseObjectDAO.find(tabConf.getLoadHealper(), tabConf.getSyncRecordClass(), sql, pk.parseValuesToArray(), conn);
+		
 	}
 	
 }

@@ -418,5 +418,11 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	@Override
 	public void setSelfJoinTables(List<AuxExtractTable> setSelfJoinTables) {
 	}
+
+	@Override
+	public String generateSelectFromQuery() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 }

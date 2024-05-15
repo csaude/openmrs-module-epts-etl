@@ -86,14 +86,13 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public synchronized void fullLoad() throws DBException {
-		if (this.isFullLoaded()) {
-			return;
-		}
-		
 		this.setTableAlias(generateAlias(this));
 		
 		super.fullLoad();
-		
+	}
+	
+	@Override
+	public void loadOwnElements(Connection conn) throws DBException {
 		if (this.hasParentRefInfo()) {
 			for (ParentTable ref : this.getParentRefInfo()) {
 				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getTableName());
@@ -101,7 +100,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 				ref.setTableAlias(generateAlias(ref));
 				
 				if (fullLoadedTab != null) {
-					ref.clone(fullLoadedTab);
+					ref.clone(fullLoadedTab, conn);
 				} else {
 					ref.fullLoad();
 				}
@@ -113,7 +112,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 						ref.getSharedKeyRefInfo().setTableAlias(generateAlias(ref.getSharedKeyRefInfo()));
 					}
 					if (fullLoadedTab != null) {
-						ref.getSharedKeyRefInfo().clone(fullLoadedTab);
+						ref.getSharedKeyRefInfo().clone(fullLoadedTab, conn);
 					} else {
 						ref.getSharedKeyRefInfo().fullLoad();
 					}
@@ -135,7 +134,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getTableName());
 					
 					if (fullLoadedTab != null) {
-						t.clone(fullLoadedTab);
+						t.clone(fullLoadedTab, conn);
 					} else {
 						t.fullLoad(srcConn);
 					}
@@ -150,7 +149,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					t.setTableAlias(this.generateAlias(t));
 					
 					if (fullLoadedTab != null) {
-						t.clone(fullLoadedTab);
+						t.clone(fullLoadedTab, conn);
 					} else {
 						t.fullLoad(srcConn);
 					}
@@ -163,7 +162,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getSharedKeyRefInfo().getTableName());
 						
 						if (fullLoadedTab != null) {
-							t.getSharedKeyRefInfo().clone(fullLoadedTab);
+							t.getSharedKeyRefInfo().clone(fullLoadedTab, conn);
 						} else {
 							t.getSharedKeyRefInfo().fullLoad();
 						}
@@ -178,12 +177,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 				}
 			}
 		}
-		catch (Exception e) {
-			e.printStackTrace();
-			
+		finally {
 			srcConn.finalizeConnection();
-			
-			throw new RuntimeException(e);
 		}
 		
 		this.setFullLoaded(true);
@@ -211,10 +206,10 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		return this.fullLoaded;
 	}
 	
-	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig) {
+	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig, Connection conn) throws DBException {
 		SrcConf src = new SrcConf();
 		
-		src.clone(src);
+		src.clone(src, conn);
 		
 		return src;
 	}
@@ -242,7 +237,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		if (useSharedPKKey()) {
 			//Parce the shared parent to datasource
 			utilities.updateOnArray(this.getParentRefInfo(), getSharedKeyRefInfo(),
-			    ParentAsSrcDataSource.generateFromSrcConfSharedPkParent(this, getSharedKeyRefInfo()));
+			    ParentAsSrcDataSource.generateFromSrcConfSharedPkParent(this, getSharedKeyRefInfo(), conn));
 		}
 	}
 	

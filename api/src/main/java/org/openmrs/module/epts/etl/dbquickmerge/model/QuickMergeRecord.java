@@ -146,7 +146,7 @@ public class QuickMergeRecord {
 				                + parentInfo.getParentTableConfInDst().getTableName() + " as destination!");
 			}
 			
-			EtlDatabaseObject dstParent = dstSharedConf.generateDstObject(parentInfo.getParentRecordInOrigin(), srcConn,
+			EtlDatabaseObject dstParent = dstSharedConf.transform(parentInfo.getParentRecordInOrigin(), srcConn,
 			    srcApp, destApp);
 			
 			QuickMergeRecord parentData = new QuickMergeRecord(dstParent, parentInfo.getParentTableConfInDst(), srcApp,
@@ -165,9 +165,10 @@ public class QuickMergeRecord {
 	
 	protected static void loadDestParentInfo(QuickMergeRecord quickMergeRecord, Connection srcConn, Connection destConn)
 	        throws ParentNotYetMigratedException, DBException {
+		
 		TableConfiguration config = quickMergeRecord.config;
 		
-		if (!utilities.arrayHasElement(config.getParents()))
+		if (!utilities.arrayHasElement(config.getParentRefInfo()))
 			return;
 		
 		EtlDatabaseObject record = quickMergeRecord.record;
@@ -355,9 +356,9 @@ public class QuickMergeRecord {
 		}
 	}
 	
-	public static void mergeAll(Map<String, List<QuickMergeRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn)
+	public static void mergeAll(List<String> mapOrder, Map<String, List<QuickMergeRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
-		for (String key : mergingRecs.keySet()) {
+		for (String key : mapOrder) {
 			mergeAll(mergingRecs.get(key), srcConn, dstConn);
 		}
 	}

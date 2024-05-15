@@ -315,7 +315,7 @@ public class AttDefinedElements {
 	}
 	
 	public static boolean isNumeric(String attType) {
-		return utilities.isStringIn(attType, "Integer", "Long", "byte", "short", "double", "float");
+		return utilities.isStringIn(attType.toLowerCase() , "integer", "long", "byte", "short", "double", "float", "bit", "tinyint");
 	}
 	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,
@@ -411,6 +411,10 @@ public class AttDefinedElements {
 	
 	public static boolean isPrimitive(String type) {
 		return isNumeric(type) || utilities.isStringIn(type, "char", "boolean");
+	}
+	
+	public static boolean isSmallInt(String type) {
+		return utilities.isStringIn(type.toLowerCase(), "tinyint", "bit");
 	}
 	
 }

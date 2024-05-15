@@ -44,6 +44,12 @@ public class QuickTest {
 		DBConnectionInfo connInfo_localhost = new DBConnectionInfo("root", "root", "jdbc:mysql://localhost:3306/tmp_qlm_hgq",
 		        "com.mysql.cj.jdbc.Driver");
 		
+		DBConnectionInfo connInfo_quelimane = new DBConnectionInfo("root", "Fgh397$@Wy$Q7",
+		        "jdbc:mysql://10.0.0.22:3307/openmrs_gurue_lioma", "com.mysql.cj.jdbc.Driver");
+		
+		DBConnectionInfo connInfo_zambezia = new DBConnectionInfo("root", "root",
+		        "jdbc:mysql://10.0.0.24:3307/openmrs_derre", "com.mysql.cj.jdbc.Driver");
+		
 		String json = "{\r\n" + "            \"dataBaseUserName\":\"root\",\r\n"
 		        + "            \"dataBaseUserPassword\":\"#moZart123#\",\r\n"
 		        + "            \"connectionURI\":\"jdbc:mysql://10.10.2.71:3306/mozart_q1_fy24_ariel_cab_consolidated?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true\",\r\n"
@@ -51,14 +57,57 @@ public class QuickTest {
 		
 		DBConnectionInfo connInfo_mozart = DBConnectionInfo.loadFromJson(json);
 		
-		DBConnectionService service = DBConnectionService.init(connInfo_localhost);
+		DBConnectionService service = DBConnectionService.init(connInfo_zambezia);
 		
 		return service.openConnection();
 	}
 	
 	public static void main(String[] args) throws Exception {
-		filderTokenToFile();
+		searchOnDbs(openConnection());
+	}
+	
+	public static void calcularIdade(Connection conn) throws IOException, DBException {
+		List<String> patients = FileUtilities.readAllFileAsListOfString(
+		    "D:/ORG/C-SAUDE/PROJECTOS/Centralizacao/Tickets/Data-Community/Cacum/Analyse/patient_data/not_extracted.txt");
 		
+		String newLine = "\n";
+		
+		for (String uuid : patients) {
+			String sql = "";
+			sql += " select person_id as value " + newLine;
+			sql += " from  " + uuid + ".person " + newLine;
+			sql += " where uuid = 'd203ee32-e000-11e6-a91f-4485001ec084' ";
+			
+			SimpleValue result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
+			
+			if (result != null) {
+				System.out.println("Record found on" + uuid);
+			}
+		}
+		
+		System.out.println("Finished ");
+	}
+	
+	public static void searchOnDbs(Connection conn) throws IOException, DBException {
+		List<String> alldbs = FileUtilities.readAllFileAsListOfString(
+		    "D:/ORG/C-SAUDE/PROJECTOS/Centralizacao/Tickets/Data-Community/Cacum/Analyse/alldbs.txt");
+		
+		String newLine = "\n";
+		
+		for (String dbName : alldbs) {
+			String sql = "";
+			sql += " select person_id as value " + newLine;
+			sql += " from  " + dbName + ".person " + newLine;
+			sql += " where uuid = 'd203ee32-e000-11e6-a91f-4485001ec084' ";
+			
+			SimpleValue result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
+			
+			if (result != null) {
+				System.out.println("Record found on" + dbName);
+			}
+		}
+		
+		System.out.println("Finished ");
 	}
 	
 	public static void searchRecords() throws IOException, DBException {
@@ -96,7 +145,7 @@ public class QuickTest {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateDstObject(rec, srcConn, srcApp, dstApp);
+					destObject = mappingInfo.transform(rec, srcConn, srcApp, dstApp);
 					
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);

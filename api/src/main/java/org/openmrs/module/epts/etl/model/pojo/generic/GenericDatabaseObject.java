@@ -1,20 +1,19 @@
 package org.openmrs.module.epts.etl.model.pojo.generic;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
-import org.openmrs.module.epts.etl.conf.SrcConf;
-import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -23,11 +22,6 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	private DatabaseObjectConfiguration relatedConfiguration;
 	
 	private List<Field> fields;
-	
-	/*
-	 * Objects from extraDataSource
-	 */
-	private List<GenericDatabaseObject> extraDataSourceObjects;
 	
 	private GenericDatabaseObject sharedPkObj;
 	
@@ -39,11 +33,6 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	public GenericDatabaseObject getSharedPkObj() {
 		return sharedPkObj;
-	}
-	
-	@Override
-	public List<EtlDatabaseObject> getExtraDataSourceObjects() {
-		return utilities.parseList(extraDataSourceObjects, EtlDatabaseObject.class);
 	}
 	
 	public GenericDatabaseObject(DatabaseObjectConfiguration relatedConfiguration) {
@@ -63,14 +52,50 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
-	public void loadWithDefaultValues() {
+	public void loadWithDefaultValues(Connection conn) throws DBException {
 		if (this.relatedConfiguration == null) {
 			throw new ForbiddenOperationException("The relatedConfiguration  is not set");
 		}
 		
+		TableConfiguration conf = (TableConfiguration) getRelatedConfiguration();
+		
 		for (Field f : this.fields) {
 			if (!f.allowNull()) {
-				f.loadWithDefaultValue();
+				
+				ParentTable p = conf.getFieldIsRelatedParent(f);
+				
+				if (p != null) {
+					EtlDatabaseObject defaultParent = null;
+					
+					try {
+						defaultParent = p.getDefaultObject(conn);
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+					if (defaultParent == null) {
+						try {
+							defaultParent = conf.getSyncRecordClass().newInstance();
+							defaultParent.setRelatedConfiguration(p);
+							
+							if (defaultParent.checkIfAllRelationshipCanBeresolved(conf, conn)) {
+								defaultParent = p.generateAndSaveDefaultObject(conn);
+							} else {
+								throw new ForbiddenOperationException("There are recursive relationship between "
+								        + conf.getTableName() + " and " + p.getTableName()
+								        + " which cannot automatically resolved...! Please manual create default record for one of thise table using id '-1'");
+							}
+						}
+						catch (InstantiationException | IllegalAccessException e) {
+							throw new RuntimeException(e);
+						}
+					}
+					
+					this.changeParentValue(p, defaultParent);
+				} else {
+					f.loadWithDefaultValue();
+				}
 			}
 		}
 	}
@@ -96,39 +121,12 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		
 		this.fields = this.relatedConfiguration.cloneFields();
 		
-		if (relatedConfiguration instanceof SrcConf) {
-			SrcConf srcConf = (SrcConf) relatedConfiguration;
-			
-			if (srcConf.getExtraTableDataSource() != null) {
-				
-				for (TableDataSourceConfig tsrc : srcConf.getExtraTableDataSource()) {
-					
-					if (extraDataSourceObjects == null) {
-						extraDataSourceObjects = new ArrayList<>();
-					}
-					
-					extraDataSourceObjects.add(new GenericDatabaseObject(tsrc));
-				}
-			}
-		}
-		
 		if (relatedConfiguration instanceof TableConfiguration) {
 			
 			TableConfiguration tabConf = (TableConfiguration) relatedConfiguration;
 			
 			if (tabConf.getSharePkWith() != null) {
-				
-				if (extraDataSourceObjects != null) {
-					for (GenericDatabaseObject obj : this.extraDataSourceObjects) {
-						if (obj.getRelatedConfiguration().equals(tabConf.getSharedKeyRefInfo())) {
-							this.sharedPkObj = obj;
-						}
-					}
-				}
-				
-				if (this.sharedPkObj == null) {
-					this.sharedPkObj = new GenericDatabaseObject(tabConf.getSharedKeyRefInfo());
-				}
+				this.sharedPkObj = new GenericDatabaseObject(tabConf.getSharedKeyRefInfo());
 			}
 			
 		}
@@ -161,49 +159,19 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 				}
 			}
 			
-			loadAdditionInfo(rs);
+			if (this.sharedPkObj != null && !this.sharedPkObj.loadedFromDb) {
+				this.sharedPkObj.load(rs);
+			}
+			
+			if (this.relatedConfiguration instanceof TableConfiguration) {
+				this.loadObjectIdData((TableConfiguration) this.relatedConfiguration);
+			}
 			
 			loadedFromDb = true;
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	/**
-	 * @param rs
-	 * @throws SQLException
-	 */
-	private void loadAdditionInfo(ResultSet rs) throws SQLException {
-		if (this.relatedConfiguration instanceof SrcConf) {
-			List<TableDataSourceConfig> allDs = ((SrcConf) this.relatedConfiguration).getExtraTableDataSource();
-			
-			if (utilities.arrayHasElement(allDs)) {
-				for (TableDataSourceConfig ds : allDs) {
-					GenericDatabaseObject dbo = findExtraObject(ds);
-					
-					dbo.load(rs);
-				}
-			}
-		}
-		
-		if (this.sharedPkObj != null && !this.sharedPkObj.loadedFromDb) {
-			this.sharedPkObj.load(rs);
-		}
-		
-		if (this.relatedConfiguration instanceof TableConfiguration) {
-			this.loadObjectIdData((TableConfiguration) this.relatedConfiguration);
-		}
-	}
-	
-	private GenericDatabaseObject findExtraObject(TableConfiguration tabConf) {
-		for (GenericDatabaseObject dbo : this.extraDataSourceObjects) {
-			if (dbo.relatedConfiguration.getAlias().equals(tabConf.getTableAlias())) {
-				return dbo;
-			}
-		}
-		
-		throw new ForbiddenOperationException("No extra object found for " + tabConf.getTableName());
 	}
 	
 	@Override

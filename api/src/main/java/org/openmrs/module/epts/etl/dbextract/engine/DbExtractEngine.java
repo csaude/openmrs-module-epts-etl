@@ -85,6 +85,8 @@ public class DbExtractEngine extends EtlEngine {
 		
 		Map<String, List<DbExtractRecord>> mergingRecs = new HashMap<>();
 		
+		List<String> mapOrder = new ArrayList<>();
+		
 		try {
 			
 			for (EtlObject record : etlObjects) {
@@ -94,7 +96,7 @@ public class DbExtractEngine extends EtlEngine {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);
@@ -103,6 +105,8 @@ public class DbExtractEngine extends EtlEngine {
 						        false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
+							mapOrder.add(mappingInfo.getTableName());
+							
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(etlObjects.size()));
 						}
 						
@@ -116,7 +120,7 @@ public class DbExtractEngine extends EtlEngine {
 				etlObjects.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			DbExtractRecord.extractAll(mergingRecs, srcConn, dstConn);
+			DbExtractRecord.extractAll(mapOrder, mergingRecs, srcConn, dstConn);
 			
 			logInfo("EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size()
 			        + "' RECORDS");
@@ -160,7 +164,7 @@ public class DbExtractEngine extends EtlEngine {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.generateDstObject(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
 					
 					if (destObject == null) {
 						continue;

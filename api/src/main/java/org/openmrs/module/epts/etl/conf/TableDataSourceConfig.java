@@ -1,12 +1,12 @@
 package org.openmrs.module.epts.etl.conf;
 
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -15,7 +15,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents a source table configuration. A {@link TableDataSourceConfig} is used as an auxiliary
  * extraction table as well as an extra datasource
  */
-public class TableDataSourceConfig extends AbstractTableConfiguration implements EtlAdditionalDataSource {
+public class TableDataSourceConfig extends AbstractTableConfiguration implements EtlAdditionalDataSource, JoinableEntity {
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -52,11 +52,11 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public boolean isRequired() {
-		return this.joinType.isLeftJoin();
+		return this.joinType.isInnerJoin();
 	}
 	
 	@Override
-	public synchronized void fullLoad(Connection conn) {
+	public synchronized void fullLoad(Connection conn) throws DBException {
 		
 		if (isFullLoaded()) {
 			return;
@@ -65,55 +65,6 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		this.setTableAlias(getRelatedSrcConf().generateAlias(this));
 		
 		super.fullLoad(conn);
-		
-		tryToLoadJoinFields();
-		
-		if (hasExtraConditionForExtract()) {
-			this.setJoinExtraCondition(this.joinExtraCondition.replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
-		}
-		
-		if (!hasJoinFields()) {
-			throw new ForbiddenOperationException("No join fields were difined between " + this.relatedSrcConf.getTableName()
-			        + " And " + this.getTableName());
-		}
-		
-		if (!hasJoinType()) {
-			if (utilities.arrayHasMoreThanOneElements(this.getParentConf().getExtraTableDataSource())) {
-				this.joinType = JoinType.LEFT;
-			} else {
-				this.joinType = JoinType.INNER;
-			}
-		}
-		
-		if (hasSelfJoinTables()) {
-			for (AuxExtractTable t : this.getSelfJoinTables()) {
-				t.setParentConf(this);
-				t.setMainExtractTable(this);
-				
-				t.setTableAlias(this.getParentConf().generateAlias(t));
-				
-				t.fullLoad(conn);
-			}
-			
-		}
-	}
-	
-	public boolean hasJoinType() {
-		return this.joinType != null;
-	}
-	
-	public boolean hasSelfJoinTables() {
-		return utilities.arrayHasElement(this.selfJoinTables);
-	}
-	
-	public void tryToLoadJoinFields() {
-		if (!utilities.arrayHasElement(this.joinFields)) {
-			this.joinFields = tryToLoadJoinFields(this.relatedSrcConf);
-		}
-	}
-	
-	public boolean hasJoinFields() {
-		return utilities.arrayHasElement(this.joinFields);
 	}
 	
 	public String getJoinExtraCondition() {
@@ -157,21 +108,16 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
 	        throws DBException {
+		
 		String condition = super.generateConditionsFields(mainObject, this.joinFields, this.joinExtraCondition);
 		
-		return DatabaseObjectDAO.find(this.getLoadHealper(), this.getSyncRecordClass(srcAppInfo), condition, srcConn);
+		String sql = this.generateSelectFromQuery() + " WHERE " + condition;
+		
+		return DatabaseObjectDAO.find(this.getLoadHealper(), this.getSyncRecordClass(srcAppInfo), sql, null, srcConn);
 	}
 	
 	public String generateJoinCondition() {
 		return super.generateJoinCondition(this.relatedSrcConf, this.joinFields, this.joinExtraCondition);
-	}
-	
-	public void addJoinField(FieldsMapping fm) {
-		if (this.joinFields == null) {
-			this.joinFields = new ArrayList<>();
-		}
-		
-		this.joinFields.add(fm);
 	}
 	
 	@Override
@@ -187,6 +133,41 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	@Override
 	public boolean isGeneric() {
 		return false;
+	}
+	
+	@Override
+	public JoinType determineJoinType() {
+		if (utilities.arrayHasMoreThanOneElements(this.getParentConf().getExtraTableDataSource())) {
+			return JoinType.LEFT;
+		} else {
+			return JoinType.INNER;
+		}
+	}
+	
+	@Override
+	public void loadOwnElements(Connection conn) throws DBException {
+		loadJoinElements(conn);
+		
+		if (hasSelfJoinTables()) {
+			for (AuxExtractTable t : this.getSelfJoinTables()) {
+				t.setParentConf(this);
+				t.setMainExtractTable(this);
+				
+				t.setTableAlias(this.getParentConf().generateAlias(t));
+				
+				t.fullLoad(conn);
+			}
+			
+		}
+	}
+	
+	private boolean hasSelfJoinTables() {
+		return utilities.arrayHasElement(getSelfJoinTables());
+	}
+	
+	@Override
+	public TableConfiguration getJoiningEntity() {
+		return getRelatedSrcConf();
 	}
 	
 }

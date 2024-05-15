@@ -27,8 +27,6 @@ public interface RelatedTable extends TableConfiguration {
 		return this.getRefMapping().get(0);
 	}
 	
-	void clone(TableConfiguration toCloneFrom);
-	
 	default void addMapping(RefMapping mapping) {
 		if (this.getRefMapping() == null) {
 			this.setRefMapping(new ArrayList<>());
@@ -82,6 +80,28 @@ public interface RelatedTable extends TableConfiguration {
 		
 		for (RefMapping map : this.getRefMapping()) {
 			if (map.getChildField().getNameAsClassAtt().equals(attName)) {
+				return map;
+			}
+		}
+		
+		throw new ForbiddenOperationException("No mapping defined for att '" + attName + "'");
+	}
+	
+	@JsonIgnore
+	default boolean checkIfContainsRefMappingByChildName(String attName) {
+		try {
+			return getRefMappingByChildName(attName) != null;
+		}
+		catch (ForbiddenOperationException e) {
+			return false;
+		}
+	}
+	
+	@JsonIgnore
+	default RefMapping getRefMappingByChildName(String attName) throws ForbiddenOperationException {
+		
+		for (RefMapping map : this.getRefMapping()) {
+			if (map.getChildField().getName().equals(attName)) {
 				return map;
 			}
 		}

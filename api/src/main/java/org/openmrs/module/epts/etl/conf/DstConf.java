@@ -122,7 +122,15 @@ public class DstConf extends AbstractTableConfiguration {
 						
 					}
 					catch (FieldNotAvaliableInAnyDataSource e) {
-						notAvaliableInAnyDataSource.add(fm.getSrcField());
+						Field f = getField(fm.getDstField());
+						
+						boolean problem = !f.getAttDefinedElements().isPartOfObjectId();
+						
+						problem = problem ? problem : !this.useAutoIncrementId(conn);
+						
+						if (problem) {
+							notAvaliableInAnyDataSource.add(fm.getSrcField());
+						}
 					}
 					catch (FieldAvaliableInMultipleDataSources e) {
 						avaliableInMultiDataSources.add(fm.getSrcField());
@@ -159,7 +167,17 @@ public class DstConf extends AbstractTableConfiguration {
 					addMapping(fm);
 				}
 				catch (FieldNotAvaliableInAnyDataSource e) {
-					notAvaliableInAnyDataSource.add(fm.getSrcField());
+					
+					Field f = getField(fm.getDstField());
+					
+					boolean problem = !f.getAttDefinedElements().isPartOfObjectId();
+					
+					problem = problem ? problem : !this.useAutoIncrementId(conn);
+					
+					if (problem) {
+						notAvaliableInAnyDataSource.add(fm.getSrcField());
+					}
+					
 				}
 				catch (FieldAvaliableInMultipleDataSources e) {
 					avaliableInMultiDataSources.add(fm.getSrcField());
@@ -264,13 +282,16 @@ public class DstConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public synchronized void fullLoad(Connection conn) {
+	public synchronized void fullLoad(Connection conn) throws DBException {
 		if (!hasAlias()) {
 			setTableAlias(getSrcConf().generateAlias(this));
 		}
 		
 		super.fullLoad(conn);
-		
+	}
+	
+	@Override
+	public void loadOwnElements(Connection conn) throws DBException {
 		loadJoinFields(conn);
 		
 		this.allAvaliableDataSource = new ArrayList<>();
@@ -284,7 +305,6 @@ public class DstConf extends AbstractTableConfiguration {
 		this.fullLoadAllRelatedTables(getSrcConf(), null, conn);
 		
 		determinePrefferredDataSources();
-		
 	}
 	
 	private void determinePrefferredDataSources() {
@@ -371,7 +391,7 @@ public class DstConf extends AbstractTableConfiguration {
 		return this.getParentConf().getSrcConf();
 	}
 	
-	public EtlDatabaseObject generateDstObject(EtlDatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
+	public EtlDatabaseObject transform(EtlDatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
 	        AppInfo dstAppInfo) throws DBException, ForbiddenOperationException {
 		try {
 			
@@ -381,12 +401,6 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			if (srcObject.shasSharedPkObj()) {
 				srcObjects.add(srcObject.getSharedPkObj());
-			}
-			
-			if (srcObject.getExtraDataSourceObjects() != null) {
-				for (EtlDatabaseObject obj : srcObject.getExtraDataSourceObjects()) {
-					srcObjects.add(obj);
-				}
 			}
 			
 			for (EtlAdditionalDataSource mappingInfo : this.getSrcConf().getAvaliableExtraDataSource()) {

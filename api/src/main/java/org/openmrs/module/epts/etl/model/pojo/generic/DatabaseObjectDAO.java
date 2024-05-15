@@ -78,7 +78,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	        throws DBException {
 		Object[] params = null;
 		String sql = null;
-		
+		 
 		if (tableConfiguration.isAutoIncrementId()) {
 			params = record.getInsertParamsWithoutObjectId();
 			sql = record.getInsertSQLWithoutObjectId();

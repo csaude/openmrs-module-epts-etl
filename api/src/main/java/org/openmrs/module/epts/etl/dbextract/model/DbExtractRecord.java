@@ -94,7 +94,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 						                + this.config.getSharedKeyRefInfo().getTableName() + " as destination!");
 					}
 					
-					EtlDatabaseObject dstParent = dstSharedConf.generateDstObject(parentInOrigin, srcConn, srcApp, destApp);
+					EtlDatabaseObject dstParent = dstSharedConf.transform(parentInOrigin, srcConn, srcApp, destApp);
 					
 					DbExtractRecord parentData = new DbExtractRecord(dstParent, this.srcConf, dstSharedConf, srcApp, destApp,
 					        this.writeOperationHistory);
@@ -153,6 +153,13 @@ public class DbExtractRecord extends QuickMergeRecord {
 		
 		for (ParentInfo parentInfo : this.parentsWithDefaultValues) {
 			
+			EtlDatabaseObject parent = parentInfo.getParentRecordInOrigin().findOnDB(destConn);
+			
+			if (parent != null) {
+				record.changeParentValue(parentInfo.getParentTableConfInDst(), parent);
+				continue;
+			}
+			
 			DstConf dstSharedConf = parentInfo.getParentTableConfInDst().findRelatedDstConf();
 			
 			if (dstSharedConf == null) {
@@ -177,7 +184,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 				        + " is needed for extraction of " + this.record + " but this cannot be extracted");
 			}
 			
-			EtlDatabaseObject parent = dstSharedConf.generateDstObject(parentFromInSrcConf, srcConn, srcApp, destApp);
+			parent = dstSharedConf.transform(parentFromInSrcConf, srcConn, srcApp, destApp);
 			
 			DbExtractRecord parentData = new DbExtractRecord(parent, this.srcConf, parentInfo.getParentTableConfInDst(),
 			        srcApp, destApp, this.writeOperationHistory);
@@ -220,9 +227,9 @@ public class DbExtractRecord extends QuickMergeRecord {
 		}
 	}
 	
-	public static void extractAll(Map<String, List<DbExtractRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn)
-	        throws ParentNotYetMigratedException, DBException {
-		for (String key : mergingRecs.keySet()) {
+	public static void extractAll(List<String> mapOrder, Map<String, List<DbExtractRecord>> mergingRecs, Connection srcConn,
+	        OpenConnection dstConn) throws ParentNotYetMigratedException, DBException {
+		for (String key : mapOrder) {
 			extractAll(utilities.parseList(mergingRecs.get(key), DbExtractRecord.class), srcConn, dstConn);
 		}
 	}

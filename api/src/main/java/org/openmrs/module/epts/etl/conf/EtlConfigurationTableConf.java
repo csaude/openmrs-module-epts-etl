@@ -1,8 +1,11 @@
 package org.openmrs.module.epts.etl.conf;
 
+import java.sql.Connection;
+
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
  * Represents any table related to etl configuration. Ex: "table_operation_progress_info",
@@ -36,5 +39,11 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	@Override
 	public Class<? extends EtlDatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		return GenericDatabaseObject.class;
+	}
+
+	@Override
+	public void loadOwnElements(Connection conn) throws DBException {
+		// TODO Auto-generated method stub
+		
 	}
 }
