@@ -241,6 +241,10 @@ public interface EtlDatabaseObject extends EtlObject {
 		return null;
 	}
 	
+	default boolean hasRelatedConfiguration() {
+		return getRelatedConfiguration() != null;
+	}
+	
 	/**
 	 * Retrive values for all fields in any unique key.
 	 * 
@@ -272,7 +276,7 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		return fieldValues;
 	}
-
+	
 	void fastCreateSimpleNumericKey(long i);
 	
 	void loadWithDefaultValues(Connection conn) throws DBException;
@@ -320,19 +324,20 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		return true;
 	}
-
+	
 	default EtlDatabaseObject findOnDB(Connection conn) throws DBException, ForbiddenOperationException {
-		 TableConfiguration tabConf = (TableConfiguration) this.getRelatedConfiguration();
+		TableConfiguration tabConf = (TableConfiguration) this.getRelatedConfiguration();
 		
 		Oid pk = this.getObjectId();
 		
 		pk.setTabConf(tabConf);
 		
-		String sql =   this.getRelatedConfiguration().generateSelectFromQuery();
+		String sql = this.getRelatedConfiguration().generateSelectFromQuery();
 		
 		sql += " WHERE " + pk.parseToParametrizedStringCondition();
 		
-		return DatabaseObjectDAO.find(tabConf.getLoadHealper(), tabConf.getSyncRecordClass(), sql, pk.parseValuesToArray(), conn);
+		return DatabaseObjectDAO.find(tabConf.getLoadHealper(), tabConf.getSyncRecordClass(), sql, pk.parseValuesToArray(),
+		    conn);
 		
 	}
 	

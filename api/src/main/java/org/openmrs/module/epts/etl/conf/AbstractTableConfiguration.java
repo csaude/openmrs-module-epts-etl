@@ -15,6 +15,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public abstract class AbstractTableConfiguration extends AbstractEtlDataConfiguration implements Comparable<AbstractTableConfiguration>, TableConfiguration {
 	
+	private List<String> ignorableFields;
+	
 	private String tableName;
 	
 	private String tableAlias;
@@ -81,6 +83,16 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this();
 		
 		this.tableName = tableName;
+	}
+	
+	@Override
+	public List<String> getIgnorableFields() {
+		return ignorableFields;
+	}
+	
+	@Override
+	public void setIgnorableFields(List<String> ignorableFields) {
+		this.ignorableFields = ignorableFields;
 	}
 	
 	public PrimaryKey getPrimaryKey() {

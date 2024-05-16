@@ -158,6 +158,11 @@ public class DstConf extends AbstractTableConfiguration {
 		List<Field> myFields = this.getFields();
 		
 		for (Field field : myFields) {
+			
+			if (isIgnorableField(field)) {
+				continue;
+			}
+			
 			FieldsMapping fm = FieldsMapping.fastCreate(field.getName(), field.getName());
 			
 			if (!this.allMapping.contains(fm)) {
@@ -187,17 +192,19 @@ public class DstConf extends AbstractTableConfiguration {
 		}
 		
 		if (!avaliableInMultiDataSources.isEmpty()) {
-			throw new ForbiddenOperationException("The destination fields " + avaliableInMultiDataSources.toString()
+			throw new ForbiddenOperationException(getTableName() + " The destination fields "
+			        + avaliableInMultiDataSources.toString()
 			        + " cannot be automatically mapped as them occurrs in multiple src. Please configure them manually or specify the datasource order preference in prefferredDataSource array ");
 		}
 		
 		if (!notAvaliableInAnyDataSource.isEmpty()) {
-			throw new ForbiddenOperationException("The destination fields " + notAvaliableInAnyDataSource.toString()
+			throw new ForbiddenOperationException(getTableName() + " The destination fields "
+			        + notAvaliableInAnyDataSource.toString()
 			        + " cannot be automatically mapped as them do not occurr in any src. Please configure them manually!");
 		}
 		
 		if (!notAvaliableInSpecifiedDataSource.isEmpty()) {
-			throw new ForbiddenOperationException("The source fields for destination fields ["
+			throw new ForbiddenOperationException(getTableName() + " The source fields for destination fields ["
 			        + notAvaliableInSpecifiedDataSource.toString() + "] do not occurs in specified data sources !");
 		}
 	}
@@ -205,6 +212,9 @@ public class DstConf extends AbstractTableConfiguration {
 	private void tryToLoadDataSourceToFieldMapping(FieldsMapping fm)
 	        throws FieldNotAvaliableInAnyDataSource, FieldAvaliableInMultipleDataSources {
 		int qtyOccurences = 0;
+		
+		if (fm.getSrcValue() != null)
+			return;
 		
 		for (EtlDataSource pref : this.allPrefferredDataSource) {
 			if (pref.containsField(fm.getSrcField())) {

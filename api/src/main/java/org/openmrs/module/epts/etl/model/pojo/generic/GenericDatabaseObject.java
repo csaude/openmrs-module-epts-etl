@@ -142,21 +142,21 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		try {
 			super.load(rs);
 			
-			if (this.relatedConfiguration == null) {
+			if (!this.hasRelatedConfiguration()) {
 				throw new ForbiddenOperationException("The relatedConfiguration  is not set");
 			}
 			
 			for (Field field : this.fields) {
-				try {
+				
+				if (getRelatedConfiguration() instanceof TableConfiguration) {
 					field.setValue(retrieveFieldValue(
 					    field.generateAliasedColumn((TableConfiguration) this.relatedConfiguration), field.getType(), rs));
-					
-					super.setFieldValue(field.getNameAsClassAtt(), field.getValue());
+				} else {
+					field.setValue(retrieveFieldValue(field.getName(), field.getType(), rs));
 				}
-				catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				
+				super.setFieldValue(field.getNameAsClassAtt(), field.getValue());
+				
 			}
 			
 			if (this.sharedPkObj != null && !this.sharedPkObj.loadedFromDb) {

@@ -184,8 +184,8 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void refreshLastSyncDateOnDestination(TableConfiguration tableConfiguration,
-	        String recordOriginLocationCode, Connection conn) {
+	public void refreshLastSyncDateOnDestination(TableConfiguration tableConfiguration, String recordOriginLocationCode,
+	        Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -296,8 +296,8 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void changeParentForAllChildren(EtlDatabaseObject newParent, TableConfiguration syncTableInfo,
-	        Connection conn) throws DBException {
+	public void changeParentForAllChildren(EtlDatabaseObject newParent, TableConfiguration syncTableInfo, Connection conn)
+	        throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
@@ -348,12 +348,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void loadWithDefaultValues() {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
 	public EtlDatabaseObject getSharedPkObj() {
 		// TODO Auto-generated method stub
 		return null;
@@ -393,6 +387,12 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	
 	@Override
 	public void update(TableConfiguration syncTableInfo, Connection conn) throws DBException {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void loadWithDefaultValues(Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}

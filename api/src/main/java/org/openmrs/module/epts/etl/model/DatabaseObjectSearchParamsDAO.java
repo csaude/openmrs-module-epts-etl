@@ -8,7 +8,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabaseObjectSearchParamsDAO extends SearchParamsDAO {
 	
-	public static List<EtlDatabaseObject> search(DatabaseObjectSearchParams searchParams, Connection conn) throws DBException {
+	public static List<EtlDatabaseObject> search(DatabaseObjectSearchParams searchParams, Connection conn)
+	        throws DBException {
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
 		
@@ -18,7 +19,16 @@ public class DatabaseObjectSearchParamsDAO extends SearchParamsDAO {
 		
 		String sql = searchClauses.generateSQL(conn);
 		
-		return search(searchParams.getLoaderHealper(), searchParams.getRecordClass(), sql, searchClauses.getParameters(),
-		    conn);
+		List<EtlDatabaseObject> l = search(searchParams.getLoaderHealper(), searchParams.getRecordClass(), sql,
+		    searchClauses.getParameters(), conn);
+		
+		while (utilities.arrayHasNoElement(l) && searchParams.getLimits().canGoNext()) {
+			searchParams.getLimits().moveNext(searchParams.getQtdRecordPerSelected());
+			
+			l = search(searchParams.getLoaderHealper(), searchParams.getRecordClass(), sql, searchClauses.getParameters(),
+			    conn);
+		}
+		
+		return l;
 	}
 }

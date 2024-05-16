@@ -62,7 +62,9 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			return;
 		}
 		
-		this.setTableAlias(getRelatedSrcConf().generateAlias(this));
+		if (!hasAlias()) {
+			this.setTableAlias(getRelatedSrcConf().generateAlias(this));
+		}
 		
 		super.fullLoad(conn);
 	}

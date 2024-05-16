@@ -74,6 +74,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	void setWinningRecordFieldsInfo(List<List<Field>> winningRecordFieldsInfo);
 	
+	List<String> getIgnorableFields();
+	
+	void setIgnorableFields(List<String> ignorable);
+	
 	@JsonIgnore
 	@Override
 	default boolean hasPK(Connection conn) {
@@ -1712,6 +1716,23 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		return false;
+	}
+	
+	default boolean isIgnorableField(Field field) {
+		if (!hasIgnorableField())
+			return false;
+		
+		for (String ignorable : this.getIgnorableFields()) {
+			if (field.getName().equals(ignorable)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	default boolean hasIgnorableField() {
+		return utilities.arrayHasElement(getIgnorableFields());
 	}
 	
 	/**
