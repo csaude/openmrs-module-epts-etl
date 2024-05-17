@@ -161,7 +161,7 @@ public class QuickTest {
 				}
 			}
 			
-			QuickMergeRecord.mergeAll(mergingRecs, srcConn, dstConn);
+			//QuickMergeRecord.mergeAll(mergingRecs, srcConn, dstConn);
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}

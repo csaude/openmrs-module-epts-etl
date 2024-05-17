@@ -751,8 +751,8 @@ public class DBUtilities {
 		return uniqueKeys;
 	}
 	
-	private static boolean addUniqueKey(AbstractTableConfiguration tabConf, String keyName, List<String> keyElements, List<UniqueKeyInfo> uniqueKeys,
-	        String primaryKey) {
+	private static boolean addUniqueKey(AbstractTableConfiguration tabConf, String keyName, List<String> keyElements,
+	        List<UniqueKeyInfo> uniqueKeys, String primaryKey) {
 		if (keyElements == null || keyElements.isEmpty())
 			return false;
 		
@@ -787,6 +787,10 @@ public class DBUtilities {
 		ResultSetMetaData rsMetaData;
 		
 		try {
+			query = removeWhereConditionOnQuery(query);
+			
+			query += " where 1 <> 1";
+			
 			st = conn.prepareStatement(query);
 			
 			int qtyQuestionMarksOnQuery = getQtyQuestionMarksOnQuery(query);
@@ -824,6 +828,10 @@ public class DBUtilities {
 		}
 		
 		return fields;
+	}
+	
+	public static String removeWhereConditionOnQuery(String query) {
+		return query.toLowerCase().split("where ")[0];
 	}
 	
 	/**

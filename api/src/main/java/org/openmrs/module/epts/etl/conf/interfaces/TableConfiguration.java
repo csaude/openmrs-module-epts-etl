@@ -969,7 +969,15 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					throw new ForbiddenOperationException(
 					        "The table '" + generateFullTableName(conn) + "' does not exist!!!");
 				
-				setFields(DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn));
+				List<Field> flds = DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn);
+				
+				this.setFields(new ArrayList<>());
+				
+				for (Field f : flds) {
+					if (!isIgnorableField(f)) {
+						this.getFields().add(f);
+					}
+				}
 				
 				getPrimaryKey(conn);
 				
