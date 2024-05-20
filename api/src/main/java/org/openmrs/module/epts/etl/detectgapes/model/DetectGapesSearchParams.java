@@ -20,7 +20,7 @@ public class DetectGapesSearchParams extends DatabaseObjectSearchParams {
 	
 	public DetectGapesSearchParams(EtlItemConfiguration config, RecordLimits limits,
 	    DetectGapesController relatedController) {
-		super(config, limits);
+		super(config, limits, relatedController);
 		
 		this.relatedController = relatedController;
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());

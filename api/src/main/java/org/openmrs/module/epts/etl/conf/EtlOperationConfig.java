@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.consolitation.controller.DatabaseIntegrityCon
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
+import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
 import org.openmrs.module.epts.etl.databasepreparation.controller.DatabasePreparationController;
 import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
@@ -406,6 +407,11 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@JsonIgnore
+	public boolean isDetectMissingRecords() {
+		return this.operationType.isDetectMIssingRecords();
+	}
+	
+	@JsonIgnore
 	public boolean isMissingRecordsDetector() {
 		return this.operationType.isMissingRecordsDetector();
 	}
@@ -478,7 +484,9 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	private OperationController generateSingle(ProcessController parent, String appOriginCode, Connection conn) {
-		if (isDBExtract()) {
+		if (isDetectMissingRecords()) {
+			return new DetectMissingRecordsController(parent, this, appOriginCode);
+		} else if (isDBExtract()) {
 			return new DbExtractController(parent, this, appOriginCode);
 		} else if (isEtl()) {
 			return new EtlController(parent, this, appOriginCode);
@@ -534,7 +542,13 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			if (!this.canBeRunInEtlProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in Etl process\n";
-		} else if (this.getRelatedSyncConfig().isDbExtractProcess()) {
+		} else if (this.getRelatedSyncConfig().isDetectMissingRecords()) {
+			if (!this.canBeRunInDetectMissingRecordsProcess())
+				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
+				        + "] Cannot be configured in Detect Missing Records process\n";
+		} else
+		
+		if (this.getRelatedSyncConfig().isDbExtractProcess()) {
 			if (!this.canBeRunInDbExtractProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in Db Extract process\n";
@@ -643,6 +657,11 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInDbExtractProcess(), this.operationType);
 	}
 	
+	@JsonIgnore
+	public boolean canBeRunInDetectMissingRecordsProcess() {
+		return utilities.existOnArray(getSupportedOperationsInDetectMissingRecordsProcess(), this.operationType);
+	}
+	
 	public static List<EtlOperationType> getSupportedOperationsInResolveProblemsProcess() {
 		EtlOperationType[] supported = { EtlOperationType.GENERIC_OPERATION };
 		
@@ -676,6 +695,12 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public static List<EtlOperationType> getSupportedOperationsInEtlProcess() {
 		EtlOperationType[] supported = { EtlOperationType.ETL };
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
+	public static List<EtlOperationType> getSupportedOperationsInDetectMissingRecordsProcess() {
+		EtlOperationType[] supported = { EtlOperationType.DETECT_MISSING_RECORDS };
 		
 		return utilities.parseArrayToList(supported);
 	}

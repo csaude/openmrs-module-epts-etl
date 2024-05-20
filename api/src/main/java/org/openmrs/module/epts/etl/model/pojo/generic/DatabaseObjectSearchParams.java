@@ -4,6 +4,7 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -14,8 +15,16 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabaseObjectSearchParams extends SyncSearchParams<EtlDatabaseObject> {
 	
-	public DatabaseObjectSearchParams(EtlItemConfiguration config, RecordLimits limits) {
+	private OperationController relatedController;
+	
+	public DatabaseObjectSearchParams(EtlItemConfiguration config, RecordLimits limits, OperationController relatedController) {
 		super(config, limits);
+		
+		this.relatedController = relatedController;
+	}
+	
+	public OperationController getRelatedController() {
+		return relatedController;
 	}
 	
 	public DatabaseObjectLoaderHelper getLoaderHealper() {
@@ -28,7 +37,6 @@ public class DatabaseObjectSearchParams extends SyncSearchParams<EtlDatabaseObje
 		
 		AbstractTableConfiguration tbConfig = getSearchSourceType().isSource() ? getSrcTableConf()
 		        : getDstLastTableConfiguration();
-		
 		
 		searchClauses.addColumnToSelect(tbConfig.generateFullAliasedSelectColumns());
 		searchClauses.addToClauseFrom(tbConfig.generateSelectFromClauseContent());

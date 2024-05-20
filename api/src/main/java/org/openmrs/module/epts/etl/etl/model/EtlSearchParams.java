@@ -16,10 +16,10 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public class EtlSearchParams extends DatabaseObjectSearchParams {
 	
-	private int savedCount;
+	protected int savedCount;
 	
 	public EtlSearchParams(EtlItemConfiguration config, RecordLimits limits, EtlController relatedController) {
-		super(config, limits);
+		super(config, limits, relatedController);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray(getSrcTableConf().getTableAlias()));
 	}
@@ -60,72 +60,7 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 					    aux.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
 				}
 			}
-			
 		}
-		
-		/*
-		if (srcConfig.hasExtraTableDataSourceConfig()) {
-			for (TableDataSourceConfig t : getExtraTableDataSource()) {
-				searchClauses.addColumnToSelect(t.generateFullAliasedSelectColumns());
-				
-				String joinType = t.getJoinType().toString();
-				
-				String extraJoinQuery = t.generateJoinCondition();
-				
-				if (utilities.stringHasValue(extraJoinQuery)) {
-					Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,
-					    getConfig().getRelatedSyncConfiguration());
-					
-					extraJoinQuery = DBUtilities.replaceSqlParametersWithQuestionMarks(extraJoinQuery);
-					
-					searchClauses.addToParameters(params);
-				}
-				
-				String newLine = clauseFrom.toUpperCase().contains("JOIN") ? "\n" : "";
-				
-				clauseFrom = clauseFrom + " " + newLine + joinType + " join " + t.getTableName() + " " + t.getTableAlias()
-				        + " on " + extraJoinQuery;
-				
-				if (t.useSharedPKKey()) {
-					
-					ParentTable tshared = t.getSharedKeyRefInfo();
-					
-					clauseFrom += "LEFT join " + tshared.generateFullTableNameWithAlias(conn) + " ON "
-					        + tshared.generateJoinCondition() + "\n";
-				}
-				
-				if (utilities.arrayHasElement(t.getSelfJoinTables())) {
-					for (AuxExtractTable aux : t.getSelfJoinTables()) {
-						
-						joinType = aux.getJoinType().toString();
-						
-						extraJoinQuery = aux.generateConditionsFields();
-						
-						if (utilities.stringHasValue(extraJoinQuery)) {
-							Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,
-							    getConfig().getRelatedSyncConfiguration());
-							
-							extraJoinQuery = DBUtilities.replaceSqlParametersWithQuestionMarks(extraJoinQuery);
-							
-							searchClauses.addToParameters(params);
-						}
-						
-						newLine = clauseFrom.toUpperCase().contains("JOIN") ? "\n" : "";
-						
-						clauseFrom = clauseFrom + " " + newLine + joinType + " join " + aux.getTableName() + " "
-						        + aux.getTableAlias() + " on " + extraJoinQuery;
-						
-					}
-					
-				}
-			}
-			
-			if (utilities.stringHasValue(additionalLeftJoinFields)) {
-				searchClauses.addToClauses(additionalLeftJoinFields);
-			}
-		}
-		
-		*/
 		
 		searchClauses.addToClauseFrom(clauseFrom);
 		

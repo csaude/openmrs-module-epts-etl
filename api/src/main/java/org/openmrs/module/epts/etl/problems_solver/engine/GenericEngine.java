@@ -67,7 +67,7 @@ public abstract class GenericEngine extends Engine {
 	@Override
 	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParams(
-		        this.getEtlConfiguration(), null);
+		        this.getEtlConfiguration(), null, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

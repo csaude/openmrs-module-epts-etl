@@ -23,6 +23,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class DstConf extends AbstractTableConfiguration {
 	
+	/*
+	 * The joinFields with #getSrcConf()
+	 */
 	private List<FieldsMapping> joinField;
 	
 	private List<FieldsMapping> allMapping;
@@ -213,8 +216,17 @@ public class DstConf extends AbstractTableConfiguration {
 	        throws FieldNotAvaliableInAnyDataSource, FieldAvaliableInMultipleDataSources {
 		int qtyOccurences = 0;
 		
-		if (fm.getSrcValue() != null)
+		if (fm.getSrcValue() != null) {
+			
+			if (fm.getSrcValue().startsWith("@")) {
+				String paramName = utilities.removeCharactersOnString(fm.getSrcValue(), "@");
+				
+				fm.setSrcValue(getRelatedSyncConfiguration().getParamValue(paramName));
+			}
+			
 			return;
+			
+		}
 		
 		for (EtlDataSource pref : this.allPrefferredDataSource) {
 			if (pref.containsField(fm.getSrcField())) {

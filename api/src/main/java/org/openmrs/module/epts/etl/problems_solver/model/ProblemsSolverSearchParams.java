@@ -10,14 +10,15 @@ import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class ProblemsSolverSearchParams extends DatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public ProblemsSolverSearchParams(EtlItemConfiguration config, RecordLimits limits) {
-		super(config, limits);
+	public ProblemsSolverSearchParams(EtlItemConfiguration config, RecordLimits limits, GenericOperationController relatedController) {
+		super(config, limits, relatedController);
 	}
 	
 	@Override

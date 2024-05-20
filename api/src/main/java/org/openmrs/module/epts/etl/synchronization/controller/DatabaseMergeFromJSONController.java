@@ -54,7 +54,7 @@ public class DatabaseMergeFromJSONController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(config, null);
+			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(config, null, this);
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
@@ -79,7 +79,7 @@ public class DatabaseMergeFromJSONController extends OperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(config, null);
+			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(config, null, this);
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getLastRecord(searchParams, conn);

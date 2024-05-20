@@ -6,6 +6,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBController;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
@@ -15,8 +16,17 @@ public class DataBaseMergeFromSourceDBSearchParams extends SyncSearchParams<Sync
 	
 	private boolean selectAllRecords;
 	
-	public DataBaseMergeFromSourceDBSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn) {
+	private DataBaseMergeFromSourceDBController relatedController;
+	
+	public DataBaseMergeFromSourceDBSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn,
+	    DataBaseMergeFromSourceDBController relatedController) {
 		super(config, limits);
+		
+		this.relatedController = relatedController;
+	}
+	
+	public DataBaseMergeFromSourceDBController getRelatedController() {
+		return relatedController;
 	}
 	
 	@Override
@@ -36,8 +46,7 @@ public class DataBaseMergeFromSourceDBSearchParams extends SyncSearchParams<Sync
 			}
 			
 			if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
-				searchClauses
-				        .addToClauses(this.getConfig().getSrcConf().getExtraConditionForExtract());
+				searchClauses.addToClauses(this.getConfig().getSrcConf().getExtraConditionForExtract());
 			}
 		}
 		
@@ -52,7 +61,7 @@ public class DataBaseMergeFromSourceDBSearchParams extends SyncSearchParams<Sync
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
 		DataBaseMergeFromSourceDBSearchParams auxSearchParams = new DataBaseMergeFromSourceDBSearchParams(this.getConfig(),
-		        this.getLimits(), conn);
+		        this.getLimits(), conn, getRelatedController());
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);
@@ -60,7 +69,7 @@ public class DataBaseMergeFromSourceDBSearchParams extends SyncSearchParams<Sync
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		DatabaseObjectSearchParams migratedRecordsSearchParams = new DatabaseObjectSearchParams(getConfig(), null);
+		DatabaseObjectSearchParams migratedRecordsSearchParams = new DatabaseObjectSearchParams(getConfig(), null, getRelatedController());
 		
 		int processed = SearchParamsDAO.countAll(migratedRecordsSearchParams, conn);
 		int allRecords = countAllRecords(conn);

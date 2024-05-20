@@ -329,6 +329,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default void loadUniqueKeys(Connection conn) {
 		if (this.getUniqueKeys() == null) {
 			loadUniqueKeys(this, conn);
+		}else {
+			for (UniqueKeyInfo uk : this.getUniqueKeys()) {
+				uk.setTabConf(this);
+			}
 		}
 	}
 	

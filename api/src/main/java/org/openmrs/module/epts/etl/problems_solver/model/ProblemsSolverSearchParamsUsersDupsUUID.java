@@ -11,12 +11,13 @@ import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class ProblemsSolverSearchParamsUsersDupsUUID extends DatabaseObjectSearchParams {
 	
-	public ProblemsSolverSearchParamsUsersDupsUUID(EtlItemConfiguration config, RecordLimits limits) {
-		super(config, limits);
+	public ProblemsSolverSearchParamsUsersDupsUUID(EtlItemConfiguration config, RecordLimits limits, GenericOperationController relatedController) {
+		super(config, limits, relatedController);
 	}
 	
 	@Override

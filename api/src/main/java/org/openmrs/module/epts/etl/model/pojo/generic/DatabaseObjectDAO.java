@@ -78,7 +78,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	        throws DBException {
 		Object[] params = null;
 		String sql = null;
-		 
+		
 		if (tableConfiguration.isAutoIncrementId()) {
 			params = record.getInsertParamsWithoutObjectId();
 			sql = record.getInsertSQLWithoutObjectId();
@@ -386,6 +386,16 @@ public class DatabaseObjectDAO extends BaseDAO {
 		    tableConfiguration.getSyncRecordClass(tableConfiguration.getMainApp()), sql, params, conn);
 	}
 	
+	public static long countAll(TableConfiguration tableConfiguration, Connection conn) throws DBException {
+		Object[] params = {};
+		
+		String sql = "";
+		
+		sql += " SELECT count(*) as value FROM " + tableConfiguration.getTableName();
+		
+		return find(SimpleValue.class, sql, params, conn).longValue();
+	}
+	
 	public static EtlDatabaseObject getFirstConsistentRecordInOrigin(TableConfiguration tableInfo, Connection conn)
 	        throws DBException {
 		return getConsistentRecordInOrigin(tableInfo, "min", conn);
@@ -539,15 +549,6 @@ public class DatabaseObjectDAO extends BaseDAO {
 	
 	public static void insertAll(List<EtlDatabaseObject> objects, TableConfiguration abstractTableConfiguration,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
-		boolean isInMetadata = utilities.isStringIn(abstractTableConfiguration.getTableName(), "location",
-		    "concept_datatype", "concept", "person_attribute_type", "provider_attribute_type", "program", "program_workflow",
-		    "program_workflow_state", "encounter_type", "visit_type", "relationship_type", "patient_identifier_type");
-		
-		if (abstractTableConfiguration.getRelatedSyncConfiguration().isOpenMRSModel()
-		        && abstractTableConfiguration.isMetadata() && !isInMetadata) {
-			throw new ForbiddenOperationException(
-			        "The table " + abstractTableConfiguration.getTableName() + " is been treated as metadata but it is not");
-		}
 		
 		if (abstractTableConfiguration.isMetadata()) {
 			insertAllMetadata(objects, abstractTableConfiguration, conn);

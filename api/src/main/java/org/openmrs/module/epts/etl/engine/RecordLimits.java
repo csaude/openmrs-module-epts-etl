@@ -36,7 +36,7 @@ public class RecordLimits {
 	
 	private String lastSavedOn;
 	
-	private int qtyRecordsPerProcessing;
+	protected int qtyRecordsPerProcessing;
 	
 	public RecordLimits() {
 	}
@@ -123,6 +123,10 @@ public class RecordLimits {
 		this.lastSavedOn = lastSavedOn;
 	}
 	
+	public void setQtyRecordsPerProcessing(int qtyRecordsPerProcessing) {
+		this.qtyRecordsPerProcessing = qtyRecordsPerProcessing;
+	}
+	
 	public void save() {
 		String fileName = generateFilePath();
 		
@@ -194,10 +198,8 @@ public class RecordLimits {
 	}
 	
 	/**
-	 * Tries to load data for this engine from file.
-	 * 
-	 * If there is no saved limits then will keeped the current limits info
-	 * 
+	 * Tries to load data for this engine from file. If there is no saved limits then will keeped
+	 * the current limits info
 	 * 
 	 * @param file
 	 * @param engine
@@ -216,8 +218,7 @@ public class RecordLimits {
 			this.engine = engine;
 			this.threadCode = engine.getEngineId();
 		}
-		catch (NoSuchFileException e) {
-		}
+		catch (NoSuchFileException e) {}
 		catch (IOException e) {
 			throw new RuntimeException();
 		}
@@ -232,18 +233,21 @@ public class RecordLimits {
 		this.engine = copyFrom.engine;
 		this.loadedFromFile = copyFrom.loadedFromFile;
 		this.lastSavedOn = copyFrom.lastSavedOn;
-		this.qtyRecordsPerProcessing = copyFrom.qtyRecordsPerProcessing;		
+		this.qtyRecordsPerProcessing = copyFrom.qtyRecordsPerProcessing;
 	}
 	
 	private static RecordLimits loadFromJSON(String json) {
 		return utilities.loadObjectFormJSON(RecordLimits.class, json);
 	}
 	
-	
 	@Override
 	public String toString() {
 		return getThreadCode() + " : Thread [" + this.threadMinRecord + " - " + this.threadMaxRecord + "] Curr ["
 		        + this.currentFirstRecordId + " - " + this.currentLastRecordId + "]";
+	}
+
+	public boolean isDefined() {
+		return getCurrentFirstRecordId() > 0 && getCurrentLastRecordId() > 0;
 	}
 	
 }

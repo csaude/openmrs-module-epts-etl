@@ -32,6 +32,9 @@ public class UniqueKeyInfo {
 	
 	private TableConfiguration tabConf;
 	
+	public UniqueKeyInfo() {
+	}
+	
 	public UniqueKeyInfo(TableConfiguration tabConf) {
 		this.tabConf = tabConf;
 	}

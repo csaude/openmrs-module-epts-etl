@@ -78,7 +78,7 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	@Override
 	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromSourceDBSearchParams(
-		        this.getEtlConfiguration(), limits, conn);
+		        this.getEtlConfiguration(), limits, conn, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

@@ -22,8 +22,28 @@ public class DatabaseObjectSearchParamsDAO extends SearchParamsDAO {
 		List<EtlDatabaseObject> l = search(searchParams.getLoaderHealper(), searchParams.getRecordClass(), sql,
 		    searchClauses.getParameters(), conn);
 		
+		int i = 0;
+		
 		while (utilities.arrayHasNoElement(l) && searchParams.getLimits().canGoNext()) {
-			searchParams.getLimits().moveNext(searchParams.getQtdRecordPerSelected());
+			
+			if (i++ == 0) {
+				searchParams.getRelatedController()
+				        .logInfo("Empty result on fased quering... The application will keep searching next pages");
+			} else {
+				searchParams.getRelatedController()
+				        .logDebug("Empty result on fased quering... The application will keep searching next pages "
+				                + searchParams.getLimits());
+			}
+			
+			searchParams.getLimits().moveNext(searchParams.getLimits().getQtyRecordsPerProcessing());
+			
+			searchClauses = searchParams.generateSearchClauses(conn);
+			
+			if (searchParams.getOrderByFields() != null) {
+				searchClauses.addToOrderByFields(searchParams.getOrderByFields());
+			}
+			
+			sql = searchClauses.generateSQL(conn);
 			
 			l = search(searchParams.getLoaderHealper(), searchParams.getRecordClass(), sql, searchClauses.getParameters(),
 			    conn);

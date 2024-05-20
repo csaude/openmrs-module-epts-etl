@@ -66,6 +66,10 @@ public abstract class OperationController implements Controller {
 	
 	protected OperationProgressInfo progressInfo;
 	
+	protected long maxRecord;
+	
+	protected long minRecord;
+	
 	public OperationController(ProcessController processController, EtlOperationConfig operationConfig) {
 		this.logger = new EptsEtlLogger(OperationController.class);
 		
@@ -91,6 +95,22 @@ public abstract class OperationController implements Controller {
 			conn.finalizeConnection();
 		}
 		
+	}
+	
+	public long getMaxRecord() {
+		return maxRecord;
+	}
+	
+	public void setMaxRecord(long maxRecord) {
+		this.maxRecord = maxRecord;
+	}
+	
+	public long getMinRecord() {
+		return minRecord;
+	}
+	
+	public void setMinRecord(long minRecord) {
+		this.minRecord = minRecord;
 	}
 	
 	public void resetProgressInfo(Connection conn) throws DBException {
@@ -768,4 +788,11 @@ public abstract class OperationController implements Controller {
 	
 	public abstract boolean canBeRunInMultipleEngines();
 	
+	public RecordLimits generateLimits(long minRecId, long currMax, Engine engine) {
+		return new RecordLimits(minRecId, currMax, getQtyRecordsPerProcessing(), engine);
+	}
+	
+	public int getQtyRecordsPerProcessing() {
+		return this.getOperationConfig().getMaxRecordPerProcessing();
+	}
 }

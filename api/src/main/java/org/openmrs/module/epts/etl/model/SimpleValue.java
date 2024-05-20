@@ -118,6 +118,10 @@ public class SimpleValue extends BaseVO {
 		return Integer.parseInt(this.value);
 	}
 	
+	public Long longValue() {
+		return Long.parseLong(this.value);
+	}
+	
 	public Integer IntegerValue() {
 		return Integer.parseInt(this.value);
 	}

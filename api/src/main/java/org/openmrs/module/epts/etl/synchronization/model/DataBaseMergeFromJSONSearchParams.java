@@ -10,16 +10,24 @@ import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.synchronization.controller.DatabaseMergeFromJSONController;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParams {
 	
 	private boolean forProgressMeter;
 	
-	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, RecordLimits limits) {
+	private DatabaseMergeFromJSONController relatedController;
+	
+	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, RecordLimits limits, DatabaseMergeFromJSONController relatedController) {
 		super(config, limits);
 		
 		setOrderByFields("id");
+	}
+	
+	
+	public DatabaseMergeFromJSONController getRelatedController() {
+		return relatedController;
 	}
 	
 	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, RecordLimits limits, String appOriginLocationCode) {
@@ -70,7 +78,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		DatabaseObjectSearchParams migratedRecordSearchParams = new DatabaseObjectSearchParams(getConfig(), null);
+		DatabaseObjectSearchParams migratedRecordSearchParams = new DatabaseObjectSearchParams(getConfig(), null, getRelatedController());
 		
 		int migrated = SearchParamsDAO.countAll(migratedRecordSearchParams, conn);
 		int notMigrated = countNotProcessedRecords(conn);

@@ -98,7 +98,7 @@ public abstract class SyncSearchParams<T extends EtlObject> extends AbstractSear
 	 * @param tableInfo
 	 */
 	public void tryToAddLimits(SearchClauses<EtlDatabaseObject> searchClauses) {
-		if (this.getLimits() != null) {
+		if (this.getLimits() != null && this.getLimits().isDefined() ) {
 			
 			if (getSrcTableConf().getPrimaryKey().isSimpleNumericKey()) {
 				searchClauses.addToClauses( getSrcConf().getTableAlias() + "." + getSrcTableConf().getPrimaryKey().retrieveSimpleKeyColumnName() + " between ? and ?");

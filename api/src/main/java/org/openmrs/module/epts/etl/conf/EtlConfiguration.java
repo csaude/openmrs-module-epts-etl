@@ -44,8 +44,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 	
 	private String originAppLocationCode;
 	
-	//private Map<String, AbstractTableConfiguration> syncTableConfigurationPull;
-	
 	private List<EtlItemConfiguration> etlItemConfiguration;
 	
 	private List<AppInfo> appsInfo;
@@ -82,9 +80,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 	private List<AbstractTableConfiguration> allTables;
 	
 	private EptsEtlLogger logger;
-	
-	private ModelType modelType;
-	
 	private String syncStageSchema;
 	
 	private final String stringLock = new String("LOCK_STRING");
@@ -107,7 +102,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 	private EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf;
 	
 	public EtlConfiguration() {
-		//syncTableConfigurationPull = new HashMap<String, AbstractTableConfiguration>();
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
 		this.initialized = false;
@@ -159,14 +153,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 		this.syncStageSchema = syncStageSchema;
 	}
 	
-	public ModelType getModelType() {
-		return modelType;
-	}
-	
-	public void setModelType(ModelType modelType) {
-		this.modelType = modelType;
-	}
-	
 	@JsonIgnore
 	public List<AbstractTableConfiguration> getAllTables() {
 		return allTables;
@@ -198,11 +184,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 			throw new ForbiddenOperationException("No main app found on configurations!");
 		
 		return mainApp;
-	}
-	
-	@JsonIgnore
-	public boolean isOpenMRSModel() {
-		return this.modelType.isOpenMRS();
 	}
 	
 	public boolean isDisabled() {
@@ -309,6 +290,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 	@JsonIgnore
 	public boolean isDbCopy() {
 		return this.processType.isDbCopy();
+	}
+	
+	@JsonIgnore
+	public boolean isDetectMissingRecords() {
+		return this.processType.isDetectMissingRecords();
 	}
 	
 	@JsonIgnore
@@ -673,8 +659,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 			
 			types[0] = ParentTableImpl.class;
 			
-			EtlConfiguration etlConfiguration = new ObjectMapperProvider(types).getContext(EtlConfiguration.class).readValue(json,
-			    EtlConfiguration.class);
+			EtlConfiguration etlConfiguration = new ObjectMapperProvider(types).getContext(EtlConfiguration.class)
+			        .readValue(json, EtlConfiguration.class);
 			
 			etlConfiguration.init();
 			
@@ -816,11 +802,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 		
 		if (getProcessType() == null || !utilities.stringHasValue(getProcessType().name()))
 			errorMsg += ++errNum + ". You must specify value for 'processType' parameter\n";
-		
-		if (getModelType() == null || !utilities.stringHasValue(getModelType().name()))
-			errorMsg += ++errNum + ". You must specify value for 'modelType' parameter\n";
-		
-		for (EtlOperationConfig operation : this.operations) {
+	
+		for (EtlOperationConfig operation : this.getOperations()) {
 			operation.validate();
 		}
 		
@@ -834,6 +817,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 		
 		List<EtlOperationType> supportedOperations = null;
 		
+		if (isDetectMissingRecords()) {
+			supportedOperations = EtlOperationConfig.getSupportedOperationsInDetectMissingRecordsProcess();
+		} else 
 		if (isEtlProcess()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInEtlProcess();
 		} else if (isPojoGeneration()) {
@@ -1096,7 +1082,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 	public boolean isSupposedToHaveOriginAppCode() {
 		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isDBQuickMergeProcess()
 		        || this.isDBQuickMergeWithEntityGenerationDBProcess() || this.isDBInconsistencyCheckProcess()
-		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess() || this.isEtlProcess() || this.isDbExtractProcess();
+		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess() || this.isEtlProcess() || this.isDbExtractProcess()
+		        || this.isDetectMissingRecords();
 	}
 	
 	public boolean isSupposedToRunInDestination() {

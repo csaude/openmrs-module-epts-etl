@@ -182,7 +182,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	@Override
 	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		SyncSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParams(this.getEtlConfiguration(),
-		        null);
+		        null, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

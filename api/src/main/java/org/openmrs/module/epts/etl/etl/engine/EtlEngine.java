@@ -42,7 +42,7 @@ public class EtlEngine extends Engine {
 	@Override
 	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
 		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.getSearchParams(), conn), EtlObject.class);
 	}
 	
 	public AppInfo getDstApp() {
@@ -84,7 +84,7 @@ public class EtlEngine extends Engine {
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
 		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
-		
+			
 		Map<String, List<EtlRecord>> mergingRecs = new HashMap<>();
 		
 		try {

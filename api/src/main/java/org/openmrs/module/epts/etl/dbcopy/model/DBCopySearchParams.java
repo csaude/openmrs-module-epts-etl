@@ -18,15 +18,17 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class DBCopySearchParams extends DatabaseObjectSearchParams {
 	
-	private DBCopyController relatedController;
-	
 	private boolean forProgressMeter;
 	
 	public DBCopySearchParams(EtlItemConfiguration config, RecordLimits limits, DBCopyController relatedController) {
-		super(config, limits);
+		super(config, limits, relatedController);
 		
-		this.relatedController = relatedController;
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
+	}
+	
+	@Override
+	public DBCopyController getRelatedController() {
+		return (DBCopyController) super.getRelatedController();
 	}
 	
 	@Override
@@ -46,7 +48,7 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 			OpenConnection dstConn = null;
 			
 			try {
-				dstConn = this.relatedController.openDstConnection();
+				dstConn = this.getRelatedController().openDstConnection();
 				
 				if (DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
 					throw new ForbiddenOperationException("Rever este metodo!");
@@ -104,11 +106,11 @@ public class DBCopySearchParams extends DatabaseObjectSearchParams {
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
 		
-		OpenConnection destConn = relatedController.openDstConnection();
+		OpenConnection destConn = getRelatedController().openDstConnection();
 		
 		try {
 			
-			DatabaseObjectSearchParams destSearchParams = new DatabaseObjectSearchParams(getConfig(), null);
+			DatabaseObjectSearchParams destSearchParams = new DatabaseObjectSearchParams(getConfig(), null, getRelatedController());
 			
 			destSearchParams.setSearchSourceType(SearchSourceType.TARGET);
 			

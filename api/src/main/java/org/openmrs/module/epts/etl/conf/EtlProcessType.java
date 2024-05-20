@@ -21,8 +21,13 @@ public enum EtlProcessType {
 	DETECT_GAPES_ON_DB_TABLES,
 	POJO_GENERATION,
 	ETL,
-	DB_EXTRACT;
+	DB_EXTRACT,
+	DETECT_MISSING_RECORDS;
 	
+	
+	public boolean isDetectMissingRecords() {
+		return this.equals(DETECT_MISSING_RECORDS);
+	}
 	public boolean isDbExtract() {
 		return this.equals(DB_EXTRACT);
 	}
@@ -162,4 +167,9 @@ public enum EtlProcessType {
 	public static boolean isSupportedProcessType(String processType) {
 		return EtlProcessType.valueOf(processType).isSupportedProcessType();
 	}
+	
+	public static boolean isDetectMissingRecords(String processType) {
+		return EtlProcessType.valueOf(processType).isDetectMissingRecords();
+	}
+	
 }

@@ -58,7 +58,9 @@ public class EtlController extends SiteOperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return getExtremeRecord(config, "min", conn);
+			this.minRecord = getExtremeRecord(config, "min", conn);
+			
+			return this.minRecord;
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -75,7 +77,9 @@ public class EtlController extends SiteOperationController {
 		OpenConnection conn = openConnection();
 		
 		try {
-			return getExtremeRecord(tableInfo, "max", conn);
+			this.maxRecord = getExtremeRecord(tableInfo, "max", conn);
+		
+			return this.maxRecord;
 		}
 		catch (DBException e) {
 			e.printStackTrace();
