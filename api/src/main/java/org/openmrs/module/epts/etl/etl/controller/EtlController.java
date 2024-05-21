@@ -55,9 +55,11 @@ public class EtlController extends SiteOperationController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			this.minRecord = getExtremeRecord(config, "min", conn);
 			
 			return this.minRecord;
@@ -68,17 +70,20 @@ public class EtlController extends SiteOperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration tableInfo) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			this.maxRecord = getExtremeRecord(tableInfo, "max", conn);
-		
+			
 			return this.maxRecord;
 		}
 		catch (DBException e) {
@@ -87,7 +92,8 @@ public class EtlController extends SiteOperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -124,11 +130,11 @@ public class EtlController extends SiteOperationController {
 		return false;
 	}
 	
-	public OpenConnection openSrcConnection() {
+	public OpenConnection openSrcConnection() throws DBException {
 		return srcApp.openConnection();
 	}
 	
-	public OpenConnection openDstConnection() {
+	public OpenConnection openDstConnection() throws DBException {
 		return dstApp.openConnection();
 	}
 	

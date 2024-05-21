@@ -5,12 +5,12 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class LoadedRecordsSearchParams extends SyncSearchParams<SyncImportInfoVO> {
+public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<SyncImportInfoVO> {
 	
 	private String appOriginLocationCode;
 	

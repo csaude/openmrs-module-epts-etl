@@ -334,7 +334,7 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		String sql = this.getRelatedConfiguration().generateSelectFromQuery();
 		
-		sql += " WHERE " + pk.parseToParametrizedStringCondition();
+		sql += " WHERE " + pk.parseToParametrizedStringConditionWithAlias();
 		
 		return DatabaseObjectDAO.find(tabConf.getLoadHealper(), tabConf.getSyncRecordClass(), sql, pk.parseValuesToArray(),
 		    conn);

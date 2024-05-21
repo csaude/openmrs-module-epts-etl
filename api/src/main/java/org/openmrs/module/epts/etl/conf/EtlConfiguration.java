@@ -80,6 +80,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 	private List<AbstractTableConfiguration> allTables;
 	
 	private EptsEtlLogger logger;
+	
 	private String syncStageSchema;
 	
 	private final String stringLock = new String("LOCK_STRING");
@@ -184,6 +185,39 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 			throw new ForbiddenOperationException("No main app found on configurations!");
 		
 		return mainApp;
+	}
+	
+	public boolean hasDstApp() {
+		List<AppInfo> allInfo = exposeAllAppsNotMain();
+		
+		if (allInfo != null) {
+			for (AppInfo info : allInfo) {
+				if (info.getApplicationCode().equals(AppInfo.DST_APP_CODE)) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	@JsonIgnore
+	public AppInfo getDstApp() {
+		if (!hasDstApp()) {
+			throw new ForbiddenOperationException("No dst App is configured");
+		}
+		
+		List<AppInfo> allInfo = exposeAllAppsNotMain();
+		
+		if (allInfo != null) {
+			for (AppInfo info : allInfo) {
+				if (info.getApplicationCode().equals(AppInfo.DST_APP_CODE)) {
+					return info;
+				}
+			}
+		}
+		
+		return null;
 	}
 	
 	public boolean isDisabled() {
@@ -626,9 +660,12 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 		if (UUID.randomUUID() != null)
 			throw new ForbiddenOperationException("Please review this method");
 		
-		OpenConnection conn = getMainApp().openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = getMainApp().openConnection();
+			;
+			
 			DatabaseMetaData dbmd = conn.getMetaData();
 			String[] types = { "TABLE" };
 			
@@ -648,7 +685,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 		
 	}
@@ -802,7 +840,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 		
 		if (getProcessType() == null || !utilities.stringHasValue(getProcessType().name()))
 			errorMsg += ++errNum + ". You must specify value for 'processType' parameter\n";
-	
+		
 		for (EtlOperationConfig operation : this.getOperations()) {
 			operation.validate();
 		}
@@ -819,8 +857,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration {
 		
 		if (isDetectMissingRecords()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInDetectMissingRecordsProcess();
-		} else 
-		if (isEtlProcess()) {
+		} else if (isEtlProcess()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInEtlProcess();
 		} else if (isPojoGeneration()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInPojoGenerationProcess();

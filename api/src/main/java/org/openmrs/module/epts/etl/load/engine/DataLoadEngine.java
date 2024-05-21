@@ -11,7 +11,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.load.model.LoadSyncDataSearchParams;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
@@ -153,8 +153,8 @@ public class DataLoadEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends EtlObject> searchParams = new LoadSyncDataSearchParams(getRelatedOperationController(),
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new LoadSyncDataSearchParams(getRelatedOperationController(),
 		        this.getEtlConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
 		

@@ -6,13 +6,13 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.transport.controller.TransportController;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class TransportSyncSearchParams extends SyncSearchParams<EtlDatabaseObject> implements FilenameFilter {
+public class TransportSyncSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> implements FilenameFilter {
 	
 	private String firstFileName;
 	

@@ -14,11 +14,21 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 	        throws DBException {
 		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		
-		Object[] params = { record.getOperationId(), record.getOperationName(), record.getEtlConfiguration().getConfigCode(),
-		        record.getOriginAppLocationCode(), DateAndTimeUtilities.getCurrentSystemDate(conn),
-		        DateAndTimeUtilities.getCurrentSystemDate(conn), record.getProgressMeter().getTotal(),
-		        record.getProgressMeter().getProcessed(), record.getProgressMeter().getStatus() };
+		//@// @formatter:off
+		Object[] params = { record.getOperationId(), 
+							record.getOperationName(), 
+							record.getEtlConfiguration().getConfigCode(),
+							record.getOriginAppLocationCode(), 
+							DateAndTimeUtilities.getCurrentSystemDate(conn),
+							DateAndTimeUtilities.getCurrentSystemDate(conn), 
+							record.getProgressMeter().getTotal(),
+							record.getProgressMeter().getMinRecordId(),
+							record.getProgressMeter().getMaxRecordId(),
+							record.getProgressMeter().getProcessed(), 
+							record.getProgressMeter().getStatus() };
 		
+		 
+		// @formatter:on
 		String sql = "";
 		
 		sql += "INSERT INTO " + syncStageSchema + ".table_operation_progress_info(operation_id,\n";
@@ -28,9 +38,13 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 		sql += "																  started_at,\n";
 		sql += "																  last_refresh_at,\n";
 		sql += "																  total_records,\n";
+		sql += "																  min_record_id,\n";
+		sql += "																  max_record_id,\n";
 		sql += "																  total_processed_records,\n";
 		sql += "																  status)\n";
 		sql += "	VALUES(?,\n";
+		sql += "		   ?,\n";
+		sql += "		   ?,\n";
 		sql += "		   ?,\n";
 		sql += "		   ?,\n";
 		sql += "		   ?,\n";
@@ -47,14 +61,22 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 	        throws DBException {
 		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		
-		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), record.getProgressMeter().getTotal(),
-		        record.getProgressMeter().getProcessed(), record.getProgressMeter().getStatus(), record.getOperationId() };
+		//@// @formatter:off
+		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), 
+							record.getProgressMeter().getTotal(),
+							record.getProgressMeter().getMinRecordId(),
+							record.getProgressMeter().getMaxRecordId(),
+							record.getProgressMeter().getProcessed(), 
+							record.getProgressMeter().getStatus(), 
+							record.getOperationId() };
 		
 		String sql = "";
 		
 		sql += " UPDATE " + syncStageSchema + ".table_operation_progress_info\n";
 		sql += " SET	last_refresh_at = ?,\n";
 		sql += "		total_records = ?,\n";
+		sql += "		min_record_id = ?,\n";
+		sql += "		max_record_id = ?,\n";		
 		sql += "		total_processed_records=?,";
 		sql += "		status=?";
 		sql += " WHERE operation_id = ? ";
@@ -62,8 +84,8 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static TableOperationProgressInfo find(OperationController controller, EtlItemConfiguration config, Connection conn)
-	        throws DBException {
+	public static TableOperationProgressInfo find(OperationController controller, EtlItemConfiguration config,
+	        Connection conn) throws DBException {
 		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		
 		Object[] params = { TableOperationProgressInfo.generateOperationId(controller, config) };

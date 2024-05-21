@@ -1,12 +1,12 @@
 package fgh.sp.openmrs_changed_records_action.eip;
 
-
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import fgh.sp.openmrs_changed_records_action.eip.model.Event;
@@ -17,16 +17,15 @@ import fgh.spi.changedrecordsdetector.DetectedRecordAction;
 
 /**
  * @author jpboane
- *
  */
 public class EipChangedRecordDetectedAction implements DetectedRecordAction {
-
+	
 	private DBConnectionService dbService;
 	
 	public EipChangedRecordDetectedAction() {
 	}
 	
-	public OpenConnection openConnection() {
+	public OpenConnection openConnection() throws DBException {
 		return dbService.openConnection();
 	}
 	
@@ -37,9 +36,9 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 		Event event = new Event();
 		
 		event.setTableName(record.getTableName());
-		event.setPrimaryKeyId(""+record.getObjectId());
+		event.setPrimaryKeyId("" + record.getObjectId());
 		event.setIdentifier(record.getUuid());
-		event.setOperation(""+record.getOperationType());
+		event.setOperation("" + record.getOperationType());
 		event.setSnapshot(Boolean.FALSE);
 		
 		item.setAttemptCount(0);
@@ -49,38 +48,41 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 		
 		item.setEvent(event);
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			SenderRetryQueueItemDAO.insert(item, conn);
 			
 			conn.markAsSuccessifullyTerminated();
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new RuntimeException(e);
-		} 
+		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
 	public String getAppCode() {
 		return "eip";
 	}
-
-
+	
 	@Override
 	public boolean isDBServiceConfigured() {
 		return this.dbService != null;
 	}
-
+	
 	@Override
 	public void configureDBService(DBConnectionInfo dbConnectionInfo) {
-		this.dbService = DBConnectionService.init(dbConnectionInfo );
+		this.dbService = DBConnectionService.init(dbConnectionInfo);
 	}
-
+	
 	@Override
 	public void performeAction(List<ChangedRecord> record, AbstractTableConfiguration abstractTableConfiguration) {
 		throw new ForbiddenOperationException("Not supported batch performing");
-	}	
+	}
 }

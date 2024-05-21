@@ -11,7 +11,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.OperationController;
-import org.openmrs.module.epts.etl.engine.SyncProgressMeter;
+import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
@@ -46,7 +46,7 @@ public class OperationProgressInfo {
 	
 	public OperationProgressInfo(OperationController controller) {
 		this.controller = controller;
-		this.status = SyncProgressMeter.STATUS_NOT_INITIALIZED;
+		this.status = EtlProgressMeter.STATUS_NOT_INITIALIZED;
 		this.operationName = controller.getControllerId();
 	}
 	
@@ -156,45 +156,45 @@ public class OperationProgressInfo {
 	}
 	
 	public boolean isRunning() {
-		return this.status.equals(SyncProgressMeter.STATUS_RUNNING);
+		return this.status.equals(EtlProgressMeter.STATUS_RUNNING);
 	}
 	
 	public boolean isPaused() {
-		return this.status.equals(SyncProgressMeter.STATUS_PAUSED);
+		return this.status.equals(EtlProgressMeter.STATUS_PAUSED);
 	}
 	
 	public boolean isStopped() {
-		return this.status.equals(SyncProgressMeter.STATUS_STOPPED);
+		return this.status.equals(EtlProgressMeter.STATUS_STOPPED);
 	}
 	
 	public boolean isSleeping() {
-		return this.status.equals(SyncProgressMeter.STATUS_SLEEPING);
+		return this.status.equals(EtlProgressMeter.STATUS_SLEEPING);
 	}
 	
 	public boolean isFinished() {
-		return this.status.equals(SyncProgressMeter.STATUS_FINISHED);
+		return this.status.equals(EtlProgressMeter.STATUS_FINISHED);
 	}
 	
 	public void changeStatusToSleeping() {
-		this.status = SyncProgressMeter.STATUS_SLEEPING;
+		this.status = EtlProgressMeter.STATUS_SLEEPING;
 		
 		save();
 	}
 	
 	public void changeStatusToRunning() {
-		this.status = SyncProgressMeter.STATUS_RUNNING;
+		this.status = EtlProgressMeter.STATUS_RUNNING;
 		
 		save();
 	}
 	
 	public void changeStatusToStopped() {
-		this.status = SyncProgressMeter.STATUS_STOPPED;
+		this.status = EtlProgressMeter.STATUS_STOPPED;
 		
 		save();
 	}
 	
 	public void changeStatusToFinished() {
-		this.status = SyncProgressMeter.STATUS_FINISHED;
+		this.status = EtlProgressMeter.STATUS_FINISHED;
 		this.finishTime = DateAndTimeUtilities.getCurrentDate();
 		
 		save();

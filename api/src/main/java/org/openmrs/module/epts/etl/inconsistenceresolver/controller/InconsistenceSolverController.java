@@ -15,12 +15,13 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
- * This class is responsible for control the data inconsistence resolving in the synchronization processs
+ * This class is responsible for control the data inconsistence resolving in the synchronization
+ * processs
  * 
  * @author jpboane
- *
  */
 public class InconsistenceSolverController extends OperationController {
+	
 	public InconsistenceSolverController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
@@ -29,44 +30,54 @@ public class InconsistenceSolverController extends OperationController {
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new InconsistenceSolverEngine(monitor, limits);
 	}
-
+	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			EtlDatabaseObject obj = DatabaseObjectDAO.getFirstNeverProcessedRecordOnOrigin(config.getSrcConf(), conn);
-		
-			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
+			
+			if (obj != null)
+				return obj.getObjectId().getSimpleValueAsInt();
 			
 			return 0;
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			EtlDatabaseObject obj = DatabaseObjectDAO.getLastNeverProcessedRecordOnOrigin(config.getSrcConf(), conn);
-		
-			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
+			
+			if (obj != null)
+				return obj.getObjectId().getSimpleValueAsInt();
 			
 			return 0;
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -76,13 +87,14 @@ public class InconsistenceSolverController extends OperationController {
 	}
 	
 	@Override
-	public OpenConnection openConnection() {
+	public OpenConnection openConnection() throws DBException {
 		OpenConnection conn = super.openConnection();
-	
+		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
 			try {
 				DBUtilities.disableForegnKeyChecks(conn);
-			} catch (DBException e) {
+			}
+			catch (DBException e) {
 				e.printStackTrace();
 				
 				throw new RuntimeException(e);

@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.dbextract.model.DbExtractRecord;
 import org.openmrs.module.epts.etl.dbextract.model.DbExtractSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -272,8 +272,8 @@ public class DbExtractEngine extends EtlEngine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends EtlObject> searchParams = new DbExtractSearchParams(this.getEtlConfiguration(), limits,
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DbExtractSearchParams(this.getEtlConfiguration(), limits,
 		        getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

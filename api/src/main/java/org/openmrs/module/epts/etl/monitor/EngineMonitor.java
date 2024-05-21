@@ -9,8 +9,8 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncProgressMeter;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -45,8 +45,6 @@ public class EngineMonitor implements MonitoredOperation {
 	private boolean stopRequested;
 	
 	protected TableOperationProgressInfo tableOperationProgressInfo;
-	
-	//private List<EtlObject> recordsToBeReprocessed;
 	
 	public EngineMonitor(OperationController controller, EtlItemConfiguration etlItemConfiguration,
 	    TableOperationProgressInfo tableOperationProgressInfo) {
@@ -85,7 +83,7 @@ public class EngineMonitor implements MonitoredOperation {
 		return this.getEtlConfiguration().getConfigCode();
 	}
 	
-	public SyncProgressMeter getProgressMeter() {
+	public EtlProgressMeter getProgressMeter() {
 		return this.tableOperationProgressInfo != null ? this.tableOperationProgressInfo.getProgressMeter() : null;
 	}
 	
@@ -139,7 +137,7 @@ public class EngineMonitor implements MonitoredOperation {
 		}
 	}
 	
-	void doWait() {
+	void doWait() throws DBException {
 		while (isRunning()) {
 			
 			if (mustRestartInTheEnd()) {
@@ -170,22 +168,40 @@ public class EngineMonitor implements MonitoredOperation {
 		return controller;
 	}
 	
-	private void initEngine() {
+	private void initEngine() throws DBException {
 		logInfo("INITIALIZING ENGINE FOR ETL CONFIG [" + getEtlConfiguration().getConfigCode().toUpperCase() + "]");
 		
-		logDebug("DETERMINING MIN RECORD FOR " + getSrcMainTableConf().getTableName());
+		long minRecId = tableOperationProgressInfo.getProgressMeter().getMinRecordId();
 		
-		long minRecId = getController().getMinRecordId(getEtlConfiguration());
-		
-		logDebug("FOUND MIN RECORD " + getEtlConfiguration() + " = " + minRecId);
+		if (minRecId == 0) {
+			logDebug("DETERMINING MIN RECORD FOR " + getSrcMainTableConf().getTableName());
+			
+			minRecId = getController().getMinRecordId(getEtlConfiguration());
+			
+			logDebug("FOUND MIN RECORD " + getEtlConfiguration() + " = " + minRecId);
+			
+			tableOperationProgressInfo.getProgressMeter().setMinRecordId(minRecId);
+			
+		} else {
+			logDebug("USING SAVED MIN RECORD " + getEtlConfiguration() + " = " + minRecId);
+		}
 		
 		long maxRecId = 0;
 		
 		if (minRecId != 0) {
-			logDebug("DETERMINING MAX RECORD FOR CONFIG" + getEtlConfiguration().getConfigCode());
+			maxRecId = tableOperationProgressInfo.getProgressMeter().getMaxRecordId();
 			
-			maxRecId = getController().getMaxRecordId(getEtlConfiguration());
-			logDebug("FOUND MAX RECORD " + getEtlConfiguration() + " = " + maxRecId);
+			if (maxRecId == 0) {
+				logDebug("DETERMINING MAX RECORD FOR CONFIG" + getEtlConfiguration().getConfigCode());
+				
+				maxRecId = getController().getMaxRecordId(getEtlConfiguration());
+				
+				tableOperationProgressInfo.getProgressMeter().setMaxRecordId(maxRecId);
+				
+				logDebug("FOUND MAX RECORD " + getEtlConfiguration() + " = " + maxRecId);
+			} else {
+				logDebug("USING SAVED MAX RECORD " + getEtlConfiguration() + " = " + maxRecId);
+			}
 		} else {
 			logDebug("MIN RECORD IS ZERO! SKIPING MAX RECORD VERIFICATION...");
 		}
@@ -247,8 +263,8 @@ public class EngineMonitor implements MonitoredOperation {
 			int i = 1;
 			
 			for (i = 1; i < qtyEngines; i++) {
-				limits = getController().generateLimits(limits.getThreadMaxRecord() + 1, limits.getThreadMaxRecord() + qtyRecordsPerEngine,
-				    null);
+				limits = getController().generateLimits(limits.getThreadMaxRecord() + 1,
+				    limits.getThreadMaxRecord() + qtyRecordsPerEngine, null);
 				
 				if (i == qtyEngines - 1) {
 					limits.setThreadMaxRecord(maxRecId);
@@ -347,7 +363,7 @@ public class EngineMonitor implements MonitoredOperation {
 		return qtyRecords / getController().getOperationConfig().getMinRecordsPerEngine();
 	}
 	
-	public void realocateJobToEngines() {
+	public void realocateJobToEngines() throws DBException {
 		logDebug("REALOCATING ENGINES FOR '" + getEtlConfigCode().toUpperCase() + "'");
 		
 		killSelfCreatedThreads();
@@ -632,7 +648,7 @@ public class EngineMonitor implements MonitoredOperation {
 	}
 	
 	public void reportProgress() {
-		SyncProgressMeter globalProgressMeter = this.getProgressMeter();
+		EtlProgressMeter globalProgressMeter = this.getProgressMeter();
 		
 		String log = "";
 		

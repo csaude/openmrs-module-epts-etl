@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -66,8 +67,13 @@ public interface ParentTable extends RelatedTable {
 		return utilities.arrayHasElement(this.getConditionalFields());
 	}
 	
-	default DstConf findRelatedDstConf() {
+	default DstConf findRelatedDstConf() throws DBException {
 		for (EtlItemConfiguration conf : getRelatedSyncConfiguration().getEtlItemConfiguration()) {
+			
+			if (!conf.isFullLoaded()) {
+				conf.fullLoad();
+			}
+			
 			for (DstConf dst : conf.getDstConf()) {
 				if (dst.getTableName().equals(this.getTableName())) {
 					return dst;

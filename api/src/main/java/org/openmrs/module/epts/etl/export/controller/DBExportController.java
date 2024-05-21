@@ -24,19 +24,18 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  * This class is responsible for control the data export in the synchronization processs
  * 
  * @author jpboane
- *
  */
 public class DBExportController extends OperationController {
 	
 	public DBExportController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
-
+	
 	@Override
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new DBExportEngine(monitor, limits);
 	}
-
+	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
 		
@@ -44,49 +43,60 @@ public class DBExportController extends OperationController {
 			throw new ForbiddenOperationException("Not supported composite primary key");
 		}
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			EtlDatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(config.getSrcConf(), conn);
-		
-			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
+			
+			if (obj != null)
+				return obj.getObjectId().getSimpleValueAsInt();
 			
 			return 0;
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
 		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
 			throw new ForbiddenOperationException("Not supported composite primary key");
 		}
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			EtlDatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(config.getSrcConf(), conn);
-		
-			if (obj != null) return obj.getObjectId().getSimpleValueAsInt();
+			
+			if (obj != null)
+				return obj.getObjectId().getSimpleValueAsInt();
 			
 			return 0;
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
-	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, AbstractTableConfiguration tableInfo, Integer startRecord, Integer lastRecord) throws IOException {
+	public synchronized File generateJSONTempFile(SyncJSONInfo jsonInfo, AbstractTableConfiguration tableInfo,
+	        Integer startRecord, Integer lastRecord) throws IOException {
 		String fileName = "";
 		
 		fileName += tableInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
@@ -102,15 +112,15 @@ public class DBExportController extends OperationController {
 		
 		fileName += "_" + utilities().garantirXCaracterOnNumber(startRecord, 10);
 		fileName += "_" + utilities().garantirXCaracterOnNumber(lastRecord, 10);
-	
-		if(new File(fileName).exists() ) {
+		
+		if (new File(fileName).exists()) {
 			logInfo("The file '" + fileName + "' is already exists!!! Removing it...");
 			new File(fileName).delete();
 		}
 		
-		if(new File(fileName+".json").exists() ) {
-			logInfo("The file '" + fileName  + ".json' is already exists!!! Removing it...");
-			new File(fileName+".json").delete();
+		if (new File(fileName + ".json").exists()) {
+			logInfo("The file '" + fileName + ".json' is already exists!!! Removing it...");
+			new File(fileName + ".json").delete();
 		}
 		
 		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
@@ -120,12 +130,12 @@ public class DBExportController extends OperationController {
 		
 		return file;
 	}
-
+	
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return false;
 	}
-
+	
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return true;

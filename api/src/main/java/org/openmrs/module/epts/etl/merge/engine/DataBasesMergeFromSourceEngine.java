@@ -11,7 +11,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBController;
 import org.openmrs.module.epts.etl.merge.model.DataBaseMergeFromSourceDBSearchParams;
@@ -76,8 +76,8 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromSourceDBSearchParams(
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromSourceDBSearchParams(
 		        this.getEtlConfiguration(), limits, conn, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

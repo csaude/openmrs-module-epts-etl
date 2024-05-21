@@ -47,11 +47,13 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		Integer id = Integer.valueOf(0);
 		
 		try {
+			conn = openConnection();
+			
 			SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(config.getSrcConf(), conn);
 			
 			id = record != null ? record.getId() : 0;
@@ -64,17 +66,20 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		Integer id = Integer.valueOf(0);
 		
 		try {
+			conn = openConnection();
+			
 			SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(config.getSrcConf(), conn);
 			
 			id = record != null ? record.getId() : 0;
@@ -87,7 +92,8 @@ public class DataBaseMergeFromSourceDBController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	

@@ -174,7 +174,7 @@ public class DatabaseEntityPOJOGenerator {
 		insertValuesWithObjectIdDefinition += attElements.getSqlInsertValues();
 		
 		if (pojoble.getPrimaryKey() != null) {
-			updateSQLDefinition += " WHERE " + pojoble.getPrimaryKey().parseToParametrizedStringCondition();
+			updateSQLDefinition += " WHERE " + pojoble.getPrimaryKey().parseToParametrizedStringConditionWithAlias();
 			
 			for (Key key : pojoble.getPrimaryKey().getFields()) {
 				updateParamsDefinition += ", this." + key.getNameAsClassAtt();

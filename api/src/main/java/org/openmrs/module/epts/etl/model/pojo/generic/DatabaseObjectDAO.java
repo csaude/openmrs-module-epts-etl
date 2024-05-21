@@ -191,7 +191,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		try {
 			params = utilities.setParam(params, uniqueKey.parseValuesToArray());
 			
-			conditionSQL = uniqueKey.parseToParametrizedStringCondition();
+			conditionSQL = uniqueKey.parseToParametrizedStringConditionWithAlias();
 		}
 		catch (ForbiddenOperationException e) {}
 		
@@ -234,7 +234,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			try {
 				params = utilities.setParam(params, uniqueKey.parseValuesToArray());
 				
-				tmpCodition = uniqueKey.parseToParametrizedStringCondition();
+				tmpCodition = uniqueKey.parseToParametrizedStringConditionWithAlias();
 			}
 			catch (ForbiddenOperationException e) {}
 			
@@ -305,7 +305,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			
 			sql += " SELECT " + tabConf.generateFullAliasedSelectColumns() + "\n";
 			sql += " FROM  	" + tabConf.generateSelectFromClauseContent() + "\n";
-			sql += " WHERE 	" + oid.parseToParametrizedStringCondition();
+			sql += " WHERE 	" + oid.parseToParametrizedStringConditionWithAlias();
 			
 			obj = find(tabConf.getLoadHealper(), openMRSClass, sql, params, conn);
 			
@@ -345,7 +345,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			
 			sql += " SELECT " + tabConf.generateFullAliasedSelectColumns() + "\n";
 			sql += " FROM  	" + tabConf.generateSelectFromClauseContentOnSpecificSchema(schema) + "\n";
-			sql += " WHERE 	" + oid.parseToParametrizedStringCondition();
+			sql += " WHERE 	" + oid.parseToParametrizedStringConditionWithAlias();
 			
 			return find(tabConf.getLoadHealper(), openMRSClass, sql, params, conn);
 		}
@@ -468,7 +468,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = record.getObjectId().parseValuesToArray();
 		
 		String sql = " DELETE" + " FROM " + record.generateTableName() + " WHERE  "
-		        + record.getObjectId().parseToParametrizedStringCondition();
+		        + record.getObjectId().parseToParametrizedStringConditionWithAlias();
 		
 		executeQueryWithRetryOnError(sql, params, conn);
 	}

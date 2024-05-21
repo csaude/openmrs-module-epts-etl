@@ -32,7 +32,7 @@ public class DatabaseMergeFromJSONController extends OperationController {
 	}
 	
 	@Override
-	public OpenConnection openConnection() {
+	public OpenConnection openConnection() throws DBException {
 		OpenConnection conn = super.openConnection();
 		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
@@ -51,9 +51,11 @@ public class DatabaseMergeFromJSONController extends OperationController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(config, null, this);
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
@@ -70,15 +72,18 @@ public class DatabaseMergeFromJSONController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(config, null, this);
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
@@ -95,7 +100,8 @@ public class DatabaseMergeFromJSONController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	

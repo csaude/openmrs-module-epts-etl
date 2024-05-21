@@ -2,7 +2,6 @@ package org.openmrs.module.epts.etl.resolveconflictsinstagearea.controller;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -34,12 +33,14 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(config, null,
 		        conn);
 		
 		try {
+			conn = openConnection();
+			
 			SyncImportInfoVO rec = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
 			
 			return rec != null ? rec.getId() : 0;
@@ -51,18 +52,21 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(config, null,
 		        conn);
 		
 		try {
+			conn = openConnection();
+			
 			SyncImportInfoVO rec = SyncImportInfoDAO.getLastRecord(searchParams, conn);
 			
 			return rec != null ? rec.getId() : 0;
@@ -74,7 +78,8 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -84,7 +89,7 @@ public class ResolveConflictsInStageAreaController extends OperationController {
 	}
 	
 	@Override
-	public OpenConnection openConnection() {
+	public OpenConnection openConnection() throws DBException {
 		OpenConnection conn = super.openConnection();
 		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {

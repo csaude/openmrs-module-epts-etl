@@ -39,9 +39,11 @@ public class DBQuickCopyController extends SiteOperationController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			return DatabaseObjectDAO.getFirstRecord(config.getSrcConf(), conn);
 		}
 		catch (DBException e) {
@@ -50,15 +52,18 @@ public class DBQuickCopyController extends SiteOperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			return DatabaseObjectDAO.getLastRecord(config.getSrcConf(), conn);
 		}
 		catch (DBException e) {
@@ -67,7 +72,8 @@ public class DBQuickCopyController extends SiteOperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -76,7 +82,7 @@ public class DBQuickCopyController extends SiteOperationController {
 		return false;
 	}
 	
-	public OpenConnection openDstConnection() {
+	public OpenConnection openDstConnection() throws DBException {
 		return dstConn.openConnection();
 	}
 	

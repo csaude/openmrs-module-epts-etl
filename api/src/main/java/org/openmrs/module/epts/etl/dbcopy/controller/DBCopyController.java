@@ -47,9 +47,11 @@ public class DBCopyController extends OperationController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openSrcConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openSrcConnection();
+			
 			DBCopySearchParams searchParams = new DBCopySearchParams(config, null, this);
 			
 			return DatabaseObjectDAO.getFirstRecord(searchParams, conn);
@@ -60,17 +62,20 @@ public class DBCopyController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openSrcConnection();
+		OpenConnection conn = null;
 		
 		DBCopySearchParams searchParams = new DBCopySearchParams(config, null, this);
 		
 		try {
+			conn = openSrcConnection();
+			
 			return DatabaseObjectDAO.getLastRecord(searchParams, conn);
 		}
 		catch (DBException e) {
@@ -79,7 +84,8 @@ public class DBCopyController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -88,11 +94,11 @@ public class DBCopyController extends OperationController {
 		return false;
 	}
 	
-	public OpenConnection openSrcConnection() {
+	public OpenConnection openSrcConnection() throws DBException {
 		return srcAppInfo.openConnection();
 	}
 	
-	public OpenConnection openDstConnection() {
+	public OpenConnection openDstConnection() throws DBException {
 		return dstAppInfo.openConnection();
 	}
 	

@@ -197,13 +197,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@JsonIgnore
 	@Override
 	default PrimaryKey getPrimaryKey() {
-		OpenConnection conn = getRelatedAppInfo().openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = getRelatedAppInfo().openConnection();
+			
 			return getPrimaryKey(conn);
 		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
+		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -315,13 +321,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default void loadUniqueKeys() {
-		OpenConnection conn = getRelatedSyncConfiguration().getMainApp().openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = getRelatedSyncConfiguration().getMainApp().openConnection();
+			
 			loadUniqueKeys(conn);
 		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
+		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -329,7 +341,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default void loadUniqueKeys(Connection conn) {
 		if (this.getUniqueKeys() == null) {
 			loadUniqueKeys(this, conn);
-		}else {
+		} else {
 			for (UniqueKeyInfo uk : this.getUniqueKeys()) {
 				uk.setTabConf(this);
 			}
@@ -1051,7 +1063,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				PrimaryKey childRefInfoAskey = new PrimaryKey(ref.getChildTableConf());
 				childRefInfoAskey.setFields(ref.extractChildFieldsFromRefMapping());
 				
-				if (ref.getPrimaryKey().equals(parentRefInfoAskey)
+				if (ref.getPrimaryKey() != null && ref.getPrimaryKey().equals(parentRefInfoAskey)
 				        && ref.getChildTableConf().getPrimaryKey().equals(childRefInfoAskey)) {
 					this.setSharePkWith(ref.getTableName());
 					
@@ -1400,9 +1412,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		if (this.getPrimaryKey() != null) {
-			updateSQL += " WHERE " + this.getPrimaryKey().parseToParametrizedStringCondition();
+			updateSQL += " WHERE " + this.getPrimaryKey().parseToParametrizedStringConditionWithoutAlias();
 		} else {
-			updateSQL += " WHERE " + UniqueKeyInfo.parseToParametrizedStringConditionToAll(this.getUniqueKeys());
+			updateSQL += " WHERE " + UniqueKeyInfo.parseToParametrizedStringConditionToAllWithoutAlias(this.getUniqueKeys());
 		}
 		
 		return updateSQL;

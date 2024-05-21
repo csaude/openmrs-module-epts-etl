@@ -10,7 +10,7 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -18,7 +18,7 @@ import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class LoadSyncDataSearchParams extends SyncSearchParams<EtlDatabaseObject> implements FilenameFilter {
+public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> implements FilenameFilter {
 	
 	private String firstFileName;
 	

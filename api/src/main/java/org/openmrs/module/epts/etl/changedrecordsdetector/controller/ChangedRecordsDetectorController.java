@@ -42,8 +42,13 @@ public class ChangedRecordsDetectorController extends OperationController {
 	public void onStart() {
 		super.onStart();
 		
-		if (!existDetectedRecordInfoTable()) {
-			generateDetectedRecordInfoTable();
+		try {
+			if (!existDetectedRecordInfoTable()) {
+				generateDetectedRecordInfoTable();
+			}
+		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
 		}
 	}
 	
@@ -54,17 +59,16 @@ public class ChangedRecordsDetectorController extends OperationController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
 			
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstChangedRecord(
-				    config.getSrcConf(),
+				return DetectedRecordInfoDAO.getFirstChangedRecord(config.getSrcConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstNewRecord(
-				    config.getSrcConf(),
+				return DetectedRecordInfoDAO.getFirstNewRecord(config.getSrcConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(
@@ -76,22 +80,23 @@ public class ChangedRecordsDetectorController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastChangedRecord(
-				    config.getSrcConf(),
+				return DetectedRecordInfoDAO.getLastChangedRecord(config.getSrcConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastNewRecord(
-				    config.getSrcConf(),
+				return DetectedRecordInfoDAO.getLastNewRecord(config.getSrcConf(),
 				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(
@@ -103,7 +108,8 @@ public class ChangedRecordsDetectorController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -112,7 +118,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 		return false;
 	}
 	
-	public OpenConnection openConnection() {
+	public OpenConnection openConnection() throws DBException {
 		OpenConnection conn = getDefaultApp().openConnection();
 		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
@@ -129,7 +135,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 		return conn;
 	}
 	
-	public boolean existDetectedRecordInfoTable() {
+	public boolean existDetectedRecordInfoTable() throws DBException {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -151,7 +157,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 	}
 	
 	private void generateDetectedRecordInfoTable() {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		String sql = "";
 		
@@ -170,6 +176,9 @@ public class ChangedRecordsDetectorController extends OperationController {
 		sql += ") ENGINE=InnoDB;\n";
 		
 		try {
+			
+			conn = openConnection();
+			
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
 			st.addBatch("CREATE INDEX d_rec_info_app_idx ON detected_record_info (app_code);");
@@ -189,8 +198,10 @@ public class ChangedRecordsDetectorController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.markAsSuccessifullyTerminated();
-			conn.finalizeConnection();
+			if (conn != null) {
+				conn.markAsSuccessifullyTerminated();
+				conn.finalizeConnection();
+			}
 		}
 	}
 	

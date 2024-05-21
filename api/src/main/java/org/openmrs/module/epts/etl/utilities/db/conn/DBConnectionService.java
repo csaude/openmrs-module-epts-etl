@@ -1,11 +1,9 @@
 package org.openmrs.module.epts.etl.utilities.db.conn;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TimeZone;
 
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -130,8 +128,8 @@ public class DBConnectionService {
 	}*/
 	
 	@JsonIgnore
-	public OpenConnection openConnection() {
-		OpenConnection conn = new OpenConnection(openConnection(50), this);
+	public OpenConnection openConnection() throws DBException {
+		OpenConnection conn = new OpenConnection(openConnection(50, null), this);
 		
 		//incriseOpenConnections();
 		return conn;
@@ -151,89 +149,30 @@ public class DBConnectionService {
 	}
 	*/
 	
-	public OpenConnection openConnection(String context) {
-		return openConnection(context, 10);
-	}
-	
-	private Connection openConnection(int qtyTry) {
+	private Connection openConnection(int qtyTry, SQLException e) throws DBException {
 		if (qtyTry <= 0)
-			throw new ForbiddenOperationException("The connection service could stablish a valid connection");
+			throw new DBException(e);
 		
 		try {
 			
 			return this.dataSource.getConnection();
 		}
-		catch (SQLException e) {
+		catch (SQLException e1) {
+			
+			if (DBUtilities.determineDataBaseFromException(e).equals(DBUtilities.MYSQL_DATABASE)) {
+				if (DBException.checkIfExceptionContainsMessage(e, "Unknown database")) {
+					throw new ForbiddenOperationException(e);
+				}
+			}
+			
 			e.printStackTrace();
 			
 			logger.warn("Tentando novamente Obter uma conexao");
 			
-			TimeCountDown.sleep(10);
+			TimeCountDown.sleep(5);
 			
-			return openConnection(--qtyTry);
+			return openConnection(--qtyTry, e1);
 		}
-	}
-	
-	@SuppressWarnings("unused")
-	private Connection openConnectionOld(int qtyTry) {
-		if (qtyTry <= 0)
-			throw new ForbiddenOperationException("The connection service could stablish a valid connection");
-		
-		try {
-			TimeZone timeZone = TimeZone.getTimeZone("Africa/Johannesburg");
-			TimeZone.setDefault(timeZone);
-			
-			Class.forName(this.dbConnInfo.getDriveClassName());
-			
-			Connection conn = DriverManager.getConnection(this.dbConnInfo.getConnectionURI(),
-			    this.dbConnInfo.getDataBaseUserName(), this.dbConnInfo.getDataBaseUserPassword());
-			conn.setAutoCommit(false);
-			
-			return this.dataSource.getConnection();
-		}
-		catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			logger.warn("Tentando novamente Obter uma conexao");
-			
-			TimeCountDown.sleep(10);
-			
-			return openConnection(--qtyTry);
-			
-		}
-		
-		/**
-		 * Exemplos: 1. SQLServer Connection conn =
-		 * BaseDAO.openConnection("com.microsoft.jdbc.sqlserver.SQLServerDriver",
-		 * "jbdc.microsoft:sqlserver://192.168.0.220:1422;databaseName=SifinSql", "sifin", "sifin");
-		 */
-		
-		return null;
-	}
-	
-	private OpenConnection openConnection(String context, int qtyTry) {
-		/*
-		 * if (qtyTry <= 0) throw new
-		 * ForbidenOperationException("The connection service could stablish a valid connection"
-		 * );
-		 * 
-		 * DBConnectionService conn = defaultDBConnection.openConnection(context);
-		 * 
-		 * if(conn == null){ logger.warn(errMsg);
-		 * logger.warn("Tentando novamente Obter uma conexao");
-		 * 
-		 * TimeCountDown.sleep(5);
-		 * 
-		 * return openConnection(context, --qtyTry); } else{ OpenConnection
-		 * openConnection = new OpenConnection(conn);
-		 * 
-		 * return openConnection; }
-		 */
-		
-		return null;
 	}
 	
 	public static void main(String[] args) throws DBException {

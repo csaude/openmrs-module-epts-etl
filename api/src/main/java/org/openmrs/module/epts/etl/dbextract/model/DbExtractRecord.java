@@ -160,23 +160,23 @@ public class DbExtractRecord extends QuickMergeRecord {
 				continue;
 			}
 			
-			DstConf dstSharedConf = parentInfo.getParentTableConfInDst().findRelatedDstConf();
+			DstConf parentDstConf = parentInfo.getParentTableConfInDst().findRelatedDstConf();
 			
-			if (dstSharedConf == null) {
+			if (parentDstConf == null) {
 				throw new ForbiddenOperationException(
 				        "There are relashioship which cannot auto resolved as there is no configured etl for "
 				                + parentInfo.getParentTableConfInDst().getTableName() + " as destination!");
 			}
 			
-			if (!dstSharedConf.getParentConf().isFullLoaded()) {
-				dstSharedConf.getParentConf().fullLoad();
+			if (!parentDstConf.getParentConf().isFullLoaded()) {
+				parentDstConf.getParentConf().fullLoad();
 			}
 			
-			if (!dstSharedConf.isFullLoaded()) {
-				dstSharedConf.fullLoad(destConn);
+			if (!parentDstConf.isFullLoaded()) {
+				parentDstConf.fullLoad(destConn);
 			}
 			
-			EtlDatabaseObject parentFromInSrcConf = dstSharedConf.getParentConf()
+			EtlDatabaseObject parentFromInSrcConf = parentDstConf.getParentConf()
 			        .retrieveRecordInSrc(parentInfo.getParentRecordInOrigin(), srcConn);
 			
 			if (parentFromInSrcConf == null) {
@@ -184,7 +184,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 				        + " is needed for extraction of " + this.record + " but this cannot be extracted");
 			}
 			
-			parent = dstSharedConf.transform(parentFromInSrcConf, srcConn, srcApp, destApp);
+			parent = parentDstConf.transform(parentFromInSrcConf, srcConn, srcApp, destApp);
 			
 			DbExtractRecord parentData = new DbExtractRecord(parent, this.srcConf, parentInfo.getParentTableConfInDst(),
 			        srcApp, destApp, this.writeOperationHistory);
@@ -194,7 +194,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 			record.changeParentValue(parentInfo.getParentTableConfInDst(), parent);
 		}
 		
-		record.update(srcConf, destConn);
+		record.update(this.getConfig(), destConn);
 		
 	}
 	

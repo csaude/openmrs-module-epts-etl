@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
@@ -59,7 +59,8 @@ public class PojoGenerationEngine extends Engine {
 		
 		generate(mainApp, getMainSrcTableConf());
 		
-		List<EtlAdditionalDataSource> allAvaliableDataSources = getEtlConfiguration().getSrcConf().getAvaliableExtraDataSource();
+		List<EtlAdditionalDataSource> allAvaliableDataSources = getEtlConfiguration().getSrcConf()
+		        .getAvaliableExtraDataSource();
 		
 		for (EtlAdditionalDataSource t : allAvaliableDataSources) {
 			generate(mainApp, t);
@@ -89,15 +90,21 @@ public class PojoGenerationEngine extends Engine {
 		String fullClassName = tableConfiguration.generateFullClassName(app);
 		
 		if (!checkIfIsAlredyGenerated(fullClassName)) {
-			OpenConnection appConn = app.openConnection();
+			OpenConnection appConn = null;
 			
 			try {
+				appConn = app.openConnection();
+				
 				tableConfiguration.generateRecordClass(app, true);
 				
 				this.alreadyGeneratedClasses.add(fullClassName);
 			}
+			catch (DBException e) {
+				throw new RuntimeException(e);
+			}
 			finally {
-				appConn.finalizeConnection();
+				if (appConn != null)
+					appConn.finalizeConnection();
 			}
 		}
 	}
@@ -123,7 +130,7 @@ public class PojoGenerationEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		return new PojoGenerationSearchParams(this, limits, conn);
 	}
 	

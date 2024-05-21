@@ -11,7 +11,7 @@ import java.util.Date;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
-import org.openmrs.module.epts.etl.engine.SyncProgressMeter;
+import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
@@ -26,7 +26,7 @@ public class TableOperationProgressInfo extends BaseVO {
 	
 	private EtlItemConfiguration etlItemConfiguration;
 	
-	private SyncProgressMeter progressMeter;
+	private EtlProgressMeter progressMeter;
 	
 	private OperationController controller;
 	
@@ -43,20 +43,22 @@ public class TableOperationProgressInfo extends BaseVO {
 	public void load(ResultSet resultSet) throws SQLException {
 		super.load(resultSet);
 		
+		int minRecordId = resultSet.getInt("min_record_id");
+		int maxRecordId = resultSet.getInt("max_record_id");
 		int total = resultSet.getInt("total_records");
 		String status = resultSet.getString("status");
 		int processed = resultSet.getInt("total_processed_records");
 		Date startTime = resultSet.getTimestamp("started_at");
 		Date lastRefreshAt = resultSet.getTimestamp("last_refresh_at");
 		
-		this.progressMeter = SyncProgressMeter.fullInit(status, startTime, lastRefreshAt, total, processed);
+		this.progressMeter = EtlProgressMeter.fullInit(status, startTime, lastRefreshAt, minRecordId, maxRecordId, total, processed);
 	}
 	
 	public TableOperationProgressInfo(OperationController controller, EtlItemConfiguration etlItemConfiguration) {
 		this.controller = controller;
 		this.etlItemConfiguration = etlItemConfiguration;
 		this.originAppLocationCode = determineAppLocationCode(controller);
-		this.progressMeter = SyncProgressMeter.defaultProgressMeter(getOperationId());
+		this.progressMeter = EtlProgressMeter.defaultProgressMeter(getOperationId());
 	}
 	
 	private String determineAppLocationCode(OperationController controller) {
@@ -110,7 +112,7 @@ public class TableOperationProgressInfo extends BaseVO {
 		return this.etlItemConfiguration.getConfigCode();
 	}
 	
-	public SyncProgressMeter getProgressMeter() {
+	public EtlProgressMeter getProgressMeter() {
 		return progressMeter;
 	}
 	

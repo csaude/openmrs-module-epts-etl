@@ -39,9 +39,11 @@ public class DBQuickExportController extends OperationController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			return DatabaseObjectDAO.getFirstRecord(config.getSrcConf(), conn);
 		}
 		catch (DBException e) {
@@ -50,15 +52,18 @@ public class DBQuickExportController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			return DatabaseObjectDAO.getLastRecord(config.getSrcConf(), conn);
 		}
 		catch (DBException e) {
@@ -67,7 +72,8 @@ public class DBQuickExportController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -77,7 +83,7 @@ public class DBQuickExportController extends OperationController {
 	}
 	
 	@Override
-	public OpenConnection openConnection() {
+	public OpenConnection openConnection() throws DBException {
 		OpenConnection conn = super.openConnection();
 		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {

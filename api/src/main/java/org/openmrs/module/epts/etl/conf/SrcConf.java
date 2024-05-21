@@ -86,7 +86,9 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public synchronized void fullLoad() throws DBException {
-		this.setTableAlias(generateAlias(this));
+		if (!hasAlias()) {
+			this.setTableAlias(generateAlias(this));
+		}
 		
 		super.fullLoad();
 	}

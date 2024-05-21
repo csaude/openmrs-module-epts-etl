@@ -137,6 +137,58 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		OpenConnection conn = getDefaultApp().openConnection();
 		
+		if (getConfiguration().hasDstApp()) {
+			AppInfo dstApp = getConfiguration().getDstApp();
+			
+			//Try to openConnection to determine if db schama exists
+			boolean dstDbExists = false;
+			
+			try {
+				OpenConnection dstConn = dstApp.openConnection();
+				dstConn.finalizeConnection();
+				
+				dstDbExists = true;
+			}
+			catch (DBException e) {
+				if (DBUtilities.determineDataBaseFromException(e).equals(DBUtilities.MYSQL_DATABASE)) {
+					if (DBException.checkIfExceptionContainsMessage(e, "Unknown database")) {
+						
+					}
+				}
+			}
+			
+			if (!dstDbExists) {
+				
+				String databaseName = dstApp.getConnInfo().determineSchema();
+				
+				if (!DBUtilities.isSameDatabaseServer(getDefaultApp().getConnInfo().getConnectionURI(),
+				    dstApp.getConnInfo().getConnectionURI())) {
+					throw new ForbiddenOperationException("The database '" + databaseName
+					        + "' does not exists and the application cannot connect to the related database to automcatically create it!");
+				}
+				
+				if (dstApp.getConnInfo().getDatabaseSchemaPath() != null) {
+					DBUtilities.createDatabaseSchema(databaseName, conn);
+					
+					OpenConnection dstConn = null;
+					
+					try {
+						dstConn = dstApp.openConnection();
+						
+						DBUtilities.executeSqlScript(dstConn, dstApp.getConnInfo().getDatabaseSchemaPath());
+						
+						dstConn.markAsSuccessifullyTerminated();
+					}
+					finally {
+						if (dstConn != null) {
+							dstConn.finalizeConnection();
+						}
+					}
+				}
+				
+			}
+		}
+		
 		try {
 			for (EtlOperationConfig operation : configuration.getOperations()) {
 				List<OperationController> controller = operation.generateRelatedController(this,
@@ -419,18 +471,25 @@ public class ProcessController implements Controller, ControllerStarter {
 			onFinish();
 		} else {
 			
-			if (wasPreviouslyFinished) {
-				performePreReRunActions();
-			}
-			
-			OpenConnection conn = getDefaultApp().openConnection();
+			OpenConnection conn = null;
 			
 			try {
+				if (wasPreviouslyFinished) {
+					performePreReRunActions();
+				}
+				
+				conn = getDefaultApp().openConnection();
+				
 				initOperationsControllers(conn);
 				conn.markAsSuccessifullyTerminated();
 			}
+			catch (DBException e) {
+				throw new RuntimeException(e);
+			}
 			finally {
-				conn.finalizeConnection();
+				if (conn != null) {
+					conn.finalizeConnection();
+				}
 			}
 			
 			changeStatusToRunning();
@@ -458,7 +517,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 	}
 	
-	private void performePreReRunActions() {
+	private void performePreReRunActions() throws DBException {
 		FileUtilities.removeFile(this.processInfo.generateProcessStatusFile());
 		
 		OpenConnection conn = openConnection();
@@ -682,11 +741,11 @@ public class ProcessController implements Controller, ControllerStarter {
 		return null;
 	}
 	
-	public OpenConnection openConnection() {
+	public OpenConnection openConnection() throws DBException {
 		return getDefaultApp().openConnection();
 	}
 	
-	private void createStageSchema() {
+	private void createStageSchema() throws DBException {
 		OpenConnection conn = getDefaultApp().openConnection();
 		
 		try {
@@ -714,7 +773,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-	private boolean isImportStageSchemaExists() {
+	private boolean isImportStageSchemaExists() throws DBException {
 		OpenConnection conn = openConnection();
 		
 		try {
@@ -731,7 +790,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-	public boolean existInconsistenceInfoTable() {
+	public boolean existInconsistenceInfoTable() throws DBException {
 		OpenConnection conn = openConnection();
 		
 		String schema = getConfiguration().getSyncStageSchema();
@@ -752,7 +811,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-	public boolean existsDefaultGeneratedObjectKeyTable() {
+	public boolean existsDefaultGeneratedObjectKeyTable() throws DBException {
 		OpenConnection conn = openConnection();
 		
 		String schema = getConfiguration().getSyncStageSchema();
@@ -773,7 +832,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-	public boolean existOperationProgressInfoTable() {
+	public boolean existOperationProgressInfoTable() throws DBException {
 		OpenConnection conn = openConnection();
 		
 		String schema = getConfiguration().getSyncStageSchema();
@@ -811,6 +870,8 @@ public class ProcessController implements Controller, ControllerStarter {
 			sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableDateTimeField("started_at", "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableDateTimeField("last_refresh_at", "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("min_record_id", "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("max_record_id", "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableIntegerField("total_records", "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableIntegerField("total_processed_records", "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableVarcharField("status", 50, "NOT NULL", conn) + ",\n";

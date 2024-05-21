@@ -5,11 +5,14 @@ import java.util.List;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class AppInfo {
 	
 	public static final String MAIN_APP_CODE = "main";
+	
+	public static final String DST_APP_CODE = "destination";
 	
 	public static final String PERFORMING_MODE_SINGLE = "single";
 	
@@ -40,7 +43,7 @@ public class AppInfo {
 		return this.dbService;
 	}
 	
-	public OpenConnection openConnection() {
+	public OpenConnection openConnection() throws DBException {
 		return getRelatedDBConnectionService().openConnection();
 	}
 	

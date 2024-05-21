@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.changedrecordsdetector.model.ChangedRecordsDe
 import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordInfo;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
@@ -96,8 +96,8 @@ public class ChangedRecordsDetectorEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends EtlObject> searchParams = new ChangedRecordsDetectorSearchParams(
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ChangedRecordsDetectorSearchParams(
 		        this.getEtlConfiguration(), getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
 		        limits, getRelatedOperationController().getOperationType(), conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

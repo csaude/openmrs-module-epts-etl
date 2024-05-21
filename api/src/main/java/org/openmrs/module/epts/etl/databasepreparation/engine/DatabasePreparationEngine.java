@@ -11,7 +11,7 @@ import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparation
 import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -194,7 +194,7 @@ public class DatabasePreparationEngine extends Engine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		return new DatabasePreparationSearchParams(this, limits, conn);
 	}
 	

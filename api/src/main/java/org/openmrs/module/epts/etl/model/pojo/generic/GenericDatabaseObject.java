@@ -119,11 +119,11 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	public void setRelatedConfiguration(DatabaseObjectConfiguration tableConfiguration) {
 		this.relatedConfiguration = tableConfiguration;
 		
-		this.fields = this.relatedConfiguration.cloneFields();
+		this.fields = this.getRelatedConfiguration().cloneFields();
 		
-		if (relatedConfiguration instanceof TableConfiguration) {
+		if (getRelatedConfiguration() instanceof TableConfiguration) {
 			
-			TableConfiguration tabConf = (TableConfiguration) relatedConfiguration;
+			TableConfiguration tabConf = (TableConfiguration) getRelatedConfiguration();
 			
 			if (tabConf.getSharePkWith() != null) {
 				this.sharedPkObj = new GenericDatabaseObject(tabConf.getSharedKeyRefInfo());
@@ -159,12 +159,12 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 				
 			}
 			
-			if (this.sharedPkObj != null && !this.sharedPkObj.loadedFromDb) {
-				this.sharedPkObj.load(rs);
+			if (this.getSharedPkObj() != null && !this.getSharedPkObj().loadedFromDb) {
+				this.getSharedPkObj().load(rs);
 			}
 			
-			if (this.relatedConfiguration instanceof TableConfiguration) {
-				this.loadObjectIdData((TableConfiguration) this.relatedConfiguration);
+			if (this.getRelatedConfiguration() instanceof TableConfiguration) {
+				this.loadObjectIdData((TableConfiguration) this.getRelatedConfiguration());
 			}
 			
 			loadedFromDb = true;

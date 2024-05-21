@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.consolitation.controller.DatabaseIntegrityCon
 import org.openmrs.module.epts.etl.consolitation.model.DatabaseIntegrityConsolidationSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
@@ -56,8 +56,8 @@ public class DatabaseIntegrityConsolidationEngine extends Engine {
 	}
 
 	@Override
-	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends EtlObject> searchParams = new DatabaseIntegrityConsolidationSearchParams(this.getEtlConfiguration(), limits,  conn);
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DatabaseIntegrityConsolidationSearchParams(this.getEtlConfiguration(), limits,  conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
 		

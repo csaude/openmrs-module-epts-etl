@@ -16,7 +16,6 @@ public class DBException extends SQLException {
 	
 	public static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
-
 	/**
 	 * Os atributos abaixo só se aplicam no caso de
 	 */
@@ -231,9 +230,9 @@ public class DBException extends SQLException {
 		
 		return false;
 	}
-
+	
 	public boolean isTemporaryDBErrr(Connection conn) throws DBException {
-		return isDeadLock(conn) || isLockWaitTimeExceded(conn); 
+		return isDeadLock(conn) || isLockWaitTimeExceded(conn);
 	}
 	
 	public boolean isDeadLock(Connection conn) throws DBException {
@@ -262,5 +261,19 @@ public class DBException extends SQLException {
 		}
 		
 		return false;
+	}
+	
+	public static boolean checkIfExceptionContainsMessage(Throwable e, String msg) {
+		if (e.getLocalizedMessage() != null && e.getLocalizedMessage().contains(msg)) {
+			return true;
+		} else if (e.getCause() != null) {
+			return checkIfExceptionContainsMessage(e.getCause(), msg);
+		}
+		
+		return false;
+	}
+	
+	public RuntimeException parseToRuntimeException() {
+		return new RuntimeException(this);
 	}
 }

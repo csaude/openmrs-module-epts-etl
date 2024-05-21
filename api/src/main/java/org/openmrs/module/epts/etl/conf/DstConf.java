@@ -26,7 +26,7 @@ public class DstConf extends AbstractTableConfiguration {
 	/*
 	 * The joinFields with #getSrcConf()
 	 */
-	private List<FieldsMapping> joinField;
+	private List<FieldsMapping> joinFields;
 	
 	private List<FieldsMapping> allMapping;
 	
@@ -61,12 +61,12 @@ public class DstConf extends AbstractTableConfiguration {
 		this.prefferredDataSource = prefferredDataSource;
 	}
 	
-	public List<FieldsMapping> getJoinField() {
-		return joinField;
+	public List<FieldsMapping> getJoinFields() {
+		return joinFields;
 	}
 	
-	public void setJoinField(List<FieldsMapping> joinField) {
-		this.joinField = joinField;
+	public void setJoinFields(List<FieldsMapping> joinFields) {
+		this.joinFields = joinFields;
 	}
 	
 	@Override
@@ -370,7 +370,7 @@ public class DstConf extends AbstractTableConfiguration {
 	}
 	
 	private void loadJoinFields(Connection conn) {
-		if (this.joinField != null)
+		if (this.getJoinFields() != null)
 			return;
 		
 		if (this.hasUniqueKeys()) {
@@ -398,12 +398,12 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 			
 			if (fakeSrcUk.hasFields() && uk.equals(fakeSrcUk)) {
-				if (this.joinField == null) {
-					this.joinField = new ArrayList<>();
+				if (this.joinFields == null) {
+					this.joinFields = new ArrayList<>();
 				}
 				
 				for (Key key : uk.getFields()) {
-					this.joinField.add(FieldsMapping.fastCreate(key.getName()));
+					this.joinFields.add(FieldsMapping.fastCreate(key.getName()));
 				}
 			}
 		}
@@ -553,12 +553,12 @@ public class DstConf extends AbstractTableConfiguration {
 	public String generateJoinConditionWithSrc() {
 		String joinCondition = "";
 		
-		for (int i = 0; i < this.joinField.size(); i++) {
+		for (int i = 0; i < this.getJoinFields().size(); i++) {
 			if (i > 0)
 				joinCondition += " AND ";
 			
-			joinCondition += getTableAlias() + "." + this.joinField.get(i).getDstField() + " = "
-			        + getSrcConf().getTableAlias() + "." + this.joinField.get(i).getSrcField();
+			joinCondition += getTableAlias() + "." + this.getJoinFields().get(i).getDstField() + " = "
+			        + getSrcConf().getTableAlias() + "." + this.getJoinFields().get(i).getSrcField();
 		}
 		
 		if (!utilities.stringHasValue(joinCondition) && this.isMetadata()) {
@@ -570,7 +570,7 @@ public class DstConf extends AbstractTableConfiguration {
 	}
 	
 	public boolean hasJoinFields() {
-		return utilities.arrayHasElement(this.joinField);
+		return utilities.arrayHasElement(this.getJoinFields());
 	}
 	
 }

@@ -72,6 +72,7 @@ public class ProcessStarter implements ControllerStarter {
 				return;
 			}
 			
+			/*
 			if (this.synConfigFilesPaths.length > 2) {
 				throw new ForbiddenOperationException("The system currently doesn't support parallely processing");
 			}
@@ -80,6 +81,9 @@ public class ProcessStarter implements ControllerStarter {
 			
 			if (countQtyDestination(syncConfigs) > 1)
 				throw new ForbiddenOperationException("You must define only one destination file");
+			*/
+			
+			List<EtlConfiguration> syncConfigs = loadSyncConfig(this.synConfigFilesPaths);
 			
 			for (EtlConfiguration conf : syncConfigs) {
 				if (!conf.isAutomaticStart())

@@ -1,5 +1,7 @@
 package org.openmrs.module.epts.etl.utilities.db.conn;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -148,27 +150,6 @@ public class DBUtilities {
 		}
 	}
 	
-	public static String determineDataBaseFromConnection(Connection conn) throws DBException {
-		String str;
-		try {
-			str = conn.getMetaData().getDriverName().toUpperCase();
-		}
-		catch (SQLException e) {
-			throw new DBException(e);
-		}
-		
-		if (str.contains("ORACLE"))
-			return ORACLE_DATABASE;
-		if (str.contains("MYSQL"))
-			return MYSQL_DATABASE;
-		if (str.contains("POSTGRES"))
-			return POSTGRESQL_DATABASE;
-		if (str.contains("SQLSERVER") || str.contains("SQL SERVER"))
-			return SQLSERVER_DATABASE;
-		
-		throw new RuntimeException("Impossivel determinar a base de dados a partir da conexao");
-	}
-	
 	public static boolean isSameDatabaseServer(Connection srcConn, Connection dstConn) throws DBException {
 		try {
 			String srcDatabaseType = DBUtilities.determineDataBaseFromConnection(srcConn);
@@ -200,6 +181,29 @@ public class DBUtilities {
 		catch (SQLException e) {
 			throw new DBException(e);
 		}
+	}
+	
+	public static boolean isSameDatabaseServer(String srcUrl, String dstUrl) throws DBException {
+		String srcDatabaseType = DBUtilities.determineDataBaseFromConnectionUri(srcUrl);
+		String dstDatabaseType = DBUtilities.determineDataBaseFromConnectionUri(dstUrl);
+		
+		if (!srcDatabaseType.equals(dstDatabaseType)) {
+			return false;
+		}
+		
+		if (srcDatabaseType.equals(POSTGRESQL_DATABASE)) {
+			return srcUrl.equals(dstUrl);
+		} else if (srcDatabaseType.equals(ORACLE_DATABASE)) {
+			return srcUrl.equals(dstUrl);
+		} else if (srcDatabaseType.equals(MYSQL_DATABASE)) {
+			String srcHostAndPort = srcUrl.split("//")[1].split("/")[0];
+			String dstHostAndPort = dstUrl.split("//")[1].split("/")[0];
+			
+			return srcHostAndPort.equals(dstHostAndPort);
+		}
+		
+		throw new ForbiddenOperationException("Unsupported database [" + srcDatabaseType + "]");
+		
 	}
 	
 	/**
@@ -241,7 +245,7 @@ public class DBUtilities {
 	}
 	
 	public static String tryToPutSchemaOnInsertScript(String sql, Connection conn) throws DBException {
-		String tableName = (sql.toUpperCase().split("INSERT INTO")[1]).split("\\(")[0];
+		String tableName = (sql.toLowerCase().split("insert into")[1]).split("\\(")[0];
 		
 		String[] tableNameComposition = tableName.split("\\.");
 		
@@ -250,18 +254,18 @@ public class DBUtilities {
 		
 		String fullTableName = tryToPutSchemaOnDatabaseObject(utilities.removeAllEmptySpace(tableName), conn);
 		
-		return sql.toUpperCase().replaceFirst(tableName, " " + fullTableName);
+		return sql.toLowerCase().replaceFirst(tableName, " " + fullTableName);
 	}
 	
 	public static String addInsertIgnoreOnInsertScript(String sql, Connection conn) throws DBException {
 		if (!isMySQLDB(conn))
 			return sql;
 		
-		return sql.toUpperCase().replaceFirst("INSERT", "INSERT IGNORE");
+		return sql.toLowerCase().replaceFirst("insert", "insert ignore");
 	}
 	
 	public static String tryToPutSchemaOnUpdateScript(String sql, Connection conn) throws DBException {
-		String tableName = (sql.toUpperCase().split("UPDATE ")[1]).split(" ")[0];
+		String tableName = (sql.toLowerCase().split("update ")[1]).split(" ")[0];
 		
 		String[] tableNameComposition = tableName.split("\\.");
 		
@@ -270,7 +274,7 @@ public class DBUtilities {
 		
 		String fullTableName = tryToPutSchemaOnDatabaseObject(utilities.removeAllEmptySpace(tableName), conn);
 		
-		return sql.toUpperCase().replaceFirst(tableName, " " + fullTableName);
+		return sql.toLowerCase().replaceFirst(tableName, " " + fullTableName);
 	}
 	
 	public static String determineSchemaFromFullTableName(String fullTableName) {
@@ -484,6 +488,10 @@ public class DBUtilities {
 		ResultSet result = statement.executeQuery();
 		
 		return result.next();
+	}
+	
+	public static boolean isSchemaExists(String resourceSchema, Connection conn) throws DBException {
+		return isResourceExist(resourceSchema, null, RESOURCE_TYPE_SCHEMA, null, conn);
 	}
 	
 	public static boolean isResourceExist(String resourceSchema, String resourceTable, String resourceType,
@@ -787,10 +795,6 @@ public class DBUtilities {
 		ResultSetMetaData rsMetaData;
 		
 		try {
-			query = removeWhereConditionOnQuery(query);
-			
-			query += " where 1 <> 1";
-			
 			st = conn.prepareStatement(query);
 			
 			int qtyQuestionMarksOnQuery = getQtyQuestionMarksOnQuery(query);
@@ -889,43 +893,32 @@ public class DBUtilities {
 		return fields;
 	}
 	
-	public static List<Field> getTableFields(String tableName, String schema, Connection conn) throws DBException {
-		List<Field> fields = new ArrayList<Field>();
-		
-		PreparedStatement st;
-		ResultSet rs;
-		ResultSetMetaData rsMetaData;
-		
-		if (utilities.stringHasValue(DBUtilities.determineSchemaFromFullTableName(tableName))) {
-			schema = DBUtilities.determineSchemaFromFullTableName(tableName);
-		}
-		
+	public static String determineDataBaseFromConnection(Connection conn) throws DBException {
+		String str;
 		try {
+			str = conn.getMetaData().getDriverName().toUpperCase();
 			
-			// @formatter:off
-			st = conn.prepareStatement("SELECT * FROM " + schema + "." + DBUtilities.extractTableNameFromFullTableName(tableName) + " WHERE 1 != 1");
-			
-			// @formatter:on
-			rs = st.executeQuery();
-			rsMetaData = rs.getMetaData();
-			
-			int qtyAttrs = rsMetaData.getColumnCount();
-			
-			for (int i = 1; i <= qtyAttrs; i++) {
-				Field field = new Field(rsMetaData.getColumnName(i));
-				field.setType(rsMetaData.getColumnTypeName(i));
-				
-				field.setAllowNull(rsMetaData.isNullable(i) == ResultSetMetaData.columnNullable);
-				
-				fields.add(field);
-			}
-			
+			return determineDataBaseFromConnectionUri(str);
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
 		}
+	}
+	
+	public static String determineDataBaseFromConnectionUri(String connectionUri) {
+		String str = connectionUri.toUpperCase();
 		
-		return fields;
+		if (str.contains("ORACLE"))
+			return ORACLE_DATABASE;
+		if (str.contains("MYSQL"))
+			return MYSQL_DATABASE;
+		if (str.contains("POSTGRES"))
+			return POSTGRESQL_DATABASE;
+		if (str.contains("SQLSERVER") || str.contains("SQL SERVER"))
+			return SQLSERVER_DATABASE;
+		
+		throw new RuntimeException("Impossivel determinar a base de dados a partir da conexao");
+		
 	}
 	
 	public static String convertMySQLTypeTOJavaType(String mySQLTypeName) {
@@ -998,6 +991,72 @@ public class DBUtilities {
 		catch (SQLException e) {
 			throw new DBException(e);
 		}
+	}
+	
+	public static void executeSqlScript(Connection conn, String scriptFilePath) throws DBException {
+		// Read the SQL script file
+		try (BufferedReader reader = new BufferedReader(new FileReader(scriptFilePath))) {
+			StringBuilder sql = new StringBuilder();
+			String line;
+			while ((line = reader.readLine()) != null) {
+				sql.append(line).append("\n");
+			}
+			
+			// Execute the SQL script
+			try (Statement stmt = conn.createStatement()) {
+				String[] sqlCommands = sql.toString().split(";");
+				for (String command : sqlCommands) {
+					if (!command.trim().isEmpty()) {
+						stmt.execute(command);
+					}
+				}
+			}
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public static List<Field> getTableFields(String tableName, String schema, Connection conn) throws DBException {
+		List<Field> fields = new ArrayList<Field>();
+		
+		PreparedStatement st;
+		ResultSet rs;
+		ResultSetMetaData rsMetaData;
+		
+		if (utilities.stringHasValue(DBUtilities.determineSchemaFromFullTableName(tableName))) {
+			schema = DBUtilities.determineSchemaFromFullTableName(tableName);
+		}
+		
+		try {
+			
+			// @formatter:off
+			st = conn.prepareStatement("SELECT * FROM " + schema + "." + DBUtilities.extractTableNameFromFullTableName(tableName) + " WHERE 1 != 1");
+			
+			// @formatter:on
+			rs = st.executeQuery();
+			rsMetaData = rs.getMetaData();
+			
+			int qtyAttrs = rsMetaData.getColumnCount();
+			
+			for (int i = 1; i <= qtyAttrs; i++) {
+				Field field = new Field(rsMetaData.getColumnName(i));
+				field.setType(rsMetaData.getColumnTypeName(i));
+				
+				field.setAllowNull(rsMetaData.isNullable(i) == ResultSetMetaData.columnNullable);
+				
+				fields.add(field);
+			}
+			
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+		
+		return fields;
 	}
 	
 	public static String generateTableAutoIncrementField(String fieldName, Connection conn) throws DBException {
@@ -1289,6 +1348,15 @@ public class DBUtilities {
 		}
 		
 		return paramValue;
+	}
+	
+	public static void createDatabaseSchema(String databaseName, OpenConnection conn) throws DBException {
+		
+		if (isMySQLDB(conn)) {
+			executeBatch(conn, "create database " + databaseName);
+		}
+		
+		throw new ForbiddenOperationException("DBMS not supported for schema creation");
 	}
 	
 }

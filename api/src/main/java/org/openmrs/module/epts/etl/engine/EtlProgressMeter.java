@@ -12,7 +12,8 @@ import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDownInitializer
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class SyncProgressMeter implements  TimeCountDownInitializer{
+public class EtlProgressMeter implements TimeCountDownInitializer {
+	
 	/**
 	 * Utilitarios do sistema
 	 */
@@ -23,20 +24,30 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	 */
 	public static final int STATUS_ERROR = -1;
 	
-	public static final String STATUS_NOT_INITIALIZED="NOT INITIALIZED";
-	public static final String STATUS_RUNNING="RUNNING";
+	public static final String STATUS_NOT_INITIALIZED = "NOT INITIALIZED";
+	
+	public static final String STATUS_RUNNING = "RUNNING";
+	
 	public static final String STATUS_PAUSED = "PAUSED";
-	public static final String STATUS_STOPPED="STOPPED";
-	public static final String STATUS_SLEEPING="SLEEPING";
-	public static final String STATUS_FINISHED="FINISHED";
+	
+	public static final String STATUS_STOPPED = "STOPPED";
+	
+	public static final String STATUS_SLEEPING = "SLEEPING";
+	
+	public static final String STATUS_FINISHED = "FINISHED";
 	
 	private String id;
 	
 	private String designation;
+	
 	/**
 	 * Total de registos
 	 */
 	private int total;
+	
+	private long minRecordId;
+	
+	private long maxRecordId;
 	
 	/**
 	 * Estado corrente
@@ -64,26 +75,35 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	
 	/**
 	 * Indica se este {@link MigrationProgressMeter} encontra-se actualizado ou nao.
-	 * <p>Com base no valor deste atributo pode se evitar o "refresh" sempre que o mesmo se encontrar 
+	 * <p>
+	 * Com base no valor deste atributo pode se evitar o "refresh" sempre que o mesmo se encontrar
 	 * updated
 	 */
 	private boolean updated;
 	
 	/**
-	 * Indica o intervalo de tempo durante o qual este {@link SyncProgressMeter} sera considerado updated
+	 * Indica o intervalo de tempo durante o qual este {@link EtlProgressMeter} sera considerado
+	 * updated
 	 */
 	private int refreshInterval;
+	
 	private Date startTime;
+	
 	private Date finishTime;
+	
 	private double elapsedTime;
+	
 	private TimeController timer;
 	
-	public SyncProgressMeter() {
+	public EtlProgressMeter() {
 		this.status = STATUS_NOT_INITIALIZED;
 	}
 	
-	public SyncProgressMeter(String statusMsg, int total, int processed){
+	public EtlProgressMeter(String statusMsg, long minRecordId, long maxRecordId, int total, int processed) {
 		this();
+		
+		this.minRecordId = minRecordId;
+		this.maxRecordId = maxRecordId;
 		
 		refresh(statusMsg, total, processed);
 		
@@ -94,21 +114,21 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 		this.updated = false;
 	}
 	
-	private SyncProgressMeter (String id){
+	private EtlProgressMeter(String id) {
 		this();
 		
 		//this._default = true;
 		this.id = id;
 	}
 	
-	public static SyncProgressMeter defaultProgressMeter(String id){
-		return new SyncProgressMeter(id);
+	public static EtlProgressMeter defaultProgressMeter(String id) {
+		return new EtlProgressMeter(id);
 	}
 	
 	public Date getFinishTime() {
 		return finishTime;
 	}
-
+	
 	public void setFinishTime(Date finishTime) {
 		this.finishTime = finishTime;
 	}
@@ -116,19 +136,19 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	public void setElapsedTime(double elapsedTime) {
 		this.elapsedTime = elapsedTime;
 	}
-
+	
 	public double getElapsedTime() {
 		return getTimer() != null ? getTimer().getDuration(TimeController.DURACAO_IN_MINUTES) : this.elapsedTime;
 	}
-
+	
 	public String getStatus() {
 		return status;
 	}
-
+	
 	public void setProcessed(int processed) {
 		this.processed = processed;
 	}
-
+	
 	/**
 	 * Refrsca a informacao do estado actual da migracao, recalcunlando a percentagem de progresso
 	 * 
@@ -137,24 +157,22 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	 * @param processed Registos processados
 	 * @param timer Temporizador da migracao
 	 */
-	public synchronized void refresh(String statusMsg, int total, int processed){
+	public synchronized void refresh(String statusMsg, int total, int processed) {
 		this.total = total;
 		this.processed = processed;
 		
 		this.statusMsg = statusMsg;
 		
-		if (refreshInterval > 0 && this.updateControl == null){
-			this.updateControl = TimeCountDown.wait(this, 60*this.refreshInterval, ""); 
+		if (refreshInterval > 0 && this.updateControl == null) {
+			this.updateControl = TimeCountDown.wait(this, 60 * this.refreshInterval, "");
 			this.updated = true;
-		}
-		else
-		if (this.updateControl != null){
+		} else if (this.updateControl != null) {
 			this.updated = true;
 			
 			this.updateControl.restart();
 		}
 	}
-
+	
 	public String getHumanReadbleTime() {
 		return getTimer() != null ? getTimer().toString() : "00:00:00";
 	}
@@ -164,68 +182,65 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 		return this.timer;
 	}
 	
-	public void changeRefreshInterval(int refreshInterval){
+	public void changeRefreshInterval(int refreshInterval) {
 		this.refreshInterval = refreshInterval;
 		
-		if (refreshInterval > 0){
-		}
-		else {
+		if (refreshInterval > 0) {} else {
 			this.updateControl = null;
 			this.updated = false;
 		}
 	}
 	
 	/**
-	 * 
 	 * @return a hora de inicio da migracao
 	 */
-	public Date getStartTime(){
+	public Date getStartTime() {
 		return this.startTime;
 	}
+	
 	/**
-	 * 
 	 * @return a hora de inicio da migracao formatada
 	 */
-	public String getFormatedStartTime(){
+	public String getFormatedStartTime() {
 		return getStartTime() != null ? DateAndTimeUtilities.formatToDDMMYYYY_HHMISS(getStartTime()) : null;
 	}
+	
 	/**
-	 * 
 	 * @param exception de erro na migracao
 	 */
 	public void reportError(Exception exception) {
 		this.statusMsg = exception.getLocalizedMessage();
 		statusError = true;
 	}
-
+	
 	/**
 	 * @return the statusError
 	 */
 	public boolean isStatusError() {
 		return statusError;
 	}
-
+	
 	/**
 	 * @return the statusMsg
 	 */
 	public String getStatusMsg() {
 		return statusMsg;
 	}
-
+	
 	/**
 	 * @return the total
 	 */
 	public int getTotal() {
-		return (int)total;
+		return (int) total;
 	}
-
+	
 	/**
 	 * @return Quantidade de registos processados
 	 */
 	public int getProcessed() {
-		return (int)processed;
+		return (int) processed;
 	}
-
+	
 	public int getRemain() {
 		return this.total - this.processed;
 	}
@@ -241,41 +256,41 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 			double processedAsDouble = this.processed;
 			double totalAsDouble = this.total;
 			
-			progress = Double.parseDouble(utilities.getNumberInXPrecision((processedAsDouble / totalAsDouble)*100, 2));
+			progress = Double.parseDouble(utilities.getNumberInXPrecision((processedAsDouble / totalAsDouble) * 100, 2));
 		}
 		
 		return progress;
 	}
 	
 	public boolean isRunning() {
-		return this.status.equals(SyncProgressMeter.STATUS_RUNNING);
+		return this.status.equals(EtlProgressMeter.STATUS_RUNNING);
 	}
 	
 	public boolean isPaused() {
-		return this.status.equals(SyncProgressMeter.STATUS_PAUSED);
+		return this.status.equals(EtlProgressMeter.STATUS_PAUSED);
 	}
 	
 	public boolean isStopped() {
-		return this.status.equals(SyncProgressMeter.STATUS_STOPPED);
+		return this.status.equals(EtlProgressMeter.STATUS_STOPPED);
 	}
 	
 	public boolean isSleeping() {
-		return this.status.equals(SyncProgressMeter.STATUS_SLEEPING);
+		return this.status.equals(EtlProgressMeter.STATUS_SLEEPING);
 	}
 	
 	public boolean isFinished() {
-		return this.status.equals(SyncProgressMeter.STATUS_FINISHED);
+		return this.status.equals(EtlProgressMeter.STATUS_FINISHED);
 	}
-
+	
 	public void changeStatusToSleeping() {
-		this.status = SyncProgressMeter.STATUS_SLEEPING;
-		this.statusMsg = SyncProgressMeter.STATUS_SLEEPING;
+		this.status = EtlProgressMeter.STATUS_SLEEPING;
+		this.statusMsg = EtlProgressMeter.STATUS_SLEEPING;
 		
 	}
 	
 	public void changeStatusToRunning() {
-		this.status = SyncProgressMeter.STATUS_RUNNING;
-		this.statusMsg = SyncProgressMeter.STATUS_RUNNING;
+		this.status = EtlProgressMeter.STATUS_RUNNING;
+		this.statusMsg = EtlProgressMeter.STATUS_RUNNING;
 		
 		tryToInitializeTimer();
 		
@@ -283,8 +298,8 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	}
 	
 	public void changeStatusToStopped() {
-		this.status = SyncProgressMeter.STATUS_STOPPED;	
-		this.statusMsg = SyncProgressMeter.STATUS_STOPPED;
+		this.status = EtlProgressMeter.STATUS_STOPPED;
+		this.statusMsg = EtlProgressMeter.STATUS_STOPPED;
 		
 		tryToInitializeTimer();
 		
@@ -292,8 +307,8 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	}
 	
 	public void changeStatusToFinished() {
-		this.status = SyncProgressMeter.STATUS_FINISHED;	
-		this.statusMsg = SyncProgressMeter.STATUS_FINISHED;
+		this.status = EtlProgressMeter.STATUS_FINISHED;
+		this.statusMsg = EtlProgressMeter.STATUS_FINISHED;
 		
 		this.finishTime = DateAndTimeUtilities.getCurrentDate();
 		
@@ -310,10 +325,11 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	}
 	
 	@JsonIgnore
-	public String parseToJSON(){
+	public String parseToJSON() {
 		try {
-			return new ObjectMapperProvider().getContext(SyncProgressMeter.class).writeValueAsString(this);
-		} catch (JsonProcessingException e) {
+			return new ObjectMapperProvider().getContext(EtlProgressMeter.class).writeValueAsString(this);
+		}
+		catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -326,7 +342,8 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	}
 	
 	/**
-	 * Modifica o valor do atributo {@link #id} para o valor fornecido pelo parâmetro <code>id</code>
+	 * Modifica o valor do atributo {@link #id} para o valor fornecido pelo parâmetro
+	 * <code>id</code>
 	 * 
 	 * @param id novo valor para o atributo {@link #id}
 	 */
@@ -340,22 +357,24 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 			return utilities.isStringIn(this.id, obj.toString());
 		}
 		
-		if (!(obj instanceof SyncProgressMeter)) return false;
+		if (!(obj instanceof EtlProgressMeter))
+			return false;
 		
-		SyncProgressMeter otherMeter = (SyncProgressMeter)obj;
+		EtlProgressMeter otherMeter = (EtlProgressMeter) obj;
 		
-		if (utilities.isStringIn(this.id, otherMeter.id)) return true;
+		if (utilities.isStringIn(this.id, otherMeter.id))
+			return true;
 		
 		return false;
 	}
 	
-	public String getDetailedRemaining(){
+	public String getDetailedRemaining() {
 		int remaining = total - processed;
 		
 		return utilities.generateCommaSeparetedNumber(remaining) + "(" + (100 - this.getProgress()) + "%)";
 	}
 	
-	public String getDetailedProgress(){
+	public String getDetailedProgress() {
 		return utilities.generateCommaSeparetedNumber(this.processed) + "(" + this.getProgress() + "%)";
 	}
 	
@@ -367,7 +386,8 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	}
 	
 	/**
-	 * Modifica o valor do atributo {@link #designation} para o valor fornecido pelo parâmetro <code>designation</code>
+	 * Modifica o valor do atributo {@link #designation} para o valor fornecido pelo parâmetro
+	 * <code>designation</code>
 	 * 
 	 * @param designation novo valor para o atributo {@link #designation}
 	 */
@@ -375,11 +395,10 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 		this.designation = designation;
 	}
 	
-
 	@Override
 	@JsonIgnore
 	public String getThreadNamingPattern() {
-		String pathern = "["+this.getClass().getCanonicalName() + "]" + "[%d]";
+		String pathern = "[" + this.getClass().getCanonicalName() + "]" + "[%d]";
 		
 		pathern = "[ProgressMeter]" + pathern;
 		
@@ -388,13 +407,14 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	
 	/**
 	 * Indica se este meter esta actualizado ou nao.
-	 * <p>Cada meter pode definir um intervalo dentro do qual o mesmo pode ser actualizado
-	 * Qualquer tentativa de "actualizacao" de um meter que esteja "actualizado" podera ser ignorado
-	 * evitando dessa forma consumo de recursos desnecessario
+	 * <p>
+	 * Cada meter pode definir um intervalo dentro do qual o mesmo pode ser actualizado Qualquer
+	 * tentativa de "actualizacao" de um meter que esteja "actualizado" podera ser ignorado evitando
+	 * dessa forma consumo de recursos desnecessario
 	 * 
 	 * @return true se este meter se encontrar actualizado ou false no caso contrario
 	 */
-	public boolean isUpdated(){
+	public boolean isUpdated() {
 		return this.updated;
 	}
 	
@@ -402,26 +422,46 @@ public class SyncProgressMeter implements  TimeCountDownInitializer{
 	public void onFinish() {
 		this.updated = false;
 	}
-
+	
 	public void retrieveTimer() {
 		if (getStartTime() != null) {
 			this.timer = TimeController.retrieveTimer(getStartTime(), getElapsedTime());
 		}
 	}
-
-	public static SyncProgressMeter fullInit(String status, Date startTime, Date stopTime, int total, int processed) {
-		SyncProgressMeter progressMeter = new SyncProgressMeter();
+	
+	public static EtlProgressMeter fullInit(String status, Date startTime, Date stopTime, long minRecordId, long maxRecordId,
+	        int total, int processed) {
+		EtlProgressMeter progressMeter = new EtlProgressMeter();
 		
 		progressMeter.status = status;
 		progressMeter.startTime = startTime;
+		progressMeter.minRecordId = minRecordId;
+		progressMeter.maxRecordId = maxRecordId;
 		progressMeter.total = total;
 		progressMeter.processed = processed;
 		progressMeter.elapsedTime = TimeController.computeElapsedTime(startTime, stopTime);
 		
 		progressMeter.timer = new TimeController(startTime, progressMeter.elapsedTime);
 		
-		if (progressMeter.isFinished()) progressMeter.finishTime = stopTime;
+		if (progressMeter.isFinished())
+			progressMeter.finishTime = stopTime;
 		
 		return progressMeter;
+	}
+	
+	public long getMinRecordId() {
+		return minRecordId;
+	}
+	
+	public void setMinRecordId(long minRecordId) {
+		this.minRecordId = minRecordId;
+	}
+	
+	public long getMaxRecordId() {
+		return maxRecordId;
+	}
+	
+	public void setMaxRecordId(long maxRecordId) {
+		this.maxRecordId = maxRecordId;
 	}
 }

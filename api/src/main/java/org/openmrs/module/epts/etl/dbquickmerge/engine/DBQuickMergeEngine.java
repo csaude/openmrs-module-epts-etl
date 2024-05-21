@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeControlle
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -67,20 +67,23 @@ public class DBQuickMergeEngine extends EtlEngine {
 			return false;
 		} else {
 			
-			OpenConnection srcConn = openConnection();
-			OpenConnection dstConn = this.getDstApp().openConnection();
-			
 			boolean sameDBSDerver;
-			
+			OpenConnection srcConn = null;
+			OpenConnection dstConn = null;
 			try {
+				srcConn = openConnection();
+				dstConn = this.getDstApp().openConnection();
+				
 				sameDBSDerver = DBUtilities.isSameDatabaseServer(srcConn, dstConn);
 			}
 			catch (DBException e) {
 				throw new RuntimeException(e);
 			}
 			finally {
-				srcConn.finalizeConnection();
-				dstConn.finalizeConnection();
+				if (srcConn != null)
+					srcConn.finalizeConnection();
+				if (dstConn != null)
+					dstConn.finalizeConnection();
 			}
 			
 			if (sameDBSDerver) {
@@ -312,9 +315,9 @@ public class DBQuickMergeEngine extends EtlEngine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends EtlObject> searchParams = new DBQuickMergeSearchParams(this.getEtlConfiguration(), limits,
-		        getRelatedOperationController());
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DBQuickMergeSearchParams(this.getEtlConfiguration(),
+		        limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

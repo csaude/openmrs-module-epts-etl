@@ -418,7 +418,7 @@ public class UniqueKeyInfo {
 		return values;
 	}
 	
-	public String parseToParametrizedStringCondition() {
+	public String parseToParametrizedStringConditionWithAlias() {
 		if (getTabConf() == null) {
 			throw new ForbiddenOperationException("The tabConf is needed");
 		}
@@ -426,6 +426,15 @@ public class UniqueKeyInfo {
 		if (!getTabConf().hasAlias()) {
 			throw new ForbiddenOperationException("The table " + getTabConf().getTableName() + " has no alias!");
 		}
+		
+		return parseToParametrizedStringCondition(getTabConf().getAlias());
+	}
+	
+	public String parseToParametrizedStringConditionWithoutAlias() {
+		return parseToParametrizedStringCondition("");
+	}
+	
+	private String parseToParametrizedStringCondition(String alias) {
 		
 		String fields = "";
 		
@@ -436,13 +445,25 @@ public class UniqueKeyInfo {
 				fields += " AND ";
 			}
 			
-			fields += tabConf.getAlias() + "." + key.getName() + " = ? ";
+			if (utilities.stringHasValue(alias)) {
+				alias += ".";
+			}
+			
+			fields += alias + key.getName() + " = ? ";
 		}
 		
 		return fields;
 	}
 	
-	public static String parseToParametrizedStringConditionToAll(List<UniqueKeyInfo> uks) {
+	public static String parseToParametrizedStringConditionToAllWithAlias(List<UniqueKeyInfo> uks) {
+		return parseToParametrizedStringConditionToAll(uks, uks.get(0).getTabConf().getAlias());
+	}
+	
+	public static String parseToParametrizedStringConditionToAllWithoutAlias(List<UniqueKeyInfo> uks) {
+		return parseToParametrizedStringConditionToAll(uks, null);
+	}
+	
+	private static String parseToParametrizedStringConditionToAll(List<UniqueKeyInfo> uks, String alias) {
 		String fields = "";
 		
 		for (UniqueKeyInfo uk : uks) {
@@ -450,7 +471,11 @@ public class UniqueKeyInfo {
 				fields += " AND ";
 			}
 			
-			fields += uk.parseToParametrizedStringCondition();
+			if (utilities.stringHasValue(alias)) {
+				fields += uk.parseToParametrizedStringConditionWithAlias();
+			} else {
+				fields += uk.parseToParametrizedStringConditionWithoutAlias();
+			}
 		}
 		
 		return fields;

@@ -3,13 +3,13 @@ package org.openmrs.module.epts.etl.pojogeneration.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.pojogeneration.engine.PojoGenerationEngine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class PojoGenerationSearchParams extends SyncSearchParams<EtlDatabaseObject> {
+public class PojoGenerationSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
 	private PojoGenerationEngine engine;
 	

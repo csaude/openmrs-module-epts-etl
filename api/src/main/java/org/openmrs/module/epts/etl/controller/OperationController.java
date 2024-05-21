@@ -12,8 +12,8 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncProgressMeter;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -81,9 +81,10 @@ public abstract class OperationController implements Controller {
 		this.controllerId = (getOperationType().name().toLowerCase() + "_on_" + processController.getControllerId())
 		        .toLowerCase();
 		
-		OpenConnection conn = openConnection();
-		
+		OpenConnection conn = null;
 		try {
+			conn = openConnection();
+			
 			this.progressInfo = this.processController.initOperationProgressMeter(this, conn);
 			
 			conn.markAsSuccessifullyTerminated();
@@ -92,7 +93,8 @@ public abstract class OperationController implements Controller {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 		
 	}
@@ -177,7 +179,7 @@ public abstract class OperationController implements Controller {
 		this.allGeneratedEngineMonitor = allGeneratedEngineMonitor;
 	}
 	
-	private synchronized void runInSequencialMode() {
+	private synchronized void runInSequencialMode() throws DBException {
 		changeStatusToRunning();
 		
 		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
@@ -280,7 +282,7 @@ public abstract class OperationController implements Controller {
 		}
 	}
 	
-	private synchronized void runInParallelMode() {
+	private synchronized void runInParallelMode() throws DBException {
 		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
 		
 		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
@@ -331,7 +333,7 @@ public abstract class OperationController implements Controller {
 			if (tableOpPm == null) {
 				logWarn("No Table Operation Info found for [" + etlConfig.getConfigCode() + "]");
 			} else {
-				SyncProgressMeter sPm = tableOpPm.getProgressMeter();
+				EtlProgressMeter sPm = tableOpPm.getProgressMeter();
 				
 				if (sPm == null) {
 					logWarn("The progress meter for etl configuration is not exists [" + etlConfig.getConfigCode() + "]");
@@ -493,7 +495,7 @@ public abstract class OperationController implements Controller {
 		}
 	}
 	
-	public synchronized void markTableOperationAsFinished(EtlItemConfiguration conf) {
+	public synchronized void markTableOperationAsFinished(EtlItemConfiguration conf) throws DBException {
 		
 		logDebug("FINISHING OPERATION ON TABLE " + conf.getConfigCode().toUpperCase());
 		
@@ -758,7 +760,7 @@ public abstract class OperationController implements Controller {
 		return getProcessController().getDefaultApp();
 	}
 	
-	public OpenConnection openConnection() {
+	public OpenConnection openConnection() throws DBException {
 		return getProcessController().openConnection();
 	}
 	

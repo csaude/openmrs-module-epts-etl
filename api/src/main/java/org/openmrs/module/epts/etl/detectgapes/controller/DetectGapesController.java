@@ -44,9 +44,11 @@ public class DetectGapesController extends OperationController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			return getExtremeRecord(config, "min", conn);
 		}
 		catch (DBException e) {
@@ -55,15 +57,18 @@ public class DetectGapesController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			return getExtremeRecord(config, "max", conn);
 		}
 		catch (DBException e) {
@@ -72,13 +77,13 @@ public class DetectGapesController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
 	private long getExtremeRecord(EtlItemConfiguration config, String function, Connection conn) throws DBException {
-		DetectGapesSearchParams searchParams = new DetectGapesSearchParams(config, null,
-		        this);
+		DetectGapesSearchParams searchParams = new DetectGapesSearchParams(config, null, this);
 		searchParams.setSyncStartDate(getConfiguration().getStartDate());
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
@@ -107,9 +112,11 @@ public class DetectGapesController extends OperationController {
 	
 	private void tryToCreateTableGape() {
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		try {
+			conn = openConnection();
+			
 			String syncStageSchema = operationConfig.getRelatedSyncConfig().getSyncStageSchema();
 			
 			if (!DBUtilities.isTableExists(syncStageSchema, "sync_table_gape", conn)) {
@@ -122,7 +129,8 @@ public class DetectGapesController extends OperationController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 		
 	}

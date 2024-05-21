@@ -38,6 +38,8 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 		
 		if (utilities.arrayHasElement(srcConfig.getSelfJoinTables())) {
 			for (AuxExtractTable aux : srcConfig.getSelfJoinTables()) {
+				searchClauses.addColumnToSelect(aux.generateFullAliasedSelectColumns());
+				
 				String joinType = aux.getJoinType().toString();
 				String extraJoinQuery = aux.generateConditionsFields();
 				

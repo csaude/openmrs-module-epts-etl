@@ -43,7 +43,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected EngineMonitor monitor;
 	
-	protected SyncSearchParams<? extends EtlObject> searchParams;
+	protected AbstractEtlSearchParams<? extends EtlObject> searchParams;
 	
 	private int operationStatus;
 	
@@ -60,7 +60,13 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	public Engine(EngineMonitor monitr, RecordLimits limits) {
 		this.monitor = monitr;
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn;
+		try {
+			conn = openConnection();
+		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
+		}
 		
 		this.searchParams = initSearchParams(limits, conn);
 		
@@ -124,7 +130,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		this.children = children;
 	}
 	
-	public SyncSearchParams<? extends EtlObject> getSearchParams() {
+	public AbstractEtlSearchParams<? extends EtlObject> getSearchParams() {
 		return searchParams;
 	}
 	
@@ -140,11 +146,11 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return monitor.getSrcMainTableConf();
 	}
 	
-	public SyncProgressMeter getProgressMeter_() {
+	public EtlProgressMeter getProgressMeter_() {
 		return monitor.getProgressMeter();
 	}
 	
-	public OpenConnection openConnection() {
+	public OpenConnection openConnection() throws DBException {
 		return getRelatedOperationController().openConnection();
 	}
 	
@@ -219,11 +225,13 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 				logDebug(
 				    "SEARCHING NEXT MIGRATION RECORDS FOR ETL CONFIG '" + this.getEtlConfiguration().getConfigCode() + "'");
 				
-				OpenConnection conn = openConnection();
+				OpenConnection conn = null;
 				
 				boolean finished = false;
 				
 				try {
+					conn = openConnection();
+					
 					int processedRecords_ = performe(conn);
 					
 					refreshProgressMeter(processedRecords_, conn);
@@ -288,7 +296,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 				}
 				catch (Exception e) {
 					
-					conn.finalizeConnection();
+					if (conn != null)
+						conn.finalizeConnection();
 					
 					reportError(e);
 				}
@@ -481,7 +490,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		this.operationStatus = MonitoredOperation.STATUS_STOPPED;
 		
 		if (this.isMainEngine()) {
-			SyncProgressMeter pm = this.getProgressMeter_();
+			EtlProgressMeter pm = this.getProgressMeter_();
 			
 			if (pm != null) {
 				pm.changeStatusToStopped();
@@ -505,7 +514,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		}
 		
 		if (isMainEngine()) {
-			SyncProgressMeter pm = this.getProgressMeter_();
+			EtlProgressMeter pm = this.getProgressMeter_();
 			
 			if (pm != null) {
 				pm.changeStatusToFinished();
@@ -720,11 +729,10 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected abstract void restart();
 	
-	protected abstract SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn);
+	protected abstract AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn);
 	
 	public abstract void performeSync(List<EtlObject> records, Connection conn) throws DBException;
 	
 	protected abstract List<EtlObject> searchNextRecords(Connection conn) throws DBException;
-	
 	
 }

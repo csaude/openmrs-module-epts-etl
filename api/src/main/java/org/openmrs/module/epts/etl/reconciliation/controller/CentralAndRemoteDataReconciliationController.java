@@ -23,19 +23,24 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * This class is responsible for control record changes process
  * 
  * @author jpboane
- *
  */
 public class CentralAndRemoteDataReconciliationController extends OperationController {
-		
-	public CentralAndRemoteDataReconciliationController(ProcessController processController, EtlOperationConfig operationConfig) {
+	
+	public CentralAndRemoteDataReconciliationController(ProcessController processController,
+	    EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
 	@Override
 	public void onStart() {
-			
-		if (!existDataReconciliationInfoTable()) {
-			generateDataReconciliationInfoTable();
+		
+		try {
+			if (!existDataReconciliationInfoTable()) {
+				generateDataReconciliationInfoTable();
+			}
+		}
+		catch (DBException e) {
+			throw e.parseToRuntimeException();
 		}
 		
 		super.onStart();
@@ -45,7 +50,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
 		return new CentralAndRemoteDataReconciliationEngine(monitor, limits);
 	}
-
+	
 	public boolean isMissingRecordsDetector() {
 		return this.getOperationType().isMissingRecordsDetector();
 	}
@@ -53,80 +58,82 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	public boolean isOutdateRecordsDetector() {
 		return this.getOperationType().isOutdatedRecordsDetector();
 	}
-
+	
 	public boolean isPhantomRecordsDetector() {
 		return this.getOperationType().isPhantomRecordsDetector();
 	}
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		if (config.getSrcConf().getTableName().equalsIgnoreCase("users")) return 0;
+		if (config.getSrcConf().getTableName().equalsIgnoreCase("users"))
+			return 0;
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		int id = 0;
-			
+		
 		try {
+			conn = openConnection();
+			
 			if (isMissingRecordsDetector()) {
 				SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(config.getSrcConf(), conn);
 				
 				id = record != null ? record.getId() : 0;
-			}
-			else
-			if (isOutdateRecordsDetector()) {
+			} else if (isOutdateRecordsDetector()) {
 				id = DatabaseObjectDAO.getFirstRecord(config.getSrcConf(), conn);
-			}
-			else
-			if (isPhantomRecordsDetector()){
+			} else if (isPhantomRecordsDetector()) {
 				EtlDatabaseObject record = DatabaseObjectDAO.getFirstPhantomRecordInDestination(config.getSrcConf(), conn);
 				
 				id = record != null ? record.getObjectId().getSimpleValueAsInt() : 0;
 			}
-		
+			
 			return id;
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
-
+	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		if (config.getSrcConf().getTableName().equalsIgnoreCase("users")) return 0;
+		if (config.getSrcConf().getTableName().equalsIgnoreCase("users"))
+			return 0;
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		int id = 0;
 		
 		try {
+			conn = openConnection();
+			
 			if (isMissingRecordsDetector()) {
 				SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(config.getSrcConf(), conn);
 				
 				id = record != null ? record.getId() : 0;
-			}
-			else
-			if (isOutdateRecordsDetector()) {
+			} else if (isOutdateRecordsDetector()) {
 				id = DatabaseObjectDAO.getLastRecord(config.getSrcConf(), conn);
-			}
-			else
-			if (isPhantomRecordsDetector()){
+			} else if (isPhantomRecordsDetector()) {
 				EtlDatabaseObject record = DatabaseObjectDAO.getLastPhantomRecordInDestination(config.getSrcConf(), conn);
 				
 				id = record != null ? record.getObjectId().getSimpleValueAsInt() : 0;
 			}
-		
+			
 			return id;
-		} catch (DBException e) {
+		}
+		catch (DBException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -134,15 +141,16 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	public boolean mustRestartInTheEnd() {
 		return false;
 	}
-
-	@Override
-	public OpenConnection openConnection() {
-		OpenConnection conn = super.openConnection();
 	
+	@Override
+	public OpenConnection openConnection() throws DBException {
+		OpenConnection conn = super.openConnection();
+		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
 			try {
 				DBUtilities.disableForegnKeyChecks(conn);
-			} catch (DBException e) {
+			}
+			catch (DBException e) {
 				e.printStackTrace();
 				
 				throw new RuntimeException(e);
@@ -152,19 +160,21 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		return conn;
 	}
 	
-	
-	public boolean existDataReconciliationInfoTable() {
-		OpenConnection conn = openConnection();
+	public boolean existDataReconciliationInfoTable() throws DBException {
 		
 		String schema = getConfiguration().getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = "data_conciliation_info";
-
+		
+		OpenConnection conn = openConnection();
+		
 		try {
+			
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-
+			
 			throw new RuntimeException(e);
 		}
 		finally {
@@ -174,7 +184,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 	
 	private void generateDataReconciliationInfoTable() {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = null;
 		
 		String sql = "";
 		
@@ -187,22 +197,27 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		sql += "creation_date datetime DEFAULT CURRENT_TIMESTAMP,\n";
 		sql += "PRIMARY KEY (id)\n";
 		sql += ") ENGINE=InnoDB;\n";
-				
+		
 		try {
+			conn = openConnection();
+			
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
 			st.executeBatch();
-
+			
 			st.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-
-			throw new RuntimeException(e);
-		} 
-		finally {
+			
 			conn.markAsSuccessifullyTerminated();
-			conn.finalizeConnection();
-		}	
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			if (conn != null)
+				conn.finalizeConnection();
+		}
 	}
 	
 	@Override

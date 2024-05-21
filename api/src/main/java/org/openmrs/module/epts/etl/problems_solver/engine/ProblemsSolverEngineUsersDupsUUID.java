@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -153,8 +153,8 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	}
 	
 	@Override
-	protected SyncSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		SyncSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParamsUsersDupsUUID(
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParamsUsersDupsUUID(
 		        this.getEtlConfiguration(), null, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

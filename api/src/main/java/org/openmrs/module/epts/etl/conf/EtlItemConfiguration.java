@@ -196,7 +196,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	        throws DBException {
 		EtlSearchParams searchParams = new EtlSearchParams(this, null, null);
 		
-		searchParams.setExtraCondition(this.getSrcConf().getPrimaryKey().parseToParametrizedStringCondition());
+		searchParams.setExtraCondition(this.getSrcConf().getPrimaryKey().parseToParametrizedStringConditionWithAlias());
 		
 		searchParams.setSyncStartDate(getRelatedSyncConfiguration().getStartDate());
 		

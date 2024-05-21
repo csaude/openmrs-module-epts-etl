@@ -40,7 +40,7 @@ public class QuickTest {
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	@SuppressWarnings("unused")
-	public static OpenConnection openConnection() {
+	public static OpenConnection openConnection() throws DBException {
 		DBConnectionInfo connInfo_localhost = new DBConnectionInfo("root", "root", "jdbc:mysql://localhost:3306/tmp_qlm_hgq",
 		        "com.mysql.cj.jdbc.Driver");
 		

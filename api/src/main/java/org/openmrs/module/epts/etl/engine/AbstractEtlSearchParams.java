@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
-public abstract class SyncSearchParams<T extends EtlObject> extends AbstractSearchParams<T> {
+public abstract class AbstractEtlSearchParams<T extends EtlObject> extends AbstractSearchParams<T> {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -29,7 +29,7 @@ public abstract class SyncSearchParams<T extends EtlObject> extends AbstractSear
 	
 	private SearchSourceType searchSourceType;
 	
-	public SyncSearchParams(EtlItemConfiguration config, RecordLimits limits) {
+	public AbstractEtlSearchParams(EtlItemConfiguration config, RecordLimits limits) {
 		this.config = config;
 		this.limits = limits;
 		this.searchSourceType = SearchSourceType.SOURCE;

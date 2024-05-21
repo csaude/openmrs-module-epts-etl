@@ -4,14 +4,14 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.SyncSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DBQuickExportSearchParams extends SyncSearchParams<EtlDatabaseObject> {
+public class DBQuickExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
 	private boolean selectAllRecords;
 	

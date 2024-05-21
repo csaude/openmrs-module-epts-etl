@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 public class DBConnectionInfo {
@@ -26,6 +27,8 @@ public class DBConnectionInfo {
 	
 	private int minIdleConnections;
 	
+	private String databaseSchemaPath;
+	
 	public DBConnectionInfo() {
 	}
 	
@@ -42,6 +45,14 @@ public class DBConnectionInfo {
 		this(dataBaseUserName, dataBaseUserPassword, connectionURI, driveClassName);
 		
 		this.schema = schema;
+	}
+	
+	public String getDatabaseSchemaPath() {
+		return databaseSchemaPath;
+	}
+	
+	public void setDatabaseSchemaPath(String databaseSchemaPath) {
+		this.databaseSchemaPath = databaseSchemaPath;
 	}
 	
 	public int getMaxActiveConnections() {
@@ -130,8 +141,27 @@ public class DBConnectionInfo {
 		
 		return conf;
 	}
-
+	
 	public static DBConnectionInfo loadFromJson(String json) {
 		return utilities.loadObjectFormJSON(DBConnectionInfo.class, json);
 	}
+	
+	public String determineSchema() {
+		
+		if (utilities.stringHasValue(this.schema))
+			return schema;
+		
+		if (isMySQLConnection()) {
+			String[] urlParts = this.getConnectionURI().split("/");
+			
+			return urlParts[1].split("?")[urlParts.length-1];
+		}
+		
+		throw new ForbiddenOperationException("Unrecognized dbms");
+	}
+	
+	private boolean isMySQLConnection() {
+		return this.connectionURI.toUpperCase().contains("MYSQL");
+	}
+	
 }
