@@ -154,7 +154,7 @@ public class DBConnectionInfo {
 		if (isMySQLConnection()) {
 			String[] urlParts = this.getConnectionURI().split("/");
 			
-			return urlParts[1].split("?")[urlParts.length-1];
+			return urlParts[urlParts.length-1].split("\\?")[0];
 		}
 		
 		throw new ForbiddenOperationException("Unrecognized dbms");

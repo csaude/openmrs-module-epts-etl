@@ -151,10 +151,11 @@ public class ProcessController implements Controller, ControllerStarter {
 			}
 			catch (DBException e) {
 				if (DBUtilities.determineDataBaseFromException(e).equals(DBUtilities.MYSQL_DATABASE)) {
-					if (DBException.checkIfExceptionContainsMessage(e, "Unknown database")) {
-						
+					if (!DBException.checkIfExceptionContainsMessage(e, "Unknown database")) {
+						throw e;
 					}
-				}
+				} else
+					throw e;
 			}
 			
 			if (!dstDbExists) {

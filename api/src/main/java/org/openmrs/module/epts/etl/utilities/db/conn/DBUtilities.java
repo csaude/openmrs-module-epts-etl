@@ -83,7 +83,7 @@ public class DBUtilities {
 		return null;
 	}
 	
-	public static String determineDataBaseFromException(SQLException sqlExcetion) {
+	public static String determineDataBaseFromException(Throwable sqlExcetion) {
 		String db = determineDataBaseFromString(sqlExcetion.getClass().getName());
 		
 		if (db != null)
@@ -109,6 +109,10 @@ public class DBUtilities {
 			
 			if (db != null)
 				return db;
+		}
+		
+		if (sqlExcetion.getCause() != null) {
+			return determineDataBaseFromException(sqlExcetion.getCause());
 		}
 		
 		return UNKNOWN_DATABASE;
@@ -1354,9 +1358,8 @@ public class DBUtilities {
 		
 		if (isMySQLDB(conn)) {
 			executeBatch(conn, "create database " + databaseName);
-		}
-		
-		throw new ForbiddenOperationException("DBMS not supported for schema creation");
+		} else
+			throw new ForbiddenOperationException("DBMS not supported for schema creation");
 	}
 	
 }

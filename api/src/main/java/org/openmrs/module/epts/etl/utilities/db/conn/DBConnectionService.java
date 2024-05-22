@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tomcat.jdbc.pool.DataSource;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
@@ -159,13 +158,13 @@ public class DBConnectionService {
 		}
 		catch (SQLException e1) {
 			
-			if (DBUtilities.determineDataBaseFromException(e).equals(DBUtilities.MYSQL_DATABASE)) {
-				if (DBException.checkIfExceptionContainsMessage(e, "Unknown database")) {
-					throw new ForbiddenOperationException(e);
+			if (DBUtilities.determineDataBaseFromException(e1).equals(DBUtilities.MYSQL_DATABASE)) {
+				if (DBException.checkIfExceptionContainsMessage(e1, "Unknown database")) {
+					throw new DBException(e1);
 				}
 			}
 			
-			e.printStackTrace();
+			e1.printStackTrace();
 			
 			logger.warn("Tentando novamente Obter uma conexao");
 			
