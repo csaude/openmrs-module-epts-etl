@@ -179,6 +179,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setInsertSQLWithoutObjectId(toCloneFrom.getInsertSQLWithoutObjectId());
 		this.setUpdateSql(toCloneFrom.getUpdateSql());
 		this.setRelatedSyncConfiguration(toCloneFrom.getRelatedSyncConfiguration());
+		this.setSchema(toCloneFrom.getSchema());
 		
 		loadOwnElements(conn);
 	}
@@ -482,19 +483,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				try {
 					logDebug("DISCOVERED '" + count + "' PARENTS FOR TABLE '" + getTableName() + "'");
 					
-					String tableName = DBUtilities.extractTableNameFromFullTableName(this.getTableName());
-					
-					String schema = DBUtilities.determineSchemaFromFullTableName(this.getTableName());
-					
-					schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
-					
 					String catalog = conn.getCatalog();
 					
-					if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
-						catalog = schema;
+					if (DBUtilities.isMySQLDB(conn)) {
+						catalog = getSchema();
 					}
 					
-					foreignKeyRS = conn.getMetaData().getImportedKeys(catalog, schema, tableName);
+					foreignKeyRS = conn.getMetaData().getImportedKeys(catalog, getSchema(), getTableName());
 					
 					while (foreignKeyRS.next()) {
 						
@@ -513,6 +508,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						parentTabConf.setParentConf(this.getParentConf());
 						parentTabConf.setChildTableConf(this);
 						parentTabConf.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
+						
+						parentTabConf.setSchema(foreignKeyRS.getString("PKTABLE_SCHEM"));
+						
+						if (!parentTabConf.hasSchema()) {
+							parentTabConf.setSchema(foreignKeyRS.getString("PKTABLE_CAT"));
+						}
 						
 						addParentMappingInfo(refCode, childFieldName, parentTabConf, parentFieldName, conn);
 						
@@ -667,6 +668,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						childTabConf.setParentTableConf(this);
 						childTabConf.setParentConf(this.getParentConf());
 						childTabConf.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
+						childTabConf.setSchema(foreignKeyRS.getString("FKTABLE_SCHEM"));
+						
+						if (!childTabConf.hasSchema()) {
+							childTabConf.setSchema(foreignKeyRS.getString("PKTABLE_CAT"));
+						}
 						
 						addChildMappingInfo(refCode, childTabConf, childFieldName, parentFieldName, conn);
 						
@@ -900,12 +906,15 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return generateFullTableName(conn) + " " + this.getTableAlias();
 	}
 	
-	default String generateFullTableNameWithAlias(String schema) {
+	default String generateFullTableNameWithAlias() {
 		if (!hasAlias()) {
 			throw new ForbiddenOperationException("No alias is defined for table " + this.getTableName());
 		}
+		if (!hasSchema()) {
+			throw new ForbiddenOperationException("No schema is defined for table" + this.getTableName());
+		}
 		
-		return utilities.stringHasValue(schema) ? schema + "." + generateTableNameWithAlias() : generateTableNameWithAlias();
+		return getSchema() + "." + generateTableNameWithAlias();
 	}
 	
 	default String generateTableNameWithAlias() {
@@ -977,6 +986,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				if (this.isFullLoaded()) {
 					return;
+				}
+				
+				String[] tableNameParts = getTableName().split("\\.");
+				
+				if (tableNameParts.length == 1) {
+					if (getSchema() == null) {
+						setSchema(DBUtilities.determineSchemaName(conn));
+					}
+				} else if (tableNameParts.length == 2) {
+					setTableName(tableNameParts[1]);
+					setSchema(tableNameParts[0]);
+				} else {
+					throw new ForbiddenOperationException("The table name " + getTableName() + " is malformed!");
 				}
 				
 				boolean exists = DBUtilities.isTableExists(conn.getSchema(), getTableName(), conn);
@@ -1124,7 +1146,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		throw new ForbiddenOperationException("The related table of shared pk " + getSharePkWith() + " of table "
-		        + this.getTableName() + " is not listed inparents!");
+		        + this.getTableName() + " is not listed in parents!");
 	}
 	
 	default TableConfiguration findParentOnChildRefInfo(String parentTableName) {
@@ -1135,6 +1157,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		return null;
+	}
+	
+	default String getFullTableName() {
+		return hasSchema() ? getSchema() + "." + getTableName() : getTableName();
+	}
+	
+	default String getFullTableDescription() {
+		return getFullTableName() + (hasAlias() ? " as " + getTableAlias() : "");
 	}
 	
 	default List<ParentTable> findAllRefToParent(String parentTableName) {
@@ -1524,29 +1554,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 * @return
 	 */
 	default String generateSelectFromClauseContent() {
-		return generateSelectFromClauseContentOnSpecificSchema("");
-	}
-	
-	/**
-	 * Generates the content for SELECT FROM clause content.
-	 * 
-	 * @return
-	 * @throws DBException
-	 */
-	default String generateSelectFromClauseContentOnSpecificSchema(Connection conn) throws DBException {
-		return generateSelectFromClauseContentOnSpecificSchema(DBUtilities.determineSchemaName(conn));
-	}
-	
-	/**
-	 * Generates the content for SELECT FROM clause content.
-	 * 
-	 * @return
-	 */
-	default String generateSelectFromClauseContentOnSpecificSchema(String schema) {
-		String fromClause = generateFullTableNameWithAlias(schema);
+		String fromClause = generateFullTableNameWithAlias();
 		
 		if (useSharedPKKey()) {
-			fromClause += "\n INNER JOIN " + this.getSharedTableConf().generateFullTableNameWithAlias(schema) + " ON "
+			fromClause += "\n INNER JOIN " + this.getSharedTableConf().generateFullTableNameWithAlias() + " ON "
 			        + this.getSharedKeyRefInfo().generateJoinCondition();
 		}
 		
@@ -1559,6 +1570,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default boolean hasChildRefInfo() {
 		return isMustLoadChildrenInfo() && utilities.arrayHasElement(this.getChildRefInfo());
+	}
+	
+	default boolean hasSchema() {
+		return utilities.stringHasValue(getSchema());
 	}
 	
 	default List<FieldsMapping> tryToLoadJoinFields(TableConfiguration relatedTabConf) {
@@ -1663,14 +1678,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return conditionFields;
 	}
 	
-	default TableConfiguration findFullConfiguredConfInAllRelatedTable(String tableName) {
-		if (this.getTableName().equals(tableName) && this.isFullLoaded()) {
+	default TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName) {
+		if (this.getFullTableName().equals(fullTableName) && this.isFullLoaded()) {
 			return this;
 		}
 		
 		if (this.hasParentRefInfo()) {
 			for (ParentTable p : this.getParentRefInfo()) {
-				TableConfiguration fullLoaded = p.findFullConfiguredConfInAllRelatedTable(tableName);
+				TableConfiguration fullLoaded = p.findFullConfiguredConfInAllRelatedTable(fullTableName);
 				
 				if (fullLoaded != null) {
 					return fullLoaded;
@@ -1680,7 +1695,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		if (this.hasChildRefInfo()) {
 			for (ChildTable p : this.getChildRefInfo()) {
-				TableConfiguration fullLoaded = p.findFullConfiguredConfInAllRelatedTable(tableName);
+				TableConfiguration fullLoaded = p.findFullConfiguredConfInAllRelatedTable(fullTableName);
 				
 				if (fullLoaded != null) {
 					return fullLoaded;
@@ -1690,6 +1705,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		return null;
 	}
+	
+	String getSchema();
+	
+	void setSchema(String schema);
 	
 	boolean isAllRelatedTablesFullLoaded();
 	
@@ -1707,16 +1726,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				TableConfiguration existingConf = null;
 				
 				if (related != null) {
-					existingConf = related.findFullConfiguredConfInAllRelatedTable(ref.getTableName());
+					existingConf = related.findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());
 				}
 				
 				if (existingConf == null) {
-					existingConf = this.findFullConfiguredConfInAllRelatedTable(ref.getTableName());
+					existingConf = this.findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());
 				}
 				
-				if (!ref.hasAlias()) {
-					ref.setTableAlias(aliasGenerator.generateAlias(ref));
-				}
+				ref.tryToGenerateTableAlias(aliasGenerator); 
 				
 				if (existingConf != null) {
 					ref.clone(existingConf, conn);
@@ -1772,7 +1789,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 */
 	default String generateSelectFromQuery() {
 		String sql = " SELECT " + generateFullAliasedSelectColumns() + "\n";
-		sql += " FROM " + generateTableNameWithAlias() + "\n";
+		sql += " FROM " + generateSelectFromClauseContent() + "\n";
 		
 		return sql;
 	}
@@ -1803,5 +1820,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		return null;
+	}
+	
+	default  void tryToGenerateTableAlias(TableAliasesGenerator aliasGenerator) {
+		
+		synchronized (this) {
+			if (hasAlias()) return;
+			
+			aliasGenerator.generateAliasForTable(this);
+		}
 	}
 }

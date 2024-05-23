@@ -104,9 +104,9 @@ public class ChildTable extends AbstractRelatedTable {
 	@Override
 	@JsonIgnore
 	public String toString() {
-		String str = this.hasRelated() ? this.getRelatedTabConf().getTableName() + " >> " : "";
+		String str = super.toString();
 		
-		str += this.getTableName();
+		str += this.hasRelated() ? " Child of " + this.getRelatedTabConf().getFullTableDescription() : "";
 		
 		if (hasMapping()) {
 			str += ": ";
@@ -122,7 +122,7 @@ public class ChildTable extends AbstractRelatedTable {
 		
 		return str;
 	}
-
+	
 	@Override
 	public void loadOwnElements(Connection conn) throws DBException {
 		// TODO Auto-generated method stub

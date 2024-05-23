@@ -136,7 +136,7 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 		String str = super.toString();
 		
 		if (this.hasRelated()) {
-			str += " Parent of " + this.getRelatedTabConf().getTableName();
+			str += " Parent of " + this.getRelatedTabConf().getFullTableDescription();
 		}
 		
 		String mappingStr = "";

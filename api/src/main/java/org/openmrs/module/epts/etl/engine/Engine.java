@@ -139,10 +139,10 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	}
 	
 	public String getMainSrcTableName() {
-		return getMainSrcTableConf().getTableName();
+		return getSrcConf().getTableName();
 	}
 	
-	public SrcConf getMainSrcTableConf() {
+	public SrcConf getSrcConf() {
 		return monitor.getSrcMainTableConf();
 	}
 	
@@ -274,7 +274,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 									this.finalCheckStatus = MigrationFinalCheckStatus.IGNORED;
 								}
 							} else {
-								logDebug("NO MORE '" + this.getMainSrcTableConf().getTableName() + "' RECORDS TO "
+								logDebug("NO MORE '" + this.getSrcConf().getTableName() + "' RECORDS TO "
 								        + getRelatedOperationController().getOperationType().name().toLowerCase()
 								        + " ON LIMITS [" + getLimits() + "]! FINISHING...");
 								
@@ -354,12 +354,12 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		List<EtlObject> records = searchNextRecords(conn);
 		
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
-		        + getMainSrcTableConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records)
+		        + getSrcConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records)
 		        + "' RECORDS.");
 		
 		if (utilities.arrayHasElement(records)) {
 			logDebug("INITIALIZING " + getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '"
-			        + records.size() + "' RECORDS OF TABLE '" + this.getMainSrcTableConf().getTableName() + "'");
+			        + records.size() + "' RECORDS OF TABLE '" + this.getSrcConf().getTableName() + "'");
 			
 			beforeSync(records, conn);
 			
@@ -372,7 +372,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	private void beforeSync(List<EtlObject> records, Connection conn) {
 		for (EtlObject rec : records) {
 			if (rec instanceof EtlDatabaseObject) {
-				((EtlDatabaseObject) rec).loadObjectIdData(getMainSrcTableConf());
+				((EtlDatabaseObject) rec).loadObjectIdData(getSrcConf());
 			}
 		}
 	}

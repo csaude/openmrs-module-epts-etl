@@ -101,11 +101,11 @@ public class TransportEngine extends Engine {
 	}
 	
 	private File getSyncBkpDirectory() throws IOException {
-		return getRelatedOperationController().getSyncBkpDirectory(getMainSrcTableConf());
+		return getRelatedOperationController().getSyncBkpDirectory(getSrcConf());
 	}
 	
 	private File getSyncDestinationDirectory() throws IOException {
-		return getRelatedOperationController().getSyncDestinationDirectory(getMainSrcTableConf());
+		return getRelatedOperationController().getSyncDestinationDirectory(getSrcConf());
 	}
 	
 	@Override
@@ -114,7 +114,7 @@ public class TransportEngine extends Engine {
 	}
 	
 	private File getSyncDirectory() {
-		return getRelatedOperationController().getSyncDirectory(getMainSrcTableConf());
+		return getRelatedOperationController().getSyncDirectory(getSrcConf());
 	}
 	
 }

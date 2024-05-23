@@ -186,7 +186,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
-				dup.save(getMainSrcTableConf(), conn);
+				dup.save(getSrcConf(), conn);
 			}
 			
 			i++;

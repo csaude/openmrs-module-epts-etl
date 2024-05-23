@@ -75,6 +75,8 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private boolean allRelatedTablesFullLoaded;
 	
+	private String schema;
+	
 	public AbstractTableConfiguration() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
@@ -83,6 +85,16 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this();
 		
 		this.tableName = tableName;
+	}
+	
+	@Override
+	public String getSchema() {
+		return schema;
+	}
+	
+	@Override
+	public void setSchema(String schema) {
+		this.schema = schema;
 	}
 	
 	@Override
@@ -147,7 +159,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	public void setTableAlias(String tableAlias) {
-		if (hasAlias())
+		if (hasAlias() && !tableAlias.equals(this.getTableAlias()))
 			throw new ForbiddenOperationException("This table has already an alias and change is forbidden!");
 		
 		this.tableAlias = tableAlias;
@@ -328,7 +340,13 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	@Override
 	@JsonIgnore
 	public String toString() {
-		return "Table [name:" + this.tableName + ", Alias:" + this.tableAlias + ",   pk: " + this.primaryKey + "]";
+		String toString = "Table [" + getFullTableDescription();
+		
+		toString += hasPK() ? ", pk: " + this.getPrimaryKey() : "";
+		
+		toString += "]";
+	
+		return toString;
 	}
 	
 	@Override

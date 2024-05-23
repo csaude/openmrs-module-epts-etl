@@ -12,8 +12,8 @@ import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -141,8 +141,8 @@ public class DBQuickMergeEngine extends EtlEngine {
 							destObject.loadObjectIdData(mappingInfo);
 						}
 						
-						QuickMergeRecord mr = new QuickMergeRecord(destObject, mappingInfo, this.getSrcApp(),
-						        this.getDstApp(), false);
+						QuickMergeRecord mr = new QuickMergeRecord(destObject, getSrcConf(), mappingInfo,
+						        this.getSrcApp(), this.getDstApp(), false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mapOrder.add(mappingInfo.getTableName());
@@ -218,8 +218,8 @@ public class DBQuickMergeEngine extends EtlEngine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					QuickMergeRecord data = new QuickMergeRecord(destObject, mappingInfo, this.getSrcApp(), this.getDstApp(),
-					        wrt);
+					QuickMergeRecord data = new QuickMergeRecord(destObject, getSrcConf(), mappingInfo,
+					        this.getSrcApp(), this.getDstApp(), wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);

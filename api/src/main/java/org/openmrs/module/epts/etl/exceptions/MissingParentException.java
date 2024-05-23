@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.exceptions;
 
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 
 public class MissingParentException extends EtlException {
@@ -16,28 +17,37 @@ public class MissingParentException extends EtlException {
 	
 	private ParentTable refInfo;
 	
+	private EtlDatabaseObject etlObject;
+	
 	public MissingParentException() {
 		super("On or more parents are missing");
 	}
 	
-	public MissingParentException(Integer parentId, String parentTable, String originAppLocationConde,
-	    ParentTable refInfo) {
-		super("Missing parent! Parent: [table: " + parentTable + ", id: " + parentId + ", from:" + originAppLocationConde
-		        + "]");
+	public MissingParentException(EtlDatabaseObject etlObject, Integer parentId, String parentTable,
+	    String originAppLocationConde, ParentTable refInfo) {
+		super("Missing Parent of record " + etlObject + "!!! Parent [table: " + parentTable + ", id: " + parentId + ", from:"
+		        + originAppLocationConde + "]");
 		
 		this.parentId = parentId;
 		this.parentTable = parentTable;
 		this.originAppLocationConde = originAppLocationConde;
 		this.refInfo = refInfo;
+		this.etlObject = etlObject;
 	}
 	
-	public MissingParentException(Oid parentId, String parentTable, String originAppLocationConde, ParentTable refInfo) {
-		super("Missing parent! Parent: [table: " + parentTable + ", id: " + parentId + ", from:" + originAppLocationConde
-		        + "]");
+	public EtlDatabaseObject getEtlObject() {
+		return etlObject;
+	}
+	
+	public MissingParentException(EtlDatabaseObject etlObject, Oid parentId, String parentTable,
+	    String originAppLocationConde, ParentTable refInfo) {
+		super("Missing parent of record " + etlObject + "!!! Parent: [table: " + parentTable + ", id: " + parentId
+		        + ", from:" + originAppLocationConde + "]");
 		
 		this.parentTable = parentTable;
 		this.originAppLocationConde = originAppLocationConde;
 		this.refInfo = refInfo;
+		this.etlObject = etlObject;
 	}
 	
 	public Integer getParentId() {

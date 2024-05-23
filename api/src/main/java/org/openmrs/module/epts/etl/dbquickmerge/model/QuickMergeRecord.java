@@ -9,6 +9,7 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -29,7 +30,7 @@ public class QuickMergeRecord {
 	
 	protected EtlDatabaseObject record;
 	
-	protected TableConfiguration config;
+	protected DstConf config;
 	
 	protected List<ParentInfo> parentsWithDefaultValues;
 	
@@ -41,7 +42,9 @@ public class QuickMergeRecord {
 	
 	protected long destinationRecordId;
 	
-	public QuickMergeRecord(EtlDatabaseObject record, TableConfiguration config, AppInfo srcApp, AppInfo destApp,
+	protected SrcConf srcConf;
+	
+	public QuickMergeRecord(EtlDatabaseObject record, SrcConf srcConf, DstConf config, AppInfo srcApp, AppInfo destApp,
 	    boolean writeOperationHistory) {
 		this.record = record;
 		this.config = config;
@@ -49,9 +52,15 @@ public class QuickMergeRecord {
 		this.destApp = destApp;
 		this.writeOperationHistory = writeOperationHistory;
 		
+		this.srcConf = srcConf;
+		
 		this.parentsWithDefaultValues = new ArrayList<ParentInfo>();
 		
 		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(this.config.getUniqueKeys(), this.record));
+	}
+	
+	public AppInfo getSrcApp() {
+		return srcApp;
 	}
 	
 	public List<ParentInfo> getParentsWithDefaultValues() {
@@ -67,7 +76,7 @@ public class QuickMergeRecord {
 		}
 	}
 	
-	public TableConfiguration getConfig() {
+	public DstConf getConfig() {
 		return config;
 	}
 	
@@ -146,16 +155,17 @@ public class QuickMergeRecord {
 				                + parentInfo.getParentTableConfInDst().getTableName() + " as destination!");
 			}
 			
-			EtlDatabaseObject dstParent = dstSharedConf.transform(parentInfo.getParentRecordInOrigin(), srcConn,
-			    srcApp, destApp);
+			EtlDatabaseObject dstParent = dstSharedConf.transform(parentInfo.getParentRecordInOrigin(), srcConn, srcApp,
+			    destApp);
 			
-			QuickMergeRecord parentData = new QuickMergeRecord(dstParent, parentInfo.getParentTableConfInDst(), srcApp,
-			        destApp, this.writeOperationHistory);
+			QuickMergeRecord parentData = new QuickMergeRecord(dstParent,
+			        parentInfo.getParentTableConfInDst().findRelatedSrcConf(),
+			        parentInfo.getParentTableConfInDst().findRelatedDstConf(), srcApp, destApp, this.writeOperationHistory);
 			
 			parentData.merge(srcConn, destConn);
 			
-			List<EtlDatabaseObject> recs = DatabaseObjectDAO
-			        .getByUniqueKeys(parentInfo.getParentTableConfInDst(), dstParent, destConn);
+			List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parentInfo.getParentTableConfInDst(), dstParent,
+			    destConn);
 			
 			EtlDatabaseObject parent = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 			
@@ -191,7 +201,7 @@ public class QuickMergeRecord {
 				if (parentInOrigin == null) {
 					
 					if (refInfo.getSimpleRefMapping().getDefaultValueDueInconsistency() == null) {
-						throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(),
+						throw new MissingParentException(record, parentIdInOrigin, refInfo.getTableName(),
 						        quickMergeRecord.config.getOriginAppLocationCode(), refInfo);
 					} else {
 						
@@ -201,7 +211,7 @@ public class QuickMergeRecord {
 						    Oid.fastCreate(fieldNameOnParentTable, parentIdInOrigin), srcConn);
 						
 						if (parentInOrigin == null) {
-							throw new MissingParentException(parentIdInOrigin, refInfo.getTableName(),
+							throw new MissingParentException(record, parentIdInOrigin, refInfo.getTableName(),
 							        quickMergeRecord.config.getOriginAppLocationCode(), refInfo);
 						}
 					}
@@ -254,7 +264,7 @@ public class QuickMergeRecord {
 				    Oid.fastCreate(refInfo.getParentColumnOnSimpleMapping(), parentId), destConn);
 				
 				if (parent == null)
-					throw new MissingParentException(parentId, refInfo.getTableName(),
+					throw new MissingParentException(record, parentId, refInfo.getTableName(),
 					        quickMergeRecord.config.getOriginAppLocationCode(), refInfo);
 			}
 		}
@@ -295,7 +305,7 @@ public class QuickMergeRecord {
 				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(parent, objectId, srcConn);
 				
 				if (parentInOrigin == null)
-					throw new MissingParentException(parentIdInOrigin, parent.getTableName(),
+					throw new MissingParentException(record, parentIdInOrigin, parent.getTableName(),
 					        quickMergeRecord.config.getOriginAppLocationCode(), parent);
 				
 				List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parent, parentInOrigin, destConn);
@@ -356,8 +366,8 @@ public class QuickMergeRecord {
 		}
 	}
 	
-	public static void mergeAll(List<String> mapOrder, Map<String, List<QuickMergeRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn)
-	        throws ParentNotYetMigratedException, DBException {
+	public static void mergeAll(List<String> mapOrder, Map<String, List<QuickMergeRecord>> mergingRecs, Connection srcConn,
+	        OpenConnection dstConn) throws ParentNotYetMigratedException, DBException {
 		for (String key : mapOrder) {
 			mergeAll(mergingRecs.get(key), srcConn, dstConn);
 		}

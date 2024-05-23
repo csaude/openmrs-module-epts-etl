@@ -119,7 +119,7 @@ public class DBExportEngine extends Engine {
 		try {
 			conn = openConnection();
 			
-			DatabaseObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getMainSrcTableConf(),
+			DatabaseObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSrcConf(),
 			    getEtlConfiguration().getOriginAppLocationCode(), conn);
 			
 			conn.markAsSuccessifullyTerminated();
@@ -136,7 +136,7 @@ public class DBExportEngine extends Engine {
 	}
 	
 	private File generateJSONTempFile(SyncJSONInfo jsonInfo, Integer startRecord, Integer lastRecord) throws IOException {
-		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getMainSrcTableConf(), startRecord,
+		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcConf(), startRecord,
 		    lastRecord);
 	}
 	

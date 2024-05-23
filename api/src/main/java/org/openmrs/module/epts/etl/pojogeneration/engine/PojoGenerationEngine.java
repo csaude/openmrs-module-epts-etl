@@ -57,7 +57,7 @@ public class PojoGenerationEngine extends Engine {
 			getEtlConfiguration().fullLoad();
 		}
 		
-		generate(mainApp, getMainSrcTableConf());
+		generate(mainApp, getSrcConf());
 		
 		List<EtlAdditionalDataSource> allAvaliableDataSources = getEtlConfiguration().getSrcConf()
 		        .getAvaliableExtraDataSource();
@@ -124,7 +124,7 @@ public class PojoGenerationEngine extends Engine {
 		
 		List<EtlObject> records = new ArrayList<EtlObject>();
 		
-		records.add(new PojoGenerationRecord(getMainSrcTableConf()));
+		records.add(new PojoGenerationRecord(getSrcConf()));
 		
 		return records;
 	}

@@ -45,7 +45,7 @@ public interface JoinableEntity extends TableConfiguration {
 		}
 	}
 	
-	default String generateConditionsFields() {
+	default String generateJoinConditionsFields() {
 		String conditionFields = "";
 		
 		for (int i = 0; i < this.getJoinFields().size(); i++) {

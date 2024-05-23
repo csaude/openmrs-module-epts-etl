@@ -4,8 +4,8 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -28,7 +28,7 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
 	
 		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
-		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContentOnSpecificSchema(conn));
+		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContent());
 		
 		searchClauses.addToClauseFrom(
 		    "inner join " + tableInfo.generateFullStageTableName() + " on record_origin_id  = " + tableInfo.getPrimaryKey());

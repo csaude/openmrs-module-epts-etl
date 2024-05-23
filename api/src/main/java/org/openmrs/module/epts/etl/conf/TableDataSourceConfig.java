@@ -57,14 +57,11 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
-		
 		if (isFullLoaded()) {
 			return;
 		}
 		
-		if (!hasAlias()) {
-			this.setTableAlias(getRelatedSrcConf().generateAlias(this));
-		}
+		this.tryToGenerateTableAlias(getRelatedSrcConf());
 		
 		super.fullLoad(conn);
 	}
@@ -155,8 +152,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 				t.setParentConf(this);
 				t.setMainExtractTable(this);
 				
-				t.setTableAlias(this.getParentConf().generateAlias(t));
-				
+				t.tryToGenerateTableAlias(this.getParentConf());
+					
 				t.fullLoad(conn);
 			}
 			

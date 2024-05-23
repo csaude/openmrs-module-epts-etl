@@ -81,7 +81,7 @@ public class DBQuickMergeSearchParams extends EtlSearchParams {
 		
 		AbstractTableConfiguration srcTabConf = getSrcTableConf();
 		
-		String fromClause = dstConf.generateSelectFromClauseContentOnSpecificSchema(dstConn);
+		String fromClause = dstConf.generateSelectFromClauseContent();
 		
 		String dstJoinSubquery = "";
 		String joinCondition = dstConf.generateJoinConditionWithSrc();

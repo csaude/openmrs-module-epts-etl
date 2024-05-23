@@ -61,7 +61,7 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 			
 			logDebug(startingStrLog + ": Merging Record: [" + record + "]");
 			
-			MergingRecord data = new MergingRecord((SyncImportInfoVO) record, getMainSrcTableConf(),
+			MergingRecord data = new MergingRecord((SyncImportInfoVO) record, getSrcConf(),
 			        getRelatedOperationController().getRemoteApp(), getRelatedOperationController().getMainApp());
 			
 			try {

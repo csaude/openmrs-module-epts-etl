@@ -54,7 +54,7 @@ public class DBQuickExportEngine extends Engine {
 			this.getMonitor().logInfo("GENERATING '" + etlObjects.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
 			
 			for (EtlDatabaseObject rec : syncRecordsAsOpenMRSObjects) {
-				rec.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(getMainSrcTableConf().getUniqueKeys(), rec));
+				rec.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(getSrcConf().getUniqueKeys(), rec));
 			}
 			
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getMainSrcTableName(), syncRecordsAsOpenMRSObjects,
@@ -119,7 +119,7 @@ public class DBQuickExportEngine extends Engine {
 	}
 	
 	private File generateJSONTempFile(SyncJSONInfo jsonInfo, Integer startRecord, Integer lastRecord) throws IOException {
-		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getMainSrcTableConf(), startRecord,
+		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcConf(), startRecord,
 		    lastRecord);
 	}
 }

@@ -27,18 +27,21 @@ public class DetectMissingRecordsSearchParams extends EtlSearchParams {
 		this.relatedDstConf = new DstConf();
 		this.relatedDstConf.setParentConf(config);
 		
-		OpenConnection dstConn = relatedController.openDstConnection();
+		OpenConnection dstConn = null;
 		
 		try {
+			dstConn = relatedController.openDstConnection();
+			
 			this.relatedDstConf.clone(getSrcConf(), dstConn);
 			
-			this.relatedDstConf.setTableAlias(getSrcConf().generateAlias(this.relatedDstConf));
+			this.relatedDstConf.tryToGenerateTableAlias(getSrcConf());
 		}
 		catch (DBException e) {
 			throw new RuntimeException(e);
 		}
 		finally {
-			dstConn.finalizeConnection();
+			if (dstConn != null)
+				dstConn.finalizeConnection();
 		}
 		
 	}
@@ -72,7 +75,7 @@ public class DetectMissingRecordsSearchParams extends EtlSearchParams {
 		
 		AbstractTableConfiguration srcTabConf = getSrcTableConf();
 		
-		String fromClause = relatedDstConf.generateSelectFromClauseContentOnSpecificSchema(dstConn);
+		String fromClause = relatedDstConf.generateSelectFromClauseContent();
 		
 		String dstJoinSubquery = "";
 		String joinCondition = relatedDstConf.generateJoinConditionWithSrc();

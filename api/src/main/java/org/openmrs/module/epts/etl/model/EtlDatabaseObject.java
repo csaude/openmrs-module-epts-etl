@@ -325,20 +325,24 @@ public interface EtlDatabaseObject extends EtlObject {
 		return true;
 	}
 	
-	default EtlDatabaseObject findOnDB(Connection conn) throws DBException, ForbiddenOperationException {
-		TableConfiguration tabConf = (TableConfiguration) this.getRelatedConfiguration();
-		
+	default EtlDatabaseObject findOnDB(TableConfiguration tabConf, Connection conn)
+	        throws DBException, ForbiddenOperationException {
 		Oid pk = this.getObjectId();
 		
 		pk.setTabConf(tabConf);
 		
-		String sql = this.getRelatedConfiguration().generateSelectFromQuery();
+		String sql = tabConf.generateSelectFromQuery();
 		
 		sql += " WHERE " + pk.parseToParametrizedStringConditionWithAlias();
 		
 		return DatabaseObjectDAO.find(tabConf.getLoadHealper(), tabConf.getSyncRecordClass(), sql, pk.parseValuesToArray(),
 		    conn);
+	}
+	
+	default EtlDatabaseObject findOnDB(Connection conn) throws DBException, ForbiddenOperationException {
+		TableConfiguration tabConf = (TableConfiguration) this.getRelatedConfiguration();
 		
+		return findOnDB(tabConf, conn);
 	}
 	
 }

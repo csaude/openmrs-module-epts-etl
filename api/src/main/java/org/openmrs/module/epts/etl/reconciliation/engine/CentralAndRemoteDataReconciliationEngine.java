@@ -71,7 +71,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			
 			logInfo(startingStrLog + ": Restoring record: [" + record + "]");
 			
-			DataReconciliationRecord data = new DataReconciliationRecord((EtlDatabaseObject) record, getMainSrcTableConf(),
+			DataReconciliationRecord data = new DataReconciliationRecord((EtlDatabaseObject) record, getSrcConf(),
 			        ConciliationReasonType.MISSING);
 			
 			data.reloadRelatedRecordDataFromRemote(conn);
@@ -93,7 +93,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			
 			logInfo(startingStrLog + ": Updating record: [" + record + "]");
 			
-			DataReconciliationRecord.tryToReconciliate((EtlDatabaseObject) record, getMainSrcTableConf(), conn);
+			DataReconciliationRecord.tryToReconciliate((EtlDatabaseObject) record, getSrcConf(), conn);
 			
 			i++;
 		}
@@ -109,7 +109,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 			logInfo(startingStrLog + ": Removing record: [" + record + "]");
 			
 			DataReconciliationRecord data = new DataReconciliationRecord(((EtlDatabaseObject) record).getUuid(),
-			        getMainSrcTableConf(), ConciliationReasonType.PHANTOM);
+			        getSrcConf(), ConciliationReasonType.PHANTOM);
 			data.reloadRelatedRecordDataFromDestination(conn);
 			data.removeRelatedRecord(conn);
 			data.save(conn);

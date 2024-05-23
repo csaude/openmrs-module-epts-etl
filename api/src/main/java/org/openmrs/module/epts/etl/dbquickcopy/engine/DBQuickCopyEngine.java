@@ -48,7 +48,7 @@ public class DBQuickCopyEngine extends Engine {
 			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
 			
 			logInfo(
-			    "LOADING  '" + etlObjects.size() + "' " + getMainSrcTableConf().getTableName() + " TO DESTINATION DB");
+			    "LOADING  '" + etlObjects.size() + "' " + getSrcConf().getTableName() + " TO DESTINATION DB");
 			
 			List<SyncImportInfoVO> records = SyncImportInfoVO.generateFromSyncRecord(syncRecordsAsOpenMRSObjects,
 			    getRelatedOperationController().getAppOriginLocationCode(), false);
@@ -57,7 +57,7 @@ public class DBQuickCopyEngine extends Engine {
 				rec.setConsistent(1);
 			}
 			
-			SyncImportInfoDAO.insertAllBatch(records, getMainSrcTableConf(), conn);
+			SyncImportInfoDAO.insertAllBatch(records, getSrcConf(), conn);
 			
 		}
 		catch (DBException e) {

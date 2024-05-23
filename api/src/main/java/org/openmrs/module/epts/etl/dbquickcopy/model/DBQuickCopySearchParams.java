@@ -32,7 +32,7 @@ public class DBQuickCopySearchParams extends AbstractEtlSearchParams<EtlDatabase
 		
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
-		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContentOnSpecificSchema(conn));
+		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContent());
 		
 		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
 		

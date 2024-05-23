@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.dbquickexport.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -25,7 +25,7 @@ public class DBQuickExportSearchParams extends AbstractEtlSearchParams<EtlDataba
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
-		searchClauses.addToClauseFrom(getSrcTableConf().generateSelectFromClauseContentOnSpecificSchema(conn));
+		searchClauses.addToClauseFrom(getSrcTableConf().generateSelectFromClauseContent());
 		searchClauses.addColumnToSelect(getSrcTableConf().generateFullAliasedSelectColumns());
 		
 		if (!this.selectAllRecords) {

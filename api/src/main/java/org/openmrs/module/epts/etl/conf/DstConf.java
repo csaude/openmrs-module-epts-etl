@@ -8,6 +8,7 @@ import java.util.NoSuchElementException;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
 import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
@@ -305,11 +306,35 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
-		if (!hasAlias()) {
-			setTableAlias(getSrcConf().generateAlias(this));
-		}
+		this.tryToGenerateTableAlias(getSrcConf());
 		
 		super.fullLoad(conn);
+	}
+	
+	/**
+	 * Find a parent which with same name in src
+	 * 
+	 * @param dstParent the parent to find the correspondent one in the src
+	 * @return the related parent in src
+	 * @throws ForbiddenOperationException if the @param dstParent is not a parent of this table or
+	 *             if it is not in the src
+	 */
+	public ParentTable findParentInSrc(ParentTable dstParent) throws ForbiddenOperationException {
+		List<ParentTable> parents = findAllRefToParent(dstParent.getTableName());
+		
+		if (!utilities.arrayHasElement(parents)) {
+			throw new ForbiddenOperationException(
+			        "The table " + dstParent.getTableName() + " is not parent of " + this.getTableName());
+		}
+		
+		parents = getSrcConf().findAllRefToParent(dstParent.getTableName());
+		
+		if (!utilities.arrayHasElement(parents)) {
+			throw new ForbiddenOperationException(
+			        "The table " + dstParent.getTableName() + " is not parent of " + this.getTableName() + " in the src");
+		}
+		
+		return parents.get(0);
 	}
 	
 	@Override

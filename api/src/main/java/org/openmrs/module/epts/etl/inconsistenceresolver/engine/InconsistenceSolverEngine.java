@@ -44,7 +44,7 @@ public class InconsistenceSolverEngine extends Engine {
 		
 		for (EtlDatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
-				obj.resolveInconsistence(getMainSrcTableConf(), conn);
+				obj.resolveInconsistence(getSrcConf(), conn);
 			}
 			catch (Exception e) {
 				logError(

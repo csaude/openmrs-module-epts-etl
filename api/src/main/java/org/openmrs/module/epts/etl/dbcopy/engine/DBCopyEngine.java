@@ -49,7 +49,7 @@ public class DBCopyEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<EtlObject> etlObjects, Connection srcConn) throws DBException {
-		logInfo("PERFORMING BATCH COPY ON " + etlObjects.size() + "' " + getMainSrcTableConf().getTableName());
+		logInfo("PERFORMING BATCH COPY ON " + etlObjects.size() + "' " + getSrcConf().getTableName());
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
@@ -85,7 +85,7 @@ public class DBCopyEngine extends Engine {
 				DatabaseObjectDAO.insertAllDataWithoutId(mergingRecs.get(key), dstConn);
 			}
 			
-			logInfo("COPY DONE ON " + etlObjects.size() + " " + getMainSrcTableConf().getTableName() + "!");
+			logInfo("COPY DONE ON " + etlObjects.size() + " " + getSrcConf().getTableName() + "!");
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}

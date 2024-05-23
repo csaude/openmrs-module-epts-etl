@@ -75,7 +75,7 @@ public class DetectGapesEngine extends Engine {
 				
 				for (int i = prevRec.getObjectId().getSimpleValueAsInt() + 1; i < rec.getObjectId()
 				        .getSimpleValueAsInt(); i++) {
-					GapeDAO.insert(getMainSrcTableConf(), i, conn);
+					GapeDAO.insert(getSrcConf(), i, conn);
 				}
 			}
 			

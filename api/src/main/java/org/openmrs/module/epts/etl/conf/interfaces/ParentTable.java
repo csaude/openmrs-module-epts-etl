@@ -8,6 +8,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
+import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -78,6 +79,21 @@ public interface ParentTable extends RelatedTable {
 				if (dst.getTableName().equals(this.getTableName())) {
 					return dst;
 				}
+			}
+		}
+		
+		return null;
+	}
+	
+	default SrcConf findRelatedSrcConf() throws DBException {
+		for (EtlItemConfiguration conf : getRelatedSyncConfiguration().getEtlItemConfiguration()) {
+			
+			if (!conf.isFullLoaded()) {
+				conf.fullLoad();
+			}
+			
+			if (conf.getSrcConf().getTableName().equals(this.getTableName())) {
+				return conf.getSrcConf();
 			}
 		}
 		

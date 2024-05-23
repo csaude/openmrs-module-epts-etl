@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -26,14 +27,11 @@ public class DbExtractRecord extends QuickMergeRecord {
 	
 	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	public SrcConf srcConf;
-	
-	public DbExtractRecord(EtlDatabaseObject record, SrcConf srcConf, TableConfiguration config, AppInfo srcApp,
-	    AppInfo destApp, boolean writeOperationHistory) {
+	public DbExtractRecord(EtlDatabaseObject record, SrcConf srcConf, DstConf config, AppInfo srcApp, AppInfo destApp,
+	    boolean writeOperationHistory) {
 		
-		super(record, config, srcApp, destApp, writeOperationHistory);
+		super(record, srcConf, config, srcApp, destApp, writeOperationHistory);
 		
-		this.srcConf = srcConf;
 	}
 	
 	private void tryToLoadDefaultParents(Connection srcConn, Connection dstConn)
@@ -50,10 +48,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 				continue;
 			
 			if (!refInfo.isFullLoaded()) {
-				
-				if (!refInfo.hasAlias()) {
-					refInfo.setTableAlias(srcConf.generateAlias(refInfo));
-				}
+				refInfo.tryToGenerateTableAlias(this.srcConf);
 				
 				refInfo.fullLoad(dstConn);
 			}
@@ -66,9 +61,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 			
 			if (refInfo.useSharedPKKey()) {
 				if (!refInfo.getSharedKeyRefInfo().isFullLoaded()) {
-					if (!refInfo.getSharedKeyRefInfo().hasAlias()) {
-						refInfo.getSharedKeyRefInfo().setTableAlias(srcConf.generateAlias(refInfo.getSharedKeyRefInfo()));
-					}
+					refInfo.getSharedKeyRefInfo().tryToGenerateTableAlias(this.srcConf);
 					
 					refInfo.getSharedKeyRefInfo().fullLoad(dstConn);
 				}
@@ -77,11 +70,12 @@ public class DbExtractRecord extends QuickMergeRecord {
 			EtlDatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo, key, dstConn);
 			
 			if (parent == null) {
-				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo, key, srcConn);
+				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(getConfig().findParentInSrc(refInfo), key,
+				    srcConn);
 				
 				if (parentInOrigin == null) {
-					throw new MissingParentException(key, refInfo.getTableName(), this.config.getOriginAppLocationCode(),
-					        refInfo);
+					throw new MissingParentException(record, key, refInfo.getTableName(),
+					        this.config.getOriginAppLocationCode(), refInfo);
 				}
 				
 				if (this.config.useSharedPKKey() && this.config.getSharedTableConf().equals(refInfo)) {
@@ -153,7 +147,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 		
 		for (ParentInfo parentInfo : this.parentsWithDefaultValues) {
 			
-			EtlDatabaseObject parent = parentInfo.getParentRecordInOrigin().findOnDB(destConn);
+			EtlDatabaseObject parent = parentInfo.getParentRecordInOrigin().findOnDB(parentInfo.getParentTableConfInDst(),   destConn);
 			
 			if (parent != null) {
 				record.changeParentValue(parentInfo.getParentTableConfInDst(), parent);
@@ -186,8 +180,9 @@ public class DbExtractRecord extends QuickMergeRecord {
 			
 			parent = parentDstConf.transform(parentFromInSrcConf, srcConn, srcApp, destApp);
 			
-			DbExtractRecord parentData = new DbExtractRecord(parent, this.srcConf, parentInfo.getParentTableConfInDst(),
-			        srcApp, destApp, this.writeOperationHistory);
+			DbExtractRecord parentData = new DbExtractRecord(parent,
+			        parentInfo.getParentTableConfInDst().findRelatedSrcConf(),
+			        parentInfo.getParentTableConfInDst().findRelatedDstConf(), srcApp, destApp, this.writeOperationHistory);
 			
 			parentData.extract(srcConn, destConn);
 			

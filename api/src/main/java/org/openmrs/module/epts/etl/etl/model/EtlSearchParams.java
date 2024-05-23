@@ -5,6 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -32,7 +33,7 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 		
 		searchClauses.addColumnToSelect("distinct " + srcConfig.generateFullAliasedSelectColumns() + "\n");
 		
-		String clauseFrom = srcConfig.generateSelectFromClauseContentOnSpecificSchema(conn);
+		String clauseFrom = srcConfig.generateSelectFromClauseContent();
 		
 		String additionalLeftJoinFields = "";
 		
@@ -41,7 +42,7 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 				searchClauses.addColumnToSelect(aux.generateFullAliasedSelectColumns());
 				
 				String joinType = aux.getJoinType().toString();
-				String extraJoinQuery = aux.generateConditionsFields();
+				String extraJoinQuery = aux.generateJoinConditionsFields();
 				
 				if (utilities.stringHasValue(extraJoinQuery)) {
 					Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,
@@ -54,8 +55,16 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 				
 				String newLine = clauseFrom.toUpperCase().contains("JOIN") ? "\n" : "";
 				
-				clauseFrom = clauseFrom + " " + newLine + joinType + " join " + aux.getTableName() + " "
+				clauseFrom = clauseFrom + " " + newLine + joinType + " join " + aux.getFullTableName() + " "
 				        + aux.getTableAlias() + " on " + extraJoinQuery;
+				
+				if (aux.useSharedPKKey()) {
+					
+					ParentTable shrd = aux.getSharedTableConf();
+					
+					clauseFrom += "\n" + joinType + " join " + shrd.generateSelectFromClauseContent() + " on " + shrd.generateJoinCondition();
+				}
+				
 				
 				if (aux.getJoinType().isLeftJoin()) {
 					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,

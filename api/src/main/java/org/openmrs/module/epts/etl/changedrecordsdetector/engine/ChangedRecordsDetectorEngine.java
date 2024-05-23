@@ -58,11 +58,11 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(etlObjects.size());
 		
 		this.getMonitor().logInfo(
-		    "PERFORMING CHANGE DETECTED ACTION '" + etlObjects.size() + "' " + getMainSrcTableConf().getTableName());
+		    "PERFORMING CHANGE DETECTED ACTION '" + etlObjects.size() + "' " + getSrcConf().getTableName());
 		
 		for (EtlDatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
-				((GenericDatabaseObject) obj).setRelatedConfiguration(getMainSrcTableConf());
+				((GenericDatabaseObject) obj).setRelatedConfiguration(getSrcConf());
 				
 				processedRecords.add(DetectedRecordInfo.generate(obj,
 				    getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
@@ -71,7 +71,7 @@ public class ChangedRecordsDetectorEngine extends Engine {
 				if (getRelatedOperationController().getActionPerformeApp().isSinglePerformingMode()) {
 					DetectedRecordService.getInstance().performeAction(
 					    getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
-					    processedRecords.get(processedRecords.size() - 1), getMainSrcTableConf());
+					    processedRecords.get(processedRecords.size() - 1), getSrcConf());
 				}
 				
 			}
@@ -88,11 +88,11 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		if (getRelatedOperationController().getActionPerformeApp().isBatchPerformingMode()) {
 			DetectedRecordService.getInstance().performeAction(
 			    getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords,
-			    getMainSrcTableConf());
+			    getSrcConf());
 		}
 		
 		this.getMonitor().logInfo("ACTION PERFORMED FOR CHANGED RECORDS '" + etlObjects.size() + "' "
-		        + getMainSrcTableConf().getTableName() + "!");
+		        + getSrcConf().getTableName() + "!");
 	}
 	
 	@Override

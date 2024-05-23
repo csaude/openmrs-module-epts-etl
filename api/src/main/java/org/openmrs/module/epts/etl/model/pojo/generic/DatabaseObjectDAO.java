@@ -201,7 +201,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " SELECT " + tableConfiguration.generateFullAliasedSelectColumns() + "\n";
-		sql += " FROM     " + tableConfiguration.generateFullTableNameWithAlias(schema) + "\n";
+		sql += " FROM     " + tableConfiguration.generateFullTableNameWithAlias() + "\n";
 		sql += " WHERE 	" + conditionSQL;
 		
 		T recOnDb = (T) find(tableConfiguration.getLoadHealper(), tableConfiguration.getSyncRecordClass(), sql, params,
@@ -252,7 +252,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " SELECT " + tableConfiguration.generateFullAliasedSelectColumns() + "\n";
-		sql += " FROM     " + tableConfiguration.generateFullTableNameWithAlias(schema) + "\n";
+		sql += " FROM     " + tableConfiguration.generateFullTableNameWithAlias() + "\n";
 		sql += " WHERE 	" + conditionSQL;
 		
 		List<T> objs = (List<T>) search(tableConfiguration.getLoadHealper(), obj.getClass(), sql, params, conn);
@@ -289,6 +289,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 	        throws DBException {
 		try {
 			
+			oid.setTabConf(tabConf);
+			
 			if (!tabConf.isFullLoaded()) {
 				tabConf.fullLoad(conn);
 			}
@@ -315,39 +317,6 @@ public class DatabaseObjectDAO extends BaseDAO {
 			
 			return obj;
 			
-		}
-		catch (InstantiationException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		catch (IllegalAccessException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <T extends EtlDatabaseObject> T getByIdOnSpecificSchema(TableConfiguration tabConf, Oid oid, String schema,
-	        Connection conn) throws DBException {
-		try {
-			
-			Class<T> openMRSClass = (Class<T>) tabConf.getSyncRecordClass(tabConf.getRelatedAppInfo());
-			
-			T obj = openMRSClass.newInstance();
-			
-			obj.setRelatedConfiguration(tabConf);
-			
-			Object[] params = oid.parseValuesToArray();
-			
-			String sql = "";
-			
-			sql += " SELECT " + tabConf.generateFullAliasedSelectColumns() + "\n";
-			sql += " FROM  	" + tabConf.generateSelectFromClauseContentOnSpecificSchema(schema) + "\n";
-			sql += " WHERE 	" + oid.parseToParametrizedStringConditionWithAlias();
-			
-			return find(tabConf.getLoadHealper(), openMRSClass, sql, params, conn);
 		}
 		catch (InstantiationException e) {
 			e.printStackTrace();

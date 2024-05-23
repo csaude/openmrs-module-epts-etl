@@ -150,7 +150,7 @@ public class QuickTest {
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);
 						
-						QuickMergeRecord mr = new QuickMergeRecord(destObject, mappingInfo, srcApp, dstApp, false);
+						QuickMergeRecord mr = new QuickMergeRecord(destObject, etlConf.getSrcConf(),  mappingInfo, srcApp, dstApp, false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));

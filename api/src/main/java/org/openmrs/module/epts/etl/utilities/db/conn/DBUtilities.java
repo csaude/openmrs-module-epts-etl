@@ -956,28 +956,6 @@ public class DBUtilities {
 		executeBatch(conn, "drop table " + tableName);
 	}
 	
-	public static void renameTable(String schema, String oldTableName, String newTableName, Connection conn)
-	        throws DBException {
-		try {
-			if (isMySQLDB(conn)) {
-				renameMySQLTable(schema, oldTableName, newTableName, conn);
-			} else
-				throw new ForbiddenOperationException(
-				        "Unsupported DB Engine.. [" + determineDataBaseFromConnection(conn) + "]");
-		}
-		catch (SQLException e) {
-			throw new DBException(e);
-		}
-	}
-	
-	private static void renameMySQLTable(String schema, String oldTableName, String newTableName, Connection conn)
-	        throws DBException {
-		String sql = "";
-		
-		sql += "RENAME TABLE " + schema + "." + oldTableName + " TO " + schema + "." + newTableName + ";";
-		
-		executeBatch(conn, sql);
-	}
 	
 	public static void executeBatch(Connection conn, String... batches) throws DBException {
 		
@@ -1361,5 +1339,29 @@ public class DBUtilities {
 		} else
 			throw new ForbiddenOperationException("DBMS not supported for schema creation");
 	}
+	
+	public static void renameTable(String schema, String oldTableName, String newTableName, Connection conn)
+	        throws DBException {
+		try {
+			if (isMySQLDB(conn)) {
+				renameMySQLTable(schema, oldTableName, newTableName, conn);
+			} else
+				throw new ForbiddenOperationException(
+				        "Unsupported DB Engine.. [" + determineDataBaseFromConnection(conn) + "]");
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+	}
+	
+	private static void renameMySQLTable(String schema, String oldTableName, String newTableName, Connection conn)
+	        throws DBException {
+		String sql = "";
+		
+		sql += "RENAME TABLE " + schema + "." + oldTableName + " TO " + schema + "." + newTableName + ";";
+		
+		executeBatch(conn, sql);
+	}
+	
 	
 }

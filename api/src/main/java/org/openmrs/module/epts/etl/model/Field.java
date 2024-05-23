@@ -305,6 +305,10 @@ public class Field implements Serializable {
 		return commaSeparatedNames;
 	}
 	
+	public boolean hasValue() {
+		return getValue() != null;
+	}
+	
 	public void loadWithDefaultValue() {
 		if (isDateField()) {
 			setValue(DEFAULT_DATE_VALUE);

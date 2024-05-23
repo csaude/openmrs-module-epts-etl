@@ -9,8 +9,8 @@ import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -44,7 +44,8 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	
 	@Override
 	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
+		return utilities.parseList(
+		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	@Override
@@ -73,13 +74,12 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					
 					logDebug(startingStrLog + " STARTING RESOLVE PROBLEMS OF RECORD [" + record + "]");
 					
-					
 					AbstractTableConfiguration personTabConf = null;
 					/*
 					AbstractTableConfiguration personTabConf = AbstractTableConfiguration
 					        .initGenericTabConf("person", getEtlConfiguration().getSrcConf(), getEtlConfiguration().getSrcConf());
 					*/
-					EtlDatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(getMainSrcTableConf(),
+					EtlDatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(getSrcConf(),
 					    ((EtlDatabaseObject) record).getObjectId(), conn);
 					
 					if ((Integer) userOnDestDB.getParentValue("personId") != 1) {
@@ -102,8 +102,8 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 							
 							logDebug("RESOLVING USER PROBLEM USING DATA FROM [" + dbName + "]");
 							
-							EtlDatabaseObject relatedPersonOnSrcDB = DatabaseObjectDAO.getByIdOnSpecificSchema(personTabConf,
-							    Oid.fastCreate("", userOnSrcDB.getParentValue("personId")), dbName, srcConn);
+							EtlDatabaseObject relatedPersonOnSrcDB = DatabaseObjectDAO.getByOid(personTabConf,
+							    Oid.fastCreate("", userOnSrcDB.getParentValue("personId")), srcConn);
 							
 							List<EtlDatabaseObject> relatedPersonOnDestDB = null;//DatabaseObjectDAO.getByUuid(prsonRecordClass, relatedPersonOnSrcDB.getUuid(), conn);
 							
@@ -112,7 +112,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 							r.addMapping(RefMapping.fastCreate("person_id", "person_id"));
 							
 							userOnDestDB.changeParentValue(r, relatedPersonOnDestDB.get(0));
-							userOnDestDB.save(getMainSrcTableConf(), conn);
+							userOnDestDB.save(getSrcConf(), conn);
 							
 							found = true;
 							
@@ -161,7 +161,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 				
 				dup.setUuid(dup.getUuid() + "_" + j);
 				
-				dup.save(getMainSrcTableConf(), conn);
+				dup.save(getSrcConf(), conn);
 			}
 			
 			i++;
@@ -181,8 +181,8 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParams(this.getEtlConfiguration(),
-		        null, getRelatedOperationController());
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParams(
+		        this.getEtlConfiguration(), null, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

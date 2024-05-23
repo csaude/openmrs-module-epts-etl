@@ -265,6 +265,10 @@ public class UniqueKeyInfo {
 		return true;
 	}
 	
+	public boolean hasName() {
+		return utilities.stringHasValue(getKeyName());
+	}
+	
 	@Override
 	@JsonIgnore
 	public String toString() {
@@ -272,11 +276,15 @@ public class UniqueKeyInfo {
 		if (this.fields == null)
 			return "";
 		
-		String toString = keyName + "[";
+		String toString = hasName() ? this.getKeyName() + " " : "";
+		
+		toString += "[";
 		int i = 0;
 		
-		for (Field field : this.fields) {
-			String fieldInfo = field.getName() + ": " + field.getValue();
+		for (Field field : this.getFields()) {
+			String fieldInfo = field.getName();
+			
+			fieldInfo += field.hasValue() ? ": " + field.getValue() : "";
 			
 			if (i > 0) {
 				toString += ",";

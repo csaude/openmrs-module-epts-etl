@@ -53,9 +53,8 @@ public class DataReconciliationRecord {
 		dataReciliationRecord.config = config;
 		dataReciliationRecord.stageInfo = record.getRelatedSyncInfo();
 		
-		EtlDatabaseObject srcObj = DatabaseObjectDAO.getByIdOnSpecificSchema(config,
-		    dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginIdAsOid(),
-		    dataReciliationRecord.stageInfo.getRecordOriginLocationCode(), conn);
+		EtlDatabaseObject srcObj = DatabaseObjectDAO.getByOid(config,
+		    dataReciliationRecord.record.getRelatedSyncInfo().getRecordOriginIdAsOid(), conn);
 		
 		srcObj.setRelatedSyncInfo(record.getRelatedSyncInfo());
 		
@@ -75,8 +74,7 @@ public class DataReconciliationRecord {
 			this.stageInfo = SyncImportInfoDAO.getWinRecord(this.config, this.recordUuid, conn);
 		
 		if (this.stageInfo != null) {
-			this.record = DatabaseObjectDAO.getByIdOnSpecificSchema(config, stageInfo.getRecordOriginIdAsOid(),
-			    stageInfo.getRecordOriginLocationCode(), conn);
+			this.record = DatabaseObjectDAO.getByOid(config, stageInfo.getRecordOriginIdAsOid(), conn);
 		} else {
 			this.record = null;
 		}
@@ -127,8 +125,8 @@ public class DataReconciliationRecord {
 			
 			for (ChildTable refInfo : config.getChildRefInfo()) {
 				if (refInfo.getTableName().equals("patient")) {
-					DataReconciliationRecord childData = new DataReconciliationRecord(this.recordUuid,
-					        refInfo, ConciliationReasonType.MISSING);
+					DataReconciliationRecord childData = new DataReconciliationRecord(this.recordUuid, refInfo,
+					        ConciliationReasonType.MISSING);
 					
 					childData.reloadRelatedRecordDataFromRemote(conn);
 					
@@ -204,8 +202,8 @@ public class DataReconciliationRecord {
 			    refInfo.getChildColumnOnSimpleMapping(), this.record.getObjectId().getSimpleValueAsInt(), conn);
 			
 			for (EtlDatabaseObject child : children) {
-				DataReconciliationRecord childDataInfo = new DataReconciliationRecord(child.getUuid(),
-				        refInfo, ConciliationReasonType.WRONG_RELATIONSHIPS);
+				DataReconciliationRecord childDataInfo = new DataReconciliationRecord(child.getUuid(), refInfo,
+				        ConciliationReasonType.WRONG_RELATIONSHIPS);
 				
 				childDataInfo.reloadRelatedRecordDataFromRemote(conn);
 				
