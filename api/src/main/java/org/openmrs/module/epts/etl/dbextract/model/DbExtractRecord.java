@@ -93,10 +93,10 @@ public class DbExtractRecord extends QuickMergeRecord {
 	EtlDatabaseObject extractParent(ParentInfo parentInfo, Connection srcConn, Connection destConn)
 	        throws ForbiddenOperationException, DBException {
 		
-		EtlDatabaseObject parent = parentInfo.getParentRecordInOrigin();
+		EtlDatabaseObject parentInOrigin = parentInfo.getParentRecordInOrigin();
 		ParentTable parentConfInDst = parentInfo.getParentTableConfInDst();
 		
-		EtlDatabaseObject parentInDst = parent.findOnDB(parentConfInDst, destConn);
+		EtlDatabaseObject parentInDst = parentInOrigin.findOnDB(parentConfInDst, destConn);
 		
 		if (parentInDst != null) {
 			return parentInDst;
@@ -123,13 +123,13 @@ public class DbExtractRecord extends QuickMergeRecord {
 				dst.fullLoad(destConn);
 			}
 			
-			parentFromSrc = dst.getParentConf().retrieveRecordInSrc(parent, srcConn);
+			parentFromSrc = dst.getParentConf().retrieveRecordInSrc(parentInOrigin, srcConn);
 			
 			if (parentFromSrc != null) {
-				parent = dst.transform(parentFromSrc, srcConn, srcApp, destApp);
+				parentInDst = dst.transform(parentFromSrc, srcConn, srcApp, destApp);
 				
-				if (parent != null) {
-					DbExtractRecord parentData = new DbExtractRecord(parent, dst.getSrcConf(), dst, srcApp, destApp,
+				if (parentInDst != null) {
+					DbExtractRecord parentData = new DbExtractRecord(parentInDst, dst.getSrcConf(), dst, srcApp, destApp,
 					        this.writeOperationHistory);
 					
 					parentData.extract(srcConn, destConn);
@@ -139,12 +139,12 @@ public class DbExtractRecord extends QuickMergeRecord {
 			}
 		}
 		
-		if (parent == null) {
-			throw new ForbiddenOperationException("The record " + parent + " is needed for extraction of " + this.record
-			        + " but this cannot be extracted");
+		if (parentInDst == null) {
+			throw new ForbiddenOperationException("The record " + parentInOrigin + " is needed for extraction of "
+			        + this.record + " but this cannot be extracted");
 		}
 		
-		return parent;
+		return parentInDst;
 	}
 	
 	public void extract(Connection srcConn, Connection dstConn) throws DBException {
@@ -225,10 +225,11 @@ public class DbExtractRecord extends QuickMergeRecord {
 			
 			if (quickMergeRecord.getConfig().useSharedPKKey()) {
 				//Force the extraction of shared pk record
-				Oid key = quickMergeRecord.getConfig().getSharedKeyRefInfo().generateParentOidFromChild(quickMergeRecord.getRecord());
+				Oid key = quickMergeRecord.getConfig().getSharedKeyRefInfo()
+				        .generateParentOidFromChild(quickMergeRecord.getRecord());
 				
-				TableConfiguration parentConf = quickMergeRecord.getEtlConfiguration().findTableInSrc(quickMergeRecord.getConfig().getSharedKeyRefInfo(),
-				    srcConn);
+				TableConfiguration parentConf = quickMergeRecord.getEtlConfiguration()
+				        .findTableInSrc(quickMergeRecord.getConfig().getSharedKeyRefInfo(), srcConn);
 				
 				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(parentConf, key, srcConn);
 				
