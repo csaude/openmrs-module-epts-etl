@@ -118,7 +118,6 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 					
 					map.generateAllFieldsMapping(dstConn);
 					
-					
 					map.tryToAutoGenerateJoinFields(map, map);
 				}
 			}
@@ -194,6 +193,11 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	public EtlDatabaseObject retrieveRecordInSrc(EtlDatabaseObject parentRecordInOrigin, Connection srcConn)
 	        throws DBException {
+		
+		if (getSrcConf().getTableAlias().equals("person_99")) {
+			System.out.println("Stop");
+		}
+		
 		EtlSearchParams searchParams = new EtlSearchParams(this, null, null);
 		
 		searchParams.setExtraCondition(this.getSrcConf().getPrimaryKey().parseToParametrizedStringConditionWithAlias());
@@ -210,5 +214,21 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		    getSrcConf().getSyncRecordClass(getMainApp()), sql, searchClauses.getParameters(), srcConn);
 		
 		return simpleValue;
+	}
+	
+	public boolean containsDstTable(String tableName) {
+		if (utilities.arrayHasElement(getDstConf())) {
+			for (DstConf dst : getDstConf()) {
+				if (dst.getTableName().equals(tableName)) {
+					return true;
+				}
+			}
+		} else {
+			if (getSrcConf().getTableName().equals(tableName)) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 }

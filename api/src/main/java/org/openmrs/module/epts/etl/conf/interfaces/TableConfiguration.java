@@ -174,12 +174,27 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setFields(toCloneFrom.getFields());
 		this.setWinningRecordFieldsInfo(toCloneFrom.getWinningRecordFieldsInfo());
 		this.setFullLoaded(toCloneFrom.isFullLoaded());
-		this.setExtraConditionForExtract(toCloneFrom.getExtraConditionForExtract());
+		
 		this.setInsertSQLWithObjectId(toCloneFrom.getInsertSQLWithObjectId());
 		this.setInsertSQLWithoutObjectId(toCloneFrom.getInsertSQLWithoutObjectId());
 		this.setUpdateSql(toCloneFrom.getUpdateSql());
 		this.setRelatedSyncConfiguration(toCloneFrom.getRelatedSyncConfiguration());
 		this.setSchema(toCloneFrom.getSchema());
+		
+		this.tryToGenerateTableAlias(toCloneFrom.getRelatedSyncConfiguration());
+		
+		if (toCloneFrom.hasExtraConditionForExtract()) {
+			//First try to replace the alias
+			this.setExtraConditionForExtract(toCloneFrom.getExtraConditionForExtract()
+			        .replaceAll(toCloneFrom.getTableAlias() + "\\.", getTableAlias() + "\\."));
+			//Secodn try to replace tableName
+			
+			this.setExtraConditionForExtract(
+			    this.getExtraConditionForExtract().replaceAll(toCloneFrom.getTableName() + "\\.", getTableAlias() + "\\."));
+			
+		} else {
+			setExtraConditionForExtract(null);
+		}
 		
 		loadOwnElements(conn);
 	}
@@ -1042,6 +1057,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				this.setFullLoaded(true);
 				
+				getRelatedSyncConfiguration().addToFullLoadedTables(this);
+				
 			}
 			catch (SQLException e) {
 				e.printStackTrace();
@@ -1099,6 +1116,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@Override
 	default void fullLoad() throws DBException {
 		synchronized (this) {
+			
+			tryToGenerateTableAlias(getRelatedSyncConfiguration());
 			
 			OpenConnection mainConn = getRelatedSyncConfiguration().getMainApp().openConnection();
 			
@@ -1176,6 +1195,22 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		for (ParentTable parent : this.getParentRefInfo()) {
 			if (parentTableName.equals(parent.getTableName())) {
+				references.add(parent);
+			}
+		}
+		
+		return references;
+	}
+	
+	default List<ParentTable> findAllRefToParent(String parentTableName, String schema) {
+		if (!hasParentRefInfo()) {
+			return null;
+		}
+		
+		List<ParentTable> references = new ArrayList<>();
+		
+		for (ParentTable parent : this.getParentRefInfo()) {
+			if (parentTableName.equals(parent.getTableName()) && schema.equals(parent.getSchema())) {
 				references.add(parent);
 			}
 		}
@@ -1733,7 +1768,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					existingConf = this.findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());
 				}
 				
-				ref.tryToGenerateTableAlias(aliasGenerator); 
+				ref.tryToGenerateTableAlias(aliasGenerator);
 				
 				if (existingConf != null) {
 					ref.clone(existingConf, conn);
@@ -1822,10 +1857,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return null;
 	}
 	
-	default  void tryToGenerateTableAlias(TableAliasesGenerator aliasGenerator) {
+	default void tryToGenerateTableAlias(TableAliasesGenerator aliasGenerator) {
 		
 		synchronized (this) {
-			if (hasAlias()) return;
+			if (hasAlias())
+				return;
 			
 			aliasGenerator.generateAliasForTable(this);
 		}

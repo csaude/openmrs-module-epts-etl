@@ -16,7 +16,6 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -48,7 +47,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 				continue;
 			
 			if (!refInfo.isFullLoaded()) {
-				refInfo.tryToGenerateTableAlias(this.srcConf);
+				refInfo.tryToGenerateTableAlias(this.getEtlConfiguration());
 				
 				refInfo.fullLoad(dstConn);
 			}
@@ -61,7 +60,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 			
 			if (refInfo.useSharedPKKey()) {
 				if (!refInfo.getSharedKeyRefInfo().isFullLoaded()) {
-					refInfo.getSharedKeyRefInfo().tryToGenerateTableAlias(this.srcConf);
+					refInfo.getSharedKeyRefInfo().tryToGenerateTableAlias(this.getEtlConfiguration());
 					
 					refInfo.getSharedKeyRefInfo().fullLoad(dstConn);
 				}
@@ -70,56 +69,108 @@ public class DbExtractRecord extends QuickMergeRecord {
 			EtlDatabaseObject parent = DatabaseObjectDAO.getByOid(refInfo, key, dstConn);
 			
 			if (parent == null) {
-				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(getConfig().findParentInSrc(refInfo), key,
-				    srcConn);
+				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO
+				        .getByOid(getConfig().findCorrespondentSrcParentConf(refInfo), key, srcConn);
 				
 				if (parentInOrigin == null) {
 					throw new MissingParentException(record, key, refInfo.getTableName(),
-					        this.config.getOriginAppLocationCode(), refInfo);
+					        this.getConfig().getOriginAppLocationCode(), refInfo);
 				}
 				
-				if (this.config.useSharedPKKey() && this.config.getSharedTableConf().equals(refInfo)) {
-					//Force the extraction of shared pk record
-					DstConf dstSharedConf = this.config.getSharedKeyRefInfo().findRelatedDstConf();
-					
-					if (dstSharedConf == null) {
-						throw new ForbiddenOperationException(
-						        "There are relashioship which cannot auto resolved as there is no configured etl for "
-						                + this.config.getSharedKeyRefInfo().getTableName() + " as destination!");
-					}
-					
-					EtlDatabaseObject dstParent = dstSharedConf.transform(parentInOrigin, srcConn, srcApp, destApp);
-					
-					DbExtractRecord parentData = new DbExtractRecord(dstParent, this.srcConf, dstSharedConf, srcApp, destApp,
-					        this.writeOperationHistory);
-					
-					parentData.extract(srcConn, dstConn);
-					
-				} else {
-					EtlDatabaseObject defaultParentInDst = refInfo.getDefaultObject(dstConn);
-					
-					if (defaultParentInDst == null) {
-						defaultParentInDst = config.generateAndSaveDefaultObject(dstConn);
-					}
-					
-					record.changeParentValue(refInfo, defaultParentInDst);
-					
-					this.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInOrigin));
+				EtlDatabaseObject defaultParentInDst = refInfo.getDefaultObject(dstConn);
+				
+				if (defaultParentInDst == null) {
+					defaultParentInDst = config.generateAndSaveDefaultObject(dstConn);
 				}
+				
+				record.changeParentValue(refInfo, defaultParentInDst);
+				
+				this.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentInOrigin));
 			}
 		}
 	}
 	
-	public void extract(Connection srcConn, Connection destConn) throws DBException {
+	EtlDatabaseObject extractParent(ParentInfo parentInfo, Connection srcConn, Connection destConn)
+	        throws ForbiddenOperationException, DBException {
+		
+		EtlDatabaseObject parent = parentInfo.getParentRecordInOrigin();
+		ParentTable parentConfInDst = parentInfo.getParentTableConfInDst();
+		
+		EtlDatabaseObject parentInDst = parent.findOnDB(parentConfInDst, destConn);
+		
+		if (parentInDst != null) {
+			return parentInDst;
+		}
+		
+		//All the available dstConf for the parent
+		List<DstConf> allAvaliableDstConfForParent = parentConfInDst.findRelatedDstConf();
+		
+		if (!utilities.arrayHasElement(allAvaliableDstConfForParent)) {
+			throw new ForbiddenOperationException(
+			        "There are relashioship that cannot be auto resolved as there is no configured etl for "
+			                + parentConfInDst.getTableName() + " as destination!");
+		}
+		
+		EtlDatabaseObject parentFromSrc = null;
+		
+		//Retrieves the record in all available src and tries to extract it 
+		for (DstConf dst : allAvaliableDstConfForParent) {
+			if (!dst.getParentConf().isFullLoaded()) {
+				dst.getParentConf().fullLoad();
+			}
+			
+			if (!dst.isFullLoaded()) {
+				dst.fullLoad(destConn);
+			}
+			
+			parentFromSrc = dst.getParentConf().retrieveRecordInSrc(parent, srcConn);
+			
+			if (parentFromSrc != null) {
+				parent = dst.transform(parentFromSrc, srcConn, srcApp, destApp);
+				
+				if (parent != null) {
+					DbExtractRecord parentData = new DbExtractRecord(parent, dst.getSrcConf(), dst, srcApp, destApp,
+					        this.writeOperationHistory);
+					
+					parentData.extract(srcConn, destConn);
+					
+					break;
+				}
+			}
+		}
+		
+		if (parent == null) {
+			throw new ForbiddenOperationException("The record " + parent + " is needed for extraction of " + this.record
+			        + " but this cannot be extracted");
+		}
+		
+		return parent;
+	}
+	
+	public void extract(Connection srcConn, Connection dstConn) throws DBException {
 		
 		if (!config.isFullLoaded())
 			config.fullLoad();
 		
 		try {
 			
-			this.tryToLoadDefaultParents(srcConn, destConn);
+			if (this.getConfig().useSharedPKKey()) {
+				//Force the extraction of shared pk record
+				Oid key = this.getConfig().getSharedKeyRefInfo().generateParentOidFromChild(getRecord());
+				
+				TableConfiguration parentConf = getEtlConfiguration().findTableInSrc(this.getConfig().getSharedKeyRefInfo(),
+				    srcConn);
+				
+				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(parentConf, key, srcConn);
+				
+				ParentInfo pInfo = new ParentInfo(this.getConfig().getSharedKeyRefInfo(), parentInOrigin);
+				
+				extractParent(pInfo, srcConn, dstConn);
+			}
 			
-			DatabaseObjectDAO.insertWithObjectId(record, destConn);
+			this.tryToLoadDefaultParents(srcConn, dstConn);
+			
+			DatabaseObjectDAO.insertWithObjectId(record, dstConn);
 			
 			if (config.useSimpleNumericPk()) {
 				this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
@@ -128,13 +179,13 @@ public class DbExtractRecord extends QuickMergeRecord {
 		}
 		catch (DBException e) {
 			if (e.isDuplicatePrimaryOrUniqueKeyException()) {} else if (e.isIntegrityConstraintViolationException()) {
-				determineMissingMetadataParent(this, srcConn, destConn);
+				determineMissingMetadataParent(this, srcConn, dstConn);
 			} else
 				throw e;
 		}
 		
 		if (!this.parentsWithDefaultValues.isEmpty()) {
-			reloadParentsWithDefaultValues(srcConn, destConn);
+			reloadParentsWithDefaultValues(srcConn, dstConn);
 		}
 		
 		if (writeOperationHistory) {
@@ -147,44 +198,7 @@ public class DbExtractRecord extends QuickMergeRecord {
 		
 		for (ParentInfo parentInfo : this.parentsWithDefaultValues) {
 			
-			EtlDatabaseObject parent = parentInfo.getParentRecordInOrigin().findOnDB(parentInfo.getParentTableConfInDst(),   destConn);
-			
-			if (parent != null) {
-				record.changeParentValue(parentInfo.getParentTableConfInDst(), parent);
-				continue;
-			}
-			
-			DstConf parentDstConf = parentInfo.getParentTableConfInDst().findRelatedDstConf();
-			
-			if (parentDstConf == null) {
-				throw new ForbiddenOperationException(
-				        "There are relashioship which cannot auto resolved as there is no configured etl for "
-				                + parentInfo.getParentTableConfInDst().getTableName() + " as destination!");
-			}
-			
-			if (!parentDstConf.getParentConf().isFullLoaded()) {
-				parentDstConf.getParentConf().fullLoad();
-			}
-			
-			if (!parentDstConf.isFullLoaded()) {
-				parentDstConf.fullLoad(destConn);
-			}
-			
-			EtlDatabaseObject parentFromInSrcConf = parentDstConf.getParentConf()
-			        .retrieveRecordInSrc(parentInfo.getParentRecordInOrigin(), srcConn);
-			
-			if (parentFromInSrcConf == null) {
-				throw new ForbiddenOperationException("The record " + parentInfo.getParentRecordInOrigin()
-				        + " is needed for extraction of " + this.record + " but this cannot be extracted");
-			}
-			
-			parent = parentDstConf.transform(parentFromInSrcConf, srcConn, srcApp, destApp);
-			
-			DbExtractRecord parentData = new DbExtractRecord(parent,
-			        parentInfo.getParentTableConfInDst().findRelatedSrcConf(),
-			        parentInfo.getParentTableConfInDst().findRelatedDstConf(), srcApp, destApp, this.writeOperationHistory);
-			
-			parentData.extract(srcConn, destConn);
+			EtlDatabaseObject parent = extractParent(parentInfo, srcConn, destConn);
 			
 			record.changeParentValue(parentInfo.getParentTableConfInDst(), parent);
 		}
@@ -208,6 +222,21 @@ public class DbExtractRecord extends QuickMergeRecord {
 		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(extractRecs.size());
 		
 		for (DbExtractRecord quickMergeRecord : extractRecs) {
+			
+			if (quickMergeRecord.getConfig().useSharedPKKey()) {
+				//Force the extraction of shared pk record
+				Oid key = quickMergeRecord.getConfig().getSharedKeyRefInfo().generateParentOidFromChild(quickMergeRecord.getRecord());
+				
+				TableConfiguration parentConf = quickMergeRecord.getEtlConfiguration().findTableInSrc(quickMergeRecord.getConfig().getSharedKeyRefInfo(),
+				    srcConn);
+				
+				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(parentConf, key, srcConn);
+				
+				ParentInfo pInfo = new ParentInfo(quickMergeRecord.getConfig().getSharedKeyRefInfo(), parentInOrigin);
+				
+				quickMergeRecord.extractParent(pInfo, srcConn, dstConn);
+			}
+			
 			quickMergeRecord.tryToLoadDefaultParents(srcConn, dstConn);
 			
 			objects.add(quickMergeRecord.getRecord());

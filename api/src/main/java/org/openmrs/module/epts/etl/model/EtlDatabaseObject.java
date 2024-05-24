@@ -339,10 +339,11 @@ public interface EtlDatabaseObject extends EtlObject {
 		    conn);
 	}
 	
+	/*
 	default EtlDatabaseObject findOnDB(Connection conn) throws DBException, ForbiddenOperationException {
 		TableConfiguration tabConf = (TableConfiguration) this.getRelatedConfiguration();
 		
 		return findOnDB(tabConf, conn);
-	}
+	}*/
 	
 }

@@ -61,7 +61,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			return;
 		}
 		
-		this.tryToGenerateTableAlias(getRelatedSrcConf());
+		this.tryToGenerateTableAlias(getRelatedSyncConfiguration());
 		
 		super.fullLoad(conn);
 	}
@@ -152,7 +152,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 				t.setParentConf(this);
 				t.setMainExtractTable(this);
 				
-				t.tryToGenerateTableAlias(this.getParentConf());
+				t.tryToGenerateTableAlias(this.getRelatedSyncConfiguration());
 					
 				t.fullLoad(conn);
 			}

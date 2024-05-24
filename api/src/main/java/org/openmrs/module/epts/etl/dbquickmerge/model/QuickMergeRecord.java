@@ -9,6 +9,7 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -147,24 +148,34 @@ public class QuickMergeRecord {
 	        throws ParentNotYetMigratedException, DBException {
 		for (ParentInfo parentInfo : this.parentsWithDefaultValues) {
 			
-			DstConf dstSharedConf = parentInfo.getParentTableConfInDst().findRelatedDstConf();
+			List<DstConf> dstSharedConf = parentInfo.getParentTableConfInDst().findRelatedDstConf();
 			
-			if (dstSharedConf == null) {
+			if (utilities.arrayHasNoElement(dstSharedConf)) {
 				throw new ForbiddenOperationException(
 				        "There are relashioship which cannot auto resolved as there is no configured etl for "
 				                + parentInfo.getParentTableConfInDst().getTableName() + " as destination!");
 			}
 			
-			EtlDatabaseObject dstParent = dstSharedConf.transform(parentInfo.getParentRecordInOrigin(), srcConn, srcApp,
-			    destApp);
+			EtlDatabaseObject dstParent = null;
+			DstConf dstConf = null;
 			
-			QuickMergeRecord parentData = new QuickMergeRecord(dstParent,
-			        parentInfo.getParentTableConfInDst().findRelatedSrcConf(),
-			        parentInfo.getParentTableConfInDst().findRelatedDstConf(), srcApp, destApp, this.writeOperationHistory);
+			for (DstConf dst : dstSharedConf) {
+				dstParent = dst.transform(parentInfo.getParentRecordInOrigin(), srcConn, srcApp, destApp);
+				
+				if (dstParent != null) {
+					QuickMergeRecord parentData = new QuickMergeRecord(dstParent,
+					        parentInfo.getParentTableConfInDst().findRelatedSrcConf(), dst, srcApp, destApp,
+					        this.writeOperationHistory);
+					
+					parentData.merge(srcConn, destConn);
+					
+					dstConf = dst;
+					
+					break;
+				}
+			}
 			
-			parentData.merge(srcConn, destConn);
-			
-			List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parentInfo.getParentTableConfInDst(), dstParent,
+			List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(dstConf, dstParent,
 			    destConn);
 			
 			EtlDatabaseObject parent = utilities.arrayHasElement(recs) ? recs.get(0) : null;
@@ -371,5 +382,9 @@ public class QuickMergeRecord {
 		for (String key : mapOrder) {
 			mergeAll(mergingRecs.get(key), srcConn, dstConn);
 		}
+	}
+	
+	public EtlConfiguration getEtlConfiguration() {
+		return getConfig().getRelatedSyncConfiguration();
 	}
 }

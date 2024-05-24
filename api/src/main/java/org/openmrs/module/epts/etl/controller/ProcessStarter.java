@@ -222,17 +222,4 @@ public class ProcessStarter implements ControllerStarter {
 		
 		return syncConfigs;
 	}
-	
-	private int countQtyDestination(List<EtlConfiguration> confs) {
-		
-		int i = 0;
-		
-		for (EtlConfiguration conf : confs) {
-			if (conf.isDataBaseMergeFromJSONProcess()) {
-				i++;
-			}
-		}
-		
-		return i;
-	}
 }

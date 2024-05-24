@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AppInfo;
@@ -68,21 +69,25 @@ public interface ParentTable extends RelatedTable {
 		return utilities.arrayHasElement(this.getConditionalFields());
 	}
 	
-	default DstConf findRelatedDstConf() throws DBException {
+	default List<DstConf> findRelatedDstConf() throws DBException {
+		List<DstConf> allDstForTable = new ArrayList<>();
+		
 		for (EtlItemConfiguration conf : getRelatedSyncConfiguration().getEtlItemConfiguration()) {
 			
-			if (!conf.isFullLoaded()) {
-				conf.fullLoad();
-			}
-			
-			for (DstConf dst : conf.getDstConf()) {
-				if (dst.getTableName().equals(this.getTableName())) {
-					return dst;
+			if (conf.containsDstTable(getTableName())) {
+				if (!conf.isFullLoaded()) {
+					conf.fullLoad();
+				}
+				
+				for (DstConf dst : conf.getDstConf()) {
+					if (dst.getTableName().equals(this.getTableName())) {
+						allDstForTable.add(dst);
+					}
 				}
 			}
 		}
 		
-		return null;
+		return allDstForTable;
 	}
 	
 	default SrcConf findRelatedSrcConf() throws DBException {

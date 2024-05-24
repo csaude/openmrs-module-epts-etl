@@ -306,7 +306,7 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
-		this.tryToGenerateTableAlias(getSrcConf());
+		this.tryToGenerateTableAlias(getRelatedSyncConfiguration());
 		
 		super.fullLoad(conn);
 	}
@@ -319,7 +319,7 @@ public class DstConf extends AbstractTableConfiguration {
 	 * @throws ForbiddenOperationException if the @param dstParent is not a parent of this table or
 	 *             if it is not in the src
 	 */
-	public ParentTable findParentInSrc(ParentTable dstParent) throws ForbiddenOperationException {
+	public ParentTable findCorrespondentSrcParentConf(ParentTable dstParent) throws ForbiddenOperationException {
 		List<ParentTable> parents = findAllRefToParent(dstParent.getTableName());
 		
 		if (!utilities.arrayHasElement(parents)) {
@@ -349,7 +349,7 @@ public class DstConf extends AbstractTableConfiguration {
 			        .addAll(utilities.parseList(getSrcConf().getAvaliableExtraDataSource(), EtlDataSource.class));
 		}
 		
-		this.fullLoadAllRelatedTables(getSrcConf(), null, conn);
+		this.fullLoadAllRelatedTables(getRelatedSyncConfiguration(), null, conn);
 		
 		determinePrefferredDataSources();
 	}
@@ -434,7 +434,7 @@ public class DstConf extends AbstractTableConfiguration {
 		}
 	}
 	
-	private SrcConf getSrcConf() {
+	public SrcConf getSrcConf() {
 		return this.getParentConf().getSrcConf();
 	}
 	

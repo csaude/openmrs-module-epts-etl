@@ -345,7 +345,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		toString += hasPK() ? ", pk: " + this.getPrimaryKey() : "";
 		
 		toString += "]";
-	
+		
 		return toString;
 	}
 	

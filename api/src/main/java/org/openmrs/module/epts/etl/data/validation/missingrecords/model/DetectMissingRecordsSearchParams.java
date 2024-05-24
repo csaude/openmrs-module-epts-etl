@@ -34,7 +34,7 @@ public class DetectMissingRecordsSearchParams extends EtlSearchParams {
 			
 			this.relatedDstConf.clone(getSrcConf(), dstConn);
 			
-			this.relatedDstConf.tryToGenerateTableAlias(getSrcConf());
+			this.relatedDstConf.tryToGenerateTableAlias(config.getRelatedSyncConfiguration());
 		}
 		catch (DBException e) {
 			throw new RuntimeException(e);
