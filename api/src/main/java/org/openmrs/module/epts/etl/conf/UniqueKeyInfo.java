@@ -497,6 +497,26 @@ public class UniqueKeyInfo {
 		this.tabConf = tabConf;
 	}
 	
+	public String generateSqlNullCheckWithDisjunction() {
+		
+		if (tabConf == null)
+			throw new ForbiddenOperationException("The tabConf is not set");
+		
+		String fields = "";
+		
+		for (int i = 0; i < this.getFields().size(); i++) {
+			Key key = this.getFields().get(i);
+			
+			if (utilities.stringHasValue(fields)) {
+				fields += " OR ";
+			}
+			
+			fields += this.tabConf.getTableAlias() + "." + key.getName() + " is null ";
+		}
+		
+		return fields;
+	}
+	
 	public String generateSqlNotNullCheckWithDisjunction() {
 		
 		if (tabConf == null)

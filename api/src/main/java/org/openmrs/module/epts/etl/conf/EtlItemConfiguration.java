@@ -117,8 +117,6 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 					}
 					
 					map.generateAllFieldsMapping(dstConn);
-					
-					map.tryToAutoGenerateJoinFields(map, map);
 				}
 			}
 			
