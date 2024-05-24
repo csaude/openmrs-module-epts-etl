@@ -401,6 +401,11 @@ public class DstConf extends AbstractTableConfiguration {
 		if (this.hasUniqueKeys()) {
 			//If no joinField is defined but the dst table has uk, tries to map the uk with src fields
 			tryToAutoGenerateJoinFields(this, this.getSrcConf());
+			
+			if (!hasJoinFields() && this.getSrcConf().hasUniqueKeys()) {
+				tryToAutoGenerateJoinFields(this.getSrcConf(), this);
+			}
+			
 		} else if (this.getSrcConf().hasUniqueKeys()) {
 			//If no joinField is defined but the src table has uk, tries to map the uk with dst fields
 			tryToAutoGenerateJoinFields(this.getSrcConf(), this);

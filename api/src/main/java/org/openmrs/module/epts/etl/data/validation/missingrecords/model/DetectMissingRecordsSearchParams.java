@@ -81,6 +81,8 @@ public class DetectMissingRecordsSearchParams extends EtlSearchParams {
 			searchClauses.addToClauses(extraCondition);
 			
 			tryToAddLimits(searchClauses);
+		} else {
+			searchClauses.addToClauseFrom(clauseFrom);
 		}
 		
 		tryToAddExtraConditionForExport(searchClauses);
