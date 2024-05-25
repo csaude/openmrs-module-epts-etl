@@ -991,9 +991,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@Override
 	default void fullLoad(Connection conn) throws DBException {
-		
-		if (!hasAlias())
-			throw new ForbiddenOperationException("The table alias is not defined!");
+		tryToGenerateTableAlias(getRelatedSyncConfiguration());
 		
 		synchronized (this) {
 			
@@ -1116,9 +1114,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@Override
 	default void fullLoad() throws DBException {
 		synchronized (this) {
-			
-			tryToGenerateTableAlias(getRelatedSyncConfiguration());
-			
 			OpenConnection mainConn = getRelatedSyncConfiguration().getMainApp().openConnection();
 			
 			OpenConnection dstConn = null;

@@ -8,6 +8,7 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -35,12 +36,10 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 		
 		String clauseFrom = srcConfig.generateSelectFromClauseContent();
 		
-		String additionalLeftJoinFields = "";
-		
 		if (utilities.arrayHasElement(srcConfig.getSelfJoinTables())) {
+			String additionalLeftJoinFields = "";
+			
 			for (AuxExtractTable aux : srcConfig.getSelfJoinTables()) {
-				searchClauses.addColumnToSelect(aux.generateFullAliasedSelectColumns());
-				
 				String joinType = aux.getJoinType().toString();
 				String extraJoinQuery = aux.generateJoinConditionsFields();
 				
@@ -62,14 +61,24 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 					
 					ParentTable shrd = aux.getSharedTableConf();
 					
-					clauseFrom += "\n" + joinType + " join " + shrd.generateSelectFromClauseContent() + " on " + shrd.generateJoinCondition();
+					clauseFrom += "\n" + joinType + " join " + shrd.generateSelectFromClauseContent() + " on "
+					        + shrd.generateJoinCondition();
 				}
 				
-				
 				if (aux.getJoinType().isLeftJoin()) {
+					
+					if (aux.getPrimaryKey() == null) {
+						throw new ForbiddenOperationException("The aux table " + aux.getTableName() + " in relation "
+						        + srcConfig.getTableName() + " does not have primary key");
+					}
+					
 					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
 					    aux.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
 				}
+			}
+			
+			if (!additionalLeftJoinFields.isEmpty()) {
+				searchClauses.addToClauses(additionalLeftJoinFields);
 			}
 		}
 		
