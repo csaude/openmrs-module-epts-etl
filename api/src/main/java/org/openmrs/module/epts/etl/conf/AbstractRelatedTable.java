@@ -60,7 +60,9 @@ public abstract class AbstractRelatedTable extends AbstractTableConfiguration im
 		AbstractRelatedTable other = (AbstractRelatedTable) obj;
 		
 		if (utilities.stringHasValue(this.refCode) && utilities.stringHasValue(other.refCode)) {
-			return this.refCode.equals(other.refCode);
+			if (this.refCode.equals(other.refCode)) {
+				return true;
+			}
 		}
 		
 		if (!this.getRelatedTabConf().equals(other.getRelatedTabConf())) {

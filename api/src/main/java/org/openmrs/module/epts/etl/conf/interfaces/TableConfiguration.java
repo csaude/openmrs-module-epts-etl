@@ -612,6 +612,20 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						}
 					}
 					
+					if (hasParentRefInfo()) {
+						//Find and exclude duplicated ref
+						
+						List<ParentTable> cleanList = new ArrayList<>();
+						
+						for (ParentTable ref : this.getParentRefInfo()) {
+							if (!cleanList.contains(ref)) {
+								cleanList.add(ref);
+							}
+						}
+						
+						this.setParentRefInfo(cleanList);
+					}
+					
 					logDebug("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
 				}
 				finally
