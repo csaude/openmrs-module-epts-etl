@@ -360,18 +360,20 @@ public class QuickMergeRecord {
 		
 		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
 		
-		if (config.hasParentRefInfo()) {
-			for (QuickMergeRecord quickMergeRecord : mergingRecs) {
+		for (QuickMergeRecord quickMergeRecord : mergingRecs) {
+			if (config.hasParentRefInfo()) {
 				QuickMergeRecord.loadDestParentInfo(quickMergeRecord, srcConn, dstConn);
 				QuickMergeRecord.loadDestConditionalParentInfo(quickMergeRecord, srcConn, dstConn);
-				
-				objects.add(quickMergeRecord.record);
 			}
+			
+			objects.add(quickMergeRecord.record);
 		}
 		
 		DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn);
 		
-		if (config.hasParentRefInfo()) {
+		if (config.hasParentRefInfo())
+		
+		{
 			for (QuickMergeRecord quickMergeRecord : mergingRecs) {
 				if (!quickMergeRecord.parentsWithDefaultValues.isEmpty()) {
 					quickMergeRecord.reloadParentsWithDefaultValues(srcConn, dstConn);

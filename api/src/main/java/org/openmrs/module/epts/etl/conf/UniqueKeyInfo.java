@@ -446,6 +446,8 @@ public class UniqueKeyInfo {
 		
 		String fields = "";
 		
+		String fullAlias;
+		
 		for (int i = 0; i < this.getFields().size(); i++) {
 			Key key = this.getFields().get(i);
 			
@@ -453,11 +455,13 @@ public class UniqueKeyInfo {
 				fields += " AND ";
 			}
 			
+			fullAlias = alias;
+			
 			if (utilities.stringHasValue(alias)) {
-				alias += ".";
+				fullAlias += ".";
 			}
 			
-			fields += alias + key.getName() + " = ? ";
+			fields += fullAlias + key.getName() + " = ? ";
 		}
 		
 		return fields;

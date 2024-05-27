@@ -229,6 +229,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		for (UniqueKeyInfo uniqueKey : tableConfiguration.getUniqueKeys()) {
 			
+			uniqueKey.loadValuesToFields(obj);
+			
 			String tmpCodition = "";
 			
 			try {
