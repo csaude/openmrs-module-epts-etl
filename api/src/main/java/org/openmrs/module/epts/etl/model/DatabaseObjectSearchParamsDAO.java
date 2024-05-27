@@ -25,6 +25,7 @@ public class DatabaseObjectSearchParamsDAO extends SearchParamsDAO {
 		int i = 0;
 		
 		while (utilities.arrayHasNoElement(l) && searchParams.getLimits().canGoNext()) {
+			searchParams.getLimits().save();
 			
 			if (i++ == 0) {
 				searchParams.getRelatedController()
@@ -34,7 +35,6 @@ public class DatabaseObjectSearchParamsDAO extends SearchParamsDAO {
 				        .logDebug("Empty result on fased quering... The application will keep searching next pages "
 				                + searchParams.getLimits());
 			}
-			
 			searchParams.getLimits().moveNext(searchParams.getLimits().getQtyRecordsPerProcessing());
 			
 			searchClauses = searchParams.generateSearchClauses(conn);
