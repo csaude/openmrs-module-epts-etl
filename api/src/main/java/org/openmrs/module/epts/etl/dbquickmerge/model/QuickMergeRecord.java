@@ -175,8 +175,7 @@ public class QuickMergeRecord {
 				}
 			}
 			
-			List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(dstConf, dstParent,
-			    destConn);
+			List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(dstConf, dstParent, destConn);
 			
 			EtlDatabaseObject parent = utilities.arrayHasElement(recs) ? recs.get(0) : null;
 			
@@ -361,18 +360,22 @@ public class QuickMergeRecord {
 		
 		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
 		
-		for (QuickMergeRecord quickMergeRecord : mergingRecs) {
-			QuickMergeRecord.loadDestParentInfo(quickMergeRecord, srcConn, dstConn);
-			QuickMergeRecord.loadDestConditionalParentInfo(quickMergeRecord, srcConn, dstConn);
-			
-			objects.add(quickMergeRecord.record);
+		if (config.hasParentRefInfo()) {
+			for (QuickMergeRecord quickMergeRecord : mergingRecs) {
+				QuickMergeRecord.loadDestParentInfo(quickMergeRecord, srcConn, dstConn);
+				QuickMergeRecord.loadDestConditionalParentInfo(quickMergeRecord, srcConn, dstConn);
+				
+				objects.add(quickMergeRecord.record);
+			}
 		}
 		
 		DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn);
 		
-		for (QuickMergeRecord quickMergeRecord : mergingRecs) {
-			if (!quickMergeRecord.parentsWithDefaultValues.isEmpty()) {
-				quickMergeRecord.reloadParentsWithDefaultValues(srcConn, dstConn);
+		if (config.hasParentRefInfo()) {
+			for (QuickMergeRecord quickMergeRecord : mergingRecs) {
+				if (!quickMergeRecord.parentsWithDefaultValues.isEmpty()) {
+					quickMergeRecord.reloadParentsWithDefaultValues(srcConn, dstConn);
+				}
 			}
 		}
 	}
