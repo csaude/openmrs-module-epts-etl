@@ -5,7 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
-import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.model.EtlSearchParams;
@@ -70,12 +70,12 @@ public class DetectMissingRecordsSearchParams extends EtlSearchParams {
 			
 			String extraCondition = "";
 			
-			for (UniqueKeyInfo uk : relatedDstConf.getUniqueKeys()) {
+			for (FieldsMapping uk : relatedDstConf.getJoinFields()) {
 				if (!extraCondition.isEmpty()) {
 					extraCondition += " OR ";
 				}
 				
-				extraCondition += uk.generateSqlNullCheckWithDisjunction();
+				extraCondition += this.relatedDstConf.getAlias() + "." + uk.getDstField() + " is null";
 			}
 			
 			searchClauses.addToClauses(extraCondition);

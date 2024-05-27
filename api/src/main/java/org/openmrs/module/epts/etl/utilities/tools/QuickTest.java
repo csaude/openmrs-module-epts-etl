@@ -63,8 +63,22 @@ public class QuickTest {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		searchOnDbs(openConnection());
+		selectLinesOnFile();
+		
 	}
+	
+	public static void selectLinesOnFile() throws IOException, DBException {
+		List<String> lines = FileUtilities.readAllFileAsListOfString("D:\\ORG\\C-SAUDE\\PROJECTOS\\EPTS\\etl\\alldbs.txt");
+		
+		
+		
+		for (String line : lines) {
+			if (line.endsWith("new")) {
+				FileUtilities.write("D:\\ORG\\C-SAUDE\\PROJECTOS\\EPTS\\etl\\newdbs.txt", line);
+			}
+		}
+	}
+	
 	
 	public static void calcularIdade(Connection conn) throws IOException, DBException {
 		List<String> patients = FileUtilities.readAllFileAsListOfString(
