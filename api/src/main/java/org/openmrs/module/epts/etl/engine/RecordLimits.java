@@ -41,18 +41,21 @@ public class RecordLimits {
 	public RecordLimits() {
 	}
 	
-	public RecordLimits(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing, Engine engine) {
+	public RecordLimits(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing) {
 		this.threadMinRecord = firstRecordId;
 		this.threadMaxRecord = lastRecordId;
-		
 		this.qtyRecordsPerProcessing = qtyRecordsPerProcessing;
+		
+		this.reset();
+	}
+	
+	public RecordLimits(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing, Engine engine) {
+		this(firstRecordId, lastRecordId, qtyRecordsPerProcessing);
 		
 		this.engine = engine;
 		
 		if (this.engine != null)
 			this.threadCode = engine.getEngineId();
-		
-		this.reset();
 	}
 	
 	public void reset() {
@@ -245,7 +248,7 @@ public class RecordLimits {
 		return getThreadCode() + " : Thread [" + this.threadMinRecord + " - " + this.threadMaxRecord + "] Curr ["
 		        + this.currentFirstRecordId + " - " + this.currentLastRecordId + "]";
 	}
-
+	
 	public boolean isDefined() {
 		return getCurrentFirstRecordId() > 0 && getCurrentLastRecordId() > 0;
 	}

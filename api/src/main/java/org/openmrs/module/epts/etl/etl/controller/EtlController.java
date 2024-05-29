@@ -5,15 +5,13 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
-import org.openmrs.module.epts.etl.etl.model.EtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -98,25 +96,19 @@ public class EtlController extends SiteOperationController {
 	}
 	
 	private long getExtremeRecord(EtlItemConfiguration config, String function, Connection conn) throws DBException {
+		
 		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
 			throw new ForbiddenOperationException("Composite and non numeric keys are not supported for src tables");
 		}
 		
-		EtlSearchParams searchParams = new EtlSearchParams(config, null, this);
-		searchParams.setSyncStartDate(getConfiguration().getStartDate());
+		SrcConf srcConfig = config.getSrcConf();
 		
-		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
-		
-		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
-		
-		searchClauses.setColumnsToSelect(function + "(" + config.getSrcConf().getTableAlias() + "."
+		String sql = "SELECT " + (function + "(" + config.getSrcConf().getTableAlias() + "."
 		        + config.getSrcConf().getPrimaryKey().retrieveSimpleKeyColumnName() + ") as value");
 		
-		String sql = searchClauses.generateSQL(conn);
+		sql += " FROM " + srcConfig.generateSelectFromClauseContent() + "\n";
 		
-		SimpleValue simpleValue = BaseDAO.find(SimpleValue.class, sql, searchClauses.getParameters(), conn);
-		
-		searchClauses.getSearchParameters().setQtdRecordPerSelected(bkpQtyRecsPerSelect);
+		SimpleValue simpleValue = BaseDAO.find(SimpleValue.class, sql, null, conn);
 		
 		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
 			return simpleValue.intValue();

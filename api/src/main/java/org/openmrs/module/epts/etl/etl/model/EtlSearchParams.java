@@ -1,6 +1,12 @@
 package org.openmrs.module.epts.etl.etl.model;
 
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import org.openmrs.module.epts.etl.conf.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
@@ -8,10 +14,12 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -96,21 +104,94 @@ public class EtlSearchParams extends DatabaseObjectSearchParams {
 	}
 	
 	@Override
+	public EtlController getRelatedController() {
+		return (EtlController) super.getRelatedController();
+	}
+	
+	@Override
 	public int countAllRecords(Connection conn) throws DBException {
 		if (this.savedCount > 0)
 			return this.savedCount;
 		
-		RecordLimits bkpLimits = this.getLimits();
+		TableOperationProgressInfo progressInfo = null;
 		
-		this.removeLimits();
+		try {
+			progressInfo = this.getRelatedController().getProgressInfo().retrieveProgressInfo(getConfig());
+		}
+		catch (NullPointerException e) {
+			throw new EtlException("Error on thread " + this.getRelatedController().getControllerId()
+			        + ": Progress meter not found for Etl Confinguration [" + getConfig().getConfigCode() + "].");
+		}
 		
-		int count = SearchParamsDAO.countAll(this, conn);
+		int maxRecordId = (int) progressInfo.getProgressMeter().getMaxRecordId();
+		int minRecordId = (int) progressInfo.getProgressMeter().getMinRecordId();
 		
-		this.setLimits(bkpLimits);
+		int qtyRecordsBetweenLimits = maxRecordId - minRecordId;
 		
-		this.savedCount = count;
+		if (qtyRecordsBetweenLimits == 0) {
+			return 0;
+		}
 		
-		return count;
+		//int qtyProcessors = utilities.getAvailableProcessors();
+		
+		int qtyProcessors = 1;
+		
+		int qtyRecordsPerEngine = qtyRecordsBetweenLimits / qtyProcessors;
+		
+		RecordLimits initialLimits = null;
+		
+		List<CompletableFuture<Integer>> tasks = new ArrayList<>(qtyProcessors);
+		
+		for (int i = 0; i < qtyProcessors; i++) {
+			RecordLimits limits;
+			
+			if (initialLimits == null) {
+				limits = new RecordLimits(minRecordId, minRecordId + qtyRecordsPerEngine - 1, qtyRecordsPerEngine);
+				initialLimits = limits;
+			} else {
+				// Last processor
+				if (i == qtyProcessors - 1) {
+					limits = new RecordLimits(initialLimits.getThreadMaxRecord() + 1, maxRecordId, qtyRecordsPerEngine);
+				} else {
+					limits = new RecordLimits(initialLimits.getThreadMaxRecord() + 1,
+					        initialLimits.getThreadMaxRecord() + qtyRecordsPerEngine, qtyRecordsPerEngine);
+				}
+				initialLimits = limits;
+			}
+			
+			tasks.add(CompletableFuture.supplyAsync(() -> {
+				try {
+					return SearchParamsDAO.countAll(new EtlSearchParams(getConfig(), limits, getRelatedController()), conn);
+				}
+				catch (DBException e) {
+					throw new EtlException(e);
+				}
+			}));
+		}
+		
+		// External variable to store the final sum
+		AtomicLong finalSum = new AtomicLong(0);
+		
+		// Combine all tasks
+		CompletableFuture<Void> allOf = CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
+		
+		// Handle results when all tasks are complete and update the external variable
+		allOf.thenRun(() -> {
+			long sum = tasks.stream().map(CompletableFuture::join).collect(Collectors.summingLong(Integer::intValue));
+			finalSum.set(sum);
+		});
+		
+		// Block and wait for all tasks to complete (optional)
+		try {
+			allOf.get();
+		}
+		catch (InterruptedException | ExecutionException e) {
+			e.printStackTrace();
+		}
+		
+		this.savedCount = (int) finalSum.get();
+		
+		return this.savedCount;
 	}
 	
 	@Override

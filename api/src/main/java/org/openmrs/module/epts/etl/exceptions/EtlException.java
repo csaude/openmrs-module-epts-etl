@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.exceptions;
 
-public abstract class EtlException extends RuntimeException {
+public class EtlException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
 	public EtlException(){
