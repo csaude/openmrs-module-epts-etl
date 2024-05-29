@@ -12,11 +12,9 @@ import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -43,12 +41,6 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	}
 	
 	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
-	}
-	
-	@Override
 	public GenericOperationController getRelatedOperationController() {
 		return (GenericOperationController) super.getRelatedOperationController();
 	}
@@ -59,7 +51,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	
 	@SuppressWarnings({ "null", "unused" })
 	@Override
-	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		logDebug("RESOLVING PROBLEM MERGE ON " + etlObjects.size() + "' " + this.getMainSrcTableName());
 		
 		OpenConnection srcConn = remoteApp.openConnection();

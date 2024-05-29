@@ -1195,11 +1195,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	@JsonIgnore
-	default boolean isDBQuickCopy() {
-		return getRelatedSyncConfiguration().isDbCopy();
-	}
-	
-	@JsonIgnore
 	default boolean isDbCopy() {
 		return getRelatedSyncConfiguration().isDBQuickCopyProcess();
 	}

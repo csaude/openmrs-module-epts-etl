@@ -333,11 +333,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	@JsonIgnore
-	public boolean isDbCopy() {
-		return this.processType.isDbCopy();
-	}
-	
-	@JsonIgnore
 	public boolean isDetectMissingRecords() {
 		return this.processType.isDetectMissingRecords();
 	}
@@ -940,8 +935,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInDBInconsistencyCheckProcess();
 		} else if (isResolveProblems()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInResolveProblemsProcess();
-		} else if (isDbCopy()) {
-			supportedOperations = EtlOperationConfig.getSupportedOperationsInDbCopyProcess();
 		} else if (isDetectGapesOnDbTables()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInDetectGapesOnDbTables();
 		}

@@ -3,13 +3,11 @@ package org.openmrs.module.epts.etl.reconciliation.engine;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.reconciliation.controller.CentralAndRemoteDataReconciliationController;
 import org.openmrs.module.epts.etl.reconciliation.model.CentralAndRemoteDataReconciliationSearchParams;
@@ -21,12 +19,6 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	
 	public CentralAndRemoteDataReconciliationEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
-	}
-	
-	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	@Override
@@ -44,7 +36,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		if (getMainSrcTableName().equalsIgnoreCase("users"))
 			return;
 		
@@ -62,7 +54,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		this.getMonitor().logInfo("RECONCILIATION DONE ON " + etlObjects.size() + " " + getMainSrcTableName() + "!");
 	}
 	
-	private void performeMissingRecordsCreation(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	private void performeMissingRecordsCreation(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		int i = 1;
 		
 		for (EtlObject record : etlObjects) {
@@ -84,7 +76,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		}
 	}
 	
-	private void performeOutdatedRecordsUpdate(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	private void performeOutdatedRecordsUpdate(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		int i = 1;
 		
 		for (EtlObject record : etlObjects) {
@@ -99,7 +91,7 @@ public class CentralAndRemoteDataReconciliationEngine extends Engine {
 		}
 	}
 	
-	private void performePhantomRecordsRemotion(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	private void performePhantomRecordsRemotion(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		int i = 1;
 		
 		for (EtlObject record : etlObjects) {

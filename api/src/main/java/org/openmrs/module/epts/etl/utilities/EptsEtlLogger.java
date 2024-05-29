@@ -118,7 +118,7 @@ public class EptsEtlLogger {
 	}
 	
 	String putAdditionalInfoOnLog(String msg) {
-		return msg += " At: " + utilities.formatDateToDDMMYYYY_HHMISS(utilities.getCurrentDate());
+		return msg;// += " At: " + utilities.formatDateToDDMMYYYY_HHMISS(utilities.getCurrentDate());
 	}
 	
 	void updateLastLogDate() {

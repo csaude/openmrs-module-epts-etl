@@ -5,23 +5,51 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
+import org.openmrs.module.epts.etl.dbquickmerge.engine.DBQuickMergeEngine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.etl.model.EtlSearchParams;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class DBQuickMergeSearchParams extends EtlSearchParams {
+public class DBQuickMergeSearchParams extends EtlDatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public DBQuickMergeSearchParams(EtlItemConfiguration config, RecordLimits limits,
-	    DBQuickMergeController relatedController) {
+	private DBQuickMergeEngine engine;
+	
+	public DBQuickMergeSearchParams(EtlItemConfiguration config, RecordLimits limits, DBQuickMergeEngine engine) {
 		
-		super(config, limits, relatedController);
+		super(config, limits, engine.getRelatedOperationController());
 		
+		this.engine = engine;
+	}
+	
+	public DBQuickMergeEngine getEngine() {
+		return engine;
+	}
+	
+	@Override
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+		
+		if (getEngine().getFinalCheckStatus().onGoing()) {
+			OpenConnection dstConn = this.getEngine().getDstApp().openConnection();
+			
+			try {
+				if (DBUtilities.isSameDatabaseServer(conn, dstConn) && getConfig().hasDstWithJoinFieldsToSrc()) {
+					this.setExtraCondition(this.generateDestinationExclusionClause(conn, dstConn));
+				}
+			}
+			finally {
+				dstConn.finalizeConnection();
+			}
+		}
+		
+		return super.generateSearchClauses(conn);
 	}
 	
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {

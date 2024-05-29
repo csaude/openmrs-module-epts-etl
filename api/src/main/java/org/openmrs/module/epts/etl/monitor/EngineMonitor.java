@@ -59,6 +59,14 @@ public class EngineMonitor implements MonitoredOperation {
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
 	}
 	
+	public long getMinRecordId() {
+		return getProgressMeter().getMinRecordId();
+	}
+	
+	public long getMaxRecordId() {
+		return getProgressMeter().getMaxRecordId();
+	}
+	
 	public SrcConf getSrcMainTableConf() {
 		return this.getEtlConfiguration().getSrcConf();
 	}

@@ -17,17 +17,16 @@ public enum EtlProcessType {
 	DB_QUICK_MERGE_WITH_DATABASE_GENERATION,
 	DB_INCONSISTENCY_CHECK,
 	GENERIC_PROCESS,
-	DB_COPY,
 	DETECT_GAPES_ON_DB_TABLES,
 	POJO_GENERATION,
 	ETL,
 	DB_EXTRACT,
 	DETECT_MISSING_RECORDS;
 	
-	
 	public boolean isDetectMissingRecords() {
 		return this.equals(DETECT_MISSING_RECORDS);
 	}
+	
 	public boolean isDbExtract() {
 		return this.equals(DB_EXTRACT);
 	}
@@ -46,10 +45,6 @@ public enum EtlProcessType {
 	
 	public boolean isGenericProcess() {
 		return this.equals(GENERIC_PROCESS);
-	}
-	
-	public boolean isDbCopy() {
-		return this.equals(DB_COPY);
 	}
 	
 	public boolean isdDBInconsistencyCheck() {
@@ -154,10 +149,6 @@ public enum EtlProcessType {
 	
 	public static boolean isEtl(String processType) {
 		return EtlProcessType.valueOf(processType).isEtl();
-	}
-	
-	public static boolean isDbCopy(String processType) {
-		return EtlProcessType.valueOf(processType).isDbCopy();
 	}
 	
 	public static boolean isDetectGapesOnDbTables(String processType) {

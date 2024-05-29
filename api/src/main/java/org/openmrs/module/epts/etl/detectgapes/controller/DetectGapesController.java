@@ -7,12 +7,12 @@ import java.sql.Statement;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
-import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.detectgapes.engine.DetectGapesEngine;
 import org.openmrs.module.epts.etl.detectgapes.model.DetectGapesSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SimpleValue;
@@ -29,10 +29,10 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * @author jpboane
  * @see DetectGapesEngine
  */
-public class DetectGapesController extends OperationController {
+public class DetectGapesController extends EtlController {
 	
 	public DetectGapesController(ProcessController processController, EtlOperationConfig operationConfig) {
-		super(processController, operationConfig);
+		super(processController, operationConfig, null);
 		
 		tryToCreateTableGape();
 	}

@@ -1,14 +1,11 @@
 package org.openmrs.module.epts.etl.transport.engine;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -38,12 +35,12 @@ public class TransportEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> migrationRecords, Connection conn) {
+	public void performeSync(List<? extends EtlObject> migrationRecords, Connection conn) {
 		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords,
 		    TransportRecord.class);
 		
-		this.getMonitor()
-		        .logInfo("COPYING  '" + migrationRecords.size() + "' " + getMainSrcTableName() + " SOURCE FILES TO IMPORT AREA");
+		this.getMonitor().logInfo(
+		    "COPYING  '" + migrationRecords.size() + "' " + getMainSrcTableName() + " SOURCE FILES TO IMPORT AREA");
 		
 		for (TransportRecord t : migrationRecordAsTransportRecord) {
 			t.transport();
@@ -62,28 +59,8 @@ public class TransportEngine extends Engine {
 			    "TRANSPORTED FILE " + t.getDestinationFile().getPath() + " WITH SIZE " + t.getDestinationFile().length());
 		}
 		
-		this.getMonitor()
-		        .logInfo("'" + migrationRecords.size() + "' " + getMainSrcTableName() + " SOURCE FILES COPIED TO IMPORT AREA");
-	}
-	
-	@Override
-	protected List<EtlObject> searchNextRecords(Connection conn) {
-		try {
-			File[] files = getSyncDirectory().listFiles(this.getSearchParams());
-			
-			List<EtlObject> etlObjects = new ArrayList<EtlObject>();
-			
-			if (files != null && files.length > 0) {
-				etlObjects.add(new TransportRecord(files[0], getSyncDestinationDirectory(), getSyncBkpDirectory()));
-			}
-			
-			return etlObjects;
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
+		this.getMonitor().logInfo(
+		    "'" + migrationRecords.size() + "' " + getMainSrcTableName() + " SOURCE FILES COPIED TO IMPORT AREA");
 	}
 	
 	@Override
@@ -93,28 +70,16 @@ public class TransportEngine extends Engine {
 	
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new TransportSyncSearchParams(getRelatedOperationController(),
-		        this.getEtlConfiguration(), limits);
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new TransportSyncSearchParams(
+		        getRelatedOperationController(), this.getEtlConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);
 		
 		return searchParams;
 	}
 	
-	private File getSyncBkpDirectory() throws IOException {
-		return getRelatedOperationController().getSyncBkpDirectory(getSrcConf());
-	}
-	
-	private File getSyncDestinationDirectory() throws IOException {
-		return getRelatedOperationController().getSyncDestinationDirectory(getSrcConf());
-	}
-	
 	@Override
 	public TransportController getRelatedOperationController() {
 		return (TransportController) super.getRelatedOperationController();
-	}
-	
-	private File getSyncDirectory() {
-		return getRelatedOperationController().getSyncDirectory(getSrcConf());
 	}
 	
 }

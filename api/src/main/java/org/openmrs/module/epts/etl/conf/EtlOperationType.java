@@ -27,19 +27,18 @@ public enum EtlOperationType {
 	PHANTOM_RECORDS_DETECTOR,
 	RESOLVE_CONFLICTS,
 	DB_QUICK_COPY,
-	DB_COPY,
 	DB_MERGE_FROM_SOURCE_DB,
 	DB_QUICK_MERGE,
 	GENERIC_OPERATION,
 	DETECT_GAPES,
 	ETL,
-	DB_EXTRACT, 
+	DB_EXTRACT,
 	DETECT_MISSING_RECORDS;
-	
 	
 	public static boolean isDetectMIssingRecords(String operationType) {
 		return EtlOperationType.valueOf(operationType).equals(DETECT_MISSING_RECORDS);
-	}	
+	}
+	
 	public static boolean isDbExtract(String operationType) {
 		return EtlOperationType.valueOf(operationType).equals(DB_EXTRACT);
 	}
@@ -50,10 +49,6 @@ public enum EtlOperationType {
 	
 	public static boolean isDetectGapesOperation(String operationType) {
 		return EtlOperationType.valueOf(operationType).equals(DETECT_GAPES);
-	}
-	
-	public static boolean isDbCopyOperation(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(DB_COPY);
 	}
 	
 	public static boolean isGenericOperation(String operationType) {
@@ -221,10 +216,6 @@ public enum EtlOperationType {
 		return this.equals(GENERIC_OPERATION);
 	}
 	
-	public boolean isDbCopyOperation() {
-		return this.equals(DB_COPY);
-	}
-	
 	public boolean isDetectGapesOperation() {
 		return this.equals(DETECT_GAPES);
 	}
@@ -236,7 +227,6 @@ public enum EtlOperationType {
 	public boolean isDbExtract() {
 		return this.equals(DB_EXTRACT);
 	}
-	
 	
 	public boolean isDetectMIssingRecords() {
 		return this.equals(DETECT_MISSING_RECORDS);

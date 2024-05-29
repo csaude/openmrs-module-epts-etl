@@ -12,16 +12,14 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.dbextract.model.DbExtractRecord;
 import org.openmrs.module.epts.etl.dbextract.model.DbExtractSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
-import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -35,12 +33,6 @@ public class DbExtractEngine extends EtlEngine {
 	
 	public DbExtractEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
-	}
-	
-	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
 	}
 	
 	public AppInfo getDstApp() {
@@ -66,7 +58,7 @@ public class DbExtractEngine extends EtlEngine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		if (getRelatedSyncOperationConfig().writeOperationHistory()
 		        || getEtlConfiguration().getSrcConf().hasWinningRecordsInfo()) {
 			performeSyncOneByOne(etlObjects, conn);
@@ -75,7 +67,7 @@ public class DbExtractEngine extends EtlEngine {
 		}
 	}
 	
-	public void performeBatchSync(List<EtlObject> etlObjects, Connection srcConn) throws DBException {
+	public void performeBatchSync(List<? extends EtlObject> etlObjects, Connection srcConn) throws DBException {
 		logInfo("PERFORMING DB EXTRACT OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
@@ -101,8 +93,8 @@ public class DbExtractEngine extends EtlEngine {
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);
 						
-						DbExtractRecord mr = new DbExtractRecord(destObject, getSrcConf(), mappingInfo, this.getSrcApp(), this.getDstApp(),
-						        false);
+						DbExtractRecord mr = new DbExtractRecord(destObject, getSrcConf(), mappingInfo, this.getSrcApp(),
+						        this.getDstApp(), false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mapOrder.add(mappingInfo.getTableName());
@@ -141,7 +133,7 @@ public class DbExtractEngine extends EtlEngine {
 		}
 	}
 	
-	private void performeSyncOneByOne(List<EtlObject> etlObjects, Connection srcConn) throws DBException {
+	private void performeSyncOneByOne(List<? extends EtlObject> etlObjects, Connection srcConn) throws DBException {
 		logInfo("PERFORMING EXTRACTION OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
@@ -174,8 +166,8 @@ public class DbExtractEngine extends EtlEngine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					DbExtractRecord data = new DbExtractRecord(destObject, getSrcConf(), mappingInfo, this.getSrcApp(), this.getDstApp(),
-					        wrt);
+					DbExtractRecord data = new DbExtractRecord(destObject, getSrcConf(), mappingInfo, this.getSrcApp(),
+					        this.getDstApp(), wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -273,8 +265,8 @@ public class DbExtractEngine extends EtlEngine {
 	
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DbExtractSearchParams(this.getEtlConfiguration(), limits,
-		        getRelatedOperationController());
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DbExtractSearchParams(this.getEtlConfiguration(),
+		        limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

@@ -416,11 +416,10 @@ public class DBUtilities {
 		}
 	}
 	
-	public static String determineColunType(String tableName, String columnName, Connection conn) throws DBException {
+	public static String determineColunType(String schema, String tableName, String columnName, Connection conn)
+	        throws DBException {
 		try {
-			tableName = tryToPutSchemaOnDatabaseObject(tableName, conn);
-			
-			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
+			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + schema + "." + tableName + " WHERE 1 != 1");
 			
 			ResultSet rs = st.executeQuery();
 			ResultSetMetaData rsMetaData = rs.getMetaData();
@@ -442,11 +441,9 @@ public class DBUtilities {
 		}
 	}
 	
-	public static boolean checkIfTableUseAutoIcrement(String tableName, Connection conn) throws DBException {
+	public static boolean checkIfTableUseAutoIcrement(String schema, String tableName, Connection conn) throws DBException {
 		try {
-			tableName = tryToPutSchemaOnDatabaseObject(tableName, conn);
-			
-			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
+			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + schema + "." + tableName + " WHERE 1 != 1");
 			
 			ResultSet rs = st.executeQuery();
 			ResultSetMetaData rsMetaData = rs.getMetaData();
@@ -703,7 +700,7 @@ public class DBUtilities {
 			if (rs.next()) {
 				String primaryKey = rs.getString("COLUMN_NAME");
 				
-				String primaryKeyType = DBUtilities.determineColunType(tableName, primaryKey, conn);
+				String primaryKeyType = DBUtilities.determineColunType(schema, tableName, primaryKey, conn);
 				
 				att = new Field(primaryKey);
 				
@@ -955,7 +952,6 @@ public class DBUtilities {
 		
 		executeBatch(conn, "drop table " + tableName);
 	}
-	
 	
 	public static void executeBatch(Connection conn, String... batches) throws DBException {
 		
@@ -1362,6 +1358,5 @@ public class DBUtilities {
 		
 		executeBatch(conn, sql);
 	}
-	
 	
 }

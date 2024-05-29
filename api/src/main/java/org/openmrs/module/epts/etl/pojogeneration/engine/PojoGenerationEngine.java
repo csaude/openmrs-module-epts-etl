@@ -7,9 +7,9 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
@@ -48,7 +48,7 @@ public class PojoGenerationEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> migrationRecords, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> migrationRecords, Connection conn) throws DBException {
 		this.pojoGenerated = true;
 		
 		AppInfo mainApp = getEtlConfiguration().getMainApp();
@@ -115,18 +115,6 @@ public class PojoGenerationEngine extends Engine {
 	
 	public boolean isPojoGenerated() {
 		return pojoGenerated;
-	}
-	
-	@Override
-	protected List<EtlObject> searchNextRecords(Connection conn) {
-		if (pojoGenerated)
-			return null;
-		
-		List<EtlObject> records = new ArrayList<EtlObject>();
-		
-		records.add(new PojoGenerationRecord(getSrcConf()));
-		
-		return records;
 	}
 	
 	@Override

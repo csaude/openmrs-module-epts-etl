@@ -6,13 +6,11 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParams;
@@ -53,11 +51,6 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 		this.userRoleRecordClass = userRoleTableConf.getSyncRecordClass(getDefaultApp());*/
 	}
 	
-	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
-	}
 	
 	@Override
 	public GenericOperationController getRelatedOperationController() {
@@ -69,7 +62,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		logInfo("RESOLVING PROBLEM MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;

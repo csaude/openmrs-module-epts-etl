@@ -9,16 +9,14 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBController;
 import org.openmrs.module.epts.etl.merge.model.DataBaseMergeFromSourceDBSearchParams;
 import org.openmrs.module.epts.etl.merge.model.MergingRecord;
-import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -26,13 +24,6 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	
 	public DataBasesMergeFromSourceEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
-	}
-	
-	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
-		
 	}
 	
 	@Override
@@ -50,7 +41,7 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		logInfo("PERFORMING MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;

@@ -4,10 +4,11 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<SyncImportInfoVO> {
@@ -15,7 +16,7 @@ public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<SyncImpor
 	private String appOriginLocationCode;
 	
 	public LoadedRecordsSearchParams(EtlItemConfiguration config, RecordLimits limits, String appOriginLocationCode) {
-		super(config, limits);
+		super(config, limits, null);
 		
 		setOrderByFields("id");
 		
@@ -53,5 +54,17 @@ public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<SyncImpor
 	@Override
 	public int countNotProcessedRecords(Connection conn) throws DBException {
 		return 0;
+	}
+
+	@Override
+	protected VOLoaderHelper getLoaderHealper() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

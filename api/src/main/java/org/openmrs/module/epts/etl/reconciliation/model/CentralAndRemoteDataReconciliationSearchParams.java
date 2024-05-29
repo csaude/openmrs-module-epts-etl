@@ -4,12 +4,13 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -22,7 +23,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	
 	public CentralAndRemoteDataReconciliationSearchParams(EtlItemConfiguration config, RecordLimits limits,
 	    EtlOperationType type, Connection conn) {
-		super(config, limits);
+		super(config, limits, null);
 		
 		this.type = type;
 	}
@@ -149,5 +150,17 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 		this.setLimits(bkpLimits);
 		
 		return count;
+	}
+
+	@Override
+	protected VOLoaderHelper getLoaderHealper() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

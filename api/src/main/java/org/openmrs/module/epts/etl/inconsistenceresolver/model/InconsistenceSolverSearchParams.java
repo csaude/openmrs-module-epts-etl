@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
@@ -16,7 +17,7 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 	private boolean selectAllRecords;
 	
 	public InconsistenceSolverSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn) {
-		super(config, limits);
+		super(config, limits, null);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
@@ -63,5 +64,17 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 		this.setLimits(bkpLimits);
 		
 		return count;
+	}
+
+	@Override
+	protected VOLoaderHelper getLoaderHealper() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

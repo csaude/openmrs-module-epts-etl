@@ -5,18 +5,16 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.export.controller.DBExportController;
 import org.openmrs.module.epts.etl.export.model.ExportSearchParams;
-import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -29,13 +27,6 @@ public class DBExportEngine extends Engine {
 	}
 	
 	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
-		
-	}
-	
-	@Override
 	public DBExportController getRelatedOperationController() {
 		return (DBExportController) super.getRelatedOperationController();
 	}
@@ -45,7 +36,7 @@ public class DBExportEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> etlObjects, Connection conn) {
+	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) {
 		try {
 			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
 			
@@ -136,8 +127,7 @@ public class DBExportEngine extends Engine {
 	}
 	
 	private File generateJSONTempFile(SyncJSONInfo jsonInfo, Integer startRecord, Integer lastRecord) throws IOException {
-		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcConf(), startRecord,
-		    lastRecord);
+		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcConf(), startRecord, lastRecord);
 	}
 	
 	@Override

@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -670,17 +671,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return v != null && v.hasValue() ? v.IntegerValue() : 0;
 	}
 	
-	public static Integer getFirstRecord(DatabaseObjectSearchParams searchParams, Connection conn)
+	public static Integer getFirstRecord(EtlDatabaseObjectSearchParams searchParams, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		return getSpecificRecord(searchParams, "min", conn);
 	}
 	
-	public static Integer getLastRecord(DatabaseObjectSearchParams searchParams, Connection conn)
+	public static Integer getLastRecord(EtlDatabaseObjectSearchParams searchParams, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		return getSpecificRecord(searchParams, "max", conn);
 	}
 	
-	public static Integer getSpecificRecord(DatabaseObjectSearchParams searchParams, String function, Connection conn)
+	public static Integer getSpecificRecord(EtlDatabaseObjectSearchParams searchParams, String function, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);

@@ -7,24 +7,45 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.sql.Connection;
+import java.util.List;
 
+import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
+import org.openmrs.module.epts.etl.dbquickload.engine.DBQuickLoadEngine;
 import org.openmrs.module.epts.etl.dbquickload.engine.QuickLoadLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
+import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.SyncJSONInfoMinimal;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> implements FilenameFilter {
 	
-	private DBQuickLoadController controller;
+	private File currJSONSourceFile;
 	
-	public DBQuickLoadSearchParams(DBQuickLoadController controller, EtlItemConfiguration config, QuickLoadLimits limits) {
-		super(config, limits);
-		
-		this.controller = controller;
+	/*
+	 * The current json info which is being processed
+	 */
+	private SyncJSONInfo currJSONInfo;
+	
+	public DBQuickLoadSearchParams(DBQuickLoadEngine engine, EtlItemConfiguration config, QuickLoadLimits limits) {
+		super(config, limits, engine.getRelatedOperationController());
+	}
+	
+	public SyncJSONInfo getCurrJSONInfo() {
+		return currJSONInfo;
+	}
+	
+	public File getCurrJSONSourceFile() {
+		return currJSONSourceFile;
+	}
+	
+	@Override
+	public DBQuickLoadController getRelatedController() {
+		return (DBQuickLoadController) super.getRelatedController();
 	}
 	
 	@Override
@@ -37,10 +58,52 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 		return name.toLowerCase().endsWith("json");
 	}
 	
+	private File getNextJSONFileToLoad() {
+		File[] files = getSyncDirectory().listFiles(this);
+		
+		if (files != null && files.length > 0) {
+			return files[0];
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public List<EtlDatabaseObject> searchNextRecords(Connection conn) throws DBException {
+		this.currJSONSourceFile = getNextJSONFileToLoad();
+		
+		if (this.currJSONSourceFile == null)
+			return null;
+		
+		getRelatedController().logInfo("Loading content on JSON File " + this.currJSONSourceFile.getAbsolutePath());
+		
+		try {
+			String json = new String(Files.readAllBytes(Paths.get(currJSONSourceFile.getAbsolutePath())));
+			
+			this.currJSONInfo = SyncJSONInfo.loadFromJSON(json);
+			this.currJSONInfo.setFileName(currJSONSourceFile.getAbsolutePath());
+			
+			for (SyncImportInfoVO rec : this.currJSONInfo.getSyncInfo()) {
+				rec.setRecordOriginLocationCode(this.currJSONInfo.getOriginAppLocationCode());
+			}
+			
+			return utilities.parseList(this.currJSONInfo.getSyncInfo(), EtlDatabaseObject.class);
+			
+		}
+		catch (Exception e) {
+			getRelatedController().logInfo("Error performing " + this.currJSONSourceFile.getAbsolutePath());
+			
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		
+	}
+	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
 		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(getConfig(), null,
-		        controller.getAppOriginLocationCode());
+		        getRelatedController().getAppOriginLocationCode());
 		
 		int processed = syncSearchParams.countAllRecords(conn);
 		
@@ -84,6 +147,18 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	}
 	
 	private File getSyncDirectory() {
-		return this.controller.getSyncDirectory(getSrcTableConf());
+		return this.getRelatedController().getSyncDirectory(getSrcTableConf());
+	}
+	
+	@Override
+	protected VOLoaderHelper getLoaderHealper() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

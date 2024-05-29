@@ -7,11 +7,11 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.dbquickload.engine.DBQuickLoadEngine;
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -23,7 +23,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  * 
  * @author jpboane
  */
-public class DBQuickLoadController extends SiteOperationController {
+public class DBQuickLoadController extends EtlController {
 	
 	public DBQuickLoadController(ProcessController processController, EtlOperationConfig operationConfig,
 	    String appOriginLocationCode) {
@@ -37,7 +37,7 @@ public class DBQuickLoadController extends SiteOperationController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, config,
+		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(null, config,
 		        null);
 		
 		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(searchParams);
@@ -51,7 +51,7 @@ public class DBQuickLoadController extends SiteOperationController {
 	
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
-		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(this, config,
+		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(null, config,
 		        null);
 		
 		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(searchParams);

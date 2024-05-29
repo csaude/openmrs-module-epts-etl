@@ -4,10 +4,10 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
-import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.synchronization.engine.DataBaseMergeFromJSONEngine;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
@@ -20,10 +20,10 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class DatabaseMergeFromJSONController extends OperationController {
+public class DatabaseMergeFromJSONController extends EtlController {
 	
 	public DatabaseMergeFromJSONController(ProcessController processController, EtlOperationConfig operationConfig) {
-		super(processController, operationConfig);
+		super(processController, operationConfig, null);
 	}
 	
 	@Override

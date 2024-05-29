@@ -6,10 +6,12 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.synchronization.controller.DatabaseMergeFromJSONController;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -24,7 +26,6 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 		
 		setOrderByFields("id");
 	}
-	
 	
 	public DatabaseMergeFromJSONController getRelatedController() {
 		return relatedController;
@@ -78,7 +79,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		DatabaseObjectSearchParams migratedRecordSearchParams = new DatabaseObjectSearchParams(getConfig(), null, getRelatedController());
+		EtlDatabaseObjectSearchParams migratedRecordSearchParams = new EtlDatabaseObjectSearchParams(getConfig(), null, getRelatedController());
 		
 		int migrated = SearchParamsDAO.countAll(migratedRecordSearchParams, conn);
 		int notMigrated = countNotProcessedRecords(conn);
@@ -89,5 +90,17 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	@Override
 	public int countNotProcessedRecords(Connection conn) throws DBException {
 		return SearchParamsDAO.countAll(this, conn);
+	}
+
+	@Override
+	protected VOLoaderHelper getLoaderHealper() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

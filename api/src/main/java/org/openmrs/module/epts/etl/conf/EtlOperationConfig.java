@@ -11,7 +11,6 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
 import org.openmrs.module.epts.etl.databasepreparation.controller.DatabasePreparationController;
-import org.openmrs.module.epts.etl.dbcopy.controller.DBCopyController;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportController;
@@ -383,10 +382,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return this.operationType.isDbQuickCopy();
 	}
 	
-	public boolean isDbCopy() {
-		return this.operationType.isDbCopyOperation();
-	}
-	
 	public boolean isDetectGapes() {
 		return this.operationType.isDetectGapesOperation();
 	}
@@ -526,8 +521,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			return new DBQuickMergeController(parent, this, appOriginCode);
 		} else if (isResolveProblem()) {
 			return new GenericOperationController(parent, this);
-		} else if (isDbCopy()) {
-			return new DBCopyController(parent, this);
 		} else if (isDetectGapes()) {
 			return new DetectGapesController(parent, this);
 		} else
@@ -603,10 +596,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			if (!this.canBeRunInDBInconsistencyCheckProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db inconsistency check process\n";
-		} else if (this.getRelatedSyncConfig().isDbCopy()) {
-			if (!this.canBeRunInDbCopyProcess())
-				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
-				        + "] Cannot be configured in db copy process\n";
 		} else if (this.getRelatedSyncConfig().isPojoGeneration()) {
 			if (!this.canBeRunInDbPojoGenerationProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
@@ -703,18 +692,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		EtlOperationType[] supported = { EtlOperationType.DETECT_MISSING_RECORDS };
 		
 		return utilities.parseArrayToList(supported);
-	}
-	
-	public static List<EtlOperationType> getSupportedOperationsInDbCopyProcess() {
-		EtlOperationType[] supported = { EtlOperationType.DATABASE_PREPARATION, EtlOperationType.POJO_GENERATION,
-		        EtlOperationType.DB_COPY };
-		
-		return utilities.parseArrayToList(supported);
-	}
-	
-	@JsonIgnore
-	public boolean canBeRunInDbCopyProcess() {
-		return utilities.existOnArray(getSupportedOperationsInDbCopyProcess(), this.operationType);
 	}
 	
 	@JsonIgnore

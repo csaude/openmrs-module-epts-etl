@@ -5,11 +5,12 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -23,7 +24,7 @@ public class ChangedRecordsDetectorSearchParams extends AbstractEtlSearchParams<
 	
 	public ChangedRecordsDetectorSearchParams(EtlItemConfiguration config, String appCode, RecordLimits limits,
 	    EtlOperationType type, Connection conn) {
-		super(config, limits);
+		super(config, limits, null);
 		
 		this.appCode = appCode;
 		
@@ -108,5 +109,14 @@ public class ChangedRecordsDetectorSearchParams extends AbstractEtlSearchParams<
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
 		return countAllRecords(conn);
+	}
+	
+	public DatabaseObjectLoaderHelper getLoaderHealper() {
+		return this.getConfig().getSrcConf().getLoadHealper();
+	}
+	
+	@Override
+	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+		return null;
 	}
 }

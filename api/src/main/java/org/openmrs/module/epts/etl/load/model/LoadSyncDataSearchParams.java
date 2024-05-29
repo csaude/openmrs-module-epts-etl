@@ -7,18 +7,27 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> implements FilenameFilter {
+	
+	private File currJSONSourceFile;
+	
+	/*
+	 * The current json info which is being processed
+	 */
+	private SyncJSONInfo currJSONInfo;
 	
 	private String firstFileName;
 	
@@ -29,7 +38,7 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	private DataLoadController controller;
 	
 	public LoadSyncDataSearchParams(DataLoadController controller, EtlItemConfiguration config, RecordLimits limits) {
-		super(config, limits);
+		super(config, limits, null);
 		
 		this.controller = controller;
 		
@@ -39,6 +48,56 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 			this.lastFileName = getSrcTableConf().getTableName() + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json";
 		}
+	}
+	
+	@Override
+	public DataLoadController getRelatedController() {
+		return (DataLoadController) super.getRelatedController();
+	}
+	
+	private File getNextJSONFileToLoad() {
+		File[] files = getSyncDirectory().listFiles(this);
+		
+		if (files != null && files.length > 0) {
+			return files[0];
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public List<EtlDatabaseObject> searchNextRecords(Connection conn) throws DBException {
+		this.currJSONSourceFile = getNextJSONFileToLoad();
+		
+		if (this.currJSONSourceFile == null)
+			return null;
+		
+		getRelatedController().logInfo("Loading content on JSON File " + this.currJSONSourceFile.getAbsolutePath());
+		
+		try {
+			String json = new String(Files.readAllBytes(Paths.get(currJSONSourceFile.getAbsolutePath())));
+			
+			this.currJSONInfo = SyncJSONInfo.loadFromJSON(json);
+			this.currJSONInfo.setFileName(currJSONSourceFile.getAbsolutePath());
+			
+			return utilities.parseList(this.currJSONInfo.getSyncInfo(), EtlDatabaseObject.class);
+			
+		}
+		catch (Exception e) {
+			getRelatedController().logInfo("Error performing " + this.currJSONSourceFile.getAbsolutePath());
+			
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public SyncJSONInfo getCurrJSONInfo() {
+		return currJSONInfo;
+	}
+	
+	public File getCurrJSONSourceFile() {
+		return currJSONSourceFile;
 	}
 	
 	public void setFileNamePathern(String fileNamePathern) {
@@ -126,5 +185,17 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	
 	private File getSyncDirectory() {
 		return this.controller.getSyncDirectory(getSrcTableConf());
+	}
+
+	@Override
+	protected VOLoaderHelper getLoaderHealper() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

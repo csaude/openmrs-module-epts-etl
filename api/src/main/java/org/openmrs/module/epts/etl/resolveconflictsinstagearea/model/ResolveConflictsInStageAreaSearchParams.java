@@ -6,9 +6,11 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearchParams {
@@ -80,5 +82,17 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 		this.setLimits(bkpLimits);
 		
 		return count;
+	}
+
+	@Override
+	protected VOLoaderHelper getLoaderHealper() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

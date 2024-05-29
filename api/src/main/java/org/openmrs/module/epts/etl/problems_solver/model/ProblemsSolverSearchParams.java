@@ -1,29 +1,67 @@
 package org.openmrs.module.epts.etl.problems_solver.model;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
+import org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class ProblemsSolverSearchParams extends DatabaseObjectSearchParams {
+public class ProblemsSolverSearchParams extends AbstractEtlSearchParams<EtlObject> {
 	
 	private int savedCount;
 	
-	public ProblemsSolverSearchParams(EtlItemConfiguration config, RecordLimits limits, GenericOperationController relatedController) {
+	public ProblemsSolverSearchParams(EtlItemConfiguration config, RecordLimits limits,
+	    GenericOperationController relatedController) {
 		super(config, limits, relatedController);
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
+	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
+		EtlObject rec = new EtlObject() {
+			
+			@Override
+			public void setExcluded(boolean excluded) {
+			}
+			
+			@Override
+			public void load(ResultSet rs) throws SQLException {
+			}
+			
+			@Override
+			public boolean isExcluded() {
+				return false;
+			}
+			
+			@Override
+			public String generateTableName() {
+				return null;
+			}
+		};
+		
+		if (!GenericEngine.done) {
+			return utilities.parseToList(rec);
+		} else {
+			return null;
+		}
+	}
+	
+
+	
+	@Override
+	public SearchClauses<EtlObject> generateSearchClauses(Connection conn) throws DBException {
+		SearchClauses<EtlObject> searchClauses = new SearchClauses<>(this);
 		
 		String tableName = "tmp_user";
 		
@@ -69,13 +107,25 @@ public class ProblemsSolverSearchParams extends DatabaseObjectSearchParams {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public Class<EtlDatabaseObject> getRecordClass() {
+	public Class<EtlObject> getRecordClass() {
 		try {
-			return (Class<EtlDatabaseObject>) GenericDatabaseObject.class.getClassLoader()
+			return (Class<EtlObject>) GenericDatabaseObject.class.getClassLoader()
 			        .loadClass("org.openmrs.module.epts.etl.problems_solver.model.TmpUserVO");
 		}
 		catch (ClassNotFoundException e) {
 			throw new ForbiddenOperationException(e);
 		}
+	}
+
+	@Override
+	protected VOLoaderHelper getLoaderHealper() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected AbstractEtlSearchParams<EtlObject> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

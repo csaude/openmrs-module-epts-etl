@@ -2,8 +2,6 @@ package org.openmrs.module.epts.etl.dbquickload.engine;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.List;
 
@@ -11,11 +9,10 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -23,14 +20,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DBQuickLoadEngine extends Engine {
-	
-	private File currJSONSourceFile;
-	
-	/*
-	 * The current json info which is being processed
-	 */
-	private SyncJSONInfo currJSONInfo;
-	
+
+
 	public DBQuickLoadEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
@@ -40,7 +31,12 @@ public class DBQuickLoadEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> migrationRecords, Connection conn) throws DBException {
+	public DBQuickLoadSearchParams getSearchParams() {
+		return (DBQuickLoadSearchParams) super.getSearchParams();
+	}
+	
+	@Override
+	public void performeSync(List<? extends EtlObject> migrationRecords, Connection conn) throws DBException {
 		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(migrationRecords, SyncImportInfoVO.class);
 		
 		for (SyncImportInfoVO rec : migrationRecordAsSyncInfo)
@@ -52,13 +48,13 @@ public class DBQuickLoadEngine extends Engine {
 		
 		this.logInfo("'" + migrationRecords.size() + "' " + getMainSrcTableName() + " WROTE TO STAGING TABLE");
 		
-		this.logDebug("MOVING SOURCE JSON [" + this.currJSONSourceFile.getAbsolutePath() + "] TO BACKUP AREA.");
+		this.logDebug("MOVING SOURCE JSON [" + this.getSearchParams().getCurrJSONSourceFile().getAbsolutePath() + "] TO BACKUP AREA.");
 		
 		BaseDAO.commit(conn);
 		
 		moveSoureJSONFileToBackup();
 		
-		logDebug("SOURCE JSON [" + this.currJSONSourceFile.getAbsolutePath() + "] MOVED TO BACKUP AREA.");
+		logDebug("SOURCE JSON [" + this.getSearchParams().getCurrJSONSourceFile().getAbsolutePath() + "] MOVED TO BACKUP AREA.");
 	}
 	
 	private void moveSoureJSONFileToBackup() {
@@ -68,19 +64,19 @@ public class DBQuickLoadEngine extends Engine {
 			
 			pathToBkpFile += getSyncBkpDirectory().getAbsolutePath();
 			pathToBkpFile += FileUtilities.getPathSeparator();
-			pathToBkpFile += FileUtilities.generateFileNameFromRealPath(this.currJSONSourceFile.getAbsolutePath());
+			pathToBkpFile += FileUtilities.generateFileNameFromRealPath(this.getSearchParams().getCurrJSONSourceFile().getAbsolutePath());
 			
 			if (new File(pathToBkpFile).exists()) {
 				FileUtilities.removeFile(pathToBkpFile);
 			}
 			
-			FileUtilities.renameTo(this.currJSONSourceFile.getAbsolutePath(), pathToBkpFile);
+			FileUtilities.renameTo(this.getSearchParams().getCurrJSONSourceFile().getAbsolutePath(), pathToBkpFile);
 			
 			//FileUtilities.removeFile(this.currJSONSourceFile.getAbsolutePath());
 			
-			if (this.currJSONSourceFile.exists()) {
+			if (this.getSearchParams().getCurrJSONSourceFile().exists()) {
 				throw new ForbiddenOperationException(
-				        "The file " + this.currJSONSourceFile.getAbsolutePath() + " Could not removed");
+				        "The file " + this.getSearchParams().getCurrJSONSourceFile().getAbsolutePath() + " Could not removed");
 			}
 		}
 		catch (IOException e) {
@@ -89,59 +85,14 @@ public class DBQuickLoadEngine extends Engine {
 			throw new RuntimeException(e);
 		}
 	}
-	
-	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) {
-		this.currJSONSourceFile = getNextJSONFileToLoad();
-		
-		if (this.currJSONSourceFile == null)
-			return null;
-		
-		getRelatedOperationController().logInfo("Loading content on JSON File " + this.currJSONSourceFile.getAbsolutePath());
-		
-		try {
-			String json = new String(Files.readAllBytes(Paths.get(currJSONSourceFile.getAbsolutePath())));
-			
-			this.currJSONInfo = SyncJSONInfo.loadFromJSON(json);
-			this.currJSONInfo.setFileName(currJSONSourceFile.getAbsolutePath());
-			
-			for (SyncImportInfoVO rec : this.currJSONInfo.getSyncInfo()) {
-				rec.setRecordOriginLocationCode(this.currJSONInfo.getOriginAppLocationCode());
-			}
-			
-			return utilities.parseList(this.currJSONInfo.getSyncInfo(), EtlObject.class);
-			
-		}
-		catch (Exception e) {
-			getRelatedOperationController().logInfo("Error performing " + this.currJSONSourceFile.getAbsolutePath());
-			
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-	}
-	
-	private File getNextJSONFileToLoad() {
-		File[] files = getSyncDirectory().listFiles(this.getSearchParams());
-		
-		if (files != null && files.length > 0) {
-			return files[0];
-		}
-		
-		return null;
-	}
-	
-	@Override
-	public DBQuickLoadSearchParams getSearchParams() {
-		return (DBQuickLoadSearchParams) super.getSearchParams();
-	}
+
 	
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		QuickLoadLimits loadLimits = new QuickLoadLimits();
 		loadLimits.copy(limits);
 		
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DBQuickLoadSearchParams(getRelatedOperationController(),
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DBQuickLoadSearchParams(this,
 		        this.getEtlConfiguration(), loadLimits);
 		
 		searchParams.setQtdRecordPerSelected(1);
@@ -163,10 +114,5 @@ public class DBQuickLoadEngine extends Engine {
 		return (DBQuickLoadController) super.getRelatedOperationController();
 	}
 	
-	private File getSyncDirectory() {
-		String baseDirectory = getRelatedOperationController().getSyncDirectory(getSrcConf())
-		        .getAbsolutePath();
-		
-		return new File(baseDirectory);
-	}
+
 }

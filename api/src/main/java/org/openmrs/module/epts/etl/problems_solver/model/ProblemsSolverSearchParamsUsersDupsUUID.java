@@ -4,17 +4,17 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class ProblemsSolverSearchParamsUsersDupsUUID extends DatabaseObjectSearchParams {
+public class ProblemsSolverSearchParamsUsersDupsUUID extends EtlDatabaseObjectSearchParams {
 	
 	public ProblemsSolverSearchParamsUsersDupsUUID(EtlItemConfiguration config, RecordLimits limits, GenericOperationController relatedController) {
 		super(config, limits, relatedController);

@@ -51,7 +51,8 @@ public class TableOperationProgressInfo extends BaseVO {
 		Date startTime = resultSet.getTimestamp("started_at");
 		Date lastRefreshAt = resultSet.getTimestamp("last_refresh_at");
 		
-		this.progressMeter = EtlProgressMeter.fullInit(status, startTime, lastRefreshAt, minRecordId, maxRecordId, total, processed);
+		this.progressMeter = EtlProgressMeter.fullInit(status, startTime, lastRefreshAt, minRecordId, maxRecordId, total,
+		    processed);
 	}
 	
 	public TableOperationProgressInfo(OperationController controller, EtlItemConfiguration etlItemConfiguration) {
@@ -79,7 +80,7 @@ public class TableOperationProgressInfo extends BaseVO {
 		        || controller.getOperationConfig().isPhantomRecordsDetector()
 		        || controller.getOperationConfig().isDBMergeFromSourceDB()
 		        || controller.getOperationConfig().isDataBaseMergeFromJSONOperation()
-		        || controller.getConfiguration().isResolveProblems() || controller.getConfiguration().isDbCopy()
+		        || controller.getConfiguration().isResolveProblems()
 		        || controller.getConfiguration().isDetectGapesOnDbTables() || controller.getConfiguration().isEtlProcess())
 			return "central_site";
 		

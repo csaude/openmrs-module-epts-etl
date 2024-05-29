@@ -3,15 +3,13 @@ package org.openmrs.module.epts.etl.databasepreparation.engine;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.databasepreparation.controller.DatabasePreparationController;
-import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationRecord;
 import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -38,7 +36,7 @@ public class DatabasePreparationEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> migrationRecords, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> migrationRecords, Connection conn) throws DBException {
 		try {
 			updateTableInfo(conn);
 			
@@ -182,18 +180,6 @@ public class DatabasePreparationEngine extends Engine {
 	}
 	
 	@Override
-	protected List<EtlObject> searchNextRecords(Connection conn) {
-		if (updateDone)
-			return null;
-		
-		List<EtlObject> records = new ArrayList<EtlObject>();
-		
-		records.add(new DatabasePreparationRecord(getEtlConfiguration().getSrcConf()));
-		
-		return records;
-	}
-	
-	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		return new DatabasePreparationSearchParams(this, limits, conn);
 	}
@@ -206,8 +192,7 @@ public class DatabasePreparationEngine extends Engine {
 		String parentTableName = getEtlConfiguration().getSrcConf().generateFullStageTableName();
 		String tableName = getEtlConfiguration().getSrcConf().generateRelatedStageUniqueKeysTableName();
 		
-		sql += "CREATE TABLE " + getEtlConfiguration().getSrcConf().generateFullStageUniqueKeysTableName()
-		        + "(\n";
+		sql += "CREATE TABLE " + getEtlConfiguration().getSrcConf().generateFullStageUniqueKeysTableName() + "(\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
@@ -261,16 +246,14 @@ public class DatabasePreparationEngine extends Engine {
 		sql += DBUtilities.generateTableBigIntField("destination_id", "NULL", conn) + endLineMarker;
 		
 		String checkCondition = "migration_status = -1 OR migration_status = 0 OR migration_status = 1";
-		String keyName = "CHK_" + getEtlConfiguration().getSrcConf().generateRelatedStageTableName()
-		        + "_MIG_STATUS";
+		String keyName = "CHK_" + getEtlConfiguration().getSrcConf().generateRelatedStageTableName() + "_MIG_STATUS";
 		
 		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
 		
 		String uniqueKeyName = tableName + "_UNQ_RECORD_ID".toLowerCase();
 		
 		if (getEtlConfiguration().getSrcConf().isDestinationInstallationType()
-		        || getEtlConfiguration().getSrcConf().isDBQuickLoad()
-		        || getEtlConfiguration().getSrcConf().isDBQuickCopy()) {
+		        || getEtlConfiguration().getSrcConf().isDBQuickLoad()) {
 			
 			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName,
 			    "record_origin_id, record_origin_location_code", conn) + endLineMarker;

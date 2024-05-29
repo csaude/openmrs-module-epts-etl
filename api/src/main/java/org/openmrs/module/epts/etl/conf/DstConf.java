@@ -533,7 +533,7 @@ public class DstConf extends AbstractTableConfiguration {
 		return (EtlItemConfiguration) super.getParentConf();
 	}
 	
-	public int generateNextStartIdForThread(List<EtlObject> etlObjects, Connection conn)
+	public int generateNextStartIdForThread(List<? extends EtlObject> etlObjects, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
 		synchronized (stringLock) {

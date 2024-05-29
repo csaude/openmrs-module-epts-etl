@@ -3,13 +3,11 @@ package org.openmrs.module.epts.etl.synchronization.engine;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.synchronization.controller.DatabaseMergeFromJSONController;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
@@ -21,13 +19,7 @@ public class DataBaseMergeFromJSONEngine extends Engine {
 	public DataBaseMergeFromJSONEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
-	
-	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
-	}
-	
+
 	@Override
 	protected void restart() {
 		this.getSearchParams().setSyncStartDate(DateAndTimeUtilities.getCurrentDate());
@@ -39,7 +31,7 @@ public class DataBaseMergeFromJSONEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		throw new ForbiddenOperationException("Rever este metodo!");
 		
 		/*getRelatedOperationController().logInfo("SYNCHRONIZING '"+syncRecords.size() + "' "+ getSyncTableConfiguration().getTableName().toUpperCase());

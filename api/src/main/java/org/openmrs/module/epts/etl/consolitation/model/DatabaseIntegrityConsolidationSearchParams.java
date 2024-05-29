@@ -3,11 +3,12 @@ package org.openmrs.module.epts.etl.consolitation.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabaseIntegrityConsolidationSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
@@ -15,7 +16,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends AbstractEtlSearc
 	private boolean selectAllRecords;
 	
 	public DatabaseIntegrityConsolidationSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn) {
-		super(config, limits);
+		super(config, limits, null);
 		
 		setOrderByFields(config.getSrcConf().getPrimaryKey().parseFieldNamesToArray());
 	}
@@ -63,5 +64,17 @@ public class DatabaseIntegrityConsolidationSearchParams extends AbstractEtlSearc
 		this.setLimits(bkpLimits);
 		
 		return count;
+	}
+
+	@Override
+	protected VOLoaderHelper getLoaderHealper() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

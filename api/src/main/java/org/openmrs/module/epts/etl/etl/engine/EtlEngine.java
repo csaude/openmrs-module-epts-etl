@@ -10,19 +10,17 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.EtlRecord;
-import org.openmrs.module.epts.etl.etl.model.EtlSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
-import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -40,9 +38,8 @@ public class EtlEngine extends Engine {
 	}
 	
 	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.getSearchParams(), conn), EtlObject.class);
+	public EtlDatabaseObjectSearchParams getSearchParams() {
+		return (EtlDatabaseObjectSearchParams) super.getSearchParams();
 	}
 	
 	public AppInfo getDstApp() {
@@ -68,7 +65,7 @@ public class EtlEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		if (getRelatedSyncOperationConfig().writeOperationHistory()
 		        || getEtlConfiguration().getSrcConf().hasWinningRecordsInfo()) {
 			performeSyncOneByOne(etlObjects, conn);
@@ -77,14 +74,14 @@ public class EtlEngine extends Engine {
 		}
 	}
 	
-	public void performeBatchSync(List<EtlObject> etlObjects, Connection srcConn) throws DBException {
+	public void performeBatchSync(List<? extends EtlObject> etlObjects, Connection srcConn) throws DBException {
 		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
 		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
-			
+		
 		Map<String, List<EtlRecord>> mergingRecs = new HashMap<>();
 		
 		try {
@@ -143,7 +140,7 @@ public class EtlEngine extends Engine {
 		}
 	}
 	
-	private void performeSyncOneByOne(List<EtlObject> etlObjects, Connection srcConn) throws DBException {
+	private void performeSyncOneByOne(List<? extends EtlObject> etlObjects, Connection srcConn) throws DBException {
 		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
@@ -282,8 +279,8 @@ public class EtlEngine extends Engine {
 	
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new EtlSearchParams(this.getEtlConfiguration(), limits,
-		        getRelatedOperationController());
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new EtlDatabaseObjectSearchParams(
+		        this.getEtlConfiguration(), limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

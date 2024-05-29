@@ -7,11 +7,10 @@ import java.util.List;
 import org.openmrs.module.epts.etl.changedrecordsdetector.controller.ChangedRecordsDetectorController;
 import org.openmrs.module.epts.etl.changedrecordsdetector.model.ChangedRecordsDetectorSearchParams;
 import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordInfo;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -34,11 +33,6 @@ public class ChangedRecordsDetectorEngine extends Engine {
 	}
 	
 	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		return utilities.parseList(SearchParamsDAO.search(this.searchParams, conn), EtlObject.class);
-	}
-	
-	@Override
 	protected boolean mustDoFinalCheck() {
 		return false;
 	}
@@ -53,12 +47,12 @@ public class ChangedRecordsDetectorEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
 		List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(etlObjects.size());
 		
-		this.getMonitor().logInfo(
-		    "PERFORMING CHANGE DETECTED ACTION '" + etlObjects.size() + "' " + getSrcConf().getTableName());
+		this.getMonitor()
+		        .logInfo("PERFORMING CHANGE DETECTED ACTION '" + etlObjects.size() + "' " + getSrcConf().getTableName());
 		
 		for (EtlDatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
@@ -87,12 +81,11 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		
 		if (getRelatedOperationController().getActionPerformeApp().isBatchPerformingMode()) {
 			DetectedRecordService.getInstance().performeAction(
-			    getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords,
-			    getSrcConf());
+			    getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords, getSrcConf());
 		}
 		
-		this.getMonitor().logInfo("ACTION PERFORMED FOR CHANGED RECORDS '" + etlObjects.size() + "' "
-		        + getSrcConf().getTableName() + "!");
+		this.getMonitor().logInfo(
+		    "ACTION PERFORMED FOR CHANGED RECORDS '" + etlObjects.size() + "' " + getSrcConf().getTableName() + "!");
 	}
 	
 	@Override
@@ -101,8 +94,6 @@ public class ChangedRecordsDetectorEngine extends Engine {
 		        this.getEtlConfiguration(), getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
 		        limits, getRelatedOperationController().getOperationType(), conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		
-		
 		
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

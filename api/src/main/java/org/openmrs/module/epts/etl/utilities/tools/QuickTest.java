@@ -20,13 +20,11 @@ import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -70,15 +68,12 @@ public class QuickTest {
 	public static void selectLinesOnFile() throws IOException, DBException {
 		List<String> lines = FileUtilities.readAllFileAsListOfString("D:\\ORG\\C-SAUDE\\PROJECTOS\\EPTS\\etl\\alldbs.txt");
 		
-		
-		
 		for (String line : lines) {
 			if (line.endsWith("new")) {
 				FileUtilities.write("D:\\ORG\\C-SAUDE\\PROJECTOS\\EPTS\\etl\\newdbs.txt", line);
 			}
 		}
 	}
-	
 	
 	public static void calcularIdade(Connection conn) throws IOException, DBException {
 		List<String> patients = FileUtilities.readAllFileAsListOfString(
@@ -143,8 +138,7 @@ public class QuickTest {
 		
 		OpenConnection srcConn = conf.getMainApp().openConnection();
 		
-		List<EtlDatabaseObject> syncRecords = DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) searchParams,
-		    srcConn);
+		List<EtlDatabaseObject> syncRecords = searchParams.searchNextRecords(srcConn);
 		
 		OpenConnection dstConn = dstApp.openConnection();
 		
@@ -164,7 +158,8 @@ public class QuickTest {
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);
 						
-						QuickMergeRecord mr = new QuickMergeRecord(destObject, etlConf.getSrcConf(),  mappingInfo, srcApp, dstApp, false);
+						QuickMergeRecord mr = new QuickMergeRecord(destObject, etlConf.getSrcConf(), mappingInfo, srcApp,
+						        dstApp, false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
@@ -319,7 +314,7 @@ public class QuickTest {
 		
 		RecordLimits limits = new RecordLimits(1448341 + 500, 1449340, 20, null);
 		
-		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(tableInfo, limits, controller);
+		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(tableInfo, limits, null);
 		
 		//tableInfo.setExtraConditionForExport("value_datetime is not null");
 		

@@ -1,18 +1,30 @@
 package org.openmrs.module.epts.etl.engine;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
+import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
+import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
+import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -29,10 +41,23 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 	
 	private SearchSourceType searchSourceType;
 	
-	public AbstractEtlSearchParams(EtlItemConfiguration config, RecordLimits limits) {
+	private EtlController relatedController;
+	
+	protected int savedCount;
+	
+	public AbstractEtlSearchParams(EtlItemConfiguration config, RecordLimits limits, EtlController relatedController) {
 		this.config = config;
 		this.limits = limits;
 		this.searchSourceType = SearchSourceType.SOURCE;
+		this.relatedController = relatedController;
+	}
+	
+	public EtlController getRelatedController() {
+		return relatedController;
+	}
+	
+	public void setRelatedController(EtlController relatedController) {
+		this.relatedController = relatedController;
 	}
 	
 	public void setSearchSourceType(SearchSourceType searchSourceType) {
@@ -139,7 +164,221 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		return  utilities.getLastRecordOnArray(getConfig().getDstConf());
 	}	
 	
-	public abstract int countAllRecords(Connection conn) throws DBException;
+	public int countAllRecords(Connection conn) throws DBException {
+		if (this.savedCount > 0)
+			return this.savedCount;
+		
+		TableOperationProgressInfo progressInfo = null;
+		
+		try {
+			progressInfo = this.getRelatedController().getProgressInfo().retrieveProgressInfo(getConfig());
+		}
+		catch (NullPointerException e) {
+			throw new EtlException("Error on thread " + this.getRelatedController().getControllerId()
+			        + ": Progress meter not found for Etl Confinguration [" + getConfig().getConfigCode() + "].");
+		}
+		
+		int maxRecordId = (int) progressInfo.getProgressMeter().getMaxRecordId();
+		int minRecordId = (int) progressInfo.getProgressMeter().getMinRecordId();
+		
+		int qtyRecordsBetweenLimits = maxRecordId - minRecordId;
+		
+		if (qtyRecordsBetweenLimits == 0) {
+			return 0;
+		}
+		
+		int qtyProcessors = utilities.getAvailableProcessors();
+		
+		//int qtyProcessors = 1;
+		
+		int qtyRecordsPerEngine = qtyRecordsBetweenLimits / qtyProcessors;
+		
+		RecordLimits initialLimits = null;
+		
+		List<CompletableFuture<Integer>> tasks = new ArrayList<>(qtyProcessors);
+		
+		for (int i = 0; i < qtyProcessors; i++) {
+			RecordLimits limits;
+			
+			if (initialLimits == null) {
+				limits = new RecordLimits(minRecordId, minRecordId + qtyRecordsPerEngine - 1, qtyRecordsPerEngine);
+				initialLimits = limits;
+			} else {
+				// Last processor
+				if (i == qtyProcessors - 1) {
+					limits = new RecordLimits(initialLimits.getThreadMaxRecord() + 1, maxRecordId, qtyRecordsPerEngine);
+				} else {
+					limits = new RecordLimits(initialLimits.getThreadMaxRecord() + 1,
+					        initialLimits.getThreadMaxRecord() + qtyRecordsPerEngine, qtyRecordsPerEngine);
+				}
+				initialLimits = limits;
+			}
+			
+			tasks.add(CompletableFuture.supplyAsync(() -> {
+				try {
+					return SearchParamsDAO.countAll(new EtlDatabaseObjectSearchParams(getConfig(), limits, getRelatedController()), conn);
+				}
+				catch (DBException e) {
+					throw new EtlException(e);
+				}
+			}));
+		}
+		
+		// External variable to store the final sum
+		AtomicLong finalSum = new AtomicLong(0);
+		
+		// Combine all tasks
+		CompletableFuture<Void> allOf = CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
+		
+		// Handle results when all tasks are complete and update the external variable
+		allOf.thenRun(() -> {
+			long sum = tasks.stream().map(CompletableFuture::join).collect(Collectors.summingLong(Integer::intValue));
+			finalSum.set(sum);
+		});
+		
+		// Block and wait for all tasks to complete (optional)
+		try {
+			allOf.get();
+		}
+		catch (InterruptedException | ExecutionException e) {
+			e.printStackTrace();
+		}
+		
+		this.savedCount = (int) finalSum.get();
+		
+		return this.savedCount;
+	}
 	
 	public abstract int countNotProcessedRecords(Connection conn) throws DBException;
+
+	public List<T> searchNextRecords(Connection conn) throws DBException{
+		SearchClauses<T> searchClauses = this.generateSearchClauses(conn);
+		
+		if (this.getOrderByFields() != null) {
+			searchClauses.addToOrderByFields(this.getOrderByFields());
+		}
+		
+		String sql = searchClauses.generateSQL(conn);
+		
+		List<T> l = BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql,
+		    searchClauses.getParameters(), conn);
+		
+		int i = 0;
+		
+		while (utilities.arrayHasNoElement(l) && this.getLimits().canGoNext()) {
+			this.getLimits().save();
+			
+			if (i++ == 0) {
+				this.getRelatedController()
+				        .logInfo("Empty result on fased quering... The application will keep searching next pages");
+			} else {
+				this.getRelatedController()
+				        .logDebug("Empty result on fased quering... The application will keep searching next pages "
+				                + this.getLimits());
+			}
+			this.getLimits().moveNext(this.getLimits().getQtyRecordsPerProcessing());
+			
+			searchClauses = this.generateSearchClauses(conn);
+			
+			if (this.getOrderByFields() != null) {
+				searchClauses.addToOrderByFields(this.getOrderByFields());
+			}
+			
+			sql = searchClauses.generateSQL(conn);
+			
+			l = BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, searchClauses.getParameters(),
+			    conn);
+		}
+		
+		return l;		
+	}
+
+	protected abstract VOLoaderHelper getLoaderHealper();
+
+	protected List<T> searchNextRecordsInMultiThreads(Connection conn){
+		
+		if (getLimits() == null) {
+			throw new ForbiddenOperationException("For multithreading search you must specify the limits with min and max records in the searching range");
+		}
+		
+		if (getLimits().getCurrentFirstRecordId() == 0 && getLimits().getCurrentLastRecordId() == 0 ) {
+			throw new EtlException("The minRecordId and maxRecordId cannot be zero!!!");
+		}
+		
+		long qtyRecordsBetweenLimits = getLimits().getCurrentLastRecordId() - getLimits().getCurrentFirstRecordId();
+		
+		int qtyProcessors = utilities.getAvailableProcessors();
+		
+		//int qtyProcessors = 1;
+		
+		long qtyRecordsPerEngine = qtyRecordsBetweenLimits / qtyProcessors;
+		
+		RecordLimits initialLimits = null;
+		
+		List<CompletableFuture<List<T>>> tasks = new ArrayList<>(qtyProcessors);
+		
+		for (int i = 0; i < qtyProcessors; i++) {
+			RecordLimits limits;
+			
+			if (initialLimits == null) {
+				limits = new RecordLimits(getLimits().getCurrentFirstRecordId(), getLimits().getCurrentFirstRecordId() + qtyRecordsPerEngine - 1, (int)qtyRecordsPerEngine);
+				initialLimits = limits;
+			} else {
+				// Last processor
+				if (i == qtyProcessors - 1) {
+					limits = new RecordLimits(initialLimits.getThreadMaxRecord() + 1,  getLimits().getCurrentLastRecordId(), (int)qtyRecordsPerEngine);
+				} else {
+					limits = new RecordLimits(initialLimits.getThreadMaxRecord() + 1,
+					        initialLimits.getThreadMaxRecord() + qtyRecordsPerEngine, (int)qtyRecordsPerEngine);
+				}
+				initialLimits = limits;
+			}
+			
+			tasks.add(CompletableFuture.supplyAsync(() -> {
+				try {
+					AbstractEtlSearchParams<T> cloned = this.cloneMe();
+					cloned.setLimits(limits);
+					
+					return cloned.searchNextRecords(conn);
+				}
+				catch (DBException e) {
+					throw new EtlException(e);
+				}
+			}));
+		}
+		
+		// External variable to store the final sum
+		 List<T> allSearchedRecords = new ArrayList<>();
+		
+		// Combine all tasks
+		CompletableFuture<Void> allOf = CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
+		
+		// Handle results when all tasks are complete and update the external variable
+		allOf.thenRun(() -> {
+			allOf.thenApply(v -> tasks.stream()
+                .map(CompletableFuture::join)
+                .flatMap(List::stream)
+                .collect(Collectors.toList())
+        ).thenAccept(allSearchedRecords::addAll).join();
+		});
+		
+		// Block and wait for all tasks to complete (optional)
+		try {
+			allOf.get();
+		}
+		catch (InterruptedException | ExecutionException e) {
+			e.printStackTrace();
+		}
+		
+		return allSearchedRecords;		
+	}
+
+	/**
+	 * Clone this search params to another object.
+	 * 
+	 * Note that the {@link #limits} are not cloned
+	 * 
+	 * @return the cloned search params
+	 */
+	protected abstract AbstractEtlSearchParams<T> cloneMe();
 }

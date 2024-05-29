@@ -2,17 +2,20 @@ package org.openmrs.module.epts.etl.transport.model;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;
+import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.transport.controller.TransportController;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class TransportSyncSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> implements FilenameFilter {
+public class TransportSyncSearchParams extends AbstractEtlSearchParams<TransportRecord> implements FilenameFilter {
 	
 	private String firstFileName;
 	
@@ -20,12 +23,8 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<EtlDataba
 	
 	private String fileNamePathern;
 	
-	private TransportController controller;
-	
 	public TransportSyncSearchParams(TransportController controller, EtlItemConfiguration config, RecordLimits limits) {
-		super(config, limits);
-		
-		this.controller = controller;
+		super(config, limits, controller);
 		
 		if (limits != null) {
 			this.firstFileName = getSrcTableConf().getTableName() + "_"
@@ -35,6 +34,35 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<EtlDataba
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json";
 		}
+	}
+
+	
+	@Override
+	public List<TransportRecord> searchNextRecords(Connection conn) throws DBException {
+		try {
+			File[] files = getSyncDirectory().listFiles(this);
+			
+			List<TransportRecord> etlObjects = new ArrayList<>();
+			
+			if (files != null && files.length > 0) {
+				etlObjects.add(new TransportRecord(files[0], getSyncDestinationDirectory(), getSyncBkpDirectory()));
+			}
+			
+			return etlObjects;
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private File getSyncBkpDirectory() throws IOException {
+		return getRelatedController().getSyncBkpDirectory(getSrcConf());
+	}
+	
+	private File getSyncDestinationDirectory() throws IOException {
+		return getRelatedController().getSyncDestinationDirectory(getSrcConf());
 	}
 	
 	public String getFileNamePathern() {
@@ -46,7 +74,7 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<EtlDataba
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<TransportRecord> generateSearchClauses(Connection conn) throws DBException {
 		return null;
 	}
 	
@@ -86,7 +114,24 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<EtlDataba
 		return 0;
 	}
 	
+	@Override
+	public TransportController getRelatedController() {
+		return (TransportController) super.getRelatedController();
+	}
+	
 	private File getSyncDirectory() {
-		return controller.getSyncDirectory(getSrcTableConf());
+		return getRelatedController().getSyncDirectory(getSrcTableConf());
+	}
+	
+	@Override
+	protected VOLoaderHelper getLoaderHealper() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	protected AbstractEtlSearchParams<TransportRecord> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

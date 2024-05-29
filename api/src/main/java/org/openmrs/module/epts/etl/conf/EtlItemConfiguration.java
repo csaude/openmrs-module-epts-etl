@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.etl.model.EtlSearchParams;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -196,7 +196,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			System.out.println("Stop");
 		}
 		
-		EtlSearchParams searchParams = new EtlSearchParams(this, null, null);
+		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(this, null, null);
 		
 		searchParams.setExtraCondition(this.getSrcConf().getPrimaryKey().parseToParametrizedStringConditionWithAlias());
 		

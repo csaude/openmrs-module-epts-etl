@@ -66,10 +66,6 @@ public abstract class OperationController implements Controller {
 	
 	protected OperationProgressInfo progressInfo;
 	
-	protected long maxRecord;
-	
-	protected long minRecord;
-	
 	public OperationController(ProcessController processController, EtlOperationConfig operationConfig) {
 		this.logger = new EptsEtlLogger(OperationController.class);
 		
@@ -97,22 +93,6 @@ public abstract class OperationController implements Controller {
 				conn.finalizeConnection();
 		}
 		
-	}
-	
-	public long getMaxRecord() {
-		return maxRecord;
-	}
-	
-	public void setMaxRecord(long maxRecord) {
-		this.maxRecord = maxRecord;
-	}
-	
-	public long getMinRecord() {
-		return minRecord;
-	}
-	
-	public void setMinRecord(long minRecord) {
-		this.minRecord = minRecord;
 	}
 	
 	public void resetProgressInfo(Connection conn) throws DBException {

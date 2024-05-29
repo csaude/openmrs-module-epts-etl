@@ -1,19 +1,16 @@
 package org.openmrs.module.epts.etl.detectgapes.engine;
 
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.detectgapes.model.DetectGapesSearchParams;
 import org.openmrs.module.epts.etl.detectgapes.model.GapeDAO;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.model.DatabaseObjectSearchParamsDAO;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -36,14 +33,6 @@ public class DetectGapesEngine extends Engine {
 	}
 	
 	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
-		List<EtlObject> records = new ArrayList<EtlObject>();
-		
-		return utilities.parseList(
-		    DatabaseObjectSearchParamsDAO.search((DatabaseObjectSearchParams) this.searchParams, conn), EtlObject.class);
-	}
-	
-	@Override
 	protected boolean mustDoFinalCheck() {
 		return false;
 	}
@@ -58,7 +47,7 @@ public class DetectGapesEngine extends Engine {
 	}
 	
 	@Override
-	public void performeSync(List<EtlObject> etlObjects, Connection conn) throws DBException {
+	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
 		logDebug("DETECTING GAPES ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		if (this.prevRec == null) {
@@ -85,8 +74,8 @@ public class DetectGapesEngine extends Engine {
 	
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DetectGapesSearchParams(this.getEtlConfiguration(), limits,
-		        getRelatedOperationController());
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DetectGapesSearchParams(this.getEtlConfiguration(),
+		        limits, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

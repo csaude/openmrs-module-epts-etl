@@ -43,7 +43,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected EngineMonitor monitor;
 	
-	protected AbstractEtlSearchParams<? extends EtlObject> searchParams;
+	private AbstractEtlSearchParams<? extends EtlObject> searchParams;
 	
 	private int operationStatus;
 	
@@ -89,7 +89,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return monitor.getQtyRecordsPerProcessing();
 	}
 	
-	protected MigrationFinalCheckStatus getFinalCheckStatus() {
+	public MigrationFinalCheckStatus getFinalCheckStatus() {
 		return finalCheckStatus;
 	}
 	
@@ -222,9 +222,6 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 					logInfo("PERFORMING FINAL CHECK...");
 				}
 				
-				logDebug(
-				    "SEARCHING NEXT MIGRATION RECORDS FOR ETL CONFIG '" + this.getEtlConfiguration().getConfigCode() + "'");
-				
 				OpenConnection conn = null;
 				
 				boolean finished = false;
@@ -263,7 +260,10 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 								if (mustDoFinalCheck()) {
 									this.finalCheckStatus = MigrationFinalCheckStatus.ONGOING;
 									
-									this.resetLimits(null);
+									//Start work with whole records range
+									this.getLimits().setThreadMinRecord(getMonitor().getMinRecordId());
+									this.getLimits().setThreadMaxRecord(getMonitor().getMaxRecordId());
+									this.getLimits().reset();
 									
 									logInfo("INITIALIZING FINAL CHECK...");
 									
@@ -351,11 +351,18 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 			logDebug("SERCHING NEXT RECORDS");
 		}
 		
-		List<EtlObject> records = searchNextRecords(conn);
+		List<? extends EtlObject> records = null;
+		
+		if (finalCheckStatus.onGoing()) {
+			//When the final check is on going, only one engine is working, so do the search on multithreads
+			
+			records = getSearchParams().searchNextRecordsInMultiThreads(conn);
+		} else {
+			records = getSearchParams().searchNextRecords(conn);
+		}
 		
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
-		        + getSrcConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records)
-		        + "' RECORDS.");
+		        + getSrcConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records) + "' RECORDS.");
 		
 		if (utilities.arrayHasElement(records)) {
 			logDebug("INITIALIZING " + getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '"
@@ -369,7 +376,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return utilities.arraySize(records);
 	}
 	
-	private void beforeSync(List<EtlObject> records, Connection conn) {
+	private void beforeSync(List<? extends EtlObject> records, Connection conn) {
 		for (EtlObject rec : records) {
 			if (rec instanceof EtlDatabaseObject) {
 				((EtlDatabaseObject) rec).loadObjectIdData(getSrcConf());
@@ -731,8 +738,5 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected abstract AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn);
 	
-	public abstract void performeSync(List<EtlObject> records, Connection conn) throws DBException;
-	
-	protected abstract List<EtlObject> searchNextRecords(Connection conn) throws DBException;
-	
+	public abstract void performeSync(List<? extends EtlObject> records, Connection conn) throws DBException;
 }

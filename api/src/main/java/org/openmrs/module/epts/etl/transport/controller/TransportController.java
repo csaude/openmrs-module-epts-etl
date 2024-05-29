@@ -7,10 +7,10 @@ import java.util.Arrays;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
-import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.transport.engine.TransportEngine;
 import org.openmrs.module.epts.etl.transport.model.TransportSyncSearchParams;
@@ -21,10 +21,10 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  * 
  * @author jpboane
  */
-public class TransportController extends OperationController {
+public class TransportController extends EtlController {
 	
 	public TransportController(ProcessController processController, EtlOperationConfig operationConfig) {
-		super(processController, operationConfig);
+		super(processController, operationConfig, null);
 	}
 	
 	@Override

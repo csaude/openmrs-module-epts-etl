@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.common.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -12,11 +12,11 @@ public abstract class SyncImportInfoSearchParams extends AbstractEtlSearchParams
 	private String appOriginLocationCode;
 	
 	public SyncImportInfoSearchParams(EtlItemConfiguration config, RecordLimits limits) {
-		super(config, limits);
+		super(config, limits, null);
 	}
 	
 	public SyncImportInfoSearchParams(EtlItemConfiguration config, RecordLimits limits, String appOriginLocationCode) {
-		super(config, limits);
+		super(config, limits, null);
 	
 		this.appOriginLocationCode = appOriginLocationCode;
 	}
