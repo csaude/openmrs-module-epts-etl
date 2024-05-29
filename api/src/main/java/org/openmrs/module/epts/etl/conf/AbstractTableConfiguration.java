@@ -77,6 +77,8 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private String schema;
 	
+	private boolean usingManualDefinedAlias;
+	
 	public AbstractTableConfiguration() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
@@ -85,6 +87,16 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this();
 		
 		this.tableName = tableName;
+	}
+	
+	
+	public void setUsingManualDefinedAlias(boolean usingManualDefinedAlias) {
+		this.usingManualDefinedAlias = usingManualDefinedAlias;
+	}
+	
+	@Override
+	public boolean isUsingManualDefinedAlias() {
+		return this.usingManualDefinedAlias;
 	}
 	
 	@Override

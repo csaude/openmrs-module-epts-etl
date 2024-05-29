@@ -601,6 +601,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				tc.getSrcConf().setParentConf(tc);
 				
 				if (tc.getSrcConf().hasAlias()) {
+					tc.getSrcConf().setUsingManualDefinedAlias(true);
 					tryToAddToBusyTableAliasName(tc.getSrcConf().getTableAlias());
 				}
 				
@@ -613,6 +614,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 						TableConfiguration tAsTabConf = (TableConfiguration) t;
 						
 						if (tAsTabConf.hasAlias()) {
+							tAsTabConf.setUsingManualDefinedAlias(true);
 							tryToAddToBusyTableAliasName(tAsTabConf.getTableAlias());
 						}
 						
@@ -626,6 +628,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				if (tc.getSrcConf().hasSelfJoinTables()) {
 					for (AuxExtractTable t : tc.getSrcConf().getSelfJoinTables()) {
 						if (t.hasAlias()) {
+							t.setUsingManualDefinedAlias(true);
+							
 							tryToAddToBusyTableAliasName(t.getTableAlias());
 						}
 					}
@@ -637,6 +641,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					for (DstConf dst : tc.getDstConf()) {
 						
 						if (dst.hasAlias()) {
+							dst.setUsingManualDefinedAlias(true);
+							
 							tryToAddToBusyTableAliasName(dst.getTableAlias());
 						}
 						

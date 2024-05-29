@@ -138,6 +138,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	List<? extends ParentTable> getParents();
 	
+	boolean isUsingManualDefinedAlias();
+	
+	void setUsingManualDefinedAlias(boolean usingManualDefinedAlias);
+	
 	void setParents(List<? extends ParentTable> parents);
 	
 	void setSharePkWith(String sharePkWith);
@@ -238,19 +242,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		if (this.getPrimaryKey() == null) {
 			try {
 				
-				String tableName = DBUtilities.extractTableNameFromFullTableName(this.getTableName());
-				
-				String schema = DBUtilities.determineSchemaFromFullTableName(this.getTableName());
-				
-				schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
-				
-				String catalog = conn.getCatalog();
-				
-				if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
-					catalog = schema;
-				}
-				
-				ResultSet rs = conn.getMetaData().getPrimaryKeys(catalog, schema, tableName);
+				ResultSet rs = conn.getMetaData().getPrimaryKeys(getCatalog(conn), getSchema(), getTableName());
 				
 				while (rs.next()) {
 					
@@ -262,7 +254,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					
 					Key pk = new Key();
 					pk.setName(rs.getString("COLUMN_NAME"));
-					pk.setType(DBUtilities.determineColunType(this.getTableName(), pk.getName(), conn));
+					pk.setType(DBUtilities.determineColunType(getSchema(), this.getTableName(), pk.getName(), conn));
 					pk.setType(AttDefinedElements.convertDatabaseTypeTOJavaType(pk.getName(), pk.getType()));
 					
 					this.getPrimaryKey().addKey(pk);
@@ -390,17 +382,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default int countChildren(Connection conn) throws SQLException {
 		String tableName = DBUtilities.extractTableNameFromFullTableName(this.getTableName());
 		
-		String schema = DBUtilities.determineSchemaFromFullTableName(this.getTableName());
-		
-		schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
-		
-		String catalog = conn.getCatalog();
-		
-		if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
-			catalog = schema;
-		}
-		
-		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(catalog, schema, tableName);
+		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(getCatalog(conn), getSchema(), tableName);
 		
 		try {
 			if (DBUtilities.isMySQLDB(conn)) {
@@ -435,19 +417,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default int countParents(Connection conn) throws SQLException {
-		String tableName = DBUtilities.extractTableNameFromFullTableName(this.getTableName());
-		
-		String schema = DBUtilities.determineSchemaFromFullTableName(this.getTableName());
-		
-		schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
-		
-		String catalog = conn.getCatalog();
-		
-		if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
-			catalog = schema;
-		}
-		
-		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(catalog, schema, tableName);
+		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(getCatalog(conn), getSchema(), getTableName());
 		
 		try {
 			if (DBUtilities.isMySQLDB(conn)) {
@@ -498,13 +468,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				try {
 					logDebug("DISCOVERED '" + count + "' PARENTS FOR TABLE '" + getTableName() + "'");
 					
-					String catalog = conn.getCatalog();
-					
-					if (DBUtilities.isMySQLDB(conn)) {
-						catalog = getSchema();
-					}
-					
-					foreignKeyRS = conn.getMetaData().getImportedKeys(catalog, getSchema(), getTableName());
+					foreignKeyRS = conn.getMetaData().getImportedKeys(getCatalog(conn), getSchema(), getTableName());
 					
 					while (foreignKeyRS.next()) {
 						
@@ -665,19 +629,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				try {
 					logDebug("DISCOVERED '" + count + "' CHILDREN FOR TABLE '" + getTableName() + "'");
 					
-					String tableName = DBUtilities.extractTableNameFromFullTableName(this.getTableName());
-					
-					String schema = DBUtilities.determineSchemaFromFullTableName(this.getTableName());
-					
-					schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
-					
-					String catalog = conn.getCatalog();
-					
-					if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
-						catalog = schema;
-					}
-					
-					foreignKeyRS = conn.getMetaData().getExportedKeys(catalog, schema, tableName);
+					foreignKeyRS = conn.getMetaData().getExportedKeys(getCatalog(conn), getSchema(), getTableName());
 					
 					int i = 0;
 					
@@ -1028,13 +980,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					throw new ForbiddenOperationException("The table name " + getTableName() + " is malformed!");
 				}
 				
-				boolean exists = DBUtilities.isTableExists(conn.getSchema(), getTableName(), conn);
+				boolean exists = DBUtilities.isTableExists(getSchema(), getTableName(), conn);
 				
 				if (!exists)
 					throw new ForbiddenOperationException(
 					        "The table '" + generateFullTableName(conn) + "' does not exist!!!");
 				
-				List<Field> flds = DBUtilities.getTableFields(getTableName(), DBUtilities.determineSchemaName(conn), conn);
+				List<Field> flds = DBUtilities.getTableFields(getTableName(), getSchema(), conn);
 				
 				this.setFields(new ArrayList<>());
 				
@@ -1060,7 +1012,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					this.setAutoIncrementId(useAutoIncrementId(conn));
 				}
 				
-				if (hasExtraConditionForExtract()) {
+				if (hasExtraConditionForExtract() && !isUsingManualDefinedAlias()) {
 					this.setExtraConditionForExtract(
 					    this.getExtraConditionForExtract().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
 				}
@@ -1364,7 +1316,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			return false;
 		}
 		
-		return DBUtilities.checkIfTableUseAutoIcrement(this.getTableName(), conn);
+		return DBUtilities.checkIfTableUseAutoIcrement(this.getSchema(), this.getTableName(), conn);
 	}
 	
 	default List<ParentTable> getConditionalParents() {
@@ -1751,6 +1703,20 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	String getSchema();
+	
+	default String getCatalog(Connection conn) throws DBException {
+		
+		try {
+			if (DBUtilities.isMySQLDB(conn)) {
+				return getSchema();
+			} else {
+				return conn.getCatalog();
+			}
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+	}
 	
 	void setSchema(String schema);
 	
