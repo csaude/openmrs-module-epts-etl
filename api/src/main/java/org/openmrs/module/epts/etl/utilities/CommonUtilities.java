@@ -97,7 +97,8 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	public <T> List<T> parseObjectToList_(Object obj, Class<T> objClass_) {
-		if (obj == null) return null;
+		if (obj == null)
+			return null;
 		
 		List<Object> list = new ArrayList<Object>();
 		
@@ -1078,11 +1079,11 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	public Object getFieldValue(EtlObject obj, String fieldName) throws ForbiddenOperationException {
-		return getFieldValue(obj.getObjectName(),  obj, fieldName);
+		return getFieldValue(obj.getObjectName(), obj, fieldName);
 	}
 	
 	public Object getFieldValue(Object obj, String fieldName) throws ForbiddenOperationException {
-		return getFieldValue(obj.getClass().getName(),  obj, fieldName);
+		return getFieldValue(obj.getClass().getName(), obj, fieldName);
 	}
 	
 	private Object getFieldValue(String objectName, Object obj, String fieldName) throws ForbiddenOperationException {
@@ -1180,6 +1181,12 @@ public class CommonUtilities implements Serializable {
 	
 	public void throwReviewMethodException() {
 		throw new ForbiddenOperationException("Review the method calling me");
+	}
+	
+	public int getAvailableProcessors() {
+		Runtime runtime = Runtime.getRuntime();
+		
+		return runtime.availableProcessors();
 	}
 	
 }
