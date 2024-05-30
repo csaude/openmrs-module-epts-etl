@@ -295,8 +295,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 
 	protected abstract VOLoaderHelper getLoaderHealper();
 
-	protected List<T> searchNextRecordsInMultiThreads(Connection conn){
-		
+	protected List<T> searchNextRecordsInMultiThreads(Engine engine, Connection conn){
 		if (getLimits() == null) {
 			throw new ForbiddenOperationException("For multithreading search you must specify the limits with min and max records in the searching range");
 		}
@@ -305,17 +304,19 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 			throw new EtlException("The minRecordId and maxRecordId cannot be zero!!!");
 		}
 		
-		long qtyRecordsBetweenLimits = getLimits().getCurrentLastRecordId() - getLimits().getCurrentFirstRecordId();
+		long qtyRecordsBetweenLimits = getLimits().getCurrentLastRecordId() - getLimits().getCurrentFirstRecordId()+1;
 		
 		int qtyProcessors = utilities.getAvailableProcessors();
 		
-		//int qtyProcessors = 1;
+		//qtyProcessors = 1;
 		
 		long qtyRecordsPerEngine = qtyRecordsBetweenLimits / qtyProcessors;
 		
 		RecordLimits initialLimits = null;
 		
 		List<CompletableFuture<List<T>>> tasks = new ArrayList<>(qtyProcessors);
+		
+		List<RecordLimits> generatedLimits = new ArrayList<>();
 		
 		for (int i = 0; i < qtyProcessors; i++) {
 			RecordLimits limits;
@@ -333,6 +334,13 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 				}
 				initialLimits = limits;
 			}
+			
+			
+			limits.setEngine(engine);
+			
+			limits.setThreadCode(engine.getEngineId() + utilities.garantirXCaracterOnNumber(i++, 2) + ".tmp");
+			
+			generatedLimits.add(limits);
 			
 			tasks.add(CompletableFuture.supplyAsync(() -> {
 				try {
@@ -368,6 +376,21 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		}
 		catch (InterruptedException | ExecutionException e) {
 			e.printStackTrace();
+		}
+		
+		RecordLimits.removeAll(generatedLimits);
+		
+		
+		if (utilities.arrayHasNoElement(allSearchedRecords) && this.getLimits().canGoNext()) {
+			this.getLimits().save();
+			
+			this.getRelatedController()
+				        .logDebug("Empty result on fased quering... The application will keep searching next pages "
+				                + this.getLimits());
+			
+			this.getLimits().moveNext(this.getLimits().getQtyRecordsPerProcessing());
+			
+			return searchNextRecordsInMultiThreads(engine, conn);
 		}
 		
 		return allSearchedRecords;		

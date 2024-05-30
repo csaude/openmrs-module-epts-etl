@@ -175,7 +175,6 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 				}
 			}
 		} else {
-			
 			if (getLimits() != null && !getLimits().isLoadedFromFile()) {
 				retriveSavedLimits();
 			}
@@ -229,17 +228,21 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 				try {
 					conn = openConnection();
 					
-					int processedRecords_ = performe(conn);
-					
-					refreshProgressMeter(processedRecords_, conn);
-					
-					conn.markAsSuccessifullyTerminated();
-					conn.finalizeConnection();
-					
-					reportProgress();
-					
 					if (getLimits() != null && getLimits().canGoNext()) {
+						//Move next at first.
+						//Note that when the limits is create, it pos the firt record to minRecordId - qtyRecordsPerProcessing  
+						//Note that when the processing is done sucessifuly, the current limits are saved
 						getLimits().moveNext(getQtyRecordsPerProcessing());
+						
+						int processedRecords_ = performe(conn);
+						
+						refreshProgressMeter(processedRecords_, conn);
+						
+						conn.markAsSuccessifullyTerminated();
+						conn.finalizeConnection();
+						
+						reportProgress();
+						
 						getLimits().save();
 					} else {
 						if (getRelatedOperationController().mustRestartInTheEnd()) {
@@ -264,6 +267,11 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 									this.getLimits().setThreadMinRecord(getMonitor().getMinRecordId());
 									this.getLimits().setThreadMaxRecord(getMonitor().getMaxRecordId());
 									this.getLimits().reset();
+									
+									//Change the engine to unique engine to prevent the original main engine processing history
+									setEngineId(getMonitor().getEngineId());
+									
+									this.getLimits().refreshCode();
 									
 									logInfo("INITIALIZING FINAL CHECK...");
 									
@@ -356,7 +364,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		if (finalCheckStatus.onGoing()) {
 			//When the final check is on going, only one engine is working, so do the search on multithreads
 			
-			records = getSearchParams().searchNextRecordsInMultiThreads(conn);
+			records = getSearchParams().searchNextRecordsInMultiThreads(this, conn);
 		} else {
 			records = getSearchParams().searchNextRecords(conn);
 		}

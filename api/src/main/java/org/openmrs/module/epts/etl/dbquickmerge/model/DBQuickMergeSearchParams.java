@@ -5,7 +5,9 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.engine.DBQuickMergeEngine;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -34,6 +36,11 @@ public class DBQuickMergeSearchParams extends EtlDatabaseObjectSearchParams {
 	}
 	
 	@Override
+	public DBQuickMergeController getRelatedController() {
+		return (DBQuickMergeController) super.getRelatedController();
+	}
+	
+	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
 		
 		if (getEngine().getFinalCheckStatus().onGoing()) {
@@ -50,6 +57,13 @@ public class DBQuickMergeSearchParams extends EtlDatabaseObjectSearchParams {
 		}
 		
 		return super.generateSearchClauses(conn);
+	}
+	
+	@Override
+	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+		DBQuickMergeSearchParams cloned = new DBQuickMergeSearchParams(getConfig(), null, getEngine());
+		
+		return cloned;
 	}
 	
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {

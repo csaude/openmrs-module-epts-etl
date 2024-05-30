@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -59,10 +60,13 @@ public class RecordLimits {
 	}
 	
 	public void reset() {
-		this.setCurrentLimits(this.threadMinRecord);
+		//Set To allow a secure #moveNext, put the threadMinRecord behind
+		this.setCurrentLimits(this.threadMinRecord - this.qtyRecordsPerProcessing);
 	}
 	
 	public void setEngine(Engine engine) {
+		threadCode = null;
+		
 		this.engine = engine;
 		
 		if (this.engine != null)
@@ -251,6 +255,30 @@ public class RecordLimits {
 	
 	public boolean isDefined() {
 		return getCurrentFirstRecordId() > 0 && getCurrentLastRecordId() > 0;
+	}
+	
+	public void refreshCode() {
+		threadCode = null;
+		
+		if (this.engine != null)
+			this.threadCode = engine.getEngineId();
+	}
+	
+	public static void removeAll(List<RecordLimits> generatedLimits) {
+		if (generatedLimits != null) {
+			
+			for (RecordLimits limits : generatedLimits) {
+				limits.remove();
+			}
+		}
+	}
+	
+	public void remove() {
+		String fileName = generateFilePath();
+		
+		if (new File(fileName).exists()) {
+			FileUtilities.removeFile(fileName);
+		}
 	}
 	
 }
