@@ -34,7 +34,7 @@ public class TransportController extends EtlController {
 	
 	@Override
 	public long getMinRecordId(EtlItemConfiguration config) {
-		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(new TransportSyncSearchParams(this, config, null));
+		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(new TransportSyncSearchParams(null, config, null));
 		
 		if (files == null || files.length == 0)
 			return 0;
@@ -53,7 +53,7 @@ public class TransportController extends EtlController {
 	@Override
 	public long getMaxRecordId(EtlItemConfiguration config) {
 		File[] files = getSyncDirectory(config.getSrcConf())
-		        .listFiles(new TransportSyncSearchParams(this, config, null));
+		        .listFiles(new TransportSyncSearchParams(null, config, null));
 		
 		if (files == null || files.length == 0)
 			return 0;

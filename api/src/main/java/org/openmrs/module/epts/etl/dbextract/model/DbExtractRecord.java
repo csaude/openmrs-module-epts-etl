@@ -12,6 +12,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -125,17 +126,24 @@ public class DbExtractRecord extends QuickMergeRecord {
 			
 			parentFromSrc = dst.getParentConf().retrieveRecordInSrc(parentInOrigin, srcConn);
 			
-			if (parentFromSrc != null) {
-				parentInDst = dst.transform(parentFromSrc, srcConn, srcApp, destApp);
-				
-				if (parentInDst != null) {
-					DbExtractRecord parentData = new DbExtractRecord(parentInDst, dst.getSrcConf(), dst, srcApp, destApp,
-					        this.writeOperationHistory);
+			try {
+				if (parentFromSrc != null) {
+					parentInDst = dst.transform(parentFromSrc, srcConn, srcApp, destApp);
 					
-					parentData.extract(srcConn, destConn);
-					
-					break;
+					if (parentInDst != null) {
+						DbExtractRecord parentData = new DbExtractRecord(parentInDst, dst.getSrcConf(), dst, srcApp, destApp,
+						        this.writeOperationHistory);
+						
+						parentData.extract(srcConn, destConn);
+						
+						break;
+					}
 				}
+			}
+			catch (NullPointerException e) {
+				e.printStackTrace();
+				
+				throw new EtlException("Error extracting parent " + parentFromSrc + " For record: " + this.getRecord());
 			}
 		}
 		

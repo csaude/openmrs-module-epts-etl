@@ -66,7 +66,7 @@ public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchPara
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		EtlDatabaseObjectSearchParams migratedRecordsSearchParams = new EtlDatabaseObjectSearchParams(getConfig(), null, getRelatedController());
+		EtlDatabaseObjectSearchParams migratedRecordsSearchParams = new EtlDatabaseObjectSearchParams(getConfig(), null, getRelatedEngine());
 		
 		int processed = SearchParamsDAO.countAll(migratedRecordsSearchParams, conn);
 		int allRecords = countAllRecords(conn);
@@ -82,6 +82,12 @@ public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchPara
 
 	@Override
 	protected AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -19,6 +19,7 @@ import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeControlle
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.etl.re_etl.controller.ReEtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.export.controller.DBExportController;
 import org.openmrs.module.epts.etl.inconsistenceresolver.controller.InconsistenceSolverController;
@@ -360,6 +361,11 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@JsonIgnore
+	public boolean isReEtl() {
+		return this.operationType.isReEtl();
+	}
+	
+	@JsonIgnore
 	public boolean isPojoGeneration() {
 		return this.operationType.isPojoGeneration();
 	}
@@ -479,7 +485,10 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	private OperationController generateSingle(ProcessController parent, String appOriginCode, Connection conn) {
-		if (isDetectMissingRecords()) {
+		
+		if (isReEtl()) {
+			return new ReEtlController(parent, this, appOriginCode);
+		} else if (isDetectMissingRecords()) {
 			return new DetectMissingRecordsController(parent, this, appOriginCode);
 		} else if (isDBExtract()) {
 			return new DbExtractController(parent, this, appOriginCode);
@@ -531,7 +540,11 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		String errorMsg = "";
 		int errNum = 0;
 		
-		if (this.getRelatedSyncConfig().isEtlProcess()) {
+		if (this.getRelatedSyncConfig().isReEtlProcess()) {
+			if (!this.canBeRunInReEtlProcess())
+				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
+				        + "] Cannot be configured in Re Etl process\n";
+		} else if (this.getRelatedSyncConfig().isEtlProcess()) {
 			if (!this.canBeRunInEtlProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in Etl process\n";
@@ -688,6 +701,12 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return utilities.parseArrayToList(supported);
 	}
 	
+	public static List<EtlOperationType> getSupportedOperationsInReEtlProcess() {
+		EtlOperationType[] supported = { EtlOperationType.RE_ETL };
+		
+		return utilities.parseArrayToList(supported);
+	}
+	
 	public static List<EtlOperationType> getSupportedOperationsInDetectMissingRecordsProcess() {
 		EtlOperationType[] supported = { EtlOperationType.DETECT_MISSING_RECORDS };
 		
@@ -835,6 +854,12 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	public boolean canBeRunInEtlProcess() {
 		return utilities.existOnArray(getSupportedOperationsInEtlProcess(), this.operationType);
 	}
+	
+	@JsonIgnore
+	public boolean canBeRunInReEtlProcess() {
+		return utilities.existOnArray(getSupportedOperationsInReEtlProcess(), this.operationType);
+	}
+	
 	
 	public static List<EtlOperationType> getSupportedOperationsInDestinationSyncProcess() {
 		EtlOperationType[] supported = { EtlOperationType.CONSOLIDATION, EtlOperationType.DB_MERGE_FROM_JSON,

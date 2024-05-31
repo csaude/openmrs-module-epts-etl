@@ -1183,6 +1183,10 @@ public class CommonUtilities implements Serializable {
 		throw new ForbiddenOperationException("Review the method calling me");
 	}
 	
+	public void throwForbiddenMethodException() {
+		throw new ForbiddenOperationException("This method is forbidden");
+	}
+	
 	public int getAvailableProcessors() {
 		Runtime runtime = Runtime.getRuntime();
 		

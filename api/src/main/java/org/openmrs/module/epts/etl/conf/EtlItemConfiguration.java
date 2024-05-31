@@ -192,10 +192,6 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	public EtlDatabaseObject retrieveRecordInSrc(EtlDatabaseObject parentRecordInOrigin, Connection srcConn)
 	        throws DBException {
 		
-		if (getSrcConf().getTableAlias().equals("person_99")) {
-			System.out.println("Stop");
-		}
-		
 		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(this, null, null);
 		
 		searchParams.setExtraCondition(this.getSrcConf().getPrimaryKey().parseToParametrizedStringConditionWithAlias());

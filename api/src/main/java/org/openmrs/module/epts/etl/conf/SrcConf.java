@@ -16,7 +16,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SrcConf extends AbstractTableConfiguration implements EtlDataSource{
+public class SrcConf extends AbstractTableConfiguration implements EtlDataSource {
 	
 	private List<AuxExtractTable> selfJoinTables;
 	
@@ -64,7 +64,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			for (ParentTable ref : this.getParentRefInfo()) {
 				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());
 				
-				ref.tryToGenerateTableAlias(getRelatedSyncConfiguration()); 
+				ref.tryToGenerateTableAlias(getRelatedSyncConfiguration());
 				
 				if (fullLoadedTab != null) {
 					ref.clone(fullLoadedTab, conn);
@@ -119,7 +119,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 						
 						t.getSharedKeyRefInfo().setParentConf(t);
 					}
-					}
+				}
 			}
 			
 			if (hasExtraTableDataSourceConfig()) {
@@ -283,6 +283,24 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	public boolean hasSelfJoinTables() {
 		return utilities.arrayHasElement(getSelfJoinTables());
+	}
+	
+	public boolean hasRequiredExtraDataSource() {
+		if (hasExtraDataSource()) {
+			return false;
+		} else {
+			for (EtlAdditionalDataSource ds : getAvaliableExtraDataSource()) {
+				if (ds.isRequired()) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	public boolean hasExtraDataSource() {
+		return utilities.arrayHasElement(getAvaliableExtraDataSource());
 	}
 	
 }

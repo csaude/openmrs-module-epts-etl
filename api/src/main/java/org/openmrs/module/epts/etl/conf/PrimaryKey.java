@@ -7,6 +7,9 @@ import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 
 public class PrimaryKey extends UniqueKeyInfo {
 	
+	public PrimaryKey() {
+	}
+	
 	public PrimaryKey(TableConfiguration tabConf) {
 		super(tabConf);
 	}

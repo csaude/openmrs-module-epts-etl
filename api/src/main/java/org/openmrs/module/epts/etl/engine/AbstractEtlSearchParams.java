@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
@@ -41,23 +41,27 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 	
 	private SearchSourceType searchSourceType;
 	
-	private EtlController relatedController;
+	private EtlEngine relatedEngine;
 	
 	protected int savedCount;
 	
-	public AbstractEtlSearchParams(EtlItemConfiguration config, RecordLimits limits, EtlController relatedController) {
+	public AbstractEtlSearchParams(EtlItemConfiguration config, RecordLimits limits, EtlEngine relatedEtlEngine) {
 		this.config = config;
 		this.limits = limits;
 		this.searchSourceType = SearchSourceType.SOURCE;
-		this.relatedController = relatedController;
+		this.relatedEngine = relatedEtlEngine;
+	}
+	
+	public EtlEngine getRelatedEngine() {
+		return relatedEngine;
+	}
+	
+	public void setRelatedEngine(EtlEngine relatedEngine) {
+		this.relatedEngine = relatedEngine;
 	}
 	
 	public EtlController getRelatedController() {
-		return relatedController;
-	}
-	
-	public void setRelatedController(EtlController relatedController) {
-		this.relatedController = relatedController;
+		return getRelatedEngine().getRelatedOperationController();
 	}
 	
 	public void setSearchSourceType(SearchSourceType searchSourceType) {
@@ -216,7 +220,11 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 			
 			tasks.add(CompletableFuture.supplyAsync(() -> {
 				try {
-					return SearchParamsDAO.countAll(new EtlDatabaseObjectSearchParams(getConfig(), limits, getRelatedController()), conn);
+					AbstractEtlSearchParams<T> cloned = this.cloneMe();
+					
+					cloned.setLimits(limits);
+					
+					return SearchParamsDAO.countAll(cloned, conn);
 				}
 				catch (DBException e) {
 					throw new EtlException(e);
@@ -249,8 +257,6 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		return this.savedCount;
 	}
 	
-	public abstract int countNotProcessedRecords(Connection conn) throws DBException;
-
 	public List<T> searchNextRecords(Connection conn) throws DBException{
 		SearchClauses<T> searchClauses = this.generateSearchClauses(conn);
 		
@@ -292,8 +298,6 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		
 		return l;		
 	}
-
-	protected abstract VOLoaderHelper getLoaderHealper();
 
 	protected List<T> searchNextRecordsInMultiThreads(Engine engine, Connection conn){
 		if (getLimits() == null) {
@@ -404,4 +408,11 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 	 * @return the cloned search params
 	 */
 	protected abstract AbstractEtlSearchParams<T> cloneMe();
+	
+	protected abstract VOLoaderHelper getLoaderHealper();
+
+	public abstract int countNotProcessedRecords(Connection conn) throws DBException;
+
+	public abstract String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException;
+
 }

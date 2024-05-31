@@ -147,7 +147,7 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParamsUsersDupsUUID(
-		        this.getEtlConfiguration(), null, getRelatedOperationController());
+		        this.getEtlConfiguration(), null, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

@@ -8,14 +8,14 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickcopy.model.DBQuickCopySearchParams;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DBQuickCopyEngine extends Engine {
+public class DBQuickCopyEngine extends EtlEngine {
 	
 	public DBQuickCopyEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
@@ -63,7 +63,7 @@ public class DBQuickCopyEngine extends Engine {
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DBQuickCopySearchParams(this.getEtlConfiguration(), limits,
-		        getRelatedOperationController());
+		        this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

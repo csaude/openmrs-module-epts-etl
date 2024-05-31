@@ -76,4 +76,10 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

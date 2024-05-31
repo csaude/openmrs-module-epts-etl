@@ -20,6 +20,7 @@ public enum EtlProcessType {
 	DETECT_GAPES_ON_DB_TABLES,
 	POJO_GENERATION,
 	ETL,
+	RE_ETL,
 	DB_EXTRACT,
 	DETECT_MISSING_RECORDS;
 	
@@ -30,6 +31,11 @@ public enum EtlProcessType {
 	public boolean isDbExtract() {
 		return this.equals(DB_EXTRACT);
 	}
+	
+	public boolean isReEtl() {
+		return this.equals(RE_ETL);
+	}
+	
 	
 	public boolean isEtl() {
 		return this.equals(ETL);
@@ -149,6 +155,10 @@ public enum EtlProcessType {
 	
 	public static boolean isEtl(String processType) {
 		return EtlProcessType.valueOf(processType).isEtl();
+	}
+	
+	public static boolean isReEtl(String processType) {
+		return EtlProcessType.valueOf(processType).isReEtl();
 	}
 	
 	public static boolean isDetectGapesOnDbTables(String processType) {

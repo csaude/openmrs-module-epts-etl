@@ -214,7 +214,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return utilities.stringHasValue(this.getSharePkWith());
 	}
 	
-	@JsonIgnore
 	@Override
 	default PrimaryKey getPrimaryKey() {
 		OpenConnection conn = null;

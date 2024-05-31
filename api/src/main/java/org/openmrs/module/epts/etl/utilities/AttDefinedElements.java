@@ -315,7 +315,7 @@ public class AttDefinedElements {
 	}
 	
 	public static boolean isNumeric(String attType) {
-		return utilities.isStringIn(attType.toLowerCase() , "integer", "long", "byte", "short", "double", "float", "bit", "tinyint");
+		return utilities.isStringIn(attType.toLowerCase() , "int", "integer", "long", "byte", "short", "double", "float", "bit", "tinyint");
 	}
 	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,

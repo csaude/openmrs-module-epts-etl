@@ -5,6 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
+import org.openmrs.module.epts.etl.detectgapes.engine.DetectGapesEngine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -14,20 +15,17 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	
-	private DetectGapesController relatedController;
-	
 	private int savedCount;
 	
 	public DetectGapesSearchParams(EtlItemConfiguration config, RecordLimits limits,
-	    DetectGapesController relatedController) {
-		super(config, limits, relatedController);
+	    DetectGapesEngine relatedEngine) {
+		super(config, limits, relatedEngine);
 		
-		this.relatedController = relatedController;
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	public DetectGapesController getRelatedController() {
-		return relatedController;
+		return (DetectGapesController) super.getRelatedController();
 	}
 	
 	@Override

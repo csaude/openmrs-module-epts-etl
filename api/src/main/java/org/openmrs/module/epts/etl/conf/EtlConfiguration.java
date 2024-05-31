@@ -323,6 +323,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	@JsonIgnore
+	public boolean isReEtlProcess() {
+		return processType.isReEtl();
+	}
+	
+	@JsonIgnore
 	public boolean isDbExtractProcess() {
 		return processType.isDbExtract();
 	}
@@ -1166,7 +1171,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isDBQuickMergeProcess()
 		        || this.isDBQuickMergeWithEntityGenerationDBProcess() || this.isDBInconsistencyCheckProcess()
 		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess() || this.isEtlProcess() || this.isDbExtractProcess()
-		        || this.isDetectMissingRecords();
+		        || this.isDetectMissingRecords() || this.isReEtlProcess();
 	}
 	
 	public boolean isSupposedToRunInDestination() {

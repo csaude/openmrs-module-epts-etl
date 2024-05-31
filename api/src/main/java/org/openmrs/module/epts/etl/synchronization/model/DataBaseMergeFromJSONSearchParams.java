@@ -79,7 +79,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		EtlDatabaseObjectSearchParams migratedRecordSearchParams = new EtlDatabaseObjectSearchParams(getConfig(), null, getRelatedController());
+		EtlDatabaseObjectSearchParams migratedRecordSearchParams = new EtlDatabaseObjectSearchParams(getConfig(), null, getRelatedEngine());
 		
 		int migrated = SearchParamsDAO.countAll(migratedRecordSearchParams, conn);
 		int notMigrated = countNotProcessedRecords(conn);
@@ -100,6 +100,12 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 
 	@Override
 	protected AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}

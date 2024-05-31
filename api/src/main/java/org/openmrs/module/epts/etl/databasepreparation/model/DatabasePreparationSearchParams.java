@@ -67,4 +67,9 @@ public class DatabasePreparationSearchParams extends AbstractEtlSearchParams<Dat
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) {
+		return null;
+	}
 }

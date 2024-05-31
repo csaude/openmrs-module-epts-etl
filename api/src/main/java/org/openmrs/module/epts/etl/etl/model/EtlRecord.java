@@ -18,15 +18,15 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class EtlRecord {
 	
-	private static CommonUtilities utilities = CommonUtilities.getInstance();
+	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private EtlDatabaseObject record;
+	protected EtlDatabaseObject record;
 	
-	private AbstractTableConfiguration config;
+	protected AbstractTableConfiguration config;
 	
-	private boolean writeOperationHistory;
+	protected boolean writeOperationHistory;
 	
-	private long destinationRecordId;
+	protected long destinationRecordId;
 	
 	public EtlRecord(EtlDatabaseObject record, AbstractTableConfiguration config, boolean writeOperationHistory) {
 		this.record = record;
@@ -37,25 +37,32 @@ public class EtlRecord {
 	}
 	
 	public void merge(Connection srcConn, Connection destConn) throws DBException {
-		
-		consolidateAndSaveData(srcConn, destConn);
+		consolidateAndSaveData(true, srcConn, destConn);
 		
 		if (writeOperationHistory) {
 			save(srcConn);
 		}
 	}
 	
+	public void reMerge(Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException {
+		consolidateAndSaveData(false, srcConn, destConn);
+	}
+	
 	public AbstractTableConfiguration getConfig() {
 		return config;
 	}
 	
-	private void consolidateAndSaveData(Connection srcConn, Connection destConn)
+	private void consolidateAndSaveData(boolean create, Connection srcConn, Connection destConn)
 	        throws ParentNotYetMigratedException, DBException {
 		if (!config.isFullLoaded())
 			config.fullLoad();
 		
 		try {
-			record.save(config, destConn);
+			if (create) {
+				record.save(config, destConn);
+			}else {
+				record.update(config, destConn);
+			}
 			
 			if (config.useSimpleNumericPk()) {
 				this.destinationRecordId = record.getObjectId().getSimpleValueAsInt();
@@ -138,4 +145,5 @@ public class EtlRecord {
 			mergeAll(mergingRecs.get(key), srcConn, dstConn);
 		}
 	}
+	
 }

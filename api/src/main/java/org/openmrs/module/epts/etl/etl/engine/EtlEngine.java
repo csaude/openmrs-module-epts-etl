@@ -38,7 +38,7 @@ public class EtlEngine extends Engine {
 	}
 	
 	@Override
-	public EtlDatabaseObjectSearchParams getSearchParams() {
+	public AbstractEtlSearchParams<? extends EtlObject> getSearchParams() {
 		return (EtlDatabaseObjectSearchParams) super.getSearchParams();
 	}
 	
@@ -52,7 +52,32 @@ public class EtlEngine extends Engine {
 	
 	@Override
 	protected boolean mustDoFinalCheck() {
-		return false;
+		if (getRelatedOperationController().getOperationConfig().skipFinalDataVerification()) {
+			return false;
+		} else {
+			OpenConnection srcConn = null;
+			OpenConnection dstConn = null;
+			
+			try {
+				srcConn = openConnection();
+				dstConn = this.getDstApp().openConnection();
+				
+				if (DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
+					return utilities.stringHasValue(getSearchParams().generateDestinationExclusionClause(srcConn, dstConn));
+				} else {
+					return false;
+				}
+			}
+			catch (DBException e) {
+				throw new RuntimeException(e);
+			}
+			finally {
+				if (srcConn != null)
+					srcConn.finalizeConnection();
+				if (dstConn != null)
+					dstConn.finalizeConnection();
+			}
+		}
 	}
 	
 	@Override
@@ -280,7 +305,7 @@ public class EtlEngine extends Engine {
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new EtlDatabaseObjectSearchParams(
-		        this.getEtlConfiguration(), limits, getRelatedOperationController());
+		        this.getEtlConfiguration(), limits, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

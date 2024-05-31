@@ -14,7 +14,6 @@ import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
-import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -23,8 +22,8 @@ public class ProblemsSolverSearchParams extends AbstractEtlSearchParams<EtlObjec
 	private int savedCount;
 	
 	public ProblemsSolverSearchParams(EtlItemConfiguration config, RecordLimits limits,
-	    GenericOperationController relatedController) {
-		super(config, limits, relatedController);
+	    GenericEngine relatedEngine) {
+		super(config, limits, relatedEngine);
 	}
 	
 	@Override
@@ -125,6 +124,12 @@ public class ProblemsSolverSearchParams extends AbstractEtlSearchParams<EtlObjec
 
 	@Override
 	protected AbstractEtlSearchParams<EtlObject> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}

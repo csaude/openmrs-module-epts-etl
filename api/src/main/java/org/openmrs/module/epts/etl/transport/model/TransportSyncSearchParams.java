@@ -13,6 +13,7 @@ import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.transport.controller.TransportController;
+import org.openmrs.module.epts.etl.transport.engine.TransportEngine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class TransportSyncSearchParams extends AbstractEtlSearchParams<TransportRecord> implements FilenameFilter {
@@ -23,8 +24,8 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	
 	private String fileNamePathern;
 	
-	public TransportSyncSearchParams(TransportController controller, EtlItemConfiguration config, RecordLimits limits) {
-		super(config, limits, controller);
+	public TransportSyncSearchParams(TransportEngine engine, EtlItemConfiguration config, RecordLimits limits) {
+		super(config, limits, engine);
 		
 		if (limits != null) {
 			this.firstFileName = getSrcTableConf().getTableName() + "_"
@@ -131,6 +132,13 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	
 	@Override
 	protected AbstractEtlSearchParams<TransportRecord> cloneMe() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}

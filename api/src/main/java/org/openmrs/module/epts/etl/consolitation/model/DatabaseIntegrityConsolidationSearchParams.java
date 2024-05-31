@@ -5,13 +5,13 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
-import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DatabaseIntegrityConsolidationSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
+public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjectSearchParams {
 	
 	private boolean selectAllRecords;
 	
@@ -67,14 +67,13 @@ public class DatabaseIntegrityConsolidationSearchParams extends AbstractEtlSearc
 	}
 
 	@Override
-	protected VOLoaderHelper getLoaderHealper() {
+	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
-	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
-		// TODO Auto-generated method stub
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) {
 		return null;
 	}
 }

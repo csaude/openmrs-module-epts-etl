@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
+import org.openmrs.module.epts.etl.data.validation.missingrecords.engine.DetectMIssingRecordsEngine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -19,8 +20,8 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 	DstConf relatedDstConf;
 	
 	public DetectMissingRecordsSearchParams(EtlItemConfiguration config, RecordLimits limits,
-	    DetectMissingRecordsController relatedController) {
-		super(config, limits, relatedController);
+	    DetectMIssingRecordsEngine relatedEngine) {
+		super(config, limits, relatedEngine);
 		
 		this.excludedRecords = null;
 		
@@ -32,7 +33,7 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 		OpenConnection dstConn = null;
 		
 		try {
-			dstConn = relatedController.openDstConnection();
+			dstConn = getRelatedController().openDstConnection();
 			
 			this.relatedDstConf.fullLoad(dstConn);
 		}

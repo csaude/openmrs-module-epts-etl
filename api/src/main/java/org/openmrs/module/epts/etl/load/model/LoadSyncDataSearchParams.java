@@ -198,4 +198,10 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

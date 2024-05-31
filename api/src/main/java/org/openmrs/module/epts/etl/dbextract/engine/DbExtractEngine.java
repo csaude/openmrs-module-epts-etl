@@ -266,7 +266,7 @@ public class DbExtractEngine extends EtlEngine {
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DbExtractSearchParams(this.getEtlConfiguration(),
-		        limits, getRelatedOperationController());
+		        limits, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

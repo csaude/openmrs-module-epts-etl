@@ -1,26 +1,23 @@
-package org.openmrs.module.epts.etl.dbquickmerge.engine;
+package org.openmrs.module.epts.etl.etl.re_etl.engine;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
-import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
-import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
-import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.etl.model.EtlRecord;
+import org.openmrs.module.epts.etl.etl.re_etl.controller.ReEtlController;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -30,101 +27,30 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * @author jpboane
  * @see DbExtractController
  */
-public class DBQuickMergeEngine extends EtlEngine {
+public class ReEtlEngine extends EtlEngine {
 	
-	public DBQuickMergeEngine(EngineMonitor monitor, RecordLimits limits) {
+	public ReEtlEngine(EngineMonitor monitor, RecordLimits limits) {
 		super(monitor, limits);
 	}
 	
 	@Override
-	public DBQuickMergeController getRelatedOperationController() {
-		return (DBQuickMergeController) super.getRelatedOperationController();
+	protected boolean mustDoFinalCheck() {
+		return false;
+	}
+	
+	@Override
+	public ReEtlController getRelatedOperationController() {
+		return (ReEtlController) super.getRelatedOperationController();
 	}
 	
 	@Override
 	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
-		if (getRelatedSyncOperationConfig().writeOperationHistory()
-		        || getEtlConfiguration().getSrcConf().hasWinningRecordsInfo()) {
-			performeSyncOneByOne(etlObjects, conn);
-		} else {
-			performeBatchSync(etlObjects, conn);
-		}
-	}
-	
-	public void performeBatchSync(List<? extends EtlObject> etlObjects, Connection srcConn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
-		
-		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
-		
-		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
-		
-		Map<String, List<QuickMergeRecord>> mergingRecs = new HashMap<>();
-		List<String> mapOrder = new ArrayList<>();
-		
-		try {
-			
-			for (EtlObject record : etlObjects) {
-				EtlDatabaseObject rec = (EtlDatabaseObject) record;
-				
-				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
-					
-					EtlDatabaseObject destObject = null;
-					
-					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
-					
-					if (destObject != null) {
-						if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
-							
-							int currObjectId = mappingInfo.generateNextStartIdForThread(etlObjects, dstConn);
-							
-							destObject.setObjectId(Oid.fastCreate(
-							    mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
-						} else {
-							destObject.loadObjectIdData(mappingInfo);
-						}
-						
-						QuickMergeRecord mr = new QuickMergeRecord(destObject, getSrcConf(), mappingInfo, this.getSrcApp(),
-						        this.getDstApp(), false);
-						
-						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
-							mapOrder.add(mappingInfo.getTableName());
-							
-							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(etlObjects.size()));
-						}
-						
-						mergingRecs.get(mappingInfo.getTableName()).add(mr);
-					}
-				}
-			}
-			
-			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
-				logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
-				etlObjects.removeAll(recordsToIgnoreOnStatistics);
-			}
-			
-			QuickMergeRecord.mergeAll(mapOrder, mergingRecs, srcConn, dstConn);
-			
-			logInfo("MERGE DONE ON " + etlObjects.size() + " " + getMainSrcTableName());
-			
-			dstConn.markAsSuccessifullyTerminated();
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-			
-			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits()
-			        + "]... \n Try to performe merge record by record...");
-			
-			performeSyncOneByOne(etlObjects, srcConn);
-		}
-		finally {
-			dstConn.finalizeConnection();
-		}
-	}
-	
-	private void performeSyncOneByOne(List<? extends EtlObject> etlObjects, Connection srcConn) throws DBException {
-		logInfo("PERFORMING MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName() + "' ONE-BY-ONE");
+		logInfo("PERFORMING RE ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
+		        + "' RECORDS");
 		
 		int i = 1;
+		
+		Connection srcConn = conn;
 		
 		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
 		
@@ -149,19 +75,11 @@ public class DBQuickMergeEngine extends EtlEngine {
 						continue;
 					}
 					
-					if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
-						int currObjectId = mappingInfo.generateNextStartIdForThread(etlObjects, dstConn);
-						
-						destObject.setObjectId(Oid.fastCreate(
-						    mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
-					} else {
-						destObject.loadObjectIdData(mappingInfo);
-					}
+					destObject.loadObjectIdData(mappingInfo);
 					
 					boolean wrt = writeOperationHistory();
 					
-					QuickMergeRecord data = new QuickMergeRecord(destObject, getSrcConf(), mappingInfo, this.getSrcApp(),
-					        this.getDstApp(), wrt);
+					EtlRecord data = new EtlRecord(destObject, mappingInfo, wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -237,7 +155,8 @@ public class DBQuickMergeEngine extends EtlEngine {
 				etlObjects.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			logInfo("MERGE DONE ON " + etlObjects.size() + " " + getMainSrcTableName() + "!");
+			logInfo("RE ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size()
+			        + "' RECORDS");
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}
@@ -246,20 +165,20 @@ public class DBQuickMergeEngine extends EtlEngine {
 		}
 	}
 	
-	private void process(QuickMergeRecord mergingData, String startingStrLog, int reprocessingCount, Connection srcConn,
+	private void process(EtlRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
 	        Connection destConn) throws DBException {
-		String reprocessingMessage = reprocessingCount == 0 ? "Merging Record"
-		        : "Re-merging " + reprocessingCount + " Record";
+		String reprocessingMessage = reprocessingCount == 0 ? "Re Merging Record"
+		        : "Re re-merging " + reprocessingCount + " Record";
 		
-		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + mergingData.getRecord() + "]");
+		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + etlData.getRecord() + "]");
 		
-		mergingData.merge(srcConn, destConn);
+		etlData.reMerge(srcConn, destConn);
 	}
 	
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DBQuickMergeSearchParams(this.getEtlConfiguration(),
-		        limits, this);
+		AbstractEtlSearchParams<? extends EtlObject> searchParams = new EtlDatabaseObjectSearchParams(
+		        this.getEtlConfiguration(), limits, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		

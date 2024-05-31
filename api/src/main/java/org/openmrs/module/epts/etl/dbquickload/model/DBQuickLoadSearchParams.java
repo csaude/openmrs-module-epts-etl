@@ -32,7 +32,7 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	private SyncJSONInfo currJSONInfo;
 	
 	public DBQuickLoadSearchParams(DBQuickLoadEngine engine, EtlItemConfiguration config, QuickLoadLimits limits) {
-		super(config, limits, engine.getRelatedOperationController());
+		super(config, limits, engine);
 	}
 	
 	public SyncJSONInfo getCurrJSONInfo() {
@@ -159,6 +159,11 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	@Override
 	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		return null;
 	}
 }

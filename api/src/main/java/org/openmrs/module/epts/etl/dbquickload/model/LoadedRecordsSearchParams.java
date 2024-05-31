@@ -67,4 +67,9 @@ public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<SyncImpor
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException{
+		return null;
+	}
 }

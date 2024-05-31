@@ -560,11 +560,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
+	
 	public static void insertAllDataWithId(List<EtlDatabaseObject> objects, Connection conn) throws DBException {
 		String sql = DBUtilities.addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0],
 		    conn);
-		
-		//sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
 		
 		sql += " VALUES";
 		

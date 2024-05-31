@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -14,7 +15,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class ChangedRecordsDetectorSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
+public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchParams {
 	
 	private boolean selectAllRecords;
 	
@@ -117,6 +118,11 @@ public class ChangedRecordsDetectorSearchParams extends AbstractEtlSearchParams<
 	
 	@Override
 	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+		return null;
+	}
+	
+	@Override
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) {
 		return null;
 	}
 }

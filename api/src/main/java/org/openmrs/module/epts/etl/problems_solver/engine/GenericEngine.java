@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.problems_solver.engine;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchPar
 /**
  * @author jpboane
  */
-public abstract class GenericEngine extends Engine {
+public abstract class GenericEngine extends EtlEngine {
 	
 	public static boolean done;
 	
@@ -33,7 +33,7 @@ public abstract class GenericEngine extends Engine {
 	@Override
 	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParams(
-		        this.getEtlConfiguration(), null, getRelatedOperationController());
+		        this.getEtlConfiguration(), null, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
