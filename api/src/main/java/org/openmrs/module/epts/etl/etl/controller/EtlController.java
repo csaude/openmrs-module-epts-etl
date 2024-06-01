@@ -9,8 +9,8 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
-import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.etl.re_etl.engine.ReEtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -47,8 +47,8 @@ public class EtlController extends SiteOperationController {
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
-		return new EtlEngine(monitor, limits);
+	public Engine initRelatedEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+		return new ReEtlEngine(monitor, limits);
 	}
 	
 	@Override

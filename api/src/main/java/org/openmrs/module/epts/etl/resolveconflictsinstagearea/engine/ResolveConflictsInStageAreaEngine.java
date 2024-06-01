@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class ResolveConflictsInStageAreaEngine extends Engine {
 	
-	public ResolveConflictsInStageAreaEngine(EngineMonitor monitor, RecordLimits limits) {
+	public ResolveConflictsInStageAreaEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -74,7 +74,7 @@ public class ResolveConflictsInStageAreaEngine extends Engine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ResolveConflictsInStageAreaSearchParams(
 		        this.getEtlConfiguration(), limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

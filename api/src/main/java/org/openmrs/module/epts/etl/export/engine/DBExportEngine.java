@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.export.controller.DBExportController;
 import org.openmrs.module.epts.etl.export.model.ExportSearchParams;
@@ -22,7 +22,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DBExportEngine extends Engine {
 	
-	public DBExportEngine(EngineMonitor monitor, RecordLimits limits) {
+	public DBExportEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -131,7 +131,7 @@ public class DBExportEngine extends Engine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ExportSearchParams(this.getEtlConfiguration(),
 		        limits, conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

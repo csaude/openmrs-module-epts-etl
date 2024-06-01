@@ -4,7 +4,7 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -15,7 +15,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 	
 	private boolean selectAllRecords;
 	
-	public DatabaseIntegrityConsolidationSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn) {
+	public DatabaseIntegrityConsolidationSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits, Connection conn) {
 		super(config, limits, null);
 		
 		setOrderByFields(config.getSrcConf().getPrimaryKey().parseFieldNamesToArray());
@@ -55,7 +55,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		RecordLimits bkpLimits = this.getLimits();
+		ThreadLimitsManager bkpLimits = this.getLimits();
 		
 		this.setLimits(null);
 		

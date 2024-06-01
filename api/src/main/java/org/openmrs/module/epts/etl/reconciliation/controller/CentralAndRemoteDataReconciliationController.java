@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -47,7 +47,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
+	public Engine initRelatedEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
 		return new CentralAndRemoteDataReconciliationEngine(monitor, limits);
 	}
 	

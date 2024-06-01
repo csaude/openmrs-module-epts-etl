@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -21,7 +21,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	private DatabaseMergeFromJSONController relatedController;
 	
-	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, RecordLimits limits, DatabaseMergeFromJSONController relatedController) {
+	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits, DatabaseMergeFromJSONController relatedController) {
 		super(config, limits);
 		
 		setOrderByFields("id");
@@ -31,7 +31,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 		return relatedController;
 	}
 	
-	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, RecordLimits limits, String appOriginLocationCode) {
+	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits, String appOriginLocationCode) {
 		super(config, limits, appOriginLocationCode);
 		setOrderByFields("id");
 	}

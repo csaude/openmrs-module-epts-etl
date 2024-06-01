@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -16,7 +16,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DataBaseMergeFromJSONEngine extends Engine {
 	
-	public DataBaseMergeFromJSONEngine(EngineMonitor monitor, RecordLimits limits) {
+	public DataBaseMergeFromJSONEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
 		super(monitor, limits);
 	}
 
@@ -58,7 +58,7 @@ public class DataBaseMergeFromJSONEngine extends Engine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
 		/*AbstractEtlSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromJSONSearchParams(this.getSyncTableConfiguration(), limits, this.getRelatedOperationController().getAppOriginLocationCode());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());

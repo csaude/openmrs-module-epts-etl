@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -22,7 +22,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
-	public EtlDatabaseObjectSearchParams(EtlItemConfiguration config, RecordLimits limits, EtlEngine relatedEtlEngine) {
+	public EtlDatabaseObjectSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits, EtlEngine relatedEtlEngine) {
 		super(config, limits, relatedEtlEngine);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray(getSrcTableConf().getTableAlias()));

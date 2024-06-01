@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.transport.controller.TransportController;
@@ -24,7 +24,7 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	
 	private String fileNamePathern;
 	
-	public TransportSyncSearchParams(TransportEngine engine, EtlItemConfiguration config, RecordLimits limits) {
+	public TransportSyncSearchParams(TransportEngine engine, EtlItemConfiguration config, ThreadLimitsManager limits) {
 		super(config, limits, engine);
 		
 		if (limits != null) {

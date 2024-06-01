@@ -57,7 +57,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected MigrationFinalCheckStatus finalCheckStatus;
 	
-	public Engine(EngineMonitor monitr, RecordLimits limits) {
+	public Engine(EngineMonitor monitr, ThreadLimitsManager limits) {
 		this.monitor = monitr;
 		
 		OpenConnection conn;
@@ -81,7 +81,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return getRelatedOperationController().getDefaultApp();
 	}
 	
-	public RecordLimits getLimits() {
+	public ThreadLimitsManager getLimits() {
 		return getSearchParams().getLimits();
 	}
 	
@@ -232,7 +232,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 						//Move next at first.
 						//Note that when the limits is create, it pos the firt record to minRecordId - qtyRecordsPerProcessing  
 						//Note that when the processing is done sucessifuly, the current limits are saved
-						getLimits().moveNext(getQtyRecordsPerProcessing());
+						getLimits().moveNext();
 						
 						int processedRecords_ = performe(conn);
 						
@@ -264,8 +264,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 									this.finalCheckStatus = MigrationFinalCheckStatus.ONGOING;
 									
 									//Start work with whole records range
-									this.getLimits().setThreadMinRecord(getMonitor().getMinRecordId());
-									this.getLimits().setThreadMaxRecord(getMonitor().getMaxRecordId());
+									this.getLimits().getMaxLimits().reset(getMonitor().getMinRecordId(), getMonitor().getMaxRecordId());
 									this.getLimits().reset();
 									
 									//Change the engine to unique engine to prevent the original main engine processing history
@@ -548,7 +547,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		this.monitor.reportProgress();
 	}
 	
-	public void resetLimits(RecordLimits limits) {
+	public void resetLimits(ThreadLimitsManager limits) {
 		if (limits != null) {
 			limits.setEngine(this);
 		}
@@ -744,7 +743,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected abstract void restart();
 	
-	protected abstract AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn);
+	protected abstract AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn);
 	
 	public abstract void performeSync(List<? extends EtlObject> records, Connection conn) throws DBException;
 }

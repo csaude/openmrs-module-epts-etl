@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
@@ -17,7 +17,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	
 	private boolean selectAllRecords;
 	
-	public ResolveConflictsInStageAreaSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn) {
+	public ResolveConflictsInStageAreaSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits, Connection conn) {
 		super(config, limits, null);
 	}
 	
@@ -73,7 +73,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		RecordLimits bkpLimits = this.getLimits();
+		ThreadLimitsManager bkpLimits = this.getLimits();
 		
 		this.removeLimits();
 		

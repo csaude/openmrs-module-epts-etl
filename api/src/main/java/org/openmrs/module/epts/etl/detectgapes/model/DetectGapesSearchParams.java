@@ -6,7 +6,7 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.detectgapes.engine.DetectGapesEngine;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -17,7 +17,7 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public DetectGapesSearchParams(EtlItemConfiguration config, RecordLimits limits,
+	public DetectGapesSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits,
 	    DetectGapesEngine relatedEngine) {
 		super(config, limits, relatedEngine);
 		
@@ -54,7 +54,7 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 		if (this.savedCount > 0)
 			return this.savedCount;
 		
-		RecordLimits bkpLimits = this.getLimits();
+		ThreadLimitsManager bkpLimits = this.getLimits();
 		
 		this.removeLimits();
 		

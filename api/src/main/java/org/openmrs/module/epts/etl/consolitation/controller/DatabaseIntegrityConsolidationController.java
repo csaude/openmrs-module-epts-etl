@@ -6,7 +6,7 @@ import org.openmrs.module.epts.etl.consolitation.engine.DatabaseIntegrityConsoli
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -26,7 +26,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
+	public Engine initRelatedEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
 		return new DatabaseIntegrityConsolidationEngine(monitor, limits);
 	}
 	

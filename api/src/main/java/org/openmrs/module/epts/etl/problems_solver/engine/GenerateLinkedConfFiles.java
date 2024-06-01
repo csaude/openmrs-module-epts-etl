@@ -14,7 +14,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -37,7 +37,7 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	
 	private boolean done;
 	
-	public GenerateLinkedConfFiles(EngineMonitor monitor, RecordLimits limits) {
+	public GenerateLinkedConfFiles(EngineMonitor monitor, ThreadLimitsManager limits) {
 		super(monitor, limits);
 		
 		Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("partner");
@@ -164,7 +164,7 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new MozartLInkedFileSearchParams(this, null);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());

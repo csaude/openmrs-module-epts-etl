@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -21,7 +21,7 @@ public class ProblemsSolverSearchParams extends AbstractEtlSearchParams<EtlObjec
 	
 	private int savedCount;
 	
-	public ProblemsSolverSearchParams(EtlItemConfiguration config, RecordLimits limits,
+	public ProblemsSolverSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits,
 	    GenericEngine relatedEngine) {
 		super(config, limits, relatedEngine);
 	}
@@ -86,7 +86,7 @@ public class ProblemsSolverSearchParams extends AbstractEtlSearchParams<EtlObjec
 		if (this.savedCount > 0)
 			return this.savedCount;
 		
-		RecordLimits bkpLimits = this.getLimits();
+		ThreadLimitsManager bkpLimits = this.getLimits();
 		
 		this.removeLimits();
 		

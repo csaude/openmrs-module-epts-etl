@@ -2,8 +2,6 @@ package org.openmrs.module.epts.etl.conf;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -16,7 +14,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 
-import org.apache.commons.io.IOUtils;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -519,26 +516,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public static EtlConfiguration loadFromFile(File file) throws IOException {
+		EtlConfiguration conf = EtlConfiguration.loadFromJSON(FileUtilities.realAllFileAsString(file));
 		
-		EtlConfiguration conf;
-		InputStream b = null;
-		
-		try {
-			
-			b = Files.newInputStream(file.toPath());
-			
-			conf = EtlConfiguration.loadFromJSON(new String(IOUtils.toByteArray(b)));
-			
-			conf.setRelatedConfFile(file);
-		}
-		finally {
-			if (b != null) {
-				try {
-					b.close();
-				}
-				catch (IOException e) {}
-			}
-		}
+		conf.setRelatedConfFile(file);
 		
 		return conf;
 	}

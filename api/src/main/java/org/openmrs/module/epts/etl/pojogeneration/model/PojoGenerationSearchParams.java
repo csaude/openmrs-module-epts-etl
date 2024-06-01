@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
@@ -16,7 +16,7 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<EtlObjec
 	
 	private PojoGenerationEngine engine;
 	
-	public PojoGenerationSearchParams(PojoGenerationEngine engine, RecordLimits limits, Connection conn) {
+	public PojoGenerationSearchParams(PojoGenerationEngine engine, ThreadLimitsManager limits, Connection conn) {
 		super(engine.getEtlConfiguration(), limits, null);
 		
 		this.engine = engine;

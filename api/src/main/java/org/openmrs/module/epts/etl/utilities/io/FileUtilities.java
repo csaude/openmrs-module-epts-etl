@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -349,6 +350,25 @@ public class FileUtilities {
 		InputStream stream = new FileInputStream(pathToFile);
 		
 		return readAllStreamAsListOfString(stream);
+	}
+	
+	
+	public static String realAllFileAsString(File file) throws IOException {
+		InputStream b = null;
+		
+		try {
+			b = Files.newInputStream(file.toPath());
+			
+			return new String(IOUtils.toByteArray(b));
+		}
+		finally {
+			if (b != null) {
+				try {
+					b.close();
+				}
+				catch (IOException e) {}
+			}
+		}		
 	}
 	
 	/**

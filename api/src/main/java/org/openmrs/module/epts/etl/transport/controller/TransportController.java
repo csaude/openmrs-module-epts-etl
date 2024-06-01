@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.transport.engine.TransportEngine;
@@ -28,7 +28,7 @@ public class TransportController extends EtlController {
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
+	public Engine initRelatedEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
 		return new TransportEngine(monitor, limits);
 	}
 	

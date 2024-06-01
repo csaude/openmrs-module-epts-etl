@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeControlle
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -32,7 +32,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class DBQuickMergeEngine extends EtlEngine {
 	
-	public DBQuickMergeEngine(EngineMonitor monitor, RecordLimits limits) {
+	public DBQuickMergeEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -257,7 +257,7 @@ public class DBQuickMergeEngine extends EtlEngine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(RecordLimits limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DBQuickMergeSearchParams(this.getEtlConfiguration(),
 		        limits, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

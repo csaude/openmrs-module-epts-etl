@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -16,7 +16,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class ProblemsSolverSearchParamsUsersDupsUUID extends EtlDatabaseObjectSearchParams {
 	
-	public ProblemsSolverSearchParamsUsersDupsUUID(EtlItemConfiguration config, RecordLimits limits, GenericEngine relatedEngine) {
+	public ProblemsSolverSearchParamsUsersDupsUUID(EtlItemConfiguration config, ThreadLimitsManager limits, GenericEngine relatedEngine) {
 		super(config, limits, relatedEngine);
 	}
 	

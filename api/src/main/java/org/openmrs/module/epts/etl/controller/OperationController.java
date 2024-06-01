@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -679,7 +679,7 @@ public abstract class OperationController implements Controller {
 		return this.operationConfig.getOperationType();
 	}
 	
-	public abstract Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits);
+	public abstract Engine initRelatedEngine(EngineMonitor monitor, ThreadLimitsManager limits);
 	
 	public abstract long getMinRecordId(EtlItemConfiguration tableInfo);
 	
@@ -770,8 +770,8 @@ public abstract class OperationController implements Controller {
 	
 	public abstract boolean canBeRunInMultipleEngines();
 	
-	public RecordLimits generateLimits(long minRecId, long currMax, Engine engine) {
-		return new RecordLimits(minRecId, currMax, getQtyRecordsPerProcessing(), engine);
+	public ThreadLimitsManager generateLimits(long minRecId, long currMax, Engine engine) {
+		return new ThreadLimitsManager(minRecId, currMax, getQtyRecordsPerProcessing(), engine);
 	}
 	
 	public int getQtyRecordsPerProcessing() {

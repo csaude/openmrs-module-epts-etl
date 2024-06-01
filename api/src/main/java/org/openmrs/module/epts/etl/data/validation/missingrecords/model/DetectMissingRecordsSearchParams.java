@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
 import org.openmrs.module.epts.etl.data.validation.missingrecords.engine.DetectMIssingRecordsEngine;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -19,7 +19,7 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 	
 	DstConf relatedDstConf;
 	
-	public DetectMissingRecordsSearchParams(EtlItemConfiguration config, RecordLimits limits,
+	public DetectMissingRecordsSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits,
 	    DetectMIssingRecordsEngine relatedEngine) {
 		super(config, limits, relatedEngine);
 		

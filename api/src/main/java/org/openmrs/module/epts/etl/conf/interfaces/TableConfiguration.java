@@ -1447,16 +1447,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		int qtyAttrs = this.getFields().size();
 		
-		Object[] params = new Object[qtyAttrs + this.getPrimaryKey().getFields().size()];
-		
-		int i = 0;
-		
-		for (i = 0; i < this.getFields().size(); i++) {
-			Field field = this.getFields().get(i);
-			
-			params[i] = obj.getFieldValue(field.getName());
-		}
-		
 		List<Key> keys = null;
 		
 		if (this.getPrimaryKey() != null) {
@@ -1469,7 +1459,17 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			}
 		}
 		
-		for (Key key : this.getPrimaryKey().getFields()) {
+		Object[] params = new Object[qtyAttrs + keys.size()];
+		
+		int i = 0;
+		
+		for (i = 0; i < this.getFields().size(); i++) {
+			Field field = this.getFields().get(i);
+			
+			params[i] = obj.getFieldValue(field.getName());
+		}
+		
+		for (Key key : keys) {
 			params[i++] = obj.getFieldValue(key.getName());
 		}
 		

@@ -10,7 +10,8 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.Limit;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -46,6 +47,8 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	protected TableOperationProgressInfo tableOperationProgressInfo;
 	
+	protected List<Limit> excludedRecordsLimits;
+	
 	public EngineMonitor(OperationController controller, EtlItemConfiguration etlItemConfiguration,
 	    TableOperationProgressInfo tableOperationProgressInfo) {
 		this.controller = controller;
@@ -57,6 +60,14 @@ public class EngineMonitor implements MonitoredOperation {
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
+	}
+	
+	public List<Limit> getExcludedRecordsIntervals() {
+		return excludedRecordsLimits;
+	}
+	
+	public void setExcludedRecordsLimits(List<Limit> excludedRecordsLimits) {
+		this.excludedRecordsLimits = excludedRecordsLimits;
 	}
 	
 	public long getMinRecordId() {
@@ -179,6 +190,8 @@ public class EngineMonitor implements MonitoredOperation {
 	private void initEngine() throws DBException {
 		logInfo("INITIALIZING ENGINE FOR ETL CONFIG [" + getEtlConfiguration().getConfigCode().toUpperCase() + "]");
 		
+		tryToLoadExcludedRecordsLimits();
+		
 		long minRecId = tableOperationProgressInfo.getProgressMeter().getMinRecordId();
 		
 		if (minRecId == 0) {
@@ -249,7 +262,7 @@ public class EngineMonitor implements MonitoredOperation {
 			if (qtyEngines == 1)
 				currMax = maxRecId;
 			
-			RecordLimits limits = this.getController().generateLimits(minRecId, currMax, null);
+			ThreadLimitsManager limits = this.getController().generateLimits(minRecId, currMax, null);
 			
 			Engine mainEngine = retrieveAndRemoveMainSleepingEngine();
 			
@@ -275,7 +288,7 @@ public class EngineMonitor implements MonitoredOperation {
 				    limits.getThreadMaxRecord() + qtyRecordsPerEngine, null);
 				
 				if (i == qtyEngines - 1) {
-					limits.setThreadMaxRecord(maxRecId);
+					limits.getMaxLimits().setMaxRecordId(maxRecId);
 					limits.reset();
 				}
 				
@@ -348,6 +361,20 @@ public class EngineMonitor implements MonitoredOperation {
 			}
 			
 			logInfo("ENGINE FOR TABLE CONFIG [" + getEtlConfiguration().getConfigCode().toUpperCase() + "] INITIALIZED!");
+		}
+	}
+	
+	private void tryToLoadExcludedRecordsLimits() {
+		List<ThreadLimitsManager> limitsManagers = ThreadLimitsManager.getAllSavedLimitsOfOperation(this);
+		
+		if (utilities.arrayHasElement(limitsManagers)) {
+			this.setExcludedRecordsLimits(new ArrayList<>());
+			
+			for (ThreadLimitsManager threadLimits : limitsManagers) {
+				threadLimits.getCurrentLimits().setMinRecordId(threadLimits.getThreadMinRecordId());
+				
+				this.getExcludedRecordsIntervals().add(threadLimits.getCurrentLimits());
+			}
 		}
 	}
 	

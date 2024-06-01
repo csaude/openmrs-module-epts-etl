@@ -5,7 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -16,7 +16,7 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 	
 	private boolean selectAllRecords;
 	
-	public InconsistenceSolverSearchParams(EtlItemConfiguration config, RecordLimits limits, Connection conn) {
+	public InconsistenceSolverSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits, Connection conn) {
 		super(config, limits, null);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
@@ -55,7 +55,7 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
 		
-		RecordLimits bkpLimits = this.getLimits();
+		ThreadLimitsManager bkpLimits = this.getLimits();
 		
 		this.removeLimits();
 		

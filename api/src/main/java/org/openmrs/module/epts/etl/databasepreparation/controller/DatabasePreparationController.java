@@ -6,7 +6,7 @@ import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.databasepreparation.engine.DatabasePreparationEngine;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 
 /**
@@ -21,7 +21,7 @@ public class DatabasePreparationController extends OperationController {
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, RecordLimits limits) {
+	public Engine initRelatedEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
 		return new DatabasePreparationEngine(monitor, limits);
 	}
 	

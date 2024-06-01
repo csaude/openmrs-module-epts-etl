@@ -11,7 +11,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.RecordLimits;
+import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -37,7 +37,7 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	
 	private DataLoadController controller;
 	
-	public LoadSyncDataSearchParams(DataLoadController controller, EtlItemConfiguration config, RecordLimits limits) {
+	public LoadSyncDataSearchParams(DataLoadController controller, EtlItemConfiguration config, ThreadLimitsManager limits) {
 		super(config, limits, null);
 		
 		this.controller = controller;
