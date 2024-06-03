@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.monitor;
 
+import java.io.File;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,8 +11,8 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
-import org.openmrs.module.epts.etl.engine.Limit;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -21,6 +22,7 @@ import org.openmrs.module.epts.etl.utilities.concurrent.TimeController;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 /**
  * This class monitor all {@link Engine}s of an {@link OperationController}
@@ -47,7 +49,7 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	protected TableOperationProgressInfo tableOperationProgressInfo;
 	
-	protected List<Limit> excludedRecordsLimits;
+	protected List<IntervalExtremeRecord> excludedRecordsLimits;
 	
 	public EngineMonitor(OperationController controller, EtlItemConfiguration etlItemConfiguration,
 	    TableOperationProgressInfo tableOperationProgressInfo) {
@@ -62,11 +64,11 @@ public class EngineMonitor implements MonitoredOperation {
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
 	}
 	
-	public List<Limit> getExcludedRecordsIntervals() {
+	public List<IntervalExtremeRecord> getExcludedRecordsIntervals() {
 		return excludedRecordsLimits;
 	}
 	
-	public void setExcludedRecordsLimits(List<Limit> excludedRecordsLimits) {
+	public void setExcludedRecordsLimits(List<IntervalExtremeRecord> excludedRecordsLimits) {
 		this.excludedRecordsLimits = excludedRecordsLimits;
 	}
 	
@@ -262,7 +264,7 @@ public class EngineMonitor implements MonitoredOperation {
 			if (qtyEngines == 1)
 				currMax = maxRecId;
 			
-			ThreadLimitsManager limits = this.getController().generateLimits(minRecId, currMax, null);
+			ThreadRecordIntervalsManager limits = this.getController().generateLimits(minRecId, currMax, null);
 			
 			Engine mainEngine = retrieveAndRemoveMainSleepingEngine();
 			
@@ -284,8 +286,8 @@ public class EngineMonitor implements MonitoredOperation {
 			int i = 1;
 			
 			for (i = 1; i < qtyEngines; i++) {
-				limits = getController().generateLimits(limits.getThreadMaxRecord() + 1,
-				    limits.getThreadMaxRecord() + qtyRecordsPerEngine, null);
+				limits = getController().generateLimits(limits.getThreadMaxRecordId() + 1,
+				    limits.getThreadMaxRecordId() + qtyRecordsPerEngine, null);
 				
 				if (i == qtyEngines - 1) {
 					limits.getMaxLimits().setMaxRecordId(maxRecId);
@@ -303,6 +305,8 @@ public class EngineMonitor implements MonitoredOperation {
 				} else {
 					engine.resetLimits(limits);
 				}
+				
+				addEngineToOwnEgines(engine);
 				
 				logDebug("REALOCATED NEW RECORDS [" + engine.getSearchParams().getLimits() + "] FOR ENGINE ["
 				        + engine.getEngineId() + "]");
@@ -348,13 +352,13 @@ public class EngineMonitor implements MonitoredOperation {
 				conn.finalizeConnection();
 			}
 			
+			doFirstSaveAllLimits();
+			
 			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(mainEngine.getEngineId());
 			executor.execute(mainEngine);
 			
 			if (mainEngine.getChildren() != null) {
 				for (Engine childEngine : mainEngine.getChildren()) {
-					addEngineToOwnEgines(childEngine);
-					
 					executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(childEngine.getEngineId());
 					executor.execute(childEngine);
 				}
@@ -364,16 +368,53 @@ public class EngineMonitor implements MonitoredOperation {
 		}
 	}
 	
+	private void doFirstSaveAllLimits() {
+		List<ThreadRecordIntervalsManager> newIntervals = new ArrayList<>();
+		
+		List<ThreadRecordIntervalsManager> oldLImitsManagers = ThreadRecordIntervalsManager
+		        .getAllSavedLimitsOfOperation(this);
+		
+		for (Engine engine : this.getOwnEngines()) {
+			engine.getLimits().save(this);
+			
+			newIntervals.add(engine.getLimits());
+		}
+		
+		if (oldLImitsManagers != null) {
+			for (ThreadRecordIntervalsManager limits : oldLImitsManagers) {
+				if (!newIntervals.contains(limits)) {
+					limits.remove(this);
+				}
+			}
+		}
+	}
+	
+	public File getThreadsDir() {
+		String subFolder = this.getRelatedOperationController().generateOperationStatusFolder();
+		
+		subFolder += FileUtilities.getPathSeparator() + "threads";
+		
+		return new File(subFolder);
+	}
+	
 	private void tryToLoadExcludedRecordsLimits() {
-		List<ThreadLimitsManager> limitsManagers = ThreadLimitsManager.getAllSavedLimitsOfOperation(this);
+		List<ThreadRecordIntervalsManager> limitsManagers = ThreadRecordIntervalsManager.getAllSavedLimitsOfOperation(this);
 		
 		if (utilities.arrayHasElement(limitsManagers)) {
 			this.setExcludedRecordsLimits(new ArrayList<>());
 			
-			for (ThreadLimitsManager threadLimits : limitsManagers) {
+			for (ThreadRecordIntervalsManager threadLimits : limitsManagers) {
 				threadLimits.getCurrentLimits().setMinRecordId(threadLimits.getThreadMinRecordId());
 				
 				this.getExcludedRecordsIntervals().add(threadLimits.getCurrentLimits());
+				
+				if (threadLimits.hasExcludedIntervals()) {
+					for (IntervalExtremeRecord l : threadLimits.getExcludedIntervals()) {
+						if (!this.getExcludedRecordsIntervals().contains(l)) {
+							this.getExcludedRecordsIntervals().add(l);
+						}
+					}
+				}
 			}
 		}
 	}

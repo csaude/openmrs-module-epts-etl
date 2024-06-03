@@ -11,7 +11,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBController;
 import org.openmrs.module.epts.etl.merge.model.DataBaseMergeFromSourceDBSearchParams;
@@ -22,7 +22,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DataBasesMergeFromSourceEngine extends Engine {
 	
-	public DataBasesMergeFromSourceEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public DataBasesMergeFromSourceEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -67,7 +67,7 @@ public class DataBasesMergeFromSourceEngine extends Engine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromSourceDBSearchParams(
 		        this.getEtlConfiguration(), limits, conn, getRelatedOperationController());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

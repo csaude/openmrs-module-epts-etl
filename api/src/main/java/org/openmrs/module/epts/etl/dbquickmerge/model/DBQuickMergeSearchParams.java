@@ -6,14 +6,14 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.engine.DBQuickMergeEngine;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DBQuickMergeSearchParams extends EtlDatabaseObjectSearchParams {
 		
-	public DBQuickMergeSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits, DBQuickMergeEngine engine) {
+	public DBQuickMergeSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, DBQuickMergeEngine engine) {
 		super(config, limits, engine);
 		
 	}

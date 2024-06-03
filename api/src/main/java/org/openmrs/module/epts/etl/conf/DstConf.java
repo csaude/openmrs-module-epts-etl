@@ -51,7 +51,17 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private List<EtlDataSource> allPrefferredDataSource;
 	
+	private boolean ignoreUnmappedFields;
+	
 	public DstConf() {
+	}
+	
+	public boolean isIgnoreUnmappedFields() {
+		return ignoreUnmappedFields;
+	}
+	
+	public void setIgnoreUnmappedFields(boolean ignoreUnmappedFields) {
+		this.ignoreUnmappedFields = ignoreUnmappedFields;
 	}
 	
 	public List<String> getPrefferredDataSource() {
@@ -253,7 +263,7 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 		}
 		
-		if (qtyOccurences == 0) {
+		if (qtyOccurences == 0 && !isIgnoreUnmappedFields()) {
 			throw new FieldNotAvaliableInAnyDataSource(fm.getSrcField());
 		}
 		

@@ -60,7 +60,7 @@ public class EtlRecord {
 		try {
 			if (create) {
 				record.save(config, destConn);
-			}else {
+			} else {
 				record.update(config, destConn);
 			}
 			
@@ -117,7 +117,7 @@ public class EtlRecord {
 		return record;
 	}
 	
-	public static void mergeAll(List<EtlRecord> mergingRecs, Connection srcConn, OpenConnection dstConn)
+	public static void transformAll(List<EtlRecord> mergingRecs, Connection srcConn, OpenConnection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		if (!utilities.arrayHasElement(mergingRecs)) {
 			return;
@@ -139,11 +139,10 @@ public class EtlRecord {
 		
 	}
 	
-	public static void mergeAll(Map<String, List<EtlRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn)
+	public static void transformAll(Map<String, List<EtlRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		for (String key : mergingRecs.keySet()) {
-			mergeAll(mergingRecs.get(key), srcConn, dstConn);
+			transformAll(mergingRecs.get(key), srcConn, dstConn);
 		}
 	}
-	
 }

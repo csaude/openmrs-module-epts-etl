@@ -11,12 +11,13 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
+import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -37,7 +38,7 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	
 	private DataLoadController controller;
 	
-	public LoadSyncDataSearchParams(DataLoadController controller, EtlItemConfiguration config, ThreadLimitsManager limits) {
+	public LoadSyncDataSearchParams(DataLoadController controller, EtlItemConfiguration config, ThreadRecordIntervalsManager limits) {
 		super(config, limits, null);
 		
 		this.controller = controller;
@@ -66,7 +67,7 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> searchNextRecords(Connection conn) throws DBException {
+	public List<EtlDatabaseObject> searchNextRecords(EngineMonitor monitor, Connection conn) throws DBException {
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
 		if (this.currJSONSourceFile == null)

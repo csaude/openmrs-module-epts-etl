@@ -5,7 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -21,7 +21,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	
 	private EtlOperationType type;
 	
-	public CentralAndRemoteDataReconciliationSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits,
+	public CentralAndRemoteDataReconciliationSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits,
 	    EtlOperationType type, Connection conn) {
 		super(config, limits, null);
 		
@@ -141,7 +141,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		ThreadLimitsManager bkpLimits = this.getLimits();
+		ThreadRecordIntervalsManager bkpLimits = this.getLimits();
 		
 		this.removeLimits();
 		

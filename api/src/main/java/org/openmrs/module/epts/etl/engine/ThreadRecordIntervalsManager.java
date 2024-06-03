@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  * @author jpboane
  */
-public class ThreadLimitsManager {
+public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordIntervalsManager> {
 	
 	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -35,25 +35,25 @@ public class ThreadLimitsManager {
 	
 	protected int qtyRecordsPerProcessing;
 	
-	private Limit currentLimits;
+	private IntervalExtremeRecord currentLimits;
 	
-	private Limit maxLimits;
+	private IntervalExtremeRecord maxLimits;
 	
-	private List<Limit> excludedIntervals;
+	private List<IntervalExtremeRecord> excludedIntervals;
 	
 	private ThreadLImitsManagerStatusType status;
 	
-	public ThreadLimitsManager() {
+	public ThreadRecordIntervalsManager() {
 		this.status = ThreadLImitsManagerStatusType.NOT_INITIALIZED;
 		
-		this.setCurrentLimits(new Limit());
-		this.setMaxLimits(new Limit());
+		this.setCurrentLimits(new IntervalExtremeRecord());
+		this.setMaxLimits(new IntervalExtremeRecord());
 	}
 	
-	public ThreadLimitsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing) {
+	public ThreadRecordIntervalsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing) {
 		this();
 		
-		this.maxLimits = new Limit(firstRecordId, lastRecordId);
+		this.maxLimits = new IntervalExtremeRecord(firstRecordId, lastRecordId);
 		
 		this.qtyRecordsPerProcessing = qtyRecordsPerProcessing;
 		
@@ -64,31 +64,31 @@ public class ThreadLimitsManager {
 		return status;
 	}
 	
-	public List<Limit> getExcludedIntervals() {
+	public List<IntervalExtremeRecord> getExcludedIntervals() {
 		return excludedIntervals;
 	}
 	
-	public void setExcludedIntervals(List<Limit> excludedIntervals) {
+	public void setExcludedIntervals(List<IntervalExtremeRecord> excludedIntervals) {
 		this.excludedIntervals = excludedIntervals;
 	}
 	
-	public Limit getMaxLimits() {
+	public IntervalExtremeRecord getMaxLimits() {
 		return maxLimits;
 	}
 	
-	public void setMaxLimits(Limit maxLimits) {
+	public void setMaxLimits(IntervalExtremeRecord maxLimits) {
 		this.maxLimits = maxLimits;
 	}
 	
-	public Limit getCurrentLimits() {
+	public IntervalExtremeRecord getCurrentLimits() {
 		return currentLimits;
 	}
 	
-	public void setCurrentLimits(Limit currentLimits) {
+	public void setCurrentLimits(IntervalExtremeRecord currentLimits) {
 		this.currentLimits = currentLimits;
 	}
 	
-	public ThreadLimitsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing, Engine engine) {
+	public ThreadRecordIntervalsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing, Engine engine) {
 		this(firstRecordId, lastRecordId, qtyRecordsPerProcessing);
 		
 		this.engine = engine;
@@ -134,30 +134,30 @@ public class ThreadLimitsManager {
 		long currentLastRecordId = -1;
 		
 		if (hasExcludedIntervals()) {
-			for (Limit limit : getExcludedIntervals()) {
-				if (currentFirstRecordId >= limit.getMinRecordId()) {
+			for (IntervalExtremeRecord intervalExtremeRecord : getExcludedIntervals()) {
+				if (currentFirstRecordId >= intervalExtremeRecord.getMinRecordId()) {
 					//Try to go out of already processed intervals
-					while (currentFirstRecordId <= limit.getMaxRecordId()) {
+					while (currentFirstRecordId <= intervalExtremeRecord.getMaxRecordId()) {
 						currentFirstRecordId++;
 					}
 				}
 			}
 		}
 		
-		if (currentFirstRecordId > this.getThreadMaxRecord()) {
+		if (currentFirstRecordId > this.getThreadMaxRecordId()) {
 			this.setStatus(ThreadLImitsManagerStatusType.OUT_OF_LIMITS);
 		} else {
 			currentLastRecordId = currentFirstRecordId + this.getQtyRecordsPerProcessing() - 1;
 			
-			if (currentLastRecordId > this.getThreadMaxRecord()) {
-				currentLastRecordId = this.getThreadMaxRecord();
+			if (currentLastRecordId > this.getThreadMaxRecordId()) {
+				currentLastRecordId = this.getThreadMaxRecordId();
 			}
 			
 			if (hasExcludedIntervals()) {
-				for (Limit limit : getExcludedIntervals()) {
-					if (currentLastRecordId < limit.getMaxRecordId()) {
+				for (IntervalExtremeRecord intervalExtremeRecord : getExcludedIntervals()) {
+					if (currentLastRecordId < intervalExtremeRecord.getMaxRecordId()) {
 						//Try to go out of already processed intervals
-						while (currentLastRecordId >= limit.getMinRecordId()) {
+						while (currentLastRecordId >= intervalExtremeRecord.getMinRecordId()) {
 							currentLastRecordId--;
 						}
 					}
@@ -197,7 +197,7 @@ public class ThreadLimitsManager {
 		return getMaxLimits().getMinRecordId();
 	}
 	
-	public long getThreadMaxRecord() {
+	public long getThreadMaxRecordId() {
 		return getMaxLimits().getMaxRecordId();
 	}
 	
@@ -213,11 +213,11 @@ public class ThreadLimitsManager {
 		this.qtyRecordsPerProcessing = qtyRecordsPerProcessing;
 	}
 	
-	public void save() {
+	public void save(EngineMonitor monitor) {
 		if (isOutOfLimits() || isNotInitialized())
 			throw new ForbiddenOperationException("You cannot save out of limit/not initialized thread limits manager");
 		
-		String fileName = generateFilePath();
+		String fileName = generateFilePath(monitor);
 		
 		if (new File(fileName).exists()) {
 			FileUtilities.removeFile(fileName);
@@ -234,8 +234,8 @@ public class ThreadLimitsManager {
 		this.loadedFromFile = true;
 	}
 	
-	public String generateFilePath() {
-		String subFolder = this.engine.getRelatedOperationController().generateOperationStatusFolder();
+	public String generateFilePath(EngineMonitor monitor) {
+		String subFolder = monitor.getRelatedOperationController().generateOperationStatusFolder();
 		
 		subFolder += FileUtilities.getPathSeparator() + "threads";
 		
@@ -247,17 +247,16 @@ public class ThreadLimitsManager {
 		return utilities.parseToJSON(this);
 	}
 	
-	public boolean hasSameEngineInfo(ThreadLimitsManager limits) {
-		return this.equals(limits) && this.getThreadMaxRecord() == limits.getThreadMaxRecord()
-		        && this.getThreadMinRecordId() == limits.getThreadMinRecordId();
+	public boolean hasSameEngineInfo(ThreadRecordIntervalsManager limits) {
+		return this.getMaxLimits().equals(limits.getMaxLimits());
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof ThreadLimitsManager) || obj == null)
+		if (!(obj instanceof ThreadRecordIntervalsManager) || obj == null)
 			return false;
 		
-		ThreadLimitsManager cr = (ThreadLimitsManager) obj;
+		ThreadRecordIntervalsManager cr = (ThreadRecordIntervalsManager) obj;
 		
 		return this.getThreadCode().equals(cr.getThreadCode());
 	}
@@ -270,7 +269,7 @@ public class ThreadLimitsManager {
 	 * @return
 	 */
 	public boolean canGoNext() {
-		return !isOutOfLimits() && this.getCurrentLastRecordId() < this.getThreadMaxRecord();
+		return !isOutOfLimits() && this.getCurrentLastRecordId() < this.getThreadMaxRecordId();
 	}
 	
 	public synchronized void moveNext() {
@@ -278,7 +277,7 @@ public class ThreadLimitsManager {
 			this.defineCurrentLimits(this.getCurrentFirstRecordId() + getQtyRecordsPerProcessing());
 		} else
 			throw new ForbiddenOperationException("You reached the max record. Curr Status: [" + this.getThreadMinRecordId()
-			        + " - " + this.getThreadMaxRecord() + "] Curr [" + this.getCurrentFirstRecordId() + " - "
+			        + " - " + this.getThreadMaxRecordId() + "] Curr [" + this.getCurrentFirstRecordId() + " - "
 			        + this.getCurrentLastRecordId() + "]");
 	}
 	
@@ -295,14 +294,14 @@ public class ThreadLimitsManager {
 	 */
 	public void tryToLoadFromFile(File file, Engine engine) {
 		try {
-			ThreadLimitsManager limits = loadFromJSON(new String(Files.readAllBytes(file.toPath())));
+			ThreadRecordIntervalsManager limits = loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 			
 			if (limits != null && limits.hasSameEngineInfo(engine.getLimits())) {
 				
 				copy(limits);
 				
 				this.loadedFromFile = true;
-			}else {
+			} else {
 				this.setExcludedIntervals(engine.getMonitor().getExcludedRecordsIntervals());
 			}
 			
@@ -315,26 +314,28 @@ public class ThreadLimitsManager {
 		}
 	}
 	
-	public void copy(ThreadLimitsManager copyFrom) {
+	public void copy(ThreadRecordIntervalsManager copyFrom) {
 		this.threadCode = copyFrom.threadCode;
 		this.engine = copyFrom.engine;
 		this.loadedFromFile = copyFrom.loadedFromFile;
 		this.lastSavedOn = copyFrom.lastSavedOn;
 		this.qtyRecordsPerProcessing = copyFrom.qtyRecordsPerProcessing;
+		this.excludedIntervals = copyFrom.excludedIntervals;
+		this.status = copyFrom.status;
 		
-		this.setCurrentLimits(
-		    new Limit(copyFrom.getCurrentLimits().getMinRecordId(), copyFrom.getCurrentLimits().getMaxRecordId()));
-		this.setMaxLimits(new Limit(copyFrom.getMaxLimits().getMinRecordId(), copyFrom.getMaxLimits().getMaxRecordId()));
+		this.setCurrentLimits(new IntervalExtremeRecord(copyFrom.getCurrentLimits().getMinRecordId(),
+		        copyFrom.getCurrentLimits().getMaxRecordId()));
+		this.setMaxLimits(
+		    new IntervalExtremeRecord(copyFrom.getMaxLimits().getMinRecordId(), copyFrom.getMaxLimits().getMaxRecordId()));
 	}
 	
-	private static ThreadLimitsManager loadFromJSON(String json) {
-		return utilities.loadObjectFormJSON(ThreadLimitsManager.class, json);
+	private static ThreadRecordIntervalsManager loadFromJSON(String json) {
+		return utilities.loadObjectFormJSON(ThreadRecordIntervalsManager.class, json);
 	}
 	
 	@Override
 	public String toString() {
-		return getThreadCode() + " : Thread [" + this.getThreadMinRecordId() + " - " + this.getThreadMaxRecord() + "] Curr ["
-		        + this.getCurrentFirstRecordId() + " - " + this.getCurrentLastRecordId() + "]";
+		return getThreadCode() + " : Thread [" + this.getMaxLimits() + "] Curr [" + this.getCurrentLimits() + "]";
 	}
 	
 	public boolean isInitialized() {
@@ -360,24 +361,24 @@ public class ThreadLimitsManager {
 			this.threadCode = engine.getEngineId();
 	}
 	
-	public static void removeAll(List<ThreadLimitsManager> generatedLimits) {
+	public static void removeAll(List<ThreadRecordIntervalsManager> generatedLimits, EngineMonitor monitor) {
 		if (generatedLimits != null) {
 			
-			for (ThreadLimitsManager limits : generatedLimits) {
-				limits.remove();
+			for (ThreadRecordIntervalsManager limits : generatedLimits) {
+				limits.remove(monitor);
 			}
 		}
 	}
 	
-	public void remove() {
-		String fileName = generateFilePath();
+	public void remove(EngineMonitor monitor) {
+		String fileName = generateFilePath(monitor);
 		
 		if (new File(fileName).exists()) {
 			FileUtilities.removeFile(fileName);
 		}
 	}
 	
-	public static List<ThreadLimitsManager> getAllSavedLimitsOfOperation(EngineMonitor monitor) {
+	public static List<ThreadRecordIntervalsManager> getAllSavedLimitsOfOperation(EngineMonitor monitor) {
 		
 		try {
 			String threadsFolder = monitor.getRelatedOperationController().generateOperationStatusFolder();
@@ -386,7 +387,7 @@ public class ThreadLimitsManager {
 			
 			File[] files = new File(threadsFolder).listFiles(new LimitSearcher(monitor));
 			
-			List<ThreadLimitsManager> allLImitsOfEngine = null;
+			List<ThreadRecordIntervalsManager> allLImitsOfEngine = null;
 			
 			if (files != null) {
 				allLImitsOfEngine = new ArrayList<>();
@@ -404,6 +405,12 @@ public class ThreadLimitsManager {
 		}
 		
 	}
+	
+	@Override
+	public int compareTo(ThreadRecordIntervalsManager other) {
+		return this.getThreadCode().compareTo(other.getThreadCode());
+	}
+	
 }
 
 class LimitSearcher implements FilenameFilter {

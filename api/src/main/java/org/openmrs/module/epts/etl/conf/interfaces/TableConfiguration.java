@@ -1390,6 +1390,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		this.setInsertSQLWithoutObjectId("INSERT INTO " + this.getObjectName() + "(" + insertSQLFieldsWithoutObjectId
 		        + ") VALUES( " + insertSQLQuestionMarksWithoutObjectId + ");");
+		
+		setInsertSQLQuestionMarksWithoutObjectId(insertSQLQuestionMarksWithoutObjectId);
 	}
 	
 	default void generateInsertSQLWithObjectId() {
@@ -1409,9 +1411,18 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setInsertSQLWithObjectId("INSERT INTO " + this.getObjectName() + "(" + insertSQLFieldsWithObjectId
 		        + ") VALUES( " + insertSQLQuestionMarksWithObjectId + ");");
 		
+		this.setInsertSQLQuestionMarksWithObjectId(insertSQLQuestionMarksWithObjectId);
 	}
 	
-	void setInsertSQLWithObjectId(java.lang.String string2);
+	void setInsertSQLQuestionMarksWithObjectId(String insertQuestionMarks);
+	
+	String getInsertSQLQuestionMarksWithObjectId();
+	
+	void setInsertSQLQuestionMarksWithoutObjectId(String insertQuestionMarks);
+	
+	String getInsertSQLQuestionMarksWithoutObjectId();
+	
+	void setInsertSQLWithObjectId(String sql);
 	
 	@JsonIgnore
 	default String generateUpdateSQL() {

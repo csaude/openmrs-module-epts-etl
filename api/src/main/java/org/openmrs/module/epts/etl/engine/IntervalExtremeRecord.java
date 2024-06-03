@@ -5,16 +5,16 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 /**
  * Indicate the min and max record id to be processed in a certain thread or thread iteration
  */
-public class Limit {
+public class IntervalExtremeRecord {
 	
 	private long minRecordId;
 	
 	private long maxRecordId;
 	
-	public Limit() {
+	public IntervalExtremeRecord() {
 	}
 	
-	public Limit(long minRecordId, long maxRecordId) {
+	public IntervalExtremeRecord(long minRecordId, long maxRecordId) {
 		
 		if (minRecordId > maxRecordId)
 			throw new ForbiddenOperationException("The minRecordId cannot be greater that the maxRecordId");
@@ -44,4 +44,19 @@ public class Limit {
 		setMaxRecordId(maxRecordId);
 	}
 	
+	@Override
+	public String toString() {
+		return getMinRecordId() + " - " + getMaxRecordId();
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof IntervalExtremeRecord))
+			return false;
+		
+		IntervalExtremeRecord intervalExtremeRecord = (IntervalExtremeRecord) obj;
+		
+		return this.getMinRecordId() == intervalExtremeRecord.getMinRecordId()
+		        && this.getMaxRecordId() == intervalExtremeRecord.getMaxRecordId();
+	}
 }

@@ -253,6 +253,38 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	public void setInsertSQLQuestionMarksWithObjectId(String insertQuestionMarks) {
+		if (this.relatedConfiguration instanceof TableConfiguration) {
+			((TableConfiguration) this.relatedConfiguration).setInsertSQLQuestionMarksWithObjectId(insertQuestionMarks);
+		}
+	}
+	
+	@Override
+	public String getInsertSQLQuestionMarksWithObjectId() {
+		if (this.relatedConfiguration instanceof TableConfiguration) {
+			return ((TableConfiguration) this.relatedConfiguration).getInsertSQLQuestionMarksWithObjectId();
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public void setInsertSQLQuestionMarksWithoutObjectId(String insertQuestionMarks) {
+		if (this.relatedConfiguration instanceof TableConfiguration) {
+			((TableConfiguration) this.relatedConfiguration).setInsertSQLQuestionMarksWithoutObjectId(insertQuestionMarks);
+		}
+	}
+	
+	@Override
+	public String getInsertSQLQuestionMarksWithoutObjectId() {
+		if (this.relatedConfiguration instanceof TableConfiguration) {
+			return ((TableConfiguration) this.relatedConfiguration).getInsertSQLQuestionMarksWithoutObjectId();
+		}
+		
+		return null;
+	}
+	
+	@Override
 	@JsonIgnore
 	public boolean hasParents() {
 		if (utilities.arrayHasElement(this.relatedConfiguration.getParentRefInfo())) {

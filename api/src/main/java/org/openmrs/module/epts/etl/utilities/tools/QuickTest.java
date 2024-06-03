@@ -18,7 +18,7 @@ import org.openmrs.module.epts.etl.controller.ProcessStarter;
 import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
 import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -138,7 +138,7 @@ public class QuickTest {
 		
 		OpenConnection srcConn = conf.getMainApp().openConnection();
 		
-		List<EtlDatabaseObject> syncRecords = searchParams.searchNextRecords(srcConn);
+		List<EtlDatabaseObject> syncRecords = searchParams.searchNextRecords(null, srcConn);
 		
 		OpenConnection dstConn = dstApp.openConnection();
 		
@@ -312,7 +312,7 @@ public class QuickTest {
 		DBQuickMergeController controller = (DBQuickMergeController) ps.getCurrentController().getOperationsControllers()
 		        .get(0);
 		
-		ThreadLimitsManager limits = new ThreadLimitsManager(1448341 + 500, 1449340, 20, null);
+		ThreadRecordIntervalsManager limits = new ThreadRecordIntervalsManager(1448341 + 500, 1449340, 20, null);
 		
 		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(tableInfo, limits, null);
 		

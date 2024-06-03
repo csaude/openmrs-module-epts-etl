@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.databasepreparation.controller.DatabasePrepar
 import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationSearchParams;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -19,7 +19,7 @@ public class DatabasePreparationEngine extends Engine {
 	
 	private boolean updateDone;
 	
-	public DatabasePreparationEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public DatabasePreparationEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -180,7 +180,7 @@ public class DatabasePreparationEngine extends Engine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
 		return new DatabasePreparationSearchParams(this, limits, conn);
 	}
 	

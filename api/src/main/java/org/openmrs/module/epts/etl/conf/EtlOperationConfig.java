@@ -624,19 +624,19 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db problems resolution process\n";
 			
-			if (!utilities.stringHasValue(this.getEngineFullClassName())) {
-				errorMsg += ++errNum + ". You should specifie the engine full class on this type of operation "
-				        + this.getOperationType() + "\n";
-			} else {
-				loadEngine();
-				
-				if (this.engineClazz == null) {
-					errorMsg += ++errNum + ". The engine class [" + this.getEngineFullClassName() + "] cannot be found\n";
-				} else if (!GenericEngine.class.isAssignableFrom(this.engineClazz)) {
-					errorMsg += ++errNum + ". The engine class [" + this.getEngineFullClassName()
-					        + "] is not any org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine \n";
-				}
+		}
+		
+		try {
+			tryToLoadEngine();
+			
+			if (this.getRelatedSyncConfig().isResolveProblems() && !GenericEngine.class.isAssignableFrom(this.engineClazz)) {
+				errorMsg += ++errNum + ". The engine class [" + this.getEngineFullClassName()
+				        + "] is not any org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine \n";
 			}
+			
+		}
+		catch (ForbiddenOperationException e) {
+			errorMsg += ++errNum + "." + e.getLocalizedMessage() + "\n";
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
@@ -647,6 +647,10 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			this.getChild().validate();
 		}
 		
+	}
+	
+	public boolean requireEngine() {
+		return this.getRelatedSyncConfig().isResolveProblems();
 	}
 	
 	@JsonIgnore
@@ -860,7 +864,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInReEtlProcess(), this.operationType);
 	}
 	
-	
 	public static List<EtlOperationType> getSupportedOperationsInDestinationSyncProcess() {
 		EtlOperationType[] supported = { EtlOperationType.CONSOLIDATION, EtlOperationType.DB_MERGE_FROM_JSON,
 		        EtlOperationType.LOAD, EtlOperationType.DATABASE_PREPARATION, EtlOperationType.POJO_GENERATION };
@@ -885,17 +888,33 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T extends Engine> void loadEngine() {
+	public synchronized <T extends Engine> void tryToLoadEngine() throws ForbiddenOperationException {
 		
 		try {
-			
-			ClassLoader loader = Engine.class.getClassLoader();
-			
-			Class<T> c = (Class<T>) loader.loadClass(this.getEngineFullClassName());
-			
-			this.engineClazz = (Class<Engine>) c;
+			if (engineClazz == null) {
+				
+				if (utilities.stringHasValue(this.getEngineFullClassName())) {
+					
+					ClassLoader loader = Engine.class.getClassLoader();
+					
+					Class<T> c = (Class<T>) loader.loadClass(this.getEngineFullClassName());
+					
+					this.engineClazz = (Class<Engine>) c;
+					
+					if (this.engineClazz == null) {
+						throw new ForbiddenOperationException(
+						        "The engine class [" + this.getEngineFullClassName() + "] cannot be found");
+					}
+				} else if (requireEngine()) {
+					throw new ForbiddenOperationException(
+					        "You should specifie the engine full class on this type of operation "
+					                + this.getOperationType());
+				}
+			}
 		}
-		catch (ClassNotFoundException e) {}
+		catch (
+		
+		ClassNotFoundException e) {}
 	}
 	
 }

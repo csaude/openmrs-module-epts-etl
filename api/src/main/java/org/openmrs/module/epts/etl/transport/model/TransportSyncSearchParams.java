@@ -9,9 +9,10 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
+import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.transport.controller.TransportController;
 import org.openmrs.module.epts.etl.transport.engine.TransportEngine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -24,7 +25,7 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	
 	private String fileNamePathern;
 	
-	public TransportSyncSearchParams(TransportEngine engine, EtlItemConfiguration config, ThreadLimitsManager limits) {
+	public TransportSyncSearchParams(TransportEngine engine, EtlItemConfiguration config, ThreadRecordIntervalsManager limits) {
 		super(config, limits, engine);
 		
 		if (limits != null) {
@@ -39,7 +40,7 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 
 	
 	@Override
-	public List<TransportRecord> searchNextRecords(Connection conn) throws DBException {
+	public List<TransportRecord> searchNextRecords(EngineMonitor monitor, Connection conn) throws DBException {
 		try {
 			File[] files = getSyncDirectory().listFiles(this);
 			

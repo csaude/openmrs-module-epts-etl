@@ -1,12 +1,12 @@
 package org.openmrs.module.epts.etl.dbquickload.engine;
 
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class QuickLoadLimits extends ThreadLimitsManager {
+public class QuickLoadLimits extends ThreadRecordIntervalsManager {
 	
 	private DBQuickLoadSearchParams searchParams;
 	
@@ -24,7 +24,7 @@ public class QuickLoadLimits extends ThreadLimitsManager {
 	}
 	
 	@Override
-	public synchronized void moveNext(int qtyRecords) {
+	public synchronized void moveNext() {
 	}
 	
 	@JsonIgnore

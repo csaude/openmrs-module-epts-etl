@@ -303,4 +303,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		return utilities.arrayHasElement(getAvaliableExtraDataSource());
 	}
 	
+	public boolean isComplex() {
+		return hasRequiredExtraDataSource();
+	}
+	
 }

@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
@@ -26,7 +26,7 @@ import org.openmrs.module.epts.etl.transport.model.TransportSyncSearchParams;
  */
 public class TransportEngine extends EtlEngine {
 	
-	public TransportEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public TransportEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -69,7 +69,7 @@ public class TransportEngine extends EtlEngine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new TransportSyncSearchParams(
 		        this, this.getEtlConfiguration(), limits);
 		searchParams.setQtdRecordPerSelected(2500);

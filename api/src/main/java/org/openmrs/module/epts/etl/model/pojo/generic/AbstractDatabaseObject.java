@@ -975,6 +975,18 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			return this.getUuid().equals(objAsOpenMrs.getUuid());
 		}
 		
+		if (this.hasUniqueKeys()) {
+			for (UniqueKeyInfo key : this.getUniqueKeysInfo()) {
+				
+				UniqueKeyInfo otherKey = objAsOpenMrs.getUniqueKeyInfo(key);
+				
+				if (otherKey != null  && key.hasSameValues(otherKey)) {
+					return true;
+				}
+				
+			}
+		}
+		
 		return super.equals(obj);
 	}
 	

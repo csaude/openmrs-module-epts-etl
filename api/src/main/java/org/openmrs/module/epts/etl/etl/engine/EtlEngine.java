@@ -12,11 +12,12 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.EtlRecord;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -33,7 +34,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class EtlEngine extends Engine {
 	
-	public EtlEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public EtlEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -116,9 +117,7 @@ public class EtlEngine extends Engine {
 				
 				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
-					EtlDatabaseObject destObject = null;
-					
-					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					EtlDatabaseObject destObject = transform(rec, mappingInfo, srcConn);
 					
 					if (destObject != null) {
 						if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
@@ -131,7 +130,7 @@ public class EtlEngine extends Engine {
 							destObject.loadObjectIdData(mappingInfo);
 						}
 						
-						EtlRecord etlRec = new EtlRecord(destObject, mappingInfo, false);
+						EtlRecord etlRec = initEtlRecord(destObject, mappingInfo, false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(etlObjects.size()));
@@ -147,7 +146,7 @@ public class EtlEngine extends Engine {
 				etlObjects.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			EtlRecord.mergeAll(mergingRecs, srcConn, dstConn);
+			EtlRecord.transformAll(mergingRecs, srcConn, dstConn);
 			
 			logInfo(
 			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
@@ -186,9 +185,7 @@ public class EtlEngine extends Engine {
 				
 				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
-					EtlDatabaseObject destObject = null;
-					
-					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					EtlDatabaseObject destObject = transform(rec, mappingInfo, srcConn);
 					
 					if (destObject == null) {
 						continue;
@@ -206,7 +203,7 @@ public class EtlEngine extends Engine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					EtlRecord data = new EtlRecord(destObject, mappingInfo, wrt);
+					EtlRecord data = initEtlRecord(destObject, mappingInfo, wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -292,6 +289,19 @@ public class EtlEngine extends Engine {
 		}
 	}
 	
+	/**
+	 * @param conn
+	 * @param rec
+	 * @param mappingInfo
+	 * @return
+	 * @throws DBException
+	 * @throws ForbiddenOperationException
+	 */
+	public EtlDatabaseObject transform(EtlDatabaseObject rec, DstConf mappingInfo, Connection conn)
+	        throws DBException, ForbiddenOperationException {
+		return mappingInfo.transform(rec, conn, this.getSrcApp(), this.getDstApp());
+	}
+	
 	private void process(EtlRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
 	        Connection destConn) throws DBException {
 		String reprocessingMessage = reprocessingCount == 0 ? "Merging Record"
@@ -303,13 +313,18 @@ public class EtlEngine extends Engine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits,
+	        Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new EtlDatabaseObjectSearchParams(
 		        this.getEtlConfiguration(), limits, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
 		return searchParams;
+	}
+	
+	public EtlRecord initEtlRecord(EtlDatabaseObject destObject, DstConf mappingInfo, boolean writeOperationHistory) {
+		return new EtlRecord(destObject, mappingInfo, writeOperationHistory);
 	}
 	
 }

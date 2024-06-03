@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.dbquickcopy.engine.DBQuickCopyEngine;
 import org.openmrs.module.epts.etl.dbquickload.model.LoadedRecordsSearchParams;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DBQuickCopySearchParams extends EtlDatabaseObjectSearchParams{
 	
-	public DBQuickCopySearchParams(EtlItemConfiguration config, ThreadLimitsManager limits,
+	public DBQuickCopySearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits,
 	    DBQuickCopyEngine relatedEngine) {
 		super(config, limits, relatedEngine);
 		

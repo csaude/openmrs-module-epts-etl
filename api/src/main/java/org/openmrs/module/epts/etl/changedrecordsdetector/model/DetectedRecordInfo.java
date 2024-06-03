@@ -396,4 +396,28 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void setInsertSQLQuestionMarksWithObjectId(String insertQuestionMarks) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String getInsertSQLQuestionMarksWithObjectId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setInsertSQLQuestionMarksWithoutObjectId(String insertQuestionMarks) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String getInsertSQLQuestionMarksWithoutObjectId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

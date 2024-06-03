@@ -6,7 +6,7 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -23,7 +23,7 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 	
 	private EtlOperationType type;
 	
-	public ChangedRecordsDetectorSearchParams(EtlItemConfiguration config, String appCode, ThreadLimitsManager limits,
+	public ChangedRecordsDetectorSearchParams(EtlItemConfiguration config, String appCode, ThreadRecordIntervalsManager limits,
 	    EtlOperationType type, Connection conn) {
 		super(config, limits, null);
 		
@@ -96,7 +96,7 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		ThreadLimitsManager bkpLimits = this.getLimits();
+		ThreadRecordIntervalsManager bkpLimits = this.getLimits();
 		
 		this.setLimits(null);
 		

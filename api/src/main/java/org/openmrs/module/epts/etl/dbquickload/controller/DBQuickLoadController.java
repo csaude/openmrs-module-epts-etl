@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.dbquickload.engine.DBQuickLoadEngine;
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -31,7 +31,7 @@ public class DBQuickLoadController extends EtlController {
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public Engine initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		return new DBQuickLoadEngine(monitor, limits);
 	}
 	

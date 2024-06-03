@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.load.engine.DataLoadEngine;
 import org.openmrs.module.epts.etl.load.model.LoadSyncDataSearchParams;
@@ -32,7 +32,7 @@ public class DataLoadController extends EtlController {
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public Engine initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		return new DataLoadEngine(monitor, limits);
 	}
 	

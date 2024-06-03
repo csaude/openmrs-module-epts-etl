@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -22,7 +22,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 public class DBQuickLoadEngine extends EtlEngine {
 
 
-	public DBQuickLoadEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public DBQuickLoadEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -88,7 +88,7 @@ public class DBQuickLoadEngine extends EtlEngine {
 
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
 		QuickLoadLimits loadLimits = new QuickLoadLimits();
 		loadLimits.copy(limits);
 		

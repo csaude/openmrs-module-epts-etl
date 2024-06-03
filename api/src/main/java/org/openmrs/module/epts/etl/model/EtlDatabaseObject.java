@@ -46,6 +46,23 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo);
 	
+	default UniqueKeyInfo getUniqueKeyInfo(UniqueKeyInfo keyToFind) {
+		if (hasUniqueKeys()) {
+			for (UniqueKeyInfo key : this.getUniqueKeysInfo()) {
+				if (keyToFind.equals(key)) {
+					return key;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	default boolean hasUniqueKeys() {
+		return utils.arrayHasElement(getUniqueKeysInfo());
+	}
+
+	
 	/**
 	 * Load the destination parents id to this object
 	 * 
@@ -70,6 +87,14 @@ public interface EtlDatabaseObject extends EtlObject {
 	String generateInsertValuesWithoutObjectId();
 	
 	String generateInsertValuesWithObjectId();
+	
+	void setInsertSQLQuestionMarksWithObjectId(String insertQuestionMarks);
+	
+	String getInsertSQLQuestionMarksWithObjectId();
+	
+	void setInsertSQLQuestionMarksWithoutObjectId(String insertQuestionMarks);
+	
+	String getInsertSQLQuestionMarksWithoutObjectId();
 	
 	boolean hasIgnoredParent();
 	

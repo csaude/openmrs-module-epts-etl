@@ -192,22 +192,27 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	public EtlDatabaseObject retrieveRecordInSrc(EtlDatabaseObject parentRecordInOrigin, Connection srcConn)
 	        throws DBException {
 		
-		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(this, null, null);
-		
-		searchParams.setExtraCondition(this.getSrcConf().getPrimaryKey().parseToParametrizedStringConditionWithAlias());
-		
-		searchParams.setSyncStartDate(getRelatedSyncConfiguration().getStartDate());
-		
-		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(srcConn);
-		
-		searchClauses.addToParameters(parentRecordInOrigin.getObjectId().parseValuesToArray());
-		
-		String sql = searchClauses.generateSQL(srcConn);
-		
-		EtlDatabaseObject simpleValue = DatabaseObjectDAO.find(getSrcConf().getLoadHealper(),
-		    getSrcConf().getSyncRecordClass(getMainApp()), sql, searchClauses.getParameters(), srcConn);
-		
-		return simpleValue;
+		if (!this.getSrcConf().isComplex()) {
+			return DatabaseObjectDAO.getByOid(srcConf, parentRecordInOrigin.getObjectId(), srcConn);
+		} else {
+			
+			EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(this, null, null);
+			
+			searchParams.setExtraCondition(this.getSrcConf().getPrimaryKey().parseToParametrizedStringConditionWithAlias());
+			
+			searchParams.setSyncStartDate(getRelatedSyncConfiguration().getStartDate());
+			
+			SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(srcConn);
+			
+			searchClauses.addToParameters(parentRecordInOrigin.getObjectId().parseValuesToArray());
+			
+			String sql = searchClauses.generateSQL(srcConn);
+			
+			EtlDatabaseObject simpleValue = DatabaseObjectDAO.find(getSrcConf().getLoadHealper(),
+			    getSrcConf().getSyncRecordClass(getMainApp()), sql, searchClauses.getParameters(), srcConn);
+			
+			return simpleValue;
+		}
 	}
 	
 	public boolean containsDstTable(String tableName) {

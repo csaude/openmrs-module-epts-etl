@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
@@ -21,7 +21,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	
-	public ProblemsSolverEngineUsersDupsUUID(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public ProblemsSolverEngineUsersDupsUUID(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -145,7 +145,7 @@ public class ProblemsSolverEngineUsersDupsUUID extends GenericEngine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ProblemsSolverSearchParamsUsersDupsUUID(
 		        this.getEtlConfiguration(), null, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

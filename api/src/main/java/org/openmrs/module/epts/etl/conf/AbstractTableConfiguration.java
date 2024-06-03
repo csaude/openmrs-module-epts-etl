@@ -79,6 +79,30 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private boolean usingManualDefinedAlias;
 	
+	private String insertSQLQuestionMarksWithObjectId;
+	
+	private String insertSQLQuestionMarksWithoutObjectId;
+	
+	@Override
+	public String getInsertSQLQuestionMarksWithObjectId() {
+		return insertSQLQuestionMarksWithObjectId;
+	}
+	
+	@Override
+	public void setInsertSQLQuestionMarksWithObjectId(String insertSQLQuestionMarksWithObjectId) {
+		this.insertSQLQuestionMarksWithObjectId = insertSQLQuestionMarksWithObjectId;
+	}
+	
+	@Override
+	public String getInsertSQLQuestionMarksWithoutObjectId() {
+		return insertSQLQuestionMarksWithoutObjectId;
+	}
+	
+	@Override
+	public void setInsertSQLQuestionMarksWithoutObjectId(String insertSQLQuestionMarksWithoutObjectId) {
+		this.insertSQLQuestionMarksWithoutObjectId = insertSQLQuestionMarksWithoutObjectId;
+	}
+	
 	public AbstractTableConfiguration() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
@@ -88,7 +112,6 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		
 		this.tableName = tableName;
 	}
-	
 	
 	public void setUsingManualDefinedAlias(boolean usingManualDefinedAlias) {
 		this.usingManualDefinedAlias = usingManualDefinedAlias;

@@ -251,6 +251,25 @@ public class UniqueKeyInfo {
 		return false;
 	}
 	
+	public boolean hasSameValues(UniqueKeyInfo otherUniqueKey) {
+		
+		if (!this.hasSameFields(otherUniqueKey)) {
+			throw new ForbiddenOperationException("The unique keys has diffents keys");
+		}
+		
+		for (Key key : this.getFields()) {
+			
+			Key keyFromOtherUk = otherUniqueKey.getKey(key.getName());
+			
+			if (!key.getValue().equals(keyFromOtherUk.getValue())) {
+				return false;
+			}
+		}
+		
+		return true;
+		
+	}
+	
 	public boolean hasSameFields(UniqueKeyInfo other) {
 		for (Field field : this.getFields()) {
 			if (!other.getFields().contains(field))

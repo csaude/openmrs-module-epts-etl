@@ -57,7 +57,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected MigrationFinalCheckStatus finalCheckStatus;
 	
-	public Engine(EngineMonitor monitr, ThreadLimitsManager limits) {
+	public Engine(EngineMonitor monitr, ThreadRecordIntervalsManager limits) {
 		this.monitor = monitr;
 		
 		OpenConnection conn;
@@ -81,7 +81,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return getRelatedOperationController().getDefaultApp();
 	}
 	
-	public ThreadLimitsManager getLimits() {
+	public ThreadRecordIntervalsManager getLimits() {
 		return getSearchParams().getLimits();
 	}
 	
@@ -243,7 +243,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 						
 						reportProgress();
 						
-						getLimits().save();
+						getLimits().save(this.getMonitor());
 					} else {
 						if (getRelatedOperationController().mustRestartInTheEnd()) {
 							this.requestANewJob();
@@ -264,7 +264,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 									this.finalCheckStatus = MigrationFinalCheckStatus.ONGOING;
 									
 									//Start work with whole records range
-									this.getLimits().getMaxLimits().reset(getMonitor().getMinRecordId(), getMonitor().getMaxRecordId());
+									this.getLimits().getMaxLimits().reset(getMonitor().getMinRecordId(),
+									    getMonitor().getMaxRecordId());
 									this.getLimits().reset();
 									
 									//Change the engine to unique engine to prevent the original main engine processing history
@@ -365,7 +366,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 			
 			records = getSearchParams().searchNextRecordsInMultiThreads(this, conn);
 		} else {
-			records = getSearchParams().searchNextRecords(conn);
+			records = getSearchParams().searchNextRecords(this.getMonitor(), conn);
 		}
 		
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
@@ -547,12 +548,14 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		this.monitor.reportProgress();
 	}
 	
-	public void resetLimits(ThreadLimitsManager limits) {
+	public void resetLimits(ThreadRecordIntervalsManager limits) {
 		if (limits != null) {
 			limits.setEngine(this);
 		}
 		
 		getSearchParams().setLimits(limits);
+		
+		retriveSavedLimits();
 	}
 	
 	public void requestANewJob() {
@@ -717,7 +720,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		
 		logDebug("Retrieving saved limits for " + getLimits());
 		
-		getLimits().tryToLoadFromFile(new File(getLimits().generateFilePath()), this);
+		getLimits().tryToLoadFromFile(new File(getLimits().generateFilePath(this.getMonitor())), this);
 		
 		if (getLimits().isLoadedFromFile()) {
 			logDebug("Saved limits found [" + getLimits() + "]");
@@ -743,7 +746,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected abstract void restart();
 	
-	protected abstract AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn);
+	protected abstract AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits,
+	        Connection conn);
 	
 	public abstract void performeSync(List<? extends EtlObject> records, Connection conn) throws DBException;
 }

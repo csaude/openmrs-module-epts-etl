@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.detectgapes.model.DetectGapesSearchParams;
 import org.openmrs.module.epts.etl.detectgapes.model.GapeDAO;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
@@ -28,7 +28,7 @@ public class DetectGapesEngine extends EtlEngine {
 	 */
 	private EtlDatabaseObject prevRec;
 	
-	public DetectGapesEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public DetectGapesEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -73,7 +73,7 @@ public class DetectGapesEngine extends EtlEngine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DetectGapesSearchParams(this.getEtlConfiguration(),
 		        limits, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

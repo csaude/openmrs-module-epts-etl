@@ -5,7 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBController;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -17,7 +17,7 @@ public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchPara
 	
 	private boolean selectAllRecords;
 	
-	public DataBaseMergeFromSourceDBSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits, Connection conn,
+	public DataBaseMergeFromSourceDBSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, Connection conn,
 	    DataBaseMergeFromSourceDBController relatedController) {
 		super(config, limits, null);
 	}

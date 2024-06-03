@@ -25,6 +25,7 @@ import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
+import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -35,7 +36,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 	
 	private Date syncStartDate;
 	
-	private ThreadLimitsManager limits;
+	private ThreadRecordIntervalsManager limits;
 	
 	private EtlItemConfiguration config;
 	
@@ -45,7 +46,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 	
 	protected int savedCount;
 	
-	public AbstractEtlSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits, EtlEngine relatedEtlEngine) {
+	public AbstractEtlSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, EtlEngine relatedEtlEngine) {
 		this.config = config;
 		this.limits = limits;
 		this.searchSourceType = SearchSourceType.SOURCE;
@@ -88,11 +89,11 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		this.config = config;
 	}
 	
-	public ThreadLimitsManager getLimits() {
+	public ThreadRecordIntervalsManager getLimits() {
 		return limits;
 	}
 	
-	public void setLimits(ThreadLimitsManager limits) {
+	public void setLimits(ThreadRecordIntervalsManager limits) {
 		this.limits = limits;
 	}
 	
@@ -201,23 +202,23 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		
 		int qtyRecordsPerEngine = qtyRecordsBetweenLimits / qtyProcessors;
 		
-		ThreadLimitsManager initialLimits = null;
+		ThreadRecordIntervalsManager initialLimits = null;
 		
 		List<CompletableFuture<Integer>> tasks = new ArrayList<>(qtyProcessors);
 		
 		for (int i = 0; i < qtyProcessors; i++) {
-			ThreadLimitsManager limits;
+			ThreadRecordIntervalsManager limits;
 			
 			if (initialLimits == null) {
-				limits = new ThreadLimitsManager(minRecordId, minRecordId + qtyRecordsPerEngine - 1, qtyRecordsPerEngine);
+				limits = new ThreadRecordIntervalsManager(minRecordId, minRecordId + qtyRecordsPerEngine - 1, qtyRecordsPerEngine);
 				initialLimits = limits;
 			} else {
 				// Last processor
 				if (i == qtyProcessors - 1) {
-					limits = new ThreadLimitsManager(initialLimits.getThreadMaxRecord() + 1, maxRecordId, qtyRecordsPerEngine);
+					limits = new ThreadRecordIntervalsManager(initialLimits.getThreadMaxRecordId() + 1, maxRecordId, qtyRecordsPerEngine);
 				} else {
-					limits = new ThreadLimitsManager(initialLimits.getThreadMaxRecord() + 1,
-					        initialLimits.getThreadMaxRecord() + qtyRecordsPerEngine, qtyRecordsPerEngine);
+					limits = new ThreadRecordIntervalsManager(initialLimits.getThreadMaxRecordId() + 1,
+					        initialLimits.getThreadMaxRecordId() + qtyRecordsPerEngine, qtyRecordsPerEngine);
 				}
 				initialLimits = limits;
 			}
@@ -261,7 +262,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		return this.savedCount;
 	}
 	
-	public List<T> searchNextRecords(Connection conn) throws DBException{
+	public List<T> searchNextRecords(EngineMonitor monitor, Connection conn) throws DBException{
 		SearchClauses<T> searchClauses = this.generateSearchClauses(conn);
 		
 		if (this.getOrderByFields() != null) {
@@ -276,7 +277,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		int i = 0;
 		
 		while (utilities.arrayHasNoElement(l) && this.getLimits().canGoNext()) {
-			this.getLimits().save();
+			this.getLimits().save(monitor);
 			
 			if (i++ == 0) {
 				this.getRelatedController()
@@ -320,25 +321,25 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		
 		long qtyRecordsPerEngine = qtyRecordsBetweenLimits / qtyProcessors;
 		
-		ThreadLimitsManager initialLimits = null;
+		ThreadRecordIntervalsManager initialLimits = null;
 		
 		List<CompletableFuture<List<T>>> tasks = new ArrayList<>(qtyProcessors);
 		
-		List<ThreadLimitsManager> generatedLimits = new ArrayList<>();
+		List<ThreadRecordIntervalsManager> generatedLimits = new ArrayList<>();
 		
 		for (int i = 0; i < qtyProcessors; i++) {
-			ThreadLimitsManager limits;
+			ThreadRecordIntervalsManager limits;
 			
 			if (initialLimits == null) {
-				limits = new ThreadLimitsManager(getLimits().getCurrentFirstRecordId(), getLimits().getCurrentFirstRecordId() + qtyRecordsPerEngine - 1, (int)qtyRecordsPerEngine);
+				limits = new ThreadRecordIntervalsManager(getLimits().getCurrentFirstRecordId(), getLimits().getCurrentFirstRecordId() + qtyRecordsPerEngine - 1, (int)qtyRecordsPerEngine);
 				initialLimits = limits;
 			} else {
 				// Last processor
 				if (i == qtyProcessors - 1) {
-					limits = new ThreadLimitsManager(initialLimits.getThreadMaxRecord() + 1,  getLimits().getCurrentLastRecordId(), (int)qtyRecordsPerEngine);
+					limits = new ThreadRecordIntervalsManager(initialLimits.getThreadMaxRecordId() + 1,  getLimits().getCurrentLastRecordId(), (int)qtyRecordsPerEngine);
 				} else {
-					limits = new ThreadLimitsManager(initialLimits.getThreadMaxRecord() + 1,
-					        initialLimits.getThreadMaxRecord() + qtyRecordsPerEngine, (int)qtyRecordsPerEngine);
+					limits = new ThreadRecordIntervalsManager(initialLimits.getThreadMaxRecordId() + 1,
+					        initialLimits.getThreadMaxRecordId() + qtyRecordsPerEngine, (int)qtyRecordsPerEngine);
 				}
 				initialLimits = limits;
 			}
@@ -355,7 +356,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 					AbstractEtlSearchParams<T> cloned = this.cloneMe();
 					cloned.setLimits(limits);
 					
-					return cloned.searchNextRecords(conn);
+					return cloned.searchNextRecords(engine.getMonitor(), conn);
 				}
 				catch (DBException e) {
 					throw new EtlException(e);
@@ -386,11 +387,11 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 			e.printStackTrace();
 		}
 		
-		ThreadLimitsManager.removeAll(generatedLimits);
+		ThreadRecordIntervalsManager.removeAll( generatedLimits, engine.getMonitor());
 		
 		
 		if (utilities.arrayHasNoElement(allSearchedRecords) && this.getLimits().canGoNext()) {
-			this.getLimits().save();
+			this.getLimits().save(engine.getMonitor());
 			
 			this.getRelatedController()
 				        .logDebug("Empty result on fased quering... The application will keep searching next pages "

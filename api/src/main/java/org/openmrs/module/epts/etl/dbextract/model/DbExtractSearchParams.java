@@ -4,13 +4,13 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.dbextract.engine.DbExtractEngine;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
 public class DbExtractSearchParams extends EtlDatabaseObjectSearchParams {
 	
-	public DbExtractSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits, DbExtractEngine relatedEngine) {
+	public DbExtractSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, DbExtractEngine relatedEngine) {
 		super(config, limits, relatedEngine);
 	}
 	

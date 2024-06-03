@@ -538,9 +538,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = DBUtilities
 		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0], conn);
 		
-		//sql = objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
-		
 		sql += " VALUES";
+		
+		Object[] params = {};
 		
 		sql = sql.toLowerCase();
 		
@@ -550,16 +550,20 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			values += "(" + utilities.resolveScapeCharacter(objects.get(i).generateInsertValuesWithoutObjectId()) + "),";
+			//values += "(" + utilities.resolveScapeCharacter(objects.get(i).generateInsertValuesWithoutObjectId()) + "),";
+			
+			values += "(" + objects.get(i).getInsertSQLQuestionMarksWithoutObjectId() + "),";
+			
+			params = utilities.setParam(params, objects.get(i).getInsertParamsWithoutObjectId());
+			
 		}
 		
 		if (utilities.stringHasValue(values)) {
 			sql += utilities.removeLastChar(values);
 			
-			executeQueryWithRetryOnError(sql, null, conn);
+			executeQueryWithRetryOnError(sql, params, conn);
 		}
 	}
-	
 	
 	public static void insertAllDataWithId(List<EtlDatabaseObject> objects, Connection conn) throws DBException {
 		String sql = DBUtilities.addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0],
@@ -567,6 +571,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		sql += " VALUES";
 		
+		Object[] params = {};
+		
 		sql = sql.toLowerCase();
 		
 		String values = "";
@@ -575,13 +581,17 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			values += "(" + utilities.resolveScapeCharacter(objects.get(i).generateInsertValuesWithObjectId()) + "),";
+			//values += "(" + utilities.resolveScapeCharacter(objects.get(i).generateInsertValuesWithObjectId()) + "),";
+			
+			values += "(" + objects.get(i).getInsertSQLQuestionMarksWithObjectId() + "),";
+			
+			params = utilities.setParam(params, objects.get(i).getInsertParamsWithObjectId());
 		}
 		
 		if (utilities.stringHasValue(values)) {
 			sql += utilities.removeLastChar(values);
 			
-			executeQueryWithRetryOnError(sql, null, conn);
+			executeQueryWithRetryOnError(sql, params, conn);
 		}
 	}
 	

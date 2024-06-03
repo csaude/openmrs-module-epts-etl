@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.consolitation.controller.DatabaseIntegrityCon
 import org.openmrs.module.epts.etl.consolitation.model.DatabaseIntegrityConsolidationSearchParams;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -15,7 +15,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabaseIntegrityConsolidationEngine extends Engine {
 	
-	public DatabaseIntegrityConsolidationEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public DatabaseIntegrityConsolidationEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -50,7 +50,7 @@ public class DatabaseIntegrityConsolidationEngine extends Engine {
 	}
 
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DatabaseIntegrityConsolidationSearchParams(this.getEtlConfiguration(), limits,  conn);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());

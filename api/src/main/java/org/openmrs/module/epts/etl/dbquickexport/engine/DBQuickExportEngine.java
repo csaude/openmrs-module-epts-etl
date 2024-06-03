@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportControl
 import org.openmrs.module.epts.etl.dbquickexport.model.DBQuickExportSearchParams;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
@@ -21,7 +21,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DBQuickExportEngine extends Engine {
 	
-	public DBQuickExportEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public DBQuickExportEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -102,7 +102,7 @@ public class DBQuickExportEngine extends Engine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DBQuickExportSearchParams(this.getEtlConfiguration(),
 		        limits);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

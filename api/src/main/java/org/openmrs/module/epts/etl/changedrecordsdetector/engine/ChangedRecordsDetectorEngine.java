@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.changedrecordsdetector.model.ChangedRecordsDe
 import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordInfo;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
@@ -22,7 +22,7 @@ import fgh.spi.changedrecordsdetector.DetectedRecordService;
 
 public class ChangedRecordsDetectorEngine extends Engine {
 	
-	public ChangedRecordsDetectorEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public ChangedRecordsDetectorEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 		
 		DetectedRecordService action = DetectedRecordService.getInstance();
@@ -89,7 +89,7 @@ public class ChangedRecordsDetectorEngine extends Engine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ChangedRecordsDetectorSearchParams(
 		        this.getEtlConfiguration(), getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
 		        limits, getRelatedOperationController().getOperationType(), conn);

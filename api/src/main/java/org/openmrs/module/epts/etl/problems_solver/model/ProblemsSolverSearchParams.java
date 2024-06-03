@@ -7,13 +7,14 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -21,13 +22,13 @@ public class ProblemsSolverSearchParams extends AbstractEtlSearchParams<EtlObjec
 	
 	private int savedCount;
 	
-	public ProblemsSolverSearchParams(EtlItemConfiguration config, ThreadLimitsManager limits,
+	public ProblemsSolverSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits,
 	    GenericEngine relatedEngine) {
 		super(config, limits, relatedEngine);
 	}
 	
 	@Override
-	public List<EtlObject> searchNextRecords(Connection conn) throws DBException {
+	public List<EtlObject> searchNextRecords(EngineMonitor monitor, Connection conn) throws DBException {
 		EtlObject rec = new EtlObject() {
 			
 			@Override
@@ -86,7 +87,7 @@ public class ProblemsSolverSearchParams extends AbstractEtlSearchParams<EtlObjec
 		if (this.savedCount > 0)
 			return this.savedCount;
 		
-		ThreadLimitsManager bkpLimits = this.getLimits();
+		ThreadRecordIntervalsManager bkpLimits = this.getLimits();
 		
 		this.removeLimits();
 		

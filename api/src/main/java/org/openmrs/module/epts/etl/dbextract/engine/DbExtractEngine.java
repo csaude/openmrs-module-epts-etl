@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.dbextract.model.DbExtractRecord;
 import org.openmrs.module.epts.etl.dbextract.model.DbExtractSearchParams;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -31,7 +31,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class DbExtractEngine extends EtlEngine {
 	
-	public DbExtractEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
+	public DbExtractEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	
@@ -264,7 +264,7 @@ public class DbExtractEngine extends EtlEngine {
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadLimitsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DbExtractSearchParams(this.getEtlConfiguration(),
 		        limits, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

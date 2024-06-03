@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.etl.controller;
 
+import java.lang.reflect.Constructor;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AppInfo;
@@ -9,7 +10,7 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.engine.ThreadLimitsManager;
+import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.re_etl.engine.ReEtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
@@ -46,9 +47,25 @@ public class EtlController extends SiteOperationController {
 		return dstApp;
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, ThreadLimitsManager limits) {
-		return new ReEtlEngine(monitor, limits);
+	public Engine initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+		if (getOperationConfig().getEngineClazz() != null) {
+			
+			Class[] parameterTypes = { EngineMonitor.class, ThreadRecordIntervalsManager.class };
+			
+			try {
+				Constructor<Engine> a = getOperationConfig().getEngineClazz().getConstructor(parameterTypes);
+				
+				return a.newInstance(monitor, limits);
+			}
+			catch (Exception e) {
+				throw new ForbiddenOperationException(e);
+			}
+		} else {
+			return new ReEtlEngine(monitor, limits);
+			
+		}
 	}
 	
 	@Override
