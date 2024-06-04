@@ -233,6 +233,8 @@ public class DstConf extends AbstractTableConfiguration {
 				String paramName = utilities.removeCharactersOnString(fm.getSrcValue(), "@");
 				
 				fm.setSrcValue(getRelatedSyncConfiguration().getParamValue(paramName));
+			} else if (fm.getSrcValue().isEmpty() || fm.getSrcValue().equals("null")) {
+				fm.setMapToNullValue(true);
 			}
 			
 			return;
@@ -489,7 +491,9 @@ public class DstConf extends AbstractTableConfiguration {
 			for (FieldsMapping fieldsMapping : this.allMapping) {
 				Object srcValue;
 				
-				if (fieldsMapping.getSrcValue() != null) {
+				if (fieldsMapping.isMapToNullValue()) {
+					srcValue = null;
+				} else if (fieldsMapping.getSrcValue() != null) {
 					srcValue = fieldsMapping.getSrcValue();
 				} else {
 					srcValue = fieldsMapping.retrieveValue(mappedObject, srcObjects, dstAppInfo, srcConn);

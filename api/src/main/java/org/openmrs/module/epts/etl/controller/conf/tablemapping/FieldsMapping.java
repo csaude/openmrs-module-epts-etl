@@ -26,6 +26,8 @@ public class FieldsMapping {
 	private String dataSourceName;
 	
 	private String dstField;
+
+	private boolean mapToNullValue;
 	
 	public FieldsMapping() {
 	}
@@ -119,5 +121,14 @@ public class FieldsMapping {
 		
 		throw new ForbiddenOperationException(
 		        "The field '" + this.srcField + " does not belong to any configured source table");
+	}
+
+	public void setMapToNullValue(boolean b) {
+		mapToNullValue = b;
+	}
+	
+	
+	public boolean isMapToNullValue() {
+		return mapToNullValue;
 	}
 }

@@ -117,6 +117,9 @@ public class QuickMergeRecord {
 				
 			} else if (e.isIntegrityConstraintViolationException()) {
 				determineMissingMetadataParent(this, srcConn, destConn);
+				
+				//If there is no missing metadata parent, throw exception
+				throw e;
 			} else
 				throw e;
 		}
@@ -198,9 +201,8 @@ public class QuickMergeRecord {
 				continue;
 			
 			String fieldNameOnParentTable = refInfo.getSimpleRefMapping().getParentField().getNameAsClassAtt();
-			String filedNameOnChildTable = refInfo.getSimpleRefMapping().getChildField().getNameAsClassAtt();
 			
-			Object oParentIdInOrigin = record.getParentValue(filedNameOnChildTable);
+			Object oParentIdInOrigin = record.getParentValue(refInfo);
 			
 			if (oParentIdInOrigin != null) {
 				Integer parentIdInOrigin = (Integer) oParentIdInOrigin;
@@ -256,16 +258,13 @@ public class QuickMergeRecord {
 	        Connection destConn) throws MissingParentException, DBException {
 		TableConfiguration config = quickMergeRecord.config;
 		
-		if (!utilities.arrayHasElement(config.getParents()))
-			return;
-		
 		EtlDatabaseObject record = quickMergeRecord.record;
 		
 		for (ParentTable refInfo : config.getParentRefInfo()) {
 			if (!refInfo.isMetadata())
 				continue;
 			
-			Object oParentId = record.getParentValue(refInfo.getChildColumnAsClassAttOnSimpleMapping());
+			Object oParentId = record.getParentValue(refInfo);
 			
 			if (oParentId != null) {
 				Integer parentId = (Integer) oParentId;
@@ -305,7 +304,7 @@ public class QuickMergeRecord {
 			Integer parentIdInOrigin = null;
 			
 			try {
-				parentIdInOrigin = (Integer) record.getParentValue(parent.getChildColumnAsClassAttOnSimpleMapping());
+				parentIdInOrigin = (Integer) record.getParentValue(parent);
 			}
 			catch (NullPointerException | NumberFormatException e) {}
 			

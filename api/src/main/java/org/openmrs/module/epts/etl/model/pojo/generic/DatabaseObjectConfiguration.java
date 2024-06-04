@@ -146,6 +146,16 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	DatabaseObjectLoaderHelper getLoadHealper();
 	
+	default boolean hasParentRefInfo() {
+		return utilities.arrayHasElement(this.getParentRefInfo());
+	}
+	
+	default boolean hasChildRefInfo() {
+		return isMustLoadChildrenInfo() && utilities.arrayHasElement(this.getChildRefInfo());
+	}
+	
+	boolean isMustLoadChildrenInfo();
+	
 	default boolean containsField(String fieldName) {
 		for (Field f : this.getFields()) {
 			if (f.getName().equals(fieldName)) {

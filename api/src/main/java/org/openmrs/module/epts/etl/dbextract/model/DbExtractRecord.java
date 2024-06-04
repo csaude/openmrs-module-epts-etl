@@ -188,6 +188,10 @@ public class DbExtractRecord extends QuickMergeRecord {
 		catch (DBException e) {
 			if (e.isDuplicatePrimaryOrUniqueKeyException()) {} else if (e.isIntegrityConstraintViolationException()) {
 				determineMissingMetadataParent(this, srcConn, dstConn);
+				
+				//If there is no missing metadata parent, throw exception
+				
+				throw e;
 			} else
 				throw e;
 		}
@@ -212,7 +216,6 @@ public class DbExtractRecord extends QuickMergeRecord {
 		}
 		
 		record.update(this.getConfig(), destConn);
-		
 	}
 	
 	public static void extractAll(List<DbExtractRecord> extractRecs, Connection srcConn, OpenConnection dstConn)

@@ -421,8 +421,12 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 
 	@Override
 	public String generateSelectFromQuery() {
-		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public boolean isMustLoadChildrenInfo() {
+		return false;
 	}
 	
 }

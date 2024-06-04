@@ -301,19 +301,19 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
-	public Integer getParentValue(String parentAttName) {
-		if (utilities.arrayHasElement(this.relatedConfiguration.getParentRefInfo())) {
+	public Object getParentValue(ParentTable parent) {
+		if (this.relatedConfiguration.hasParentRefInfo()) {
 			for (ParentTable refInfo : this.relatedConfiguration.getParentRefInfo()) {
 				for (RefMapping map : refInfo.getRefMapping()) {
 					
-					if (map.getChildFieldName().equals(parentAttName)) {
-						return (Integer) getFieldValue(map.getChildFieldName());
+					if (map.getChildFieldName().equals(map.getParentFieldName())) {
+						return getFieldValue(map.getChildFieldName());
 					}
 				}
 			}
 		}
 		
-		return 0;
+		return null;
 	}
 	
 	@Override

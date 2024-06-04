@@ -74,9 +74,12 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 					EtlDatabaseObject userOnDestDB = DatabaseObjectDAO.getByOid(getSrcConf(),
 					    ((EtlDatabaseObject) record).getObjectId(), conn);
 					
-					if ((Integer) userOnDestDB.getParentValue("personId") != 1) {
+					ParentTableImpl p = new ParentTableImpl();
+					p.addMapping(RefMapping.fastCreate("personId", "personId"));
+					
+					if ((Integer) userOnDestDB.getParentValue(p) != 1) {
 						logDebug("SKIPPING THE RECORD BECAUSE IT HAS THE CORRECT PERSON ["
-						        + userOnDestDB.getParentValue("personId") + "]");
+						        + userOnDestDB.getParentValue(p) + "]");
 						continue;
 					}
 					
@@ -95,7 +98,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 							logDebug("RESOLVING USER PROBLEM USING DATA FROM [" + dbName + "]");
 							
 							EtlDatabaseObject relatedPersonOnSrcDB = DatabaseObjectDAO.getByOid(personTabConf,
-							    Oid.fastCreate("", userOnSrcDB.getParentValue("personId")), srcConn);
+							    Oid.fastCreate("", userOnSrcDB.getParentValue(p)), srcConn);
 							
 							List<EtlDatabaseObject> relatedPersonOnDestDB = null;//DatabaseObjectDAO.getByUuid(prsonRecordClass, relatedPersonOnSrcDB.getUuid(), conn);
 							

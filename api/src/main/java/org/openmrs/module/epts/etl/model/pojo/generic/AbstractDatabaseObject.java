@@ -980,7 +980,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 				
 				UniqueKeyInfo otherKey = objAsOpenMrs.getUniqueKeyInfo(key);
 				
-				if (otherKey != null  && key.hasSameValues(otherKey)) {
+				if (otherKey != null && key.hasSameValues(otherKey)) {
 					return true;
 				}
 				
@@ -1081,7 +1081,5 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			Object parentValue = newParent.getFieldValue(map.getChildFieldNameAsAttClass());
 			this.setFieldValue(map.getChildFieldNameAsAttClass(), parentValue);
 		}
-		
 	}
-	
 }

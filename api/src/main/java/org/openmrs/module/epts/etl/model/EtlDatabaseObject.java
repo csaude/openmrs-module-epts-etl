@@ -108,7 +108,7 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	boolean hasParents();
 	
-	Object getParentValue(String parentAttName);
+	Object getParentValue(ParentTable refInfo);
 	
 	String generateTableName();
 	

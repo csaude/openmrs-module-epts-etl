@@ -1565,14 +1565,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return fromClause;
 	}
 	
-	default boolean hasParentRefInfo() {
-		return utilities.arrayHasElement(this.getParentRefInfo());
-	}
-	
-	default boolean hasChildRefInfo() {
-		return isMustLoadChildrenInfo() && utilities.arrayHasElement(this.getChildRefInfo());
-	}
-	
 	default boolean hasSchema() {
 		return utilities.stringHasValue(getSchema());
 	}
