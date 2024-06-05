@@ -117,7 +117,7 @@ public class EtlRecord {
 		return record;
 	}
 	
-	public static void transformAll(List<EtlRecord> mergingRecs, Connection srcConn, OpenConnection dstConn)
+	public static void transformAll(List<EtlRecord> mergingRecs, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		if (!utilities.arrayHasElement(mergingRecs)) {
 			return;

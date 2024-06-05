@@ -83,6 +83,22 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private String insertSQLQuestionMarksWithoutObjectId;
 	
+	private boolean includePrimaryKeyOnInsert;
+	
+	@Override
+	public boolean includePrimaryKeyOnInsert() {
+		return includePrimaryKeyOnInsert;
+	}
+	
+	@Override
+	public void setIncludePrimaryKeyOnInsert(boolean includePrimaryKeyOnInsert) {
+		this.includePrimaryKeyOnInsert = includePrimaryKeyOnInsert;
+	}
+	
+	public boolean isIncludePrimaryKeyOnInsert() {
+		return includePrimaryKeyOnInsert;
+	}
+	
 	@Override
 	public String getInsertSQLQuestionMarksWithObjectId() {
 		return insertSQLQuestionMarksWithObjectId;

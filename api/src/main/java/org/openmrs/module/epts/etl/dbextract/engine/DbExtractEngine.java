@@ -125,8 +125,7 @@ public class DbExtractEngine extends EtlEngine {
 			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits()
 			        + "]... \n Try to performe extraction record by record...");
 			
-			throw e;
-			//performeSyncOneByOne(syncRecords, srcConn);
+			performeSyncOneByOne(etlObjects, srcConn);
 		}
 		finally {
 			dstConn.finalizeConnection();
@@ -260,11 +259,12 @@ public class DbExtractEngine extends EtlEngine {
 		
 		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + extractionData.getRecord() + "]");
 		
-		extractionData.merge(srcConn, destConn);
+		extractionData.extract(srcConn, destConn);
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits,
+	        Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DbExtractSearchParams(this.getEtlConfiguration(),
 		        limits, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

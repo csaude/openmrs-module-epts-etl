@@ -46,7 +46,8 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 	
 	protected int savedCount;
 	
-	public AbstractEtlSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, EtlEngine relatedEtlEngine) {
+	public AbstractEtlSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits,
+	    EtlEngine relatedEtlEngine) {
 		this.config = config;
 		this.limits = limits;
 		this.searchSourceType = SearchSourceType.SOURCE;
@@ -190,7 +191,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		int maxRecordId = (int) progressInfo.getProgressMeter().getMaxRecordId();
 		int minRecordId = (int) progressInfo.getProgressMeter().getMinRecordId();
 		
-		int qtyRecordsBetweenLimits = maxRecordId - minRecordId;
+		int qtyRecordsBetweenLimits = maxRecordId - minRecordId+1;
 		
 		if (qtyRecordsBetweenLimits == 0) {
 			return 0;
@@ -201,6 +202,8 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		//int qtyProcessors = 1;
 		
 		int qtyRecordsPerEngine = qtyRecordsBetweenLimits / qtyProcessors;
+		
+		List<ThreadRecordIntervalsManager> generatedLimits = new ArrayList<>();
 		
 		ThreadRecordIntervalsManager initialLimits = null;
 		
@@ -215,13 +218,21 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 			} else {
 				// Last processor
 				if (i == qtyProcessors - 1) {
-					limits = new ThreadRecordIntervalsManager(initialLimits.getThreadMaxRecordId() + 1, maxRecordId, qtyRecordsPerEngine);
+					long min = initialLimits.getThreadMaxRecordId() + 1;
+					long process = maxRecordId - min + 1;
+					
+					limits = new ThreadRecordIntervalsManager(min, maxRecordId, (int) process);
 				} else {
 					limits = new ThreadRecordIntervalsManager(initialLimits.getThreadMaxRecordId() + 1,
 					        initialLimits.getThreadMaxRecordId() + qtyRecordsPerEngine, qtyRecordsPerEngine);
 				}
 				initialLimits = limits;
 			}
+			
+			//The limits start qtyRecordsPerProcessing behind, so move next before search
+			limits.moveNext();
+			
+			generatedLimits.add(limits);
 			
 			tasks.add(CompletableFuture.supplyAsync(() -> {
 				try {
@@ -263,6 +274,9 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 	}
 	
 	public List<T> searchNextRecords(EngineMonitor monitor, Connection conn) throws DBException{
+		
+		if (hasLimits() && getLimits().isOutOfLimits()) return null;
+		
 		SearchClauses<T> searchClauses = this.generateSearchClauses(conn);
 		
 		if (this.getOrderByFields() != null) {
@@ -305,9 +319,11 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 	}
 
 	protected List<T> searchNextRecordsInMultiThreads(Engine engine, Connection conn){
-		if (getLimits() == null) {
+		if (!hasLimits()) {
 			throw new ForbiddenOperationException("For multithreading search you must specify the limits with min and max records in the searching range");
 		}
+		
+		if (getLimits().isOutOfLimits()) return null;
 		
 		if (getLimits().getCurrentFirstRecordId() == 0 && getLimits().getCurrentLastRecordId() == 0 ) {
 			throw new EtlException("The minRecordId and maxRecordId cannot be zero!!!");
@@ -336,7 +352,10 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 			} else {
 				// Last processor
 				if (i == qtyProcessors - 1) {
-					limits = new ThreadRecordIntervalsManager(initialLimits.getThreadMaxRecordId() + 1,  getLimits().getCurrentLastRecordId(), (int)qtyRecordsPerEngine);
+					long min = initialLimits.getThreadMaxRecordId() + 1;
+					long process = getLimits().getCurrentLastRecordId() - min + 1;
+					
+					limits = new ThreadRecordIntervalsManager(min,  getLimits().getCurrentLastRecordId(), (int)process);
 				} else {
 					limits = new ThreadRecordIntervalsManager(initialLimits.getThreadMaxRecordId() + 1,
 					        initialLimits.getThreadMaxRecordId() + qtyRecordsPerEngine, (int)qtyRecordsPerEngine);
@@ -344,12 +363,14 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 				initialLimits = limits;
 			}
 			
-			
 			limits.setEngine(engine);
 			
-			limits.setThreadCode(engine.getEngineId() + utilities.garantirXCaracterOnNumber(i++, 2) + ".tmp");
+			limits.setThreadCode(engine.getEngineId() + utilities.garantirXCaracterOnNumber(i, 2) + ".tmp");
 			
 			generatedLimits.add(limits);
+			
+			//The limits start qtyRecordsPerProcessing behind, so move next before search
+			limits.moveNext();
 			
 			tasks.add(CompletableFuture.supplyAsync(() -> {
 				try {

@@ -176,7 +176,9 @@ public class UniqueKeyInfo {
 					keyElements = new ArrayList<>();
 				}
 				
-				keyElements.add(new Key(rs.getString("COLUMN_NAME")));
+				Field f = tableConfiguration.getField(rs.getString("COLUMN_NAME"));
+				
+				keyElements.add(Key.fastCreateTyped(f.getName(), f.getType()));
 			}
 			
 			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);
@@ -344,7 +346,7 @@ public class UniqueKeyInfo {
 		UniqueKeyInfo uk = UniqueKeyInfo.init(this.tabConf, keyName);
 		
 		for (Field field : fields) {
-			uk.addKey(new Key(field.getName()));
+			uk.addKey(Key.fastCreateTyped(field.getName(), field.getType()));
 		}
 		return uk;
 	}
@@ -445,6 +447,22 @@ public class UniqueKeyInfo {
 		return values;
 	}
 	
+	public String parseToFilledStringConditionWithAlias() {
+		if (getTabConf() == null) {
+			throw new ForbiddenOperationException("The tabConf is needed");
+		}
+		
+		if (!getTabConf().hasAlias()) {
+			throw new ForbiddenOperationException("The table " + getTabConf().getTableName() + " has no alias!");
+		}
+		
+		return parseToFilledStringCondition(getTabConf().getAlias());
+	}
+	
+	public String parseToFilledStringConditionWithoutAlias() {
+		return parseToFilledStringCondition("");
+	}
+	
 	public String parseToParametrizedStringConditionWithAlias() {
 		if (getTabConf() == null) {
 			throw new ForbiddenOperationException("The tabConf is needed");
@@ -459,6 +477,31 @@ public class UniqueKeyInfo {
 	
 	public String parseToParametrizedStringConditionWithoutAlias() {
 		return parseToParametrizedStringCondition("");
+	}
+	
+	private String parseToFilledStringCondition(String alias) {
+		
+		String fields = "";
+		
+		String fullAlias;
+		
+		for (int i = 0; i < this.getFields().size(); i++) {
+			Key key = this.getFields().get(i);
+			
+			if (utilities.stringHasValue(fields)) {
+				fields += " AND ";
+			}
+			
+			fullAlias = alias;
+			
+			if (utilities.stringHasValue(alias)) {
+				fullAlias += ".";
+			}
+			
+			fields += fullAlias + key.getName() + " = " + key.getValueAsSqlPart();
+		}
+		
+		return fields;
 	}
 	
 	private String parseToParametrizedStringCondition(String alias) {
@@ -481,6 +524,32 @@ public class UniqueKeyInfo {
 			}
 			
 			fields += fullAlias + key.getName() + " = ? ";
+		}
+		
+		return fields;
+	}
+	
+	public static String parseToFilledStringConditionToAllWithAlias(List<UniqueKeyInfo> uks) {
+		return parseToFilledStringConditionToAll(uks, uks.get(0).getTabConf().getAlias());
+	}
+	
+	public static String parseToFilledStringConditionToAllWithoutAlias(List<UniqueKeyInfo> uks) {
+		return parseToFilledStringConditionToAll(uks, null);
+	}
+	
+	private static String parseToFilledStringConditionToAll(List<UniqueKeyInfo> uks, String alias) {
+		String fields = "";
+		
+		for (UniqueKeyInfo uk : uks) {
+			if (utilities.stringHasValue(fields)) {
+				fields += " AND ";
+			}
+			
+			if (utilities.stringHasValue(alias)) {
+				fields += uk.parseToFilledStringConditionWithAlias();
+			} else {
+				fields += uk.parseToFilledStringConditionWithoutAlias();
+			}
 		}
 		
 		return fields;

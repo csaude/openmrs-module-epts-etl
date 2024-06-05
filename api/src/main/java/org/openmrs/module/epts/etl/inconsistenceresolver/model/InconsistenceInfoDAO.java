@@ -6,13 +6,15 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class InconsistenceInfoDAO extends BaseDAO{
+public class InconsistenceInfoDAO extends BaseDAO {
+	
+	//@// @formatter:off
 	public static void insert(InconsistenceInfo record, TableConfiguration tableConfiguration, Connection conn) throws DBException{
 		try {
 			String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
 			
 			Object[] params = {record.getTableName(),
-							   record.getRecordId(),
+							   record.getRecordId().getSimpleValue(),
 							   record.getParentTableName(),
 							   record.getParentId(),
 							   record.getRecordOriginLocationCode(),

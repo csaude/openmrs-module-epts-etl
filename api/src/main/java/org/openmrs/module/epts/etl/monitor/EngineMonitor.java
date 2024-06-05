@@ -375,6 +375,7 @@ public class EngineMonitor implements MonitoredOperation {
 		        .getAllSavedLimitsOfOperation(this);
 		
 		for (Engine engine : this.getOwnEngines()) {
+			engine.getLimits().setEngine(engine);
 			engine.getLimits().save(this);
 			
 			newIntervals.add(engine.getLimits());

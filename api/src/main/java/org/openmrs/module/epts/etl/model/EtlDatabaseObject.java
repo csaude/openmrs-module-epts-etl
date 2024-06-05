@@ -112,6 +112,8 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	String generateTableName();
 	
+	String generateFullFilledUpdateSql();
+	
 	/**
 	 * Load the objectId info
 	 * 

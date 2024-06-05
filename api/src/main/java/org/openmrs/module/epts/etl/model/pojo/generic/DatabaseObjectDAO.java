@@ -189,6 +189,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String conditionSQL = "";
 		
+		uniqueKey.setTabConf(tableConfiguration);
+		
 		try {
 			params = utilities.setParam(params, uniqueKey.parseValuesToArray());
 			
@@ -440,7 +442,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = record.getObjectId().parseValuesToArray();
 		
 		String sql = " DELETE" + " FROM " + record.generateTableName() + " WHERE  "
-		        + record.getObjectId().parseToParametrizedStringConditionWithAlias();
+		        + record.getObjectId().parseToParametrizedStringConditionWithoutAlias();
 		
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
@@ -526,10 +528,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 			insertAllMetadata(objects, abstractTableConfiguration, conn);
 		} else {
 			
-			if (abstractTableConfiguration.isAutoIncrementId()) {
-				insertAllDataWithoutId(objects, conn);
-			} else {
+			if (abstractTableConfiguration.includePrimaryKeyOnInsert()) {
 				insertAllDataWithId(objects, conn);
+			} else {
+				insertAllDataWithoutId(objects, conn);
 			}
 		}
 	}
@@ -569,11 +571,11 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = DBUtilities.addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0],
 		    conn);
 		
+		sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
+		
 		sql += " VALUES";
 		
 		Object[] params = {};
-		
-		sql = sql.toLowerCase();
 		
 		String values = "";
 		

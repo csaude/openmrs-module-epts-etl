@@ -4,12 +4,11 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-
-import org.openmrs.module.epts.etl.dbsync.model.BaseModel;
 import org.openmrs.module.epts.etl.dbsync.model.SyncModel;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
@@ -19,10 +18,13 @@ public final class JsonUtils {
 	
 	static {
 		MAPPER = new ObjectMapper();
+		
+		MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		
 		SimpleModule module = new SimpleModule();
+		
 		module.addSerializer(new LocalDateSerializer());
 		module.addSerializer(new LocalDateTimeSerializer());
-		module.addDeserializer(BaseModel.class, new BaseModelDeserializer());
 		module.addDeserializer(LocalDate.class, new LocalDateDeserializer());
 		module.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer());
 		MAPPER.registerModule(module);
@@ -74,6 +76,8 @@ public final class JsonUtils {
 			return MAPPER.readValue(json, objectClass);
 		}
 		catch (IOException e) {
+			e.printStackTrace();
+			
 			throw new EtlException(e);
 		}
 	}

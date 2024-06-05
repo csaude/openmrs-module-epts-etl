@@ -81,6 +81,9 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	@Override
 	public void loadObjectIdData(TableConfiguration tabConf) {
 		if (tabConf.getPrimaryKey() != null) {
+			
+			tabConf.getPrimaryKey().setTabConf(tabConf);
+			
 			this.objectId = tabConf.getPrimaryKey().generateOid(this);
 			
 			this.objectId.setFullLoaded(true);
@@ -199,9 +202,12 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 						field.set(this, value);
 					}
 					
-					break;
+					return;
 				}
 			}
+			
+			throw new ForbiddenOperationException(
+			        "The field " + fieldName + " was not found on entity " + this.getClass().getName());
 		}
 		catch (IllegalArgumentException e) {
 			throw new RuntimeException(e);
@@ -209,6 +215,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		catch (IllegalAccessException e) {
 			throw new RuntimeException(e);
 		}
+		
 	}
 	
 	@Override
@@ -1065,7 +1072,10 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	public void fastCreateSimpleNumericKey(long i) {
 		Oid oid = new Oid();
 		
-		oid.addKey(new Key("", i));
+		Key k = new Key();
+		k.setValue(i);
+		
+		oid.addKey(k);
 	}
 	
 	@Override

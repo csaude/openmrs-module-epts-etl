@@ -78,6 +78,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	void setIgnorableFields(List<String> ignorable);
 	
+	boolean includePrimaryKeyOnInsert();
+	
+	void setIncludePrimaryKeyOnInsert(boolean includePrimaryKeyOnInsert);
+	
 	@JsonIgnore
 	@Override
 	default boolean hasPK(Connection conn) {
@@ -1006,9 +1010,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				loadAttDefinition(conn);
 				
-				//If was not specifically set to true
-				if (!this.isAutoIncrementId()) {
-					this.setAutoIncrementId(useAutoIncrementId(conn));
+				this.setAutoIncrementId(useAutoIncrementId(conn));
+				
+				if (!includePrimaryKeyOnInsert()) {
+					
+					//Force the inclusion of primaryKey if the table is not autoincrement
+					if (!isAutoIncrementId()) {
+						setIncludePrimaryKeyOnInsert(true);
+					}
 				}
 				
 				if (hasExtraConditionForExtract() && !isUsingManualDefinedAlias()) {
@@ -1337,6 +1346,35 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	void setUpdateSql(java.lang.String generateUpdateSQL);
+	
+	default String generateFullFilledUpdateSql(EtlDatabaseObject obj) {
+		if (this.getPrimaryKey() == null) {
+			
+			if (this.getUniqueKeys() == null) {
+				throw new ForbiddenOperationException("Impossible to generate update params, there is no primary key");
+			}
+		}
+		
+		String updateSQL = "UPDATE " + this.getObjectName() + " SET ";
+		
+		for (Field field : this.getFields()) {
+			AttDefinedElements attElements = field.getAttDefinedElements();
+			
+			updateSQL = utilities.concatStrings(updateSQL, attElements.getSqlUpdateDefinition(obj));
+		}
+		
+		if (this.getPrimaryKey() != null) {
+			obj.loadObjectIdData(this);
+			
+			updateSQL += " WHERE " + obj.getObjectId().parseToFilledStringConditionWithoutAlias();
+		} else {
+			List<UniqueKeyInfo> cloned = UniqueKeyInfo.cloneAllAndLoadValues(getUniqueKeys(), obj);
+			
+			updateSQL += " WHERE " + UniqueKeyInfo.parseToFilledStringConditionToAllWithoutAlias(cloned);
+		}
+		
+		return updateSQL;
+	}
 	
 	default Object[] generateInsertParamsWithObjectId(EtlDatabaseObject obj) {
 		int qtyAttrs = this.getFields().size();

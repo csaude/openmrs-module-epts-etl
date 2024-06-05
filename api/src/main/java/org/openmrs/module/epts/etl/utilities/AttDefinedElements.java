@@ -53,9 +53,9 @@ public class AttDefinedElements {
 	
 	private DatabaseObjectConfiguration pojoble;
 	
-	static String aspasAbrir = "\"";
+	public static String aspasAbrir = "\"";
 	
-	static String aspasFechar = "\"";
+	public static String aspasFechar = "\"";
 	
 	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, DatabaseObjectConfiguration pojoble) {
 		this.dbAttName = dbAttName;
@@ -120,6 +120,31 @@ public class AttDefinedElements {
 	
 	public String getSqlUpdateDefinition() {
 		return sqlUpdateDefinition;
+	}
+	
+	public String getSqlUpdateDefinition(EtlDatabaseObject obj) {
+		Object value = null;
+		
+		try {
+			value = obj.getFieldValue(this.dbAttName);
+		}
+		catch (ForbiddenOperationException e) {
+			value = obj.getFieldValue(this.attName);
+		}
+		
+		if (value == null) {
+			value = "null";
+		} else if (isNumeric()) {
+			value = value.toString();
+		} else if (isDate()) {
+			value = aspasAbrir + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) value) + aspasFechar;
+		} else if (isString()) {
+			value = aspasAbrir + utilities.scapeQuotationMarks(value.toString()) + aspasFechar;
+		} else {
+			value = aspasAbrir + value.toString() + aspasFechar;
+		}
+		
+		return sqlUpdateDefinition.replaceAll("\\?", value.toString());
 	}
 	
 	public void setSqlUpdateDefinition(String sqlUpdateDefinition) {
@@ -315,7 +340,12 @@ public class AttDefinedElements {
 	}
 	
 	public static boolean isNumeric(String attType) {
-		return utilities.isStringIn(attType.toLowerCase() , "int", "integer", "long", "byte", "short", "double", "float", "bit", "tinyint");
+		return utilities.isStringIn(attType.toLowerCase(), "int", "integer", "long", "byte", "short", "double", "float",
+		    "bit", "tinyint");
+	}
+	
+	public static boolean isString(String attType) {
+		return utilities.isStringIn(attType, "java.lang.String", "String", "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT");
 	}
 	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,
@@ -384,7 +414,7 @@ public class AttDefinedElements {
 			return "Float";
 		if (utilities.isStringIn(databaseType, "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT"))
 			return "String";
-		if (utilities.isStringIn(databaseType, "VARBINARY", "BLOB", "LONGBLOB"))
+		if (utilities.isStringIn(databaseType, "MEDIUMBLOB", "VARBINARY", "BLOB", "LONGBLOB"))
 			return "byte[]";
 		if (utilities.isStringIn(databaseType, "DATE", "DATETIME", "TIME", "TIMESTAMP"))
 			return "java.util.Date";

@@ -1066,6 +1066,9 @@ public class CommonUtilities implements Serializable {
 	public Object getFieldValueOnFieldList(List<org.openmrs.module.epts.etl.model.Field> fields, String fieldName)
 	        throws ForbiddenOperationException {
 		
+		if (!utilities.arrayHasElement(fields))
+			return null;
+		
 		for (int i = 0; i < fields.size(); i++) {
 			org.openmrs.module.epts.etl.model.Field field = fields.get(i);
 			

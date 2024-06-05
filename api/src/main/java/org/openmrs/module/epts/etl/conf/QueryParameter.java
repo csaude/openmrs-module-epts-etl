@@ -15,8 +15,15 @@ public class QueryParameter extends Field {
 	public QueryParameter() {
 	}
 	
-	public QueryParameter(String paramName, Object paramValue) {
-		super(paramName, paramValue);
+	public QueryParameter(String name) {
+		super(name);
+	}
+	
+	public static QueryParameter fastCreateWithValue(String paramName, Object paramValue) {
+		QueryParameter q = new QueryParameter(paramName);
+		q.setValue(paramValue);
+		
+		return q;
 	}
 	
 	public ParameterValueType getValueType() {
@@ -34,7 +41,7 @@ public class QueryParameter extends Field {
 			String strValue = (paramName.split("[")[1]).split("\\]")[0];
 			
 			return Integer.parseInt(strValue);
-		}else {
+		} else {
 			throw new ForbiddenOperationException("The param " + paramName + " is not an array!");
 		}
 		

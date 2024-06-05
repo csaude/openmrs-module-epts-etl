@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.dbsync.model;
 
 import java.time.LocalDateTime;
 
-public abstract class BaseModel {
+public  class BaseModel {
 	
 	private String uuid;
 	

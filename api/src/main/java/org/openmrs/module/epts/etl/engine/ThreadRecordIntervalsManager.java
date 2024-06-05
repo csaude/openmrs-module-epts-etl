@@ -214,24 +214,29 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	}
 	
 	public void save(EngineMonitor monitor) {
-		if (isOutOfLimits() || isNotInitialized())
-			throw new ForbiddenOperationException("You cannot save out of limit/not initialized thread limits manager");
 		
-		String fileName = generateFilePath(monitor);
+		if (!hasThreadCode())
+			throw new ForbiddenOperationException("You cannot save limits without threadCode");
 		
-		if (new File(fileName).exists()) {
-			FileUtilities.removeFile(fileName);
+		if (isOutOfLimits() || isNotInitialized()) {
+			monitor.logWarn("You cannot save out of limit/not initialized thread limits manager");
+		} else {
+			String fileName = generateFilePath(monitor);
+			
+			if (new File(fileName).exists()) {
+				FileUtilities.removeFile(fileName);
+			}
+			
+			setLastSavedOn(Engine.utilities.formatDateToDDMMYYYY_HHMISS(Engine.utilities.getCurrentDate()));
+			
+			String desc = this.parseToJSON();
+			
+			FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
+			
+			FileUtilities.write(fileName, desc);
+			
+			this.loadedFromFile = true;
 		}
-		
-		setLastSavedOn(Engine.utilities.formatDateToDDMMYYYY_HHMISS(Engine.utilities.getCurrentDate()));
-		
-		String desc = this.parseToJSON();
-		
-		FileUtilities.tryToCreateDirectoryStructureForFile(fileName);
-		
-		FileUtilities.write(fileName, desc);
-		
-		this.loadedFromFile = true;
 	}
 	
 	public String generateFilePath(EngineMonitor monitor) {

@@ -332,7 +332,11 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	public void fastCreateSimpleNumericKey(long i) {
 		Oid oid = new Oid();
 		
-		oid.addKey(new Key("", i));
+		Key k = new Key("");
+		
+		k.setValue(i);
+		
+		oid.addKey(k);
 	}
 	
 	@Override
@@ -417,6 +421,12 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	
 	@Override
 	public String getInsertSQLQuestionMarksWithoutObjectId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String generateFullFilledUpdateSql() {
 		// TODO Auto-generated method stub
 		return null;
 	}

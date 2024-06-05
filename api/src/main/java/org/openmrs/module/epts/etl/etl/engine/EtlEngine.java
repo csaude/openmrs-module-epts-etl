@@ -117,19 +117,9 @@ public class EtlEngine extends Engine {
 				
 				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
-					EtlDatabaseObject destObject = transform(rec, mappingInfo, srcConn);
+					EtlDatabaseObject destObject = transform(rec, mappingInfo, etlObjects, srcConn, dstConn);
 					
 					if (destObject != null) {
-						if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
-							
-							int currObjectId = mappingInfo.generateNextStartIdForThread(etlObjects, dstConn);
-							
-							destObject.setObjectId(Oid.fastCreate(
-							    mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
-						} else {
-							destObject.loadObjectIdData(mappingInfo);
-						}
-						
 						EtlRecord etlRec = initEtlRecord(destObject, mappingInfo, false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
@@ -148,6 +138,8 @@ public class EtlEngine extends Engine {
 			
 			EtlRecord.transformAll(mergingRecs, srcConn, dstConn);
 			
+			afterEtl(etlObjects, srcConn, dstConn);
+			
 			logInfo(
 			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
 			
@@ -157,7 +149,10 @@ public class EtlEngine extends Engine {
 			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits()
 			        + "]... \n Try to performe merge record by record...");
 			
-			performeSyncOneByOne(etlObjects, srcConn);
+			e.printStackTrace();
+			
+			throw e;
+			//performeSyncOneByOne(etlObjects, srcConn);
 		}
 		finally {
 			dstConn.finalizeConnection();
@@ -185,20 +180,10 @@ public class EtlEngine extends Engine {
 				
 				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
-					EtlDatabaseObject destObject = transform(rec, mappingInfo, srcConn);
+					EtlDatabaseObject destObject = transform(rec, mappingInfo, etlObjects, srcConn, dstConn);
 					
 					if (destObject == null) {
 						continue;
-					}
-					
-					if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
-						
-						int currObjectId = mappingInfo.generateNextStartIdForThread(etlObjects, dstConn);
-						
-						destObject.setObjectId(Oid.fastCreate(
-						    mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
-					} else {
-						destObject.loadObjectIdData(mappingInfo);
 					}
 					
 					boolean wrt = writeOperationHistory();
@@ -207,6 +192,8 @@ public class EtlEngine extends Engine {
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
+						afterEtl(utilities.parseObjectToList_(record, rec.getClass()), srcConn, dstConn);
+						
 						wentWrong = false;
 					}
 					catch (MissingParentException e) {
@@ -290,16 +277,29 @@ public class EtlEngine extends Engine {
 	}
 	
 	/**
-	 * @param conn
+	 * @param srcConn
 	 * @param rec
 	 * @param mappingInfo
 	 * @return
 	 * @throws DBException
 	 * @throws ForbiddenOperationException
 	 */
-	public EtlDatabaseObject transform(EtlDatabaseObject rec, DstConf mappingInfo, Connection conn)
-	        throws DBException, ForbiddenOperationException {
-		return mappingInfo.transform(rec, conn, this.getSrcApp(), this.getDstApp());
+	public EtlDatabaseObject transform(EtlDatabaseObject rec, DstConf mappingInfo, List<? extends EtlObject> etlObjects,
+	        Connection srcConn, Connection dstConn) throws DBException, ForbiddenOperationException {
+		
+		EtlDatabaseObject transformed = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
+		
+		if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
+			
+			int currObjectId = mappingInfo.generateNextStartIdForThread(etlObjects, dstConn);
+			
+			transformed.setObjectId(
+			    Oid.fastCreate(mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
+		} else {
+			transformed.loadObjectIdData(mappingInfo);
+		}
+		
+		return transformed;
 	}
 	
 	private void process(EtlRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
@@ -327,4 +327,6 @@ public class EtlEngine extends Engine {
 		return new EtlRecord(destObject, mappingInfo, writeOperationHistory);
 	}
 	
+	public void afterEtl(List<? extends EtlObject> objs, Connection srcConn, Connection dstConn) throws DBException {
+	}
 }

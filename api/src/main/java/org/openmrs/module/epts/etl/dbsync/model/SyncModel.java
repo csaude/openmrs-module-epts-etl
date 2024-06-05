@@ -1,8 +1,11 @@
 package org.openmrs.module.epts.etl.dbsync.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SyncModel {
 	
-	private Class<? extends BaseModel> tableToSyncModelClass;
+	private String tableToSyncModelClass;
 	
 	private BaseModel model;
 	
@@ -13,7 +16,7 @@ public class SyncModel {
 	 *
 	 * @return the tableToSyncModelClass
 	 */
-	public Class<? extends BaseModel> getTableToSyncModelClass() {
+	public String getTableToSyncModelClass() {
 		return tableToSyncModelClass;
 	}
 	
@@ -22,7 +25,7 @@ public class SyncModel {
 	 *
 	 * @param tableToSyncModelClass the tableToSyncModelClass to set
 	 */
-	public void setTableToSyncModelClass(Class<? extends BaseModel> tableToSyncModelClass) {
+	public void setTableToSyncModelClass(String tableToSyncModelClass) {
 		this.tableToSyncModelClass = tableToSyncModelClass;
 	}
 	

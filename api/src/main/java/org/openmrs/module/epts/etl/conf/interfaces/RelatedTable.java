@@ -167,7 +167,12 @@ public interface RelatedTable extends TableConfiguration {
 		Oid oid = new Oid();
 		
 		for (RefMapping map : this.getRefMapping()) {
-			oid.addKey(new Key(map.getParentFieldName(), obj.getFieldValue(map.getChildFieldName())));
+			
+			Key k = new Key(map.getParentFieldName());
+			
+			k.setValue(obj.getFieldValue(map.getChildFieldName()));
+			
+			oid.addKey(k);
 		}
 		
 		oid.setFieldValuesLoaded(true);

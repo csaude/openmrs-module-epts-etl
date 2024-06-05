@@ -1152,7 +1152,7 @@ public class DBUtilities {
 		List<Field> params = extractAllParamNamesOnQuery(query);
 		
 		for (Field param : params) {
-			QueryParameter qp = new QueryParameter(param.getName(), null);
+			QueryParameter qp = new QueryParameter(param.getName());
 			qp.setValueType(ParameterValueType.CONFIGURATION_PARAM);
 			
 			paramConfig.add(qp);
@@ -1190,7 +1190,7 @@ public class DBUtilities {
 			Field param = queryParameters.get(i);
 			
 			if (!paramConfig.contains(param)) {
-				QueryParameter qp = new QueryParameter(param.getName(), null);
+				QueryParameter qp = new QueryParameter(param.getName());
 				qp.setValueType(ParameterValueType.UNDEFINED);
 				
 				paramConfig.add(qp);
@@ -1294,10 +1294,9 @@ public class DBUtilities {
 					} else if (paramValueFromMainObject != null) {
 						paramValue = paramValueFromMainObject;
 					}
-					
 				}
 				
-				params.add(new QueryParameter(paramName, paramValue));
+				params.add(QueryParameter.fastCreateWithValue(paramName, paramValue));
 			}
 		}
 		

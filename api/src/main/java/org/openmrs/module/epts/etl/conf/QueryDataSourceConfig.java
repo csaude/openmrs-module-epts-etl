@@ -378,7 +378,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public List<Field> cloneFields() {
+	public List<Field> cloneFields(EtlDatabaseObject originalObject) {
 		List<Field> clonedFields = new ArrayList<>();
 		
 		if (utilities.arrayHasElement(this.fields)) {

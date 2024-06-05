@@ -67,7 +67,11 @@ public class Oid extends PrimaryKey {
 		for (int set = 1; set <= paramsSize; set++) {
 			int pos = set * 2 - 1;
 			
-			oid.addKey(new Key(((String) params[pos - 1]), params[pos]));
+			Key k = new Key(((String) params[pos - 1]));
+			
+			k.setValue(params[pos]);
+			
+			oid.addKey(k);
 		}
 		
 		return oid;

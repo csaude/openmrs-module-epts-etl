@@ -75,9 +75,12 @@ public class Field implements Serializable {
 		this.name = name;
 	}
 	
-	public Field(String name, Object value) {
-		this.name = name;
-		this.value = value;
+	public static Field fastCreateWithValue(String name, Object value) {
+		Field f = new Field(name);
+		
+		f.setValue(value);
+		
+		return f;
 	}
 	
 	public String getName() {
@@ -102,7 +105,7 @@ public class Field implements Serializable {
 	}
 	
 	public static Object getParameter(List<? extends Field> fields, String name) {
-		Field field = CommonUtilities.getInstance().findOnArray(fields, new Field(name, null));
+		Field field = CommonUtilities.getInstance().findOnArray(fields, new Field(name));
 		
 		return field != null ? field.value : null;
 	}
@@ -250,6 +253,10 @@ public class Field implements Serializable {
 		return AttDefinedElements.isNumeric(this.type);
 	}
 	
+	public boolean isString() {
+		return AttDefinedElements.isString(this.type);
+	}
+	
 	@JsonIgnore
 	public boolean isSmallIntType() {
 		return AttDefinedElements.isSmallInt(this.type);
@@ -325,6 +332,27 @@ public class Field implements Serializable {
 	
 	public String generateAliasedColumn(TableConfiguration tabConf) {
 		return tabConf.getTableAlias() + "_" + this.name;
+	}
+	
+	public String getValueAsSqlPart() {
+		String v = "";
+		
+		String aspasAbrir = AttDefinedElements.aspasAbrir;
+		String aspasFechar = AttDefinedElements.aspasFechar;
+		
+		if (getValue() == null) {
+			v = "null";
+		} else if (isNumericColumnType()) {
+			v = getValue().toString();
+		} else if (isDateField()) {
+			v = aspasAbrir + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) getValue()) + aspasFechar;
+		} else if (isString()) {
+			v = aspasAbrir + utilities.scapeQuotationMarks(getValue().toString()) + aspasFechar;
+		} else {
+			v = aspasAbrir + getValue().toString() + aspasFechar;
+		}
+		
+		return v;
 	}
 	
 }

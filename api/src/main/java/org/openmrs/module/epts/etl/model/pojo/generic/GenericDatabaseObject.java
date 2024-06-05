@@ -102,24 +102,30 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public void setFieldValue(String fieldName, Object value) {
-		super.setFieldValue(fieldName, value);
+		try {
+			super.setFieldValue(fieldName, value);
+		}
+		catch (ForbiddenOperationException e) {}
 		
 		for (Field field : this.fields) {
 			
 			if (field.getName().equals(fieldName) || field.getNameAsClassAtt().equals(fieldName)) {
 				field.setValue(value);
 				
-				break;
+				return;
 			}
 		}
 		
+		String tableName = this.relatedConfiguration != null ? this.relatedConfiguration.getObjectName() : "Aknown Object";
+		
+		throw new ForbiddenOperationException("The field " + fieldName + " was not found on entity " + tableName);
 	}
 	
 	@Override
 	public void setRelatedConfiguration(DatabaseObjectConfiguration tableConfiguration) {
 		this.relatedConfiguration = tableConfiguration;
 		
-		this.fields = this.getRelatedConfiguration().cloneFields();
+		this.fields = this.getRelatedConfiguration().cloneFields(this);
 		
 		if (getRelatedConfiguration() instanceof TableConfiguration) {
 			
@@ -155,7 +161,10 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 					field.setValue(retrieveFieldValue(field.getName(), field.getType(), rs));
 				}
 				
-				super.setFieldValue(field.getNameAsClassAtt(), field.getValue());
+				try {
+					super.setFieldValue(field.getNameAsClassAtt(), field.getValue());
+				}
+				catch (ForbiddenOperationException e) {}
 				
 			}
 			
@@ -279,6 +288,15 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	public String getInsertSQLQuestionMarksWithoutObjectId() {
 		if (this.relatedConfiguration instanceof TableConfiguration) {
 			return ((TableConfiguration) this.relatedConfiguration).getInsertSQLQuestionMarksWithoutObjectId();
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public String generateFullFilledUpdateSql() {
+		if (this.relatedConfiguration instanceof TableConfiguration) {
+			return ((TableConfiguration) this.relatedConfiguration).generateFullFilledUpdateSql(this);
 		}
 		
 		return null;

@@ -14,14 +14,19 @@ public class Key extends Field {
 		super(name);
 	}
 	
-	public Key(String name, Object value) {
-		super(name, value);
+	public static Key fastCreateValued(String name, Object value) {
+		Key k = new Key(name);
+		
+		k.setValue(value);
+		
+		return k;
 	}
 	
-	public Key(String name, String type) {
-		this(name);
+	public static Key fastCreateTyped(String name, String type) {
+		Key k = new Key(name);
+		k.setType(type);
 		
-		setType(type);
+		return k;
 	}
 	
 	public Key(String name, String type, Object value) {
