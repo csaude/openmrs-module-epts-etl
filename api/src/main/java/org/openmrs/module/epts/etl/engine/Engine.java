@@ -114,7 +114,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return this.monitor.getController();
 	}
 	
-	public EtlOperationConfig getRelatedSyncOperationConfig() {
+	public EtlOperationConfig getRelatedEtlOperationConfig() {
 		return getRelatedOperationController().getOperationConfig();
 	}
 	
@@ -329,7 +329,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	}
 	
 	protected boolean mustDoFinalCheck() {
-		if (getRelatedSyncOperationConfig().skipFinalDataVerification()) {
+		if (getRelatedEtlOperationConfig().skipFinalDataVerification()) {
 			return false;
 		} else {
 			return true;
@@ -730,7 +730,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	}
 	
 	public boolean writeOperationHistory() {
-		return getRelatedSyncOperationConfig().writeOperationHistory();
+		return getRelatedEtlOperationConfig().writeOperationHistory();
 	}
 	
 	@Override

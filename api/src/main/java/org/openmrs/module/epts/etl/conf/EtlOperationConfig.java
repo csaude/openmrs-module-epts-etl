@@ -11,11 +11,9 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
 import org.openmrs.module.epts.etl.databasepreparation.controller.DatabasePreparationController;
-import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportController;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
-import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
@@ -89,7 +87,20 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean nonResumable;
 	
+	/*
+	 * Indicates if in this process the primary keys are transformed or not. If yes, the transformed records are given a new pk, if no, the pk is src is the same in dst
+	 */
+	private boolean transformsPrimaryKeys;
+	
 	public EtlOperationConfig() {
+	}
+	
+	public boolean isTransformsPrimaryKeys() {
+		return transformsPrimaryKeys;
+	}
+	
+	public void setTransformsPrimaryKeys(boolean transformsPrimaryKeys) {
+		this.transformsPrimaryKeys = transformsPrimaryKeys;
 	}
 	
 	public boolean isNonResumable() {
@@ -403,11 +414,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public boolean isDBExtract() {
-		return this.operationType.isDbExtract();
-	}
-	
-	@JsonIgnore
 	public boolean isDetectMissingRecords() {
 		return this.operationType.isDetectMIssingRecords();
 	}
@@ -435,11 +441,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	@JsonIgnore
 	public boolean isDBMergeFromSourceDB() {
 		return this.operationType.isDbMergeFromSourceDB();
-	}
-	
-	@JsonIgnore
-	public boolean isDBQuickMerge() {
-		return this.operationType.isDBQuickMerge();
 	}
 	
 	@JsonIgnore
@@ -490,8 +491,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			return new ReEtlController(parent, this, appOriginCode);
 		} else if (isDetectMissingRecords()) {
 			return new DetectMissingRecordsController(parent, this, appOriginCode);
-		} else if (isDBExtract()) {
-			return new DbExtractController(parent, this, appOriginCode);
 		} else if (isEtl()) {
 			return new EtlController(parent, this, appOriginCode);
 		} else if (isDatabasePreparationOperation()) {
@@ -526,8 +525,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			return new DBQuickCopyController(parent, this, appOriginCode);
 		} else if (isDBMergeFromSourceDB()) {
 			return new DataBaseMergeFromSourceDBController(parent, this);
-		} else if (isDBQuickMerge()) {
-			return new DBQuickMergeController(parent, this, appOriginCode);
 		} else if (isResolveProblem()) {
 			return new GenericOperationController(parent, this);
 		} else if (isDetectGapes()) {
@@ -552,12 +549,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			if (!this.canBeRunInDetectMissingRecordsProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in Detect Missing Records process\n";
-		} else
-		
-		if (this.getRelatedSyncConfig().isDbExtractProcess()) {
-			if (!this.canBeRunInDbExtractProcess())
-				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
-				        + "] Cannot be configured in Db Extract process\n";
 		} else if (this.getRelatedSyncConfig().isDataBaseMergeFromJSONProcess()) {
 			if (!this.canBeRunInDestinationSyncProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
@@ -593,18 +584,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			if (!this.canBeRunInDataBasesMergeFromSourceDBProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in data reconciliation process\n";
-		} else if (this.getRelatedSyncConfig().isDBQuickMergeProcess()) {
-			if (!this.canBeRunInDBQuickMergeProcess())
-				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
-				        + "] Cannot be configured in db quick merge process\n";
-		} else if (this.getRelatedSyncConfig().isDBQuickMergeWithDatabaseGenerationDBProcess()) {
-			if (!this.canBeRunInDBQuickMergeWithDatabaseGenerationProcess())
-				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
-				        + "] Cannot be configured in db quick merge with database generation process\n";
-		} else if (this.getRelatedSyncConfig().isDBQuickMergeWithEntityGenerationDBProcess()) {
-			if (!this.canBeRunInDBQuickMergeWithEntityGenerationProcess())
-				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
-				        + "] Cannot be configured in db quick merge with entity generation process\n";
 		} else if (this.getRelatedSyncConfig().isDBInconsistencyCheckProcess()) {
 			if (!this.canBeRunInDBInconsistencyCheckProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
@@ -640,7 +619,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
-			errorMsg = "There are errors on config operation configuration " + this.getOperationType() + "[File:  "
+			errorMsg = "There are errors on dstConf operation configuration " + this.getOperationType() + "[File:  "
 			        + this.getRelatedSyncConfig().getRelatedConfFile().getAbsolutePath() + "]\n" + errorMsg;
 			throw new ForbiddenOperationException(errorMsg);
 		} else if (this.getChild() != null) {
@@ -656,11 +635,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	@JsonIgnore
 	public boolean canBeRunInResolveProblemsProcess() {
 		return utilities.existOnArray(getSupportedOperationsInResolveProblemsProcess(), this.operationType);
-	}
-	
-	@JsonIgnore
-	public boolean canBeRunInDbExtractProcess() {
-		return utilities.existOnArray(getSupportedOperationsInDbExtractProcess(), this.operationType);
 	}
 	
 	@JsonIgnore
@@ -739,12 +713,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return utilities.parseArrayToList(supported);
 	}
 	
-	public static List<EtlOperationType> getSupportedOperationsInDbExtractProcess() {
-		EtlOperationType[] supported = { EtlOperationType.DB_EXTRACT };
-		
-		return utilities.parseArrayToList(supported);
-	}
-	
 	@JsonIgnore
 	public boolean canBeRunInReSyncProcess() {
 		return utilities.existOnArray(getSupportedOperationsInDBReSyncProcess(), this.operationType);
@@ -800,41 +768,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		        EtlOperationType.PHANTOM_RECORDS_DETECTOR };
 		
 		return utilities.parseArrayToList(supported);
-	}
-	
-	@JsonIgnore
-	public boolean canBeRunInDBQuickMergeProcess() {
-		return utilities.existOnArray(getSupportedOperationsInDBQuickMergeProcess(), this.operationType);
-	}
-	
-	public static List<EtlOperationType> getSupportedOperationsInDBQuickMergeProcess() {
-		EtlOperationType[] supported = { EtlOperationType.DB_QUICK_MERGE };
-		
-		return utilities.parseArrayToList(supported);
-	}
-	
-	@JsonIgnore
-	public boolean canBeRunInDBQuickMergeWithEntityGenerationProcess() {
-		return utilities.existOnArray(getSupportedOperationsInDBQuickMergeWithEntityGenerationProcess(), this.operationType);
-	}
-	
-	public static List<EtlOperationType> getSupportedOperationsInDBQuickMergeWithEntityGenerationProcess() {
-		EtlOperationType[] supported = { EtlOperationType.DB_QUICK_MERGE, EtlOperationType.DATABASE_PREPARATION,
-		        EtlOperationType.POJO_GENERATION };
-		
-		return utilities.parseArrayToList(supported);
-	}
-	
-	public static List<EtlOperationType> getSupportedOperationsInDBQuickMergeWithDatabaseGenerationProcess() {
-		EtlOperationType[] supported = { EtlOperationType.DB_QUICK_MERGE, EtlOperationType.DATABASE_PREPARATION };
-		
-		return utilities.parseArrayToList(supported);
-	}
-	
-	@JsonIgnore
-	public boolean canBeRunInDBQuickMergeWithDatabaseGenerationProcess() {
-		return utilities.existOnArray(getSupportedOperationsInDBQuickMergeWithDatabaseGenerationProcess(),
-		    this.operationType);
 	}
 	
 	@JsonIgnore

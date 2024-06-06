@@ -61,7 +61,7 @@ public class SyncConfigController {
 		
 		vm.selectOperation(EtlOperationType.valueOf(operationType));
 		
-		return new ModelAndView("redirect:config.form?installationType=");
+		return new ModelAndView("redirect:dstConf.form?installationType=");
 	}
 	
 	@RequestMapping(value = "/module/epts/etl/loadTable", method = RequestMethod.GET)
@@ -70,7 +70,7 @@ public class SyncConfigController {
 		
 		vm.selectTable(tableName);
 		
-		return new ModelAndView("redirect:config.form?installationType=");
+		return new ModelAndView("redirect:dstConf.form?installationType=");
 	}
 	
 	@RequestMapping(value = "/module/epts/etl/activeteTab", method = RequestMethod.GET)
@@ -81,10 +81,10 @@ public class SyncConfigController {
 		
 		vm.save();
 		
-		return new ModelAndView("redirect:config.form?installationType=");
+		return new ModelAndView("redirect:dstConf.form?installationType=");
 	}
 	
-	@RequestMapping(value = "/module/epts/etl/config", method = RequestMethod.GET)
+	@RequestMapping(value = "/module/epts/etl/dstConf", method = RequestMethod.GET)
 	public void config(Model model,@RequestParam String installationType) throws IOException, DBException {
 		
 		if (!installationType.isEmpty()) {
@@ -105,6 +105,6 @@ public class SyncConfigController {
 			vm.setStatusMessage(e.getLocalizedMessage());
 		}
 	
-		return new ModelAndView("redirect:config.form?installationType=");
+		return new ModelAndView("redirect:dstConf.form?installationType=");
 	}
 }

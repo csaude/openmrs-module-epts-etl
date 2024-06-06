@@ -571,7 +571,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = DBUtilities.addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0],
 		    conn);
 		
-		sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
+		//sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
 		
 		sql += " VALUES";
 		

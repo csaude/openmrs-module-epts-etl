@@ -28,20 +28,14 @@ public enum EtlOperationType {
 	RESOLVE_CONFLICTS,
 	DB_QUICK_COPY,
 	DB_MERGE_FROM_SOURCE_DB,
-	DB_QUICK_MERGE,
 	GENERIC_OPERATION,
 	DETECT_GAPES,
 	ETL,
 	RE_ETL,
-	DB_EXTRACT,
 	DETECT_MISSING_RECORDS;
 	
 	public static boolean isDetectMIssingRecords(String operationType) {
 		return EtlOperationType.valueOf(operationType).equals(DETECT_MISSING_RECORDS);
-	}
-	
-	public static boolean isDbExtract(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(DB_EXTRACT);
 	}
 	
 	public static boolean isEtl(String operationType) {
@@ -50,17 +44,14 @@ public enum EtlOperationType {
 	
 	public static boolean isReEtl(String operationType) {
 		return EtlOperationType.valueOf(operationType).equals(RE_ETL);
-	}	
+	}
+	
 	public static boolean isDetectGapesOperation(String operationType) {
 		return EtlOperationType.valueOf(operationType).equals(DETECT_GAPES);
 	}
 	
 	public static boolean isGenericOperation(String operationType) {
 		return EtlOperationType.valueOf(operationType).equals(GENERIC_OPERATION);
-	}
-	
-	public static boolean isDBQuickMerge(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(DB_QUICK_MERGE);
 	}
 	
 	public static boolean isDBMerge(String operationType) {
@@ -212,10 +203,6 @@ public enum EtlOperationType {
 		return this.equals(DB_MERGE_FROM_SOURCE_DB);
 	}
 	
-	public boolean isDBQuickMerge() {
-		return this.equals(DB_QUICK_MERGE);
-	}
-	
 	public boolean isGenericOperation() {
 		return this.equals(GENERIC_OPERATION);
 	}
@@ -230,11 +217,6 @@ public enum EtlOperationType {
 	
 	public boolean isReEtl() {
 		return this.equals(RE_ETL);
-	}
-	
-	
-	public boolean isDbExtract() {
-		return this.equals(DB_EXTRACT);
 	}
 	
 	public boolean isDetectMIssingRecords() {

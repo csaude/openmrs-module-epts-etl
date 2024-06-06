@@ -325,11 +325,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	@JsonIgnore
-	public boolean isDbExtractProcess() {
-		return processType.isDbExtract();
-	}
-	
-	@JsonIgnore
 	public boolean isDBReSyncProcess() {
 		return processType.isDBResync();
 	}
@@ -347,11 +342,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	@JsonIgnore
 	public boolean isDBQuickExportProcess() {
 		return processType.isDBQuickExport();
-	}
-	
-	@JsonIgnore
-	public boolean isDBQuickMergeProcess() {
-		return processType.isDBQuickMerge();
 	}
 	
 	@JsonIgnore
@@ -456,7 +446,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			for (EtlItemConfiguration config : etlItemConfiguration) {
 				config.setRelatedSyncConfiguration(this);
 				
-				//addToTableConfigurationPull(config.getSrcConf());
+				//addToTableConfigurationPull(dstConf.getSrcConf());
 				
 				List<EtlAdditionalDataSource> allAvaliableDataSources = config.getSrcConf().getAvaliableExtraDataSource();
 				
@@ -910,12 +900,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInDBQuickCopyProcess();
 		} else if (isDataBaseMergeFromSourceDBProcess()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInDataBasesMergeFromSourceDBProcess();
-		} else if (isDBQuickMergeProcess()) {
-			supportedOperations = EtlOperationConfig.getSupportedOperationsInDBQuickMergeProcess();
-		} else if (isDBQuickMergeWithEntityGenerationDBProcess()) {
-			supportedOperations = EtlOperationConfig.getSupportedOperationsInDBQuickMergeWithEntityGenerationProcess();
-		} else if (isDBQuickMergeWithDatabaseGenerationDBProcess()) {
-			supportedOperations = EtlOperationConfig.getSupportedOperationsInDBQuickMergeWithDatabaseGenerationProcess();
 		} else if (isDBInconsistencyCheckProcess()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInDBInconsistencyCheckProcess();
 		} else if (isResolveProblems()) {
@@ -939,7 +923,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
-			errorMsg = "There are errors on config file " + this.relatedConfFile.getAbsolutePath() + "\n" + errorMsg;
+			errorMsg = "There are errors on dstConf file " + this.relatedConfFile.getAbsolutePath() + "\n" + errorMsg;
 			throw new ForbiddenOperationException(errorMsg);
 		} else if (this.childConfig != null) {
 			this.childConfig.validate();
@@ -1148,16 +1132,16 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public boolean isSupposedToHaveOriginAppCode() {
-		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess() || this.isDBQuickMergeProcess()
+		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess()
 		        || this.isDBQuickMergeWithEntityGenerationDBProcess() || this.isDBInconsistencyCheckProcess()
-		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess() || this.isEtlProcess() || this.isDbExtractProcess()
+		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess() || this.isEtlProcess()
 		        || this.isDetectMissingRecords() || this.isReEtlProcess();
 	}
 	
 	public boolean isSupposedToRunInDestination() {
 		return this.isDataBaseMergeFromJSONProcess() || this.isDBQuickLoadProcess() || this.isDataReconciliationProcess()
-		        || this.isDBQuickCopyProcess() || this.isDataBaseMergeFromSourceDBProcess() || this.isDBQuickMergeProcess()
-		        || this.isResolveProblems() || this.isDBQuickMergeWithEntityGenerationDBProcess()
+		        || this.isDBQuickCopyProcess() || this.isDataBaseMergeFromSourceDBProcess() || this.isResolveProblems()
+		        || this.isDBQuickMergeWithEntityGenerationDBProcess()
 		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess();
 	}
 	

@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
+import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -61,7 +63,6 @@ public interface EtlDatabaseObject extends EtlObject {
 	default boolean hasUniqueKeys() {
 		return utils.arrayHasElement(getUniqueKeysInfo());
 	}
-
 	
 	/**
 	 * Load the destination parents id to this object
@@ -364,6 +365,58 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		return DatabaseObjectDAO.find(tabConf.getLoadHealper(), tabConf.getSyncRecordClass(), sql, pk.parseValuesToArray(),
 		    conn);
+	}
+	
+	/**
+	 * Check if all fields from a given parent has value or not
+	 * 
+	 * @param refInfo the parent info to check
+	 * @return true if all the field from a given parent are not empty or false in there is at least
+	 *         one empty field
+	 */
+	default boolean hasAllPerentFieldsFilled(ParentTable refInfo) {
+		
+		for (RefMapping map : refInfo.getRefMapping()) {
+			if (this.getFieldValue(map.getChildFieldName()) == null) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Check this record has at least one uniqueKey with all fields filled
+	 * 
+	 * @param refInfo the parent info to check
+	 * @return true if has at least one uniqueKey with all fields filled or false in all the
+	 *         unikeKeys has at least one empty field
+	 */
+	default boolean hasAtLeastOnUniqueKeyWIthAllFieldsFilled() {
+		if (!hasRelatedConfiguration())
+			throw new ForbiddenOperationException("The related configuration is not defined!");
+		
+		TableConfiguration tabConf = (TableConfiguration) getRelatedConfiguration();
+		
+		if (tabConf.hasUniqueKeys())
+			throw new ForbiddenOperationException("The related configuration has no uniqueKey");
+		
+		for (UniqueKeyInfo uk : tabConf.getUniqueKeys()) {
+			boolean allFiled = true;
+			
+			for (Key key : uk.getFields()) {
+				if (this.getFieldValue(key.getName()) == null) {
+					allFiled = false;
+					
+					break;
+				}
+			}
+			
+			if (allFiled)
+				return true;
+		}
+		
+		return false;
 	}
 	
 	/*

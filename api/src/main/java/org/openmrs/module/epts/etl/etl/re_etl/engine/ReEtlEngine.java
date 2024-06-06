@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
-import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
@@ -79,7 +78,7 @@ public class ReEtlEngine extends EtlEngine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					EtlRecord data = new EtlRecord(destObject, mappingInfo, wrt);
+					EtlRecord data = new EtlRecord(destObject, getSrcConf(), mappingInfo, this, wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -172,11 +171,12 @@ public class ReEtlEngine extends EtlEngine {
 		
 		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + etlData.getRecord() + "]");
 		
-		etlData.reMerge(srcConn, destConn);
+		etlData.reLoad(srcConn, destConn);
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
+	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits,
+	        Connection conn) {
 		AbstractEtlSearchParams<? extends EtlObject> searchParams = new EtlDatabaseObjectSearchParams(
 		        this.getEtlConfiguration(), limits, this);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

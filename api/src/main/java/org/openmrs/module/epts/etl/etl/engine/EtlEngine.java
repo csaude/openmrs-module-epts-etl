@@ -9,7 +9,6 @@ import java.util.Map;
 
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
-import org.openmrs.module.epts.etl.dbextract.controller.DbExtractController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
@@ -92,7 +91,7 @@ public class EtlEngine extends Engine {
 	
 	@Override
 	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
-		if (getRelatedSyncOperationConfig().writeOperationHistory()
+		if (getRelatedEtlOperationConfig().writeOperationHistory()
 		        || getEtlConfiguration().getSrcConf().hasWinningRecordsInfo()) {
 			performeSyncOneByOne(etlObjects, conn);
 		} else {
@@ -136,7 +135,7 @@ public class EtlEngine extends Engine {
 				etlObjects.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			EtlRecord.transformAll(mergingRecs, srcConn, dstConn);
+			EtlRecord.loadAll(mergingRecs, srcConn, dstConn);
 			
 			afterEtl(etlObjects, srcConn, dstConn);
 			
@@ -309,7 +308,7 @@ public class EtlEngine extends Engine {
 		
 		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + etlData.getRecord() + "]");
 		
-		etlData.merge(srcConn, destConn);
+		etlData.load(srcConn, destConn);
 	}
 	
 	@Override
@@ -324,7 +323,7 @@ public class EtlEngine extends Engine {
 	}
 	
 	public EtlRecord initEtlRecord(EtlDatabaseObject destObject, DstConf mappingInfo, boolean writeOperationHistory) {
-		return new EtlRecord(destObject, mappingInfo, writeOperationHistory);
+		return new EtlRecord(destObject, getSrcConf(), mappingInfo, this, writeOperationHistory);
 	}
 	
 	public void afterEtl(List<? extends EtlObject> objs, Connection srcConn, Connection dstConn) throws DBException {

@@ -86,7 +86,7 @@ public class DataReconciliationRecord {
 	
 	public void reloadRelatedRecordDataFromDestination(Connection conn) throws DBException, ForbiddenOperationException {
 		throw new ForbiddenOperationException();
-		//this.record= DatabaseObjectDAO.getByUuid(this.config.getSyncRecordClass(config.getMainApp()), this.recordUuid, conn).get(0);
+		//this.record= DatabaseObjectDAO.getByUuid(this.config.getSyncRecordClass(dstConf.getMainApp()), this.recordUuid, conn).get(0);
 	}
 	
 	public ConciliationReasonType getReasonType() {
@@ -149,7 +149,7 @@ public class DataReconciliationRecord {
 		/*SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
 			
 			
-			for (RefInfo refInfo: config.getParents()) {
+			for (RefInfo refInfo: dstConf.getParents()) {
 				if (refInfo.getRefTableConfiguration().isMetadata()) continue;
 				
 				Integer parentIdInOrigin = record.getParentValue(refInfo.getRefColumnAsClassAttName());

@@ -12,7 +12,6 @@ public enum EtlProcessType {
 	DATA_RECONCILIATION,
 	DB_QUICK_COPY,
 	DATABASE_MERGE_FROM_SOURCE_DB,
-	DB_QUICK_MERGE,
 	DB_QUICK_MERGE_WITH_ENTITY_GENERATION,
 	DB_QUICK_MERGE_WITH_DATABASE_GENERATION,
 	DB_INCONSISTENCY_CHECK,
@@ -21,21 +20,15 @@ public enum EtlProcessType {
 	POJO_GENERATION,
 	ETL,
 	RE_ETL,
-	DB_EXTRACT,
 	DETECT_MISSING_RECORDS;
 	
 	public boolean isDetectMissingRecords() {
 		return this.equals(DETECT_MISSING_RECORDS);
 	}
 	
-	public boolean isDbExtract() {
-		return this.equals(DB_EXTRACT);
-	}
-	
 	public boolean isReEtl() {
 		return this.equals(RE_ETL);
 	}
-	
 	
 	public boolean isEtl() {
 		return this.equals(ETL);
@@ -55,10 +48,6 @@ public enum EtlProcessType {
 	
 	public boolean isdDBInconsistencyCheck() {
 		return this.equals(DB_INCONSISTENCY_CHECK);
-	}
-	
-	public boolean isDBQuickMerge() {
-		return this.equals(DB_QUICK_MERGE);
 	}
 	
 	public boolean isQuickMergeWithEntityGeneration() {
@@ -135,10 +124,6 @@ public enum EtlProcessType {
 	
 	public static boolean isDataBasesMergeFromSourceDB(String processType) {
 		return EtlProcessType.valueOf(processType).isDataBaseMergeFromSourceDB();
-	}
-	
-	public static boolean isQuickMergeWithoutEntityGeneration(String processType) {
-		return EtlProcessType.valueOf(processType).isDBQuickMerge();
 	}
 	
 	public static boolean isQuickMergeWithEntityGeneration(String processType) {
