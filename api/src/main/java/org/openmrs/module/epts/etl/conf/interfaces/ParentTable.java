@@ -105,6 +105,33 @@ public interface ParentTable extends RelatedTable {
 		return null;
 	}
 	
+	/**
+	 * Finds all the srcConf which match with this parent table and have one dstConf matching with
+	 * this parent
+	 * 
+	 * @return
+	 * @throws DBException
+	 */
+	default List<SrcConf> findRelatedSrcConfWhichAsAtLeastOnematchingDst() throws DBException {
+		List<SrcConf> srcs = new ArrayList<>();
+		
+		for (EtlItemConfiguration conf : getRelatedSyncConfiguration().getEtlItemConfiguration()) {
+			
+			if (conf.getSrcConf().getTableName().equals(this.getTableName())) {
+				
+				if (!conf.isFullLoaded()) {
+					conf.fullLoad();
+				}
+				
+				if (conf.containsDstTable(this.getTableName())) {
+					srcs.add(conf.getSrcConf());
+				}
+			}
+		}
+		
+		return srcs;
+	}
+	
 	Object getDefaultValueDueInconsistency();
 	
 	void setDefaultValueDueInconsistency(Object defaultValueDueInconsistency);
@@ -112,5 +139,13 @@ public interface ParentTable extends RelatedTable {
 	boolean isSetNullDueInconsistency();
 	
 	void setSetNullDueInconsistency(boolean setNullDueInconsistency);
+	
+	default boolean hasMoreThanOneConditionalFields() {
+		if (hasConditionalFields()) {
+			return utilities.arrayHasMoreThanOneElements(getConditionalFields());
+		}
+		
+		return false;
+	}
 	
 }

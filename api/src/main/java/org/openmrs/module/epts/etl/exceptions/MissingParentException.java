@@ -4,8 +4,9 @@ import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class MissingParentException extends EtlException {
+public class MissingParentException extends DBException {
 	
 	private static final long serialVersionUID = -2435762700151634050L;
 	
@@ -19,14 +20,18 @@ public class MissingParentException extends EtlException {
 	
 	private EtlDatabaseObject etlObject;
 	
-	public MissingParentException() {
-		super("On or more parents are missing");
+	public MissingParentException(DBException e) {
+		super("On or more parents are missing", e);
+	}
+	
+	public MissingParentException(String msg, DBException e) {
+		super(msg, e);
 	}
 	
 	public MissingParentException(EtlDatabaseObject etlObject, Integer parentId, String parentTable,
-	    String originAppLocationConde, ParentTable refInfo) {
+	    String originAppLocationConde, ParentTable refInfo, DBException e) {
 		super("Missing Parent of record " + etlObject + "!!! Parent [table: " + parentTable + ", id: " + parentId + ", from:"
-		        + originAppLocationConde + "]");
+		        + originAppLocationConde + "]", e);
 		
 		this.parentId = parentId;
 		this.parentTable = parentTable;
@@ -40,9 +45,9 @@ public class MissingParentException extends EtlException {
 	}
 	
 	public MissingParentException(EtlDatabaseObject etlObject, Oid parentId, String parentTable,
-	    String originAppLocationConde, ParentTable refInfo) {
+	    String originAppLocationConde, ParentTable refInfo, DBException e) {
 		super("Missing parent of record " + etlObject + "!!! Parent: [table: " + parentTable + ", id: " + parentId
-		        + ", from:" + originAppLocationConde + "]");
+		        + ", from:" + originAppLocationConde + "]", e);
 		
 		this.parentTable = parentTable;
 		this.originAppLocationConde = originAppLocationConde;
@@ -82,7 +87,13 @@ public class MissingParentException extends EtlException {
 		this.refInfo = refInfo;
 	}
 	
-	public MissingParentException(String msg) {
-		super(msg);
+	@Override
+	public boolean isIntegrityConstraintViolationException() throws DBException {
+		return true;
+	}
+	
+	@Override
+	public boolean isDuplicatePrimaryOrUniqueKeyException() throws DBException {
+		return false;
 	}
 }

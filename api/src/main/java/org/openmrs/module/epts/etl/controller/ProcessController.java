@@ -135,6 +135,10 @@ public class ProcessController implements Controller, ControllerStarter {
 			createDefaultGeneratedObjectKeyTable();
 		}
 		
+		if (!existEtlRecordErrorTable()) {
+			createEtlRecordErrorTable();
+		}
+		
 		OpenConnection conn = getDefaultApp().openConnection();
 		
 		if (getConfiguration().hasDstApp()) {
@@ -817,7 +821,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		String schema = getConfiguration().getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY;
+		String tabName = EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME;
 		
 		try {
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
@@ -839,6 +843,27 @@ public class ProcessController implements Controller, ControllerStarter {
 		String schema = getConfiguration().getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = "table_operation_progress_info";
+		
+		try {
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminated();
+			conn.finalizeConnection();
+		}
+	}
+	
+	public boolean existEtlRecordErrorTable() throws DBException {
+		OpenConnection conn = openConnection();
+		
+		String schema = getConfiguration().getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME;
 		
 		try {
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
@@ -908,7 +933,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		String schema = getConfiguration().getSyncStageSchema();
 		
-		String tableName = EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY;
+		String tableName = EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME;
 		
 		sql += "CREATE TABLE " + schema + "." + tableName + "(\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
@@ -924,6 +949,51 @@ public class ProcessController implements Controller, ControllerStarter {
 		try {
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
+			st.executeBatch();
+			
+			st.close();
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void createEtlRecordErrorTable() throws DBException {
+		OpenConnection conn = openConnection();
+		
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		String schema = getConfiguration().getSyncStageSchema();
+		
+		String tableName = EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME;
+		
+		sql += "CREATE TABLE " + schema + "." + tableName + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("table_name", 50, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("origin_location_code", 50, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("exception", 200, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("exception_description", 1000, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
+		
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			
+			st.addBatch(DBUtilities.generateIndexDefinition(schema + "." + tableName, tableName + "_idx".toLowerCase(),
+			    "table_name, origin_location_code", conn) + ";");
+			
 			st.executeBatch();
 			
 			st.close();

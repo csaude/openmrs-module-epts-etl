@@ -110,7 +110,7 @@ public class MergingRecord {
 						mergingRecord.parentsWithDefaultValues.add(new ParentInfo(refInfo, parentStageInfo));
 					} else
 						throw new MissingParentException("Missing parent " + refInfo + " with value [" + parentIdInOrigin
-						        + "] from [" + stageInfo.getRecordOriginLocationCode() + "]");
+						        + "] from [" + stageInfo.getRecordOriginLocationCode() + "]", null);
 					
 					parent = DatabaseObjectDAO.getDefaultRecord(refInfo, conn);
 				}

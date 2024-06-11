@@ -118,7 +118,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return getRelatedOperationController().getOperationConfig();
 	}
 	
-	public EtlConfiguration getRelatedSyncConfiguration() {
+	public EtlConfiguration getRelatedEtlConfiguration() {
 		return getRelatedOperationController().getConfiguration();
 	}
 	

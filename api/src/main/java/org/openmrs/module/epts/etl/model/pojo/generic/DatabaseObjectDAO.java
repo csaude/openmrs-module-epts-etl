@@ -88,8 +88,6 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql = record.getInsertSQLWithObjectId();
 		}
 		
-		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn);
-		
 		long id = executeQueryWithRetryOnError(sql, params, conn);
 		
 		if (record.getObjectId().isSimpleId()) {
@@ -101,8 +99,6 @@ public class DatabaseObjectDAO extends BaseDAO {
 	public static void insertWithObjectId(EtlDatabaseObject record, Connection conn) throws DBException {
 		Object[] params = record.getInsertParamsWithObjectId();
 		String sql = record.getInsertSQLWithObjectId();
-		
-		sql = DBUtilities.tryToPutSchemaOnInsertScript(sql, conn);
 		
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
@@ -223,8 +219,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 		if (!tableConfiguration.isFullLoaded())
 			tableConfiguration.fullLoad();
 		
-		if (!utilities.arrayHasElement(tableConfiguration.getUniqueKeys()))
+		if (!tableConfiguration.hasUniqueKeys()) {
 			return null;
+		}
 		
 		Object[] params = {};
 		
@@ -234,20 +231,23 @@ public class DatabaseObjectDAO extends BaseDAO {
 			
 			uniqueKey.loadValuesToFields(obj);
 			
-			String tmpCodition = "";
-			
-			try {
-				params = utilities.setParam(params, uniqueKey.parseValuesToArray());
+			if (!uniqueKey.hasNullFields()) {
 				
-				tmpCodition = uniqueKey.parseToParametrizedStringConditionWithAlias();
-			}
-			catch (ForbiddenOperationException e) {}
-			
-			if (!tmpCodition.isEmpty()) {
-				if (!conditionSQL.isEmpty())
-					conditionSQL += " OR ";
+				String tmpCodition = "";
 				
-				conditionSQL += "(" + tmpCodition + ")";
+				try {
+					params = utilities.setParam(params, uniqueKey.parseValuesToArray());
+					
+					tmpCodition = uniqueKey.parseToParametrizedStringConditionWithAlias();
+				}
+				catch (ForbiddenOperationException e) {}
+				
+				if (!tmpCodition.isEmpty()) {
+					if (!conditionSQL.isEmpty())
+						conditionSQL += " OR ";
+					
+					conditionSQL += "(" + tmpCodition + ")";
+				}
 			}
 		}
 		
@@ -510,8 +510,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return search(tabConf.getLoadHealper(), clazz, sql, params, conn);
 	}
 	
-	private static void insertAllMetadata(List<EtlDatabaseObject> records, TableConfiguration tableInfo, Connection conn)
-	        throws DBException {
+	private static DatabaseOperationHeaderResult insertAllMetadata(List<EtlDatabaseObject> records,
+	        TableConfiguration tableInfo, Connection conn) throws DBException {
 		if (!tableInfo.isMetadata())
 			throw new ForbiddenOperationException(
 			        "You tried to insert " + tableInfo.getTableName() + " as metadata but it is not a metadata!!!");
@@ -519,26 +519,31 @@ public class DatabaseObjectDAO extends BaseDAO {
 		for (EtlDatabaseObject record : records) {
 			record.save(tableInfo, conn);
 		}
+		
+		return null;
 	}
 	
-	public static void insertAll(List<EtlDatabaseObject> objects, TableConfiguration abstractTableConfiguration,
+	public static DatabaseOperationHeaderResult insertAll(List<EtlDatabaseObject> objects, TableConfiguration tabConf,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
 		
-		if (abstractTableConfiguration.isMetadata()) {
-			insertAllMetadata(objects, abstractTableConfiguration, conn);
+		if (tabConf.isMetadata()) {
+			return insertAllMetadata(objects, tabConf, conn);
 		} else {
-			
-			if (abstractTableConfiguration.includePrimaryKeyOnInsert()) {
-				insertAllDataWithId(objects, conn);
-			} else {
-				insertAllDataWithoutId(objects, conn);
-			}
+			return insertAllData(objects, tabConf, tabConf.includePrimaryKeyOnInsert(), conn);
 		}
 	}
 	
-	public static void insertAllDataWithoutId(List<EtlDatabaseObject> objects, Connection conn) throws DBException {
-		String sql = DBUtilities
-		        .addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0], conn);
+	public static DatabaseOperationHeaderResult insertAllData(List<EtlDatabaseObject> objects, TableConfiguration tabConf,
+	        boolean includeRecordId, Connection conn) throws DBException {
+		DatabaseOperationHeaderResult result = new DatabaseOperationHeaderResult();
+		
+		String sql = null;
+		
+		if (includeRecordId) {
+			sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
+		} else {
+			sql = objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
+		}
 		
 		sql += " VALUES";
 		
@@ -552,70 +557,52 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			//values += "(" + utilities.resolveScapeCharacter(objects.get(i).generateInsertValuesWithoutObjectId()) + "),";
-			
-			values += "(" + objects.get(i).getInsertSQLQuestionMarksWithoutObjectId() + "),";
-			
-			params = utilities.setParam(params, objects.get(i).getInsertParamsWithoutObjectId());
-			
-		}
-		
-		if (utilities.stringHasValue(values)) {
-			sql += utilities.removeLastChar(values);
-			
-			executeQueryWithRetryOnError(sql, params, conn);
-		}
-	}
-	
-	public static void insertAllDataWithId(List<EtlDatabaseObject> objects, Connection conn) throws DBException {
-		String sql = DBUtilities.addInsertIgnoreOnInsertScript(objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0],
-		    conn);
-		
-		//sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
-		
-		sql += " VALUES";
-		
-		Object[] params = {};
-		
-		String values = "";
-		
-		for (int i = 0; i < objects.size(); i++) {
-			if (objects.get(i).isExcluded())
-				continue;
-			
-			//values += "(" + utilities.resolveScapeCharacter(objects.get(i).generateInsertValuesWithObjectId()) + "),";
-			
-			values += "(" + objects.get(i).getInsertSQLQuestionMarksWithObjectId() + "),";
-			
-			params = utilities.setParam(params, objects.get(i).getInsertParamsWithObjectId());
-		}
-		
-		if (utilities.stringHasValue(values)) {
-			sql += utilities.removeLastChar(values);
-			
-			executeQueryWithRetryOnError(sql, params, conn);
-		}
-	}
-	
-	@SuppressWarnings("unused")
-	private static EtlDatabaseObject retrieveProblematicObjectFromExceptionInfo(TableConfiguration tableConfiguration,
-	        DBException e, Connection conn) throws DBException {
-		//UUID duplication Error Pathern... Duplicate Entry 'objectId-origin_app' for bla bla 
-		String s = e.getLocalizedMessage().split("'")[1];
-		
-		GenericDatabaseObject obj = new GenericDatabaseObject();
-		obj.setUuid(s);
-		
-		//Check if is uuid duplication
-		if (utilities.isValidUUID(s)) {
-			List<EtlDatabaseObject> recs = getByUniqueKeys(tableConfiguration, obj, conn);
-			
-			if (utilities.arrayHasElement(recs)) {
-				return recs.get(0);
+			if (includeRecordId) {
+				values += "(" + objects.get(i).getInsertSQLQuestionMarksWithObjectId() + "),";
+				
+				params = utilities.setParam(params, objects.get(i).getInsertParamsWithObjectId());
+			} else {
+				values += "(" + objects.get(i).getInsertSQLQuestionMarksWithoutObjectId() + "),";
+				
+				params = utilities.setParam(params, objects.get(i).getInsertParamsWithoutObjectId());
 			}
 		}
 		
-		return null;
+		if (utilities.stringHasValue(values)) {
+			sql += utilities.removeLastChar(values);
+			
+			try {
+				executeQueryWithRetryOnError(sql, params, conn);
+				
+				result.addAllToRecordsWithNoError(objects);
+			}
+			catch (DBException e) {
+				for (EtlDatabaseObject obj : objects) {
+					try {
+						obj.save(tabConf, conn);
+						
+						result.addToRecordsWithNoError(obj);
+					}
+					catch (DBException e1) {
+						result.addToRecordsWithUnresolvedErrors(obj, e1);
+					}
+				}
+			}
+		}
+		
+		return result;
+	}
+	
+	public static DatabaseOperationHeaderResult insertAllDataWithoutId(List<EtlDatabaseObject> objects,
+	        TableConfiguration tabConf, Connection conn) throws DBException {
+		
+		return insertAllData(objects, tabConf, false, conn);
+		
+	}
+	
+	public static DatabaseOperationHeaderResult insertAllDataWithId(List<EtlDatabaseObject> objects,
+	        TableConfiguration tabConf, Connection conn) throws DBException {
+		return insertAllData(objects, tabConf, true, conn);
 	}
 	
 	public static Integer getAvaliableObjectId(TableConfiguration tabConf, Integer maxAcceptableId, Connection conn)

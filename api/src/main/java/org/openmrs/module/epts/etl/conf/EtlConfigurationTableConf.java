@@ -40,10 +40,16 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	public Class<? extends EtlDatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
 		return GenericDatabaseObject.class;
 	}
-
+	
+	@Override
+	public void fullLoad(Connection conn) throws DBException {
+		setIgnorableFields(utilities.parseToList("creation_date"));
+		
+		super.fullLoad(conn);
+	}
+	
 	@Override
 	public void loadOwnElements(Connection conn) throws DBException {
-		// TODO Auto-generated method stub
 		
 	}
 }

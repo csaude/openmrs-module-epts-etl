@@ -198,16 +198,14 @@ public class SyncImportInfoVO extends BaseVO implements EtlObject {
 		SyncImportInfoDAO.markAsInconsistent(tableInfo, this, conn);
 	}
 	
-	public void markAsPartialMigrated(TableConfiguration tableInfo, String errMsg, Connection conn)
-	        throws DBException {
+	public void markAsPartialMigrated(TableConfiguration tableInfo, String errMsg, Connection conn) throws DBException {
 		this.migrationStatus = MIGRATION_STATUS_INCOMPLETE;
 		this.lastSyncTryErr = errMsg;
 		
 		SyncImportInfoDAO.updateMigrationStatus(tableInfo, this, conn);
 	}
 	
-	public void markAsSyncFailedToMigrate(TableConfiguration tableInfo, String errMsg, Connection conn)
-	        throws DBException {
+	public void markAsSyncFailedToMigrate(TableConfiguration tableInfo, String errMsg, Connection conn) throws DBException {
 		this.migrationStatus = MIGRATION_STATUS_FAILED;
 		this.lastSyncTryErr = errMsg;
 		
@@ -323,7 +321,7 @@ public class SyncImportInfoVO extends BaseVO implements EtlObject {
 			if (obj != null) {
 				source.setObjectId(obj.getObjectId());
 			} else
-				throw new ParentNotYetMigratedException();
+				throw new ParentNotYetMigratedException(null);
 			
 		}
 		catch (ParentNotYetMigratedException e) {
@@ -341,8 +339,7 @@ public class SyncImportInfoVO extends BaseVO implements EtlObject {
 		SyncImportInfoDAO.markAsToBeCompletedInFuture(this, tableInfo, conn);
 	}
 	
-	public void markAsFailedToMigrate(TableConfiguration tableInfo, String errMsg, Connection conn)
-	        throws DBException {
+	public void markAsFailedToMigrate(TableConfiguration tableInfo, String errMsg, Connection conn) throws DBException {
 		SyncImportInfoDAO.markAsFailedToMigrate(this, tableInfo, errMsg, conn);
 	}
 	

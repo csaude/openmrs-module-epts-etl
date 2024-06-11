@@ -154,6 +154,27 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return getTableName();
 	}
 	
+	/**
+	 * Clones gives list of UniqueKeys to this tableConfiguration
+	 * 
+	 * @param uniqueKeys to clone to this table
+	 */
+	default void cloneUnikeKeys(List<UniqueKeyInfo> uniqueKeys) {
+		
+		if (utilities.arrayHasElement(uniqueKeys)) {
+			setUniqueKeys(new ArrayList<>(uniqueKeys.size()));
+			
+			for (UniqueKeyInfo uk : UniqueKeyInfo.cloneAll_(uniqueKeys)) {
+				uk.setTabConf(this);
+				
+				getUniqueKeys().add(uk);
+			}
+			
+		} else {
+			setUniqueKeys(null);
+		}
+	}
+	
 	default void clone(TableConfiguration toCloneFrom, Connection conn) throws DBException {
 		this.setTableName(toCloneFrom.getTableName());
 		this.setParents(toCloneFrom.getParents());
@@ -178,7 +199,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setFullLoaded(toCloneFrom.isFullLoaded());
 		this.setRemoveForbidden(toCloneFrom.isRemoveForbidden());
 		this.setObservationDateFields(toCloneFrom.getObservationDateFields());
-		this.setUniqueKeys(toCloneFrom.getUniqueKeys());
+		
+		this.cloneUnikeKeys(toCloneFrom.getUniqueKeys());
+		
 		this.setFields(toCloneFrom.getFields());
 		this.setWinningRecordFieldsInfo(toCloneFrom.getWinningRecordFieldsInfo());
 		this.setFullLoaded(toCloneFrom.isFullLoaded());
@@ -1426,7 +1449,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			}
 		}
 		
-		this.setInsertSQLWithoutObjectId("INSERT INTO " + this.getObjectName() + "(" + insertSQLFieldsWithoutObjectId
+		this.setInsertSQLWithoutObjectId("INSERT INTO " + this.getFullTableName() + "(" + insertSQLFieldsWithoutObjectId
 		        + ") VALUES( " + insertSQLQuestionMarksWithoutObjectId + ");");
 		
 		setInsertSQLQuestionMarksWithoutObjectId(insertSQLQuestionMarksWithoutObjectId);
@@ -1446,7 +1469,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			    attElements.getSqlInsertLastEndPartDefinition());
 		}
 		
-		this.setInsertSQLWithObjectId("INSERT INTO " + this.getObjectName() + "(" + insertSQLFieldsWithObjectId
+		this.setInsertSQLWithObjectId("INSERT INTO " + this.getFullTableName() + "(" + insertSQLFieldsWithObjectId
 		        + ") VALUES( " + insertSQLQuestionMarksWithObjectId + ");");
 		
 		this.setInsertSQLQuestionMarksWithObjectId(insertSQLQuestionMarksWithObjectId);
@@ -1875,5 +1898,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			
 			aliasGenerator.generateAliasForTable(this);
 		}
+	}
+	
+	default EtlDatabaseObject createRecordInstance() {
+		try {
+			return getSyncRecordClass().newInstance();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		
+	}
+	
+	default boolean hasObservationDateFields() {
+		return utilities.arrayHasElement(getObservationDateFields());
 	}
 }

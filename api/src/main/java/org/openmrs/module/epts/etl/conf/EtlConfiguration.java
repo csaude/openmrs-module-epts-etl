@@ -38,7 +38,9 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class EtlConfiguration extends AbstractBaseConfiguration implements TableAliasesGenerator {
 	
-	public static final String DEFAULT_GENERATED_OBJECT_KEY = "default_generated_object_key";
+	public static final String DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME = "default_generated_object_key";
+	
+	public static final String ETL_RECORD_ERROR_TABLE_NAME = "etl_record_error";
 	
 	private String syncRootDirectory;
 	
@@ -102,11 +104,18 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf;
 	
+	private EtlConfigurationTableConf etlRecordErrorTabCof;
+	
 	private List<TableConfiguration> fullLoadedTables;
 	
 	private List<String> busyTableAliasName;
 	
 	private List<String> generatedItemCodes;
+	
+	/*
+	 * Indicates if in this process the primary keys are transformed or not. If yes, the transformed records are given a new pk, if no, the pk is src is the same in dst
+	 */
+	private boolean doNotTransformsPrimaryKeys;
 	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
@@ -117,10 +126,19 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		this.configuredTables = new ArrayList<>();
 		
-		this.defaultGeneratedObjectKeyTabConf = new EtlConfigurationTableConf(EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY,
-		        this);
-		
 		this.busyTableAliasName = new ArrayList<>();
+	}
+	
+	public boolean isDoNotTransformsPrimaryKeys() {
+		return doNotTransformsPrimaryKeys;
+	}
+	
+	public void setDoNotTransformsPrimaryKeys(boolean doNotTransformsPrimaryKeys) {
+		this.doNotTransformsPrimaryKeys = doNotTransformsPrimaryKeys;
+	}
+	
+	public EtlConfigurationTableConf getEtlRecordErrorTabCof() {
+		return etlRecordErrorTabCof;
 	}
 	
 	public EtlConfigurationTableConf getDefaultGeneratedObjectKeyTabConf() {
@@ -445,31 +463,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		if (etlItemConfiguration != null) {
 			for (EtlItemConfiguration config : etlItemConfiguration) {
 				config.setRelatedSyncConfiguration(this);
-				
-				//addToTableConfigurationPull(dstConf.getSrcConf());
-				
-				List<EtlAdditionalDataSource> allAvaliableDataSources = config.getSrcConf().getAvaliableExtraDataSource();
-				
-				for (EtlAdditionalDataSource t : allAvaliableDataSources) {
-					if (t instanceof AbstractTableConfiguration) {
-						//addToTableConfigurationPull((AbstractTableConfiguration) t);
-					}
-				}
 			}
 		}
 		
 		this.etlItemConfiguration = etlItemConfiguration;
 	}
-	
-	/*
-	public void addToTableConfigurationPull(AbstractTableConfiguration tableConfiguration) {
-		syncTableConfigurationPull.put(tableConfiguration.getTableName(), tableConfiguration);
-	}
-	
-	public AbstractTableConfiguration findPulledTableConfiguration(String tableName) {
-		return syncTableConfigurationPull.get(tableName);
-	}
-	*/
 	
 	public String getSyncStageSchema() {
 		String schema;
@@ -566,6 +564,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 		
 		synchronized (STRING_LOCK) {
+			
+			this.defaultGeneratedObjectKeyTabConf = new EtlConfigurationTableConf(
+			        EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME, this);
+			this.defaultGeneratedObjectKeyTabConf.setSchema(getSyncStageSchema());
+			
+			this.etlRecordErrorTabCof = new EtlConfigurationTableConf(EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME, this);
+			this.etlRecordErrorTabCof.setSchema(getSyncStageSchema());
+			
 			for (EtlItemConfiguration tc : this.etlItemConfiguration) {
 				tc.setRelatedSyncConfiguration(this);
 				tc.getSrcConf().setParentConf(tc);
@@ -1141,8 +1147,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	public boolean isSupposedToRunInDestination() {
 		return this.isDataBaseMergeFromJSONProcess() || this.isDBQuickLoadProcess() || this.isDataReconciliationProcess()
 		        || this.isDBQuickCopyProcess() || this.isDataBaseMergeFromSourceDBProcess() || this.isResolveProblems()
-		        || this.isDBQuickMergeWithEntityGenerationDBProcess()
-		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess();
+		        || this.isDBQuickMergeWithEntityGenerationDBProcess() || this.isDBQuickMergeWithDatabaseGenerationDBProcess()
+		        || this.isEtlProcess() || this.isReEtlProcess();
 	}
 	
 	public boolean isSupposedToRunInOrigin() {

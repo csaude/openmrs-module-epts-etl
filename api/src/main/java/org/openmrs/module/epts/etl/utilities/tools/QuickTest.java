@@ -15,10 +15,10 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.controller.ProcessStarter;
-import org.openmrs.module.epts.etl.dbquickmerge.controller.DBQuickMergeController;
-import org.openmrs.module.epts.etl.dbquickmerge.model.DBQuickMergeSearchParams;
-import org.openmrs.module.epts.etl.dbquickmerge.model.QuickMergeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.etl.model.EtlRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -129,7 +129,7 @@ public class QuickTest {
 		
 		etlConf.fullLoad();
 		
-		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(etlConf, null, null);
+		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(etlConf, null, null);
 		
 		searchParams.setQtdRecordPerSelected(conf.getOperations().get(0).getMaxRecordPerProcessing());
 		
@@ -142,7 +142,7 @@ public class QuickTest {
 		
 		OpenConnection dstConn = dstApp.openConnection();
 		
-		Map<String, List<QuickMergeRecord>> mergingRecs = new HashMap<>();
+		Map<String, List<EtlRecord>> mergingRecs = new HashMap<>();
 		
 		try {
 			
@@ -158,8 +158,7 @@ public class QuickTest {
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);
 						
-						QuickMergeRecord mr = new QuickMergeRecord(destObject, etlConf.getSrcConf(), mappingInfo, srcApp,
-						        dstApp, false);
+						EtlRecord mr = new EtlRecord(destObject, etlConf.getSrcConf(), mappingInfo, null, false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
@@ -309,14 +308,12 @@ public class QuickTest {
 		
 		EtlItemConfiguration tableInfo = syncConfig.find(EtlItemConfiguration.fastCreate("obs"));
 		
-		DBQuickMergeController controller = (DBQuickMergeController) ps.getCurrentController().getOperationsControllers()
-		        .get(0);
+		EtlController controller = (EtlController) ps.getCurrentController().getOperationsControllers().get(0);
 		
 		ThreadRecordIntervalsManager limits = new ThreadRecordIntervalsManager(1448341 + 500, 1449340, 20, null);
 		
-		DBQuickMergeSearchParams searchParams = new DBQuickMergeSearchParams(tableInfo, limits, null);
+		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(tableInfo, limits, null);
 		
-		//tableInfo.setExtraConditionForExport("value_datetime is not null");
 		
 		List<EtlDatabaseObject> a = SearchParamsDAO.search(searchParams, conn);
 		

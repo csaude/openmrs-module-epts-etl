@@ -144,7 +144,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		}
 		
 		throw new ParentNotYetMigratedException(parentId, parentTableConfiguration.getTableName(),
-		        this.relatedSyncInfo.getRecordOriginLocationCode());
+		        this.relatedSyncInfo.getRecordOriginLocationCode(), null);
 	}
 	
 	@Override
@@ -290,8 +290,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			}
 			catch (DBException e) {
 				
-				if (e.isDuplicatePrimaryOrUniqueKeyException()
-				        && tableConfiguration.getRelatedSyncConfiguration().isSupposedToRunInDestination()) {
+				if (e.isDuplicatePrimaryOrUniqueKeyException()) {
 					
 					if (DBUtilities.isPostgresDB(conn)) {
 						/*
@@ -308,11 +307,9 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 						}
 					}
 					
-					//Try to resolve conflict if it is destination operation
-					
 					EtlDatabaseObject recordOnDB = null;
 					
-					if (tableConfiguration.isAutoIncrementId()) {
+					if (tableConfiguration.getRelatedSyncConfiguration().isDoNotTransformsPrimaryKeys()) {
 						recordOnDB = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
 					}
 					
@@ -326,7 +323,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 					if (recordOnDB != null) {
 						resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
 					} else {
-						throw new ConflictWithRecordNotYetAvaliableException(this);
+						throw new ConflictWithRecordNotYetAvaliableException(this, e);
 					}
 				} else
 					throw e;
@@ -374,7 +371,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 					break;
 				}
 			}
-		} else if (utilities.arrayHasElement(tableConfiguration.getObservationDateFields())) {
+		} else if (tableConfiguration.hasObservationDateFields()) {
 			for (String dateField : tableConfiguration.getObservationDateFields()) {
 				
 				Date thisRecordDate;

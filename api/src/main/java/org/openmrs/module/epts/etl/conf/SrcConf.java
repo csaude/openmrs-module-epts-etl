@@ -228,7 +228,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	public List<EtlAdditionalDataSource> getAvaliableExtraDataSource() {
 		List<EtlAdditionalDataSource> ds = new ArrayList<>();
 		
-		if (useSharedPKKey()) {
+		if (useSharedPKKey() && isFullLoaded()) {
 			ds.add((EtlAdditionalDataSource) getSharedKeyRefInfo());
 		}
 		

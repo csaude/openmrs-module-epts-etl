@@ -87,20 +87,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean nonResumable;
 	
-	/*
-	 * Indicates if in this process the primary keys are transformed or not. If yes, the transformed records are given a new pk, if no, the pk is src is the same in dst
-	 */
-	private boolean transformsPrimaryKeys;
-	
 	public EtlOperationConfig() {
-	}
-	
-	public boolean isTransformsPrimaryKeys() {
-		return transformsPrimaryKeys;
-	}
-	
-	public void setTransformsPrimaryKeys(boolean transformsPrimaryKeys) {
-		this.transformsPrimaryKeys = transformsPrimaryKeys;
 	}
 	
 	public boolean isNonResumable() {

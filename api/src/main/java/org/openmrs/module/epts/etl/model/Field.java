@@ -34,6 +34,8 @@ public class Field implements Serializable {
 	
 	private boolean allowNull;
 	
+	private boolean timeStamp;
+	
 	public static final Integer DEFAULT_INT_VALUE = -1;
 	
 	public static final Date DEFAULT_DATE_VALUE = DateAndTimeUtilities.createDate("1975-01-01");
@@ -353,6 +355,14 @@ public class Field implements Serializable {
 		}
 		
 		return v;
+	}
+	
+	public boolean isTimeStamp() {
+		return timeStamp;
+	}
+	
+	public void setTimeStamp(boolean timeStamp) {
+		this.timeStamp = timeStamp;
 	}
 	
 }

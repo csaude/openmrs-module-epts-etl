@@ -248,7 +248,7 @@ public class DBUtilities {
 		}
 	}
 	
-	public static String tryToPutSchemaOnInsertScript(String sql, Connection conn) throws DBException {
+	public static String tryToPutSchemaOnInsertScript_(String sql, Connection conn) throws DBException {
 		String tableName = (sql.toLowerCase().split("insert into")[1]).split("\\(")[0];
 		
 		String[] tableNameComposition = tableName.split("\\.");
@@ -1130,6 +1130,22 @@ public class DBUtilities {
 			return "CONSTRAINT " + uniqueKeyName + " UNIQUE (" + uniqueKeyFields + ")";
 		} else if (isSqlServerDB(conn)) {
 			return "CONSTRAINT " + uniqueKeyName + " UNIQUE (" + uniqueKeyFields + ")";
+		}
+		
+		throw new DatabaseNotSupportedException(conn);
+	}
+	
+	public static String generateIndexDefinition(String tableName, String indexName, String uniqueKeyFields,
+	        Connection conn) throws DBException {
+		if (isMySQLDB(conn)) {
+			return "ALTER TABLE " + tableName + " ADD INDEX " + indexName + "(" + uniqueKeyFields + ")";
+			
+		} else if (isPostgresDB(conn)) {
+			return "CREATE INDEX " + indexName + " ON " + tableName + " (" + uniqueKeyFields + ")";
+		} else if (isOracleDB(conn)) {
+			return "CREATE INDEX " + indexName + " ON " + tableName + " (" + uniqueKeyFields + ")";
+		} else if (isSqlServerDB(conn)) {
+			return "CREATE INDEX " + indexName + " ON " + tableName + " (" + uniqueKeyFields + ")";
 		}
 		
 		throw new DatabaseNotSupportedException(conn);

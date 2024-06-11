@@ -21,6 +21,7 @@ import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseOperationHeaderResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -135,9 +136,27 @@ public class EtlEngine extends Engine {
 				etlObjects.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			EtlRecord.loadAll(mergingRecs, srcConn, dstConn);
+			DatabaseOperationHeaderResult result = EtlRecord.loadAll(mergingRecs, srcConn, dstConn);
 			
-			afterEtl(etlObjects, srcConn, dstConn);
+			if (!result.hasFatalError()) {
+				afterEtl(result.getRecordsWithNoError(), srcConn, dstConn);
+				
+				if (result.hasRecordsWithUnresolvedErrors()) {
+					logWarn("Some errors where found loading '" + result.getRecordsWithUnresolvedErrors().size()
+					        + "! The errors will be documented");
+					
+					result.documentErrors(srcConn, dstConn);
+				}
+				
+			}else {
+				if (result.hasRecordsWithUnresolvedErrors()) {
+					logError("Fatal error found loading some records. The process will be aborted");
+					
+					result.printStackErrorOfFatalErrors();
+					
+				}
+			}
+			
 			
 			logInfo(
 			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
@@ -151,7 +170,6 @@ public class EtlEngine extends Engine {
 			e.printStackTrace();
 			
 			throw e;
-			//performeSyncOneByOne(etlObjects, srcConn);
 		}
 		finally {
 			dstConn.finalizeConnection();

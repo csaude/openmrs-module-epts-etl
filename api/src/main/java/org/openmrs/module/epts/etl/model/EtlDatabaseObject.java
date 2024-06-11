@@ -398,8 +398,9 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		TableConfiguration tabConf = (TableConfiguration) getRelatedConfiguration();
 		
-		if (tabConf.hasUniqueKeys())
-			throw new ForbiddenOperationException("The related configuration has no uniqueKey");
+		if (!tabConf.hasUniqueKeys())
+			throw new ForbiddenOperationException(
+			        "The related configuration " + tabConf.getTableName() + " has no uniqueKey");
 		
 		for (UniqueKeyInfo uk : tabConf.getUniqueKeys()) {
 			boolean allFiled = true;
@@ -418,6 +419,8 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		return false;
 	}
+	
+	void copyFrom(EtlDatabaseObject parentRecordInOrigin);
 	
 	/*
 	default EtlDatabaseObject findOnDB(Connection conn) throws DBException, ForbiddenOperationException {

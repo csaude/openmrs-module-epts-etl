@@ -11,7 +11,7 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.etl.re_etl.engine.ReEtlEngine;
+import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -63,8 +63,7 @@ public class EtlController extends SiteOperationController {
 				throw new ForbiddenOperationException(e);
 			}
 		} else {
-			return new ReEtlEngine(monitor, limits);
-			
+			return new EtlEngine(monitor, limits);
 		}
 	}
 	

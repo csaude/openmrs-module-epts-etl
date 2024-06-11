@@ -381,4 +381,24 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		
 		return tableName + ": " + super.toString();
 	}
+	
+	@Override
+	public void copyFrom(EtlDatabaseObject copyFrom) {
+		
+		if (!hasRelatedConfiguration())
+			throw new ForbiddenOperationException("The relatedConfiguration  is not set for record [" + this + "]");
+		
+		if (!getRelatedConfiguration().isFullLoaded())
+			throw new ForbiddenOperationException("The relatedConfiguration  is not full loaded");
+		
+		for (Field f : this.fields) {
+			try {
+				f.setValue(copyFrom.getFieldValue(f.getName()));
+			}
+			catch (ForbiddenOperationException e) {
+				f.setValue(copyFrom.getFieldValue(f.getNameAsClassAtt()));
+			}
+		}
+		
+	}
 }

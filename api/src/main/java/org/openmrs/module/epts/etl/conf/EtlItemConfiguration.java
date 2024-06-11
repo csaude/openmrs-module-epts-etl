@@ -77,6 +77,10 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.dstConf = toCloneFrom.dstConf;
 	}
 	
+	public boolean hasDstConf() {
+		return utilities.arrayHasElement(this.getDstConf());
+	}
+	
 	public synchronized void fullLoad() throws DBException {
 		if (this.isFullLoaded()) {
 			return;
@@ -97,13 +101,15 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				
 				dstConn = otherApps.get(0).openConnection();
 				
-				if (dstConf == null) {
-					dstConf = utilities.parseToList(new DstConf());
+				if (!this.hasDstConf()) {
+					setDstConf(utilities.parseToList(new DstConf()));
 				}
 				
-				for (DstConf map : this.dstConf) {
+				for (DstConf map : this.getDstConf()) {
 					if (map.getTableName() == null) {
-						map.setTableName(this.srcConf.getTableName());
+						map.setTableName(this.getSrcConf().getTableName());
+						map.setObservationDateFields(getSrcConf().getObservationDateFields());
+						map.setRemoveForbidden(this.getSrcConf().isRemoveForbidden());
 					}
 					
 					map.setRelatedAppInfo(otherApps.get(0));
@@ -229,5 +235,22 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		}
 		
 		return false;
+	}
+	
+	public DstConf findDstTable(String tableName) throws DBException {
+		
+		if (!containsDstTable(tableName))
+			return null;
+		
+		if (!isFullLoaded()) {
+			fullLoad();
+		}
+		
+		for (DstConf dst : getDstConf()) {
+			if (dst.getTableName().equals(tableName)) {
+				return dst;
+			}
+		}
+		return null;
 	}
 }

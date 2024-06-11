@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -23,6 +24,7 @@ import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseOperationHeaderResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -117,7 +119,6 @@ public class EtlRecord {
 		}
 		
 		loadDestParentInfo(srcConn, dstConn);
-		loadDestConditionalParentInfo(srcConn, dstConn);
 		
 		try {
 			
@@ -170,7 +171,6 @@ public class EtlRecord {
 			dstConf.fullLoad();
 		
 		loadDestParentInfo(srcConn, dstConn);
-		loadDestConditionalParentInfo(srcConn, dstConn);
 		
 		List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.getDstConf(), this.getRecord(), dstConn);
 		
@@ -188,19 +188,27 @@ public class EtlRecord {
 		
 		for (ParentInfo parentInfo : this.getParentsWithDefaultValues()) {
 			
-			List<DstConf> dstSharedConf = parentInfo.getParentTableConfInDst().findRelatedDstConf();
+			List<SrcConf> avaliableSrcForCurrParent = parentInfo.getParentTableConfInDst()
+			        .findRelatedSrcConfWhichAsAtLeastOnematchingDst();
 			
-			if (utilities.arrayHasNoElement(dstSharedConf)) {
+			if (utilities.arrayHasNoElement(avaliableSrcForCurrParent)) {
 				throw new ForbiddenOperationException(
 				        "There are relashioship which cannot auto resolved as there is no configured etl for "
-				                + parentInfo.getParentTableConfInDst().getTableName() + " as destination!");
+				                + parentInfo.getParentTableConfInDst().getTableName() + " as source and destination!");
 			}
 			
 			EtlDatabaseObject dstParent = null;
 			DstConf dstConf = null;
 			
-			for (DstConf dst : dstSharedConf) {
-				dstParent = dst.transform(parentInfo.getParentRecordInOrigin(), srcConn, getSrcApp(), getDstApp());
+			for (SrcConf src : avaliableSrcForCurrParent) {
+				DstConf dst = src.getParentConf().findDstTable(parentInfo.getParentTableConfInDst().getTableName());
+				
+				EtlDatabaseObject recordAsSrc = src.createRecordInstance();
+				recordAsSrc.setRelatedConfiguration(src);
+				
+				recordAsSrc.copyFrom(parentInfo.getParentRecordInOrigin());
+				
+				dstParent = dst.transform(recordAsSrc, srcConn, getSrcApp(), getDstApp());
 				
 				if (dstParent != null) {
 					EtlRecord parentData = new EtlRecord(dstParent,
@@ -224,7 +232,7 @@ public class EtlRecord {
 	}
 	
 	protected void loadDestParentInfo(Connection srcConn, Connection dstConn)
-	        throws ParentNotYetMigratedException, DBException {
+	        throws ParentNotYetMigratedException, MissingParentException, DBException {
 		
 		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo()))
 			return;
@@ -239,7 +247,7 @@ public class EtlRecord {
 				refInfo.fullLoad(dstConn);
 			}
 			
-			if (!getRecord().hasAllPerentFieldsFilled(refInfo) && !getRecord().hasAtLeastOnUniqueKeyWIthAllFieldsFilled()) {
+			if (!getRecord().hasAllPerentFieldsFilled(refInfo)) {
 				continue;
 			}
 			
@@ -251,21 +259,43 @@ public class EtlRecord {
 				}
 			}
 			
+			if (refInfo.hasConditionalFields()) {
+				if (refInfo.hasMoreThanOneConditionalFields()) {
+					throw new ForbiddenOperationException("Currently not supported multiple conditional fields");
+				}
+				
+				String conditionalFieldName = refInfo.getConditionalFields().get(0).getNameAsClassAtt();
+				Object conditionalvalue = refInfo.getConditionalFields().get(0).getValue();
+				
+				if (!conditionalvalue.equals(getRecord().getFieldValue(conditionalFieldName)))
+					continue;
+			}
+			
 			Oid key = refInfo.generateParentOidFromChild(getRecord());
 			
-			EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(refInfo, key, srcConn);
+			TableConfiguration tabConfInSrc = this.getSrcConf()
+			        .findFullConfiguredConfInAllRelatedTable(refInfo.getTableName());
+			
+			if (tabConfInSrc == null) {
+				tabConfInSrc = new GenericTableConfiguration(this.getSrcConf());
+				tabConfInSrc.setTableName(refInfo.getTableName());
+				tabConfInSrc.setRelatedSyncConfiguration(this.getEtlConfiguration());
+				tabConfInSrc.fullLoad(srcConn);
+			}
+			
+			EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(tabConfInSrc, key, srcConn);
 			
 			if (parentInOrigin == null) {
 				throw new MissingParentException(getRecord(), key, refInfo.getTableName(),
-				        this.getDstConf().getOriginAppLocationCode(), refInfo);
+				        this.getDstConf().getOriginAppLocationCode(), refInfo, null);
 			}
 			
 			EtlDatabaseObject parent;
 			
-			if (getEngine().getRelatedEtlOperationConfig().isTransformsPrimaryKeys()) {
-				parent = retrieveParentByUnikeKeys(refInfo, parentInOrigin, dstConn);
-			} else {
+			if (getEngine().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
 				parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
+			} else {
+				parent = retrieveParentByUnikeKeys(refInfo, parentInOrigin, dstConn);
 			}
 			
 			if (parent == null) {
@@ -326,57 +356,7 @@ public class EtlRecord {
 				
 				if (parent == null)
 					throw new MissingParentException(record, parentId, refInfo.getTableName(),
-					        etlRecord.getDstConf().getOriginAppLocationCode(), refInfo);
-			}
-		}
-	}
-	
-	protected void loadDestConditionalParentInfo(Connection srcConn, Connection destConn)
-	        throws ParentNotYetMigratedException, DBException {
-		if (!utilities.arrayHasElement(this.getDstConf().getConditionalParents()))
-			return;
-		
-		for (ParentTable parent : getDstConf().getConditionalParents()) {
-			if (parent.isMetadata())
-				continue;
-			
-			if (utilities.arrayHasMoreThanOneElements(parent.getConditionalFields())) {
-				throw new ForbiddenOperationException("Currently not supported multiple conditional fields");
-			}
-			
-			String conditionalFieldName = parent.getConditionalFields().get(0).getNameAsClassAtt();
-			Object conditionalvalue = parent.getConditionalFields().get(0).getValue();
-			
-			if (!conditionalvalue.equals(getRecord().getFieldValue(conditionalFieldName)))
-				continue;
-			
-			Integer parentIdInOrigin = null;
-			
-			try {
-				parentIdInOrigin = (Integer) getRecord().getParentValue(parent);
-			}
-			catch (NullPointerException | NumberFormatException e) {}
-			
-			if (parentIdInOrigin != null) {
-				Oid objectId = Oid.fastCreate(parent.getParentColumnOnSimpleMapping(), parentIdInOrigin);
-				
-				EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(parent, objectId, srcConn);
-				
-				if (parentInOrigin == null)
-					throw new MissingParentException(getRecord(), parentIdInOrigin, parent.getTableName(),
-					        this.getDstConf().getOriginAppLocationCode(), parent);
-				
-				List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parent, parentInOrigin, destConn);
-				
-				EtlDatabaseObject parentInDest = utilities.arrayHasElement(recs) ? recs.get(0) : null;
-				
-				if (parentInDest == null) {
-					this.getParentsWithDefaultValues().add(new ParentInfo(parent, parentInOrigin));
-					
-					parentInDest = DatabaseObjectDAO.getDefaultRecord(parent, destConn);
-				}
-				
-				getRecord().changeParentValue(parent, parentInDest);
+					        etlRecord.getDstConf().getOriginAppLocationCode(), refInfo, null);
 			}
 		}
 	}
@@ -402,11 +382,8 @@ public class EtlRecord {
 		consolidateAndSaveData(false, srcConn, destConn);
 	}
 	
-	public static void loadAll(List<EtlRecord> mergingRecs, Connection srcConn, Connection dstConn)
+	public static DatabaseOperationHeaderResult loadAll(List<EtlRecord> mergingRecs, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
-		if (!utilities.arrayHasElement(mergingRecs)) {
-			return;
-		}
 		
 		AbstractTableConfiguration config = mergingRecs.get(0).dstConf;
 		
@@ -416,19 +393,51 @@ public class EtlRecord {
 		
 		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
 		
-		for (EtlRecord etlRecord : mergingRecs) {
-			objects.add(etlRecord.record);
+		DatabaseOperationHeaderResult currResult = new DatabaseOperationHeaderResult();
+		
+		if (config.hasParentRefInfo()) {
+			for (EtlRecord etlRecord : mergingRecs) {
+				try {
+					etlRecord.loadDestParentInfo(srcConn, dstConn);
+					
+					objects.add(etlRecord.getRecord());
+					
+				}
+				catch (DBException e) {
+					currResult.addToRecordsWithUnresolvedErrors(etlRecord.getRecord(), e);
+				}
+				
+			}
 		}
 		
-		DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn);
+		DatabaseOperationHeaderResult dr = DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(),
+		    dstConn);
 		
+		if (config.hasParentRefInfo()) {
+			
+			for (EtlRecord r : mergingRecs) {
+				if (r.hasParentsWithDefaultValues()) {
+					r.reloadParentsWithDefaultValues(srcConn, dstConn);
+					
+					r.getRecord().update(r.getDstConf(), dstConn);
+				}
+			}
+		}
+		
+		return dr;
 	}
 	
-	public static void loadAll(Map<String, List<EtlRecord>> mergingRecs, Connection srcConn, OpenConnection dstConn)
-	        throws ParentNotYetMigratedException, DBException {
+	public static DatabaseOperationHeaderResult loadAll(Map<String, List<EtlRecord>> mergingRecs, Connection srcConn,
+	        OpenConnection dstConn) throws ParentNotYetMigratedException, DBException {
+		
+		DatabaseOperationHeaderResult result = new DatabaseOperationHeaderResult();
 		
 		for (String key : mergingRecs.keySet()) {
-			loadAll(mergingRecs.get(key), srcConn, dstConn);
+			DatabaseOperationHeaderResult currresult = loadAll(mergingRecs.get(key), srcConn, dstConn);
+			
+			result.addAllFromOtherResult(currresult);
 		}
+		
+		return result;
 	}
 }

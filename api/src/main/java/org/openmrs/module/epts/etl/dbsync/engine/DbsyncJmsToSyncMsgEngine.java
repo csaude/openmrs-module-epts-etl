@@ -65,7 +65,7 @@ public class DbsyncJmsToSyncMsgEngine extends EtlEngine {
 			syncMessage.setFieldValue("dateCreated", rec.getFieldValue("dateCreated"));
 			
 			Integer id = (Integer) rec.getFieldValue("id");
-			Integer syncMsgMaxId = Integer.parseInt(getRelatedSyncConfiguration().getParamValue("syncMsgMaxId"));
+			Integer syncMsgMaxId = Integer.parseInt(getRelatedEtlConfiguration().getParamValue("syncMsgMaxId"));
 			
 			syncMessage.setFieldValue("id", (id + syncMsgMaxId));
 			
