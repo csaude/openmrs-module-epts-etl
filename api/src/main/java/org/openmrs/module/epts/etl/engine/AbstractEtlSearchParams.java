@@ -333,15 +333,20 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		
 		int qtyProcessors = utilities.getAvailableProcessors();
 		
-		//qtyProcessors = 1;
+		if (qtyProcessors > qtyRecordsBetweenLimits) {
+			qtyProcessors = (int) qtyRecordsBetweenLimits;
+		}
 		
 		long qtyRecordsPerEngine = qtyRecordsBetweenLimits / qtyProcessors;
 		
 		ThreadRecordIntervalsManager initialLimits = null;
+	
 		
 		List<CompletableFuture<List<T>>> tasks = new ArrayList<>(qtyProcessors);
 		
 		List<ThreadRecordIntervalsManager> generatedLimits = new ArrayList<>();
+		
+		
 		
 		for (int i = 0; i < qtyProcessors; i++) {
 			ThreadRecordIntervalsManager limits;

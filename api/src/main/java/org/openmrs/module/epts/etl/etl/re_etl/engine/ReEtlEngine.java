@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
-import org.openmrs.module.epts.etl.etl.model.EtlRecord;
+import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.etl.re_etl.controller.ReEtlController;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -78,7 +78,7 @@ public class ReEtlEngine extends EtlEngine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					EtlRecord data = new EtlRecord(destObject, getSrcConf(), mappingInfo, this, wrt);
+					LoadRecord data = new LoadRecord(destObject, getSrcConf(), mappingInfo, this, wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -164,7 +164,7 @@ public class ReEtlEngine extends EtlEngine {
 		}
 	}
 	
-	private void process(EtlRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
+	private void process(LoadRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
 	        Connection destConn) throws DBException {
 		String reprocessingMessage = reprocessingCount == 0 ? "Re Merging Record"
 		        : "Re re-merging " + reprocessingCount + " Record";

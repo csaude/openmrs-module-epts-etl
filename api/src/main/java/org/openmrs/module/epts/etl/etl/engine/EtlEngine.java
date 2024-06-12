@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
-import org.openmrs.module.epts.etl.etl.model.EtlRecord;
+import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -108,7 +108,7 @@ public class EtlEngine extends Engine {
 		
 		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
 		
-		Map<String, List<EtlRecord>> mergingRecs = new HashMap<>();
+		Map<String, List<LoadRecord>> mergingRecs = new HashMap<>();
 		
 		try {
 			
@@ -120,7 +120,7 @@ public class EtlEngine extends Engine {
 					EtlDatabaseObject destObject = transform(rec, mappingInfo, etlObjects, srcConn, dstConn);
 					
 					if (destObject != null) {
-						EtlRecord etlRec = initEtlRecord(destObject, mappingInfo, false);
+						LoadRecord etlRec = initEtlRecord(destObject, mappingInfo, false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(etlObjects.size()));
@@ -136,7 +136,7 @@ public class EtlEngine extends Engine {
 				etlObjects.removeAll(recordsToIgnoreOnStatistics);
 			}
 			
-			DatabaseOperationHeaderResult result = EtlRecord.loadAll(mergingRecs, srcConn, dstConn);
+			DatabaseOperationHeaderResult result = LoadRecord.loadAll(mergingRecs, srcConn, dstConn);
 			
 			if (!result.hasFatalError()) {
 				afterEtl(result.getRecordsWithNoError(), srcConn, dstConn);
@@ -148,7 +148,7 @@ public class EtlEngine extends Engine {
 					result.documentErrors(srcConn, dstConn);
 				}
 				
-			}else {
+			} else {
 				if (result.hasRecordsWithUnresolvedErrors()) {
 					logError("Fatal error found loading some records. The process will be aborted");
 					
@@ -157,15 +157,13 @@ public class EtlEngine extends Engine {
 				}
 			}
 			
-			
 			logInfo(
 			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
 			
 			dstConn.markAsSuccessifullyTerminated();
 		}
 		catch (Exception e) {
-			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits()
-			        + "]... \n Try to performe merge record by record...");
+			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits() + "]... \n");
 			
 			e.printStackTrace();
 			
@@ -205,7 +203,7 @@ public class EtlEngine extends Engine {
 					
 					boolean wrt = writeOperationHistory();
 					
-					EtlRecord data = initEtlRecord(destObject, mappingInfo, wrt);
+					LoadRecord data = initEtlRecord(destObject, mappingInfo, wrt);
 					
 					try {
 						process(data, startingStrLog, 0, srcConn, dstConn);
@@ -306,20 +304,22 @@ public class EtlEngine extends Engine {
 		
 		EtlDatabaseObject transformed = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
 		
-		if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
+		if (transformed != null) {
 			
-			int currObjectId = mappingInfo.generateNextStartIdForThread(etlObjects, dstConn);
-			
-			transformed.setObjectId(
-			    Oid.fastCreate(mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
-		} else {
-			transformed.loadObjectIdData(mappingInfo);
+			if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
+				
+				int currObjectId = mappingInfo.generateNextStartIdForThread(etlObjects, dstConn);
+				
+				transformed.setObjectId(
+				    Oid.fastCreate(mappingInfo.getPrimaryKey().retrieveSimpleKeyColumnNameAsClassAtt(), currObjectId++));
+			} else {
+				transformed.loadObjectIdData(mappingInfo);
+			}
 		}
-		
 		return transformed;
 	}
 	
-	private void process(EtlRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
+	private void process(LoadRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
 	        Connection destConn) throws DBException {
 		String reprocessingMessage = reprocessingCount == 0 ? "Merging Record"
 		        : "Re-merging " + reprocessingCount + " Record";
@@ -340,8 +340,8 @@ public class EtlEngine extends Engine {
 		return searchParams;
 	}
 	
-	public EtlRecord initEtlRecord(EtlDatabaseObject destObject, DstConf mappingInfo, boolean writeOperationHistory) {
-		return new EtlRecord(destObject, getSrcConf(), mappingInfo, this, writeOperationHistory);
+	public LoadRecord initEtlRecord(EtlDatabaseObject destObject, DstConf mappingInfo, boolean writeOperationHistory) {
+		return new LoadRecord(destObject, getSrcConf(), mappingInfo, this, writeOperationHistory);
 	}
 	
 	public void afterEtl(List<? extends EtlObject> objs, Connection srcConn, Connection dstConn) throws DBException {

@@ -436,6 +436,8 @@ public class DstConf extends AbstractTableConfiguration {
 			for (Key key : uk.getFields()) {
 				if (targetTable.containsField(key.getName())) {
 					fakeSrcUk.addKey(key);
+				} else if (useSharedPKKey() && getSharedKeyRefInfo().containsField(key.getName())) {
+					fakeSrcUk.addKey(key);
 				}
 			}
 			
@@ -601,8 +603,20 @@ public class DstConf extends AbstractTableConfiguration {
 			if (i > 0)
 				joinCondition += " AND ";
 			
-			joinCondition += getTableAlias() + "." + this.getJoinFields().get(i).getDstField() + " = "
-			        + getSrcConf().getTableAlias() + "." + this.getJoinFields().get(i).getSrcField();
+			String ownAlias = getTableAlias();
+			String relatedTableAlias = getSrcConf().getTableAlias();
+			
+			//Force the alias to be from the sharedPk table
+			if (useSharedPKKey() && !containsField(this.getJoinFields().get(i).getDstField())) {
+				ownAlias = getSharedKeyRefInfo().getAlias();
+			}
+			
+			if (getSrcConf().useSharedPKKey() && !getSrcConf().containsField(this.getJoinFields().get(i).getSrcField())) {
+				relatedTableAlias = getSrcConf().getSharedKeyRefInfo().getAlias();
+			}
+			
+			joinCondition += ownAlias + "." + this.getJoinFields().get(i).getDstField() + " = " + relatedTableAlias + "."
+			        + this.getJoinFields().get(i).getSrcField();
 		}
 		
 		if (!utilities.stringHasValue(joinCondition) && this.isMetadata()) {

@@ -98,7 +98,7 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 		return getPrimaryKey() != null;
 	}
 	
-	boolean hasPK(Connection conn);
+	boolean hasPK(Connection conn) throws DBException;
 	
 	boolean isMetadata();
 	
@@ -167,9 +167,11 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	}
 	
 	default Field getField(String fieldName) {
-		for (Field f : this.getFields()) {
-			if (f.getName().equals(fieldName)) {
-				return f;
+		if (this.hasFields()) {
+			for (Field f : this.getFields()) {
+				if (f.getName().equals(fieldName)) {
+					return f;
+				}
 			}
 		}
 		

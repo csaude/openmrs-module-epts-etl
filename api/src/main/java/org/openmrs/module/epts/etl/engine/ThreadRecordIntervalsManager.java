@@ -303,7 +303,11 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 			
 			if (limits != null && limits.hasSameEngineInfo(engine.getLimits())) {
 				
+				int qtyRecordsPerProcessing = getQtyRecordsPerProcessing();
+				
 				copy(limits);
+				
+				this.setQtyRecordsPerProcessing(qtyRecordsPerProcessing);
 				
 				this.loadedFromFile = true;
 			} else {

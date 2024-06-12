@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -184,15 +185,16 @@ public class UniqueKeyInfo {
 			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);
 			
 			if (tableConfiguration.useSharedPKKey()) {
-				TableConfiguration parentTableInfo = new GenericTableConfiguration(tableConfiguration);
+				ParentTable p = tableConfiguration.getSharedKeyRefInfo();
 				
-				parentTableInfo.setTableName(tableConfiguration.getSharePkWith());
-				parentTableInfo.setParentConf(tableConfiguration.getParentConf());
+				if (!p.isFullLoaded()) {
+					p.loadFields(conn);
+					p.loadPrimaryKeyInfo(conn);
+					p.loadUniqueKeys(conn);
+				}
 				
-				List<UniqueKeyInfo> parentUniqueKeys = loadUniqueKeysInfo(parentTableInfo, conn);
-				
-				if (utilities.arrayHasElement(parentUniqueKeys)) {
-					uniqueKeysInfo.addAll(parentUniqueKeys);
+				if (p.hasUniqueKeys()) {
+					uniqueKeysInfo.addAll(p.getUniqueKeys());
 				}
 			}
 			

@@ -20,7 +20,10 @@ public enum EtlProcessType {
 	POJO_GENERATION,
 	ETL,
 	RE_ETL,
-	DETECT_MISSING_RECORDS;
+	DETECT_MISSING_RECORDS,
+	DB_EXTRACT;
+	
+	
 	
 	public boolean isDetectMissingRecords() {
 		return this.equals(DETECT_MISSING_RECORDS);
@@ -31,8 +34,10 @@ public enum EtlProcessType {
 	}
 	
 	public boolean isEtl() {
-		return this.equals(ETL);
+		return this.equals(ETL) || this.equals(DB_EXTRACT);
 	}
+	
+	
 	
 	public boolean isPojoGeneration() {
 		return this.equals(POJO_GENERATION);

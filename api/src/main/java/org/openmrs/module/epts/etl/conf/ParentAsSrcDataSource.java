@@ -47,6 +47,8 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 	        Connection conn) throws ForbiddenOperationException, DBException {
 		ParentAsSrcDataSource ds = new ParentAsSrcDataSource();
 		
+		ds.setChildTableConf(parent.getChildTableConf());
+		
 		ds.clone(parent, conn);
 		
 		ds.relatedSrcConf = mainSrcConf;
@@ -54,8 +56,6 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 		ds.setRefCode(parent.getRefCode());
 		ds.setRefMapping(parent.getRefMapping());
 		
-		ds.setChildTableConf(parent.getChildTableConf());
-		;
 		ds.setConditionalFields(parent.getConditionalFields());
 		ds.setDefaultValueDueInconsistency(parent.getDefaultValueDueInconsistency());
 		ds.setSetNullDueInconsistency(parent.isSetNullDueInconsistency());

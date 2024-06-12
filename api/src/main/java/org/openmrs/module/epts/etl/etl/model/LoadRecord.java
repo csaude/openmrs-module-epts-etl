@@ -30,7 +30,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class EtlRecord {
+public class LoadRecord {
 	
 	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -48,7 +48,7 @@ public class EtlRecord {
 	
 	private SrcConf srcConf;
 	
-	public EtlRecord(EtlDatabaseObject record, SrcConf srcConf, DstConf dstConf, EtlEngine engine,
+	public LoadRecord(EtlDatabaseObject record, SrcConf srcConf, DstConf dstConf, EtlEngine engine,
 	    boolean writeOperationHistory) {
 		this.record = record;
 		this.srcConf = srcConf;
@@ -211,7 +211,7 @@ public class EtlRecord {
 				dstParent = dst.transform(recordAsSrc, srcConn, getSrcApp(), getDstApp());
 				
 				if (dstParent != null) {
-					EtlRecord parentData = new EtlRecord(dstParent,
+					LoadRecord parentData = new LoadRecord(dstParent,
 					        parentInfo.getParentTableConfInDst().findRelatedSrcConf(), dst, getEngine(),
 					        this.isWriteOperationHistory());
 					
@@ -274,7 +274,7 @@ public class EtlRecord {
 			Oid key = refInfo.generateParentOidFromChild(getRecord());
 			
 			TableConfiguration tabConfInSrc = this.getSrcConf()
-			        .findFullConfiguredConfInAllRelatedTable(refInfo.getTableName());
+			        .findFullConfiguredConfInAllRelatedTable(refInfo.generateFullTableNameOnSchema(getSrcConf().getSchema()));
 			
 			if (tabConfInSrc == null) {
 				tabConfInSrc = new GenericTableConfiguration(this.getSrcConf());
@@ -329,18 +329,18 @@ public class EtlRecord {
 	}
 	
 	/**
-	 * @param etlRecord
+	 * @param loadRecord
 	 * @param srcConn
 	 * @param destConn
 	 * @throws DBException
 	 * @throws ParentNotYetMigratedException
 	 * @throws SQLException
 	 */
-	public static void determineMissingMetadataParent(EtlRecord etlRecord, Connection srcConn, Connection destConn)
+	public static void determineMissingMetadataParent(LoadRecord loadRecord, Connection srcConn, Connection destConn)
 	        throws MissingParentException, DBException {
-		TableConfiguration dstConf = etlRecord.getDstConf();
+		TableConfiguration dstConf = loadRecord.getDstConf();
 		
-		EtlDatabaseObject record = etlRecord.getRecord();
+		EtlDatabaseObject record = loadRecord.getRecord();
 		
 		for (ParentTable refInfo : dstConf.getParentRefInfo()) {
 			if (!refInfo.isMetadata())
@@ -356,7 +356,7 @@ public class EtlRecord {
 				
 				if (parent == null)
 					throw new MissingParentException(record, parentId, refInfo.getTableName(),
-					        etlRecord.getDstConf().getOriginAppLocationCode(), refInfo, null);
+					        loadRecord.getDstConf().getOriginAppLocationCode(), refInfo, null);
 			}
 		}
 	}
@@ -382,7 +382,7 @@ public class EtlRecord {
 		consolidateAndSaveData(false, srcConn, destConn);
 	}
 	
-	public static DatabaseOperationHeaderResult loadAll(List<EtlRecord> mergingRecs, Connection srcConn, Connection dstConn)
+	public static DatabaseOperationHeaderResult loadAll(List<LoadRecord> mergingRecs, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		
 		AbstractTableConfiguration config = mergingRecs.get(0).dstConf;
@@ -395,19 +395,17 @@ public class EtlRecord {
 		
 		DatabaseOperationHeaderResult currResult = new DatabaseOperationHeaderResult();
 		
-		if (config.hasParentRefInfo()) {
-			for (EtlRecord etlRecord : mergingRecs) {
-				try {
-					etlRecord.loadDestParentInfo(srcConn, dstConn);
-					
-					objects.add(etlRecord.getRecord());
-					
-				}
-				catch (DBException e) {
-					currResult.addToRecordsWithUnresolvedErrors(etlRecord.getRecord(), e);
-				}
+		for (LoadRecord loadRecord : mergingRecs) {
+			try {
+				loadRecord.loadDestParentInfo(srcConn, dstConn);
+				
+				objects.add(loadRecord.getRecord());
 				
 			}
+			catch (DBException e) {
+				currResult.addToRecordsWithUnresolvedErrors(loadRecord.getRecord(), e);
+			}
+			
 		}
 		
 		DatabaseOperationHeaderResult dr = DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(),
@@ -415,7 +413,7 @@ public class EtlRecord {
 		
 		if (config.hasParentRefInfo()) {
 			
-			for (EtlRecord r : mergingRecs) {
+			for (LoadRecord r : mergingRecs) {
 				if (r.hasParentsWithDefaultValues()) {
 					r.reloadParentsWithDefaultValues(srcConn, dstConn);
 					
@@ -427,7 +425,7 @@ public class EtlRecord {
 		return dr;
 	}
 	
-	public static DatabaseOperationHeaderResult loadAll(Map<String, List<EtlRecord>> mergingRecs, Connection srcConn,
+	public static DatabaseOperationHeaderResult loadAll(Map<String, List<LoadRecord>> mergingRecs, Connection srcConn,
 	        OpenConnection dstConn) throws ParentNotYetMigratedException, DBException {
 		
 		DatabaseOperationHeaderResult result = new DatabaseOperationHeaderResult();

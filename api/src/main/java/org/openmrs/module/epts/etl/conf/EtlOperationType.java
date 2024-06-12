@@ -32,34 +32,35 @@ public enum EtlOperationType {
 	DETECT_GAPES,
 	ETL,
 	RE_ETL,
-	DETECT_MISSING_RECORDS;
+	DETECT_MISSING_RECORDS,
+	DB_EXTRACT;
 	
 	public static boolean isDetectMIssingRecords(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(DETECT_MISSING_RECORDS);
+		return EtlOperationType.valueOf(operationType).isDetectMIssingRecords();
 	}
 	
 	public static boolean isEtl(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(ETL);
+		return EtlOperationType.valueOf(operationType).isEtl();
 	}
 	
 	public static boolean isReEtl(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(RE_ETL);
+		return EtlOperationType.valueOf(operationType).isReEtl();
 	}
 	
 	public static boolean isDetectGapesOperation(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(DETECT_GAPES);
+		return EtlOperationType.valueOf(operationType).isDetectGapesOperation();
 	}
 	
 	public static boolean isGenericOperation(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(GENERIC_OPERATION);
+		return EtlOperationType.valueOf(operationType).isGenericOperation();
 	}
 	
 	public static boolean isDBMerge(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(DB_MERGE_FROM_SOURCE_DB);
+		return EtlOperationType.valueOf(operationType).isDbMergeFromSourceDB();
 	}
 	
 	public static boolean isDatabasePreparation(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(DATABASE_PREPARATION);
+		return EtlOperationType.valueOf(operationType).isDatabasePreparation();
 	}
 	
 	public static boolean isPojoGeneration(String operationType) {
@@ -67,63 +68,63 @@ public enum EtlOperationType {
 	}
 	
 	public static boolean isInconsistencySolver(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(INCONSISTENCY_SOLVER);
+		return EtlOperationType.valueOf(operationType).isInconsistencySolver();
 	}
 	
 	public static boolean isExport(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(EXPORT);
+		return EtlOperationType.valueOf(operationType).isExport();
 	}
 	
 	public static boolean isSynchronization(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(DB_MERGE_FROM_JSON);
+		return EtlOperationType.valueOf(operationType).isDbMergeFromSourceDB();
 	}
 	
 	public static boolean isLoad(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(LOAD);
+		return EtlOperationType.valueOf(operationType).isLoad();
 	}
 	
 	public static boolean isTransport(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(TRANSPORT);
+		return EtlOperationType.valueOf(operationType).isTransport();
 	}
 	
 	public static boolean isConsolidation(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(CONSOLIDATION);
+		return EtlOperationType.valueOf(operationType).isConsolidation();
 	}
 	
 	public static boolean isChangedRecordsDetector(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(CHANGED_RECORDS_DETECTOR);
+		return EtlOperationType.valueOf(operationType).isChangedRecordsDetector();
 	}
 	
 	public static boolean isNewRecordsDetector(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(NEW_RECORDS_DETECTOR);
+		return EtlOperationType.valueOf(operationType).isNewRecordsDetector();
 	}
 	
 	public static boolean isDbQuickExport(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(QUICK_EXPORT);
+		return EtlOperationType.valueOf(operationType).isDbQuickExport();
 	}
 	
 	public static boolean isDbQuickLoad(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(QUICK_LOAD);
+		return EtlOperationType.valueOf(operationType).isDbQuickLoad();
 	}
 	
 	public static boolean isResolveConflicts(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(RESOLVE_CONFLICTS);
+		return EtlOperationType.valueOf(operationType).isResolveConflicts();
 	}
 	
 	public static boolean isMissingRecordsDetector(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(MISSING_RECORDS_DETECTOR);
+		return EtlOperationType.valueOf(operationType).isMissingRecordsDetector();
 	}
 	
 	public static boolean isOutdatedRecordsDetector(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(OUTDATED_RECORDS_DETECTOR);
+		return EtlOperationType.valueOf(operationType).isOutdatedRecordsDetector();
 	}
 	
 	public static boolean isPhantomRecordsDetector(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(PHANTOM_RECORDS_DETECTOR);
+		return EtlOperationType.valueOf(operationType).isPhantomRecordsDetector();
 	}
 	
 	public static boolean isDbQuickCopy(String operationType) {
-		return EtlOperationType.valueOf(operationType).equals(DB_QUICK_COPY);
+		return EtlOperationType.valueOf(operationType).isDbQuickCopy();
 	}
 	
 	public static boolean isSupportedOperation(String operationType) {
@@ -212,7 +213,7 @@ public enum EtlOperationType {
 	}
 	
 	public boolean isEtl() {
-		return this.equals(ETL);
+		return this.equals(ETL) || this.equals(DB_EXTRACT);
 	}
 	
 	public boolean isReEtl() {

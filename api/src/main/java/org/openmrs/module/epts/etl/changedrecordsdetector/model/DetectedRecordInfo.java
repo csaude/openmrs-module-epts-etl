@@ -424,10 +424,16 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public String generateFullFilledUpdateSql() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	@Override
+	public void copyFrom(EtlDatabaseObject parentRecordInOrigin) {
+		// TODO Auto-generated method stub
+		
 	}
 }

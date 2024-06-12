@@ -10,6 +10,8 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -85,6 +87,54 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private boolean includePrimaryKeyOnInsert;
 	
+	private boolean uniqueKeyInfoLoaded;
+	
+	private boolean primaryKeyInfoLoaded;
+	
+	private boolean fieldsLoaded;
+	
+	private boolean tableNameInfoLoaded;
+	
+	@Override
+	public boolean isFieldsLoaded() {
+		return fieldsLoaded;
+	}
+	
+	@Override
+	public void setFieldsLoaded(boolean fieldsLoaded) {
+		this.fieldsLoaded = fieldsLoaded;
+	}
+	
+	@Override
+	public boolean isTableNameInfoLoaded() {
+		return tableNameInfoLoaded;
+	}
+	
+	@Override
+	public void setTableNameInfoLoaded(boolean tableNameInfoLoaded) {
+		this.tableNameInfoLoaded = tableNameInfoLoaded;
+	}
+	
+	@Override
+	public boolean isPrimaryKeyInfoLoaded() {
+		return primaryKeyInfoLoaded;
+	}
+	
+	@Override
+	public void setPrimaryKeyInfoLoaded(boolean primaryKeyInfoLoaded) {
+		this.primaryKeyInfoLoaded = primaryKeyInfoLoaded;
+	}
+	
+	@Override
+	public boolean isUniqueKeyInfoLoaded() {
+		return uniqueKeyInfoLoaded;
+	}
+	
+	@Override
+	public void setUniqueKeyInfoLoaded(boolean uniqueKeyInfoLoaded) {
+		this.uniqueKeyInfoLoaded = uniqueKeyInfoLoaded;
+	}
+	
 	@Override
 	public boolean includePrimaryKeyOnInsert() {
 		return includePrimaryKeyOnInsert;
@@ -158,8 +208,28 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.ignorableFields = ignorableFields;
 	}
 	
+	@Override
 	public PrimaryKey getPrimaryKey() {
-		return primaryKey;
+		if (isPrimaryKeyInfoLoaded()) {
+			return primaryKey;
+		}
+		
+		OpenConnection conn = null;
+		
+		try {
+			conn = getRelatedAppInfo().openConnection();
+			
+			loadPrimaryKeyInfo(conn);
+			
+			return this.primaryKey;
+		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			if (conn != null)
+				conn.finalizeConnection();
+		}
 	}
 	
 	public void setPrimaryKey(PrimaryKey primaryKey) {

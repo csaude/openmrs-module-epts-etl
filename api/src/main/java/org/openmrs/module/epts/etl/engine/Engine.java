@@ -361,8 +361,9 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		
 		List<? extends EtlObject> records = null;
 		
-		if (finalCheckStatus.onGoing()) {
+		if (finalCheckStatus.onGoing() || (isMainEngine() && !hasChild())) {
 			//When the final check is on going, only one engine is working, so do the search on multithreads
+			//When there is only one engine too
 			
 			records = getSearchParams().searchNextRecordsInMultiThreads(this, conn);
 		} else {

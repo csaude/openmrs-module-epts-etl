@@ -80,12 +80,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = null;
 		String sql = null;
 		
-		if (tableConfiguration.isAutoIncrementId()) {
-			params = record.getInsertParamsWithoutObjectId();
-			sql = record.getInsertSQLWithoutObjectId();
-		} else {
+		if (tableConfiguration.getRelatedSyncConfiguration().isDoNotTransformsPrimaryKeys()
+		        || tableConfiguration.useSharedPKKey()) {
 			params = record.getInsertParamsWithObjectId();
 			sql = record.getInsertSQLWithObjectId();
+		} else {
+			params = record.getInsertParamsWithoutObjectId();
+			sql = record.getInsertSQLWithoutObjectId();
 		}
 		
 		long id = executeQueryWithRetryOnError(sql, params, conn);
@@ -257,7 +258,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " SELECT " + tableConfiguration.generateFullAliasedSelectColumns() + "\n";
-		sql += " FROM     " + tableConfiguration.generateFullTableNameWithAlias() + "\n";
+		sql += " FROM     " + tableConfiguration.generateSelectFromClauseContent() + "\n";
 		sql += " WHERE 	" + conditionSQL;
 		
 		List<T> objs = (List<T>) search(tableConfiguration.getLoadHealper(), obj.getClass(), sql, params, conn);
@@ -539,7 +540,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = null;
 		
-		if (includeRecordId) {
+		if (includeRecordId || tabConf.useSharedPKKey()) {
 			sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
 		} else {
 			sql = objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
@@ -557,7 +558,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			if (includeRecordId) {
+			if (includeRecordId || tabConf.useSharedPKKey()) {
 				values += "(" + objects.get(i).getInsertSQLQuestionMarksWithObjectId() + "),";
 				
 				params = utilities.setParam(params, objects.get(i).getInsertParamsWithObjectId());

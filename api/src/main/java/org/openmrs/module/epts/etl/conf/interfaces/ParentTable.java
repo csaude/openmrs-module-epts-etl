@@ -147,5 +147,6 @@ public interface ParentTable extends RelatedTable {
 		
 		return false;
 	}
+
 	
 }

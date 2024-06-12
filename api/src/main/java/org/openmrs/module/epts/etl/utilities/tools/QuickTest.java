@@ -18,7 +18,7 @@ import org.openmrs.module.epts.etl.controller.ProcessStarter;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
-import org.openmrs.module.epts.etl.etl.model.EtlRecord;
+import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -142,7 +142,7 @@ public class QuickTest {
 		
 		OpenConnection dstConn = dstApp.openConnection();
 		
-		Map<String, List<EtlRecord>> mergingRecs = new HashMap<>();
+		Map<String, List<LoadRecord>> mergingRecs = new HashMap<>();
 		
 		try {
 			
@@ -158,7 +158,7 @@ public class QuickTest {
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);
 						
-						EtlRecord mr = new EtlRecord(destObject, etlConf.getSrcConf(), mappingInfo, null, false);
+						LoadRecord mr = new LoadRecord(destObject, etlConf.getSrcConf(), mappingInfo, null, false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));

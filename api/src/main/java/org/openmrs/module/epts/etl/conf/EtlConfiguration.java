@@ -916,7 +916,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		if (supportedOperations != null) {
 			for (EtlOperationType operationType : supportedOperations) {
-				if (!isOperationConfigured(operationType))
+				if (!isOperationConfigured(operationType) && !operationCanBeOmitted(supportedOperations, operationType))
 					errorMsg += ++errNum + ". The operation '" + operationType + " is not configured\n";
 			}
 		}
@@ -935,27 +935,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			this.childConfig.validate();
 		}
 		
-	}
-	
-	public String getFinalizerFullClassName() {
-		return finalizerFullClassName;
-	}
-	
-	public void setFinalizerFullClassName(String finalizerFullClassName) {
-		this.finalizerFullClassName = finalizerFullClassName;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public <T extends ProcessFinalizer> void loadFinalizer() {
-		
-		try {
-			ClassLoader loader = ProcessFinalizer.class.getClassLoader();
-			
-			Class<T> c = (Class<T>) loader.loadClass(this.getFinalizerFullClassName());
-			
-			this.finalizerClazz = (Class<T>) c;
-		}
-		catch (ClassNotFoundException e) {}
 	}
 	
 	private boolean isOperationConfigured(EtlOperationType operationType) {
@@ -977,6 +956,44 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 		
 		return false;
+	}
+	
+	private boolean operationCanBeOmitted(List<EtlOperationType> supportedOperations, EtlOperationType operationType) {
+		boolean ok = false;
+		
+		if (operationType.isEtl()) {
+			for (EtlOperationType type : supportedOperations) {
+				
+				if (isOperationConfigured(type)) {
+					ok = true;
+					
+					break;
+				}
+			}
+		}
+		
+		return ok;
+	}
+	
+	public String getFinalizerFullClassName() {
+		return finalizerFullClassName;
+	}
+	
+	public void setFinalizerFullClassName(String finalizerFullClassName) {
+		this.finalizerFullClassName = finalizerFullClassName;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T extends ProcessFinalizer> void loadFinalizer() {
+		
+		try {
+			ClassLoader loader = ProcessFinalizer.class.getClassLoader();
+			
+			Class<T> c = (Class<T>) loader.loadClass(this.getFinalizerFullClassName());
+			
+			this.finalizerClazz = (Class<T>) c;
+		}
+		catch (ClassNotFoundException e) {}
 	}
 	
 	@Override

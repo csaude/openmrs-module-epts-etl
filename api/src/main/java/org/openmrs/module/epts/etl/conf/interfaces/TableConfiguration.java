@@ -82,10 +82,30 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	void setIncludePrimaryKeyOnInsert(boolean includePrimaryKeyOnInsert);
 	
-	@JsonIgnore
+	boolean isUniqueKeyInfoLoaded();
+	
+	void setUniqueKeyInfoLoaded(boolean uniqueKeyInfoLoaded);
+	
+	boolean isPrimaryKeyInfoLoaded();
+	
+	void setPrimaryKeyInfoLoaded(boolean primaryKeyInfoLoaded);
+	
+	boolean isFieldsLoaded();
+	
+	void setFieldsLoaded(boolean fieldsLoaded);
+	
+	boolean isTableNameInfoLoaded();
+	
+	void setTableNameInfoLoaded(boolean tableNameInfoLoaded);
+	
 	@Override
-	default boolean hasPK(Connection conn) {
-		return getPrimaryKey(conn) != null;
+	default boolean hasPK(Connection conn) throws DBException {
+		
+		if (!isPrimaryKeyInfoLoaded()) {
+			loadPrimaryKeyInfo(conn);
+		}
+		
+		return getPrimaryKey() != null;
 	}
 	
 	default boolean hasAlias() {
@@ -241,60 +261,41 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return utilities.stringHasValue(this.getSharePkWith());
 	}
 	
-	@Override
-	default PrimaryKey getPrimaryKey() {
-		OpenConnection conn = null;
-		
-		try {
-			conn = getRelatedAppInfo().openConnection();
-			
-			return getPrimaryKey(conn);
-		}
-		catch (DBException e) {
-			throw new RuntimeException(e);
-		}
-		finally {
-			if (conn != null)
-				conn.finalizeConnection();
-		}
-	}
-	
 	void setPrimaryKey(PrimaryKey primaryKey);
 	
-	@JsonIgnore
-	default PrimaryKey getPrimaryKey(Connection conn) {
+	@Override
+	PrimaryKey getPrimaryKey();
+	
+	default void loadPrimaryKeyInfo(Connection conn) throws DBException {
 		PrimaryKey primaryKey = null;
 		
-		if (this.getPrimaryKey() == null) {
+		if (!isPrimaryKeyInfoLoaded()) {
+			
+			loadTableNameInfo(conn);
+			loadFields(conn);
+			
 			try {
 				
 				ResultSet rs = conn.getMetaData().getPrimaryKeys(getCatalog(conn), getSchema(), getTableName());
 				
 				while (rs.next()) {
-					
-					if (getPrimaryKey() == null) {
-						primaryKey = new PrimaryKey(this);
-						
-						setPrimaryKey(primaryKey);
-					}
+					primaryKey = new PrimaryKey(this);
 					
 					Key pk = new Key();
 					pk.setName(rs.getString("COLUMN_NAME"));
-					pk.setType(DBUtilities.determineColunType(getSchema(), this.getTableName(), pk.getName(), conn));
-					pk.setType(AttDefinedElements.convertDatabaseTypeTOJavaType(pk.getName(), pk.getType()));
 					
-					this.getPrimaryKey().addKey(pk);
+					pk.setType(getField(pk.getName()).getType());
+					
+					primaryKey.addKey(pk);
 				}
 			}
 			catch (SQLException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
+				throw new DBException(e);
 			}
 			
+			setPrimaryKey(primaryKey);
+			setPrimaryKeyInfoLoaded(true);
 		}
-		
-		return primaryKey;
 	}
 	
 	default EtlDatabaseObject generateAndSaveDefaultObject(Connection conn) throws DBException {
@@ -355,6 +356,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default void loadUniqueKeys() {
+		if (isUniqueKeyInfoLoaded())
+			return;
+		
 		OpenConnection conn = null;
 		
 		try {
@@ -373,6 +377,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default void loadUniqueKeys(Connection conn) {
+		if (isUniqueKeyInfoLoaded())
+			return;
+		
 		if (this.getUniqueKeys() == null) {
 			loadUniqueKeys(this, conn);
 		} else {
@@ -380,6 +387,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				uk.setTabConf(this);
 			}
 		}
+		
+		setUniqueKeyInfoLoaded(true);
 	}
 	
 	@JsonIgnore
@@ -993,36 +1002,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					return;
 				}
 				
-				String[] tableNameParts = getTableName().split("\\.");
+				loadTableNameInfo(conn);
 				
-				if (tableNameParts.length == 1) {
-					if (getSchema() == null) {
-						setSchema(DBUtilities.determineSchemaName(conn));
-					}
-				} else if (tableNameParts.length == 2) {
-					setTableName(tableNameParts[1]);
-					setSchema(tableNameParts[0]);
-				} else {
-					throw new ForbiddenOperationException("The table name " + getTableName() + " is malformed!");
-				}
+				loadFields(conn);
 				
-				boolean exists = DBUtilities.isTableExists(getSchema(), getTableName(), conn);
-				
-				if (!exists)
-					throw new ForbiddenOperationException(
-					        "The table '" + generateFullTableName(conn) + "' does not exist!!!");
-				
-				List<Field> flds = DBUtilities.getTableFields(getTableName(), getSchema(), conn);
-				
-				this.setFields(new ArrayList<>());
-				
-				for (Field f : flds) {
-					if (!isIgnorableField(f)) {
-						this.getFields().add(f);
-					}
-				}
-				
-				getPrimaryKey(conn);
+				loadPrimaryKeyInfo(conn);
 				
 				loadParents(conn);
 				loadChildren(conn);
@@ -1063,6 +1047,56 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
+	/**
+	 * @param conn
+	 * @throws DBException
+	 * @throws ForbiddenOperationException
+	 */
+	default void loadTableNameInfo(Connection conn) throws DBException, ForbiddenOperationException {
+		
+		if (isTableNameInfoLoaded())
+			return;
+		
+		String[] tableNameParts = getTableName().split("\\.");
+		
+		if (tableNameParts.length == 1) {
+			if (getSchema() == null) {
+				setSchema(DBUtilities.determineSchemaName(conn));
+			}
+		} else if (tableNameParts.length == 2) {
+			setTableName(tableNameParts[1]);
+			setSchema(tableNameParts[0]);
+		} else {
+			throw new ForbiddenOperationException("The table name " + getTableName() + " is malformed!");
+		}
+		
+		boolean exists = DBUtilities.isTableExists(getSchema(), getTableName(), conn);
+		
+		if (!exists)
+			throw new ForbiddenOperationException("The table '" + generateFullTableName(conn) + "' does not exist!!!");
+		
+		setTableNameInfoLoaded(true);
+	}
+	
+	/**
+	 * @param conn
+	 * @throws DBException
+	 */
+	default void loadFields(Connection conn) throws DBException {
+		if (isFieldsLoaded())
+			return;
+		
+		List<Field> flds = DBUtilities.getTableFields(getTableName(), getSchema(), conn);
+		
+		this.setFields(new ArrayList<>());
+		
+		for (Field f : flds) {
+			if (!isIgnorableField(f)) {
+				this.getFields().add(f);
+			}
+		}
+	}
+	
 	void setFields(List<Field> tableFields);
 	
 	void setFullLoaded(boolean fullLoaded);
@@ -1089,7 +1123,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		if (this.hasParentRefInfo()) {
 			for (ParentTable ref : this.getParentRefInfo()) {
 				
-				ref.getPrimaryKey(conn);
+				ref.loadPrimaryKeyInfo(conn);
 				
 				PrimaryKey parentRefInfoAskey = new PrimaryKey(ref);
 				parentRefInfoAskey.setFields(ref.extractParentFieldsFromRefMapping());
@@ -1144,7 +1178,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			for (ParentTable parent : this.getParentRefInfo()) {
 				if (parent.getTableName().equalsIgnoreCase(this.getSharePkWith())) {
 					
-					PrimaryKey pk = parent.getPrimaryKey();
+					PrimaryKey pk = (PrimaryKey) parent.getPrimaryKey();
 					
 					PrimaryKey refInfoKey = new PrimaryKey(parent);
 					refInfoKey.setFields(parent.extractParentFieldsFromRefMapping());
@@ -1172,6 +1206,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default String getFullTableName() {
 		return hasSchema() ? getSchema() + "." + getTableName() : getTableName();
+	}
+	
+	default String generateFullTableNameOnSchema(String schema) {
+		return schema + "." + getTableName();
 	}
 	
 	default String getFullTableDescription() {
@@ -1333,7 +1371,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean useSimpleNumericPk() {
-		return this.getPrimaryKey() != null && this.getPrimaryKey().isSimpleNumericKey();
+		return this.getPrimaryKey() != null && ((PrimaryKey) this.getPrimaryKey()).isSimpleNumericKey();
 	}
 	
 	default boolean useAutoIncrementId(Connection conn) throws DBException {

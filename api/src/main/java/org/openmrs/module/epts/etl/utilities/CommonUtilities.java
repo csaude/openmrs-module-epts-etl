@@ -231,6 +231,16 @@ public class CommonUtilities implements Serializable {
 		return FuncoesGenericas.forcarAproximacaoPorExcesso(numero);
 	}
 	
+	/**
+	 * Forca a aproximacao por excesso do numero recebido pelo parametro
+	 * 
+	 * @param numero: Valor numerico (inteiro ou decimal)
+	 * @return
+	 */
+	public long forcarAproximacaoPorExcesso(double numero) {
+		return FuncoesGenericas.forcarAproximacaoPorExcesso("" + numero);
+	}
+	
 	public String getNumberInXPrecision(double number, int precision) {
 		return FuncoesGenericas.getNumberInXPrecision(number, precision);
 	}
