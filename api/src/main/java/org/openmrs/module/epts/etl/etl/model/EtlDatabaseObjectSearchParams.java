@@ -22,7 +22,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
-	public EtlDatabaseObjectSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, EtlEngine relatedEtlEngine) {
+	public EtlDatabaseObjectSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits,
+	    EtlEngine relatedEtlEngine) {
 		super(config, limits, relatedEtlEngine);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray(getSrcTableConf().getTableAlias()));
@@ -96,6 +97,9 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 			try {
 				if (DBUtilities.isSameDatabaseServer(conn, dstConn) && getConfig().hasDstWithJoinFieldsToSrc()) {
 					this.setExtraCondition(this.generateDestinationExclusionClause(conn, dstConn));
+				} else {
+					throw new RuntimeException(
+					        "The application cannot performe the final check as there is not join fields between the src and dst");
 				}
 			}
 			finally {

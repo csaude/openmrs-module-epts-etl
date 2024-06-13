@@ -53,7 +53,17 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private boolean ignoreUnmappedFields;
 	
+	private boolean automaticalyGenerated;
+	
 	public DstConf() {
+	}
+	
+	public boolean isAutomaticalyGenerated() {
+		return automaticalyGenerated;
+	}
+	
+	public void setAutomaticalyGenerated(boolean automaticalyGenerated) {
+		this.automaticalyGenerated = automaticalyGenerated;
 	}
 	
 	public boolean isIgnoreUnmappedFields() {

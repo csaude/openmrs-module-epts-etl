@@ -118,7 +118,7 @@ public class LoadRecord {
 			getDstConf().fullLoad();
 		}
 		
-		loadDestParentInfo(srcConn, dstConn);
+		loadDstParentInfo(srcConn, dstConn);
 		
 		try {
 			
@@ -170,7 +170,7 @@ public class LoadRecord {
 		if (!getDstConf().isFullLoaded())
 			dstConf.fullLoad();
 		
-		loadDestParentInfo(srcConn, dstConn);
+		loadDstParentInfo(srcConn, dstConn);
 		
 		List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.getDstConf(), this.getRecord(), dstConn);
 		
@@ -231,7 +231,7 @@ public class LoadRecord {
 		}
 	}
 	
-	protected void loadDestParentInfo(Connection srcConn, Connection dstConn)
+	protected void loadDstParentInfo(Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, MissingParentException, DBException {
 		
 		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo()))
@@ -264,17 +264,17 @@ public class LoadRecord {
 					throw new ForbiddenOperationException("Currently not supported multiple conditional fields");
 				}
 				
-				String conditionalFieldName = refInfo.getConditionalFields().get(0).getNameAsClassAtt();
+				String conditionalFieldName = refInfo.getConditionalFields().get(0).getName();
 				Object conditionalvalue = refInfo.getConditionalFields().get(0).getValue();
 				
-				if (!conditionalvalue.equals(getRecord().getFieldValue(conditionalFieldName)))
+				if (!conditionalvalue.equals(getRecord().getFieldValue(conditionalFieldName).toString()))
 					continue;
 			}
 			
 			Oid key = refInfo.generateParentOidFromChild(getRecord());
 			
-			TableConfiguration tabConfInSrc = this.getSrcConf()
-			        .findFullConfiguredConfInAllRelatedTable(refInfo.generateFullTableNameOnSchema(getSrcConf().getSchema()));
+			TableConfiguration tabConfInSrc = this.getSrcConf().findFullConfiguredConfInAllRelatedTable(
+			    refInfo.generateFullTableNameOnSchema(getSrcConf().getSchema()));
 			
 			if (tabConfInSrc == null) {
 				tabConfInSrc = new GenericTableConfiguration(this.getSrcConf());
@@ -397,7 +397,7 @@ public class LoadRecord {
 		
 		for (LoadRecord loadRecord : mergingRecs) {
 			try {
-				loadRecord.loadDestParentInfo(srcConn, dstConn);
+				loadRecord.loadDstParentInfo(srcConn, dstConn);
 				
 				objects.add(loadRecord.getRecord());
 				
@@ -408,8 +408,7 @@ public class LoadRecord {
 			
 		}
 		
-		DatabaseOperationHeaderResult dr = DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(),
-		    dstConn);
+		currResult.addAllFromOtherResult(DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn));
 		
 		if (config.hasParentRefInfo()) {
 			
@@ -421,8 +420,8 @@ public class LoadRecord {
 				}
 			}
 		}
-		
-		return dr;
+
+		return currResult;
 	}
 	
 	public static DatabaseOperationHeaderResult loadAll(Map<String, List<LoadRecord>> mergingRecs, Connection srcConn,

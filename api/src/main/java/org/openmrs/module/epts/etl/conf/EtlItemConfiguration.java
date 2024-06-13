@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -103,6 +104,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				
 				if (!this.hasDstConf()) {
 					setDstConf(utilities.parseToList(new DstConf()));
+					
 				}
 				
 				for (DstConf map : this.getDstConf()) {
@@ -110,6 +112,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 						map.setTableName(this.getSrcConf().getTableName());
 						map.setObservationDateFields(getSrcConf().getObservationDateFields());
 						map.setRemoveForbidden(this.getSrcConf().isRemoveForbidden());
+						map.setSchema(dstConn.getSchema());
+						map.setAutomaticalyGenerated(true);
 					}
 					
 					map.setRelatedAppInfo(otherApps.get(0));
@@ -118,7 +122,24 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 					
 					map.setParentConf(this);
 					
-					if (DBUtilities.isTableExists(dstConn.getSchema(), map.getTableName(), dstConn)) {
+					if (!map.isAutomaticalyGenerated()) {
+						map.loadSchemaInfo(dstConn);
+					}
+					
+					if (DBUtilities.isTableExists(map.getSchema(), map.getTableName(), dstConn)) {
+						map.loadFields(dstConn);
+						
+						if (getSrcConf().hasParents()) {
+							for (ParentTable p : getSrcConf().getParents()) {
+								ParentTable cloned = p.tryToCloneForOtherTable(map, dstConn);
+								
+								if (cloned != null) {
+									map.addParent(cloned);
+								}
+								
+							}
+						}
+						
 						map.fullLoad(dstConn);
 					}
 					

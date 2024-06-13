@@ -171,4 +171,5 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 		// TODO Auto-generated method stub
 		
 	}
+	
 }

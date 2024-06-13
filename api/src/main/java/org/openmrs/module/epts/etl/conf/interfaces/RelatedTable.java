@@ -15,6 +15,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface RelatedTable extends TableConfiguration {
 	
+	boolean isManualyConfigured();
+	
+	void setManualyConfigured(boolean manualyConfigured);
+	
 	default boolean hasRefCode() {
 		return utilities.stringHasValue(getRefCode());
 	}

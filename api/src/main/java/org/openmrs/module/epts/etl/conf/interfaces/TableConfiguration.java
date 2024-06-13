@@ -160,13 +160,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return sourceFoldersAsString;
 	}
 	
-	List<? extends ParentTable> getParents();
+	List<ParentTable> getParents();
 	
 	boolean isUsingManualDefinedAlias();
 	
 	void setUsingManualDefinedAlias(boolean usingManualDefinedAlias);
 	
-	void setParents(List<? extends ParentTable> parents);
+	void setParents(List<ParentTable> parents);
 	
 	void setSharePkWith(String sharePkWith);
 	
@@ -271,7 +271,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		if (!isPrimaryKeyInfoLoaded()) {
 			
-			loadTableNameInfo(conn);
+			loadSchemaInfo(conn);
 			loadFields(conn);
 			
 			try {
@@ -602,9 +602,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					if (utilities.arrayHasElement(this.getParents())) {
 						
 						for (ParentTable configuredParent : this.getParents()) {
-							
 							if (configuredParent.hasMapping()) {
 								if (!this.getParentRefInfo().contains(configuredParent)) {
+									configuredParent.setManualyConfigured(true);
+									
 									this.getParentRefInfo().add(configuredParent);
 								}
 							}
@@ -1002,7 +1003,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					return;
 				}
 				
-				loadTableNameInfo(conn);
+				loadSchemaInfo(conn);
 				
 				loadFields(conn);
 				
@@ -1047,12 +1048,22 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
+	default void addParent(ParentTable p) {
+		if (!hasParents()) {
+			setParents(new ArrayList<>());
+		}
+		
+		if (!getParents().contains(p)) {
+			getParents().add(p);
+		}
+	}
+	
 	/**
 	 * @param conn
 	 * @throws DBException
 	 * @throws ForbiddenOperationException
 	 */
-	default void loadTableNameInfo(Connection conn) throws DBException, ForbiddenOperationException {
+	default void loadSchemaInfo(Connection conn) throws DBException, ForbiddenOperationException {
 		
 		if (isTableNameInfoLoaded())
 			return;
@@ -1950,5 +1961,17 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default boolean hasObservationDateFields() {
 		return utilities.arrayHasElement(getObservationDateFields());
+	}
+	
+	default boolean containsAllFields(List<Field> fields) {
+		if (!hasFields())
+			return false;
+		
+		for (Field f : fields) {
+			if (!containsField(f.getName()))
+				return false;
+		}
+		
+		return true;
 	}
 }

@@ -17,6 +17,8 @@ public abstract class AbstractRelatedTable extends AbstractTableConfiguration im
 	
 	private List<RefMapping> refMapping;
 	
+	private boolean manualyConfigured;
+	
 	public AbstractRelatedTable() {
 	}
 	
@@ -24,6 +26,16 @@ public abstract class AbstractRelatedTable extends AbstractTableConfiguration im
 		super(tableName);
 		
 		this.refCode = refCode;
+	}
+	
+	@Override
+	public boolean isManualyConfigured() {
+		return manualyConfigured;
+	}
+	
+	@Override
+	public void setManualyConfigured(boolean manualyConfigured) {
+		this.manualyConfigured = manualyConfigured;
 	}
 	
 	public String getRefCode() {
@@ -82,5 +94,6 @@ public abstract class AbstractRelatedTable extends AbstractTableConfiguration im
 		}
 		
 		return true;
+		
 	}
 }

@@ -23,7 +23,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private String tableAlias;
 	
-	private List<ParentTableImpl> parents;
+	private List<ParentTable> parents;
 	
 	private List<? extends ParentTable> parentRefInfo;
 	
@@ -400,12 +400,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	public List<ParentTable> getParents() {
-		return utilities.parseList(parents, ParentTable.class);
+		return parents;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public void setParents(List<? extends ParentTable> parents) {
-		this.parents = (List<ParentTableImpl>) parents;
+	public void setParents(List<ParentTable> parents) {
+		this.parents = parents;
 	}
 	
 	public String getSharePkWith() {

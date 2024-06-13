@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -147,6 +149,75 @@ public interface ParentTable extends RelatedTable {
 		
 		return false;
 	}
-
+	
+	default List<Field> parseMappingToChildFields() {
+		if (!hasMapping())
+			return null;
+		
+		List<Field> f = new ArrayList<>();
+		
+		for (RefMapping map : this.getRefMapping()) {
+			f.add(new Field(map.getChildFieldName()));
+		}
+		
+		return f;
+	}
+	
+	default List<Field> parseMappingToParentFields() {
+		if (!hasMapping())
+			return null;
+		
+		List<Field> f = new ArrayList<>();
+		
+		for (RefMapping map : this.getRefMapping()) {
+			f.add(new Field(map.getParentFieldName()));
+		}
+		
+		return f;
+	}
+	
+	default ParentTable tryToCloneForOtherTable(TableConfiguration tabConf, Connection conn) throws DBException {
+		if (!isManualyConfigured())
+			return null;
+		
+		ParentTable p = null;
+		
+		if (tabConf.containsAllFields(parseMappingToChildFields())) {
+			
+			if (DBUtilities.isTableExists(tabConf.getSchema(), getTableName(), conn)) {
+				p = new ParentTableImpl();
+				p.setTableName(getTableName());
+				p.setSchema(tabConf.getSchema());
+				
+				p.loadFields(conn);
+				p.setChildTableConf(tabConf);
+				p.setConditionalFields(getConditionalFields());
+				
+				if (p.containsAllFields(parseMappingToParentFields())) {
+					for (RefMapping map : getRefMapping()) {
+						RefMapping cloned = map.clone();
+						cloned.setParentTabConf((ParentTableImpl) p);
+						
+						p.addRefMapping(cloned);
+						
+					}
+				}
+				
+			}
+			
+		}
+		
+		return p;
+	}
+	
+	default void addRefMapping(RefMapping cloned) {
+		if (!hasMapping())
+			setRefMapping(new ArrayList<>());
+		
+		if (!getRefMapping().contains(cloned)) {
+			getRefMapping().add(cloned);
+		}
+		
+	}
 	
 }

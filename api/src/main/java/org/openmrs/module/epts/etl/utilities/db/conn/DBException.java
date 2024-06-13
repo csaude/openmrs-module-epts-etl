@@ -44,11 +44,13 @@ public class DBException extends SQLException {
 	public DBException(String errorMessage, SQLException e) {
 		super(errorMessage, e);
 		
-		this.SQLState = e.getSQLState();
-		
-		this.SQLCodeError = e.getErrorCode();
-		
-		this.dataBaseName = DBUtilities.determineDataBaseFromException(e);
+		if (e != null) {
+			this.SQLState = e.getSQLState();
+			
+			this.SQLCodeError = e.getErrorCode();
+			
+			this.dataBaseName = DBUtilities.determineDataBaseFromException(e);
+		}
 		
 		/*if (this.SQLCodeError == 0) {
 			throw new ForbiddenOperationException("The SQLCodeError could not be zero", e);

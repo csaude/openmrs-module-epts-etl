@@ -42,11 +42,23 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public Object getFieldValue(String fieldName) {
+		String fieldNameInSnakeCase = utilities.parsetoSnakeCase(fieldName);
+		String fieldNameInCameCase = utilities.parsetoCamelCase(fieldName);
+		
 		try {
-			return utilities.getFieldValueOnFieldList(utilities.parseList(this.fields, Field.class), fieldName);
+			return utilities.getFieldValueOnFieldList(utilities.parseList(this.fields, Field.class), fieldNameInSnakeCase);
 		}
 		catch (ForbiddenOperationException e) {
-			return super.getFieldValue(fieldName);
+			
+			try {
+				return utilities.getFieldValueOnFieldList(utilities.parseList(this.fields, Field.class),
+				    fieldNameInCameCase);
+			}
+			catch (ForbiddenOperationException e1) {
+				
+				return super.getFieldValue(fieldName);
+			}
+			
 		}
 		
 	}

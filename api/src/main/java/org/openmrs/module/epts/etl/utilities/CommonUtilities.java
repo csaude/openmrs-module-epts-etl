@@ -1016,31 +1016,6 @@ public class CommonUtilities implements Serializable {
 		return -1;
 	}
 	
-	public static void main(String[] args) {
-		CommonUtilities utilities = CommonUtilities.getInstance();
-		
-		String encounterUuid = "yt7erwui67-7623has-764334we";
-		Integer conceptId = 12;
-		Date observationDate = DateAndTimeUtilities.createDate("2023-10-10");
-		Integer valueNumeric = 11;
-		Date valueDatetime = DateAndTimeUtilities.createDate("2023-10-10");
-		;
-		String valueText = "Abcds\\300\\300\\";
-		Integer valueConceptId = 12;
-		String obsUuid = "5623g-gysd6743-87643jhgsd";
-		
-		String str = "" + (encounterUuid != null ? "\"" + utilities.scapeQuotationMarks(encounterUuid) + "\"" : null) + ","
-		        + (conceptId) + ","
-		        + (observationDate != null ? "\"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(observationDate) + "\""
-		                : null)
-		        + "," + (valueNumeric) + "," + (valueConceptId) + "," + (valueText != null ? "\"" + valueText + "\"" : null)
-		        + ","
-		        + (valueDatetime != null ? "\"" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS(valueDatetime) + "\"" : null)
-		        + "," + (obsUuid != null ? "\"" + utilities.scapeQuotationMarks(obsUuid) + "\"" : null);
-		
-		System.out.println(utilities.resolveScapeCharacter(str));
-	}
-	
 	public String quote(String strToQuote) {
 		if (strToQuote == null)
 			return strToQuote;
@@ -1204,6 +1179,34 @@ public class CommonUtilities implements Serializable {
 		Runtime runtime = Runtime.getRuntime();
 		
 		return runtime.availableProcessors();
+	}
+	
+	/**
+	 * Converte o atributo para uma coluna na BD Por exemplo: imageFile => image_file
+	 * 
+	 * @param fieldName nome do atributo
+	 * @return nome da coluna correspondente ao atributo
+	 */
+	public String parsetoSnakeCase(String fieldName) {
+		return fieldName.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
+	}
+	
+	public String parsetoCamelCase(String snakeCase) {
+		StringBuilder camelCase = new StringBuilder();
+		
+		// Split the string on underscores
+		String[] parts = snakeCase.split("_");
+		
+		// Append the first word as is (in lowercase)
+		camelCase.append(parts[0].toLowerCase());
+		
+		// Capitalize the first letter of each subsequent word and append
+		for (int i = 1; i < parts.length; i++) {
+			camelCase.append(parts[i].substring(0, 1).toUpperCase());
+			camelCase.append(parts[i].substring(1).toLowerCase());
+		}
+		
+		return camelCase.toString();
 	}
 	
 }

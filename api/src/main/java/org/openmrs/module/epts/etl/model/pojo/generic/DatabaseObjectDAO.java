@@ -538,6 +538,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 	        boolean includeRecordId, Connection conn) throws DBException {
 		DatabaseOperationHeaderResult result = new DatabaseOperationHeaderResult();
 		
+		if (utilities.arrayHasNoElement(objects))
+			return result;
+		
 		String sql = null;
 		
 		if (includeRecordId || tabConf.useSharedPKKey()) {
