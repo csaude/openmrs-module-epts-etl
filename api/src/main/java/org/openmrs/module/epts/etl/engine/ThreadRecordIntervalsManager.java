@@ -10,7 +10,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -27,7 +27,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	
 	protected String threadCode;
 	
-	private EngineMonitor engine;
+	private Engine engine;
 	
 	private boolean loadedFromFile;
 	
@@ -61,7 +61,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	}
 	
 	public ThreadRecordIntervalsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing,
-	    String threadCode, EngineMonitor engine) {
+	    String threadCode, Engine engine) {
 		this(firstRecordId, lastRecordId, qtyRecordsPerProcessing);
 		
 		this.engine = engine;
@@ -114,7 +114,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		this.status = status;
 	}
 	
-	public void setEngine(EngineMonitor engine) {
+	public void setEngine(Engine engine) {
 		this.engine = engine;
 	}
 	
@@ -209,7 +209,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		this.qtyRecordsPerProcessing = qtyRecordsPerProcessing;
 	}
 	
-	public void save(EngineMonitor monitor) {
+	public void save(Engine monitor) {
 		
 		if (!hasThreadCode())
 			throw new ForbiddenOperationException("You cannot save limits without threadCode");
@@ -235,7 +235,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		}
 	}
 	
-	public String generateFilePath(EngineMonitor monitor) {
+	public String generateFilePath(Engine monitor) {
 		String subFolder = monitor.getRelatedOperationController().generateOperationStatusFolder();
 		
 		subFolder += FileUtilities.getPathSeparator() + "threads";
@@ -293,7 +293,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	 * @param file
 	 * @param engine
 	 */
-	public static ThreadRecordIntervalsManager tryToLoadFromFile(String threadCode, EngineMonitor engine) {
+	public static ThreadRecordIntervalsManager tryToLoadFromFile(String threadCode, Engine engine) {
 		ThreadRecordIntervalsManager t = new ThreadRecordIntervalsManager();
 		
 		t.setThreadCode(threadCode);
@@ -312,7 +312,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	 * @param file
 	 * @param engine
 	 */
-	public void tryToLoadFromFile(File file, EngineMonitor engine) {
+	public void tryToLoadFromFile(File file, Engine engine) {
 		try {
 			ThreadRecordIntervalsManager limits = loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 			
@@ -385,7 +385,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 			this.threadCode = engine.getEngineId();
 	}
 	
-	public static void removeAll(List<ThreadRecordIntervalsManager> generatedLimits, EngineMonitor monitor) {
+	public static void removeAll(List<ThreadRecordIntervalsManager> generatedLimits, Engine monitor) {
 		if (generatedLimits != null) {
 			
 			for (ThreadRecordIntervalsManager limits : generatedLimits) {
@@ -394,7 +394,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		}
 	}
 	
-	public void remove(EngineMonitor monitor) {
+	public void remove(Engine monitor) {
 		String fileName = generateFilePath(monitor);
 		
 		if (new File(fileName).exists()) {
@@ -402,7 +402,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		}
 	}
 	
-	public static List<ThreadRecordIntervalsManager> getAllSavedLimitsOfOperation(EngineMonitor monitor) {
+	public static List<ThreadRecordIntervalsManager> getAllSavedLimitsOfOperation(Engine monitor) {
 		
 		try {
 			String threadsFolder = monitor.getRelatedOperationController().generateOperationStatusFolder();
@@ -439,9 +439,9 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 
 class LimitSearcher implements FilenameFilter {
 	
-	EngineMonitor monitor;
+	Engine monitor;
 	
-	public LimitSearcher(EngineMonitor monitor) {
+	public LimitSearcher(Engine monitor) {
 		this.monitor = monitor;
 	}
 	

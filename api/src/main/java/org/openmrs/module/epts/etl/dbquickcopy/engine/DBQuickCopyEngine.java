@@ -12,12 +12,12 @@ import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DBQuickCopyEngine extends EtlEngine {
 	
-	public DBQuickCopyEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public DBQuickCopyEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	

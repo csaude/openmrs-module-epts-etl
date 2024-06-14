@@ -23,7 +23,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseOperationHeaderResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -34,7 +34,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class EtlEngine extends TaskProcessor {
 	
-	public EtlEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public EtlEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	

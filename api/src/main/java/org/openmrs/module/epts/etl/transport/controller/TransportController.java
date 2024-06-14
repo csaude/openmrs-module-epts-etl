@@ -11,7 +11,7 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.transport.engine.TransportEngine;
 import org.openmrs.module.epts.etl.transport.model.TransportSyncSearchParams;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -28,7 +28,7 @@ public class TransportController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		return new TransportEngine(monitor, limits);
 	}
 	

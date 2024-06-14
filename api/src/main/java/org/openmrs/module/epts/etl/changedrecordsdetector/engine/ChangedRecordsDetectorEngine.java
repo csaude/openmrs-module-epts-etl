@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -22,7 +22,7 @@ import fgh.spi.changedrecordsdetector.DetectedRecordService;
 
 public class ChangedRecordsDetectorEngine extends TaskProcessor {
 	
-	public ChangedRecordsDetectorEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public ChangedRecordsDetectorEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 		
 		DetectedRecordService action = DetectedRecordService.getInstance();

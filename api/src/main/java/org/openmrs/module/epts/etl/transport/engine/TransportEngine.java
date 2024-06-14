@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.transport.controller.TransportController;
 import org.openmrs.module.epts.etl.transport.model.TransportRecord;
 import org.openmrs.module.epts.etl.transport.model.TransportSyncSearchParams;
@@ -26,7 +26,7 @@ import org.openmrs.module.epts.etl.transport.model.TransportSyncSearchParams;
  */
 public class TransportEngine extends EtlEngine {
 	
-	public TransportEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public TransportEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	

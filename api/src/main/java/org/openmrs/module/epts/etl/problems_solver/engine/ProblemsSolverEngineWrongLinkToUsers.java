@@ -16,7 +16,7 @@ import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.epts.etl.problems_solver.model.TmpUserVO;
@@ -33,7 +33,7 @@ public class ProblemsSolverEngineWrongLinkToUsers extends GenericEngine {
 	
 	private AppInfo remoteApp;
 	
-	public ProblemsSolverEngineWrongLinkToUsers(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public ProblemsSolverEngineWrongLinkToUsers(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 		
 		this.remoteApp = getRelatedOperationController().getConfiguration().find(AppInfo.init("remote"));

@@ -25,7 +25,7 @@ import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -272,7 +272,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		return this.savedCount;
 	}
 	
-	public List<T> searchNextRecords(EngineMonitor monitor, Connection conn) throws DBException{
+	public List<T> searchNextRecords(Engine monitor, Connection conn) throws DBException{
 		
 		if (hasLimits() && getLimits().isOutOfLimits()) return null;
 		

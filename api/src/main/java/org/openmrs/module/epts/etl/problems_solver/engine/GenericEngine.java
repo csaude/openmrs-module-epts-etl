@@ -6,7 +6,7 @@ import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParams;
 
@@ -17,7 +17,7 @@ public abstract class GenericEngine extends EtlEngine {
 	
 	public static boolean done;
 	
-	public GenericEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public GenericEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	

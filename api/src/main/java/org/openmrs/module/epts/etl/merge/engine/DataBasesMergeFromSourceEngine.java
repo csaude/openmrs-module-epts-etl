@@ -17,12 +17,12 @@ import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBCon
 import org.openmrs.module.epts.etl.merge.model.DataBaseMergeFromSourceDBSearchParams;
 import org.openmrs.module.epts.etl.merge.model.MergingRecord;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DataBasesMergeFromSourceEngine extends TaskProcessor {
 	
-	public DataBasesMergeFromSourceEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public DataBasesMergeFromSourceEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	

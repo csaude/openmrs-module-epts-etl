@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.problems_solver.engine.DatabasesInfo;
 import org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine;
 import org.openmrs.module.epts.etl.problems_solver.model.mozart.MozartReportType;
@@ -46,7 +46,7 @@ public abstract class MozartProblemSolverEngine extends GenericEngine {
 	
 	protected String province;
 	
-	public MozartProblemSolverEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public MozartProblemSolverEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 		
 		try {

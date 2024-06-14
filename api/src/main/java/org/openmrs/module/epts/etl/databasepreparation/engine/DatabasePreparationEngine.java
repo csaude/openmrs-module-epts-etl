@@ -11,7 +11,7 @@ import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
@@ -19,7 +19,7 @@ public class DatabasePreparationEngine extends TaskProcessor {
 	
 	private boolean updateDone;
 	
-	public DatabasePreparationEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public DatabasePreparationEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	

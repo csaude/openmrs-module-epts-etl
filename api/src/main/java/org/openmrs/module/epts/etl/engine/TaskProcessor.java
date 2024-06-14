@@ -15,7 +15,7 @@ import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.epts.etl.utilities.concurrent.ThreadPoolService;
@@ -41,7 +41,7 @@ public abstract class TaskProcessor implements Runnable, MonitoredOperation {
 	
 	protected TaskProcessor parent;
 	
-	protected EngineMonitor monitor;
+	protected Engine monitor;
 	
 	private AbstractEtlSearchParams<? extends EtlObject> searchParams;
 	
@@ -57,7 +57,7 @@ public abstract class TaskProcessor implements Runnable, MonitoredOperation {
 	
 	protected MigrationFinalCheckStatus finalCheckStatus;
 	
-	public TaskProcessor(EngineMonitor monitr, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor(Engine monitr, ThreadRecordIntervalsManager limits) {
 		this.monitor = monitr;
 		
 		OpenConnection conn;
@@ -93,7 +93,7 @@ public abstract class TaskProcessor implements Runnable, MonitoredOperation {
 		return finalCheckStatus;
 	}
 	
-	public EngineMonitor getMonitor() {
+	public Engine getMonitor() {
 		return monitor;
 	}
 	

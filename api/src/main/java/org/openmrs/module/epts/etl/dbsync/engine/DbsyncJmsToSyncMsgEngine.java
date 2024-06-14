@@ -20,14 +20,14 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DbsyncJmsToSyncMsgEngine extends EtlEngine {
 	
 	List<GenericDatabaseObject> loadedSites;
 	
-	public DbsyncJmsToSyncMsgEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public DbsyncJmsToSyncMsgEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 		
 		loadedSites = new ArrayList<>();

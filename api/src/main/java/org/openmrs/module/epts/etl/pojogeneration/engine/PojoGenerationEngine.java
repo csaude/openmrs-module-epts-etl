@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationSearchParams;
@@ -37,7 +37,7 @@ public class PojoGenerationEngine extends TaskProcessor {
 	
 	private boolean pojoGenerated;
 	
-	public PojoGenerationEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public PojoGenerationEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 		
 		this.alreadyGeneratedClasses = new ArrayList<String>();

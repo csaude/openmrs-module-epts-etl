@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.problems_solver.model.MozartLInkedFileSearchParams;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -37,7 +37,7 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	
 	private boolean done;
 	
-	public GenerateLinkedConfFiles(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public GenerateLinkedConfFiles(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 		
 		Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("partner");

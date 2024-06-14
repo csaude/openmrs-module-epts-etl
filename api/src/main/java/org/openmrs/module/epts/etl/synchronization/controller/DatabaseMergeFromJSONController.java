@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.synchronization.engine.DataBaseMergeFromJSONEngine;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -27,7 +27,7 @@ public class DatabaseMergeFromJSONController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		return new DataBaseMergeFromJSONEngine(monitor, limits);
 	}
 	

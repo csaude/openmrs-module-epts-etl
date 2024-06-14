@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
@@ -43,9 +43,9 @@ public abstract class OperationController implements Controller {
 	
 	protected ProcessController processController;
 	
-	protected List<EngineMonitor> enginesActivititieMonitor;
+	protected List<Engine> enginesActivititieMonitor;
 	
-	protected List<EngineMonitor> allGeneratedEngineMonitor;
+	protected List<Engine> allGeneratedEngineMonitor;
 	
 	protected List<OperationController> children;
 	
@@ -152,11 +152,11 @@ public abstract class OperationController implements Controller {
 		return this.getOperationConfig().isParallelModeProcessing();
 	}
 	
-	public List<EngineMonitor> getAllGeneratedEngineMonitor() {
+	public List<Engine> getAllGeneratedEngineMonitor() {
 		return allGeneratedEngineMonitor;
 	}
 	
-	public void setAllGeneratedEngineMonitor(List<EngineMonitor> allGeneratedEngineMonitor) {
+	public void setAllGeneratedEngineMonitor(List<Engine> allGeneratedEngineMonitor) {
 		this.allGeneratedEngineMonitor = allGeneratedEngineMonitor;
 	}
 	
@@ -165,7 +165,7 @@ public abstract class OperationController implements Controller {
 		
 		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
 		
-		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
+		this.enginesActivititieMonitor = new ArrayList<Engine>();
 		
 		for (EtlItemConfiguration config : allSync) {
 			if (operationTableIsAlreadyFinished(config)) {
@@ -208,7 +208,7 @@ public abstract class OperationController implements Controller {
 					progressInfo = this.progressInfo.retrieveProgressInfo(config);
 				}
 				
-				EngineMonitor engineMonitor = EngineMonitor.init(this, config, progressInfo);
+				Engine engine = Engine.init(this, config, progressInfo);
 				
 				OpenConnection conn = getDefaultApp().openConnection();
 				
@@ -226,16 +226,16 @@ public abstract class OperationController implements Controller {
 					conn.finalizeConnection();
 				}
 				
-				this.enginesActivititieMonitor.add(engineMonitor);
+				this.enginesActivititieMonitor.add(engine);
 				
-				engineMonitor.run();
+				engine.run();
 				
-				if (stopRequested() && engineMonitor.isStopped()) {
+				if (stopRequested() && engine.isStopped()) {
 					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
 					        + config.getConfigCode() + "' is stopped successifuly!").toUpperCase());
 					break;
 				} else {
-					if (engineMonitor.getMainEngine() != null) {
+					if (engine.getMainEngine() != null) {
 						
 						if (!getOperationConfig().isRunOnce()) {
 							markTableOperationAsFinished(config);
@@ -266,7 +266,7 @@ public abstract class OperationController implements Controller {
 	private synchronized void runInParallelMode() throws DBException {
 		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
 		
-		this.enginesActivititieMonitor = new ArrayList<EngineMonitor>();
+		this.enginesActivititieMonitor = new ArrayList<Engine>();
 		
 		for (EtlItemConfiguration config : allSync) {
 			if (operationTableIsAlreadyFinished(config)) {
@@ -282,7 +282,7 @@ public abstract class OperationController implements Controller {
 				
 				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(config);
 				
-				EngineMonitor engineMonitor = EngineMonitor.init(this, config, progressInfo);
+				Engine engine = Engine.init(this, config, progressInfo);
 				
 				OpenConnection conn = getDefaultApp().openConnection();
 				
@@ -300,7 +300,7 @@ public abstract class OperationController implements Controller {
 					conn.finalizeConnection();
 				}
 				
-				startAndAddToEnginesActivititieMonitor(engineMonitor);
+				startAndAddToEnginesActivititieMonitor(engine);
 			}
 		}
 		
@@ -344,7 +344,7 @@ public abstract class OperationController implements Controller {
 		return controllerId;
 	}
 	
-	public List<EngineMonitor> getEnginesActivititieMonitor() {
+	public List<Engine> getEnginesActivititieMonitor() {
 		return enginesActivititieMonitor;
 	}
 	
@@ -353,7 +353,7 @@ public abstract class OperationController implements Controller {
 		return CommonUtilities.getInstance();
 	}
 	
-	private void startAndAddToEnginesActivititieMonitor(EngineMonitor activitityMonitor) {
+	private void startAndAddToEnginesActivititieMonitor(Engine activitityMonitor) {
 		this.enginesActivititieMonitor.add(activitityMonitor);
 		
 		ThreadPoolService.getInstance().createNewThreadPoolExecutor(activitityMonitor.getEngineMonitorId())
@@ -445,7 +445,7 @@ public abstract class OperationController implements Controller {
 			return false;
 		
 		if (isParallelModeProcessing() && this.enginesActivititieMonitor != null) {
-			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
+			for (Engine monitor : this.enginesActivititieMonitor) {
 				if (!monitor.isStopped()) {
 					return false;
 				}
@@ -464,7 +464,7 @@ public abstract class OperationController implements Controller {
 		}
 		
 		if (isParallelModeProcessing() && this.enginesActivititieMonitor != null) {
-			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
+			for (Engine monitor : this.enginesActivititieMonitor) {
 				if (!monitor.isFinished()) {
 					return false;
 				}
@@ -632,7 +632,7 @@ public abstract class OperationController implements Controller {
 			return;
 		
 		if (this.enginesActivititieMonitor != null) {
-			for (EngineMonitor monitor : this.enginesActivititieMonitor) {
+			for (Engine monitor : this.enginesActivititieMonitor) {
 				monitor.killSelfCreatedThreads();
 				
 				ThreadPoolService.getInstance().terminateTread(logger, monitor.getEngineMonitorId(), monitor);
@@ -650,7 +650,7 @@ public abstract class OperationController implements Controller {
 				changeStatusToStopped();
 			} else if (!stopRequested() && !isFinished() && !isStopped()) {
 				if (this.enginesActivititieMonitor != null) {
-					for (EngineMonitor monitor : this.enginesActivititieMonitor) {
+					for (Engine monitor : this.enginesActivititieMonitor) {
 						monitor.requestStop();
 					}
 				}
@@ -680,7 +680,7 @@ public abstract class OperationController implements Controller {
 		return this.operationConfig.getOperationType();
 	}
 	
-	public abstract TaskProcessor initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits);
+	public abstract TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits);
 	
 	public abstract long getMinRecordId(EtlItemConfiguration tableInfo);
 	
@@ -689,14 +689,14 @@ public abstract class OperationController implements Controller {
 	public void refresh() {
 	}
 	
-	public void requestStopDueError(EngineMonitor monitor, Exception e) {
+	public void requestStopDueError(Engine monitor, Exception e) {
 		e.printStackTrace();
 		
 		lastException = e;
 		this.stopRequested = true;
 		
 		if (utilities().arrayHasElement(this.enginesActivititieMonitor)) {
-			for (EngineMonitor m : this.enginesActivititieMonitor) {
+			for (Engine m : this.enginesActivititieMonitor) {
 				m.requestStopDueError();
 			}
 			

@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabasePreparationSearchParams extends AbstractEtlSearchParams<DatabasePreparationRecord> {
@@ -28,7 +28,7 @@ public class DatabasePreparationSearchParams extends AbstractEtlSearchParams<Dat
 	}
 	
 	@Override
-	public List<DatabasePreparationRecord> searchNextRecords(EngineMonitor monitor, Connection conn) {
+	public List<DatabasePreparationRecord> searchNextRecords(Engine monitor, Connection conn) {
 		if (getEngine().isUpdateDone())
 			return null;
 		

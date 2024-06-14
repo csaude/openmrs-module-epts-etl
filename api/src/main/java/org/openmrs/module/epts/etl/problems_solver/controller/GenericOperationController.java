@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 
 /**
  * @author jpboane
@@ -22,9 +22,9 @@ public class GenericOperationController extends EtlController {
 	
 	@SuppressWarnings("rawtypes")
 	@Override
-	public TaskProcessor initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		
-		Class[] parameterTypes = {EngineMonitor.class, ThreadRecordIntervalsManager.class};
+		Class[] parameterTypes = {Engine.class, ThreadRecordIntervalsManager.class};
 		
 		try {
 			Constructor<TaskProcessor> a = getOperationConfig().getEngineClazz().getConstructor(parameterTypes);

@@ -31,7 +31,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  * 
  * @author jpboane
  */
-public class EngineMonitor implements MonitoredOperation {
+public class Engine implements MonitoredOperation {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -55,7 +55,7 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	private AbstractEtlSearchParams<?> searchParams;
 	
-	public EngineMonitor(OperationController controller, EtlItemConfiguration etlItemConfiguration,
+	public Engine(OperationController controller, EtlItemConfiguration etlItemConfiguration,
 	    TableOperationProgressInfo tableOperationProgressInfo) {
 		this.controller = controller;
 		this.ownEngines = new ArrayList<TaskProcessor>();
@@ -517,7 +517,7 @@ public class EngineMonitor implements MonitoredOperation {
 	}
 	
 	/**
-	 * Schedule new job for this job. This is controller by {@link EngineMonitor}
+	 * Schedule new job for this job. This is controller by {@link Engine}
 	 * 
 	 * @param syncEngine
 	 */
@@ -544,9 +544,9 @@ public class EngineMonitor implements MonitoredOperation {
 		}
 	}
 	
-	public static EngineMonitor init(OperationController controller, EtlItemConfiguration etlItemConfiguration,
+	public static Engine init(OperationController controller, EtlItemConfiguration etlItemConfiguration,
 	        TableOperationProgressInfo tableOperationProgressInfo) {
-		EngineMonitor monitor = new EngineMonitor(controller, etlItemConfiguration, tableOperationProgressInfo);
+		Engine monitor = new Engine(controller, etlItemConfiguration, tableOperationProgressInfo);
 		
 		return monitor;
 	}

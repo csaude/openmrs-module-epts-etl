@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -28,7 +28,7 @@ public class ProblemsSolverSearchParams extends AbstractEtlSearchParams<EtlObjec
 	}
 	
 	@Override
-	public List<EtlObject> searchNextRecords(EngineMonitor monitor, Connection conn) throws DBException {
+	public List<EtlObject> searchNextRecords(Engine monitor, Connection conn) throws DBException {
 		EtlObject rec = new EtlObject() {
 			
 			@Override

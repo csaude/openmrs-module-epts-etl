@@ -10,12 +10,12 @@ import org.openmrs.module.epts.etl.inconsistenceresolver.controller.Inconsistenc
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceSolverSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class InconsistenceSolverEngine extends TaskProcessor {
 	
-	public InconsistenceSolverEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public InconsistenceSolverEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	

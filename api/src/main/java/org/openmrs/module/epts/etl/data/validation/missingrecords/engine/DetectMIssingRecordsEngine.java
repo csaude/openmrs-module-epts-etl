@@ -8,11 +8,11 @@ import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 
 public class DetectMIssingRecordsEngine extends EtlEngine {
 	
-	public DetectMIssingRecordsEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public DetectMIssingRecordsEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 	}
 	

@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.model.ProblemsSolverSearchParams;
 import org.openmrs.module.epts.etl.problems_solver.model.TmpUserVO;
@@ -39,7 +39,7 @@ public class ProblemsSolverEngineMissingUserRoles extends GenericEngine {
 	@SuppressWarnings("unused")
 	private Class<? extends EtlDatabaseObject> userRoleRecordClass;
 	
-	public ProblemsSolverEngineMissingUserRoles(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public ProblemsSolverEngineMissingUserRoles(Engine monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);
 		
 		utilities.throwReviewMethodException();

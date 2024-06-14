@@ -6,7 +6,7 @@ import org.openmrs.module.epts.etl.data.validation.missingrecords.engine.DetectM
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.monitor.EngineMonitor;
+import org.openmrs.module.epts.etl.monitor.Engine;
 
 public class DetectMissingRecordsController extends EtlController {
 	
@@ -21,7 +21,7 @@ public class DetectMissingRecordsController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
 		return new DetectMIssingRecordsEngine(monitor, limits);
 	}
 }
