@@ -8,14 +8,14 @@ import java.util.List;
 import org.openmrs.module.epts.etl.databasepreparation.controller.DatabasePreparationController;
 import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationSearchParams;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
-public class DatabasePreparationEngine extends Engine {
+public class DatabasePreparationEngine extends TaskProcessor {
 	
 	private boolean updateDone;
 	

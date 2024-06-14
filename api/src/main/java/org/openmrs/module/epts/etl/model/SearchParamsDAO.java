@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.model;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.VO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -44,16 +44,16 @@ public class SearchParamsDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends VO> List<T> search_(Engine engine, Connection conn) throws DBException {
-		SearchClauses<T> searchClauses = (SearchClauses<T>) engine.getSearchParams().generateSearchClauses(conn);
+	public static <T extends VO> List<T> search_(TaskProcessor taskProcessor, Connection conn) throws DBException {
+		SearchClauses<T> searchClauses = (SearchClauses<T>) taskProcessor.getSearchParams().generateSearchClauses(conn);
 		
-		if (engine.getSearchParams().getOrderByFields() != null) {
-			searchClauses.addToOrderByFields(engine.getSearchParams().getOrderByFields());
+		if (taskProcessor.getSearchParams().getOrderByFields() != null) {
+			searchClauses.addToOrderByFields(taskProcessor.getSearchParams().getOrderByFields());
 		}
 		
 		String sql = searchClauses.generateSQL(conn);
 		
-		List<T> records = (List<T>) search(engine.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(),
+		List<T> records = (List<T>) search(taskProcessor.getSearchParams().getRecordClass(), sql, searchClauses.getParameters(),
 		    conn);
 		
 		return records;

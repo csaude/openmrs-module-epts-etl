@@ -12,7 +12,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
@@ -680,7 +680,7 @@ public abstract class OperationController implements Controller {
 		return this.operationConfig.getOperationType();
 	}
 	
-	public abstract Engine initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits);
+	public abstract TaskProcessor initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits);
 	
 	public abstract long getMinRecordId(EtlItemConfiguration tableInfo);
 	

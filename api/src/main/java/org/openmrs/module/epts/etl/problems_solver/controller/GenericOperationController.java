@@ -5,7 +5,7 @@ import java.lang.reflect.Constructor;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -22,12 +22,12 @@ public class GenericOperationController extends EtlController {
 	
 	@SuppressWarnings("rawtypes")
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		
 		Class[] parameterTypes = {EngineMonitor.class, ThreadRecordIntervalsManager.class};
 		
 		try {
-			Constructor<Engine> a = getOperationConfig().getEngineClazz().getConstructor(parameterTypes);
+			Constructor<TaskProcessor> a = getOperationConfig().getEngineClazz().getConstructor(parameterTypes);
 			
 			return a.newInstance(monitor, limits);
 		}

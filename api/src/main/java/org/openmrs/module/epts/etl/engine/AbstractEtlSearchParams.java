@@ -317,7 +317,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		return l;		
 	}
 
-	protected List<T> searchNextRecordsInMultiThreads(Engine engine, Connection conn){
+	protected List<T> searchNextRecordsInMultiThreads(TaskProcessor taskProcessor, Connection conn){
 		if (!hasLimits()) {
 			throw new ForbiddenOperationException("For multithreading search you must specify the limits with min and max records in the searching range");
 		}
@@ -367,9 +367,9 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 				initialLimits = limits;
 			}
 			
-			limits.setEngine(engine);
+			limits.setEngine(taskProcessor);
 			
-			limits.setThreadCode(engine.getEngineId() + utilities.garantirXCaracterOnNumber(i, 2) + ".tmp");
+			limits.setThreadCode(taskProcessor.getEngineId() + utilities.garantirXCaracterOnNumber(i, 2) + ".tmp");
 			
 			generatedLimits.add(limits);
 			
@@ -381,7 +381,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 					AbstractEtlSearchParams<T> cloned = this.cloneMe();
 					cloned.setLimits(limits);
 					
-					return cloned.searchNextRecords(engine.getMonitor(), conn);
+					return cloned.searchNextRecords(taskProcessor.getMonitor(), conn);
 				}
 				catch (DBException e) {
 					throw new EtlException(e);
@@ -412,11 +412,11 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 			e.printStackTrace();
 		}
 		
-		ThreadRecordIntervalsManager.removeAll( generatedLimits, engine.getMonitor());
+		ThreadRecordIntervalsManager.removeAll( generatedLimits, taskProcessor.getMonitor());
 		
 		
 		if (utilities.arrayHasNoElement(allSearchedRecords) && this.getLimits().canGoNext()) {
-			this.getLimits().save(engine.getMonitor());
+			this.getLimits().save(taskProcessor.getMonitor());
 			
 			this.getRelatedController()
 				        .logDebug("Empty result on fased quering... The application will keep searching next pages "
@@ -424,7 +424,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 			
 			this.getLimits().moveNext();
 			
-			return searchNextRecordsInMultiThreads(engine, conn);
+			return searchNextRecordsInMultiThreads(taskProcessor, conn);
 		}
 		
 		return allSearchedRecords;		

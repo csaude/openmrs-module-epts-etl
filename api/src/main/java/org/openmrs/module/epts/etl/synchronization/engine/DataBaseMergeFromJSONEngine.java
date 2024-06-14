@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSe
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DataBaseMergeFromJSONEngine extends Engine {
+public class DataBaseMergeFromJSONEngine extends TaskProcessor {
 	
 	public DataBaseMergeFromJSONEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);

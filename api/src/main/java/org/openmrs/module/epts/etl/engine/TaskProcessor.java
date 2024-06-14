@@ -25,7 +25,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
- * Represent a Synchronization Engine. A Synchronization engine performes the task which will end up
+ * Represent a Synchronization TaskProcessor. A Synchronization engine performes the task which will end up
  * producing or consuming the synchronization info.
  * <p>
  * There are several kinds of engines that performes diferents kind of operations. All the avaliable
@@ -33,13 +33,13 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public abstract class Engine implements Runnable, MonitoredOperation {
+public abstract class TaskProcessor implements Runnable, MonitoredOperation {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	protected List<Engine> children;
+	protected List<TaskProcessor> children;
 	
-	protected Engine parent;
+	protected TaskProcessor parent;
 	
 	protected EngineMonitor monitor;
 	
@@ -57,7 +57,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	protected MigrationFinalCheckStatus finalCheckStatus;
 	
-	public Engine(EngineMonitor monitr, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor(EngineMonitor monitr, ThreadRecordIntervalsManager limits) {
 		this.monitor = monitr;
 		
 		OpenConnection conn;
@@ -122,11 +122,11 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return getRelatedOperationController().getConfiguration();
 	}
 	
-	public List<Engine> getChildren() {
+	public List<TaskProcessor> getChildren() {
 		return children;
 	}
 	
-	public void setChildren(List<Engine> children) {
+	public void setChildren(List<TaskProcessor> children) {
 		this.children = children;
 	}
 	
@@ -154,11 +154,11 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		return getRelatedOperationController().openConnection();
 	}
 	
-	public Engine getParentConf() {
+	public TaskProcessor getParentConf() {
 		return parent;
 	}
 	
-	public void setParent(Engine parent) {
+	public void setParent(TaskProcessor parent) {
 		this.parent = parent;
 	}
 	
@@ -170,8 +170,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 			changeStatusToStopped();
 			
 			if (this.hasChild()) {
-				for (Engine engine : this.getChildren()) {
-					engine.requestStop();
+				for (TaskProcessor taskProcessor : this.getChildren()) {
+					taskProcessor.requestStop();
 				}
 			}
 		} else {
@@ -197,7 +197,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 						
 						String runningThreads = "";
 						
-						for (Engine child : getChildren()) {
+						for (TaskProcessor child : getChildren()) {
 							if (!child.isStopped() && !child.isFinished()) {
 								runningThreads = utilities.concatStringsWithSeparator(runningThreads, child.getEngineId(),
 								    ";");
@@ -252,7 +252,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 								//Do the final check before finishing
 								
 								while (this.hasChild() && !isAllChildFinished()) {
-									List<Engine> runningChild = getRunningChild();
+									List<TaskProcessor> runningChild = getRunningChild();
 									
 									logDebug("WAITING FOR ALL CHILD FINISH JOB TO DO FINAL RECORDS CHECK! RUNNING CHILD ");
 									logDebug(runningChild.toString());
@@ -313,13 +313,13 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		}
 	}
 	
-	private List<Engine> getRunningChild() {
+	private List<TaskProcessor> getRunningChild() {
 		if (!hasChild())
-			throw new ForbiddenOperationException("This Engine does not have child!!!");
+			throw new ForbiddenOperationException("This TaskProcessor does not have child!!!");
 		
-		List<Engine> runningChild = new ArrayList<Engine>();
+		List<TaskProcessor> runningChild = new ArrayList<TaskProcessor>();
 		
-		for (Engine child : this.children) {
+		for (TaskProcessor child : this.children) {
 			if (child.isRunning()) {
 				runningChild.add(child);
 			}
@@ -418,8 +418,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	@Override
 	public boolean isNotInitialized() {
 		if (utilities.arrayHasElement(this.children)) {
-			for (Engine engine : this.children) {
-				if (engine.isNotInitialized()) {
+			for (TaskProcessor taskProcessor : this.children) {
+				if (taskProcessor.isNotInitialized()) {
 					return true;
 				}
 			}
@@ -431,8 +431,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	@Override
 	public boolean isRunning() {
 		if (utilities.arrayHasElement(this.children)) {
-			for (Engine engine : this.children) {
-				if (engine.isRunning())
+			for (TaskProcessor taskProcessor : this.children) {
+				if (taskProcessor.isRunning())
 					return true;
 			}
 		}
@@ -443,8 +443,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	@Override
 	public boolean isStopped() {
 		if (utilities.arrayHasElement(this.children)) {
-			for (Engine engine : this.children) {
-				if (!engine.isStopped())
+			for (TaskProcessor taskProcessor : this.children) {
+				if (!taskProcessor.isStopped())
 					return false;
 			}
 		}
@@ -458,8 +458,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 			return false;
 		
 		if (utilities.arrayHasElement(this.children)) {
-			for (Engine engine : this.children) {
-				if (!engine.isFinished())
+			for (TaskProcessor taskProcessor : this.children) {
+				if (!taskProcessor.isFinished())
 					return false;
 			}
 		}
@@ -470,8 +470,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	@Override
 	public boolean isPaused() {
 		if (utilities.arrayHasElement(this.children)) {
-			for (Engine engine : this.children) {
-				if (!engine.isPaused())
+			for (TaskProcessor taskProcessor : this.children) {
+				if (!taskProcessor.isPaused())
 					return false;
 			}
 		}
@@ -482,8 +482,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	@Override
 	public boolean isSleeping() {
 		if (utilities.arrayHasElement(this.children)) {
-			for (Engine engine : this.children) {
-				if (!engine.isSleeping())
+			for (TaskProcessor taskProcessor : this.children) {
+				if (!taskProcessor.isSleeping())
 					return false;
 			}
 		}
@@ -517,7 +517,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	@Override
 	public void changeStatusToFinished() {
 		if (this.hasChild()) {
-			for (Engine child : getChildren()) {
+			for (TaskProcessor child : getChildren()) {
 				while (!child.isFinished()) {
 					logDebug("WAITING FOR ALL CHILD ENGINES TO BE FINISHED");
 					TimeCountDown.sleep(10);
@@ -576,8 +576,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 			changeStatusToStopped();
 		} else {
 			if (this.hasChild()) {
-				for (Engine engine : this.getChildren()) {
-					engine.requestStop();
+				for (TaskProcessor taskProcessor : this.getChildren()) {
+					taskProcessor.requestStop();
 				}
 			}
 			
@@ -587,8 +587,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	public synchronized void requestStopDueError() {
 		if (this.hasChild()) {
-			for (Engine engine : this.getChildren()) {
-				engine.requestStop();
+			for (TaskProcessor taskProcessor : this.getChildren()) {
+				taskProcessor.requestStop();
 			}
 		}
 		
@@ -596,8 +596,8 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		
 		if (lastException != null) {
 			if (this.hasChild()) {
-				for (Engine engine : this.getChildren()) {
-					while (!engine.isStopped() && !engine.isFinished()) {
+				for (TaskProcessor taskProcessor : this.getChildren()) {
+					while (!taskProcessor.isStopped() && !taskProcessor.isFinished()) {
 						logError(
 						    "AN ERROR OCURRED... WAITING FOR ALL CHILD STOP TO REPORT THE ERROR END STOP THE OPERATION");
 						
@@ -649,7 +649,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 		}
 		
 		if (hasChild()) {
-			for (Engine child : this.children) {
+			for (TaskProcessor child : this.children) {
 				ThreadPoolService.getInstance().terminateTread(getRelatedOperationController().getLogger(),
 				    child.getEngineId(), this);
 			}
@@ -661,7 +661,7 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	public void markAsFinished() {
 		if (!this.hasParent()) {
 			if (hasChild()) {
-				for (Engine child : this.children) {
+				for (TaskProcessor child : this.children) {
 					while (!child.isFinished()) {
 						logDebug("WATING FOR ALL CHILDREN BEEN TERMINATED!");
 						TimeCountDown.sleep(15);
@@ -680,9 +680,9 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	public boolean isAllChildFinished() {
 		if (!hasChild())
-			throw new ForbiddenOperationException("This Engine does not have child!!!");
+			throw new ForbiddenOperationException("This TaskProcessor does not have child!!!");
 		
-		for (Engine child : this.children) {
+		for (TaskProcessor child : this.children) {
 			if (!child.isFinished())
 				return false;
 		}
@@ -736,11 +736,11 @@ public abstract class Engine implements Runnable, MonitoredOperation {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (obj == null || !(obj instanceof Engine)) {
+		if (obj == null || !(obj instanceof TaskProcessor)) {
 			return false;
 		}
 		
-		Engine e = (Engine) obj;
+		TaskProcessor e = (TaskProcessor) obj;
 		
 		return this.getEngineId().equals(e.getEngineId());
 	}

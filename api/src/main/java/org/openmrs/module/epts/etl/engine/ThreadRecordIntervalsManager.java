@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * The manager of records limits for a specific {@link Engine}
+ * The manager of records limits for a specific {@link TaskProcessor}
  * 
  * @author jpboane
  */
@@ -223,7 +223,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 				FileUtilities.removeFile(fileName);
 			}
 			
-			setLastSavedOn(Engine.utilities.formatDateToDDMMYYYY_HHMISS(Engine.utilities.getCurrentDate()));
+			setLastSavedOn(TaskProcessor.utilities.formatDateToDDMMYYYY_HHMISS(TaskProcessor.utilities.getCurrentDate()));
 			
 			String desc = this.parseToJSON();
 			
@@ -283,7 +283,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	}
 	
 	public boolean hasThreadCode() {
-		return Engine.utilities.stringHasValue(this.getThreadCode());
+		return TaskProcessor.utilities.stringHasValue(this.getThreadCode());
 	}
 	
 	/**

@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
@@ -15,7 +15,7 @@ import org.openmrs.module.epts.etl.reconciliation.model.ConciliationReasonType;
 import org.openmrs.module.epts.etl.reconciliation.model.DataReconciliationRecord;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class CentralAndRemoteDataReconciliationEngine extends Engine {
+public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor {
 	
 	public CentralAndRemoteDataReconciliationEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);

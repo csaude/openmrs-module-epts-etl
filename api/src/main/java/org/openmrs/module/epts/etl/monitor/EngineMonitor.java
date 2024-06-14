@@ -12,7 +12,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
@@ -27,7 +27,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 /**
- * This class monitor all {@link Engine}s of an {@link OperationController}
+ * This class monitor all {@link TaskProcessor}s of an {@link OperationController}
  * 
  * @author jpboane
  */
@@ -39,7 +39,7 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	private EtlItemConfiguration etlItemConfiguration;
 	
-	private List<Engine> ownEngines;
+	private List<TaskProcessor> ownEngines;
 	
 	private String engineMonitorId;
 	
@@ -58,7 +58,7 @@ public class EngineMonitor implements MonitoredOperation {
 	public EngineMonitor(OperationController controller, EtlItemConfiguration etlItemConfiguration,
 	    TableOperationProgressInfo tableOperationProgressInfo) {
 		this.controller = controller;
-		this.ownEngines = new ArrayList<Engine>();
+		this.ownEngines = new ArrayList<TaskProcessor>();
 		this.etlItemConfiguration = etlItemConfiguration;
 		
 		this.engineMonitorId = (controller.getControllerId() + "_" + this.getEtlConfigCode() + "_monitor").toLowerCase();
@@ -102,7 +102,7 @@ public class EngineMonitor implements MonitoredOperation {
 		return this.getEtlConfiguration().getSrcConf();
 	}
 	
-	public List<Engine> getOwnEngines() {
+	public List<TaskProcessor> getOwnEngines() {
 		return ownEngines;
 	}
 	
@@ -126,10 +126,10 @@ public class EngineMonitor implements MonitoredOperation {
 		return this.tableOperationProgressInfo != null ? this.tableOperationProgressInfo.getProgressMeter() : null;
 	}
 	
-	public Engine getMainEngine() {
-		for (Engine engine : this.ownEngines) {
-			if (engine.getChildren() != null) {
-				return engine;
+	public TaskProcessor getMainEngine() {
+		for (TaskProcessor taskProcessor : this.ownEngines) {
+			if (taskProcessor.getChildren() != null) {
+				return taskProcessor;
 			}
 		}
 		
@@ -288,7 +288,7 @@ public class EngineMonitor implements MonitoredOperation {
 		
 		List<Future<?>> futures = new ArrayList<>(qtyEngines);
 		
-		List<Engine> generatedEngines = new ArrayList<>(qtyEngines);
+		List<TaskProcessor> generatedEngines = new ArrayList<>(qtyEngines);
 		
 		for (int i = 0; i < qtyEngines; i++) {
 			ThreadRecordIntervalsManager limits;
@@ -312,18 +312,18 @@ public class EngineMonitor implements MonitoredOperation {
 				initialLimits = limits;
 			}
 			
-			Engine engine = getController().initRelatedEngine(this, limits);
-			engine.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i++, 2));
+			TaskProcessor taskProcessor = getController().initRelatedEngine(this, limits);
+			taskProcessor.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i++, 2));
 			
-			engine.resetLimits(limits);
+			taskProcessor.resetLimits(limits);
 			
 			limits.setEngine(this);
-			limits.setThreadCode(engine.getEngineId());
+			limits.setThreadCode(taskProcessor.getEngineId());
 			
-			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(engine.getEngineId());
+			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(taskProcessor.getEngineId());
 			
-			futures.add(executor.submit(engine));
-			generatedEngines.add(engine);
+			futures.add(executor.submit(taskProcessor));
+			generatedEngines.add(taskProcessor);
 		}
 		
 		for (Future<?> future : futures) {
@@ -417,9 +417,9 @@ public class EngineMonitor implements MonitoredOperation {
 		}
 	}
 	
-	private void addEngineToOwnEgines(Engine engine) {
-		if (!this.ownEngines.contains(engine)) {
-			this.ownEngines.add(engine);
+	private void addEngineToOwnEgines(TaskProcessor taskProcessor) {
+		if (!this.ownEngines.contains(taskProcessor)) {
+			this.ownEngines.add(taskProcessor);
 		}
 	}
 	
@@ -439,12 +439,12 @@ public class EngineMonitor implements MonitoredOperation {
 		getController().getOperationConfig().setMaxRecordPerProcessing(qtyRecordsPerProcessing);
 	}
 	
-	private Engine retrieveAndRemoveSleepingEngine() {
-		Engine sleepingEngine = null;
+	private TaskProcessor retrieveAndRemoveSleepingEngine() {
+		TaskProcessor sleepingEngine = null;
 		
-		for (Engine engine : this.ownEngines) {
-			if (engine.isSleeping()) {
-				sleepingEngine = engine;
+		for (TaskProcessor taskProcessor : this.ownEngines) {
+			if (taskProcessor.isSleeping()) {
+				sleepingEngine = taskProcessor;
 			}
 		}
 		
@@ -455,12 +455,12 @@ public class EngineMonitor implements MonitoredOperation {
 		return sleepingEngine;
 	}
 	
-	private Engine retrieveAndRemoveMainSleepingEngine() {
-		Engine sleepingEngine = null;
+	private TaskProcessor retrieveAndRemoveMainSleepingEngine() {
+		TaskProcessor sleepingEngine = null;
 		
-		for (Engine engine : this.ownEngines) {
-			if (engine.isSleeping() && engine.getChildren() != null) {
-				sleepingEngine = engine;
+		for (TaskProcessor taskProcessor : this.ownEngines) {
+			if (taskProcessor.isSleeping() && taskProcessor.getChildren() != null) {
+				sleepingEngine = taskProcessor;
 				
 				break;
 			}
@@ -503,8 +503,8 @@ public class EngineMonitor implements MonitoredOperation {
 	String generateEngineNewJobRequestStatus() {
 		String status = "";
 		
-		for (Engine engine : ownEngines) {
-			status += "[" + engine.getEngineId() + " > " + (engine.isNewJobRequested() ? "REQUESTED" : "NOT REQUESTED")
+		for (TaskProcessor taskProcessor : ownEngines) {
+			status += "[" + taskProcessor.getEngineId() + " > " + (taskProcessor.isNewJobRequested() ? "REQUESTED" : "NOT REQUESTED")
 			        + "] ";
 		}
 		
@@ -521,7 +521,7 @@ public class EngineMonitor implements MonitoredOperation {
 	 * 
 	 * @param syncEngine
 	 */
-	public void scheduleNewJobForEngine(Engine syncEngine) {
+	public void scheduleNewJobForEngine(TaskProcessor syncEngine) {
 		syncEngine.setNewJobRequested(true);
 		syncEngine.changeStatusToSleeping();
 		logWarn(
@@ -529,8 +529,8 @@ public class EngineMonitor implements MonitoredOperation {
 	}
 	
 	boolean isAllEnginesSleeping() {
-		for (Engine engine : ownEngines) {
-			if (!engine.isSleeping()) {
+		for (TaskProcessor taskProcessor : ownEngines) {
+			if (!taskProcessor.isSleeping()) {
 				return false;
 			}
 		}
@@ -539,8 +539,8 @@ public class EngineMonitor implements MonitoredOperation {
 	}
 	
 	public void killSelfCreatedThreads() {
-		for (Engine engine : this.ownEngines) {
-			ThreadPoolService.getInstance().terminateTread(getController().getLogger(), engine.getEngineId(), engine);
+		for (TaskProcessor taskProcessor : this.ownEngines) {
+			ThreadPoolService.getInstance().terminateTread(getController().getLogger(), taskProcessor.getEngineId(), taskProcessor);
 		}
 	}
 	
@@ -646,8 +646,8 @@ public class EngineMonitor implements MonitoredOperation {
 		if (!utilities.arrayHasElement(this.ownEngines)) {
 			return this.operationStatus == MonitoredOperation.STATUS_STOPPED;
 		} else
-			for (Engine engine : this.ownEngines) {
-				if (!engine.isStopped()) {
+			for (TaskProcessor taskProcessor : this.ownEngines) {
+				if (!taskProcessor.isStopped()) {
 					return false;
 				}
 			}
@@ -664,8 +664,8 @@ public class EngineMonitor implements MonitoredOperation {
 		if (!utilities.arrayHasElement(this.ownEngines)) {
 			return this.operationStatus == MonitoredOperation.STATUS_FINISHED;
 		} else
-			for (Engine engine : this.ownEngines) {
-				if (!engine.isFinished()) {
+			for (TaskProcessor taskProcessor : this.ownEngines) {
+				if (!taskProcessor.isFinished()) {
 					return false;
 				}
 			}

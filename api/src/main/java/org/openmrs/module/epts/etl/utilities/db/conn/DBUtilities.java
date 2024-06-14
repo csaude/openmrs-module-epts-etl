@@ -1358,7 +1358,7 @@ public class DBUtilities {
 				renameMySQLTable(schema, oldTableName, newTableName, conn);
 			} else
 				throw new ForbiddenOperationException(
-				        "Unsupported DB Engine.. [" + determineDataBaseFromConnection(conn) + "]");
+				        "Unsupported DB TaskProcessor.. [" + determineDataBaseFromConnection(conn) + "]");
 		}
 		catch (SQLException e) {
 			throw new DBException(e);

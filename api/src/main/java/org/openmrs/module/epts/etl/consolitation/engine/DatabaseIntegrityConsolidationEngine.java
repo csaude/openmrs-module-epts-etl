@@ -6,14 +6,14 @@ import java.util.List;
 import org.openmrs.module.epts.etl.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.epts.etl.consolitation.model.DatabaseIntegrityConsolidationSearchParams;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DatabaseIntegrityConsolidationEngine extends Engine {
+public class DatabaseIntegrityConsolidationEngine extends TaskProcessor {
 	
 	public DatabaseIntegrityConsolidationEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);

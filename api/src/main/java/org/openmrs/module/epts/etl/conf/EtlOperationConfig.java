@@ -15,7 +15,7 @@ import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportController;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.re_etl.controller.ReEtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -72,7 +72,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private String engineFullClassName;
 	
-	private Class<Engine> engineClazz;
+	private Class<TaskProcessor> engineClazz;
 	
 	private boolean skipFinalDataVerification;
 	
@@ -126,7 +126,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return engineFullClassName;
 	}
 	
-	public Class<Engine> getEngineClazz() {
+	public Class<TaskProcessor> getEngineClazz() {
 		return engineClazz;
 	}
 	
@@ -808,18 +808,18 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public synchronized <T extends Engine> void tryToLoadEngine() throws ForbiddenOperationException {
+	public synchronized <T extends TaskProcessor> void tryToLoadEngine() throws ForbiddenOperationException {
 		
 		try {
 			if (engineClazz == null) {
 				
 				if (utilities.stringHasValue(this.getEngineFullClassName())) {
 					
-					ClassLoader loader = Engine.class.getClassLoader();
+					ClassLoader loader = TaskProcessor.class.getClassLoader();
 					
 					Class<T> c = (Class<T>) loader.loadClass(this.getEngineFullClassName());
 					
-					this.engineClazz = (Class<Engine>) c;
+					this.engineClazz = (Class<TaskProcessor>) c;
 					
 					if (this.engineClazz == null) {
 						throw new ForbiddenOperationException(

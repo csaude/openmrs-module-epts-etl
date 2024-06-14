@@ -10,7 +10,7 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
@@ -32,7 +32,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * @author jpboane
  * @see DbExtractController
  */
-public class EtlEngine extends Engine {
+public class EtlEngine extends TaskProcessor {
 	
 	public EtlEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		super(monitor, limits);

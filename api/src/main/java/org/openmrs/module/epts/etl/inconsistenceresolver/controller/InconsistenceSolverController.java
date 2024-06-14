@@ -4,7 +4,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.inconsistenceresolver.engine.InconsistenceSolverEngine;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -27,7 +27,7 @@ public class InconsistenceSolverController extends OperationController {
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		return new InconsistenceSolverEngine(monitor, limits);
 	}
 	

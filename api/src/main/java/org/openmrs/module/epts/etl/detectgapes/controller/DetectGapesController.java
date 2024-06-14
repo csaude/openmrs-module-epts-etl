@@ -8,7 +8,7 @@ import java.sql.Statement;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.detectgapes.engine.DetectGapesEngine;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.monitor.EngineMonitor;
@@ -31,7 +31,7 @@ public class DetectGapesController extends EtlController {
 	}
 	
 	@Override
-	public Engine initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor initRelatedEngine(EngineMonitor monitor, ThreadRecordIntervalsManager limits) {
 		return new DetectGapesEngine(monitor, limits);
 	}
 	
