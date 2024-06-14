@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
@@ -770,11 +771,9 @@ public abstract class OperationController implements Controller {
 	
 	public abstract boolean canBeRunInMultipleEngines();
 	
-	public ThreadRecordIntervalsManager generateLimits(long minRecId, long currMax, Engine engine) {
-		return new ThreadRecordIntervalsManager(minRecId, currMax, getQtyRecordsPerProcessing(), engine);
-	}
-	
 	public int getQtyRecordsPerProcessing() {
 		return this.getOperationConfig().getMaxRecordPerProcessing();
 	}
+	
+	public abstract AbstractEtlSearchParams<?> initMainSearchParams();
 }

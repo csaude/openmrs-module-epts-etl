@@ -27,7 +27,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	
 	protected String threadCode;
 	
-	private Engine engine;
+	private EngineMonitor engine;
 	
 	private boolean loadedFromFile;
 	
@@ -60,6 +60,16 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		this.reset();
 	}
 	
+	public ThreadRecordIntervalsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing,
+	    String threadCode, EngineMonitor engine) {
+		this(firstRecordId, lastRecordId, qtyRecordsPerProcessing);
+		
+		this.engine = engine;
+		
+		if (this.engine != null)
+			this.threadCode = engine.getEngineId();
+	}
+	
 	public ThreadLImitsManagerStatusType getStatus() {
 		return status;
 	}
@@ -88,15 +98,6 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		this.currentLimits = currentLimits;
 	}
 	
-	public ThreadRecordIntervalsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing, Engine engine) {
-		this(firstRecordId, lastRecordId, qtyRecordsPerProcessing);
-		
-		this.engine = engine;
-		
-		if (this.engine != null)
-			this.threadCode = engine.getEngineId();
-	}
-	
 	/**
 	 * Put the currentLimits#minRecord to maxLimits#minRecordId - {@link #qtyRecordsPerProcessing}
 	 */
@@ -113,13 +114,8 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		this.status = status;
 	}
 	
-	public void setEngine(Engine engine) {
-		threadCode = null;
-		
+	public void setEngine(EngineMonitor engine) {
 		this.engine = engine;
-		
-		if (this.engine != null)
-			this.threadCode = engine.getEngineId();
 	}
 	
 	public boolean isLoadedFromFile() {
@@ -297,7 +293,26 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	 * @param file
 	 * @param engine
 	 */
-	public void tryToLoadFromFile(File file, Engine engine) {
+	public static ThreadRecordIntervalsManager tryToLoadFromFile(String threadCode, EngineMonitor engine) {
+		ThreadRecordIntervalsManager t = new ThreadRecordIntervalsManager();
+		
+		t.setThreadCode(threadCode);
+		
+		File f = new File(t.generateFilePath(engine));
+		
+		t.tryToLoadFromFile(f, engine);
+		
+		return t;
+	}
+	
+	/**
+	 * Tries to load data for this engine from file. If there is no saved limits then will keeped
+	 * the current limits info
+	 * 
+	 * @param file
+	 * @param engine
+	 */
+	public void tryToLoadFromFile(File file, EngineMonitor engine) {
 		try {
 			ThreadRecordIntervalsManager limits = loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 			
@@ -311,7 +326,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 				
 				this.loadedFromFile = true;
 			} else {
-				this.setExcludedIntervals(engine.getMonitor().getExcludedRecordsIntervals());
+				this.setExcludedIntervals(engine.getExcludedRecordsIntervals());
 			}
 			
 			this.engine = engine;

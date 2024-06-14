@@ -4,16 +4,18 @@ import java.io.File;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.OperationController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
@@ -51,6 +53,8 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	protected List<IntervalExtremeRecord> excludedRecordsLimits;
 	
+	private AbstractEtlSearchParams<?> searchParams;
+	
 	public EngineMonitor(OperationController controller, EtlItemConfiguration etlItemConfiguration,
 	    TableOperationProgressInfo tableOperationProgressInfo) {
 		this.controller = controller;
@@ -62,6 +66,20 @@ public class EngineMonitor implements MonitoredOperation {
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
+		
+		this.searchParams = controller.initMainSearchParams();
+	}
+	
+	public AbstractEtlSearchParams<?> getSearchParams() {
+		return searchParams;
+	}
+	
+	public ThreadRecordIntervalsManager getLimits() {
+		return getSearchParams().getLimits();
+	}
+	
+	public void setSearchParams(AbstractEtlSearchParams<?> searchParams) {
+		this.searchParams = searchParams;
 	}
 	
 	public List<IntervalExtremeRecord> getExcludedRecordsIntervals() {
@@ -192,8 +210,6 @@ public class EngineMonitor implements MonitoredOperation {
 	private void initEngine() throws DBException {
 		logInfo("INITIALIZING ENGINE FOR ETL CONFIG [" + getEtlConfiguration().getConfigCode().toUpperCase() + "]");
 		
-		tryToLoadExcludedRecordsLimits();
-		
 		long minRecId = tableOperationProgressInfo.getProgressMeter().getMinRecordId();
 		
 		if (minRecId == 0) {
@@ -241,130 +257,116 @@ public class EngineMonitor implements MonitoredOperation {
 			
 			logWarn(msg);
 		} else {
-			long qtyRecords = maxRecId - minRecId + 1;
-			long qtyEngines = determineQtyEngines(qtyRecords);
-			long qtyRecordsPerEngine = 0;
+			calculateStatistics();
 			
-			if (qtyEngines == 0) {
-				qtyEngines = 1;
+			int qtyEngines = getController().getOperationConfig().getMaxSupportedEngines();
+			
+			if (qtyEngines > getQtyRecordsPerProcessing()) {
+				setQtyRecordsPerProcessing(qtyEngines);
 			}
 			
-			if (qtyEngines > 1 && !controller.canBeRunInMultipleEngines()) {
-				throw new ForbiddenOperationException("The " + controller.getOperationType()
-				        + " Cannot be run in multiple engines! Please manual set the engines to '1'");
+			ThreadRecordIntervalsManager t = ThreadRecordIntervalsManager.tryToLoadFromFile(getEngineId(), this);
+			
+			if (t == null) {
+				this.getSearchParams().setLimits(new ThreadRecordIntervalsManager(minRecId, maxRecId,
+				        this.getQtyRecordsPerProcessing(), getEngineId(), this));
 			}
 			
-			logInfo("STARTING PROCESS FOR TABLE CONFIG [" + getEtlConfiguration().getConfigCode().toUpperCase() + "] WITH "
-			        + qtyEngines + " ENGINES [MIN REC: " + minRecId + ", MAX REC: " + maxRecId + "]");
+			long engineAlocatedRecs = this.getQtyRecordsPerProcessing() / qtyEngines;
 			
-			qtyRecordsPerEngine = determineQtyRecordsPerEngine(qtyEngines, qtyRecords);
+			performeTask(qtyEngines, engineAlocatedRecs);
 			
-			long currMax = minRecId + qtyRecordsPerEngine - 1;
+		}
+	}
+	
+	/**
+	 * @param qtyEngines
+	 * @param engineAlocatedRecs
+	 */
+	public void performeTask(int qtyEngines, long engineAlocatedRecs) {
+		ThreadRecordIntervalsManager initialLimits = null;
+		
+		List<Future<?>> futures = new ArrayList<>(qtyEngines);
+		
+		List<Engine> generatedEngines = new ArrayList<>(qtyEngines);
+		
+		for (int i = 0; i < qtyEngines; i++) {
+			ThreadRecordIntervalsManager limits;
 			
-			if (qtyEngines == 1)
-				currMax = maxRecId;
-			
-			ThreadRecordIntervalsManager limits = this.getController().generateLimits(minRecId, currMax, null);
-			
-			Engine mainEngine = retrieveAndRemoveMainSleepingEngine();
-			
-			//If there was no main engine, retrieve onother engine and make it main
-			mainEngine = mainEngine == null ? retrieveAndRemoveSleepingEngine() : mainEngine;
-			
-			mainEngine = mainEngine == null ? controller.initRelatedEngine(this, limits) : mainEngine;
-			mainEngine.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(0, 2));
-			
-			mainEngine.resetLimits(mainEngine.getLimits());
-			
-			logDebug("ALLOCATED RECORDS [" + mainEngine.getSearchParams().getLimits() + "] FOR ENGINE ["
-			        + mainEngine.getEngineId() + "]");
-			
-			if (mainEngine.getChildren() == null) {
-				mainEngine.setChildren(new ArrayList<Engine>());
-			}
-			
-			int i = 1;
-			
-			for (i = 1; i < qtyEngines; i++) {
-				limits = getController().generateLimits(limits.getThreadMaxRecordId() + 1,
-				    limits.getThreadMaxRecordId() + qtyRecordsPerEngine, null);
+			if (initialLimits == null) {
+				limits = new ThreadRecordIntervalsManager(getLimits().getCurrentFirstRecordId(),
+				        getLimits().getCurrentFirstRecordId() + engineAlocatedRecs - 1, (int) engineAlocatedRecs);
+				initialLimits = limits;
 				
+			} else {
+				// Last processor
 				if (i == qtyEngines - 1) {
-					limits.getMaxLimits().setMaxRecordId(maxRecId);
-					limits.reset();
-				}
-				
-				Engine engine = retrieveAndRemoveSleepingEngine();
-				
-				if (engine == null) {
-					engine = getController().initRelatedEngine(this, limits);
-					engine.resetLimits(engine.getLimits());
-					mainEngine.getChildren().add(engine);
-					engine.setEngineId(getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
-					engine.setParent(mainEngine);
+					long min = initialLimits.getThreadMaxRecordId() + 1;
+					long process = getLimits().getCurrentLastRecordId() - min + 1;
+					
+					limits = new ThreadRecordIntervalsManager(min, getLimits().getCurrentLastRecordId(), (int) process);
 				} else {
-					engine.resetLimits(limits);
+					limits = new ThreadRecordIntervalsManager(initialLimits.getThreadMaxRecordId() + 1,
+					        initialLimits.getThreadMaxRecordId() + engineAlocatedRecs, (int) engineAlocatedRecs);
 				}
-				
-				addEngineToOwnEgines(engine);
-				
-				logDebug("REALOCATED NEW RECORDS [" + engine.getSearchParams().getLimits() + "] FOR ENGINE ["
-				        + engine.getEngineId() + "]");
+				initialLimits = limits;
 			}
 			
-			addEngineToOwnEgines(mainEngine);
+			Engine engine = getController().initRelatedEngine(this, limits);
+			engine.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i++, 2));
 			
-			if (!this.getProgressMeter().isRunning()) {
-				this.getProgressMeter().changeStatusToRunning();
-			}
+			engine.resetLimits(limits);
 			
-			OpenConnection conn = controller.openConnection();
+			limits.setEngine(this);
+			limits.setThreadCode(engine.getEngineId());
 			
+			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(engine.getEngineId());
+			
+			futures.add(executor.submit(engine));
+			generatedEngines.add(engine);
+		}
+		
+		for (Future<?> future : futures) {
 			try {
-				logInfo("CALCULATING STATISTICS...");
-				
-				int remaining = getProgressMeter().getRemain();
-				int total = getProgressMeter().getTotal();
-				int processed = total - remaining;
-				
-				if (total == 0) {
-					total = mainEngine.getSearchParams().countAllRecords(conn);
-					remaining = mainEngine.getSearchParams().countNotProcessedRecords(conn);
-					processed = total - remaining;
-				}
-				
-				this.getProgressMeter().refresh(this.getProgressMeter().getStatusMsg(), total, processed);
-				
-				if (getRelatedOperationController().isResumable()) {
-					this.getTableOperationProgressInfo().save(conn);
-				}
-				
-				conn.markAsSuccessifullyTerminated();
+				future.get();
 			}
-			catch (DBException e) {
-				getRelatedOperationController().requestStopDueError(this, e);
-				
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
-			finally {
-				conn.finalizeConnection();
+			catch (Exception e) {}
+		}
+	}
+	
+	private void calculateStatistics() throws DBException {
+		OpenConnection conn = getController().openConnection();
+		
+		try {
+			logInfo("CALCULATING STATISTICS...");
+			
+			int remaining = getProgressMeter().getRemain();
+			int total = getProgressMeter().getTotal();
+			int processed = total - remaining;
+			
+			if (total == 0) {
+				total = getSearchParams().countAllRecords(conn);
+				remaining = getSearchParams().countNotProcessedRecords(conn);
+				processed = total - remaining;
 			}
 			
-			doFirstSaveAllLimits();
+			this.getProgressMeter().refresh(this.getProgressMeter().getStatusMsg(), total, processed);
 			
-			ExecutorService executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(mainEngine.getEngineId());
-			executor.execute(mainEngine);
-			
-			if (mainEngine.getChildren() != null) {
-				for (Engine childEngine : mainEngine.getChildren()) {
-					executor = ThreadPoolService.getInstance().createNewThreadPoolExecutor(childEngine.getEngineId());
-					executor.execute(childEngine);
-				}
+			if (getRelatedOperationController().isResumable()) {
+				this.getTableOperationProgressInfo().save(conn);
 			}
 			
-			logInfo("ENGINE FOR TABLE CONFIG [" + getEtlConfiguration().getConfigCode().toUpperCase() + "] INITIALIZED!");
+			conn.markAsSuccessifullyTerminated();
+		}
+		catch (DBException e) {
+			getRelatedOperationController().requestStopDueError(this, e);
+			
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
 		}
 	}
 	
@@ -374,12 +376,7 @@ public class EngineMonitor implements MonitoredOperation {
 		List<ThreadRecordIntervalsManager> oldLImitsManagers = ThreadRecordIntervalsManager
 		        .getAllSavedLimitsOfOperation(this);
 		
-		for (Engine engine : this.getOwnEngines()) {
-			engine.getLimits().setEngine(engine);
-			engine.getLimits().save(this);
-			
-			newIntervals.add(engine.getLimits());
-		}
+		newIntervals.add(getSearchParams().getLimits());
 		
 		if (oldLImitsManagers != null) {
 			for (ThreadRecordIntervalsManager limits : oldLImitsManagers) {
@@ -426,20 +423,6 @@ public class EngineMonitor implements MonitoredOperation {
 		}
 	}
 	
-	private long determineQtyRecordsPerEngine(long qtyEngines, long qtyRecords) {
-		return qtyRecords / qtyEngines;
-	}
-	
-	private long determineQtyEngines(long qtyRecords) {
-		long qtyRecordsPerEngine = qtyRecords / getController().getOperationConfig().getMaxSupportedEngines();
-		
-		if (qtyRecordsPerEngine > getController().getOperationConfig().getMinRecordsPerEngine()) {
-			return getController().getOperationConfig().getMaxSupportedEngines();
-		}
-		
-		return qtyRecords / getController().getOperationConfig().getMinRecordsPerEngine();
-	}
-	
 	public void realocateJobToEngines() throws DBException {
 		logDebug("REALOCATING ENGINES FOR '" + getEtlConfigCode().toUpperCase() + "'");
 		
@@ -450,6 +433,10 @@ public class EngineMonitor implements MonitoredOperation {
 	
 	public int getQtyRecordsPerProcessing() {
 		return getController().getOperationConfig().getMaxRecordPerProcessing();
+	}
+	
+	public void setQtyRecordsPerProcessing(int qtyRecordsPerProcessing) {
+		getController().getOperationConfig().setMaxRecordPerProcessing(qtyRecordsPerProcessing);
 	}
 	
 	private Engine retrieveAndRemoveSleepingEngine() {
