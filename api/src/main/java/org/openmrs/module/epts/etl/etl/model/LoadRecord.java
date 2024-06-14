@@ -21,10 +21,12 @@ import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
+import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseOperationHeaderResult;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -231,15 +233,19 @@ public class LoadRecord {
 		}
 	}
 	
-	protected void loadDstParentInfo(Connection srcConn, Connection dstConn)
+	protected DatabaseOperationItemResult loadDstParentInfo(Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, MissingParentException, DBException {
 		
-		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo()))
-			return;
+		DatabaseOperationItemResult itemResult = new DatabaseOperationItemResult(getRecord());
+		
+		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo())) {
+			return itemResult;
+		}
 		
 		for (ParentTable refInfo : getDstConf().getParentRefInfo()) {
-			if (refInfo.isMetadata())
+			if (refInfo.isMetadata()) {
 				continue;
+			}
 			
 			if (!refInfo.isFullLoaded()) {
 				refInfo.tryToGenerateTableAlias(this.getEtlConfiguration());
@@ -286,8 +292,27 @@ public class LoadRecord {
 			EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(tabConfInSrc, key, srcConn);
 			
 			if (parentInOrigin == null) {
-				throw new MissingParentException(getRecord(), key, refInfo.getTableName(),
-				        this.getDstConf().getOriginAppLocationCode(), refInfo, null);
+				
+				if (refInfo.hasDefaultValueDueInconsistency()) {
+					
+					if (refInfo.useSimplePk()) {
+						key.asSimpleKey().setValue(refInfo.getDefaultValueDueInconsistency());
+					} else
+						throw new ForbiddenOperationException(
+						        "There is a defaultValueDueInconsistency but the key is not simple on table "
+						                + refInfo.getTableName());
+					
+					parentInOrigin = DatabaseObjectDAO.getByOid(tabConfInSrc, key, srcConn);
+				}
+				
+				itemResult.addInconsistence(
+				    InconsistenceInfo.generate(getRecord().generateTableName(), getRecord().getObjectId(),
+				        refInfo.getTableName(), refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
+				        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+				
+				if (parentInOrigin == null) {
+					continue;
+				}
 			}
 			
 			EtlDatabaseObject parent;
@@ -310,6 +335,8 @@ public class LoadRecord {
 			getRecord().changeParentValue(refInfo, parent);
 			
 		}
+		
+		return itemResult;
 	}
 	
 	private EtlDatabaseObject retrieveParentByOid(ParentTable refInfo, EtlDatabaseObject parentInOrigin, Connection dstConn)
@@ -396,19 +423,19 @@ public class LoadRecord {
 		DatabaseOperationHeaderResult currResult = new DatabaseOperationHeaderResult();
 		
 		for (LoadRecord loadRecord : mergingRecs) {
-			try {
-				loadRecord.loadDstParentInfo(srcConn, dstConn);
-				
+			DatabaseOperationItemResult r = loadRecord.loadDstParentInfo(srcConn, dstConn);
+			
+			if (!r.hasUnresolvedInconsistences()) {
 				objects.add(loadRecord.getRecord());
-				
-			}
-			catch (DBException e) {
-				currResult.addToRecordsWithUnresolvedErrors(loadRecord.getRecord(), e);
 			}
 			
+			if (r.hasInconsistences()) {
+				currResult.addToRecordsWithUnresolvedErrors(r);
+			}
 		}
 		
-		currResult.addAllFromOtherResult(DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn));
+		currResult.addAllFromOtherResult(
+		    DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn));
 		
 		if (config.hasParentRefInfo()) {
 			
@@ -420,7 +447,7 @@ public class LoadRecord {
 				}
 			}
 		}
-
+		
 		return currResult;
 	}
 	

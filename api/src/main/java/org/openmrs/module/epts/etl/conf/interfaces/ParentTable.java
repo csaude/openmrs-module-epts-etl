@@ -1,6 +1,5 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +13,6 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -142,6 +140,10 @@ public interface ParentTable extends RelatedTable {
 	
 	void setSetNullDueInconsistency(boolean setNullDueInconsistency);
 	
+	default boolean hasDefaultValueDueInconsistency() {
+		return getDefaultValueDueInconsistency() != null;
+	}
+	
 	default boolean hasMoreThanOneConditionalFields() {
 		if (hasConditionalFields()) {
 			return utilities.arrayHasMoreThanOneElements(getConditionalFields());
@@ -174,40 +176,6 @@ public interface ParentTable extends RelatedTable {
 		}
 		
 		return f;
-	}
-	
-	default ParentTable tryToCloneForOtherTable(TableConfiguration tabConf, Connection conn) throws DBException {
-		if (!isManualyConfigured())
-			return null;
-		
-		ParentTable p = null;
-		
-		if (tabConf.containsAllFields(parseMappingToChildFields())) {
-			
-			if (DBUtilities.isTableExists(tabConf.getSchema(), getTableName(), conn)) {
-				p = new ParentTableImpl();
-				p.setTableName(getTableName());
-				p.setSchema(tabConf.getSchema());
-				
-				p.loadFields(conn);
-				p.setChildTableConf(tabConf);
-				p.setConditionalFields(getConditionalFields());
-				
-				if (p.containsAllFields(parseMappingToParentFields())) {
-					for (RefMapping map : getRefMapping()) {
-						RefMapping cloned = map.clone();
-						cloned.setParentTabConf((ParentTableImpl) p);
-						
-						p.addRefMapping(cloned);
-						
-					}
-				}
-				
-			}
-			
-		}
-		
-		return p;
 	}
 	
 	default void addRefMapping(RefMapping cloned) {

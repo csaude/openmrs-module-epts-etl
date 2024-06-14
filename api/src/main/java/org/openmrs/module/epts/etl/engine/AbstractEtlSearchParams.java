@@ -191,17 +191,16 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 		int maxRecordId = (int) progressInfo.getProgressMeter().getMaxRecordId();
 		int minRecordId = (int) progressInfo.getProgressMeter().getMinRecordId();
 		
-		int qtyRecordsBetweenLimits = maxRecordId - minRecordId+1;
 		
-		if (qtyRecordsBetweenLimits == 0) {
-			return 0;
-		}
+		long qtyRecordsBetweenLimits = maxRecordId - minRecordId+1;
 		
 		int qtyProcessors = utilities.getAvailableProcessors();
 		
-		//int qtyProcessors = 1;
+		if (qtyProcessors > qtyRecordsBetweenLimits) {
+			qtyProcessors = (int) qtyRecordsBetweenLimits;
+		}
 		
-		int qtyRecordsPerEngine = qtyRecordsBetweenLimits / qtyProcessors;
+		long qtyRecordsPerEngine = qtyRecordsBetweenLimits / qtyProcessors;
 		
 		List<ThreadRecordIntervalsManager> generatedLimits = new ArrayList<>();
 		
@@ -213,7 +212,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 			ThreadRecordIntervalsManager limits;
 			
 			if (initialLimits == null) {
-				limits = new ThreadRecordIntervalsManager(minRecordId, minRecordId + qtyRecordsPerEngine - 1, qtyRecordsPerEngine);
+				limits = new ThreadRecordIntervalsManager(minRecordId, minRecordId + qtyRecordsPerEngine - 1, (int) qtyRecordsPerEngine);
 				initialLimits = limits;
 			} else {
 				// Last processor
@@ -224,7 +223,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlObject> extends Abstr
 					limits = new ThreadRecordIntervalsManager(min, maxRecordId, (int) process);
 				} else {
 					limits = new ThreadRecordIntervalsManager(initialLimits.getThreadMaxRecordId() + 1,
-					        initialLimits.getThreadMaxRecordId() + qtyRecordsPerEngine, qtyRecordsPerEngine);
+					        initialLimits.getThreadMaxRecordId() + qtyRecordsPerEngine, (int) qtyRecordsPerEngine);
 				}
 				initialLimits = limits;
 			}

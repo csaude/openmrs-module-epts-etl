@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
-import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -51,20 +50,34 @@ public class DatabaseOperationHeaderResult {
 		this.recordsWithNoError.addAll(records);
 	}
 	
+	public void setRecordsWithNoError(List<EtlDatabaseObject> recordsWithNoError) {
+		this.recordsWithNoError = recordsWithNoError;
+	}
+	
 	public void addToRecordsWithNoError(EtlDatabaseObject record) {
-		if (this.recordsWithNoError == null) {
-			this.recordsWithNoError = new ArrayList<>();
+		if (this.getRecordsWithNoError() == null) {
+			this.setRecordsWithNoError(new ArrayList<>());
 		}
 		
-		this.recordsWithNoError.add(record);
+		if (!this.getRecordsWithNoError().contains(record)) {
+			this.getRecordsWithNoError().add(record);
+		}
 	}
 	
 	public void addToRecordsWithUnresolvedErrors(EtlDatabaseObject record, DBException e) {
+		addToRecordsWithUnresolvedErrors(new DatabaseOperationItemResult(record, e));
+	}
+	
+	public void addToRecordsWithUnresolvedErrors(DatabaseOperationItemResult rec) {
 		if (this.recordsWithUnresolvedErrors == null) {
 			this.recordsWithUnresolvedErrors = new ArrayList<>();
 		}
 		
-		this.recordsWithUnresolvedErrors.add(new DatabaseOperationItemResult(record, e));
+		if (!getRecordsWithUnresolvedErrors().contains(rec)) {
+			this.getRecordsWithUnresolvedErrors().add(rec);
+		} else {
+			utilities.updateOnArray(getRecordsWithUnresolvedErrors(), rec, rec);
+		}
 	}
 	
 	public List<DatabaseOperationItemResult> getRecordsWithUnresolvedErrors() {
@@ -99,15 +112,10 @@ public class DatabaseOperationHeaderResult {
 	public void documentErrors(Connection srcConn, Connection dstConn) throws DBException {
 		
 		for (DatabaseOperationItemResult r : getRecordsWithUnresolvedErrors()) {
-			if (r.getException().isIntegrityConstraintViolationException()) {
-				MissingParentException e = (MissingParentException) r.getException();
-				
-				EtlDatabaseObject rec = r.getRecord();
-				
-				InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(), rec.getObjectId(),
-				    e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
-				
-				inconsistenceInfo.save((TableConfiguration) rec.getRelatedConfiguration(), srcConn);
+			if (r.hasInconsistences()) {
+				for (InconsistenceInfo i : r.getInconsistenceInfo()) {
+					i.save((TableConfiguration) r.getRecord().getRelatedConfiguration(), srcConn);
+				}
 			} else {
 				
 				EtlConfigurationTableConf etlErr = r.getRecord().getRelatedConfiguration().getRelatedSyncConfiguration()
@@ -137,8 +145,9 @@ public class DatabaseOperationHeaderResult {
 	
 	public void printStackErrorOfFatalErrors() {
 		for (DatabaseOperationItemResult r : getRecordsWithUnresolvedErrors()) {
-			
-			r.getException().printStackTrace();
+			if (r.hasException()) {
+				r.getException().printStackTrace();
+			}
 		}
 	}
 	

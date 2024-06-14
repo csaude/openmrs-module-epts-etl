@@ -8,20 +8,27 @@ import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class InconsistenceInfo extends BaseVO{
+public class InconsistenceInfo extends BaseVO {
+	
 	private Integer id;
+	
 	private String tableName;
+	
 	private Oid recordId;
+	
 	private String parentTableName;
-	private Integer parentId;
-	private Integer defaultParentId;
+	
+	private Object parentId;
+	
+	private Object defaultParentId;
+	
 	private String recordOriginLocationCode;
 	
 	public InconsistenceInfo() {
 	}
 	
-	
-	public InconsistenceInfo(String tableName, Oid recordId, String parentTableName, Integer parentId, Integer defaultParentId, String recordOriginLocationCode) {
+	public InconsistenceInfo(String tableName, Oid recordId, String parentTableName, Object parentId, Object defaultParentId,
+	    String recordOriginLocationCode) {
 		this.tableName = tableName;
 		this.recordId = recordId;
 		this.parentTableName = parentTableName;
@@ -29,78 +36,80 @@ public class InconsistenceInfo extends BaseVO{
 		this.parentId = parentId;
 		this.defaultParentId = defaultParentId;
 	}
-
+	
 	public String getRecordOriginLocationCode() {
 		return recordOriginLocationCode;
 	}
-
-
+	
 	public void setRecordOriginLocationCode(String recordOriginLocationCode) {
 		this.recordOriginLocationCode = recordOriginLocationCode;
 	}
-
-
+	
 	public Integer getId() {
 		return id;
 	}
-
+	
 	public void setId(Integer id) {
 		this.id = id;
 	}
-
+	
 	public String getTableName() {
 		return tableName;
 	}
-
+	
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
 	}
-
+	
 	public Oid getRecordId() {
 		return recordId;
 	}
-
+	
 	public void setRecordId(Oid recordId) {
 		this.recordId = recordId;
 	}
-
+	
 	public String getParentTableName() {
 		return parentTableName;
 	}
-
+	
 	public void setParentTableName(String parentTableName) {
 		this.parentTableName = parentTableName;
 	}
-
-	public Integer getParentId() {
+	
+	public Object getParentId() {
 		return parentId;
 	}
-
-	public void setParentId(Integer parentId) {
+	
+	public void setParentId(Object parentId) {
 		this.parentId = parentId;
 	}
 	
-	public Integer getDefaultParentId() {
+	public Object getDefaultParentId() {
 		return defaultParentId;
 	}
 	
-	public void setDefaultParentId(Integer defaultParentId) {
+	public void setDefaultParentId(Object defaultParentId) {
 		this.defaultParentId = defaultParentId;
 	}
 	
-	public static InconsistenceInfo generate(EtlDatabaseObject record, EtlDatabaseObject parent, Integer defaultParentId, String recordOriginLocationCode) {
-		InconsistenceInfo info = new InconsistenceInfo(record.generateTableName(), record.getObjectId(), parent.generateTableName(), parent.getObjectId().getSimpleValueAsInt(), defaultParentId, recordOriginLocationCode);
-	
+	public static InconsistenceInfo generate(EtlDatabaseObject record, EtlDatabaseObject parent, Object defaultParentId,
+	        String recordOriginLocationCode) {
+		InconsistenceInfo info = new InconsistenceInfo(record.generateTableName(), record.getObjectId(),
+		        parent.generateTableName(), parent.getObjectId().getSimpleValueAsInt(), defaultParentId,
+		        recordOriginLocationCode);
+		
 		return info;
 	}
 	
-	public static InconsistenceInfo generate(String tableName, Oid recordId, String parentTableName, Integer parentId, Integer defaultParentId, String recordOriginLocationCode) {
-		InconsistenceInfo info = new InconsistenceInfo(tableName, recordId, parentTableName, parentId, defaultParentId, recordOriginLocationCode);
-	
+	public static InconsistenceInfo generate(String tableName, Oid recordId, String parentTableName, Object parentId,
+	        Object defaultParentId, String recordOriginLocationCode) {
+		InconsistenceInfo info = new InconsistenceInfo(tableName, recordId, parentTableName, parentId, defaultParentId,
+		        recordOriginLocationCode);
+		
 		return info;
 	}
-
-
+	
 	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		InconsistenceInfoDAO.insert(this, tableConfiguration, conn);
 	}

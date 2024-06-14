@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -129,17 +128,10 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 					if (DBUtilities.isTableExists(map.getSchema(), map.getTableName(), dstConn)) {
 						map.loadFields(dstConn);
 						
-						if (getSrcConf().hasParents()) {
-							for (ParentTable p : getSrcConf().getParents()) {
-								ParentTable cloned = p.tryToCloneForOtherTable(map, dstConn);
-								
-								if (cloned != null) {
-									map.addParent(cloned);
-								}
-								
-							}
+						if (map.isAutomaticalyGenerated() && getSrcConf().hasParents()) {
+							map.setParents(getSrcConf().tryToCloneAllParentsForOtherTable(map, dstConn));
 						}
-						
+				
 						map.fullLoad(dstConn);
 					}
 					

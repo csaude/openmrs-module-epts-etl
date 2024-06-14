@@ -571,10 +571,21 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 										    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
 										mixedConfiguredRef.getSimpleRefMapping().setSetNullDueInconsistency(
 										    manualConfiguredRefInfo.isSetNullDueInconsistency());
+										
+										mixedConfiguredRef.setDefaultValueDueInconsistency(
+										    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
+										mixedConfiguredRef.setSetNullDueInconsistency(
+										    manualConfiguredRefInfo.isSetNullDueInconsistency());
+										
 									}
 									
 									if (autoLoadedRefInfo.equals(mixedConfiguredRef)) {
 										autoLoadedRefInfo.setConditionalFields(mixedConfiguredRef.getConditionalFields());
+										
+										autoLoadedRefInfo.setDefaultValueDueInconsistency(
+										    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
+										autoLoadedRefInfo.setSetNullDueInconsistency(
+										    manualConfiguredRefInfo.isSetNullDueInconsistency());
 										
 										for (RefMapping map : autoLoadedRefInfo.getRefMapping()) {
 											RefMapping configuredMap = mixedConfiguredRef
@@ -1385,6 +1396,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return this.getPrimaryKey() != null && ((PrimaryKey) this.getPrimaryKey()).isSimpleNumericKey();
 	}
 	
+	default boolean useSimplePk() {
+		return this.getPrimaryKey() != null && ((PrimaryKey) this.getPrimaryKey()).isSimpleNumericKey();
+	}
+	
 	default boolean useAutoIncrementId(Connection conn) throws DBException {
 		
 		if (this.getPrimaryKey() == null || this.getPrimaryKey().isCompositeKey()) {
@@ -1964,7 +1979,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean containsAllFields(List<Field> fields) {
-		if (!hasFields())
+		if (!hasFields() || fields == null)
 			return false;
 		
 		for (Field f : fields) {
@@ -1974,4 +1989,41 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		return true;
 	}
+	
+	default List<ParentTable> tryToCloneAllParentsForOtherTable(TableConfiguration tableToCloneTo, Connection conn)
+	        throws DBException {
+		
+		if (!hasParents())
+			return null;
+		
+		List<ParentTable> parents = new ArrayList<>();
+		
+		for (ParentTable parentToCloneFrom : getParents()) {
+			if (DBUtilities.isTableExists(tableToCloneTo.getSchema(), parentToCloneFrom.getTableName(), conn)) {
+				ParentTable clonedParent = new ParentTableImpl();
+				
+				clonedParent.setTableName(parentToCloneFrom.getTableName());
+				clonedParent.setSchema(tableToCloneTo.getSchema());
+				clonedParent.loadFields(conn);
+				clonedParent.setChildTableConf(tableToCloneTo);
+				clonedParent.setConditionalFields(parentToCloneFrom.getConditionalFields());
+				clonedParent.setDefaultValueDueInconsistency(parentToCloneFrom.getDefaultValueDueInconsistency());
+				clonedParent.setSetNullDueInconsistency(parentToCloneFrom.isSetNullDueInconsistency());
+				
+				if (clonedParent.containsAllFields(parentToCloneFrom.parseMappingToParentFields())) {
+					for (RefMapping map : parentToCloneFrom.getRefMapping()) {
+						RefMapping clonedMap = map.clone();
+						clonedMap.setParentTabConf((ParentTableImpl) clonedParent);
+						
+						clonedParent.addRefMapping(clonedMap);
+					}
+				}
+				
+				parents.add(clonedParent);
+			}
+		}
+		
+		return parents;
+	}
+	
 }

@@ -15,7 +15,11 @@ public class PrimaryKey extends UniqueKeyInfo {
 	}
 	
 	public boolean isSimpleNumericKey() {
-		return !isCompositeKey() && retrieveSimpleKey().isNumericColumnType();
+		return isSimpleKey() && retrieveSimpleKey().isNumericColumnType();
+	}
+	
+	public boolean isSimpleKey() {
+		return !isCompositeKey();
 	}
 	
 	public Oid generateOid(EtlDatabaseObject obj) {

@@ -112,4 +112,12 @@ public class Oid extends PrimaryKey {
 		return false;
 	}
 	
+	public Key asSimpleKey() {
+		if (isSimpleKey()) {
+			return getFields().get(0);
+		}
+		
+		throw new ForbiddenOperationException("The key is composite");
+	}
+	
 }
