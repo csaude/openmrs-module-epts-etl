@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.base.VO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
@@ -170,10 +171,12 @@ public abstract class AbstractSearchParams<T extends VO> {
 		return param.toString();
 	}
 	
-	public abstract SearchClauses<T> generateSearchClauses(Connection conn) throws DBException;
+	public abstract SearchClauses<T> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	        Connection dstConn) throws DBException;
 	
-	public String generateFulfilledQueryClause(Connection conn) throws DBException {
-		SearchClauses<T> searchClauses = generateSearchClauses(conn);
+	public String generateFulfilledQueryClause(IntervalExtremeRecord recordLimits, Connection srcConn, Connection dstConn)
+	        throws DBException {
+		SearchClauses<T> searchClauses = generateSearchClauses(recordLimits, srcConn, dstConn);
 		
 		String fulfiledQuery = "";
 		String clauses = searchClauses.getClauses();

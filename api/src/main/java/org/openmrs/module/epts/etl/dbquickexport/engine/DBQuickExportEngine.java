@@ -7,27 +7,20 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportController;
-import org.openmrs.module.epts.etl.dbquickexport.model.DBQuickExportSearchParams;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
-public class DBQuickExportEngine extends TaskProcessor {
+public class DBQuickExportEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public DBQuickExportEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public DBQuickExportEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
-	}
-	
-	@Override
-	protected boolean mustDoFinalCheck() {
-		return false;
 	}
 	
 	@Override
@@ -36,15 +29,12 @@ public class DBQuickExportEngine extends TaskProcessor {
 	}
 	
 	@Override
-	protected void restart() {
-	}
-	
-	@Override
-	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		try {
-			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
+			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(records, EtlDatabaseObject.class);
 			
-			this.getMonitor().logInfo("GENERATING '" + etlObjects.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
+			this.getMonitor().logInfo("GENERATING '" + records.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
 			
 			for (EtlDatabaseObject rec : syncRecordsAsOpenMRSObjects) {
 				rec.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(getSrcConf().getUniqueKeys(), rec));
@@ -56,10 +46,11 @@ public class DBQuickExportEngine extends TaskProcessor {
 			jsonInfo.clearOriginApplicationCodeForAllChildren();
 			
 			//Generates the File to store the tmp json file
-			File jsonFIle = generateJSONTempFile(jsonInfo, syncRecordsAsOpenMRSObjects.get(0).getObjectId().getSimpleValueAsInt(),
-			    syncRecordsAsOpenMRSObjects.get(etlObjects.size() - 1).getObjectId().getSimpleValueAsInt());
+			File jsonFIle = generateJSONTempFile(jsonInfo,
+			    syncRecordsAsOpenMRSObjects.get(0).getObjectId().getSimpleValueAsInt(),
+			    syncRecordsAsOpenMRSObjects.get(records.size() - 1).getObjectId().getSimpleValueAsInt());
 			
-			this.getMonitor().logInfo("WRITING '" + etlObjects.size() + "' " + getMainSrcTableName() + " TO JSON FILE ["
+			this.getMonitor().logInfo("WRITING '" + records.size() + "' " + getMainSrcTableName() + " TO JSON FILE ["
 			        + jsonFIle.getAbsolutePath() + ".json]");
 			
 			//Try to remove not terminate files
@@ -72,9 +63,9 @@ public class DBQuickExportEngine extends TaskProcessor {
 			
 			this.logDebug("JSON [" + jsonFIle + ".json] CREATED!");
 			
-			this.logDebug("MARKING '" + etlObjects.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED");
+			this.logDebug("MARKING '" + records.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED");
 			
-			this.logDebug("MARKING '" + etlObjects.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED FINISHED");
+			this.logDebug("MARKING '" + records.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED FINISHED");
 			
 			this.logDebug("MAKING FILES AVALIABLE");
 			
@@ -88,6 +79,12 @@ public class DBQuickExportEngine extends TaskProcessor {
 				
 				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
 			}
+		
+			EtlOperationResultHeader<EtlDatabaseObject> h = new EtlOperationResultHeader<>();
+			
+			h.addAllToRecordsWithNoError(syncRecordsAsOpenMRSObjects);
+			
+			return h;	
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -101,18 +98,7 @@ public class DBQuickExportEngine extends TaskProcessor {
 		}
 	}
 	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DBQuickExportSearchParams(this.getEtlConfiguration(),
-		        limits);
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
-		
-		return searchParams;
-	}
-	
 	private File generateJSONTempFile(SyncJSONInfo jsonInfo, Integer startRecord, Integer lastRecord) throws IOException {
-		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcConf(), startRecord,
-		    lastRecord);
+		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcConf(), startRecord, lastRecord);
 	}
 }

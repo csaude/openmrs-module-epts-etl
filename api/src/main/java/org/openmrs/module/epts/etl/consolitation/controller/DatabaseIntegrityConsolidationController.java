@@ -1,12 +1,18 @@
 package org.openmrs.module.epts.etl.consolitation.controller;
 
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import java.sql.Connection;
+import java.util.List;
+
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.consolitation.engine.DatabaseIntegrityConsolidationEngine;
+import org.openmrs.module.epts.etl.consolitation.model.DatabaseIntegrityConsolidationSearchParams;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -18,7 +24,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class DatabaseIntegrityConsolidationController extends OperationController {
+public class DatabaseIntegrityConsolidationController extends OperationController<EtlDatabaseObject> {
 	
 	public DatabaseIntegrityConsolidationController(ProcessController processController,
 	    EtlOperationConfig operationConfig) {
@@ -26,18 +32,19 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
 		return new DatabaseIntegrityConsolidationEngine(monitor, limits);
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
-			return DatabaseObjectDAO.getFirstRecord(config.getSrcConf(), conn);
+			return DatabaseObjectDAO.getFirstRecord(engine.getSrcConf(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -51,13 +58,13 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
-			return DatabaseObjectDAO.getLastRecord(config.getSrcConf(), conn);
+			return DatabaseObjectDAO.getLastRecord(engine.getSrcConf(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -75,7 +82,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		return false;
 	}
 	
-	public OpenConnection openConnection() throws DBException {
+	public OpenConnection openSrcConnection() throws DBException {
 		OpenConnection conn = getDefaultApp().openConnection();
 		
 		try {
@@ -94,4 +101,23 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	public boolean canBeRunInMultipleEngines() {
 		return false;
 	}
+	
+	@Override
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
+		
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new DatabaseIntegrityConsolidationSearchParams(engine,
+		        intervalsMgt);
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		searchParams.setSyncStartDate(this.getProgressInfo().getStartTime());
+		
+		return searchParams;
+	}
+	
+	@Override
+	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
+		// TODO Auto-generated method stub
+		
+	}
+	
 }

@@ -5,14 +5,16 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.load.engine.DataLoadEngine;
 import org.openmrs.module.epts.etl.load.model.LoadSyncDataSearchParams;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -32,16 +34,27 @@ public class DataLoadController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
 		return new DataLoadEngine(monitor, limits);
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
-		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, config,
-		        null);
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
 		
-		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(searchParams);
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new LoadSyncDataSearchParams(engine, intervalsMgt);
+		searchParams.setQtdRecordPerSelected(2500);
+		
+		return searchParams;
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
+		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams((Engine<EtlDatabaseObject>) engine, null);
+		
+		File[] files = getSyncDirectory(engine.getSrcConf()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0)
 			return 0;
@@ -57,12 +70,12 @@ public class DataLoadController extends EtlController {
 		return Long.parseLong(pats[pats.length - 2]);
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
-		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams(this, config,
-		        null);
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
+		LoadSyncDataSearchParams searchParams = new LoadSyncDataSearchParams((Engine<EtlDatabaseObject>) engine, null);
 		
-		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(searchParams);
+		File[] files = getSyncDirectory(engine.getSrcConf()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0)
 			return 0;

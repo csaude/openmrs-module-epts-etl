@@ -3,9 +3,13 @@ package org.openmrs.module.epts.etl.data.validation.missingrecords.controller;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.data.validation.missingrecords.engine.DetectMIssingRecordsEngine;
+import org.openmrs.module.epts.etl.data.validation.missingrecords.model.DetectMissingRecordsSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 
 public class DetectMissingRecordsController extends EtlController {
@@ -21,7 +25,16 @@ public class DetectMissingRecordsController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
 		return new DetectMIssingRecordsEngine(monitor, limits);
 	}
+	
+	@Override
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
+		
+		return new DetectMissingRecordsSearchParams(engine, intervalsMgt);
+	}
+	
 }

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -14,15 +15,26 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 /**
  * Contains the information related to database operation on a batch of records
  */
-public class DatabaseOperationHeaderResult {
+public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private List<DatabaseOperationItemResult> recordsWithUnresolvedErrors;
+	private List<EtlOperationItemResult<T>> recordsWithUnresolvedErrors;
 	
-	private List<EtlDatabaseObject> recordsWithNoError;
+	private List<EtlOperationItemResult<T>> recordsWithResolvedErrors;
 	
-	public void addAllFromOtherResult(DatabaseOperationHeaderResult otherResult) {
+	private List<T> recordsWithNoError;
+	
+	public EtlOperationResultHeader() {
+		
+	}
+	
+	public EtlOperationResultHeader(List<T> recordsWithNoError) {
+		this.recordsWithNoError = recordsWithNoError;
+		
+	}
+	
+	public void addAllFromOtherResult(EtlOperationResultHeader<T> otherResult) {
 		if (otherResult != null) {
 			if (otherResult.hasRecordsWithNoError()) {
 				addAllToRecordsWithNoError(otherResult.getRecordsWithNoError());
@@ -31,10 +43,23 @@ public class DatabaseOperationHeaderResult {
 			if (otherResult.hasRecordsWithUnresolvedErrors()) {
 				addAllToRecordsWithUnresolvedErrors(otherResult.getRecordsWithUnresolvedErrors());
 			}
+			
+			if (otherResult.hasRecordsWithResolvedErrors()) {
+				addAllToRecordsWithResolvedErrors(otherResult.getRecordsWithResolvedErrors());
+			}
+			
 		}
 	}
 	
-	private void addAllToRecordsWithUnresolvedErrors(List<DatabaseOperationItemResult> records) {
+	private void addAllToRecordsWithResolvedErrors(List<EtlOperationItemResult<T>> records) {
+		if (this.recordsWithResolvedErrors == null) {
+			this.recordsWithResolvedErrors = new ArrayList<>();
+		}
+		
+		this.recordsWithResolvedErrors.addAll(records);
+	}
+	
+	private void addAllToRecordsWithUnresolvedErrors(List<EtlOperationItemResult<T>> records) {
 		if (this.recordsWithUnresolvedErrors == null) {
 			this.recordsWithUnresolvedErrors = new ArrayList<>();
 		}
@@ -42,7 +67,7 @@ public class DatabaseOperationHeaderResult {
 		this.recordsWithUnresolvedErrors.addAll(records);
 	}
 	
-	public void addAllToRecordsWithNoError(List<EtlDatabaseObject> records) {
+	public void addAllToRecordsWithNoError(List<T> records) {
 		if (this.recordsWithNoError == null) {
 			this.recordsWithNoError = new ArrayList<>();
 		}
@@ -50,11 +75,11 @@ public class DatabaseOperationHeaderResult {
 		this.recordsWithNoError.addAll(records);
 	}
 	
-	public void setRecordsWithNoError(List<EtlDatabaseObject> recordsWithNoError) {
+	public void setRecordsWithNoError(List<T> recordsWithNoError) {
 		this.recordsWithNoError = recordsWithNoError;
 	}
 	
-	public void addToRecordsWithNoError(EtlDatabaseObject record) {
+	public void addToRecordsWithNoError(T record) {
 		if (this.getRecordsWithNoError() == null) {
 			this.setRecordsWithNoError(new ArrayList<>());
 		}
@@ -64,11 +89,32 @@ public class DatabaseOperationHeaderResult {
 		}
 	}
 	
-	public void addToRecordsWithUnresolvedErrors(EtlDatabaseObject record, DBException e) {
-		addToRecordsWithUnresolvedErrors(new DatabaseOperationItemResult(record, e));
+	
+	public void addToRecordsWithResolvedErrors(T record, DBException e) {
+		addToRecordsWithResolvedErrors(new EtlOperationItemResult<T>(record, e));
 	}
 	
-	public void addToRecordsWithUnresolvedErrors(DatabaseOperationItemResult rec) {
+	public void addToRecordsWithResolvedErrors(T record, InconsistenceInfo i) {
+		addToRecordsWithResolvedErrors(new EtlOperationItemResult<T>(record, i));
+	}
+	
+	public void addToRecordsWithResolvedErrors(EtlOperationItemResult<T> rec) {
+		if (this.recordsWithResolvedErrors == null) {
+			this.recordsWithResolvedErrors = new ArrayList<>();
+		}
+		
+		if (!getRecordsWithResolvedErrors().contains(rec)) {
+			this.getRecordsWithResolvedErrors().add(rec);
+		} else {
+			utilities.updateOnArray(getRecordsWithResolvedErrors(), rec, rec);
+		}
+	}
+	
+	public void addToRecordsWithUnresolvedErrors(T record, DBException e) {
+		addToRecordsWithUnresolvedErrors(new EtlOperationItemResult<T>(record, e));
+	}
+	
+	public void addToRecordsWithUnresolvedErrors(EtlOperationItemResult<T> rec) {
 		if (this.recordsWithUnresolvedErrors == null) {
 			this.recordsWithUnresolvedErrors = new ArrayList<>();
 		}
@@ -80,16 +126,24 @@ public class DatabaseOperationHeaderResult {
 		}
 	}
 	
-	public List<DatabaseOperationItemResult> getRecordsWithUnresolvedErrors() {
+	public List<EtlOperationItemResult<T>> getRecordsWithResolvedErrors() {
+		return recordsWithResolvedErrors;
+	}
+	
+	public List<EtlOperationItemResult<T>> getRecordsWithUnresolvedErrors() {
 		return recordsWithUnresolvedErrors;
 	}
 	
-	public List<EtlDatabaseObject> getRecordsWithNoError() {
+	public List<T> getRecordsWithNoError() {
 		return recordsWithNoError;
 	}
 	
 	public boolean hasRecordsWithUnresolvedErrors() {
 		return utilities.arrayHasElement(getRecordsWithUnresolvedErrors());
+	}
+	
+	public boolean hasRecordsWithResolvedErrors() {
+		return utilities.arrayHasElement(getRecordsWithResolvedErrors());
 	}
 	
 	public boolean hasRecordsWithNoError() {
@@ -100,7 +154,7 @@ public class DatabaseOperationHeaderResult {
 		if (!hasRecordsWithUnresolvedErrors())
 			return false;
 		
-		for (DatabaseOperationItemResult r : getRecordsWithUnresolvedErrors()) {
+		for (EtlOperationItemResult<T> r : getRecordsWithUnresolvedErrors()) {
 			if (r.hasFatalError()) {
 				return true;
 			}
@@ -111,7 +165,17 @@ public class DatabaseOperationHeaderResult {
 	
 	public void documentErrors(Connection srcConn, Connection dstConn) throws DBException {
 		
-		for (DatabaseOperationItemResult r : getRecordsWithUnresolvedErrors()) {
+		List<EtlOperationItemResult<T>> toDocument = new ArrayList<>();
+		
+		if (hasRecordsWithUnresolvedErrors()) {
+			toDocument.addAll(getRecordsWithUnresolvedErrors());
+		}
+		
+		if (hasRecordsWithResolvedErrors()) {
+			toDocument.addAll(getRecordsWithResolvedErrors());
+		}
+		
+		for (EtlOperationItemResult<T> r : toDocument) {
 			if (r.hasInconsistences()) {
 				for (InconsistenceInfo i : r.getInconsistenceInfo()) {
 					i.save((TableConfiguration) r.getRecord().getRelatedConfiguration(), srcConn);
@@ -144,11 +208,40 @@ public class DatabaseOperationHeaderResult {
 	}
 	
 	public void printStackErrorOfFatalErrors() {
-		for (DatabaseOperationItemResult r : getRecordsWithUnresolvedErrors()) {
+		for (EtlOperationItemResult<T> r : getRecordsWithUnresolvedErrors()) {
 			if (r.hasException()) {
 				r.getException().printStackTrace();
 			}
 		}
+	}
+	
+	public static <T extends EtlDatabaseObject> EtlOperationResultHeader<T> combineAll(
+	        List<EtlOperationResultHeader<T>> allResults) {
+		
+		if (!utilities.arrayHasElement(allResults))
+			return null;
+		
+		EtlOperationResultHeader<T> result = allResults.get(0);
+		
+		for (int i = 1; i < allResults.size(); i++) {
+			result.addAllFromOtherResult(allResults.get(i));
+		}
+		
+		return result;
+	}
+	
+	public void throwDefaultExcetions() throws DBException {
+		for (EtlOperationItemResult<T> o : getRecordsWithUnresolvedErrors()) {
+			if (o.getException() != null) {
+				throw o.getException();
+			}
+		}
+		
+		throw new ForbiddenOperationException("No exception found");
+	}
+	
+	public int countAllSuccessfulyProcessedRecords() {
+		return utilities.arraySize(getRecordsWithNoError()) + utilities.arraySize(getRecordsWithResolvedErrors());
 	}
 	
 }

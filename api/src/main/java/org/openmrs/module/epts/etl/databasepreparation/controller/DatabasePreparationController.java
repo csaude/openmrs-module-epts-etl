@@ -1,37 +1,47 @@
 package org.openmrs.module.epts.etl.databasepreparation.controller;
 
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import java.sql.Connection;
+import java.util.List;
+
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.databasepreparation.engine.DatabasePreparationEngine;
+import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationRecord;
+import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
  * This class is responsible for data base preparation
  * 
  * @author jpboane
  */
-public class DatabasePreparationController extends OperationController {
+public class DatabasePreparationController extends OperationController<DatabasePreparationRecord> {
 	
 	public DatabasePreparationController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<DatabasePreparationRecord> initRelatedEngine(Engine<DatabasePreparationRecord> monitor,
+	        IntervalExtremeRecord limits) {
+		
 		return new DatabasePreparationEngine(monitor, limits);
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		return 1;
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		return 1;
 	}
 	
@@ -43,6 +53,21 @@ public class DatabasePreparationController extends OperationController {
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return false;
+	}
+	
+	@Override
+	public AbstractEtlSearchParams<DatabasePreparationRecord> initMainSearchParams(ThreadRecordIntervalsManager<DatabasePreparationRecord> intervalsMgt,
+	        Engine<DatabasePreparationRecord> engine) {
+		
+		DatabasePreparationEngine processor = (DatabasePreparationEngine) initRelatedEngine(engine, null);
+		
+		return new DatabasePreparationSearchParams(processor, intervalsMgt);
+	}
+	
+	@Override
+	public void afterEtl(List<DatabasePreparationRecord> objs, Connection srcConn, Connection dstConn) throws DBException {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

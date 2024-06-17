@@ -3,15 +3,16 @@ package org.openmrs.module.epts.etl.changedrecordsdetector.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -23,13 +24,11 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 	
 	private EtlOperationType type;
 	
-	public ChangedRecordsDetectorSearchParams(EtlItemConfiguration config, String appCode, ThreadRecordIntervalsManager limits,
-	    EtlOperationType type, Connection conn) {
-		super(config, limits, null);
+	public ChangedRecordsDetectorSearchParams(Engine<EtlDatabaseObject> engine, String appCode,
+	    ThreadRecordIntervalsManager limits, EtlOperationType type) {
+		super(engine, limits);
 		
 		this.appCode = appCode;
-		
-		setOrderByFields(config.getSrcConf().getPrimaryKey().parseFieldNamesToArray());
 		
 		this.type = type;
 	}
@@ -39,7 +38,8 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		AbstractTableConfiguration tableInfo = getConfig().getSrcConf();
@@ -76,11 +76,7 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 		}
 		
 		if (!this.selectAllRecords) {
-			if (getLimits() != null) {
-				searchClauses.addToClauses(tableInfo.getPrimaryKey() + " between ? and ?");
-				searchClauses.addToParameters(this.getLimits().getCurrentFirstRecordId());
-				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
-			}
+			tryToAddLimits(limits, searchClauses);
 		}
 		
 		tryToAddExtraConditionForExport(searchClauses);
@@ -96,13 +92,13 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		ThreadRecordIntervalsManager bkpLimits = this.getLimits();
+		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
 		
-		this.setLimits(null);
+		this.setThreadRecordIntervalsManager(null);
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.setLimits(bkpLimits);
+		this.setThreadRecordIntervalsManager(bkpLimits);
 		
 		return count;
 	}

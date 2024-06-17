@@ -3,31 +3,31 @@ package org.openmrs.module.epts.etl.export.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
 	private boolean selectAllRecords;
 	
-	public ExportSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, Connection conn) {
-		super(config, limits, null);
-		
-		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
+	public ExportSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager limits) {
+		super(engine, limits);
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
-	
+		
 		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
 		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContent());
 		
@@ -35,7 +35,7 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 		    "inner join " + tableInfo.generateFullStageTableName() + " on record_origin_id  = " + tableInfo.getPrimaryKey());
 		
 		if (!this.selectAllRecords) {
-			tryToAddLimits(searchClauses);
+			tryToAddLimits(limits, searchClauses);
 			tryToAddExtraConditionForExport(searchClauses);
 		}
 		
@@ -46,7 +46,9 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		ExportSearchParams auxSearchParams = new ExportSearchParams(getConfig(), this.getLimits(), conn);
+		ExportSearchParams auxSearchParams = new ExportSearchParams(getRelatedEngine(),
+		        this.getThreadRecordIntervalsManager());
+		
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);
@@ -54,29 +56,29 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		ThreadRecordIntervalsManager bkpLimits = this.getLimits();
+		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.setLimits(bkpLimits);
+		this.setThreadRecordIntervalsManager(bkpLimits);
 		
 		return count;
 	}
-
+	
 	@Override
 	protected VOLoaderHelper getLoaderHealper() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub

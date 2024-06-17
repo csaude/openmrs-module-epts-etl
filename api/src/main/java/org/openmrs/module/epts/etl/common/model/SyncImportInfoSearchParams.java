@@ -2,21 +2,21 @@ package org.openmrs.module.epts.etl.common.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public abstract class SyncImportInfoSearchParams extends AbstractEtlSearchParams<SyncImportInfoVO>{
 	private String appOriginLocationCode;
 	
-	public SyncImportInfoSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits) {
-		super(config, limits, null);
+	public SyncImportInfoSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager limits) {
+		super(engine, limits);
 	}
 	
-	public SyncImportInfoSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, String appOriginLocationCode) {
-		super(config, limits, null);
+	public SyncImportInfoSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager limits, String appOriginLocationCode) {
+		super(engine, limits);
 	
 		this.appOriginLocationCode = appOriginLocationCode;
 	}

@@ -5,24 +5,27 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearchParams {
 	
 	private boolean selectAllRecords;
 	
-	public ResolveConflictsInStageAreaSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, Connection conn) {
-		super(config, limits, null);
+	public ResolveConflictsInStageAreaSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager limits) {
+		super(engine, limits);
 	}
 	
 	@Override
-	public SearchClauses<SyncImportInfoVO> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<SyncImportInfoVO> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	        Connection dstConn) throws DBException {
+	
 		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
 		
 		searchClauses.addColumnToSelect("distinct (src_.record_uuid) record_uuid");
@@ -40,11 +43,11 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 			        + " inner_ " + " where inner_.record_uuid = src_.record_uuid "
 			        + " 	   and inner_.record_origin_id != src_.record_origin_id " + "       and consistent = 1) ");
 			
-			if (this.getLimits() != null) {
+			if (this.getThreadRecordIntervalsManager() != null) {
 				searchClauses.addToClauses("id between ? and ?");
 				
-				searchClauses.addToParameters(this.getLimits().getCurrentFirstRecordId());
-				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
+				searchClauses.addToParameters(this.getThreadRecordIntervalsManager().getCurrentFirstRecordId());
+				searchClauses.addToParameters(this.getThreadRecordIntervalsManager().getCurrentLastRecordId());
 			}
 			
 			if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
@@ -65,7 +68,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
 		ResolveConflictsInStageAreaSearchParams auxSearchParams = new ResolveConflictsInStageAreaSearchParams(
-		        this.getConfig(), this.getLimits(), conn);
+		        this.getRelatedEngine(), this.getThreadRecordIntervalsManager());
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);
@@ -73,13 +76,13 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		ThreadRecordIntervalsManager bkpLimits = this.getLimits();
+		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.setLimits(bkpLimits);
+		this.setThreadRecordIntervalsManager(bkpLimits);
 		
 		return count;
 	}

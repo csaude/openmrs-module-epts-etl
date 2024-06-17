@@ -2,21 +2,23 @@ package org.openmrs.module.epts.etl.dbquickload.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<SyncImportInfoVO> {
+public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
 	private String appOriginLocationCode;
 	
-	public LoadedRecordsSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, String appOriginLocationCode) {
-		super(config, limits, null);
+	public LoadedRecordsSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager limits,
+	    String appOriginLocationCode) {
+		super(engine, limits);
 		
 		setOrderByFields("id");
 		
@@ -24,8 +26,9 @@ public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<SyncImpor
 	}
 	
 	@Override
-	public SearchClauses<SyncImportInfoVO> generateSearchClauses(Connection conn) throws DBException {
-		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<>(this);
 		
 		searchClauses.addColumnToSelect(getSrcTableConf().generateFullStageTableName() + ".*");
 		
@@ -42,8 +45,8 @@ public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<SyncImpor
 	}
 	
 	@Override
-	public Class<SyncImportInfoVO> getRecordClass() {
-		return SyncImportInfoVO.class;
+	public Class<EtlDatabaseObject> getRecordClass() {
+		return EtlDatabaseObject.class;
 	}
 	
 	@Override
@@ -55,21 +58,21 @@ public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<SyncImpor
 	public int countNotProcessedRecords(Connection conn) throws DBException {
 		return 0;
 	}
-
+	
 	@Override
 	protected VOLoaderHelper getLoaderHealper() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
-	protected AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
-	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException{
+	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		return null;
 	}
 }

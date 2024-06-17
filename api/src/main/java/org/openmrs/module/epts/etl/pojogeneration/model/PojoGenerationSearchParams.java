@@ -5,35 +5,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.pojogeneration.engine.PojoGenerationEngine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class PojoGenerationSearchParams extends AbstractEtlSearchParams<EtlObject> {
+public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGenerationRecord> {
 	
-	private PojoGenerationEngine engine;
+	private PojoGenerationEngine processor;
 	
-	public PojoGenerationSearchParams(PojoGenerationEngine engine, ThreadRecordIntervalsManager limits, Connection conn) {
-		super(engine.getEtlConfiguration(), limits, null);
+	public PojoGenerationSearchParams(Engine<PojoGenerationRecord> engine, ThreadRecordIntervalsManager limits) {
+		super(engine, limits);
 		
-		this.engine = engine;
 	}
 	
-	
-	public PojoGenerationEngine getEngine() {
-		return engine;
+	public void setProcessor(PojoGenerationEngine processor) {
+		this.processor = processor;
 	}
 	
 	@Override
-	public List<EtlObject> searchNextRecords(Engine monitor, Connection conn) throws DBException {
-		if (getEngine().isPojoGenerated())
+	public List<PojoGenerationRecord> search(Engine<PojoGenerationRecord> monitor,
+	        IntervalExtremeRecord intervalExtremeRecord, Connection srcConn, Connection dstCOnn) throws DBException {
+		
+		if (processor.isPojoGenerated())
 			return null;
 		
-		List<EtlObject> records = new ArrayList<>();
+		List<PojoGenerationRecord> records = new ArrayList<>();
 		
 		records.add(new PojoGenerationRecord(getSrcConf()));
 		
@@ -41,7 +41,9 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<EtlObjec
 	}
 	
 	@Override
-	public SearchClauses<EtlObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<PojoGenerationRecord> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		// TODO Auto-generated method stub
 		return null;
 	}
 	
@@ -52,24 +54,19 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<EtlObjec
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		return engine.isPojoGenerated() ? 0 : 1;
+		return processor.isPojoGenerated() ? 0 : 1;
 	}
-
-
+	
 	@Override
 	protected VOLoaderHelper getLoaderHealper() {
-		// TODO Auto-generated method stub
 		return null;
 	}
-
-
+	
 	@Override
-	protected AbstractEtlSearchParams<EtlObject> cloneMe() {
-		// TODO Auto-generated method stub
+	protected AbstractEtlSearchParams<PojoGenerationRecord> cloneMe() {
 		return null;
 	}
-
-
+	
 	@Override
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub

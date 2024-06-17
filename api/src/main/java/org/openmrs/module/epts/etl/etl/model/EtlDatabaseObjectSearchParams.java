@@ -5,32 +5,31 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.DstConf;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
-	public EtlDatabaseObjectSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits,
-	    EtlEngine relatedEtlEngine) {
-		super(config, limits, relatedEtlEngine);
+	public EtlDatabaseObjectSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager limits) {
+		super(engine, limits);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray(getSrcTableConf().getTableAlias()));
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord intervalExtremeRecord,
+	        Connection srcConn, Connection dstConn) throws DBException {
 		SrcConf srcConfig = getSrcTableConf();
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
@@ -87,24 +86,19 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		searchClauses.addToClauseFrom(clauseFrom);
 		
-		tryToAddLimits(searchClauses);
+		tryToAddLimits(intervalExtremeRecord, searchClauses);
 		
 		tryToAddExtraConditionForExport(searchClauses);
 		
 		if (getRelatedEngine() != null && getRelatedEngine().getFinalCheckStatus().onGoing()) {
-			OpenConnection dstConn = this.getRelatedEngine().getDstApp().openConnection();
 			
-			try {
-				if (DBUtilities.isSameDatabaseServer(conn, dstConn) && getConfig().hasDstWithJoinFieldsToSrc()) {
-					this.setExtraCondition(this.generateDestinationExclusionClause(conn, dstConn));
-				} else {
-					throw new RuntimeException(
-					        "The application cannot performe the final check as there is not join fields between the src and dst");
-				}
+			if (DBUtilities.isSameDatabaseServer(srcConn, dstConn) && getConfig().hasDstWithJoinFieldsToSrc()) {
+				this.setExtraCondition(this.generateDestinationExclusionClause(srcConn, dstConn));
+			} else {
+				throw new RuntimeException(
+				        "The application cannot performe the final check as there is not join fields between the src and dst");
 			}
-			finally {
-				dstConn.finalizeConnection();
-			}
+			
 		}
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
@@ -130,7 +124,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 	
 	@Override
 	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
-		EtlDatabaseObjectSearchParams cloned = new EtlDatabaseObjectSearchParams(getConfig(), null, getRelatedEngine());
+		EtlDatabaseObjectSearchParams cloned = new EtlDatabaseObjectSearchParams(getRelatedEngine(), null);
 		
 		return cloned;
 	}

@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -21,13 +22,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  * @author jpboane
  */
-public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordIntervalsManager> {
+public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implements Comparable<ThreadRecordIntervalsManager<T>> {
 	
 	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	protected String threadCode;
 	
-	private Engine engine;
+	private Engine<T> engine;
 	
 	private boolean loadedFromFile;
 	
@@ -61,7 +62,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	}
 	
 	public ThreadRecordIntervalsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing,
-	    String threadCode, Engine engine) {
+	    String threadCode, Engine<T> engine) {
 		this(firstRecordId, lastRecordId, qtyRecordsPerProcessing);
 		
 		this.engine = engine;
@@ -114,7 +115,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		this.status = status;
 	}
 	
-	public void setEngine(Engine engine) {
+	public void setEngine(Engine<T> engine) {
 		this.engine = engine;
 	}
 	
@@ -209,7 +210,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		this.qtyRecordsPerProcessing = qtyRecordsPerProcessing;
 	}
 	
-	public void save(Engine monitor) {
+	public void save(Engine<T> monitor) {
 		
 		if (!hasThreadCode())
 			throw new ForbiddenOperationException("You cannot save limits without threadCode");
@@ -235,12 +236,16 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		}
 	}
 	
-	public String generateFilePath(Engine monitor) {
+	public String generateFilePath(Engine<T> monitor) {
+		return generateFilePath(this.getThreadCode(), monitor);
+	}
+	
+	public static <T extends EtlDatabaseObject> String generateFilePath(String threadCode, Engine<T> monitor) {
 		String subFolder = monitor.getRelatedOperationController().generateOperationStatusFolder();
 		
 		subFolder += FileUtilities.getPathSeparator() + "threads";
 		
-		return subFolder + FileUtilities.getPathSeparator() + this.threadCode;
+		return subFolder + FileUtilities.getPathSeparator() + threadCode;
 	}
 	
 	@JsonIgnore
@@ -248,16 +253,17 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		return utilities.parseToJSON(this);
 	}
 	
-	public boolean hasSameEngineInfo(ThreadRecordIntervalsManager limits) {
+	public boolean hasSameEngineInfo(ThreadRecordIntervalsManager<T> limits) {
 		return this.getMaxLimits().equals(limits.getMaxLimits());
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof ThreadRecordIntervalsManager) || obj == null)
 			return false;
 		
-		ThreadRecordIntervalsManager cr = (ThreadRecordIntervalsManager) obj;
+		ThreadRecordIntervalsManager<T> cr = (ThreadRecordIntervalsManager<T>) obj;
 		
 		return this.getThreadCode().equals(cr.getThreadCode());
 	}
@@ -275,7 +281,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	
 	public synchronized void moveNext() {
 		if (canGoNext()) {
-			this.defineCurrentLimits(this.getCurrentFirstRecordId() + getQtyRecordsPerProcessing());
+			this.defineCurrentLimits(this.getCurrentLastRecordId()+1);
 		} else
 			throw new ForbiddenOperationException("You reached the max record. Curr Status: [" + this.getThreadMinRecordId()
 			        + " - " + this.getThreadMaxRecordId() + "] Curr [" + this.getCurrentFirstRecordId() + " - "
@@ -293,52 +299,37 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	 * @param file
 	 * @param engine
 	 */
-	public static ThreadRecordIntervalsManager tryToLoadFromFile(String threadCode, Engine engine) {
-		ThreadRecordIntervalsManager t = new ThreadRecordIntervalsManager();
+	public static <T extends EtlDatabaseObject> ThreadRecordIntervalsManager<T> tryToLoadFromFile(String threadCode,
+	        Engine<T> engine) {
 		
-		t.setThreadCode(threadCode);
+		ThreadRecordIntervalsManager<T> limits = null;
 		
-		File f = new File(t.generateFilePath(engine));
+		File file = new File(generateFilePath(threadCode, engine));
 		
-		t.tryToLoadFromFile(f, engine);
-		
-		return t;
-	}
-	
-	/**
-	 * Tries to load data for this engine from file. If there is no saved limits then will keeped
-	 * the current limits info
-	 * 
-	 * @param file
-	 * @param engine
-	 */
-	public void tryToLoadFromFile(File file, Engine engine) {
 		try {
-			ThreadRecordIntervalsManager limits = loadFromJSON(new String(Files.readAllBytes(file.toPath())));
+			limits = loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 			
-			if (limits != null && limits.hasSameEngineInfo(engine.getLimits())) {
+			if (limits != null) {
+				int qtyRecordsPerProcessing = engine.getQtyRecordsPerProcessing();
 				
-				int qtyRecordsPerProcessing = getQtyRecordsPerProcessing();
+				limits.setQtyRecordsPerProcessing(qtyRecordsPerProcessing);
 				
-				copy(limits);
+				limits.loadedFromFile = true;
+				limits.setExcludedIntervals(engine.getExcludedRecordsIntervals());
 				
-				this.setQtyRecordsPerProcessing(qtyRecordsPerProcessing);
-				
-				this.loadedFromFile = true;
-			} else {
-				this.setExcludedIntervals(engine.getExcludedRecordsIntervals());
+				limits.setEngine(engine);
 			}
 			
-			this.engine = engine;
-			this.threadCode = engine.getEngineId();
 		}
 		catch (NoSuchFileException e) {}
 		catch (IOException e) {
 			throw new RuntimeException();
 		}
+		
+		return limits;
 	}
 	
-	public void copy(ThreadRecordIntervalsManager copyFrom) {
+	public void copy(ThreadRecordIntervalsManager<T> copyFrom) {
 		this.threadCode = copyFrom.threadCode;
 		this.engine = copyFrom.engine;
 		this.loadedFromFile = copyFrom.loadedFromFile;
@@ -353,7 +344,8 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		    new IntervalExtremeRecord(copyFrom.getMaxLimits().getMinRecordId(), copyFrom.getMaxLimits().getMaxRecordId()));
 	}
 	
-	private static ThreadRecordIntervalsManager loadFromJSON(String json) {
+	@SuppressWarnings("unchecked")
+	private static <T extends EtlDatabaseObject> ThreadRecordIntervalsManager<T> loadFromJSON(String json) {
 		return utilities.loadObjectFormJSON(ThreadRecordIntervalsManager.class, json);
 	}
 	
@@ -385,16 +377,17 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 			this.threadCode = engine.getEngineId();
 	}
 	
-	public static void removeAll(List<ThreadRecordIntervalsManager> generatedLimits, Engine monitor) {
+	public static <T extends EtlDatabaseObject> void removeAll(List<ThreadRecordIntervalsManager<T>> generatedLimits,
+	        Engine<T> monitor) {
 		if (generatedLimits != null) {
 			
-			for (ThreadRecordIntervalsManager limits : generatedLimits) {
+			for (ThreadRecordIntervalsManager<T> limits : generatedLimits) {
 				limits.remove(monitor);
 			}
 		}
 	}
 	
-	public void remove(Engine monitor) {
+	public void remove(Engine<T> monitor) {
 		String fileName = generateFilePath(monitor);
 		
 		if (new File(fileName).exists()) {
@@ -402,7 +395,8 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 		}
 	}
 	
-	public static List<ThreadRecordIntervalsManager> getAllSavedLimitsOfOperation(Engine monitor) {
+	public static <T extends EtlDatabaseObject> List<ThreadRecordIntervalsManager<T>> getAllSavedLimitsOfOperation(
+	        Engine<T> monitor) {
 		
 		try {
 			String threadsFolder = monitor.getRelatedOperationController().generateOperationStatusFolder();
@@ -411,7 +405,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 			
 			File[] files = new File(threadsFolder).listFiles(new LimitSearcher(monitor));
 			
-			List<ThreadRecordIntervalsManager> allLImitsOfEngine = null;
+			List<ThreadRecordIntervalsManager<T>> allLImitsOfEngine = null;
 			
 			if (files != null) {
 				allLImitsOfEngine = new ArrayList<>();
@@ -431,7 +425,7 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 	}
 	
 	@Override
-	public int compareTo(ThreadRecordIntervalsManager other) {
+	public int compareTo(ThreadRecordIntervalsManager<T> other) {
 		return this.getThreadCode().compareTo(other.getThreadCode());
 	}
 	
@@ -439,9 +433,9 @@ public class ThreadRecordIntervalsManager implements Comparable<ThreadRecordInte
 
 class LimitSearcher implements FilenameFilter {
 	
-	Engine monitor;
+	Engine<? extends EtlDatabaseObject> monitor;
 	
-	public LimitSearcher(Engine monitor) {
+	public LimitSearcher(Engine<? extends EtlDatabaseObject> monitor) {
 		this.monitor = monitor;
 	}
 	

@@ -8,9 +8,13 @@ import java.sql.Statement;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.detectgapes.engine.DetectGapesEngine;
+import org.openmrs.module.epts.etl.detectgapes.model.DetectGapesSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -31,7 +35,8 @@ public class DetectGapesController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
 		return new DetectGapesEngine(monitor, limits);
 	}
 	
@@ -45,7 +50,7 @@ public class DetectGapesController extends EtlController {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
 			String syncStageSchema = operationConfig.getRelatedSyncConfig().getSyncStageSchema();
 			
@@ -100,5 +105,16 @@ public class DetectGapesController extends EtlController {
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return true;
+	}
+	
+	@Override
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new DetectGapesSearchParams(engine, intervalsMgt);
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
+		
+		return searchParams;
+		
 	}
 }

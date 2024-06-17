@@ -26,7 +26,6 @@ public enum EtlOperationType {
 	OUTDATED_RECORDS_DETECTOR,
 	PHANTOM_RECORDS_DETECTOR,
 	RESOLVE_CONFLICTS,
-	DB_QUICK_COPY,
 	DB_MERGE_FROM_SOURCE_DB,
 	GENERIC_OPERATION,
 	DETECT_GAPES,
@@ -123,10 +122,6 @@ public enum EtlOperationType {
 		return EtlOperationType.valueOf(operationType).isPhantomRecordsDetector();
 	}
 	
-	public static boolean isDbQuickCopy(String operationType) {
-		return EtlOperationType.valueOf(operationType).isDbQuickCopy();
-	}
-	
 	public static boolean isSupportedOperation(String operationType) {
 		return CommonUtilities.getInstance().getPosOnArray(EtlOperationType.values(),
 		    EtlOperationType.valueOf(operationType)) >= 0;
@@ -194,10 +189,6 @@ public enum EtlOperationType {
 	
 	public boolean isPhantomRecordsDetector() {
 		return this.equals(PHANTOM_RECORDS_DETECTOR);
-	}
-	
-	public boolean isDbQuickCopy() {
-		return this.equals(DB_QUICK_COPY);
 	}
 	
 	public boolean isDbMergeFromSourceDB() {

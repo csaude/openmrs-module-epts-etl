@@ -511,7 +511,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return search(tabConf.getLoadHealper(), clazz, sql, params, conn);
 	}
 	
-	private static DatabaseOperationHeaderResult insertAllMetadata(List<EtlDatabaseObject> records,
+	private static EtlOperationResultHeader<EtlDatabaseObject> insertAllMetadata(List<EtlDatabaseObject> records,
 	        TableConfiguration tableInfo, Connection conn) throws DBException {
 		if (!tableInfo.isMetadata())
 			throw new ForbiddenOperationException(
@@ -524,8 +524,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return null;
 	}
 	
-	public static DatabaseOperationHeaderResult insertAll(List<EtlDatabaseObject> objects, TableConfiguration tabConf,
-	        String recordOriginLocationCode, Connection conn) throws DBException {
+	public static EtlOperationResultHeader<EtlDatabaseObject> insertAll(List<EtlDatabaseObject> objects,
+	        TableConfiguration tabConf, String recordOriginLocationCode, Connection conn) throws DBException {
 		
 		if (tabConf.isMetadata()) {
 			return insertAllMetadata(objects, tabConf, conn);
@@ -534,9 +534,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static DatabaseOperationHeaderResult insertAllData(List<EtlDatabaseObject> objects, TableConfiguration tabConf,
-	        boolean includeRecordId, Connection conn) throws DBException {
-		DatabaseOperationHeaderResult result = new DatabaseOperationHeaderResult();
+	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllData(List<EtlDatabaseObject> objects,
+	        TableConfiguration tabConf, boolean includeRecordId, Connection conn) throws DBException {
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
 		
 		if (utilities.arrayHasNoElement(objects))
 			return result;
@@ -597,14 +597,14 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return result;
 	}
 	
-	public static DatabaseOperationHeaderResult insertAllDataWithoutId(List<EtlDatabaseObject> objects,
+	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllDataWithoutId(List<EtlDatabaseObject> objects,
 	        TableConfiguration tabConf, Connection conn) throws DBException {
 		
 		return insertAllData(objects, tabConf, false, conn);
 		
 	}
 	
-	public static DatabaseOperationHeaderResult insertAllDataWithId(List<EtlDatabaseObject> objects,
+	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllDataWithId(List<EtlDatabaseObject> objects,
 	        TableConfiguration tabConf, Connection conn) throws DBException {
 		return insertAllData(objects, tabConf, true, conn);
 	}
@@ -686,7 +686,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	public static Integer getSpecificRecord(EtlDatabaseObjectSearchParams searchParams, String function, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
-		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(conn);
+		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(null, conn, null);
 		
 		searchClauses.setColumnsToSelect(function + "(" + searchParams.getConfig().getSrcConf().getPrimaryKey() + ") value");
 		

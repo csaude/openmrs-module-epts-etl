@@ -4,14 +4,17 @@ import java.io.File;
 import java.io.IOException;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.dbquickload.engine.DBQuickLoadEngine;
+import org.openmrs.module.epts.etl.dbquickload.engine.QuickLoadLimits;
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -31,16 +34,34 @@ public class DBQuickLoadController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
+		
 		return new DBQuickLoadEngine(monitor, limits);
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
-		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(null, config,
-		        null);
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
 		
-		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(searchParams);
+		QuickLoadLimits loadLimits = new QuickLoadLimits();
+		loadLimits.copy(intervalsMgt);
+		
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new DBQuickLoadSearchParams(engine, loadLimits);
+		
+		searchParams.setQtdRecordPerSelected(1);
+		
+		loadLimits.setRelatedSearchParams((DBQuickLoadSearchParams) searchParams);
+		
+		return searchParams;
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
+		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams((Engine<EtlDatabaseObject>) engine, null);
+		
+		File[] files = getSyncDirectory(engine.getSrcConf()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0) {
 			return 0;
@@ -49,12 +70,12 @@ public class DBQuickLoadController extends EtlController {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
-		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams(null, config,
-		        null);
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
+		DBQuickLoadSearchParams searchParams = new DBQuickLoadSearchParams((Engine<EtlDatabaseObject>) engine, null);
 		
-		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(searchParams);
+		File[] files = getSyncDirectory(engine.getSrcConf()).listFiles(searchParams);
 		
 		if (files == null || files.length == 0) {
 			return 0;

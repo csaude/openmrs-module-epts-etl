@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.dbsync.model.SyncMetadata;
 import org.openmrs.module.epts.etl.dbsync.model.SyncModel;
 import org.openmrs.module.epts.etl.dbsync.model.utils.JsonUtils;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -27,7 +27,7 @@ public class DbsyncJmsToSyncMsgEngine extends EtlEngine {
 	
 	List<GenericDatabaseObject> loadedSites;
 	
-	public DbsyncJmsToSyncMsgEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public DbsyncJmsToSyncMsgEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
 		
 		loadedSites = new ArrayList<>();
@@ -73,12 +73,7 @@ public class DbsyncJmsToSyncMsgEngine extends EtlEngine {
 		}
 	}
 	
-	@Override
-	public void afterEtl(List<? extends EtlObject> objs, Connection srcConn, Connection dstConn) throws DBException {
-		for (EtlObject obj : objs) {
-			DatabaseObjectDAO.remove((EtlDatabaseObject) obj, srcConn);
-		}
-	}
+
 	
 	void addToLoadedSites(GenericDatabaseObject loadedSite) {
 		

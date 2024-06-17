@@ -9,8 +9,10 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import javax.ws.rs.ForbiddenException;
+
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -18,7 +20,6 @@ import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> implements FilenameFilter {
@@ -36,12 +37,8 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	
 	private String fileNamePathern;
 	
-	private DataLoadController controller;
-	
-	public LoadSyncDataSearchParams(DataLoadController controller, EtlItemConfiguration config, ThreadRecordIntervalsManager limits) {
-		super(config, limits, null);
-		
-		this.controller = controller;
+	public LoadSyncDataSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager limits) {
+		super(engine, limits);
 		
 		if (limits != null) {
 			this.firstFileName = getSrcTableConf().getTableName() + "_"
@@ -67,7 +64,9 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> searchNextRecords(Engine monitor, Connection conn) throws DBException {
+	public List<EtlDatabaseObject> search(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord intervalExtremeRecord,
+	        Connection srcConn, Connection dstCOnn) throws DBException {
+		
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
 		if (this.currJSONSourceFile == null)
@@ -110,7 +109,9 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		// TODO Auto-generated method stub
 		return null;
 	}
 	
@@ -138,13 +139,18 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		DataBaseMergeFromJSONSearchParams syncSearchParams = new DataBaseMergeFromJSONSearchParams(getConfig(), null,
-		        controller.getAppOriginLocationCode());
+		
+		throw new ForbiddenException();
+		
+		/*
+		DataBaseMergeFromJSONSearchParams syncSearchParams = new DataBaseMergeFromJSONSearchParams(getRelatedEngine(), null,
+		        getRelatedController().getAppOriginLocationCode());
 		
 		int processed = syncSearchParams.countAllRecords(conn);
 		int notProcessed = countNotProcessedRecords(conn);
 		
 		return processed + notProcessed;
+		*/
 	}
 	
 	@Override
@@ -185,21 +191,21 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	private File getSyncDirectory() {
-		return this.controller.getSyncDirectory(getSrcTableConf());
+		return this.getRelatedController().getSyncDirectory(getSrcTableConf());
 	}
-
+	
 	@Override
 	protected VOLoaderHelper getLoaderHealper() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub

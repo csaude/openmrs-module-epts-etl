@@ -5,21 +5,19 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.databasepreparation.controller.DatabasePreparationController;
-import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationSearchParams;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationRecord;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
-public class DatabasePreparationEngine extends TaskProcessor {
+public class DatabasePreparationEngine extends TaskProcessor<DatabasePreparationRecord> {
 	
 	private boolean updateDone;
 	
-	public DatabasePreparationEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public DatabasePreparationEngine(Engine<DatabasePreparationRecord> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
 	}
 	
@@ -27,20 +25,19 @@ public class DatabasePreparationEngine extends TaskProcessor {
 		return updateDone;
 	}
 	
-	@Override
-	protected void restart() {
-	}
-	
 	private String getTableName() {
 		return getEtlConfiguration().getSrcConf().getTableName();
 	}
 	
 	@Override
-	public void performeSync(List<? extends EtlObject> migrationRecords, Connection conn) throws DBException {
+	protected EtlOperationResultHeader<DatabasePreparationRecord> performeSync(List<DatabasePreparationRecord> records,
+	        Connection srcConn, Connection dstConn) throws DBException {
 		try {
-			updateTableInfo(conn);
+			updateTableInfo(srcConn);
 			
 			this.updateDone = true;
+			
+			return new EtlOperationResultHeader<>();
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -179,11 +176,6 @@ public class DatabasePreparationEngine extends TaskProcessor {
 		return "origin_app_location_code VARCHAR(100) NULL";
 	}
 	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		return new DatabasePreparationSearchParams(this, limits, conn);
-	}
-	
 	private void createRelatedSyncStageAreaUniqueKeysTable(Connection conn) throws DBException {
 		String sql = "";
 		String notNullConstraint = "NOT NULL";
@@ -279,13 +271,4 @@ public class DatabasePreparationEngine extends TaskProcessor {
 		}
 	}
 	
-	@Override
-	public DatabasePreparationController getRelatedOperationController() {
-		return (DatabasePreparationController) super.getRelatedOperationController();
-	}
-	
-	@Override
-	protected boolean mustDoFinalCheck() {
-		return false;
-	}
 }

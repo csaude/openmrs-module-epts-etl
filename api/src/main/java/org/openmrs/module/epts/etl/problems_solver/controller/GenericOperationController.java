@@ -2,14 +2,17 @@ package org.openmrs.module.epts.etl.problems_solver.controller;
 
 import java.lang.reflect.Constructor;
 
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
+import org.openmrs.module.epts.etl.problems_solver.model.MozartLInkedFileSearchParams;
 
 /**
  * @author jpboane
@@ -20,16 +23,29 @@ public class GenericOperationController extends EtlController {
 		super(processController, operationConfig, null);
 	}
 	
-	@SuppressWarnings("rawtypes")
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
 		
-		Class[] parameterTypes = {Engine.class, ThreadRecordIntervalsManager.class};
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new MozartLInkedFileSearchParams(engine, intervalsMgt);
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
+		
+		return searchParams;
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Override
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
+		
+		Class[] parameterTypes = { Engine.class, ThreadRecordIntervalsManager.class };
 		
 		try {
-			Constructor<TaskProcessor> a = getOperationConfig().getEngineClazz().getConstructor(parameterTypes);
+			Constructor<TaskProcessor<? extends EtlDatabaseObject>> a = getOperationConfig().getEngineClazz()
+			        .getConstructor(parameterTypes);
 			
-			return a.newInstance(monitor, limits);
+			return (TaskProcessor<EtlDatabaseObject>) a.newInstance(monitor, limits);
 		}
 		catch (Exception e) {
 			throw new ForbiddenOperationException(e);
@@ -37,12 +53,12 @@ public class GenericOperationController extends EtlController {
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		return 1;
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		return 1;
 	}
 	
@@ -50,7 +66,7 @@ public class GenericOperationController extends EtlController {
 	public boolean mustRestartInTheEnd() {
 		return false;
 	}
-		
+	
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return false;

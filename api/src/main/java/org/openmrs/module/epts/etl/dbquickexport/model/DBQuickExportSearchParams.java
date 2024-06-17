@@ -1,16 +1,16 @@
 package org.openmrs.module.epts.etl.dbquickexport.model;
 
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.monitor.Engine;
 
 public class DBQuickExportSearchParams extends EtlDatabaseObjectSearchParams {
 	
-	public DBQuickExportSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits) {
-		super(config, limits, null);
+	public DBQuickExportSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager limits) {
+		super(engine, limits);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
-
 }

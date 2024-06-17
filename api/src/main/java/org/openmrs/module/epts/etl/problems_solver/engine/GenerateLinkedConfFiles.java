@@ -13,12 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.Extension;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.problems_solver.model.MozartLInkedFileSearchParams;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -37,7 +36,7 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	
 	private boolean done;
 	
-	public GenerateLinkedConfFiles(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public GenerateLinkedConfFiles(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
 		
 		Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("partner");
@@ -58,7 +57,9 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	}
 	
 	@Override
-	public void performeSync(List<? extends EtlObject> searchNextRecords, Connection conn) throws DBException {
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		
 		if (this.templateConfFilePath == null || fileWithListOfDBs == null) {
 			throw new ForbiddenOperationException(
 			        "One o all params were not specified! Please specify to params 1. Template conf file path 2. File With List of DB names");
@@ -130,6 +131,8 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 		}
 		
 		done = true;
+		
+		return new EtlOperationResultHeader<>(etlObjects);
 	}
 	
 	public static List<File> getDumps(File rootDirectory) {
@@ -161,15 +164,6 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	
 	public boolean done() {
 		return this.done;
-	}
-	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new MozartLInkedFileSearchParams(this, null);
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
-		
-		return searchParams;
 	}
 	
 }

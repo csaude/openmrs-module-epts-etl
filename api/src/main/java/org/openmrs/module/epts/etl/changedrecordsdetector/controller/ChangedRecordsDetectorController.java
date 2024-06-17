@@ -1,18 +1,23 @@
 package org.openmrs.module.epts.etl.changedrecordsdetector.controller;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.changedrecordsdetector.engine.ChangedRecordsDetectorEngine;
+import org.openmrs.module.epts.etl.changedrecordsdetector.model.ChangedRecordsDetectorSearchParams;
 import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordInfoDAO;
 import org.openmrs.module.epts.etl.conf.AppInfo;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -23,7 +28,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class ChangedRecordsDetectorController extends OperationController {
+public class ChangedRecordsDetectorController extends OperationController<EtlDatabaseObject> {
 	
 	private AppInfo actionPerformeApp;
 	
@@ -31,7 +36,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 		super(processController, operationConfig);
 		
 		//We assume that there is only one application listed in appConf
-		this.actionPerformeApp = getConfiguration().exposeAllAppsNotMain().get(0);
+		this.actionPerformeApp = getEtlConfiguration().exposeAllAppsNotMain().get(0);
 	}
 	
 	public AppInfo getActionPerformeApp() {
@@ -53,23 +58,24 @@ public class ChangedRecordsDetectorController extends OperationController {
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
 		return new ChangedRecordsDetectorEngine(monitor, limits);
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstChangedRecord(config.getSrcConf(),
-				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
+				return DetectedRecordInfoDAO.getFirstChangedRecord(engine.getSrcConf(),
+				    this.getActionPerformeApp().getApplicationCode(), getEtlConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstNewRecord(config.getSrcConf(),
-				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
+				return DetectedRecordInfoDAO.getFirstNewRecord(engine.getSrcConf(),
+				    this.getActionPerformeApp().getApplicationCode(), getEtlConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(
 				        "The operation '" + getOperationType() + "' is not supported in this controller!");
@@ -86,18 +92,18 @@ public class ChangedRecordsDetectorController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastChangedRecord(config.getSrcConf(),
-				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
+				return DetectedRecordInfoDAO.getLastChangedRecord(engine.getSrcConf(),
+				    this.getActionPerformeApp().getApplicationCode(), getEtlConfiguration().getStartDate(), conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastNewRecord(config.getSrcConf(),
-				    this.getActionPerformeApp().getApplicationCode(), getConfiguration().getStartDate(), conn);
+				return DetectedRecordInfoDAO.getLastNewRecord(engine.getSrcConf(),
+				    this.getActionPerformeApp().getApplicationCode(), getEtlConfiguration().getStartDate(), conn);
 			} else
 				throw new ForbiddenOperationException(
 				        "The operation '" + getOperationType() + "' is not supported in this controller!");
@@ -118,7 +124,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 		return false;
 	}
 	
-	public OpenConnection openConnection() throws DBException {
+	public OpenConnection openSrcConnection() throws DBException {
 		OpenConnection conn = getDefaultApp().openConnection();
 		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
@@ -136,7 +142,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 	}
 	
 	public boolean existDetectedRecordInfoTable() throws DBException {
-		OpenConnection conn = openConnection();
+		OpenConnection conn = openSrcConnection();
 		
 		try {
 			String schema = conn.getCatalog();
@@ -177,7 +183,7 @@ public class ChangedRecordsDetectorController extends OperationController {
 		
 		try {
 			
-			conn = openConnection();
+			conn = openSrcConnection();
 			
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
@@ -208,6 +214,23 @@ public class ChangedRecordsDetectorController extends OperationController {
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return true;
+	}
+	
+	@Override
+	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
+	}
+	
+	@Override
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsManager,
+	        Engine<EtlDatabaseObject> engine) {
+		
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new ChangedRecordsDetectorSearchParams(engine,
+		        this.getActionPerformeApp().getApplicationCode(), intervalsManager, this.getOperationType());
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		
+		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
+		
+		return searchParams;
 	}
 	
 }

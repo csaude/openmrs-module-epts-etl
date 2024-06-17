@@ -20,6 +20,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -383,11 +384,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	@JsonIgnore
-	public boolean isDBQuickCopyProcess() {
-		return processType.isDBQuickCopy();
-	}
-	
-	@JsonIgnore
 	public boolean isDataReconciliationProcess() {
 		return processType.isDataReconciliation();
 	}
@@ -476,8 +472,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			schema = this.syncStageSchema;
 		} else if (isSupposedToRunInOrigin()) {
 			schema = this.originAppLocationCode + "_sync_stage_area";
-		} else if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDBQuickCopyProcess()
-		        || isDataBaseMergeFromSourceDBProcess()) {
+		} else if (isDBQuickLoadProcess() || isDataReconciliationProcess() || isDataBaseMergeFromSourceDBProcess()) {
 			schema = "minimal_db_info";
 		} else {
 			schema = "sync_stage_area";
@@ -503,7 +498,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return relatedConfFile;
 	}
 	
-	public static EtlConfiguration loadFromFile(File file) throws IOException {
+	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromFile(File file) throws IOException {
 		EtlConfiguration conf = EtlConfiguration.loadFromJSON(FileUtilities.realAllFileAsString(file));
 		
 		conf.setRelatedConfFile(file);
@@ -720,7 +715,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 	}
 	
-	public static EtlConfiguration loadFromJSON(String json) {
+	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromJSON(String json) {
 		try {
 			Class<?>[] types = new Class<?>[1];
 			
@@ -832,7 +827,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	@JsonIgnore
 	public List<EtlOperationConfig> getOperationsAsList() {
-		List<EtlOperationConfig> operationsAsList = new ArrayList<EtlOperationConfig>();
+		List<EtlOperationConfig> operationsAsList = new ArrayList<>();
 		
 		for (EtlOperationConfig op : this.operations) {
 			operationsAsList.add(op);
@@ -902,8 +897,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInDBQuickLoadProcess();
 		} else if (isDataReconciliationProcess()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInDataReconciliationProcess();
-		} else if (isDBQuickCopyProcess()) {
-			supportedOperations = EtlOperationConfig.getSupportedOperationsInDBQuickCopyProcess();
 		} else if (isDataBaseMergeFromSourceDBProcess()) {
 			supportedOperations = EtlOperationConfig.getSupportedOperationsInDataBasesMergeFromSourceDBProcess();
 		} else if (isDBInconsistencyCheckProcess()) {
@@ -984,14 +977,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T extends ProcessFinalizer> void loadFinalizer() {
+	public <S extends ProcessFinalizer> void loadFinalizer() {
 		
 		try {
 			ClassLoader loader = ProcessFinalizer.class.getClassLoader();
 			
-			Class<T> c = (Class<T>) loader.loadClass(this.getFinalizerFullClassName());
+			Class<S> c = (Class<S>) loader.loadClass(this.getFinalizerFullClassName());
 			
-			this.finalizerClazz = (Class<T>) c;
+			this.finalizerClazz = (Class<S>) c;
 		}
 		catch (ClassNotFoundException e) {}
 	}
@@ -1155,15 +1148,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public boolean isSupposedToHaveOriginAppCode() {
-		return this.isSupposedToRunInOrigin() || this.isDBQuickCopyProcess()
-		        || this.isDBQuickMergeWithEntityGenerationDBProcess() || this.isDBInconsistencyCheckProcess()
-		        || this.isDBQuickMergeWithDatabaseGenerationDBProcess() || this.isEtlProcess()
-		        || this.isDetectMissingRecords() || this.isReEtlProcess();
+		return this.isSupposedToRunInOrigin() || this.isDBQuickMergeWithEntityGenerationDBProcess()
+		        || this.isDBInconsistencyCheckProcess() || this.isDBQuickMergeWithDatabaseGenerationDBProcess()
+		        || this.isEtlProcess() || this.isDetectMissingRecords() || this.isReEtlProcess();
 	}
 	
 	public boolean isSupposedToRunInDestination() {
 		return this.isDataBaseMergeFromJSONProcess() || this.isDBQuickLoadProcess() || this.isDataReconciliationProcess()
-		        || this.isDBQuickCopyProcess() || this.isDataBaseMergeFromSourceDBProcess() || this.isResolveProblems()
+		        || this.isDataBaseMergeFromSourceDBProcess() || this.isResolveProblems()
 		        || this.isDBQuickMergeWithEntityGenerationDBProcess() || this.isDBQuickMergeWithDatabaseGenerationDBProcess()
 		        || this.isEtlProcess() || this.isReEtlProcess();
 	}

@@ -14,14 +14,10 @@ import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.controller.ProcessStarter;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
@@ -129,7 +125,7 @@ public class QuickTest {
 		
 		etlConf.fullLoad();
 		
-		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(etlConf, null, null);
+		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(null, null);
 		
 		searchParams.setQtdRecordPerSelected(conf.getOperations().get(0).getMaxRecordPerProcessing());
 		
@@ -138,7 +134,7 @@ public class QuickTest {
 		
 		OpenConnection srcConn = conf.getMainApp().openConnection();
 		
-		List<EtlDatabaseObject> syncRecords = searchParams.searchNextRecords(null, srcConn);
+		List<EtlDatabaseObject> syncRecords = searchParams.searchNextRecords(null, srcConn, null);
 		
 		OpenConnection dstConn = dstApp.openConnection();
 		
@@ -296,7 +292,7 @@ public class QuickTest {
 	}
 	
 	public static void testQuickMerge() throws IOException, ForbiddenOperationException, DBException {
-		String path = "D:/PRG/JEE/Workspace/CSaude/eptssync/_testing/openmrs/conf/db_quick_merge_cs_1_maio.json";
+		/*String path = "D:/PRG/JEE/Workspace/CSaude/eptssync/_testing/openmrs/conf/db_quick_merge_cs_1_maio.json";
 		
 		ProcessStarter ps = new ProcessStarter(utilities.parseObjectToArray(path));
 		
@@ -310,13 +306,12 @@ public class QuickTest {
 		
 		EtlController controller = (EtlController) ps.getCurrentController().getOperationsControllers().get(0);
 		
-		ThreadRecordIntervalsManager limits = new ThreadRecordIntervalsManager(1448341 + 500, 1449340, 20, null);
+		ThreadRecordIntervalsManager limits = new ThreadRecordIntervalsManager(1448341 + 500, 1449340, 20);
 		
 		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(tableInfo, limits, null);
 		
-		
 		List<EtlDatabaseObject> a = SearchParamsDAO.search(searchParams, conn);
 		
-		System.out.println(a);
+		System.out.println(a);*/
 	}
 }

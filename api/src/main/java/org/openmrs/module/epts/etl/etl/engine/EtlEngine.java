@@ -1,7 +1,6 @@
 package org.openmrs.module.epts.etl.etl.engine;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,8 +9,8 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
@@ -21,25 +20,24 @@ import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseOperationHeaderResult;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
  * @author jpboane
  * @see DbExtractController
  */
-public class EtlEngine extends TaskProcessor {
+public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public EtlEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public EtlEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<? extends EtlObject> getSearchParams() {
+	public AbstractEtlSearchParams<EtlDatabaseObject> getSearchParams() {
 		return (EtlDatabaseObjectSearchParams) super.getSearchParams();
 	}
 	
@@ -52,61 +50,25 @@ public class EtlEngine extends TaskProcessor {
 	}
 	
 	@Override
-	protected boolean mustDoFinalCheck() {
-		if (getRelatedOperationController().getOperationConfig().skipFinalDataVerification()) {
-			return false;
-		} else {
-			OpenConnection srcConn = null;
-			OpenConnection dstConn = null;
-			
-			try {
-				srcConn = openConnection();
-				dstConn = this.getDstApp().openConnection();
-				
-				if (DBUtilities.isSameDatabaseServer(srcConn, dstConn)) {
-					return utilities.stringHasValue(getSearchParams().generateDestinationExclusionClause(srcConn, dstConn));
-				} else {
-					return false;
-				}
-			}
-			catch (DBException e) {
-				throw new RuntimeException(e);
-			}
-			finally {
-				if (srcConn != null)
-					srcConn.finalizeConnection();
-				if (dstConn != null)
-					dstConn.finalizeConnection();
-			}
-		}
-	}
-	
-	@Override
 	public EtlController getRelatedOperationController() {
 		return (EtlController) super.getRelatedOperationController();
 	}
 	
 	@Override
-	protected void restart() {
-	}
-	
-	@Override
-	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		if (getRelatedEtlOperationConfig().writeOperationHistory()
 		        || getEtlConfiguration().getSrcConf().hasWinningRecordsInfo()) {
-			performeSyncOneByOne(etlObjects, conn);
+			return performeSyncOneByOne(etlObjects, srcConn, dstConn);
 		} else {
-			performeBatchSync(etlObjects, conn);
+			return performeBatchSync(etlObjects, srcConn, dstConn);
 		}
 	}
 	
-	public void performeBatchSync(List<? extends EtlObject> etlObjects, Connection srcConn) throws DBException {
+	public EtlOperationResultHeader<EtlDatabaseObject> performeBatchSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
-		
-		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
-		
-		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
 		
 		Map<String, List<LoadRecord>> mergingRecs = new HashMap<>();
 		
@@ -131,36 +93,12 @@ public class EtlEngine extends TaskProcessor {
 				}
 			}
 			
-			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
-				logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
-				etlObjects.removeAll(recordsToIgnoreOnStatistics);
-			}
-			
-			DatabaseOperationHeaderResult result = LoadRecord.loadAll(mergingRecs, srcConn, dstConn);
-			
-			if (!result.hasFatalError()) {
-				afterEtl(result.getRecordsWithNoError(), srcConn, dstConn);
-				
-				if (result.hasRecordsWithUnresolvedErrors()) {
-					logWarn("Some errors where found loading '" + result.getRecordsWithUnresolvedErrors().size()
-					        + "! The errors will be documented");
-					
-					result.documentErrors(srcConn, dstConn);
-				}
-				
-			} else {
-				if (result.hasRecordsWithUnresolvedErrors()) {
-					logError("Fatal error found loading some records. The process will be aborted");
-					
-					result.printStackErrorOfFatalErrors();
-					
-				}
-			}
+			EtlOperationResultHeader<EtlDatabaseObject> result = LoadRecord.loadAll(mergingRecs, srcConn, dstConn);
 			
 			logInfo(
 			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
 			
-			dstConn.markAsSuccessifullyTerminated();
+			return result;
 		}
 		catch (Exception e) {
 			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits() + "]... \n");
@@ -169,126 +107,87 @@ public class EtlEngine extends TaskProcessor {
 			
 			throw e;
 		}
-		finally {
-			dstConn.finalizeConnection();
-		}
+		
 	}
 	
-	private void performeSyncOneByOne(List<? extends EtlObject> etlObjects, Connection srcConn) throws DBException {
+	private EtlOperationResultHeader<EtlDatabaseObject> performeSyncOneByOne(List<EtlDatabaseObject> etlObjects,
+	        Connection srcConn, Connection dstConn) throws DBException {
 		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<EtlDatabaseObject>();
+		
 		int i = 1;
 		
-		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
-		
-		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
-		
-		try {
-			for (EtlObject record : etlObjects) {
-				String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-				    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
+		for (EtlObject record : etlObjects) {
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
+			
+			EtlDatabaseObject rec = (EtlDatabaseObject) record;
+			
+			for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 				
-				boolean wentWrong = true;
+				EtlDatabaseObject destObject = transform(rec, mappingInfo, etlObjects, srcConn, dstConn);
 				
-				EtlDatabaseObject rec = (EtlDatabaseObject) record;
+				if (destObject == null) {
+					continue;
+				}
 				
-				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
+				boolean wrt = writeOperationHistory();
+				
+				LoadRecord data = initEtlRecord(destObject, mappingInfo, wrt);
+				
+				try {
+					process(data, startingStrLog, 0, srcConn, dstConn);
+					afterEtl(utilities.parseObjectToList_(record, rec.getClass()), srcConn, dstConn);
 					
-					EtlDatabaseObject destObject = transform(rec, mappingInfo, etlObjects, srcConn, dstConn);
+					result.addToRecordsWithNoError(rec);
+				}
+				catch (MissingParentException e) {
+					logWarn(
+					    startingStrLog + "." + data.getRecord() + " - " + e.getMessage() + " The record will be skipped");
 					
-					if (destObject == null) {
-						continue;
-					}
+					InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
+					    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
 					
-					boolean wrt = writeOperationHistory();
+					EtlOperationItemResult<EtlDatabaseObject> r = new EtlOperationItemResult<>(rec, inconsistenceInfo);
 					
-					LoadRecord data = initEtlRecord(destObject, mappingInfo, wrt);
-					
-					try {
-						process(data, startingStrLog, 0, srcConn, dstConn);
-						afterEtl(utilities.parseObjectToList_(record, rec.getClass()), srcConn, dstConn);
-						
-						wentWrong = false;
-					}
-					catch (MissingParentException e) {
-						logWarn(startingStrLog + "." + data.getRecord() + " - " + e.getMessage()
-						        + " The record will be skipped");
-						
-						InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
-						    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
-						
-						inconsistenceInfo.save(mappingInfo, srcConn);
-						
-						wentWrong = false;
-					}
-					catch (ConflictWithRecordNotYetAvaliableException e) {
+					result.addToRecordsWithResolvedErrors(r);
+				}
+				catch (ConflictWithRecordNotYetAvaliableException e) {
+					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+					        + e.getLocalizedMessage() + ". Skipping... ");
+				}
+				catch (DBException e) {
+					if (e.isDuplicatePrimaryOrUniqueKeyException()) {
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
 						        + e.getLocalizedMessage() + ". Skipping... ");
-					}
-					catch (DBException e) {
-						if (e.isDuplicatePrimaryOrUniqueKeyException()) {
-							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-							        + e.getLocalizedMessage() + ". Skipping... ");
-						} else if (e.isIntegrityConstraintViolationException()) {
-							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-							        + e.getLocalizedMessage() + ". Skipping... ");
-						} else {
-							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-							        + e.getLocalizedMessage() + ". Skipping... ");
-							
-							throw e;
-						}
-					}
-					catch (Exception e) {
-						e.printStackTrace();
+					} else if (e.isIntegrityConstraintViolationException()) {
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-						        + e.getLocalizedMessage());
+						        + e.getLocalizedMessage() + ". Skipping... ");
+					} else {
+						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+						        + e.getLocalizedMessage() + ". Skipping... ");
 						
 						throw e;
 					}
-					finally {
-						
-						if (wentWrong) {
-							if (DBUtilities.isPostgresDB(dstConn)) {
-								/*
-								 * PosgresSql fails when you continue to use a connection which previously encountered an exception
-								 * So we are committing before try to use the connection again
-								 * 
-								 * NOTE that we are taking risk if some other bug happen and the transaction need to be aborted
-								 */
-								try {
-									dstConn.commit();
-								}
-								catch (SQLException e) {
-									throw new DBException(e);
-								}
-							}
-							
-							if (this.finalCheckStatus.notInitialized()) {
-								recordsToIgnoreOnStatistics.add(record);
-							}
-						}
-					}
-					
-					i++;
-					
 				}
+				catch (Exception e) {
+					e.printStackTrace();
+					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+					        + e.getLocalizedMessage());
+					
+					throw e;
+				}
+				
+				i++;
+				
 			}
-			
-			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
-				logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
-				etlObjects.removeAll(recordsToIgnoreOnStatistics);
-			}
-			
-			logInfo(
-			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
-			
-			dstConn.markAsSuccessifullyTerminated();
 		}
-		finally {
-			dstConn.finalizeConnection();
-		}
+		
+		logInfo("ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
+		
+		return result;
 	}
 	
 	/**
@@ -327,17 +226,6 @@ public class EtlEngine extends TaskProcessor {
 		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + etlData.getRecord() + "]");
 		
 		etlData.load(srcConn, destConn);
-	}
-	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits,
-	        Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new EtlDatabaseObjectSearchParams(
-		        this.getEtlConfiguration(), limits, this);
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
-		
-		return searchParams;
 	}
 	
 	public LoadRecord initEtlRecord(EtlDatabaseObject destObject, DstConf mappingInfo, boolean writeOperationHistory) {

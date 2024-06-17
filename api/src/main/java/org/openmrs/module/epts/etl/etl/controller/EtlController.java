@@ -2,17 +2,21 @@ package org.openmrs.module.epts.etl.etl.controller;
 
 import java.lang.reflect.Constructor;
 import java.sql.Connection;
+import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.monitor.Engine;
@@ -25,39 +29,26 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class EtlController extends SiteOperationController {
-	
-	private AppInfo dstApp;
-	
-	private AppInfo srcApp;
+public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 	
 	public EtlController(ProcessController processController, EtlOperationConfig operationConfig,
 	    String originLocationCode) {
 		super(processController, operationConfig, originLocationCode);
-		
-		this.srcApp = getConfiguration().find(AppInfo.init("main"));
-		this.dstApp = getConfiguration().find(AppInfo.init("destination"));
 	}
 	
-	public AppInfo getSrcApp() {
-		return srcApp;
-	}
-	
-	public AppInfo getDstApp() {
-		return dstApp;
-	}
-	
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
 		if (getOperationConfig().getEngineClazz() != null) {
 			
 			Class[] parameterTypes = { Engine.class, ThreadRecordIntervalsManager.class };
 			
 			try {
-				Constructor<TaskProcessor> a = getOperationConfig().getEngineClazz().getConstructor(parameterTypes);
+				Constructor<TaskProcessor<? extends EtlDatabaseObject>> a = getOperationConfig().getEngineClazz()
+				        .getConstructor(parameterTypes);
 				
-				return a.newInstance(monitor, limits);
+				return (TaskProcessor<EtlDatabaseObject>) a.newInstance(monitor, limits);
 			}
 			catch (Exception e) {
 				throw new ForbiddenOperationException(e);
@@ -68,13 +59,13 @@ public class EtlController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
-			return getExtremeRecord(config, "min", conn);
+			return getExtremeRecord(engine.getEtlItemConfiguration(), "min", conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -88,13 +79,13 @@ public class EtlController extends SiteOperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration tableInfo) {
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
-			return getExtremeRecord(tableInfo, "max", conn);
+			return getExtremeRecord(engine.getEtlItemConfiguration(), "max", conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -134,16 +125,23 @@ public class EtlController extends SiteOperationController {
 		return false;
 	}
 	
-	public OpenConnection openSrcConnection() throws DBException {
-		return srcApp.openConnection();
-	}
-	
-	public OpenConnection openDstConnection() throws DBException {
-		return dstApp.openConnection();
-	}
-	
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return true;
 	}
+	
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
+		
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new EtlDatabaseObjectSearchParams(engine, intervalsMgt);
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
+		
+		return searchParams;
+	}
+	
+	@Override
+	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
+	}
+	
 }

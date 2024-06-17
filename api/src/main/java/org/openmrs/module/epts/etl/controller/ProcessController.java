@@ -14,6 +14,7 @@ import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.ProcessProgressInfo;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -42,7 +43,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	private int operationStatus;
 	
-	private List<OperationController> operationsControllers;
+	private List<OperationController<? extends EtlDatabaseObject>> operationsControllers;
 	
 	private String controllerId;
 	
@@ -81,7 +82,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	@JsonIgnore
-	public List<OperationController> getOperationsControllers() {
+	public List<OperationController<? extends EtlDatabaseObject>> getOperationsControllers() {
 		return operationsControllers;
 	}
 	
@@ -93,7 +94,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		return processInfo;
 	}
 	
-	public OperationProgressInfo initOperationProgressMeter(OperationController operationController, Connection conn)
+	public OperationProgressInfo initOperationProgressMeter(OperationController<? extends EtlDatabaseObject> operationController, Connection conn)
 	        throws DBException {
 		return this.progressInfo.initAndAddProgressMeterToList(operationController, conn);
 	}
@@ -117,7 +118,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
-		this.operationsControllers = new ArrayList<OperationController>();
+		this.operationsControllers = new ArrayList<>();
 		
 		if (!this.isImportStageSchemaExists()) {
 			this.createStageSchema();
@@ -195,8 +196,9 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 		
 		try {
+			
 			for (EtlOperationConfig operation : configuration.getOperations()) {
-				List<OperationController> controller = operation.generateRelatedController(this,
+				List<OperationController<? extends EtlDatabaseObject>> controller = operation.generateRelatedController(this,
 				    operation.getRelatedSyncConfig().getOriginAppLocationCode(), conn);
 				
 				this.operationsControllers.addAll(controller);
@@ -225,11 +227,12 @@ public class ProcessController implements Controller, ControllerStarter {
 		getConfiguration().finalizeAllApps();
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public void finalize(Controller c) {
 		c.killSelfCreatedThreads();
 		
-		List<OperationController> nextOperation = ((OperationController) c).getChildren();
+		List<OperationController<? extends EtlDatabaseObject>> nextOperation = ((OperationController<? extends EtlDatabaseObject>) c).getChildren();
 		
 		logDebug("TRY TO INIT NEXT OPERATION");
 		
@@ -240,7 +243,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		if (nextOperation != null) {
 			if (!stopRequested()) {
-				for (OperationController controller : nextOperation) {
+				for (OperationController<? extends EtlDatabaseObject> controller : nextOperation) {
 					logDebug("STARTING NEXT OPERATION " + controller.getControllerId());
 					
 					ExecutorService executor = ThreadPoolService.getInstance()
@@ -249,7 +252,7 @@ public class ProcessController implements Controller, ControllerStarter {
 				}
 			} else {
 				String nextOperations = "[";
-				for (OperationController controller : nextOperation) {
+				for (OperationController<? extends EtlDatabaseObject> controller : nextOperation) {
 					nextOperations += controller.getControllerId() + ";";
 				}
 				
@@ -279,14 +282,17 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.configuration = configuration;
 	}
 	
-	/*@JsonIgnore
-	public ProcessController getChildController() {
-		return childController;
-	}*/
-	
 	@JsonIgnore
 	public AppInfo getDefaultApp() {
 		return getConfiguration().getMainApp();
+	}
+	
+	@JsonIgnore
+	public AppInfo getPossibleDstApp() {
+		if (!getConfiguration().hasDstApp())
+			return null;
+		
+		return getConfiguration().getDstApp();
 	}
 	
 	@Override
@@ -321,27 +327,27 @@ public class ProcessController implements Controller, ControllerStarter {
 			return false;
 		
 		if (utilities.arrayHasElement(this.operationsControllers)) {
-			for (OperationController controller : this.operationsControllers) {
+			for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 				if (controller.getOperationConfig().isDisabled()) {
 					continue;
 				} else if (!controller.isStopped() && !controller.isFinished()) {
 					return false;
 				} else {
-					List<OperationController> children = controller.getChildren();
+					List<OperationController<? extends EtlDatabaseObject>> children = controller.getChildren();
 					
 					while (children != null) {
-						List<OperationController> grandChildren = null;
+						List<OperationController<? extends EtlDatabaseObject>> grandChildren = null;
 						
-						for (OperationController child : children) {
+						for (OperationController<? extends EtlDatabaseObject> child : children) {
 							if (!child.isStopped() && !child.isFinished()) {
 								return false;
 							}
 							
 							if (child.getChildren() != null) {
 								if (grandChildren == null)
-									grandChildren = new ArrayList<OperationController>();
+									grandChildren = new ArrayList<>();
 								
-								for (OperationController childOfChild : child.getChildren()) {
+								for (OperationController<? extends EtlDatabaseObject> childOfChild : child.getChildren()) {
 									grandChildren.add(childOfChild);
 								}
 							}
@@ -364,18 +370,18 @@ public class ProcessController implements Controller, ControllerStarter {
 			return true;
 		
 		if (utilities.arrayHasElement(this.operationsControllers)) {
-			for (OperationController controller : this.operationsControllers) {
+			for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 				if (controller.getOperationConfig().isDisabled()) {
 					continue;
 				} else if (!controller.isFinished()) {
 					return false;
 				} else {
-					List<OperationController> children = controller.getChildren();
+					List<OperationController<? extends EtlDatabaseObject>> children = controller.getChildren();
 					
 					while (children != null) {
-						List<OperationController> grandChildren = null;
+						List<OperationController<? extends EtlDatabaseObject>> grandChildren = null;
 						
-						for (OperationController child : children) {
+						for (OperationController<? extends EtlDatabaseObject> child : children) {
 							
 							if (!child.isFinished() && !child.getOperationConfig().isDisabled()) {
 								return false;
@@ -383,9 +389,9 @@ public class ProcessController implements Controller, ControllerStarter {
 							
 							if (child.getChildren() != null) {
 								if (grandChildren == null)
-									grandChildren = new ArrayList<OperationController>();
+									grandChildren = new ArrayList<>();
 								
-								for (OperationController childOfChild : child.getChildren()) {
+								for (OperationController<? extends EtlDatabaseObject> childOfChild : child.getChildren()) {
 									grandChildren.add(childOfChild);
 								}
 							}
@@ -447,7 +453,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		if (isNotInitialized()) {
 			changeStatusToStopped();
 		} else if (utilities.arrayHasElement(this.operationsControllers)) {
-			for (OperationController controller : this.operationsControllers) {
+			for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 				controller.requestStop();
 			}
 		}
@@ -530,7 +536,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		try {
 			this.progressInfo = new ProcessProgressInfo(this);
 			
-			for (OperationController controller : this.operationsControllers) {
+			for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 				controller.resetProgressInfo(conn);
 			}
 			
@@ -590,7 +596,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	public void initOperationsControllers(Connection conn) {
-		for (OperationController controller : this.operationsControllers) {
+		for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 			if (!controller.getOperationConfig().isDisabled()) {
 				ExecutorService executor = ThreadPoolService.getInstance()
 				        .createNewThreadPoolExecutor(controller.getControllerId());
@@ -647,7 +653,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			return;
 		
 		if (this.operationsControllers != null) {
-			for (OperationController operationController : this.operationsControllers) {
+			for (OperationController<? extends EtlDatabaseObject> operationController : this.operationsControllers) {
 				operationController.killSelfCreatedThreads();
 				
 				ThreadPoolService.getInstance().terminateTread(logger, operationController.getControllerId(),
@@ -684,7 +690,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	@JsonIgnore
 	public boolean processIsAlreadyFinished() {
-		for (OperationController controller : this.operationsControllers) {
+		for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 			if (!controller.operationIsAlreadyFinished()) {
 				return false;
 			}
@@ -728,7 +734,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		return progressInfoLoaded;
 	}
 	
-	public static ProcessController retrieveRunningThread(EtlConfiguration configuration) {
+	public static <T extends EtlDatabaseObject> ProcessController retrieveRunningThread(EtlConfiguration configuration) {
 		String controllerId = configuration.generateControllerId();
 		
 		//Thread runningThread = null;
@@ -748,6 +754,14 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	public OpenConnection openConnection() throws DBException {
 		return getDefaultApp().openConnection();
+	}
+	
+	public OpenConnection tryToOpenDstConn() throws DBException {
+		if (getConfiguration().hasDstApp()) {
+			return getPossibleDstApp().openConnection();
+		}
+		
+		return null;
 	}
 	
 	private void createStageSchema() throws DBException {
@@ -1048,4 +1062,5 @@ public class ProcessController implements Controller, ControllerStarter {
 			conn.finalizeConnection();
 		}
 	}
+	
 }

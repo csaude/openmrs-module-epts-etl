@@ -4,13 +4,12 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
-import org.openmrs.module.epts.etl.detectgapes.model.DetectGapesSearchParams;
 import org.openmrs.module.epts.etl.detectgapes.model.GapeDAO;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -28,13 +27,8 @@ public class DetectGapesEngine extends EtlEngine {
 	 */
 	private EtlDatabaseObject prevRec;
 	
-	public DetectGapesEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public DetectGapesEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
-	}
-	
-	@Override
-	protected boolean mustDoFinalCheck() {
-		return false;
 	}
 	
 	@Override
@@ -43,11 +37,8 @@ public class DetectGapesEngine extends EtlEngine {
 	}
 	
 	@Override
-	protected void restart() {
-	}
-	
-	@Override
-	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		logDebug("DETECTING GAPES ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		if (this.prevRec == null) {
@@ -64,22 +55,15 @@ public class DetectGapesEngine extends EtlEngine {
 				
 				for (int i = prevRec.getObjectId().getSimpleValueAsInt() + 1; i < rec.getObjectId()
 				        .getSimpleValueAsInt(); i++) {
-					GapeDAO.insert(getSrcConf(), i, conn);
+					GapeDAO.insert(getSrcConf(), i, srcConn);
 				}
 			}
 			
 			prevRec = rec;
 		}
-	}
-	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DetectGapesSearchParams(this.getEtlConfiguration(),
-		        limits, this);
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
-		return searchParams;
+		return new EtlOperationResultHeader<>(etlObjects);
 	}
+
 	
 }

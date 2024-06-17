@@ -332,6 +332,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					for (Key key : defaultObject.getObjectId().getFields()) {
 						EtlDatabaseObject keyInfo = defaultGeneratedObjectKeyTabConf.getSyncRecordClass().newInstance();
 						
+						keyInfo.setRelatedConfiguration(defaultGeneratedObjectKeyTabConf);
+						
 						keyInfo.setFieldValue("table_name", defaultObject.getObjectName());
 						keyInfo.setFieldValue("column_name", key.getName());
 						keyInfo.setFieldValue("key_value", key.getValue());
@@ -1283,11 +1285,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@JsonIgnore
 	default boolean isDBQuickLoad() {
 		return getRelatedSyncConfiguration().isDBQuickLoadProcess();
-	}
-	
-	@JsonIgnore
-	default boolean isDbCopy() {
-		return getRelatedSyncConfiguration().isDBQuickCopyProcess();
 	}
 	
 	@JsonIgnore

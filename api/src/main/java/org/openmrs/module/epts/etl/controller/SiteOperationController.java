@@ -1,8 +1,9 @@
 package org.openmrs.module.epts.etl.controller;
 
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
-public abstract class SiteOperationController extends OperationController{
+public abstract class SiteOperationController<T extends EtlDatabaseObject> extends OperationController<T>{
 
 	protected String appOriginLocationCode;
 	

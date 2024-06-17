@@ -1,20 +1,24 @@
 package org.openmrs.module.epts.etl.reconciliation.controller;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.reconciliation.engine.CentralAndRemoteDataReconciliationEngine;
+import org.openmrs.module.epts.etl.reconciliation.model.CentralAndRemoteDataReconciliationSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -24,11 +28,24 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class CentralAndRemoteDataReconciliationController extends OperationController {
+public class CentralAndRemoteDataReconciliationController extends OperationController<EtlDatabaseObject> {
 	
 	public CentralAndRemoteDataReconciliationController(ProcessController processController,
 	    EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
+	}
+	
+	@Override
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
+		
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new CentralAndRemoteDataReconciliationSearchParams(
+		        engine, intervalsMgt, this.getOperationType());
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		
+		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
+		
+		return searchParams;
 	}
 	
 	@Override
@@ -47,7 +64,8 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
 		return new CentralAndRemoteDataReconciliationEngine(monitor, limits);
 	}
 	
@@ -64,8 +82,8 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
-		if (config.getSrcConf().getTableName().equalsIgnoreCase("users"))
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
+		if (engine.getSrcConf().getTableName().equalsIgnoreCase("users"))
 			return 0;
 		
 		OpenConnection conn = null;
@@ -73,16 +91,16 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		int id = 0;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
 			if (isMissingRecordsDetector()) {
-				SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(config.getSrcConf(), conn);
+				SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(engine.getSrcConf(), conn);
 				
 				id = record != null ? record.getId() : 0;
 			} else if (isOutdateRecordsDetector()) {
-				id = DatabaseObjectDAO.getFirstRecord(config.getSrcConf(), conn);
+				id = DatabaseObjectDAO.getFirstRecord(engine.getSrcConf(), conn);
 			} else if (isPhantomRecordsDetector()) {
-				EtlDatabaseObject record = DatabaseObjectDAO.getFirstPhantomRecordInDestination(config.getSrcConf(), conn);
+				EtlDatabaseObject record = DatabaseObjectDAO.getFirstPhantomRecordInDestination(engine.getSrcConf(), conn);
 				
 				id = record != null ? record.getObjectId().getSimpleValueAsInt() : 0;
 			}
@@ -101,8 +119,8 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
-		if (config.getSrcConf().getTableName().equalsIgnoreCase("users"))
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
+		if (engine.getSrcConf().getTableName().equalsIgnoreCase("users"))
 			return 0;
 		
 		OpenConnection conn = null;
@@ -110,16 +128,16 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		int id = 0;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
 			if (isMissingRecordsDetector()) {
-				SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(config.getSrcConf(), conn);
+				SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(engine.getSrcConf(), conn);
 				
 				id = record != null ? record.getId() : 0;
 			} else if (isOutdateRecordsDetector()) {
-				id = DatabaseObjectDAO.getLastRecord(config.getSrcConf(), conn);
+				id = DatabaseObjectDAO.getLastRecord(engine.getSrcConf(), conn);
 			} else if (isPhantomRecordsDetector()) {
-				EtlDatabaseObject record = DatabaseObjectDAO.getLastPhantomRecordInDestination(config.getSrcConf(), conn);
+				EtlDatabaseObject record = DatabaseObjectDAO.getLastPhantomRecordInDestination(engine.getSrcConf(), conn);
 				
 				id = record != null ? record.getObjectId().getSimpleValueAsInt() : 0;
 			}
@@ -143,8 +161,8 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 	
 	@Override
-	public OpenConnection openConnection() throws DBException {
-		OpenConnection conn = super.openConnection();
+	public OpenConnection openSrcConnection() throws DBException {
+		OpenConnection conn = super.openSrcConnection();
 		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
 			try {
@@ -162,11 +180,11 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	
 	public boolean existDataReconciliationInfoTable() throws DBException {
 		
-		String schema = getConfiguration().getSyncStageSchema();
+		String schema = getEtlConfiguration().getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = "data_conciliation_info";
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = openSrcConnection();
 		
 		try {
 			
@@ -188,7 +206,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		
 		String sql = "";
 		
-		sql += "CREATE TABLE " + getConfiguration().getSyncStageSchema() + ".data_conciliation_info (\n";
+		sql += "CREATE TABLE " + getEtlConfiguration().getSyncStageSchema() + ".data_conciliation_info (\n";
 		sql += "id int(11) NOT NULL AUTO_INCREMENT,\n";
 		sql += "record_uuid varchar(100) NOT NULL,\n";
 		sql += "record_origin_location_code varchar(100) NOT NULL,\n";
@@ -199,7 +217,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		sql += ") ENGINE=InnoDB;\n";
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
@@ -223,5 +241,11 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return false;
+	}
+
+	@Override
+	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
+		// TODO Auto-generated method stub
+		
 	}
 }

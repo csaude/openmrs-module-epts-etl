@@ -2,15 +2,20 @@ package org.openmrs.module.epts.etl.dbquickexport.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.dbquickexport.engine.DBQuickExportEngine;
+import org.openmrs.module.epts.etl.dbquickexport.model.DBQuickExportSearchParams;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.Engine;
@@ -24,7 +29,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  * 
  * @author jpboane
  */
-public class DBQuickExportController extends OperationController {
+public class DBQuickExportController extends OperationController<EtlDatabaseObject> {
 	
 	private final String stringLock = new String("LOCK_STRING");
 	
@@ -33,18 +38,19 @@ public class DBQuickExportController extends OperationController {
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
 		return new DBQuickExportEngine(monitor, limits);
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
-			return DatabaseObjectDAO.getFirstRecord(config.getSrcConf(), conn);
+			return DatabaseObjectDAO.getFirstRecord(engine.getSrcConf(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -58,13 +64,13 @@ public class DBQuickExportController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
-			return DatabaseObjectDAO.getLastRecord(config.getSrcConf(), conn);
+			return DatabaseObjectDAO.getLastRecord(engine.getSrcConf(), conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -83,8 +89,8 @@ public class DBQuickExportController extends OperationController {
 	}
 	
 	@Override
-	public OpenConnection openConnection() throws DBException {
-		OpenConnection conn = super.openConnection();
+	public OpenConnection openSrcConnection() throws DBException {
+		OpenConnection conn = super.openSrcConnection();
 		
 		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
 			try {
@@ -98,6 +104,16 @@ public class DBQuickExportController extends OperationController {
 		}
 		
 		return conn;
+	}
+	
+	@Override
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new DBQuickExportSearchParams(engine, intervalsMgt);
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
+		
+		return searchParams;
 	}
 	
 	public File generateJSONTempFile(SyncJSONInfo jsonInfo, AbstractTableConfiguration tableInfo, Integer startRecord,
@@ -145,6 +161,12 @@ public class DBQuickExportController extends OperationController {
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return true;
+	}
+	
+	@Override
+	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

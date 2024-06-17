@@ -2,16 +2,20 @@ package org.openmrs.module.epts.etl.export.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.export.engine.DBExportEngine;
+import org.openmrs.module.epts.etl.export.model.ExportSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
@@ -25,30 +29,42 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  * 
  * @author jpboane
  */
-public class DBExportController extends OperationController {
+public class DBExportController extends OperationController<EtlDatabaseObject> {
 	
 	public DBExportController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
 		return new DBExportEngine(monitor, limits);
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
 		
-		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new ExportSearchParams(engine, intervalsMgt);
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		searchParams.setSyncStartDate(this.getProgressInfo().getStartTime());
+		
+		return searchParams;
+	}
+	
+	@Override
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
+		
+		if (!engine.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
 			throw new ForbiddenOperationException("Not supported composite primary key");
 		}
 		
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
-			EtlDatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(config.getSrcConf(), conn);
+			EtlDatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(engine.getSrcConf(), conn);
 			
 			if (obj != null)
 				return obj.getObjectId().getSimpleValueAsInt();
@@ -67,17 +83,17 @@ public class DBExportController extends OperationController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
-		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
+		if (!engine.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
 			throw new ForbiddenOperationException("Not supported composite primary key");
 		}
 		
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
-			EtlDatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(config.getSrcConf(), conn);
+			EtlDatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(engine.getSrcConf(), conn);
 			
 			if (obj != null)
 				return obj.getObjectId().getSimpleValueAsInt();
@@ -139,5 +155,9 @@ public class DBExportController extends OperationController {
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return true;
+	}
+	
+	@Override
+	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
 	}
 }

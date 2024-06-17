@@ -9,26 +9,21 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBController;
-import org.openmrs.module.epts.etl.merge.model.DataBaseMergeFromSourceDBSearchParams;
 import org.openmrs.module.epts.etl.merge.model.MergingRecord;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DataBasesMergeFromSourceEngine extends TaskProcessor {
+public class DataBasesMergeFromSourceEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public DataBasesMergeFromSourceEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public DataBasesMergeFromSourceEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
-	}
-	
-	@Override
-	protected boolean mustDoFinalCheck() {
-		return false;
 	}
 	
 	@Override
@@ -37,11 +32,8 @@ public class DataBasesMergeFromSourceEngine extends TaskProcessor {
 	}
 	
 	@Override
-	protected void restart() {
-	}
-	
-	@Override
-	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
+	        Connection srcConn, Connection dstConn) throws DBException {
 		logInfo("PERFORMING MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
@@ -56,7 +48,7 @@ public class DataBasesMergeFromSourceEngine extends TaskProcessor {
 			        getRelatedOperationController().getRemoteApp(), getRelatedOperationController().getMainApp());
 			
 			try {
-				data.merge(conn);
+				data.merge(srcConn);
 			}
 			catch (MissingParentException e) {
 				logWarn(record + " - " + e.getMessage() + " The record will be skipped");
@@ -64,15 +56,7 @@ public class DataBasesMergeFromSourceEngine extends TaskProcessor {
 			
 			i++;
 		}
-	}
-	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromSourceDBSearchParams(
-		        this.getEtlConfiguration(), limits, conn, getRelatedOperationController());
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
 		
-		return searchParams;
+		return new EtlOperationResultHeader<>(etlObjects);
 	}
 }

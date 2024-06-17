@@ -7,16 +7,14 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
-import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -31,24 +29,22 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class PojoGenerationEngine extends TaskProcessor {
+public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 	
 	private List<String> alreadyGeneratedClasses;
 	
 	private boolean pojoGenerated;
 	
-	public PojoGenerationEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public PojoGenerationEngine(Engine<PojoGenerationRecord> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
 		
 		this.alreadyGeneratedClasses = new ArrayList<String>();
 	}
 	
 	@Override
-	protected void restart() {
-	}
-	
-	@Override
-	public void performeSync(List<? extends EtlObject> migrationRecords, Connection conn) throws DBException {
+	protected EtlOperationResultHeader<PojoGenerationRecord> performeSync(List<PojoGenerationRecord> records,
+	        Connection srcConn, Connection dstConn) throws DBException {
+		
 		this.pojoGenerated = true;
 		
 		AppInfo mainApp = getEtlConfiguration().getMainApp();
@@ -80,6 +76,8 @@ public class PojoGenerationEngine extends TaskProcessor {
 				
 			}
 		}
+		
+		return new EtlOperationResultHeader<>(records);
 	}
 	
 	private void generate(AppInfo app, DatabaseObjectConfiguration tableConfiguration) {
@@ -116,19 +114,11 @@ public class PojoGenerationEngine extends TaskProcessor {
 	public boolean isPojoGenerated() {
 		return pojoGenerated;
 	}
-	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		return new PojoGenerationSearchParams(this, limits, conn);
-	}
+
 	
 	@Override
 	public PojoGenerationController getRelatedOperationController() {
 		return (PojoGenerationController) super.getRelatedOperationController();
 	}
-	
-	@Override
-	protected boolean mustDoFinalCheck() {
-		return false;
-	}
+
 }

@@ -5,13 +5,14 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.synchronization.controller.DatabaseMergeFromJSONController;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -21,9 +22,15 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	private DatabaseMergeFromJSONController relatedController;
 	
-	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, DatabaseMergeFromJSONController relatedController) {
-		super(config, limits);
+	public DataBaseMergeFromJSONSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager limits) {
+		super(engine, limits);
 		
+		setOrderByFields("id");
+	}
+	
+	public DataBaseMergeFromJSONSearchParams(Engine<SyncImportInfoVO> config, ThreadRecordIntervalsManager limits,
+	    String appOriginLocationCode) {
+		super(config, limits, appOriginLocationCode);
 		setOrderByFields("id");
 	}
 	
@@ -31,13 +38,10 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 		return relatedController;
 	}
 	
-	public DataBaseMergeFromJSONSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, String appOriginLocationCode) {
-		super(config, limits, appOriginLocationCode);
-		setOrderByFields("id");
-	}
-	
 	@Override
-	public SearchClauses<SyncImportInfoVO> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<SyncImportInfoVO> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		
 		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
 		
 		AbstractTableConfiguration tableInfo = this.getSrcTableConf();
@@ -50,10 +54,10 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 			searchClauses.addToClauses("last_sync_date is null or last_sync_date < ?");
 			searchClauses.addToParameters(this.getSyncStartDate());
 			
-			if (this.getLimits() != null) {
+			if (this.getThreadRecordIntervalsManager() != null) {
 				searchClauses.addToClauses("id between ? and ?");
-				searchClauses.addToParameters(this.getLimits().getCurrentFirstRecordId());
-				searchClauses.addToParameters(this.getLimits().getCurrentLastRecordId());
+				searchClauses.addToParameters(this.getThreadRecordIntervalsManager().getCurrentFirstRecordId());
+				searchClauses.addToParameters(this.getThreadRecordIntervalsManager().getCurrentLastRecordId());
 			}
 		} else {
 			searchClauses.addToClauses("migration_status in (?, ?)");
@@ -79,31 +83,36 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		EtlDatabaseObjectSearchParams migratedRecordSearchParams = new EtlDatabaseObjectSearchParams(getConfig(), null, getRelatedEngine());
+		
+		throw new ForbiddenOperationException("review this method!");
+		
+		/*
+		
+		EtlDatabaseObjectSearchParams migratedRecordSearchParams = new EtlDatabaseObjectSearchParams(getRelatedEngine(), null);
 		
 		int migrated = SearchParamsDAO.countAll(migratedRecordSearchParams, conn);
 		int notMigrated = countNotProcessedRecords(conn);
 		
-		return migrated + notMigrated;
+		return migrated + notMigrated;*/
 	}
 	
 	@Override
 	public int countNotProcessedRecords(Connection conn) throws DBException {
 		return SearchParamsDAO.countAll(this, conn);
 	}
-
+	
 	@Override
 	protected VOLoaderHelper getLoaderHealper() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	protected AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub

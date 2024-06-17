@@ -3,26 +3,20 @@ package org.openmrs.module.epts.etl.synchronization.engine;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.synchronization.controller.DatabaseMergeFromJSONController;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DataBaseMergeFromJSONEngine extends TaskProcessor {
+public class DataBaseMergeFromJSONEngine extends TaskProcessor<SyncImportInfoVO> {
 	
-	public DataBaseMergeFromJSONEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public DataBaseMergeFromJSONEngine(Engine<SyncImportInfoVO> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
-	}
-
-	@Override
-	protected void restart() {
-		this.getSearchParams().setSyncStartDate(DateAndTimeUtilities.getCurrentDate());
 	}
 	
 	@Override
@@ -31,7 +25,9 @@ public class DataBaseMergeFromJSONEngine extends TaskProcessor {
 	}
 	
 	@Override
-	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	protected EtlOperationResultHeader<SyncImportInfoVO> performeSync(List<SyncImportInfoVO> records, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		
 		throw new ForbiddenOperationException("Rever este metodo!");
 		
 		/*getRelatedOperationController().logInfo("SYNCHRONIZING '"+syncRecords.size() + "' "+ getSyncTableConfiguration().getTableName().toUpperCase());
@@ -57,15 +53,5 @@ public class DataBaseMergeFromJSONEngine extends TaskProcessor {
 		return (DataBaseMergeFromJSONSearchParams) super.getSearchParams();
 	}
 	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		/*AbstractEtlSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromJSONSearchParams(this.getSyncTableConfiguration(), limits, this.getRelatedOperationController().getAppOriginLocationCode());
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
-		
-		return searchParams;*/
-		
-		return null;
-	}
 	
 }

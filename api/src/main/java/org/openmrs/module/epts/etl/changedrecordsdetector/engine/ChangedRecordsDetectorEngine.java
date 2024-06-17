@@ -5,13 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.changedrecordsdetector.controller.ChangedRecordsDetectorController;
-import org.openmrs.module.epts.etl.changedrecordsdetector.model.ChangedRecordsDetectorSearchParams;
 import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordInfo;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -20,9 +18,9 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import fgh.spi.changedrecordsdetector.ChangedRecord;
 import fgh.spi.changedrecordsdetector.DetectedRecordService;
 
-public class ChangedRecordsDetectorEngine extends TaskProcessor {
+public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public ChangedRecordsDetectorEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public ChangedRecordsDetectorEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
 		
 		DetectedRecordService action = DetectedRecordService.getInstance();
@@ -33,26 +31,19 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor {
 	}
 	
 	@Override
-	protected boolean mustDoFinalCheck() {
-		return false;
-	}
-	
-	@Override
 	public ChangedRecordsDetectorController getRelatedOperationController() {
 		return (ChangedRecordsDetectorController) super.getRelatedOperationController();
 	}
 	
 	@Override
-	protected void restart() {
-	}
-	
-	@Override
-	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
-		List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
-		List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(etlObjects.size());
+	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		
+		List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(records, EtlDatabaseObject.class);
+		List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(records.size());
 		
 		this.getMonitor()
-		        .logInfo("PERFORMING CHANGE DETECTED ACTION '" + etlObjects.size() + "' " + getSrcConf().getTableName());
+		        .logInfo("PERFORMING CHANGE DETECTED ACTION '" + records.size() + "' " + getSrcConf().getTableName());
 		
 		for (EtlDatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
@@ -60,7 +51,7 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor {
 				
 				processedRecords.add(DetectedRecordInfo.generate(obj,
 				    getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
-				    getMonitor().getSrcMainTableConf().getOriginAppLocationCode()));
+				    getMonitor().getSrcConf().getOriginAppLocationCode()));
 				
 				if (getRelatedOperationController().getActionPerformeApp().isSinglePerformingMode()) {
 					DetectedRecordService.getInstance().performeAction(
@@ -84,19 +75,15 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor {
 			    getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords, getSrcConf());
 		}
 		
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		
+		result.addAllToRecordsWithNoError(utilities.parseList(processedRecords, EtlDatabaseObject.class));
+		
 		this.getMonitor().logInfo(
-		    "ACTION PERFORMED FOR CHANGED RECORDS '" + etlObjects.size() + "' " + getSrcConf().getTableName() + "!");
+		    "ACTION PERFORMED FOR CHANGED RECORDS '" + records.size() + "' " + getSrcConf().getTableName() + "!");
+		
+		return result;
+		
 	}
 	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ChangedRecordsDetectorSearchParams(
-		        this.getEtlConfiguration(), getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
-		        limits, getRelatedOperationController().getOperationType(), conn);
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		
-		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
-		
-		return searchParams;
-	}
 }

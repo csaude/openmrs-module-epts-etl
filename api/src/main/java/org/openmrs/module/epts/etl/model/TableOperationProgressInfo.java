@@ -65,7 +65,7 @@ public class TableOperationProgressInfo extends BaseVO {
 	private String determineAppLocationCode(OperationController controller) {
 		
 		if (controller.getOperationConfig().isSupposedToHaveOriginAppCode()) {
-			return controller.getConfiguration().getOriginAppLocationCode();
+			return controller.getEtlConfiguration().getOriginAppLocationCode();
 		}
 		
 		if (controller instanceof SiteOperationController) {
@@ -80,8 +80,8 @@ public class TableOperationProgressInfo extends BaseVO {
 		        || controller.getOperationConfig().isPhantomRecordsDetector()
 		        || controller.getOperationConfig().isDBMergeFromSourceDB()
 		        || controller.getOperationConfig().isDataBaseMergeFromJSONOperation()
-		        || controller.getConfiguration().isResolveProblems()
-		        || controller.getConfiguration().isDetectGapesOnDbTables() || controller.getConfiguration().isEtlProcess())
+		        || controller.getEtlConfiguration().isResolveProblems()
+		        || controller.getEtlConfiguration().isDetectGapesOnDbTables() || controller.getEtlConfiguration().isEtlProcess())
 			return "central_site";
 		
 		throw new ForbiddenOperationException("The originAppCode cannot be determined for "

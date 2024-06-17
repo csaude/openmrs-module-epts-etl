@@ -2,15 +2,16 @@ package org.openmrs.module.epts.etl.reconciliation.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -21,15 +22,16 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	
 	private EtlOperationType type;
 	
-	public CentralAndRemoteDataReconciliationSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits,
-	    EtlOperationType type, Connection conn) {
-		super(config, limits, null);
+	public CentralAndRemoteDataReconciliationSearchParams(Engine<EtlDatabaseObject> engine,
+	    ThreadRecordIntervalsManager limits, EtlOperationType type) {
+		super(engine, limits);
 		
 		this.type = type;
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		
 		utilities.throwReviewMethodException();
 		
@@ -133,7 +135,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
 		CentralAndRemoteDataReconciliationSearchParams auxSearchParams = new CentralAndRemoteDataReconciliationSearchParams(
-		        this.getConfig(), this.getLimits(), this.type, conn);
+		        this.getRelatedEngine(), this.getThreadRecordIntervalsManager(), this.type);
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);
@@ -141,29 +143,29 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		ThreadRecordIntervalsManager bkpLimits = this.getLimits();
+		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.setLimits(bkpLimits);
+		this.setThreadRecordIntervalsManager(bkpLimits);
 		
 		return count;
 	}
-
+	
 	@Override
 	protected VOLoaderHelper getLoaderHealper() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub

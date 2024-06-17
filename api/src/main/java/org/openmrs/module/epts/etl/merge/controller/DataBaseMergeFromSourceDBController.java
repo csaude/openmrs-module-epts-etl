@@ -3,13 +3,16 @@ package org.openmrs.module.epts.etl.merge.controller;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AppInfo;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.merge.engine.DataBasesMergeFromSourceEngine;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -28,8 +31,21 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 	public DataBaseMergeFromSourceDBController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig, null);
 		
-		this.mainApp = getConfiguration().find(AppInfo.init("main"));
-		this.remoteApp = getConfiguration().find(AppInfo.init("remote"));
+		this.mainApp = getEtlConfiguration().find(AppInfo.init("main"));
+		this.remoteApp = getEtlConfiguration().find(AppInfo.init("remote"));
+	}
+	
+	@Override
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
+		
+		throw new ForbiddenOperationException("Review this method");
+		
+		/*AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new DataBaseMergeFromSourceDBSearchParams(engine, intervalsMgt);
+		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
+		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
+		
+		return searchParams;*/
 	}
 	
 	public AppInfo getMainApp() {
@@ -41,20 +57,21 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits) {
 		return new DataBasesMergeFromSourceEngine(monitor, limits);
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
 		Integer id = Integer.valueOf(0);
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
-			SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(config.getSrcConf(), conn);
+			SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(engine.getSrcConf(), conn);
 			
 			id = record != null ? record.getId() : 0;
 			
@@ -72,15 +89,15 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
 		Integer id = Integer.valueOf(0);
 		
 		try {
-			conn = openConnection();
+			conn = openSrcConnection();
 			
-			SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(config.getSrcConf(), conn);
+			SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(engine.getSrcConf(), conn);
 			
 			id = record != null ? record.getId() : 0;
 			

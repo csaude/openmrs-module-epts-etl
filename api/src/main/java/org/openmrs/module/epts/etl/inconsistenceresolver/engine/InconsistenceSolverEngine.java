@@ -3,19 +3,17 @@ package org.openmrs.module.epts.etl.inconsistenceresolver.engine;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.inconsistenceresolver.controller.InconsistenceSolverController;
-import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceSolverSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class InconsistenceSolverEngine extends TaskProcessor {
+public class InconsistenceSolverEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public InconsistenceSolverEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public InconsistenceSolverEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
 	}
 	
@@ -25,18 +23,19 @@ public class InconsistenceSolverEngine extends TaskProcessor {
 	}
 	
 	@Override
-	protected void restart() {
-	}
-	
-	@Override
-	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
+	        Connection srcConn, Connection dstConn) throws DBException {
 		List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
 		
 		logInfo("DOING INCONSISTENCE SOLVER FOR '" + etlObjects.size() + "' " + getMainSrcTableName());
 		
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		
 		for (EtlDatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
-				obj.resolveInconsistence(getSrcConf(), conn);
+				obj.resolveInconsistence(getSrcConf(), srcConn);
+				
+				result.addToRecordsWithNoError(obj);
 			}
 			catch (Exception e) {
 				logError(
@@ -47,15 +46,7 @@ public class InconsistenceSolverEngine extends TaskProcessor {
 		}
 		
 		logInfo("INCONSISTENCE SOLVED FOR '" + etlObjects.size() + "' " + getMainSrcTableName() + "!");
-	}
-	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new InconsistenceSolverSearchParams(this.getEtlConfiguration(),
-		        limits, conn);
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
 		
-		return searchParams;
+		return result;
 	}
 }

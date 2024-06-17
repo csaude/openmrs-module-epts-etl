@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -131,7 +132,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 						if (map.isAutomaticalyGenerated() && getSrcConf().hasParents()) {
 							map.setParents(getSrcConf().tryToCloneAllParentsForOtherTable(map, dstConn));
 						}
-				
+						
 						map.fullLoad(dstConn);
 					}
 					
@@ -215,13 +216,15 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			return DatabaseObjectDAO.getByOid(srcConf, parentRecordInOrigin.getObjectId(), srcConn);
 		} else {
 			
-			EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(this, null, null);
+			Engine<EtlDatabaseObject> engine = new Engine<>(null, this, null);
+			
+			EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(engine, null);
 			
 			searchParams.setExtraCondition(this.getSrcConf().getPrimaryKey().parseToParametrizedStringConditionWithAlias());
 			
 			searchParams.setSyncStartDate(getRelatedSyncConfiguration().getStartDate());
 			
-			SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(srcConn);
+			SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(null, srcConn, null);
 			
 			searchClauses.addToParameters(parentRecordInOrigin.getObjectId().parseValuesToArray());
 			

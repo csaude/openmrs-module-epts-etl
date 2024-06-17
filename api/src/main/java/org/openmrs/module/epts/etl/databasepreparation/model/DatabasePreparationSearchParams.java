@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.databasepreparation.engine.DatabasePreparationEngine;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
@@ -14,33 +15,31 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabasePreparationSearchParams extends AbstractEtlSearchParams<DatabasePreparationRecord> {
 	
-	private DatabasePreparationEngine engine;
+	DatabasePreparationEngine processor;
 	
-	public DatabasePreparationSearchParams(DatabasePreparationEngine engine, ThreadRecordIntervalsManager limits,
-	    Connection conn) {
-		super(engine.getEtlConfiguration(), limits, null);
+	public DatabasePreparationSearchParams(DatabasePreparationEngine processor, ThreadRecordIntervalsManager limits) {
+		super(processor.getMonitor(), limits);
 		
-		this.engine = engine;
-	}
-	
-	public DatabasePreparationEngine getEngine() {
-		return engine;
+		this.processor = processor;
 	}
 	
 	@Override
-	public List<DatabasePreparationRecord> searchNextRecords(Engine monitor, Connection conn) {
-		if (getEngine().isUpdateDone())
+	public List<DatabasePreparationRecord> search(Engine<DatabasePreparationRecord> monitor,
+	        IntervalExtremeRecord intervalExtremeRecord, Connection srcConn, Connection dstCOnn) throws DBException {
+		if (processor.isUpdateDone())
 			return null;
 		
 		List<DatabasePreparationRecord> records = new ArrayList<>();
 		
-		records.add(new DatabasePreparationRecord(getEngine().getEtlConfiguration().getSrcConf()));
+		records.add(new DatabasePreparationRecord(getSrcConf()));
 		
 		return records;
 	}
 	
 	@Override
-	public SearchClauses<DatabasePreparationRecord> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<DatabasePreparationRecord> generateSearchClauses(IntervalExtremeRecord recordLimits,
+	        Connection srcConn, Connection dstConn) throws DBException {
+		
 		return null;
 	}
 	
@@ -51,7 +50,7 @@ public class DatabasePreparationSearchParams extends AbstractEtlSearchParams<Dat
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		return engine.isUpdateDone() ? 0 : 1;
+		return processor.isUpdateDone() ? 0 : 1;
 	}
 	
 	@Override

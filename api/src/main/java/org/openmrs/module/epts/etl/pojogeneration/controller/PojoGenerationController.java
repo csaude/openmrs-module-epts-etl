@@ -1,38 +1,54 @@
 package org.openmrs.module.epts.etl.pojogeneration.controller;
 
+import java.sql.Connection;
+import java.util.List;
+
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.pojogeneration.engine.PojoGenerationEngine;
+import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
+import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationSearchParams;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
  * This class is responsible for data base preparation
  * 
  * @author jpboane
  */
-public class PojoGenerationController extends OperationController {
+public class PojoGenerationController extends OperationController<PojoGenerationRecord> {
 	
 	public PojoGenerationController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<PojoGenerationRecord> initRelatedEngine(Engine<PojoGenerationRecord> monitor,
+	        IntervalExtremeRecord limits) {
 		return new PojoGenerationEngine(monitor, limits);
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
+	public AbstractEtlSearchParams<PojoGenerationRecord> initMainSearchParams(ThreadRecordIntervalsManager<PojoGenerationRecord> intervalsMgt,
+	        Engine<PojoGenerationRecord> engine) {
+			
+		return new PojoGenerationSearchParams(engine, intervalsMgt);
+	}
+	
+	@Override
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		return 1;
 	}
 	
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		return 1;
 	}
 	
@@ -41,12 +57,18 @@ public class PojoGenerationController extends OperationController {
 		return false;
 	}
 	
-	public EtlConfiguration getConfiguration() {
+	public EtlConfiguration getEtlConfiguration() {
 		return getProcessController().getConfiguration();
 	}
 	
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return false;
+	}
+
+	@Override
+	public void afterEtl(List<PojoGenerationRecord> objs, Connection srcConn, Connection dstConn) throws DBException {
+		// TODO Auto-generated method stub
+		
 	}
 }

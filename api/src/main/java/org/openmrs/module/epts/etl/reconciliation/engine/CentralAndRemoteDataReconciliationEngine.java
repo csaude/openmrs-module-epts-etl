@@ -3,27 +3,20 @@ package org.openmrs.module.epts.etl.reconciliation.engine;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.reconciliation.controller.CentralAndRemoteDataReconciliationController;
-import org.openmrs.module.epts.etl.reconciliation.model.CentralAndRemoteDataReconciliationSearchParams;
 import org.openmrs.module.epts.etl.reconciliation.model.ConciliationReasonType;
 import org.openmrs.module.epts.etl.reconciliation.model.DataReconciliationRecord;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor {
+public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public CentralAndRemoteDataReconciliationEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public CentralAndRemoteDataReconciliationEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
-	}
-	
-	@Override
-	protected boolean mustDoFinalCheck() {
-		return false;
 	}
 	
 	@Override
@@ -32,32 +25,40 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor {
 	}
 	
 	@Override
-	protected void restart() {
-	}
-	
-	@Override
-	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
-		if (getMainSrcTableName().equalsIgnoreCase("users"))
-			return;
+	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
+	        Connection srcConn, Connection dstConn) throws DBException {
 		
-		this.getMonitor()
-		        .logInfo("PERFORMING DATA RECONCILIATION ON " + etlObjects.size() + "' " + this.getMainSrcTableName());
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(etlObjects);
 		
-		if (getRelatedOperationController().isMissingRecordsDetector()) {
-			performeMissingRecordsCreation(etlObjects, conn);
-		} else if (getRelatedOperationController().isOutdateRecordsDetector()) {
-			performeOutdatedRecordsUpdate(etlObjects, conn);
-		} else if (getRelatedOperationController().isPhantomRecordsDetector()) {
-			performePhantomRecordsRemotion(etlObjects, conn);
+		try {
+			this.getMonitor()
+			        .logInfo("PERFORMING DATA RECONCILIATION ON " + etlObjects.size() + "' " + this.getMainSrcTableName());
+			
+			if (getMainSrcTableName().equalsIgnoreCase("users")) {
+				result.addAllToRecordsWithNoError(etlObjects);
+			} else if (getRelatedOperationController().isMissingRecordsDetector()) {
+				result = performeMissingRecordsCreation(etlObjects, srcConn, dstConn);
+			} else if (getRelatedOperationController().isOutdateRecordsDetector()) {
+				result = performeOutdatedRecordsUpdate(etlObjects, srcConn, dstConn);
+			} else if (getRelatedOperationController().isPhantomRecordsDetector()) {
+				result = performePhantomRecordsRemotion(etlObjects, srcConn, dstConn);
+			}
+		}
+		finally {
+			this.getMonitor().logInfo("RECONCILIATION DONE ON " + etlObjects.size() + " " + getMainSrcTableName() + "!");
 		}
 		
-		this.getMonitor().logInfo("RECONCILIATION DONE ON " + etlObjects.size() + " " + getMainSrcTableName() + "!");
+		return result;
 	}
 	
-	private void performeMissingRecordsCreation(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	private EtlOperationResultHeader<EtlDatabaseObject> performeMissingRecordsCreation(List<EtlDatabaseObject> etlObjects,
+	        Connection srcConn, Connection dstConn) throws DBException {
+		
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		
 		int i = 1;
 		
-		for (EtlObject record : etlObjects) {
+		for (EtlDatabaseObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
 			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
@@ -66,35 +67,50 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor {
 			DataReconciliationRecord data = new DataReconciliationRecord((EtlDatabaseObject) record, getSrcConf(),
 			        ConciliationReasonType.MISSING);
 			
-			data.reloadRelatedRecordDataFromRemote(conn);
+			data.reloadRelatedRecordDataFromRemote(srcConn);
 			
-			data.consolidateAndSaveData(conn);
+			data.consolidateAndSaveData(srcConn);
 			
-			data.save(conn);
+			data.save(srcConn);
+			
+			result.addToRecordsWithNoError(record);
 			
 			i++;
 		}
+		
+		return result;
 	}
 	
-	private void performeOutdatedRecordsUpdate(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	private EtlOperationResultHeader<EtlDatabaseObject> performeOutdatedRecordsUpdate(List<EtlDatabaseObject> etlObjects,
+	        Connection srcConn, Connection dstConn) throws DBException {
+		
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		
 		int i = 1;
 		
-		for (EtlObject record : etlObjects) {
+		for (EtlDatabaseObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
 			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
 			logInfo(startingStrLog + ": Updating record: [" + record + "]");
 			
-			DataReconciliationRecord.tryToReconciliate((EtlDatabaseObject) record, getSrcConf(), conn);
+			DataReconciliationRecord.tryToReconciliate((EtlDatabaseObject) record, getSrcConf(), srcConn);
 			
+			result.addToRecordsWithNoError(record);
 			i++;
 		}
+		
+		return result;
 	}
 	
-	private void performePhantomRecordsRemotion(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	private EtlOperationResultHeader<EtlDatabaseObject> performePhantomRecordsRemotion(List<EtlDatabaseObject> etlObjects,
+	        Connection srcConn, Connection dstConn) throws DBException {
+		
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		
 		int i = 1;
 		
-		for (EtlObject record : etlObjects) {
+		for (EtlDatabaseObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
 			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
@@ -102,21 +118,15 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor {
 			
 			DataReconciliationRecord data = new DataReconciliationRecord(((EtlDatabaseObject) record).getUuid(),
 			        getSrcConf(), ConciliationReasonType.PHANTOM);
-			data.reloadRelatedRecordDataFromDestination(conn);
-			data.removeRelatedRecord(conn);
-			data.save(conn);
+			data.reloadRelatedRecordDataFromDestination(srcConn);
+			data.removeRelatedRecord(srcConn);
+			data.save(srcConn);
 			
+			result.addToRecordsWithNoError(record);
 			i++;
 		}
+		
+		return result;
 	}
 	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new CentralAndRemoteDataReconciliationSearchParams(
-		        this.getEtlConfiguration(), limits, getRelatedOperationController().getOperationType(), conn);
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
-		
-		return searchParams;
-	}
 }

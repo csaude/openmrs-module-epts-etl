@@ -3,23 +3,22 @@ package org.openmrs.module.epts.etl.detectgapes.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
-import org.openmrs.module.epts.etl.detectgapes.engine.DetectGapesEngine;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public DetectGapesSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits,
-	    DetectGapesEngine relatedEngine) {
-		super(config, limits, relatedEngine);
+	public DetectGapesSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager limits) {
+		super(engine, limits);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
 	}
@@ -29,15 +28,16 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	        Connection dstCOnn) throws DBException {
 		AbstractTableConfiguration tableInfo = getSrcTableConf();
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
-		searchClauses.addToClauseFrom(tableInfo.generateFullTableNameWithAlias(conn));
+		searchClauses.addToClauseFrom(tableInfo.generateFullTableNameWithAlias(srcConn));
 		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
 		
-		tryToAddLimits(searchClauses);
+		tryToAddLimits(limits, searchClauses);
 		
 		tryToAddExtraConditionForExport(searchClauses);
 		
@@ -54,13 +54,13 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 		if (this.savedCount > 0)
 			return this.savedCount;
 		
-		ThreadRecordIntervalsManager bkpLimits = this.getLimits();
+		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.setLimits(bkpLimits);
+		this.setThreadRecordIntervalsManager(bkpLimits);
 		
 		this.savedCount = count;
 		

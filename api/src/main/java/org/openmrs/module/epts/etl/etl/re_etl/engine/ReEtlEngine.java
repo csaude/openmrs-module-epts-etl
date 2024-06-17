@@ -2,14 +2,11 @@ package org.openmrs.module.epts.etl.etl.re_etl.engine;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
-import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.etl.re_etl.controller.ReEtlController;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
@@ -17,10 +14,10 @@ import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
  * @author jpboane
@@ -28,13 +25,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class ReEtlEngine extends EtlEngine {
 	
-	public ReEtlEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public ReEtlEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
-	}
-	
-	@Override
-	protected boolean mustDoFinalCheck() {
-		return false;
 	}
 	
 	@Override
@@ -43,125 +35,111 @@ public class ReEtlEngine extends EtlEngine {
 	}
 	
 	@Override
-	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		logInfo("PERFORMING RE ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
 		int i = 1;
+
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
 		
-		Connection srcConn = conn;
-		
-		OpenConnection dstConn = getRelatedOperationController().openDstConnection();
-		
-		List<EtlObject> recordsToIgnoreOnStatistics = new ArrayList<EtlObject>();
-		
-		try {
-			for (EtlObject record : etlObjects) {
-				String startingStrLog = utilities.garantirXCaracterOnNumber(i,
-				    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
+		for (EtlObject record : etlObjects) {
+			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
+			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
+			
+			boolean wentWrong = true;
+			
+			EtlDatabaseObject rec = (EtlDatabaseObject) record;
+			
+			for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 				
-				boolean wentWrong = true;
+				EtlDatabaseObject destObject = null;
 				
-				EtlDatabaseObject rec = (EtlDatabaseObject) record;
+				destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
 				
-				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
+				if (destObject == null) {
+					continue;
+				}
+				
+				destObject.loadObjectIdData(mappingInfo);
+				
+				boolean wrt = writeOperationHistory();
+				
+				LoadRecord data = new LoadRecord(destObject, getSrcConf(), mappingInfo, this, wrt);
+				
+				try {
+					process(data, startingStrLog, 0, srcConn, dstConn);
 					
-					EtlDatabaseObject destObject = null;
+					result.addToRecordsWithNoError(rec);
 					
-					destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
+					wentWrong = false;
+				}
+				catch (MissingParentException e) {
+					logWarn(
+					    startingStrLog + "." + data.getRecord() + " - " + e.getMessage() + " The record will be skipped");
 					
-					if (destObject == null) {
-						continue;
-					}
+					InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
+					    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
 					
-					destObject.loadObjectIdData(mappingInfo);
+					inconsistenceInfo.save(mappingInfo, srcConn);
 					
-					boolean wrt = writeOperationHistory();
+					result.addToRecordsWithResolvedErrors(rec, inconsistenceInfo);
 					
-					LoadRecord data = new LoadRecord(destObject, getSrcConf(), mappingInfo, this, wrt);
-					
-					try {
-						process(data, startingStrLog, 0, srcConn, dstConn);
-						wentWrong = false;
-					}
-					catch (MissingParentException e) {
-						logWarn(startingStrLog + "." + data.getRecord() + " - " + e.getMessage()
-						        + " The record will be skipped");
-						
-						InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
-						    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
-						
-						inconsistenceInfo.save(mappingInfo, srcConn);
-						
-						wentWrong = false;
-					}
-					catch (ConflictWithRecordNotYetAvaliableException e) {
+					wentWrong = false;
+				}
+				catch (ConflictWithRecordNotYetAvaliableException e) {
+					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+					        + e.getLocalizedMessage() + ". Skipping... ");
+				}
+				catch (DBException e) {
+					if (e.isDuplicatePrimaryOrUniqueKeyException()) {
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
 						        + e.getLocalizedMessage() + ". Skipping... ");
-					}
-					catch (DBException e) {
-						if (e.isDuplicatePrimaryOrUniqueKeyException()) {
-							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-							        + e.getLocalizedMessage() + ". Skipping... ");
-						} else if (e.isIntegrityConstraintViolationException()) {
-							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-							        + e.getLocalizedMessage() + ". Skipping... ");
-						} else {
-							logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-							        + e.getLocalizedMessage() + ". Skipping... ");
-							
-							throw e;
-						}
-					}
-					catch (Exception e) {
-						e.printStackTrace();
+					} else if (e.isIntegrityConstraintViolationException()) {
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
-						        + e.getLocalizedMessage());
+						        + e.getLocalizedMessage() + ". Skipping... ");
+					} else {
+						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+						        + e.getLocalizedMessage() + ". Skipping... ");
 						
 						throw e;
 					}
-					finally {
-						
-						if (wentWrong) {
-							if (DBUtilities.isPostgresDB(dstConn)) {
-								/*
-								 * PosgresSql fails when you continue to use a connection which previously encountered an exception
-								 * So we are committing before try to use the connection again
-								 * 
-								 * NOTE that we are taking risk if some other bug happen and the transaction need to be aborted
-								 */
-								try {
-									dstConn.commit();
-								}
-								catch (SQLException e) {
-									throw new DBException(e);
-								}
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
+					        + e.getLocalizedMessage());
+					
+					throw e;
+				}
+				finally {
+					
+					if (wentWrong) {
+						if (DBUtilities.isPostgresDB(dstConn)) {
+							/*
+							 * PosgresSql fails when you continue to use a connection which previously encountered an exception
+							 * So we are committing before try to use the connection again
+							 * 
+							 * NOTE that we are taking risk if some other bug happen and the transaction need to be aborted
+							 */
+							try {
+								dstConn.commit();
 							}
-							
-							if (this.finalCheckStatus.notInitialized()) {
-								recordsToIgnoreOnStatistics.add(record);
+							catch (SQLException e) {
+								throw new DBException(e);
 							}
 						}
 					}
-					
-					i++;
-					
 				}
+				
+				i++;
+				
 			}
-			
-			if (finalCheckStatus.notInitialized() && utilities.arrayHasElement(recordsToIgnoreOnStatistics)) {
-				logWarn(recordsToIgnoreOnStatistics.size() + " not successifuly processed. Removing them on statistics");
-				etlObjects.removeAll(recordsToIgnoreOnStatistics);
-			}
-			
-			logInfo("RE ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size()
-			        + "' RECORDS");
-			
-			dstConn.markAsSuccessifullyTerminated();
 		}
-		finally {
-			dstConn.finalizeConnection();
-		}
+		
+		
+		return result;
 	}
 	
 	private void process(LoadRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
@@ -172,17 +150,6 @@ public class ReEtlEngine extends EtlEngine {
 		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + etlData.getRecord() + "]");
 		
 		etlData.reLoad(srcConn, destConn);
-	}
-	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits,
-	        Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new EtlDatabaseObjectSearchParams(
-		        this.getEtlConfiguration(), limits, this);
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
-		
-		return searchParams;
 	}
 	
 }

@@ -25,12 +25,11 @@ import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseOperationHeaderResult;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseOperationItemResult;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class LoadRecord {
 	
@@ -233,10 +232,10 @@ public class LoadRecord {
 		}
 	}
 	
-	protected DatabaseOperationItemResult loadDstParentInfo(Connection srcConn, Connection dstConn)
+	protected EtlOperationItemResult<EtlDatabaseObject> loadDstParentInfo(Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, MissingParentException, DBException {
 		
-		DatabaseOperationItemResult itemResult = new DatabaseOperationItemResult(getRecord());
+		EtlOperationItemResult<EtlDatabaseObject> itemResult = new EtlOperationItemResult<>(getRecord());
 		
 		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo())) {
 			return itemResult;
@@ -409,8 +408,8 @@ public class LoadRecord {
 		consolidateAndSaveData(false, srcConn, destConn);
 	}
 	
-	public static DatabaseOperationHeaderResult loadAll(List<LoadRecord> mergingRecs, Connection srcConn, Connection dstConn)
-	        throws ParentNotYetMigratedException, DBException {
+	public static EtlOperationResultHeader<EtlDatabaseObject> loadAll(List<LoadRecord> mergingRecs, Connection srcConn,
+	        Connection dstConn) throws ParentNotYetMigratedException, DBException {
 		
 		AbstractTableConfiguration config = mergingRecs.get(0).dstConf;
 		
@@ -420,10 +419,10 @@ public class LoadRecord {
 		
 		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
 		
-		DatabaseOperationHeaderResult currResult = new DatabaseOperationHeaderResult();
+		EtlOperationResultHeader<EtlDatabaseObject> currResult = new EtlOperationResultHeader<>();
 		
 		for (LoadRecord loadRecord : mergingRecs) {
-			DatabaseOperationItemResult r = loadRecord.loadDstParentInfo(srcConn, dstConn);
+			EtlOperationItemResult<EtlDatabaseObject> r = loadRecord.loadDstParentInfo(srcConn, dstConn);
 			
 			if (!r.hasUnresolvedInconsistences()) {
 				objects.add(loadRecord.getRecord());
@@ -443,7 +442,25 @@ public class LoadRecord {
 				if (r.hasParentsWithDefaultValues()) {
 					r.reloadParentsWithDefaultValues(srcConn, dstConn);
 					
+					Oid originalOid = r.getRecord().getObjectId();
+					
+					if (!r.getEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
+						List<EtlDatabaseObject> recOnDb = DatabaseObjectDAO.getByUniqueKeys(r.getDstConf(), r.getRecord(),
+						    dstConn);
+						
+						if (utilities.arrayHasElement(recOnDb)) {
+							r.getRecord().setObjectId(recOnDb.get(0).getObjectId());
+						} else {
+							r.getRecord().setObjectId(originalOid);
+							
+							throw new ForbiddenOperationException(
+							        "The record " + r.getRecord() + " cannot found on db after is has been created!!");
+						}
+					}
+					
 					r.getRecord().update(r.getDstConf(), dstConn);
+					
+					r.getRecord().setObjectId(originalOid);
 				}
 			}
 		}
@@ -451,13 +468,13 @@ public class LoadRecord {
 		return currResult;
 	}
 	
-	public static DatabaseOperationHeaderResult loadAll(Map<String, List<LoadRecord>> mergingRecs, Connection srcConn,
-	        OpenConnection dstConn) throws ParentNotYetMigratedException, DBException {
+	public static EtlOperationResultHeader<EtlDatabaseObject> loadAll(Map<String, List<LoadRecord>> mergingRecs,
+	        Connection srcConn, Connection dstConn) throws ParentNotYetMigratedException, DBException {
 		
-		DatabaseOperationHeaderResult result = new DatabaseOperationHeaderResult();
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
 		
 		for (String key : mergingRecs.keySet()) {
-			DatabaseOperationHeaderResult currresult = loadAll(mergingRecs.get(key), srcConn, dstConn);
+			EtlOperationResultHeader<EtlDatabaseObject> currresult = loadAll(mergingRecs.get(key), srcConn, dstConn);
 			
 			result.addAllFromOtherResult(currresult);
 		}

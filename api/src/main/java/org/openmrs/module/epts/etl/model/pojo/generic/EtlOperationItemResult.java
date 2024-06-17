@@ -8,21 +8,31 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DatabaseOperationItemResult {
+public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 	
 	private static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private EtlDatabaseObject record;
+	private T record;
 	
 	private DBException exception;
 	
 	private List<InconsistenceInfo> inconsistenceInfo;
 	
-	public DatabaseOperationItemResult(EtlDatabaseObject record) {
+	public EtlOperationItemResult(T record) {
 		this.record = record;
 	}
 	
-	public DatabaseOperationItemResult(EtlDatabaseObject record, DBException exception) {
+	public EtlOperationItemResult(T record, List<InconsistenceInfo> inconsistence) {
+		this.record = record;
+		this.inconsistenceInfo = inconsistence;
+	}
+	
+	public EtlOperationItemResult(T record, InconsistenceInfo inconsistence) {
+		this.record = record;
+		this.inconsistenceInfo = utilities.parseToList(inconsistence);
+	}
+	
+	public EtlOperationItemResult(T record, DBException exception) {
 		this.record = record;
 		this.exception = exception;
 	}
@@ -47,7 +57,7 @@ public class DatabaseOperationItemResult {
 		return exception;
 	}
 	
-	public EtlDatabaseObject getRecord() {
+	public T getRecord() {
 		return record;
 	}
 	
@@ -84,10 +94,11 @@ public class DatabaseOperationItemResult {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof DatabaseOperationItemResult))
+		if (!(obj instanceof EtlOperationItemResult))
 			return false;
 		
-		DatabaseOperationItemResult r = (DatabaseOperationItemResult) obj;
+		@SuppressWarnings("unchecked")
+		EtlOperationItemResult<T> r = (EtlOperationItemResult<T>) obj;
 		
 		return this.getRecord().equals(r.getRecord());
 	}

@@ -3,25 +3,18 @@ package org.openmrs.module.epts.etl.resolveconflictsinstagearea.engine;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
-import org.openmrs.module.epts.etl.resolveconflictsinstagearea.model.ResolveConflictsInStageAreaSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class ResolveConflictsInStageAreaEngine extends TaskProcessor {
+public class ResolveConflictsInStageAreaEngine extends TaskProcessor<SyncImportInfoVO> {
 	
-	public ResolveConflictsInStageAreaEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public ResolveConflictsInStageAreaEngine(Engine<SyncImportInfoVO> monitor, IntervalExtremeRecord limits) {
 		super(monitor, limits);
-	}
-	
-	
-	@Override
-	protected boolean mustDoFinalCheck() {
-		return false;
 	}
 	
 	@Override
@@ -29,15 +22,14 @@ public class ResolveConflictsInStageAreaEngine extends TaskProcessor {
 		return (ResolveConflictsInStageAreaController) super.getRelatedOperationController();
 	}
 	
-	@Override
-	protected void restart() {
-	}
 	
 	@Override
-	public void performeSync(List<? extends EtlObject> etlObjects, Connection conn) throws DBException {
+	protected EtlOperationResultHeader<SyncImportInfoVO> performeSync(List<SyncImportInfoVO> records, Connection srcConn,
+	        Connection dstConn) throws DBException {
+
 		utilities.throwReviewMethodException();
 
-		
+		return null;
 		/*List<SyncImportInfoVO> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, SyncImportInfoVO.class);
 		
 		this.getMonitor().logInfo("PERFORMING CONFLICTS RESOLUTION ACTION '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
@@ -72,14 +64,5 @@ public class ResolveConflictsInStageAreaEngine extends TaskProcessor {
 		this.getMonitor().logInfo("CONFLICTS RESOLVED FOR RECORDS '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + "!");
 		*/
 	}
-	
-	@Override
-	protected AbstractEtlSearchParams<? extends EtlObject> initSearchParams(ThreadRecordIntervalsManager limits, Connection conn) {
-		AbstractEtlSearchParams<? extends EtlObject> searchParams = new ResolveConflictsInStageAreaSearchParams(
-		        this.getEtlConfiguration(), limits, conn);
-		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
-		searchParams.setSyncStartDate(getEtlConfiguration().getRelatedSyncConfiguration().getStartDate());
-		
-		return searchParams;
-	}
+
 }

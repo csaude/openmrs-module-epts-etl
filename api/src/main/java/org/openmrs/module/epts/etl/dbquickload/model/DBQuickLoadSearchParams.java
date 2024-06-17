@@ -10,11 +10,10 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
-import org.openmrs.module.epts.etl.dbquickload.engine.DBQuickLoadEngine;
 import org.openmrs.module.epts.etl.dbquickload.engine.QuickLoadLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
@@ -32,8 +31,8 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	 */
 	private SyncJSONInfo currJSONInfo;
 	
-	public DBQuickLoadSearchParams(DBQuickLoadEngine engine, EtlItemConfiguration config, QuickLoadLimits limits) {
-		super(config, limits, engine);
+	public DBQuickLoadSearchParams(Engine<EtlDatabaseObject> engine, QuickLoadLimits limits) {
+		super(engine, limits);
 	}
 	
 	public SyncJSONInfo getCurrJSONInfo() {
@@ -50,7 +49,8 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		return null;
 	}
 	
@@ -70,7 +70,8 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> searchNextRecords(Engine monitor, Connection conn) throws DBException {
+	public List<EtlDatabaseObject> search(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord intervalExtremeRecord,
+	        Connection srcConn, Connection dstCOnn) throws DBException {
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
 		if (this.currJSONSourceFile == null)
@@ -103,7 +104,7 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(getConfig(), null,
+		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(getRelatedEngine(), null,
 		        getRelatedController().getAppOriginLocationCode());
 		
 		int processed = syncSearchParams.countAllRecords(conn);

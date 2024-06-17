@@ -11,7 +11,6 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
 import org.openmrs.module.epts.etl.databasepreparation.controller.DatabasePreparationController;
-import org.openmrs.module.epts.etl.dbquickcopy.controller.DBQuickCopyController;
 import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportController;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
@@ -23,6 +22,7 @@ import org.openmrs.module.epts.etl.export.controller.DBExportController;
 import org.openmrs.module.epts.etl.inconsistenceresolver.controller.InconsistenceSolverController;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBController;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
 import org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine;
@@ -66,13 +66,13 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private List<String> sourceFolders;
 	
-	private List<OperationController> relatedControllers;
+	private List<OperationController<? extends EtlDatabaseObject>> relatedControllers;
 	
 	private boolean mustRunToAllApps;
 	
 	private String engineFullClassName;
 	
-	private Class<TaskProcessor> engineClazz;
+	private Class<TaskProcessor<? extends EtlDatabaseObject>> engineClazz;
 	
 	private boolean skipFinalDataVerification;
 	
@@ -126,7 +126,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return engineFullClassName;
 	}
 	
-	public Class<TaskProcessor> getEngineClazz() {
+	public Class<TaskProcessor<? extends EtlDatabaseObject>> getEngineClazz() {
 		return engineClazz;
 	}
 	
@@ -169,21 +169,21 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public List<OperationController> getRelatedControllers() {
+	public List<OperationController<? extends EtlDatabaseObject>> getRelatedControllers() {
 		return relatedControllers;
 	}
 	
-	public OperationController getRelatedController(String appOriginCode) {
+	public OperationController<? extends EtlDatabaseObject> getRelatedController(String appOriginCode) {
 		if (relatedControllers == null)
 			return null;
 		
 		if (appOriginCode == null) {
-			OperationController activeController = this.relatedControllers.get(0);
+			OperationController<? extends EtlDatabaseObject> activeController = this.relatedControllers.get(0);
 			
 			return activeController;
 		}
 		
-		for (OperationController controller : this.relatedControllers) {
+		for (OperationController<? extends EtlDatabaseObject> controller : this.relatedControllers) {
 			
 			if (controller instanceof SiteOperationController
 			        && ((SiteOperationController) controller).getAppOriginLocationCode().equalsIgnoreCase(appOriginCode)) {
@@ -316,7 +316,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return doIntegrityCheckInTheEnd;
 	}
 	
-	public static EtlOperationConfig fastCreate(EtlOperationType operationType) {
+	public static <T extends EtlDatabaseObject> EtlOperationConfig fastCreate(EtlOperationType operationType) {
 		EtlOperationConfig op = new EtlOperationConfig();
 		op.setOperationType(operationType);
 		
@@ -382,10 +382,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return this.operationType.isDbQuickExport();
 	}
 	
-	public boolean isDBQuickCopy() {
-		return this.operationType.isDbQuickCopy();
-	}
-	
 	public boolean isDetectGapes() {
 		return this.operationType.isDetectGapesOperation();
 	}
@@ -435,6 +431,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return this.operationType.isGenericOperation();
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null)
@@ -443,12 +440,14 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		if (!(obj instanceof EtlOperationConfig))
 			return false;
 		
-		return this.operationType.equals(((EtlOperationConfig) obj).operationType);
+		EtlOperationConfig otherObj = (EtlOperationConfig) obj;
+		
+		return this.operationType.equals(otherObj.operationType);
 	}
 	
-	public List<OperationController> generateRelatedController(ProcessController parent, String appOriginCode_,
-	        Connection conn) {
-		this.relatedControllers = new ArrayList<OperationController>();
+	public List<OperationController<? extends EtlDatabaseObject>> generateRelatedController(ProcessController parent,
+	        String appOriginCode_, Connection conn) {
+		this.relatedControllers = new ArrayList<>();
 		
 		if (getSourceFolders() == null) {
 			this.relatedControllers.add(generateSingle(parent, appOriginCode_, conn));
@@ -459,11 +458,11 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		}
 		
 		if (this.getChild() != null) {
-			for (OperationController controller : this.relatedControllers) {
+			for (OperationController<? extends EtlDatabaseObject> controller : this.relatedControllers) {
 				controller.setChildren(
 				    this.getChild().generateRelatedController(controller.getProcessController(), appOriginCode_, conn));
 				
-				for (OperationController child : controller.getChildren()) {
+				for (OperationController<? extends EtlDatabaseObject> child : controller.getChildren()) {
 					child.setParent(controller);
 				}
 			}
@@ -472,7 +471,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return this.relatedControllers;
 	}
 	
-	private OperationController generateSingle(ProcessController parent, String appOriginCode, Connection conn) {
+	private OperationController<? extends EtlDatabaseObject> generateSingle(ProcessController parent, String appOriginCode,
+	        Connection conn) {
 		
 		if (isReEtl()) {
 			return new ReEtlController(parent, this, appOriginCode);
@@ -508,8 +508,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			return new CentralAndRemoteDataReconciliationController(parent, this);
 		} else if (isResolveConflictsInStageArea()) {
 			return new ResolveConflictsInStageAreaController(parent, this);
-		} else if (isDBQuickCopy()) {
-			return new DBQuickCopyController(parent, this, appOriginCode);
 		} else if (isDBMergeFromSourceDB()) {
 			return new DataBaseMergeFromSourceDBController(parent, this);
 		} else if (isResolveProblem()) {
@@ -561,10 +559,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 				        + "] Cannot be configured in db quick load process\n";
 		} else if (this.getRelatedSyncConfig().isDataReconciliationProcess()) {
 			if (!this.canBeRunInDataReconciliationProcess())
-				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
-				        + "] Cannot be configured in data reconciliation process\n";
-		} else if (this.getRelatedSyncConfig().isDBQuickCopyProcess()) {
-			if (!this.canBeRunInDBQuickCopyProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in data reconciliation process\n";
 		} else if (this.getRelatedSyncConfig().isDataBaseMergeFromSourceDBProcess()) {
@@ -734,17 +728,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public boolean canBeRunInDBQuickCopyProcess() {
-		return utilities.existOnArray(getSupportedOperationsInDBQuickCopyProcess(), this.operationType);
-	}
-	
-	public static List<EtlOperationType> getSupportedOperationsInDBQuickCopyProcess() {
-		EtlOperationType[] supported = { EtlOperationType.DB_QUICK_COPY };
-		
-		return utilities.parseArrayToList(supported);
-	}
-	
-	@JsonIgnore
 	public boolean canBeRunInDataReconciliationProcess() {
 		return utilities.existOnArray(getSupportedOperationsInDataReconciliationProcess(), this.operationType);
 	}
@@ -808,8 +791,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public synchronized <T extends TaskProcessor> void tryToLoadEngine() throws ForbiddenOperationException {
-		
+	public synchronized void tryToLoadEngine() throws ForbiddenOperationException {
+		/*
 		try {
 			if (engineClazz == null) {
 				
@@ -817,9 +800,10 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 					
 					ClassLoader loader = TaskProcessor.class.getClassLoader();
 					
-					Class<T> c = (Class<T>) loader.loadClass(this.getEngineFullClassName());
+					Class<? extends EtlDatabaseObject> c = (Class<? extends EtlDatabaseObject>) loader
+					        .loadClass(this.getEngineFullClassName());
 					
-					this.engineClazz = (Class<TaskProcessor>) c;
+					this.engineClazz = (Class<TaskProcessor<? extends EtlDatabaseObject>>) c;
 					
 					if (this.engineClazz == null) {
 						throw new ForbiddenOperationException(
@@ -834,7 +818,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		}
 		catch (
 		
-		ClassNotFoundException e) {}
+		ClassNotFoundException e) {}*/
 	}
 	
 }

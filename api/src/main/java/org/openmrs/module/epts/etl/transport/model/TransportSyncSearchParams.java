@@ -7,14 +7,13 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.transport.controller.TransportController;
-import org.openmrs.module.epts.etl.transport.engine.TransportEngine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class TransportSyncSearchParams extends AbstractEtlSearchParams<TransportRecord> implements FilenameFilter {
@@ -25,8 +24,8 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	
 	private String fileNamePathern;
 	
-	public TransportSyncSearchParams(TransportEngine engine, EtlItemConfiguration config, ThreadRecordIntervalsManager limits) {
-		super(config, limits, engine);
+	public TransportSyncSearchParams(Engine<TransportRecord> engine, ThreadRecordIntervalsManager limits) {
+		super(engine, limits);
 		
 		if (limits != null) {
 			this.firstFileName = getSrcTableConf().getTableName() + "_"
@@ -37,10 +36,11 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json";
 		}
 	}
-
 	
 	@Override
-	public List<TransportRecord> searchNextRecords(Engine monitor, Connection conn) throws DBException {
+	public List<TransportRecord> search(Engine<TransportRecord> monitor, IntervalExtremeRecord intervalExtremeRecord,
+	        Connection srcConn, Connection dstCOnn) throws DBException {
+		
 		try {
 			File[] files = getSyncDirectory().listFiles(this);
 			
@@ -76,7 +76,8 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	}
 	
 	@Override
-	public SearchClauses<TransportRecord> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<TransportRecord> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		return null;
 	}
 	
@@ -136,8 +137,7 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-
+	
 	@Override
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub

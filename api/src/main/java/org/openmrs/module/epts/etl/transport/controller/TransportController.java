@@ -2,18 +2,24 @@ package org.openmrs.module.epts.etl.transport.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.Arrays;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.controller.SiteOperationController;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.transport.engine.TransportEngine;
+import org.openmrs.module.epts.etl.transport.model.TransportRecord;
 import org.openmrs.module.epts.etl.transport.model.TransportSyncSearchParams;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 /**
@@ -21,20 +27,30 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  * 
  * @author jpboane
  */
-public class TransportController extends EtlController {
+public class TransportController extends SiteOperationController<TransportRecord> {
 	
 	public TransportController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig, null);
 	}
 	
 	@Override
-	public TaskProcessor initRelatedEngine(Engine monitor, ThreadRecordIntervalsManager limits) {
+	public TaskProcessor<TransportRecord> initRelatedEngine(Engine<TransportRecord> monitor, IntervalExtremeRecord limits) {
 		return new TransportEngine(monitor, limits);
 	}
 	
 	@Override
-	public long getMinRecordId(EtlItemConfiguration config) {
-		File[] files = getSyncDirectory(config.getSrcConf()).listFiles(new TransportSyncSearchParams(null, config, null));
+	public AbstractEtlSearchParams<TransportRecord> initMainSearchParams(ThreadRecordIntervalsManager<TransportRecord> intervalsMgt,
+	        Engine<TransportRecord> engine) {
+		AbstractEtlSearchParams<TransportRecord> searchParams = new TransportSyncSearchParams(engine, intervalsMgt);
+		searchParams.setQtdRecordPerSelected(2500);
+		
+		return searchParams;
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
+		File[] files = getSyncDirectory(engine.getSrcConf()).listFiles(new TransportSyncSearchParams((Engine<TransportRecord>) engine, null));
 		
 		if (files == null || files.length == 0)
 			return 0;
@@ -50,10 +66,10 @@ public class TransportController extends EtlController {
 		return Long.parseLong(pats[pats.length - 2]);
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
-	public long getMaxRecordId(EtlItemConfiguration config) {
-		File[] files = getSyncDirectory(config.getSrcConf())
-		        .listFiles(new TransportSyncSearchParams(null, config, null));
+	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
+		File[] files = getSyncDirectory(engine.getSrcConf()).listFiles(new TransportSyncSearchParams((Engine<TransportRecord>) engine, null));
 		
 		if (files == null || files.length == 0)
 			return 0;
@@ -132,5 +148,9 @@ public class TransportController extends EtlController {
 	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return false;
+	}
+
+	@Override
+	public void afterEtl(List<TransportRecord> objs, Connection srcConn, Connection dstConn) throws DBException {
 	}
 }

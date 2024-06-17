@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -412,5 +413,14 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			}
 		}
 		
+	}
+	
+	@Override
+	public void setObjectId(Oid objectId) {
+		for (Key key : objectId.getFields()) {
+			setFieldValue(key.getName(), key.getValue());
+		}
+		
+		loadObjectIdData((TableConfiguration) getRelatedConfiguration());
 	}
 }

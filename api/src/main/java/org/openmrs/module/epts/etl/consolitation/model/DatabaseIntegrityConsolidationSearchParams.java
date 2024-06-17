@@ -2,27 +2,29 @@ package org.openmrs.module.epts.etl.consolitation.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjectSearchParams {
 	
 	private boolean selectAllRecords;
 	
-	public DatabaseIntegrityConsolidationSearchParams(EtlItemConfiguration config, ThreadRecordIntervalsManager limits, Connection conn) {
-		super(config, limits, null);
+	public DatabaseIntegrityConsolidationSearchParams(Engine<EtlDatabaseObject> engine,
+	    ThreadRecordIntervalsManager limits) {
 		
-		setOrderByFields(config.getSrcConf().getPrimaryKey().parseFieldNamesToArray());
+		super(engine, limits);
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(Connection conn) throws DBException {
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		searchClauses.addColumnToSelect(getSrcTableConf().generateFullAliasedSelectColumns());
@@ -36,7 +38,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 			searchClauses.addToClauses("last_sync_date is null or last_sync_date < ?");
 			searchClauses.addToParameters(this.getSyncStartDate());
 			
-			tryToAddLimits(searchClauses);
+			tryToAddLimits(limits, searchClauses);
 			
 			tryToAddExtraConditionForExport(searchClauses);
 		}
@@ -47,7 +49,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
 		DatabaseIntegrityConsolidationSearchParams auxSearchParams = new DatabaseIntegrityConsolidationSearchParams(
-		        this.getConfig(), this.getLimits(), conn);
+		        this.getRelatedEngine(), this.getThreadRecordIntervalsManager());
 		auxSearchParams.selectAllRecords = true;
 		
 		return SearchParamsDAO.countAll(auxSearchParams, conn);
@@ -55,17 +57,17 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		ThreadRecordIntervalsManager bkpLimits = this.getLimits();
+		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
 		
-		this.setLimits(null);
+		this.setThreadRecordIntervalsManager(null);
 		
 		int count = SearchParamsDAO.countAll(this, conn);
 		
-		this.setLimits(bkpLimits);
+		this.setThreadRecordIntervalsManager(bkpLimits);
 		
 		return count;
 	}
-
+	
 	@Override
 	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub

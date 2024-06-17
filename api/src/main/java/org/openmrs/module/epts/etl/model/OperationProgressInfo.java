@@ -128,7 +128,7 @@ public class OperationProgressInfo {
 	
 	@JsonIgnore
 	private EtlConfiguration getConfiguration() {
-		return this.controller.getConfiguration();
+		return this.controller.getEtlConfiguration();
 	}
 	
 	public void refreshProgressInfo() {
