@@ -140,10 +140,7 @@ public class LoadRecord {
 				boolean existObservationDateFields = utilities.arrayHasElement(getDstConf().getObservationDateFields());
 				
 				if (existObservationDateFields || existWinningRecInfo) {
-					List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.getDstConf(), this.getRecord(),
-					    dstConn);
-					
-					EtlDatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+					EtlDatabaseObject recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this.getRecord(), dstConn);
 					
 					((AbstractDatabaseObject) getRecord()).resolveConflictWithExistingRecord(recordOnDB, this.getDstConf(),
 					    dstConn);
@@ -173,9 +170,7 @@ public class LoadRecord {
 		
 		loadDstParentInfo(srcConn, dstConn);
 		
-		List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(this.getDstConf(), this.getRecord(), dstConn);
-		
-		EtlDatabaseObject recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+		EtlDatabaseObject recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this.getRecord(), dstConn);
 		
 		((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.getDstConf(), dstConn);
 		
@@ -199,7 +194,6 @@ public class LoadRecord {
 			}
 			
 			EtlDatabaseObject dstParent = null;
-			DstConf dstConf = null;
 			
 			for (SrcConf src : avaliableSrcForCurrParent) {
 				DstConf dst = src.getParentConf().findDstTable(parentInfo.getParentTableConfInDst().getTableName());
@@ -224,9 +218,7 @@ public class LoadRecord {
 				}
 			}
 			
-			List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(dstConf, dstParent, dstConn);
-			
-			EtlDatabaseObject parent = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+			EtlDatabaseObject parent = DatabaseObjectDAO.getByUniqueKeys(dstParent, dstConn);
 			
 			getRecord().changeParentValue(parentInfo.getParentTableConfInDst(), parent);
 		}
@@ -319,7 +311,13 @@ public class LoadRecord {
 			if (getEngine().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
 				parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
 			} else {
-				parent = retrieveParentByUnikeKeys(refInfo, parentInOrigin, dstConn);
+				EtlDatabaseObject recInDst = refInfo.createRecordInstance();
+				recInDst.setRelatedConfiguration(refInfo);
+				recInDst.copyFrom(parentInOrigin);
+				recInDst.loadUniqueKeyValues(refInfo);
+				recInDst.loadObjectIdData(refInfo);
+				
+				parent = retrieveParentByUnikeKeys(recInDst, dstConn);
 			}
 			
 			if (parent == null) {
@@ -344,14 +342,10 @@ public class LoadRecord {
 		return DatabaseObjectDAO.getByOid(refInfo, parentInOrigin.getObjectId(), dstConn);
 	}
 	
-	private EtlDatabaseObject retrieveParentByUnikeKeys(ParentTable refInfo, EtlDatabaseObject parentInOrigin,
-	        Connection dstConn) throws DBException {
+	private EtlDatabaseObject retrieveParentByUnikeKeys(EtlDatabaseObject parentInOrigin, Connection dstConn)
+	        throws DBException {
 		
-		TableConfiguration parentTabConf = refInfo;
-		
-		List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(parentTabConf, parentInOrigin, dstConn);
-		
-		return utilities.arrayHasElement(recs) ? recs.get(0) : null;
+		return DatabaseObjectDAO.getByUniqueKeys(parentInOrigin, dstConn);
 	}
 	
 	/**
@@ -444,18 +438,12 @@ public class LoadRecord {
 					
 					Oid originalOid = r.getRecord().getObjectId();
 					
+					EtlDatabaseObject recByUniqueKeys = null;
+					
 					if (!r.getEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
-						List<EtlDatabaseObject> recOnDb = DatabaseObjectDAO.getByUniqueKeys(r.getDstConf(), r.getRecord(),
-						    dstConn);
+						recByUniqueKeys = DatabaseObjectDAO.getByUniqueKeys(r.getRecord(), dstConn);
 						
-						if (utilities.arrayHasElement(recOnDb)) {
-							r.getRecord().setObjectId(recOnDb.get(0).getObjectId());
-						} else {
-							r.getRecord().setObjectId(originalOid);
-							
-							throw new ForbiddenOperationException(
-							        "The record " + r.getRecord() + " cannot found on db after is has been created!!");
-						}
+						r.getRecord().setObjectId(recByUniqueKeys.getObjectId());
 					}
 					
 					r.getRecord().update(r.getDstConf(), dstConn);

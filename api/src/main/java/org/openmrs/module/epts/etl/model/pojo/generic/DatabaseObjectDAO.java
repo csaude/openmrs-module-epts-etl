@@ -159,9 +159,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static <T extends EtlDatabaseObject> List<T> getByUniqueKeys(TableConfiguration tableConfiguration, T obj,
-	        Connection conn) throws DBException {
-		return getByUniqueKeys(tableConfiguration, DBUtilities.determineSchemaName(conn), obj, conn);
+	public static <T extends EtlDatabaseObject> T getByUniqueKeys(T obj, Connection conn) throws DBException {
+		return getByUniqueKeys(DBUtilities.determineSchemaName(conn), obj, conn);
 	}
 	
 	public static <T extends EtlDatabaseObject> T getByUniqueKey(TableConfiguration tableConfiguration, UniqueKeyInfo uk,
@@ -169,11 +168,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return getByUniqueKey(tableConfiguration, uk, DBUtilities.determineSchemaName(conn), conn);
 	}
 	
-	public static <T extends EtlDatabaseObject> T getByUniqueKeysOnSpecificSchema(TableConfiguration tableConfiguration,
-	        T obj, String schema, Connection conn) throws DBException {
-		List<T> result = getByUniqueKeys(tableConfiguration, schema, obj, conn);
-		
-		return utilities.arrayHasElement(result) ? result.get(0) : null;
+	public static <T extends EtlDatabaseObject> T getByUniqueKeysOnSpecificSchema(T obj, String schema, Connection conn)
+	        throws DBException {
+		return getByUniqueKeys(schema, obj, conn);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -215,23 +212,20 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static <T extends EtlDatabaseObject> List<T> getByUniqueKeys(TableConfiguration tableConfiguration,
-	        String schema, T obj, Connection conn) throws DBException {
-		if (!tableConfiguration.isFullLoaded())
-			tableConfiguration.fullLoad();
+	private static <T extends EtlDatabaseObject> T getByUniqueKeys(String schema, T obj, Connection conn)
+	        throws DBException {
 		
-		if (!tableConfiguration.hasUniqueKeys()) {
+		if (!obj.hasAtLeastOnUniqueKeyWIthAllFieldsFilled()) {
 			return null;
 		}
+		
+		TableConfiguration tableConfiguration = (TableConfiguration) obj.getRelatedConfiguration();
 		
 		Object[] params = {};
 		
 		String conditionSQL = "";
 		
-		for (UniqueKeyInfo uniqueKey : tableConfiguration.getUniqueKeys()) {
-			
-			uniqueKey.loadValuesToFields(obj);
-			
+		for (UniqueKeyInfo uniqueKey : obj.getUniqueKeysInfo()) {
 			if (!uniqueKey.hasNullFields()) {
 				
 				String tmpCodition = "";
@@ -261,15 +255,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += " FROM     " + tableConfiguration.generateSelectFromClauseContent() + "\n";
 		sql += " WHERE 	" + conditionSQL;
 		
-		List<T> objs = (List<T>) search(tableConfiguration.getLoadHealper(), obj.getClass(), sql, params, conn);
-		
-		if (utilities.arrayHasElement(objs)) {
-			for (T t : objs) {
-				t.loadObjectIdData(tableConfiguration);
-			}
-		}
-		
-		return objs;
+		return (T) find(tableConfiguration.getLoadHealper(), obj.getClass(), sql, params, conn);
 	}
 	
 	public static <T extends EtlDatabaseObject> List<T> getByField(TableConfiguration tableConfiguration, String fieldName,

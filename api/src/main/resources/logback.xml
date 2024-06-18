@@ -1,5 +1,13 @@
 <!-- logback.xml -->
-<configuration>
+<configuration debug="true">
+
+    <property name="eip.base.dir" value="D:\\PRG\\JEE\\Workspace\\CSaude\\eptssync" />
+    <property name="LOGS_PATTERN" value="%-5level %date [%thread] %logger{8}:%line %msg%n" />
+    <property name="LOGS_DIR" value="${eip.base.dir}" />
+    <property name="LOGS_FILE_NAME" value="eptssync" />
+    <property name="LOGS_FILE_NAME_EXT" value="log" />
+    <property name="LOGS_FILE" value="${LOGS_DIR}${file.separator}${LOGS_FILE_NAME}.${LOGS_FILE_NAME_EXT}" />
+    <property name="LOGS_MAX_FILE_SIZE" value="50MB" />
 
     <!-- Console Appender -->
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
@@ -8,9 +16,26 @@
         </encoder>
     </appender>
 
+    <!-- Rolling File Appender -->
+	<!--
+    <appender name="fileApp" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS_FILE}</file>
+        <encoder>
+            <pattern>${LOGS_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS_DIR}${file.separator}${LOGS_FILE_NAME}.%d{yyyy-MM-dd}.%i.${LOGS_FILE_NAME_EXT}</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${LOGS_MAX_FILE_SIZE}</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+    </appender>
+	-->
+	
     <!-- Root Logger -->
     <root level="debug">
         <appender-ref ref="console" />
+        <!--<appender-ref ref="fileApp" />-->
     </root>
 
 </configuration>

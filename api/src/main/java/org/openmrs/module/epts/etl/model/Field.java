@@ -102,8 +102,16 @@ public class Field implements Serializable {
 		return value;
 	}
 	
+	boolean hasType() {
+		return type != null;
+	}
+	
 	public void setValue(Object value) {
-		this.value = value;
+		if (this.hasType() && value instanceof Double && (this.isIntegerField() || this.isLongField())) {
+			this.value = utilities.forcarAproximacaoPorExcesso((Double) value);
+		} else {
+			this.value = value;
+		}
 	}
 	
 	public static Object getParameter(List<? extends Field> fields, String name) {
@@ -253,6 +261,16 @@ public class Field implements Serializable {
 	@JsonIgnore
 	public boolean isNumericColumnType() {
 		return AttDefinedElements.isNumeric(this.type);
+	}
+	
+	@JsonIgnore
+	public boolean isIntegerField() {
+		return AttDefinedElements.isInteger(this.type);
+	}
+	
+	@JsonIgnore
+	public boolean isLongField() {
+		return AttDefinedElements.isLong(this.type);
 	}
 	
 	public boolean isString() {

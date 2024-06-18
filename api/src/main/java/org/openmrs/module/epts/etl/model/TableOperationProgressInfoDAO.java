@@ -84,7 +84,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static TableOperationProgressInfo find(OperationController controller, EtlItemConfiguration config,
+	public static <T extends EtlDatabaseObject> TableOperationProgressInfo find(OperationController<T> controller, EtlItemConfiguration config,
 	        Connection conn) throws DBException {
 		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
 		

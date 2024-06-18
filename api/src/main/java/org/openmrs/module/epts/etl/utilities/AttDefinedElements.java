@@ -447,4 +447,12 @@ public class AttDefinedElements {
 		return utilities.isStringIn(type.toLowerCase(), "tinyint", "bit");
 	}
 	
+	public static boolean isInteger(String type) {
+		return utilities.isStringIn(type.toLowerCase(), "int", "integer", "java.lang.integer");
+	}
+	
+	public static boolean isLong(String type) {
+		return utilities.isStringIn(type.toLowerCase(), "long", "java.lang.long");
+	}
+	
 }

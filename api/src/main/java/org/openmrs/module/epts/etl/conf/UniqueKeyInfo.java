@@ -359,6 +359,9 @@ public class UniqueKeyInfo {
 		if (utilities.arrayHasElement(uks)) {
 			
 			for (UniqueKeyInfo uk : uks) {
+				//Since this is usually for an object, null the keyName to avoid "equals" 2 object because they have same keyName
+				uk.setKeyName(null);
+				
 				uk.loadValuesToFields(obj);
 			}
 		}

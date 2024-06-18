@@ -88,6 +88,26 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		return getController().tryToOpenDstConn();
 	}
 	
+	public List<OpenConnection> openSrcConn(int qtyConnections) throws DBException {
+		List<OpenConnection> conns = new ArrayList<>(qtyConnections);
+		
+		for (int i = 0; i < qtyConnections; i++) {
+			conns.add(this.openSrcConn());
+		}
+		
+		return conns;
+	}
+	
+	public List<OpenConnection> tryToOpenDstConn(int qtyConnections) throws DBException {
+		List<OpenConnection> conns = new ArrayList<>(qtyConnections);
+		
+		for (int i = 0; i < qtyConnections; i++) {
+			conns.add(this.tryToOpenDstConn());
+		}
+		
+		return conns;
+	}
+	
 	protected boolean mustDoFinalCheck() {
 		if (getRelatedOperationController().getOperationConfig().skipFinalDataVerification()) {
 			return false;
@@ -248,51 +268,48 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				this.setSearchParams(controller.initMainSearchParams(t, this));
 				this.getSearchParams().setRelatedEngine(this);
 				
+				changeStatusToRunning();
+				
 				calculateStatistics();
 				
 				doFirstSaveAllLimits();
 				
 				long engineAlocatedRecs = this.getQtyRecordsPerProcessing() / qtyEngines;
 				
-				OpenConnection srcConn = null;
-				OpenConnection dstConn = null;
+				List<OpenConnection> srcConn = null;
+				List<OpenConnection> dstConn = null;
 				
-				while (this.getThreadRecordIntervalsManager().canGoNext()) {
-					
-					this.getThreadRecordIntervalsManager().moveNext();
-					
-					srcConn = this.openSrcConn();
-					dstConn = this.tryToOpenDstConn();
-					EtlOperationResultHeader<T> result = this.performeTask(qtyEngines, engineAlocatedRecs, srcConn, dstConn);
-					if (!result.hasFatalError()) {
-						getController().afterEtl(result.getRecordsWithNoError(), srcConn, dstConn);
+				try {
+					while (this.getThreadRecordIntervalsManager().canGoNext()) {
 						
-						if (result.hasRecordsWithUnresolvedErrors() || result.hasRecordsWithResolvedErrors()) {
-							logWarn("Some errors where found loading '" + result.getRecordsWithUnresolvedErrors().size()
-							        + "! The errors will be documented");
-							
-							result.documentErrors(srcConn, dstConn);
-						}
+						this.getThreadRecordIntervalsManager().moveNext();
 						
-					} else {
-						if (result.hasRecordsWithUnresolvedErrors()) {
+						srcConn = this.openSrcConn(qtyEngines);
+						dstConn = this.tryToOpenDstConn(qtyEngines);
+						
+						EtlOperationResultHeader<T> result = this.performeTask(qtyEngines, engineAlocatedRecs, srcConn,
+						    dstConn);
+						
+						if (result.hasFatalError()) {
 							logErr("Fatal error found loading some records. The process will be aborted");
 							
 							result.printStackErrorOfFatalErrors();
 							
 							result.throwDefaultExcetions();
+						} else {
+							OpenConnection.markAllAsSuccessifullyTerminected(srcConn);
+							OpenConnection.markAllAsSuccessifullyTerminected(dstConn);
+							
+							OpenConnection.finalizeAllConnections(srcConn);
+							OpenConnection.finalizeAllConnections(dstConn);
+							
+							getThreadRecordIntervalsManager().save(this);
 						}
 					}
-					if (srcConn != null) {
-						srcConn.markAsSuccessifullyTerminated();
-						srcConn.finalizeConnection();
-					}
-					if (dstConn != null) {
-						dstConn.markAsSuccessifullyTerminated();
-						dstConn.finalizeConnection();
-					}
-				
-					getThreadRecordIntervalsManager().save(this);
+				}
+				finally {
+					OpenConnection.finalizeAllConnections(srcConn);
+					OpenConnection.finalizeAllConnections(dstConn);
 				}
 				
 			}
@@ -311,8 +328,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	 * @throws ExecutionException
 	 * @throws InterruptedException
 	 */
-	public EtlOperationResultHeader<T> performeTask(int qtyEngines, long engineAlocatedRecs, Connection srcConn,
-	        Connection dstConn) throws DBException, InterruptedException, ExecutionException {
+	public EtlOperationResultHeader<T> performeTask(int qtyEngines, long engineAlocatedRecs, List<OpenConnection> srcConn,
+	        List<OpenConnection> dstConn) throws DBException, InterruptedException, ExecutionException {
 		
 		IntervalExtremeRecord currLimits = null;
 		
@@ -326,6 +343,10 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		
 		try {
 			for (int i = 0; i < qtyEngines; i++) {
+				
+				//Fixed to use the same connection as using multiple connections is leading to infinite deadlocks
+				final int connectionIndex = 0;
+				
 				IntervalExtremeRecord limits;
 				
 				if (currLimits == null) {
@@ -346,13 +367,28 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				}
 				
 				TaskProcessor<T> taskProcessor = getController().initRelatedEngine(this, limits);
-				taskProcessor.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i++, 2));
+				taskProcessor.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
 				
 				((EtlThreadFactory) threadFactor).setTaskId(taskProcessor.getEngineId());
 				
 				tasks.add(CompletableFuture.supplyAsync(() -> {
 					try {
-						return taskProcessor.performe(srcConn, dstConn);
+						EtlOperationResultHeader<T> result = taskProcessor.performe(srcConn.get(connectionIndex),
+						    dstConn.get(connectionIndex));
+						
+						if (!result.hasFatalError()) {
+							getController().afterEtl(result.getRecordsWithNoError(), srcConn.get(connectionIndex),
+							    dstConn.get(connectionIndex));
+							
+							if (result.hasRecordsWithUnresolvedErrors() || result.hasRecordsWithResolvedErrors()) {
+								logWarn("Some errors where found loading '" + result.getRecordsWithUnresolvedErrors().size()
+								        + "! The errors will be documented");
+								
+								result.documentErrors(srcConn.get(connectionIndex), dstConn.get(connectionIndex));
+							}
+						}
+						
+						return result;
 					}
 					catch (DBException e) {
 						throw new EtlException(e);
@@ -397,6 +433,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			int processed = total - remaining;
 			
 			if (total == 0) {
+				logWarn("No recorded statistic. Loading from Database");
+				
 				total = getSearchParams().countAllRecords(conn);
 				remaining = getSearchParams().countNotProcessedRecords(conn);
 				processed = total - remaining;

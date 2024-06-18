@@ -72,11 +72,7 @@ public class MergingRecord {
 			parentData.record = DatabaseObjectDAO.getByOid(refInfo, parentStageInfo.getRecordOriginIdAsOid(), conn);
 			parentData.merge(conn);
 			
-			EtlDatabaseObject parent = parentData.record;
-			
-			List<EtlDatabaseObject> recs = DatabaseObjectDAO.getByUniqueKeys(refInfo, parentData.record, conn);
-			
-			parent = recs != null && recs.size() > 0 ? recs.get(0) : null;
+			EtlDatabaseObject parent = DatabaseObjectDAO.getByUniqueKeys(parentData.record, conn);
 			
 			record.changeParentValue(refInfo, parent);
 		}

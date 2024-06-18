@@ -271,10 +271,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	@Override
 	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		if (tableConfiguration.isMetadata()) {
-			List<EtlDatabaseObject> recs = utilities
-			        .parseList(DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), EtlDatabaseObject.class);
-			
-			EtlDatabaseObject recordOnDBByUuid = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+			EtlDatabaseObject recordOnDBByUuid = DatabaseObjectDAO.getByUniqueKeys(this, conn);
 			
 			if (recordOnDBByUuid == null) {
 				//Check if ID is free 
@@ -314,10 +311,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 					}
 					
 					if (recordOnDB == null) {
-						List<EtlDatabaseObject> recs = utilities.parseList(
-						    DatabaseObjectDAO.getByUniqueKeys(tableConfiguration, this, conn), EtlDatabaseObject.class);
-						
-						recordOnDB = utilities.arrayHasElement(recs) ? recs.get(0) : null;
+						recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this, conn);
 					}
 					
 					if (recordOnDB != null) {

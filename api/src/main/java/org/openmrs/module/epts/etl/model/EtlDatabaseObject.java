@@ -422,11 +422,7 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	void copyFrom(EtlDatabaseObject parentRecordInOrigin);
 	
-	/*
-	default EtlDatabaseObject findOnDB(Connection conn) throws DBException, ForbiddenOperationException {
-		TableConfiguration tabConf = (TableConfiguration) this.getRelatedConfiguration();
-		
-		return findOnDB(tabConf, conn);
-	}*/
-	
+	default void loadUniqueKeyValues(TableConfiguration tabConf) {
+		this.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(tabConf.getUniqueKeys(), this));
+	}
 }

@@ -89,7 +89,6 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 	}
 	
-	
 	public void addToRecordsWithResolvedErrors(T record, DBException e) {
 		addToRecordsWithResolvedErrors(new EtlOperationItemResult<T>(record, e));
 	}
@@ -151,16 +150,7 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	}
 	
 	public boolean hasFatalError() throws DBException {
-		if (!hasRecordsWithUnresolvedErrors())
-			return false;
-		
-		for (EtlOperationItemResult<T> r : getRecordsWithUnresolvedErrors()) {
-			if (r.hasFatalError()) {
-				return true;
-			}
-		}
-		
-		return false;
+		return hasRecordsWithUnresolvedErrors();
 	}
 	
 	public void documentErrors(Connection srcConn, Connection dstConn) throws DBException {

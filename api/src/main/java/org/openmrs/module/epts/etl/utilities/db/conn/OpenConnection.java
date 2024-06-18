@@ -67,8 +67,6 @@ public class OpenConnection implements Connection, Closeable {
 	}
 	
 	public void markAsSuccessifullyTerminated() {
-		//if (this.operationTerminatedSuccessifully) throw new ForbiddenOperationException("This connection is already marcked as successifuly terminated!");
-		
 		this.operationTerminatedSuccessifully = true;
 	}
 	
@@ -77,7 +75,9 @@ public class OpenConnection implements Connection, Closeable {
 			return;
 		
 		for (OpenConnection conn : conns) {
-			conn.markAsSuccessifullyTerminated();
+			if (conn != null) {
+				conn.markAsSuccessifullyTerminated();
+			}
 		}
 	}
 	
@@ -86,7 +86,9 @@ public class OpenConnection implements Connection, Closeable {
 			return;
 		
 		for (OpenConnection conn : conns) {
-			conn.finalizeConnection();
+			if (conn != null) {
+				conn.finalizeConnection();
+			}
 		}
 	}
 	

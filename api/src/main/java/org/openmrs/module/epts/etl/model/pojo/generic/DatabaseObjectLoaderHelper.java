@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.model.pojo.generic;
 
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.VO;
@@ -24,6 +25,14 @@ public class DatabaseObjectLoaderHelper implements VOLoaderHelper {
 	
 	@Override
 	public void afterLoad(VO vo) {
+		if (!(vo instanceof EtlDatabaseObject)) {
+			throw new ForbiddenOperationException("This method is only applied to EtlDatabaseObject instances");
+		}
+		
+		if (this.tableConf instanceof TableConfiguration) {
+			((EtlDatabaseObject) vo).loadUniqueKeyValues((TableConfiguration) this.tableConf);
+			((EtlDatabaseObject) vo).loadObjectIdData((TableConfiguration) this.tableConf);
+		}
 	}
 	
 }
