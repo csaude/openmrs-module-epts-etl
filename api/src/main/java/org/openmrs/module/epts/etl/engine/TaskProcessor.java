@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.OperationController;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
@@ -96,7 +97,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
 		        + getSrcConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records) + "' RECORDS.");
 		
-		EtlOperationResultHeader<T> r = new EtlOperationResultHeader<T>();
+		EtlOperationResultHeader<T> r = null;
 		
 		if (utilities.arrayHasElement(records)) {
 			logDebug("INITIALIZING " + getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '"

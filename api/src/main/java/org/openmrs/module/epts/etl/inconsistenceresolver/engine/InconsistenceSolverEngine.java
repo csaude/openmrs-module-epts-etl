@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.inconsistenceresolver.engine;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.inconsistenceresolver.controller.InconsistenceSolverController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
@@ -29,7 +29,7 @@ public class InconsistenceSolverEngine extends TaskProcessor<EtlDatabaseObject> 
 		
 		logInfo("DOING INCONSISTENCE SOLVER FOR '" + etlObjects.size() + "' " + getMainSrcTableName());
 		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		for (EtlDatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {

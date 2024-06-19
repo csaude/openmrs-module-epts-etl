@@ -9,8 +9,8 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
@@ -65,12 +65,14 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 		}
 	}
 	
-	public EtlOperationResultHeader<EtlDatabaseObject> performeBatchSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public EtlOperationResultHeader<EtlDatabaseObject> performeBatchSync(List<EtlDatabaseObject> etlObjects,
+	        Connection srcConn, Connection dstConn) throws DBException {
 		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
 		Map<String, List<LoadRecord>> mergingRecs = new HashMap<>();
+		
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		try {
 			
@@ -93,20 +95,18 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 				}
 			}
 			
-			EtlOperationResultHeader<EtlDatabaseObject> result = LoadRecord.loadAll(mergingRecs, srcConn, dstConn);
+			result = LoadRecord.loadAll(mergingRecs, srcConn, dstConn);
 			
 			logInfo(
 			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
-			
-			return result;
 		}
 		catch (Exception e) {
 			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits() + "]... \n");
 			
-			e.printStackTrace();
-			
-			throw e;
+			result.setFatalException(e);
 		}
+		
+		return result;
 		
 	}
 	
@@ -115,7 +115,7 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<EtlDatabaseObject>();
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<EtlDatabaseObject>(getLimits());
 		
 		int i = 1;
 		
@@ -186,6 +186,8 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 		}
 		
 		logInfo("ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
+		
+		result.setInterval(getLimits());
 		
 		return result;
 	}

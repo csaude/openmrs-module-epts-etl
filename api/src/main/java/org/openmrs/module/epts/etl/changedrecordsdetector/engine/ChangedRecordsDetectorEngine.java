@@ -6,8 +6,8 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.changedrecordsdetector.controller.ChangedRecordsDetectorController;
 import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordInfo;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
@@ -75,7 +75,7 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObjec
 			    getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords, getSrcConf());
 		}
 		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		result.addAllToRecordsWithNoError(utilities.parseList(processedRecords, EtlDatabaseObject.class));
 		

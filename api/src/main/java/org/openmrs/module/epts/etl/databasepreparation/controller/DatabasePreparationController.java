@@ -10,9 +10,9 @@ import org.openmrs.module.epts.etl.databasepreparation.engine.DatabasePreparatio
 import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationRecord;
 import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationSearchParams;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;

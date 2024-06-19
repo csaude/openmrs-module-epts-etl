@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.engine;
+package org.openmrs.module.epts.etl.engine.record_intervals_manager;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -8,6 +8,7 @@ import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -18,11 +19,15 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * The manager of records limits for a specific {@link TaskProcessor}
+ * The manager of records intervals for any {@link Engine}. An instance of
+ * {@link ThreadRecordIntervalsManager} define the extreme records as stated on
+ * {@link IntervalExtremeRecord}. For each processing iteration, there is current processing
+ * interval defined by {@link ThreadCurrentIntervals} and this allow easy moving to the next
+ * interval
  * 
  * @author jpboane
  */
-public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implements Comparable<ThreadRecordIntervalsManager<T>> {
+public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends IntervalExtremeRecord implements Comparable<ThreadRecordIntervalsManager<T>> {
 	
 	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -36,42 +41,46 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 	
 	protected int qtyRecordsPerProcessing;
 	
-	private IntervalExtremeRecord currentLimits;
+	protected int maxSupportedProcessors;
 	
-	private IntervalExtremeRecord maxLimits;
+	private ThreadCurrentIntervals currentLimits;
 	
 	private List<IntervalExtremeRecord> excludedIntervals;
 	
-	private ThreadLImitsManagerStatusType status;
+	private ThreadIntervalsManagerStatusType status;
 	
 	public ThreadRecordIntervalsManager() {
-		this.status = ThreadLImitsManagerStatusType.NOT_INITIALIZED;
+		this.status = ThreadIntervalsManagerStatusType.NOT_INITIALIZED;
 		
-		this.setCurrentLimits(new IntervalExtremeRecord());
-		this.setMaxLimits(new IntervalExtremeRecord());
+		this.setCurrentLimits(new ThreadCurrentIntervals());
 	}
 	
-	public ThreadRecordIntervalsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing) {
-		this();
+	public ThreadRecordIntervalsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing,
+	    int maxAllowedProcessors) {
+		super(firstRecordId, lastRecordId);
 		
-		this.maxLimits = new IntervalExtremeRecord(firstRecordId, lastRecordId);
+		this.setCurrentLimits(new ThreadCurrentIntervals());
 		
 		this.qtyRecordsPerProcessing = qtyRecordsPerProcessing;
+		this.maxSupportedProcessors = maxAllowedProcessors;
 		
 		this.reset();
 	}
 	
-	public ThreadRecordIntervalsManager(long firstRecordId, long lastRecordId, int qtyRecordsPerProcessing,
-	    String threadCode, Engine<T> engine) {
-		this(firstRecordId, lastRecordId, qtyRecordsPerProcessing);
+	public void setCurrentLimits(ThreadCurrentIntervals currentLimits) {
+		this.currentLimits = currentLimits;
+	}
+	
+	public ThreadRecordIntervalsManager(Engine<T> engine) {
+		this(engine.getMinRecordId(), engine.getMaxRecordId(), engine.getMaxRecordsPerProcessing(),
+		        engine.getMaxSupportedProcessors());
 		
 		this.engine = engine;
 		
-		if (this.engine != null)
-			this.threadCode = engine.getEngineId();
+		this.threadCode = engine.getEngineId();
 	}
 	
-	public ThreadLImitsManagerStatusType getStatus() {
+	public ThreadIntervalsManagerStatusType getStatus() {
 		return status;
 	}
 	
@@ -83,35 +92,20 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 		this.excludedIntervals = excludedIntervals;
 	}
 	
-	public IntervalExtremeRecord getMaxLimits() {
-		return maxLimits;
-	}
-	
-	public void setMaxLimits(IntervalExtremeRecord maxLimits) {
-		this.maxLimits = maxLimits;
-	}
-	
-	public IntervalExtremeRecord getCurrentLimits() {
+	public ThreadCurrentIntervals getCurrentLimits() {
 		return currentLimits;
 	}
 	
-	public void setCurrentLimits(IntervalExtremeRecord currentLimits) {
-		this.currentLimits = currentLimits;
-	}
-	
 	/**
-	 * Put the currentLimits#minRecord to maxLimits#minRecordId - {@link #qtyRecordsPerProcessing}
+	 * Put the currentLimits#minRecord to maxLimits#minRecordId
 	 */
 	public void reset() {
-		//Set To allow a secure #moveNext, put the threadMinRecord behind
-		//this.getCurrentLimits().setMinRecordId(this.getMaxLimits().getMinRecordId() - this.getQtyRecordsPerProcessing());
+		defineCurrentLimits(this.getMinRecordId());
 		
-		defineCurrentLimits(this.getMaxLimits().getMinRecordId() - this.getQtyRecordsPerProcessing());
-		
-		this.setStatus(ThreadLImitsManagerStatusType.BETWEEN_LIMITS);
+		this.setStatus(ThreadIntervalsManagerStatusType.BETWEEN_LIMITS);
 	}
 	
-	public void setStatus(ThreadLImitsManagerStatusType status) {
+	public void setStatus(ThreadIntervalsManagerStatusType status) {
 		this.status = status;
 	}
 	
@@ -119,10 +113,12 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 		this.engine = engine;
 	}
 	
+	@JsonIgnore
 	public boolean isLoadedFromFile() {
 		return loadedFromFile;
 	}
 	
+	@JsonIgnore
 	public boolean hasExcludedIntervals() {
 		return utilities.arrayHasElement(getExcludedIntervals());
 	}
@@ -141,13 +137,13 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 			}
 		}
 		
-		if (currentFirstRecordId > this.getThreadMaxRecordId()) {
-			this.setStatus(ThreadLImitsManagerStatusType.OUT_OF_LIMITS);
+		if (currentFirstRecordId > this.getMaxRecordId()) {
+			this.setStatus(ThreadIntervalsManagerStatusType.OUT_OF_LIMITS);
 		} else {
 			currentLastRecordId = currentFirstRecordId + this.getQtyRecordsPerProcessing() - 1;
 			
-			if (currentLastRecordId > this.getThreadMaxRecordId()) {
-				currentLastRecordId = this.getThreadMaxRecordId();
+			if (currentLastRecordId > this.getMaxRecordId()) {
+				currentLastRecordId = this.getMaxRecordId();
 			}
 			
 			if (hasExcludedIntervals()) {
@@ -162,14 +158,16 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 			}
 			
 			if (currentLastRecordId < currentFirstRecordId) {
-				this.setStatus(ThreadLImitsManagerStatusType.OUT_OF_LIMITS);
+				this.setStatus(ThreadIntervalsManagerStatusType.OUT_OF_LIMITS);
 			} else {
-				this.getCurrentLimits().setMaxRecordId(currentLastRecordId);
-				this.getCurrentLimits().setMinRecordId(currentFirstRecordId);
+				
+				this.setCurrentLimits(
+				    new ThreadCurrentIntervals(currentFirstRecordId, currentLastRecordId, this.maxSupportedProcessors));
 			}
 		}
 	}
 	
+	@JsonIgnore
 	public long getCurrentFirstRecordId() {
 		return getCurrentLimits().getMinRecordId();
 	}
@@ -188,14 +186,6 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 	
 	public void setThreadCode(String threadCode) {
 		this.threadCode = threadCode;
-	}
-	
-	public long getThreadMinRecordId() {
-		return getMaxLimits().getMinRecordId();
-	}
-	
-	public long getThreadMaxRecordId() {
-		return getMaxLimits().getMaxRecordId();
 	}
 	
 	public String getLastSavedOn() {
@@ -253,10 +243,6 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 		return utilities.parseToJSON(this);
 	}
 	
-	public boolean hasSameEngineInfo(ThreadRecordIntervalsManager<T> limits) {
-		return this.getMaxLimits().equals(limits.getMaxLimits());
-	}
-	
 	@SuppressWarnings("unchecked")
 	@Override
 	public boolean equals(Object obj) {
@@ -276,16 +262,16 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 	 * @return
 	 */
 	public boolean canGoNext() {
-		return !isOutOfLimits() && this.getCurrentLastRecordId() < this.getThreadMaxRecordId();
+		return !isOutOfLimits() && this.getCurrentLastRecordId() < this.getMaxRecordId();
 	}
 	
 	public synchronized void moveNext() {
 		if (canGoNext()) {
-			this.defineCurrentLimits(this.getCurrentLastRecordId()+1);
+			this.defineCurrentLimits(this.getCurrentLastRecordId() + 1);
 		} else
-			throw new ForbiddenOperationException("You reached the max record. Curr Status: [" + this.getThreadMinRecordId()
-			        + " - " + this.getThreadMaxRecordId() + "] Curr [" + this.getCurrentFirstRecordId() + " - "
-			        + this.getCurrentLastRecordId() + "]");
+			throw new ForbiddenOperationException(
+			        "You reached the max record. Curr Status: [" + this.getMinRecordId() + " - " + this.getMaxRecordId()
+			                + "] Curr [" + this.getCurrentFirstRecordId() + " - " + this.getCurrentLastRecordId() + "]");
 	}
 	
 	public boolean hasThreadCode() {
@@ -310,7 +296,7 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 			limits = loadFromJSON(new String(Files.readAllBytes(file.toPath())));
 			
 			if (limits != null) {
-				int qtyRecordsPerProcessing = engine.getQtyRecordsPerProcessing();
+				int qtyRecordsPerProcessing = engine.getMaxRecordsPerProcessing();
 				
 				limits.setQtyRecordsPerProcessing(qtyRecordsPerProcessing);
 				
@@ -337,11 +323,11 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 		this.qtyRecordsPerProcessing = copyFrom.qtyRecordsPerProcessing;
 		this.excludedIntervals = copyFrom.excludedIntervals;
 		this.status = copyFrom.status;
+		this.currentLimits = copyFrom.getCurrentLimits().cloneMe();
+		this.maxSupportedProcessors = copyFrom.maxSupportedProcessors;
 		
-		this.setCurrentLimits(new IntervalExtremeRecord(copyFrom.getCurrentLimits().getMinRecordId(),
-		        copyFrom.getCurrentLimits().getMaxRecordId()));
-		this.setMaxLimits(
-		    new IntervalExtremeRecord(copyFrom.getMaxLimits().getMinRecordId(), copyFrom.getMaxLimits().getMaxRecordId()));
+		this.setMinRecordId(copyFrom.getMinRecordId());
+		this.setMaxRecordId(copyFrom.getMaxRecordId());
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -351,21 +337,26 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> implement
 	
 	@Override
 	public String toString() {
-		return getThreadCode() + " : Thread [" + this.getMaxLimits() + "] Curr [" + this.getCurrentLimits() + "]";
+		return getThreadCode() + " : Thread [" + this.getMinRecordId() + " - " + this.getMaxRecordId() + "] Curr ["
+		        + this.getCurrentLimits() + "]";
 	}
 	
+	@JsonIgnore
 	public boolean isInitialized() {
 		return this.getStatus().isInitialized();
 	}
 	
+	@JsonIgnore
 	public boolean isNotInitialized() {
 		return this.getStatus().isNotInitialized();
 	}
 	
+	@JsonIgnore
 	public boolean isBetweenLimits() {
 		return this.getStatus().isBetweenLimits();
 	}
 	
+	@JsonIgnore
 	public boolean isOutOfLimits() {
 		return this.getStatus().isOutOfLimits();
 	}

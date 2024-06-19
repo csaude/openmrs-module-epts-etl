@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.reconciliation.engine;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
@@ -54,7 +54,7 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 	private EtlOperationResultHeader<EtlDatabaseObject> performeMissingRecordsCreation(List<EtlDatabaseObject> etlObjects,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		int i = 1;
 		
@@ -84,7 +84,7 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 	private EtlOperationResultHeader<EtlDatabaseObject> performeOutdatedRecordsUpdate(List<EtlDatabaseObject> etlObjects,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		int i = 1;
 		
@@ -106,7 +106,7 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 	private EtlOperationResultHeader<EtlDatabaseObject> performePhantomRecordsRemotion(List<EtlDatabaseObject> etlObjects,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		int i = 1;
 		

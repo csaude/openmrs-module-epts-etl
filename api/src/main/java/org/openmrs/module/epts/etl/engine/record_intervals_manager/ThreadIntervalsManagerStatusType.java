@@ -1,6 +1,6 @@
-package org.openmrs.module.epts.etl.engine;
+package org.openmrs.module.epts.etl.engine.record_intervals_manager;
 
-public enum ThreadLImitsManagerStatusType {
+public enum ThreadIntervalsManagerStatusType {
 	NOT_INITIALIZED,
 	BETWEEN_LIMITS,
 	OUT_OF_LIMITS;

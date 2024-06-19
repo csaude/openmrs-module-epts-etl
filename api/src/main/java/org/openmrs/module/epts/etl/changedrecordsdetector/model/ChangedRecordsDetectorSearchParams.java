@@ -5,8 +5,8 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -25,7 +25,7 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 	private EtlOperationType type;
 	
 	public ChangedRecordsDetectorSearchParams(Engine<EtlDatabaseObject> engine, String appCode,
-	    ThreadRecordIntervalsManager limits, EtlOperationType type) {
+	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits, EtlOperationType type) {
 		super(engine, limits);
 		
 		this.appCode = appCode;
@@ -92,11 +92,11 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 	
 	@Override
 	public int countAllRecords(Connection conn) throws DBException {
-		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
+		ThreadRecordIntervalsManager<EtlDatabaseObject> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.setThreadRecordIntervalsManager(null);
 		
-		int count = SearchParamsDAO.countAll(this, conn);
+		int count = SearchParamsDAO.countAll(this, null, conn);
 		
 		this.setThreadRecordIntervalsManager(bkpLimits);
 		

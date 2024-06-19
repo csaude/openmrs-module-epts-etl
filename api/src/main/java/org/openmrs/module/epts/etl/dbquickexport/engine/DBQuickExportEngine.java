@@ -7,8 +7,8 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportController;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
@@ -80,7 +80,7 @@ public class DBQuickExportEngine extends TaskProcessor<EtlDatabaseObject> {
 				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
 			}
 		
-			EtlOperationResultHeader<EtlDatabaseObject> h = new EtlOperationResultHeader<>();
+			EtlOperationResultHeader<EtlDatabaseObject> h = new EtlOperationResultHeader<>(getLimits());
 			
 			h.addAllToRecordsWithNoError(syncRecordsAsOpenMRSObjects);
 			

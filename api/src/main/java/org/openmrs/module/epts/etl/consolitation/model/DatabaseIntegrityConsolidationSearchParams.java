@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.consolitation.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -17,7 +17,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 	private boolean selectAllRecords;
 	
 	public DatabaseIntegrityConsolidationSearchParams(Engine<EtlDatabaseObject> engine,
-	    ThreadRecordIntervalsManager limits) {
+	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		
 		super(engine, limits);
 	}
@@ -52,16 +52,16 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 		        this.getRelatedEngine(), this.getThreadRecordIntervalsManager());
 		auxSearchParams.selectAllRecords = true;
 		
-		return SearchParamsDAO.countAll(auxSearchParams, conn);
+		return SearchParamsDAO.countAll(auxSearchParams, null, conn);
 	}
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
+		ThreadRecordIntervalsManager<EtlDatabaseObject> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.setThreadRecordIntervalsManager(null);
 		
-		int count = SearchParamsDAO.countAll(this, conn);
+		int count = SearchParamsDAO.countAll(this, null,	 conn);
 		
 		this.setThreadRecordIntervalsManager(bkpLimits);
 		

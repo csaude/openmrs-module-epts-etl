@@ -5,29 +5,31 @@
  */
 package org.openmrs.module.epts.etl.utilities.concurrent;
 
-
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 
 public class TimeCountDown extends ScheduledOperation {
+	
 	public static EptsEtlLogger logger = EptsEtlLogger.getLogger(TimeCountDown.class);
-
+	
 	private String message;
+	
 	Thread timer = null;
 	
 	private long totalTimeToCount;
+	
 	private long remainTime;
 	
 	private TimeCountDownInitializer initializer;
-
+	
 	private long intervalForMessage;
 	
-	public TimeCountDown(String message, long totalTimeToCount){
+	public TimeCountDown(String message, long totalTimeToCount) {
 		this.message = message;
 		this.inExecution = true;
 		this.totalTimeToCount = totalTimeToCount;
-		this.remainTime = this.totalTimeToCount*1000;
+		this.remainTime = this.totalTimeToCount * 1000;
 	}
 	
 	/**
@@ -37,11 +39,11 @@ public class TimeCountDown extends ScheduledOperation {
 	 * @param message: the message to be shown during the process
 	 * @param totalTimeToCount: total time to count is seconds
 	 */
-	public TimeCountDown(TimeCountDownInitializer initializer, String message, long totalTimeToCount){
+	public TimeCountDown(TimeCountDownInitializer initializer, String message, long totalTimeToCount) {
 		this.message = message;
 		this.inExecution = true;
 		this.totalTimeToCount = totalTimeToCount;
-		this.remainTime = this.totalTimeToCount*1000;
+		this.remainTime = this.totalTimeToCount * 1000;
 		this.initializer = initializer;
 	}
 	
@@ -66,20 +68,19 @@ public class TimeCountDown extends ScheduledOperation {
 	 * @return o valor do atributo {@link #remainTime}
 	 */
 	public long getRemainTime(String format) {
-		if (format == DateAndTimeUtilities.SECOND_FORMAT){
-			return this.remainTime/1000;
+		if (format == DateAndTimeUtilities.SECOND_FORMAT) {
+			return this.remainTime / 1000;
 		}
 		
-		if (format == DateAndTimeUtilities.MINUTE_FORMAT){
-			return this.remainTime/1000/60;
+		if (format == DateAndTimeUtilities.MINUTE_FORMAT) {
+			return this.remainTime / 1000 / 60;
 		}
 		
-		
-		if (format == DateAndTimeUtilities.HOUR_FORMAT){
-			return this.remainTime/1000/60/24;
+		if (format == DateAndTimeUtilities.HOUR_FORMAT) {
+			return this.remainTime / 1000 / 60 / 24;
 		}
 		
-		if (format == DateAndTimeUtilities.MILLISECOND_FORMAT){
+		if (format == DateAndTimeUtilities.MILLISECOND_FORMAT) {
 			return this.remainTime;
 		}
 		
@@ -107,20 +108,18 @@ public class TimeCountDown extends ScheduledOperation {
 		timer=null;
 		
 		if (initializer != null) initializer.onFinish();
+		
+		logger.info("Wait finihed " + this.message);
 	}
 	
-	
-	public void restart(){
+	public void restart() {
 		this.inExecution = true;
-		this.remainTime = this.totalTimeToCount*1000;
-		
+		this.remainTime = this.totalTimeToCount * 1000;
 		
 		//System.out.println(getThreadNamingPattern() +"[%d]");
-
+		
 		ThreadPoolService.getInstance().createNewThreadPoolExecutor(getThreadNamingPattern()).execute(this);
 	}
-	
-	
 	
 	/**
 	 * @return
@@ -128,15 +127,16 @@ public class TimeCountDown extends ScheduledOperation {
 	private String getThreadNamingPattern() {
 		return this.initializer != null ? this.initializer.getThreadNamingPattern() : "TimeCountDown[%d]";
 	}
-
+	
 	/**
 	 * Provoca a paragem da execucao do fluxo normal por "timeInSeconds" segundos
+	 * 
 	 * @param timeInSeconds
 	 * @param msg
 	 */
-	public static TimeCountDown wait(long timeInSeconds, String msg){
+	public static TimeCountDown wait(long timeInSeconds, String msg) {
 		TimeCountDown timer = new TimeCountDown(msg, timeInSeconds);
-	
+		
 		timer.restart();
 		
 		return timer;
@@ -144,10 +144,11 @@ public class TimeCountDown extends ScheduledOperation {
 	
 	/**
 	 * Provoca a paragem da execucao do fluxo normal por "timeInSeconds" segundos
+	 * 
 	 * @param timeInSeconds
 	 * @param msg
 	 */
-	public static TimeCountDown wait(TimeCountDownInitializer initializer, long timeInSeconds, String msg){
+	public static TimeCountDown wait(TimeCountDownInitializer initializer, long timeInSeconds, String msg) {
 		TimeCountDown timer = new TimeCountDown(initializer, msg, timeInSeconds);
 		
 		timer.restart();
@@ -155,20 +156,19 @@ public class TimeCountDown extends ScheduledOperation {
 		return timer;
 	}
 	
-	
 	/**
 	 * @see Thread#sleep(long)
-	 * 
 	 * @param timeInSeconds
 	 */
-	public static void sleep(int timeInSeconds){
+	public static void sleep(int timeInSeconds) {
 		try {
-			Thread.sleep(1000*timeInSeconds);
-		} catch (InterruptedException e) {
+			Thread.sleep(1000 * timeInSeconds);
+		}
+		catch (InterruptedException e) {
 			return;
-		}	
+		}
 	}
-
+	
 	@Override
 	public void destruct() {
 		inExecution = false;

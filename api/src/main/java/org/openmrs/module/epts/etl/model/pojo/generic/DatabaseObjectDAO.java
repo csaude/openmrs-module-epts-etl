@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -522,7 +523,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	
 	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllData(List<EtlDatabaseObject> objects,
 	        TableConfiguration tabConf, boolean includeRecordId, Connection conn) throws DBException {
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
 		if (utilities.arrayHasNoElement(objects))
 			return result;

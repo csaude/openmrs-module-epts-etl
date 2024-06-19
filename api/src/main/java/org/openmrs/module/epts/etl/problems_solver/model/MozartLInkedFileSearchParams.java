@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.problems_solver.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
@@ -16,7 +16,8 @@ public class MozartLInkedFileSearchParams extends AbstractEtlSearchParams<EtlDat
 	
 	private GenerateLinkedConfFiles processor;
 	
-	public MozartLInkedFileSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager limits) {
+	public MozartLInkedFileSearchParams(Engine<EtlDatabaseObject> engine,
+	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		super(engine, limits);
 	}
 	

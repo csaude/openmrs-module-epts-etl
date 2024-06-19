@@ -110,7 +110,7 @@ public class GenerateContentFileFromTemplate {
 		
 		Path templateFile = new File("D:\\PROJECTOS\\FGH\\Centralizacao\\mpi\\santeMPI\\Datasets\\id_types_template.sql")
 		        .toPath();
-		Path destFile = new File("D:\\PROJECTOS\\FGH\\Centralizacao\\mpi\\santeMPI\\Datasets\\id_types.sql").toPath();
+		//Path destFile = new File("D:\\PROJECTOS\\FGH\\Centralizacao\\mpi\\santeMPI\\Datasets\\id_types.sql").toPath();
 		
 		Charset charset = StandardCharsets.UTF_8;
 		

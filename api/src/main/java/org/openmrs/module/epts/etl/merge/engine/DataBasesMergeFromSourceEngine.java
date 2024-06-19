@@ -9,8 +9,8 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBController;
 import org.openmrs.module.epts.etl.merge.model.MergingRecord;

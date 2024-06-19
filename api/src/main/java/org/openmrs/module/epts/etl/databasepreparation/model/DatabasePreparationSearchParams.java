@@ -6,8 +6,8 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.databasepreparation.engine.DatabasePreparationEngine;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.monitor.Engine;
@@ -17,7 +17,7 @@ public class DatabasePreparationSearchParams extends AbstractEtlSearchParams<Dat
 	
 	DatabasePreparationEngine processor;
 	
-	public DatabasePreparationSearchParams(DatabasePreparationEngine processor, ThreadRecordIntervalsManager limits) {
+	public DatabasePreparationSearchParams(DatabasePreparationEngine processor, ThreadRecordIntervalsManager<DatabasePreparationRecord> limits) {
 		super(processor.getMonitor(), limits);
 		
 		this.processor = processor;

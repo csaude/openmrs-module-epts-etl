@@ -20,25 +20,22 @@ public class GenerateContentFolder {
 	
 	public static final String destProject = "D:\\PRG\\JEE\\Projects\\dinat\\sigit\\lims_3.3";
 	
-	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public static void main(String[] args) throws IOException {
-	
 		
 		String[] novembro = { "E001", "C001", "C010", "C038", "C056", "C043", "C009", "C016", "C027", "C045", "C049",
 		        "C002" };
-		String[] dezembro = {"E002", "C021", "C008", "C025", "C003", "C004", "C006", "C047", "C031", "C054", "C035", "C050", "C048",
-		        "C026", "C042", "C030", "C039", "C052", "C053", "C005", "C041", "C018", "C019", "C037", "C017", "C024",
-		        "C032", "C036", "C044" };
-		String[] janeiro = {"E007", "C023", "C012", "C011", "C028", "C034", "C033", "C029", "C040", "C046", "C051"}; 
+		String[] dezembro = { "E002", "C021", "C008", "C025", "C003", "C004", "C006", "C047", "C031", "C054", "C035", "C050",
+		        "C048", "C026", "C042", "C030", "C039", "C052", "C053", "C005", "C041", "C018", "C019", "C037", "C017",
+		        "C024", "C032", "C036", "C044" };
+		String[] janeiro = { "E007", "C023", "C012", "C011", "C028", "C034", "C033", "C029", "C040", "C046", "C051" };
 		
-		String[] fevereiro = {"E008", "E006"}; 
+		String[] fevereiro = { "E008", "E006" };
 		
-		String[] marco = {"E004", "E055"};
+		String[] marco = { "E004", "E055" };
 		
-		String[] abril= {"E005", "E003"};
-		
+		String[] abril = { "E005", "E003" };
 		
 		Map<String, String[]> meses = new HashMap<>();
 		
@@ -49,10 +46,9 @@ public class GenerateContentFolder {
 		meses.put("marco", marco);
 		meses.put("abril", abril);
 		
+		List<String> allActivitities = FileUtilities.readAllFileAsListOfString(
+		    "D:\\PROJECTOS\\Minag\\TERRAS\\MOZLAND\\Directorio de Trabalho\\00_Plano\\organizacao_atividades\\all.txt");
 		
-		
-		List<String> allActivitities = FileUtilities.readAllFileAsListOfString("D:\\PROJECTOS\\Minag\\TERRAS\\MOZLAND\\Directorio de Trabalho\\00_Plano\\organizacao_atividades\\all.txt");
-	
 		String activititeBaseFolder = "D:\\PROJECTOS\\Minag\\TERRAS\\MOZLAND\\Directorio de Trabalho\\00_Plano\\organizacao_atividades\\";
 		
 		for (String activititie : allActivitities) {
@@ -61,7 +57,7 @@ public class GenerateContentFolder {
 			
 			for (Map.Entry<String, String[]> e : meses.entrySet()) {
 				if (utilities.existOnArray(e.getValue(), a)) {
-					FileUtilities.write(activititeBaseFolder+e.getKey() + ".txt", activititie);
+					FileUtilities.write(activititeBaseFolder + e.getKey() + ".txt", activititie);
 					break;
 				}
 			}
@@ -79,7 +75,7 @@ public class GenerateContentFolder {
 		
 		String separator = FileUtilities.getPathSeparator();
 		
-		List<String> excluded = CommonUtilities.getInstance().parseToList("lims_ladm");
+		//List<String> excluded = CommonUtilities.getInstance().parseToList("lims_ladm");
 		//List<String> include = CommonUtilities.getInstance().parseToList();
 		
 		for (File srcProjectFolder : projects) {

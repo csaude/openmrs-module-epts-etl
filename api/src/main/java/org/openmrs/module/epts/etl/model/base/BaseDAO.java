@@ -63,8 +63,6 @@ public abstract class BaseDAO {
 		return null;
 	}
 	
-
-	
 	/**
 	 * Perform an database querying on the table related to the passed class.
 	 * 

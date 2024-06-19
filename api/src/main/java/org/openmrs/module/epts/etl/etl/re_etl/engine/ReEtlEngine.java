@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.etl.re_etl.controller.ReEtlController;
@@ -42,7 +42,7 @@ public class ReEtlEngine extends EtlEngine {
 		
 		int i = 1;
 
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		for (EtlObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,

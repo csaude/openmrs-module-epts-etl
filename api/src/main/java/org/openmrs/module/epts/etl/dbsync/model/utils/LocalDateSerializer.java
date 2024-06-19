@@ -1,17 +1,19 @@
 package org.openmrs.module.epts.etl.dbsync.model.utils;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 /**
  * Custom {@link com.fasterxml.jackson.databind.JsonSerializer} from {@link LocalDate} to String
  */
 public class LocalDateSerializer extends StdSerializer<LocalDate> {
+	
+	private static final long serialVersionUID = -3585139508412163272L;
 	
 	public LocalDateSerializer() {
 		this(LocalDate.class);

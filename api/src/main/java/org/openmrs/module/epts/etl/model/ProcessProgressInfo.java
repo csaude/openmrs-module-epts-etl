@@ -32,7 +32,7 @@ public class ProcessProgressInfo {
 		return controller;
 	}
 	
-	public OperationProgressInfo initAndAddProgressMeterToList(OperationController operationController, Connection conn)
+	public OperationProgressInfo initAndAddProgressMeterToList(OperationController<? extends EtlDatabaseObject> operationController, Connection conn)
 	        throws DBException {
 		OperationProgressInfo progressInfo;
 		

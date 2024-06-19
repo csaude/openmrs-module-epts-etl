@@ -37,14 +37,14 @@ public class OperationProgressInfo {
 	
 	private String status;
 	
-	private OperationController controller;
+	private OperationController<? extends EtlDatabaseObject> controller;
 	
 	private List<TableOperationProgressInfo> itemsProgressInfo;
 	
 	public OperationProgressInfo() {
 	}
 	
-	public OperationProgressInfo(OperationController controller) {
+	public OperationProgressInfo(OperationController<? extends EtlDatabaseObject> controller) {
 		this.controller = controller;
 		this.status = EtlProgressMeter.STATUS_NOT_INITIALIZED;
 		this.operationName = controller.getControllerId();
@@ -91,11 +91,11 @@ public class OperationProgressInfo {
 	}
 	
 	@JsonIgnore
-	public OperationController getController() {
+	public OperationController<? extends EtlDatabaseObject> getController() {
 		return controller;
 	}
 	
-	public void setController(OperationController controller) {
+	public void setController(OperationController<? extends EtlDatabaseObject> controller) {
 		this.controller = controller;
 	}
 	

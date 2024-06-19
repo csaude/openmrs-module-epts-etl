@@ -1,7 +1,7 @@
 package org.openmrs.module.epts.etl.dbquickload.engine;
 
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 

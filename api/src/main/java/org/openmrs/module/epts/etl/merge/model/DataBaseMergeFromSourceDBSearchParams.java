@@ -4,8 +4,8 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.monitor.Engine;
@@ -15,7 +15,8 @@ public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchPara
 	
 	private boolean selectAllRecords;
 	
-	public DataBaseMergeFromSourceDBSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager limits) {
+	public DataBaseMergeFromSourceDBSearchParams(Engine<SyncImportInfoVO> engine,
+	    ThreadRecordIntervalsManager<SyncImportInfoVO> limits) {
 		super(engine, limits);
 	}
 	

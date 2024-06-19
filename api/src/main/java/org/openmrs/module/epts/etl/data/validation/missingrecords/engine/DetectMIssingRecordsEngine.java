@@ -1,7 +1,7 @@
 package org.openmrs.module.epts.etl.data.validation.missingrecords.engine;
 
 import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;

@@ -6,8 +6,8 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -22,13 +22,13 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	private DatabaseMergeFromJSONController relatedController;
 	
-	public DataBaseMergeFromJSONSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager limits) {
+	public DataBaseMergeFromJSONSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager<SyncImportInfoVO> limits) {
 		super(engine, limits);
 		
 		setOrderByFields("id");
 	}
 	
-	public DataBaseMergeFromJSONSearchParams(Engine<SyncImportInfoVO> config, ThreadRecordIntervalsManager limits,
+	public DataBaseMergeFromJSONSearchParams(Engine<SyncImportInfoVO> config, ThreadRecordIntervalsManager<SyncImportInfoVO> limits,
 	    String appOriginLocationCode) {
 		super(config, limits, appOriginLocationCode);
 		setOrderByFields("id");
@@ -98,7 +98,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	@Override
 	public int countNotProcessedRecords(Connection conn) throws DBException {
-		return SearchParamsDAO.countAll(this, conn);
+		return SearchParamsDAO.countAll(this, null, conn);
 	}
 	
 	@Override

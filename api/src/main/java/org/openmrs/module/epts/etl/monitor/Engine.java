@@ -16,10 +16,10 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.MigrationFinalCheckStatus;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
@@ -196,8 +196,6 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	@Override
 	public void run() {
 		try {
-			tryToLoadExcludedRecordsLimits();
-			
 			logInfo("INITIALIZING ENGINE FOR ETL CONFIG [" + getEtlItemConfiguration().getConfigCode().toUpperCase() + "]");
 			
 			long minRecId = tableOperationProgressInfo.getProgressMeter().getMinRecordId();
@@ -252,17 +250,14 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				logWarn(msg);
 			} else {
 				
-				int qtyEngines = getController().getOperationConfig().getMaxSupportedEngines();
-				
-				if (qtyEngines > getQtyRecordsPerProcessing()) {
-					setQtyRecordsPerProcessing(qtyEngines);
+				if (getController().getOperationConfig().getMaxSupportedEngines() > getMaxRecordsPerProcessing()) {
+					setMaxRecordsPerProcessing(getController().getOperationConfig().getMaxSupportedEngines());
 				}
 				
 				ThreadRecordIntervalsManager<T> t = ThreadRecordIntervalsManager.tryToLoadFromFile(getEngineId(), this);
 				
 				if (t == null) {
-					t = new ThreadRecordIntervalsManager<>(minRecId, maxRecId, this.getQtyRecordsPerProcessing(),
-					        getEngineId(), this);
+					t = new ThreadRecordIntervalsManager<>(this);
 				}
 				
 				this.setSearchParams(controller.initMainSearchParams(t, this));
@@ -274,42 +269,33 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				
 				doFirstSaveAllLimits();
 				
-				long engineAlocatedRecs = this.getQtyRecordsPerProcessing() / qtyEngines;
-				
-				List<OpenConnection> srcConn = null;
-				List<OpenConnection> dstConn = null;
-				
-				try {
-					while (this.getThreadRecordIntervalsManager().canGoNext()) {
-						
+				while (this.getThreadRecordIntervalsManager().canGoNext()) {
+					
+					if (this.getThreadRecordIntervalsManager().getCurrentLimits().isFullProcessed()) {
 						this.getThreadRecordIntervalsManager().moveNext();
+					}
+					
+					List<EtlOperationResultHeader<T>> results = this.performeTask();
+					
+					if (EtlOperationResultHeader.hasAtLeastOneFatalError(results)) {
+						logInfo("Some errors where encountered on current processing, the process will be aborted");
 						
-						srcConn = this.openSrcConn(qtyEngines);
-						dstConn = this.tryToOpenDstConn(qtyEngines);
-						
-						EtlOperationResultHeader<T> result = this.performeTask(qtyEngines, engineAlocatedRecs, srcConn,
-						    dstConn);
-						
-						if (result.hasFatalError()) {
-							logErr("Fatal error found loading some records. The process will be aborted");
-							
-							result.printStackErrorOfFatalErrors();
-							
-							result.throwDefaultExcetions();
-						} else {
-							OpenConnection.markAllAsSuccessifullyTerminected(srcConn);
-							OpenConnection.markAllAsSuccessifullyTerminected(dstConn);
-							
-							OpenConnection.finalizeAllConnections(srcConn);
-							OpenConnection.finalizeAllConnections(dstConn);
-							
-							getThreadRecordIntervalsManager().save(this);
+						for (EtlOperationResultHeader<T> result : results) {
+							if (result.hasFatalError()) {
+								logInfo("Encountered erros on intervals: " + result.getInterval());
+								
+								result.printStackErrorOfFatalErrors();
+							}
 						}
 					}
-				}
-				finally {
-					OpenConnection.finalizeAllConnections(srcConn);
-					OpenConnection.finalizeAllConnections(dstConn);
+					
+					getThreadRecordIntervalsManager().save(this);
+					
+					if (EtlOperationResultHeader.hasAtLeastOneFatalError(results)) {
+						EtlOperationResultHeader<T> r = EtlOperationResultHeader.getDefaultResultWithFatalError(results);
+						
+						r.throwDefaultExcetions();
+					}
 				}
 				
 			}
@@ -322,69 +308,71 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	}
 	
 	/**
-	 * @param qtyEngines
+	 * @param qtyProcessors
 	 * @param engineAlocatedRecs
 	 * @throws DBException
 	 * @throws ExecutionException
 	 * @throws InterruptedException
 	 */
-	public EtlOperationResultHeader<T> performeTask(int qtyEngines, long engineAlocatedRecs, List<OpenConnection> srcConn,
-	        List<OpenConnection> dstConn) throws DBException, InterruptedException, ExecutionException {
+	public List<EtlOperationResultHeader<T>> performeTask() throws DBException, InterruptedException, ExecutionException {
 		
-		IntervalExtremeRecord currLimits = null;
+		List<IntervalExtremeRecord> avaliableIntervals = getThreadRecordIntervalsManager().getCurrentLimits()
+		        .getAllNotProcessed();
 		
-		List<CompletableFuture<EtlOperationResultHeader<T>>> tasks = new ArrayList<>(qtyEngines);
+		logDebug("Initializing " + avaliableIntervals.size() + " processors to performe task on a interval "
+		        + getThreadRecordIntervalsManager().getCurrentLimits() + "!");
 		
-		List<TaskProcessor<T>> generatedEngines = new ArrayList<>(qtyEngines);
+		List<CompletableFuture<EtlOperationResultHeader<T>>> tasks = new ArrayList<>(avaliableIntervals.size());
+		
+		List<TaskProcessor<T>> generatedEngines = new ArrayList<>(avaliableIntervals.size());
 		
 		EtlThreadFactory threadFactor = new EtlThreadFactory();
 		
-		ExecutorService executorService = Executors.newFixedThreadPool(qtyEngines, threadFactor);
+		ExecutorService executorService = Executors.newFixedThreadPool(avaliableIntervals.size(), threadFactor);
 		
 		try {
-			for (int i = 0; i < qtyEngines; i++) {
+			for (int i = 0; i < avaliableIntervals.size(); i++) {
+				IntervalExtremeRecord interval = avaliableIntervals.get(i);
 				
-				//Fixed to use the same connection as using multiple connections is leading to infinite deadlocks
-				final int connectionIndex = 0;
-				
-				IntervalExtremeRecord limits;
-				
-				if (currLimits == null) {
-					limits = new IntervalExtremeRecord(getThreadRecordIntervalsManager().getCurrentFirstRecordId(),
-					        getThreadRecordIntervalsManager().getCurrentFirstRecordId() + engineAlocatedRecs - 1);
-					currLimits = limits;
-					
-				} else {
-					// Last processor
-					if (i == qtyEngines - 1) {
-						limits = new IntervalExtremeRecord(currLimits.getMaxRecordId() + 1,
-						        getThreadRecordIntervalsManager().getCurrentLastRecordId());
-					} else {
-						limits = new IntervalExtremeRecord(currLimits.getMaxRecordId() + 1,
-						        currLimits.getMaxRecordId() + engineAlocatedRecs);
-					}
-					currLimits = limits;
-				}
-				
-				TaskProcessor<T> taskProcessor = getController().initRelatedEngine(this, limits);
+				TaskProcessor<T> taskProcessor = getController().initRelatedEngine(this, interval);
 				taskProcessor.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
 				
 				((EtlThreadFactory) threadFactor).setTaskId(taskProcessor.getEngineId());
 				
+				logDebug("Processor initialized for records between interval: [" + interval + "]");
+				
+				generatedEngines.add(taskProcessor);
+			}
+			
+			for (TaskProcessor<T> taskProcessor : generatedEngines) {
+				
 				tasks.add(CompletableFuture.supplyAsync(() -> {
+					OpenConnection srcConn = null;
+					OpenConnection dstConn = null;
+					
 					try {
-						EtlOperationResultHeader<T> result = taskProcessor.performe(srcConn.get(connectionIndex),
-						    dstConn.get(connectionIndex));
+						srcConn = openSrcConn();
+						dstConn = tryToOpenDstConn();
+						
+						EtlOperationResultHeader<T> result = taskProcessor.performe(srcConn, dstConn);
 						
 						if (!result.hasFatalError()) {
-							getController().afterEtl(result.getRecordsWithNoError(), srcConn.get(connectionIndex),
-							    dstConn.get(connectionIndex));
+							getController().afterEtl(result.getRecordsWithNoError(), srcConn, dstConn);
 							
 							if (result.hasRecordsWithUnresolvedErrors() || result.hasRecordsWithResolvedErrors()) {
 								logWarn("Some errors where found loading '" + result.getRecordsWithUnresolvedErrors().size()
 								        + "! The errors will be documented");
 								
-								result.documentErrors(srcConn.get(connectionIndex), dstConn.get(connectionIndex));
+								result.documentErrors(srcConn, dstConn);
+							}
+							
+							taskProcessor.getLimits().markAsProcessed();
+							
+							if (srcConn != null) {
+								srcConn.markAsSuccessifullyTerminated();
+							}
+							if (dstConn != null) {
+								dstConn.markAsSuccessifullyTerminated();
 							}
 						}
 						
@@ -393,9 +381,16 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 					catch (DBException e) {
 						throw new EtlException(e);
 					}
+					finally {
+						if (srcConn != null) {
+							srcConn.finalizeConnection();
+						}
+						if (dstConn != null) {
+							dstConn.finalizeConnection();
+						}
+					}
 				}, executorService));
 				
-				generatedEngines.add(taskProcessor);
 			}
 			
 			CompletableFuture<Void> allOf = CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
@@ -403,10 +398,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			//Wait until all tasks are finished
 			allOf.get();
 			
-			List<EtlOperationResultHeader<T>> allResults = tasks.stream().map(CompletableFuture::join)
-			        .collect(Collectors.toList());
-			
-			return EtlOperationResultHeader.combineAll(allResults);
+			return tasks.stream().map(CompletableFuture::join).collect(Collectors.toList());
 		}
 		finally {
 			// Shutdown the executorService service
@@ -485,6 +477,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		return new File(subFolder);
 	}
 	
+	@SuppressWarnings("unused")
 	private void tryToLoadExcludedRecordsLimits() {
 		List<ThreadRecordIntervalsManager<T>> limitsManagers = ThreadRecordIntervalsManager
 		        .getAllSavedLimitsOfOperation(this);
@@ -493,7 +486,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			this.setExcludedRecordsLimits(new ArrayList<>());
 			
 			for (ThreadRecordIntervalsManager<T> threadLimits : limitsManagers) {
-				threadLimits.getCurrentLimits().setMinRecordId(threadLimits.getThreadMinRecordId());
+				threadLimits.getCurrentLimits().setMinRecordId(threadLimits.getMinRecordId());
 				
 				this.getExcludedRecordsIntervals().add(threadLimits.getCurrentLimits());
 				
@@ -508,12 +501,20 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		}
 	}
 	
-	public int getQtyRecordsPerProcessing() {
+	public int getMaxRecordsPerProcessing() {
 		return getController().getOperationConfig().getMaxRecordPerProcessing();
 	}
 	
-	public void setQtyRecordsPerProcessing(int qtyRecordsPerProcessing) {
-		getController().getOperationConfig().setMaxRecordPerProcessing(qtyRecordsPerProcessing);
+	public int getMaxSupportedProcessors() {
+		return getController().getOperationConfig().getMaxSupportedEngines();
+	}
+	
+	public void setMaxSupportedProcessors(int maxSupportedProcessors) {
+		getController().getOperationConfig().setMaxSupportedEngines(maxSupportedProcessors);
+	}
+	
+	public void setMaxRecordsPerProcessing(int maxRecordsPerProcessing) {
+		getController().getOperationConfig().setMaxRecordPerProcessing(maxRecordsPerProcessing);
 	}
 	
 	private boolean mustRestartInTheEnd() {
@@ -574,6 +575,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	@Override
 	public void changeStatusToRunning() {
 		this.operationStatus = MonitoredOperation.STATUS_RUNNING;
+		
+		getProgressMeter().changeStatusToRunning();
 	}
 	
 	@Override
@@ -584,6 +587,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	@Override
 	public void changeStatusToFinished() {
 		this.operationStatus = MonitoredOperation.STATUS_FINISHED;
+		
+		getProgressMeter().changeStatusToFinished();
 	}
 	
 	@Override

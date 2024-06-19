@@ -28,7 +28,7 @@ public class TableOperationProgressInfo extends BaseVO {
 	
 	private EtlProgressMeter progressMeter;
 	
-	private OperationController controller;
+	private OperationController<? extends EtlDatabaseObject> controller;
 	
 	/*
 	 * Since in destination site the etlItemConfiguration is aplayed to all sites, then it is needed to fix it to allow manual specification
@@ -55,21 +55,21 @@ public class TableOperationProgressInfo extends BaseVO {
 		    processed);
 	}
 	
-	public TableOperationProgressInfo(OperationController controller, EtlItemConfiguration etlItemConfiguration) {
+	public TableOperationProgressInfo(OperationController<? extends EtlDatabaseObject> controller, EtlItemConfiguration etlItemConfiguration) {
 		this.controller = controller;
 		this.etlItemConfiguration = etlItemConfiguration;
 		this.originAppLocationCode = determineAppLocationCode(controller);
 		this.progressMeter = EtlProgressMeter.defaultProgressMeter(getOperationId());
 	}
 	
-	private String determineAppLocationCode(OperationController controller) {
+	private String determineAppLocationCode(OperationController<? extends EtlDatabaseObject> controller) {
 		
 		if (controller.getOperationConfig().isSupposedToHaveOriginAppCode()) {
 			return controller.getEtlConfiguration().getOriginAppLocationCode();
 		}
 		
 		if (controller instanceof SiteOperationController) {
-			return ((SiteOperationController) controller).getAppOriginLocationCode();
+			return ((SiteOperationController<? extends EtlDatabaseObject>) controller).getAppOriginLocationCode();
 		}
 		
 		if (controller.getOperationConfig().isDatabasePreparationOperation()
@@ -88,7 +88,7 @@ public class TableOperationProgressInfo extends BaseVO {
 		        + controller.getOperationType().name().toLowerCase() + " operation!");
 	}
 	
-	public void setController(OperationController controller) {
+	public void setController(OperationController<? extends EtlDatabaseObject> controller) {
 		this.controller = controller;
 	}
 	
@@ -125,7 +125,7 @@ public class TableOperationProgressInfo extends BaseVO {
 		this.originAppLocationCode = originAppLocationCode;
 	}
 	
-	public static String generateOperationId(OperationController operationController, EtlItemConfiguration config) {
+	public static String generateOperationId(OperationController<? extends EtlDatabaseObject> operationController, EtlItemConfiguration config) {
 		return operationController.getControllerId() + "_" + config.getConfigCode();
 	}
 	

@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.base.VO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
@@ -156,7 +156,7 @@ public abstract class AbstractSearchParams<T extends VO> {
 	}
 	
 	public int countAllSearchebleRecords(Connection conn) throws DBException {
-		return SearchParamsDAO.countAll(this, conn);
+		return SearchParamsDAO.countAll(this, null, conn);
 	}
 	
 	private String parseParamToString(Object param) {

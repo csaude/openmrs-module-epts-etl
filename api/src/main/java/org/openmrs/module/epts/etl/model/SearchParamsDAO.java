@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.model;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.VO;
 import org.openmrs.module.epts.etl.monitor.Engine;
@@ -11,8 +12,9 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class SearchParamsDAO extends BaseDAO {
 	
-	public static <T extends VO> int countAll(AbstractSearchParams<T> parametros, Connection conn) throws DBException {
-		SearchClauses<T> searchClauses = parametros.generateSearchClauses(null, conn, null);
+	public static <T extends VO> int countAll(AbstractSearchParams<T> parametros, IntervalExtremeRecord interval,
+	        Connection conn) throws DBException {
+		SearchClauses<T> searchClauses = parametros.generateSearchClauses(interval, conn, null);
 		
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		searchClauses.getSearchParameters().setQtdRecordPerSelected(0);

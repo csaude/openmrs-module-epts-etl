@@ -186,7 +186,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		for (OperationController<? extends EtlDatabaseObject> controller : this.relatedControllers) {
 			
 			if (controller instanceof SiteOperationController
-			        && ((SiteOperationController) controller).getAppOriginLocationCode().equalsIgnoreCase(appOriginCode)) {
+			        && ((SiteOperationController<? extends EtlDatabaseObject>) controller).getAppOriginLocationCode()
+			                .equalsIgnoreCase(appOriginCode)) {
 				return controller;
 			}
 		}
@@ -431,7 +432,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return this.operationType.isGenericOperation();
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null)
@@ -790,7 +790,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return this.getRelatedSyncConfig().isSupposedToHaveOriginAppCode();
 	}
 	
-	@SuppressWarnings("unchecked")
 	public synchronized void tryToLoadEngine() throws ForbiddenOperationException {
 		/*
 		try {

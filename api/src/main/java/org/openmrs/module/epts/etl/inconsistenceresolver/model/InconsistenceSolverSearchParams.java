@@ -4,8 +4,8 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
@@ -17,7 +17,7 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 	
 	private boolean selectAllRecords;
 	
-	public InconsistenceSolverSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager limits) {
+	public InconsistenceSolverSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		super(engine, limits);
 	}
 	
@@ -49,17 +49,17 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 		        this.getThreadRecordIntervalsManager());
 		auxSearchParams.selectAllRecords = true;
 		
-		return SearchParamsDAO.countAll(auxSearchParams, conn);
+		return SearchParamsDAO.countAll(auxSearchParams, null, conn);
 	}
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
 		
-		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
+		ThreadRecordIntervalsManager<EtlDatabaseObject> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();
 		
-		int count = SearchParamsDAO.countAll(this, conn);
+		int count = SearchParamsDAO.countAll(this, null, conn);
 		
 		this.setThreadRecordIntervalsManager(bkpLimits);
 		

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -25,8 +26,28 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	
 	private List<T> recordsWithNoError;
 	
-	public EtlOperationResultHeader() {
-		
+	private Exception fatalException;
+	
+	private IntervalExtremeRecord interval;
+	
+	public EtlOperationResultHeader(IntervalExtremeRecord interval) {
+		this.interval = interval;
+	}
+	
+	public IntervalExtremeRecord getInterval() {
+		return interval;
+	}
+	
+	public void setInterval(IntervalExtremeRecord interval) {
+		this.interval = interval;
+	}
+	
+	public void setFatalException(Exception fatalException) {
+		this.fatalException = fatalException;
+	}
+	
+	public Exception getFatalException() {
+		return fatalException;
 	}
 	
 	public EtlOperationResultHeader(List<T> recordsWithNoError) {
@@ -150,7 +171,13 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	}
 	
 	public boolean hasFatalError() throws DBException {
-		return hasRecordsWithUnresolvedErrors();
+		
+		if (getFatalException() != null) {
+			return true;
+		} else {
+			
+			return hasRecordsWithUnresolvedErrors();
+		}
 	}
 	
 	public void documentErrors(Connection srcConn, Connection dstConn) throws DBException {
@@ -198,26 +225,16 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	}
 	
 	public void printStackErrorOfFatalErrors() {
-		for (EtlOperationItemResult<T> r : getRecordsWithUnresolvedErrors()) {
-			if (r.hasException()) {
-				r.getException().printStackTrace();
+		if (getFatalException() != null) {
+			getFatalException().printStackTrace();
+		} else {
+			
+			for (EtlOperationItemResult<T> r : getRecordsWithUnresolvedErrors()) {
+				if (r.hasException()) {
+					r.getException().printStackTrace();
+				}
 			}
 		}
-	}
-	
-	public static <T extends EtlDatabaseObject> EtlOperationResultHeader<T> combineAll(
-	        List<EtlOperationResultHeader<T>> allResults) {
-		
-		if (!utilities.arrayHasElement(allResults))
-			return null;
-		
-		EtlOperationResultHeader<T> result = allResults.get(0);
-		
-		for (int i = 1; i < allResults.size(); i++) {
-			result.addAllFromOtherResult(allResults.get(i));
-		}
-		
-		return result;
 	}
 	
 	public void throwDefaultExcetions() throws DBException {
@@ -232,6 +249,30 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	
 	public int countAllSuccessfulyProcessedRecords() {
 		return utilities.arraySize(getRecordsWithNoError()) + utilities.arraySize(getRecordsWithResolvedErrors());
+	}
+	
+	public static <T extends EtlDatabaseObject> boolean hasAtLeastOneFatalError(List<EtlOperationResultHeader<T>> results)
+	        throws DBException {
+		
+		for (EtlOperationResultHeader<T> result : results) {
+			if (result.hasFatalError()) {
+				return true;
+			}
+		}
+		
+		return false;
+		
+	}
+	
+	public static <T extends EtlDatabaseObject> EtlOperationResultHeader<T> getDefaultResultWithFatalError(
+	        List<EtlOperationResultHeader<T>> results) throws DBException {
+		for (EtlOperationResultHeader<T> result : results) {
+			if (result.hasFatalError()) {
+				return result;
+			}
+		}
+		
+		return null;
 	}
 	
 }

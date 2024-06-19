@@ -12,8 +12,8 @@ import java.util.List;
 import javax.ws.rs.ForbiddenException;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -37,7 +37,7 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	
 	private String fileNamePathern;
 	
-	public LoadSyncDataSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager limits) {
+	public LoadSyncDataSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		super(engine, limits);
 		
 		if (limits != null) {

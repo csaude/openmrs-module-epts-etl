@@ -17,7 +17,9 @@ import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
+import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -29,6 +31,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class LoadRecord {
@@ -324,7 +327,17 @@ public class LoadRecord {
 				parent = refInfo.getDefaultObject(dstConn);
 				
 				if (parent == null) {
-					parent = getDstConf().generateAndSaveDefaultObject(dstConn);
+					try {
+						parent = getDstConf().generateAndSaveDefaultObject(dstConn);
+					}
+					catch (ConflictWithRecordNotYetAvaliableException e) {
+						getEngine()
+						        .logWarn("Conflict with not avaliable reacord. Reloading in 10secs..." + this.getRecord());
+						
+						TimeCountDown.sleep(10);
+						
+						loadDstParentInfo(srcConn, dstConn);
+					}
 				}
 				this.getParentsWithDefaultValues().add(new ParentInfo(refInfo, parentInOrigin));
 			}
@@ -402,7 +415,7 @@ public class LoadRecord {
 		consolidateAndSaveData(false, srcConn, destConn);
 	}
 	
-	public static EtlOperationResultHeader<EtlDatabaseObject> loadAll(List<LoadRecord> mergingRecs, Connection srcConn,
+	public static EtlOperationResultHeader<EtlDatabaseObject> loadAll_(List<LoadRecord> mergingRecs, Connection srcConn,
 	        Connection dstConn) throws ParentNotYetMigratedException, DBException {
 		
 		AbstractTableConfiguration config = mergingRecs.get(0).dstConf;
@@ -413,7 +426,7 @@ public class LoadRecord {
 		
 		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
 		
-		EtlOperationResultHeader<EtlDatabaseObject> currResult = new EtlOperationResultHeader<>();
+		EtlOperationResultHeader<EtlDatabaseObject> currResult = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
 		for (LoadRecord loadRecord : mergingRecs) {
 			EtlOperationItemResult<EtlDatabaseObject> r = loadRecord.loadDstParentInfo(srcConn, dstConn);
@@ -459,10 +472,10 @@ public class LoadRecord {
 	public static EtlOperationResultHeader<EtlDatabaseObject> loadAll(Map<String, List<LoadRecord>> mergingRecs,
 	        Connection srcConn, Connection dstConn) throws ParentNotYetMigratedException, DBException {
 		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>();
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
 		for (String key : mergingRecs.keySet()) {
-			EtlOperationResultHeader<EtlDatabaseObject> currresult = loadAll(mergingRecs.get(key), srcConn, dstConn);
+			EtlOperationResultHeader<EtlDatabaseObject> currresult = loadAll_(mergingRecs.get(key), srcConn, dstConn);
 			
 			result.addAllFromOtherResult(currresult);
 		}

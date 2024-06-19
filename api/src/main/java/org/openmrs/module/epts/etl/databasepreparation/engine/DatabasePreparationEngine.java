@@ -6,8 +6,8 @@ import java.sql.Statement;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationRecord;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -37,7 +37,7 @@ public class DatabasePreparationEngine extends TaskProcessor<DatabasePreparation
 			
 			this.updateDone = true;
 			
-			return new EtlOperationResultHeader<>();
+			return new EtlOperationResultHeader<>(getLimits());
 		}
 		catch (SQLException e) {
 			e.printStackTrace();

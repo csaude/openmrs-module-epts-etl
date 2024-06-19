@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.detectgapes.model.GapeDAO;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;

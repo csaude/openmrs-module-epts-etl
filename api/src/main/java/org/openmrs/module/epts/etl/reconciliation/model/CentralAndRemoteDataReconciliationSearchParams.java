@@ -4,8 +4,8 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -23,7 +23,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	private EtlOperationType type;
 	
 	public CentralAndRemoteDataReconciliationSearchParams(Engine<EtlDatabaseObject> engine,
-	    ThreadRecordIntervalsManager limits, EtlOperationType type) {
+	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits, EtlOperationType type) {
 		super(engine, limits);
 		
 		this.type = type;
@@ -138,16 +138,16 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 		        this.getRelatedEngine(), this.getThreadRecordIntervalsManager(), this.type);
 		auxSearchParams.selectAllRecords = true;
 		
-		return SearchParamsDAO.countAll(auxSearchParams, conn);
+		return SearchParamsDAO.countAll(auxSearchParams, null, conn);
 	}
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
+		ThreadRecordIntervalsManager<EtlDatabaseObject> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();
 		
-		int count = SearchParamsDAO.countAll(this, conn);
+		int count = SearchParamsDAO.countAll(this, null, conn);
 		
 		this.setThreadRecordIntervalsManager(bkpLimits);
 		

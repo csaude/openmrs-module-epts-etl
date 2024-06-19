@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.monitor.Engine;
@@ -24,7 +24,7 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	
 	private String fileNamePathern;
 	
-	public TransportSyncSearchParams(Engine<TransportRecord> engine, ThreadRecordIntervalsManager limits) {
+	public TransportSyncSearchParams(Engine<TransportRecord> engine, ThreadRecordIntervalsManager<TransportRecord> limits) {
 		super(engine, limits);
 		
 		if (limits != null) {

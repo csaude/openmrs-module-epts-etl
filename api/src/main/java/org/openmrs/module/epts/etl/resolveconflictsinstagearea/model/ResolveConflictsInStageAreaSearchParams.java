@@ -6,8 +6,8 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.engine.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
@@ -18,7 +18,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	
 	private boolean selectAllRecords;
 	
-	public ResolveConflictsInStageAreaSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager limits) {
+	public ResolveConflictsInStageAreaSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager<SyncImportInfoVO> limits) {
 		super(engine, limits);
 	}
 	
@@ -71,16 +71,16 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 		        this.getRelatedEngine(), this.getThreadRecordIntervalsManager());
 		auxSearchParams.selectAllRecords = true;
 		
-		return SearchParamsDAO.countAll(auxSearchParams, conn);
+		return SearchParamsDAO.countAll(auxSearchParams, null, conn);
 	}
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		ThreadRecordIntervalsManager bkpLimits = this.getThreadRecordIntervalsManager();
+		ThreadRecordIntervalsManager<SyncImportInfoVO> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();
 		
-		int count = SearchParamsDAO.countAll(this, conn);
+		int count = SearchParamsDAO.countAll(this, null, conn);
 		
 		this.setThreadRecordIntervalsManager(bkpLimits);
 		

@@ -311,6 +311,9 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 					}
 					
 					if (recordOnDB == null) {
+						
+						this.loadUniqueKeyValues(tableConfiguration);
+						
 						recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this, conn);
 					}
 					
@@ -381,6 +384,9 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 				
 				try {
 					recordOnDBDate = (Date) recordOnDB.getFieldValue(dateField);
+				}
+				catch (NullPointerException e) {
+					recordOnDBDate = null;
 				}
 				catch (ForbiddenOperationException e) {
 					recordOnDBDate = (Date) recordOnDB
