@@ -123,7 +123,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+	public AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		EtlDatabaseObjectSearchParams cloned = new EtlDatabaseObjectSearchParams(getRelatedEngine(), null);
 		
 		return cloned;

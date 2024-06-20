@@ -52,7 +52,7 @@ public class MozartLInkedFileSearchParams extends AbstractEtlSearchParams<EtlDat
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+	public AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}

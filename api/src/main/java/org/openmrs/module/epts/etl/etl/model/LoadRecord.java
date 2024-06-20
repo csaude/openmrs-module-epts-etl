@@ -122,7 +122,7 @@ public class LoadRecord {
 			getDstConf().fullLoad();
 		}
 		
-		loadDstParentInfo(srcConn, dstConn);
+		loadDstParentInfo(true, srcConn, dstConn);
 		
 		try {
 			
@@ -171,7 +171,7 @@ public class LoadRecord {
 		if (!getDstConf().isFullLoaded())
 			dstConf.fullLoad();
 		
-		loadDstParentInfo(srcConn, dstConn);
+		loadDstParentInfo(true, srcConn, dstConn);
 		
 		EtlDatabaseObject recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this.getRecord(), dstConn);
 		
@@ -229,6 +229,38 @@ public class LoadRecord {
 	
 	protected EtlOperationItemResult<EtlDatabaseObject> loadDstParentInfo(Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, MissingParentException, DBException {
+		
+		EtlOperationItemResult<EtlDatabaseObject> a = null;
+		
+		EtlCounter counter = new EtlCounter();
+		
+		while (true) {
+			
+			counter.increese();
+			
+			boolean error = false;
+			
+			this.getEngine().logDebug(counter.getCurrentCount() + " Reprocessing Object" + this.getRecord());
+			
+			try {
+				a = loadDstParentInfo(false, srcConn, dstConn);
+			}
+			catch (ConflictWithRecordNotYetAvaliableException e) {
+				error = true;
+			}
+			
+			this.getEngine().logDebug("Reprocessing Object successed " + this.getRecord());
+			
+			if (!error)
+				return a;
+			
+			TimeCountDown.sleep(5);
+		}
+		
+	}
+	
+	protected EtlOperationItemResult<EtlDatabaseObject> loadDstParentInfo(boolean catchConflictException, Connection srcConn,
+	        Connection dstConn) throws ParentNotYetMigratedException, MissingParentException, DBException {
 		
 		EtlOperationItemResult<EtlDatabaseObject> itemResult = new EtlOperationItemResult<>(getRecord());
 		
@@ -331,12 +363,15 @@ public class LoadRecord {
 						parent = getDstConf().generateAndSaveDefaultObject(dstConn);
 					}
 					catch (ConflictWithRecordNotYetAvaliableException e) {
-						getEngine()
-						        .logWarn("Conflict with not avaliable reacord. Reloading in 10secs..." + this.getRecord());
 						
-						TimeCountDown.sleep(10);
-						
-						loadDstParentInfo(srcConn, dstConn);
+						if (catchConflictException) {
+							
+							getEngine().logWarn("Conflict with not avaliable reacord. Reloading in 5secs... [Instance ID "
+							        + System.identityHashCode(this.getRecord()) + "] [Object :" + this.getRecord() + "]");
+							
+							return loadDstParentInfo(srcConn, dstConn);
+						} else
+							throw e;
 					}
 				}
 				this.getParentsWithDefaultValues().add(new ParentInfo(refInfo, parentInOrigin));
@@ -429,7 +464,7 @@ public class LoadRecord {
 		EtlOperationResultHeader<EtlDatabaseObject> currResult = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
 		for (LoadRecord loadRecord : mergingRecs) {
-			EtlOperationItemResult<EtlDatabaseObject> r = loadRecord.loadDstParentInfo(srcConn, dstConn);
+			EtlOperationItemResult<EtlDatabaseObject> r = loadRecord.loadDstParentInfo(true, srcConn, dstConn);
 			
 			if (!r.hasUnresolvedInconsistences()) {
 				objects.add(loadRecord.getRecord());

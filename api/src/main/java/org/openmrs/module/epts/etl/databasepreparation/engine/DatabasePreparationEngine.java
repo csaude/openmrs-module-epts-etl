@@ -30,7 +30,7 @@ public class DatabasePreparationEngine extends TaskProcessor<DatabasePreparation
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<DatabasePreparationRecord> performeSync(List<DatabasePreparationRecord> records,
+	public EtlOperationResultHeader<DatabasePreparationRecord> performeSync(List<DatabasePreparationRecord> records,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		try {
 			updateTableInfo(srcConn);

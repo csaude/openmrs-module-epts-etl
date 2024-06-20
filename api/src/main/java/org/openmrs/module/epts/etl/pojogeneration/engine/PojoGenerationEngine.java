@@ -42,7 +42,7 @@ public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<PojoGenerationRecord> performeSync(List<PojoGenerationRecord> records,
+	public EtlOperationResultHeader<PojoGenerationRecord> performeSync(List<PojoGenerationRecord> records,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
 		this.pojoGenerated = true;

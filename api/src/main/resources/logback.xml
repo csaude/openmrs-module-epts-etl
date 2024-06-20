@@ -17,7 +17,7 @@
     </appender>
 
     <!-- Rolling File Appender -->
-	<!--
+
     <appender name="fileApp" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOGS_FILE}</file>
         <encoder>
@@ -30,12 +30,12 @@
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
     </appender>
-	-->
+
 	
     <!-- Root Logger -->
     <root level="debug">
         <appender-ref ref="console" />
-        <!--<appender-ref ref="fileApp" />-->
+     <appender-ref ref="fileApp" />
     </root>
 
 </configuration>

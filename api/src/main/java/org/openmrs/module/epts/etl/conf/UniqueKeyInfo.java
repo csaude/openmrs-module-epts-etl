@@ -177,9 +177,11 @@ public class UniqueKeyInfo {
 					keyElements = new ArrayList<>();
 				}
 				
-				Field f = tableConfiguration.getField(rs.getString("COLUMN_NAME"));
-				
-				keyElements.add(Key.fastCreateTyped(f.getName(), f.getType()));
+				if (!tableConfiguration.isIgnorableField(Field.fastCreate(rs.getString("COLUMN_NAME")))) {
+					Field f = tableConfiguration.getField(rs.getString("COLUMN_NAME"));
+					
+					keyElements.add(Key.fastCreateTyped(f.getName(), f.getType()));
+				}
 			}
 			
 			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);

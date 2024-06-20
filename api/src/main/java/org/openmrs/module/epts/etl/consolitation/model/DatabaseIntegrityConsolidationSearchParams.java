@@ -61,7 +61,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 		
 		this.setThreadRecordIntervalsManager(null);
 		
-		int count = SearchParamsDAO.countAll(this, null,	 conn);
+		int count = SearchParamsDAO.countAll(this, null, conn);
 		
 		this.setThreadRecordIntervalsManager(bkpLimits);
 		
@@ -69,7 +69,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+	public AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}

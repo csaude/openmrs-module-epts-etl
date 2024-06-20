@@ -25,7 +25,7 @@ public class DataBaseMergeFromJSONEngine extends TaskProcessor<SyncImportInfoVO>
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<SyncImportInfoVO> performeSync(List<SyncImportInfoVO> records, Connection srcConn,
+	public EtlOperationResultHeader<SyncImportInfoVO> performeSync(List<SyncImportInfoVO> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		
 		throw new ForbiddenOperationException("Rever este metodo!");
@@ -52,6 +52,5 @@ public class DataBaseMergeFromJSONEngine extends TaskProcessor<SyncImportInfoVO>
 	public DataBaseMergeFromJSONSearchParams getSearchParams() {
 		return (DataBaseMergeFromJSONSearchParams) super.getSearchParams();
 	}
-	
 	
 }

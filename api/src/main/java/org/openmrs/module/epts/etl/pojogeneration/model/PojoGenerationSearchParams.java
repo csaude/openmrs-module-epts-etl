@@ -17,7 +17,8 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 	
 	private PojoGenerationEngine processor;
 	
-	public PojoGenerationSearchParams(Engine<PojoGenerationRecord> engine, ThreadRecordIntervalsManager<PojoGenerationRecord> limits) {
+	public PojoGenerationSearchParams(Engine<PojoGenerationRecord> engine,
+	    ThreadRecordIntervalsManager<PojoGenerationRecord> limits) {
 		super(engine, limits);
 		
 	}
@@ -27,8 +28,8 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 	}
 	
 	@Override
-	public List<PojoGenerationRecord> search(Engine<PojoGenerationRecord> monitor,
-	        IntervalExtremeRecord intervalExtremeRecord, Connection srcConn, Connection dstCOnn) throws DBException {
+	public List<PojoGenerationRecord> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
+	        Connection dstCOnn) throws DBException {
 		
 		if (processor.isPojoGenerated())
 			return null;
@@ -63,7 +64,7 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<PojoGenerationRecord> cloneMe() {
+	public AbstractEtlSearchParams<PojoGenerationRecord> cloneMe() {
 		return null;
 	}
 	

@@ -113,7 +113,7 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+	public AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		return null;
 	}
 	

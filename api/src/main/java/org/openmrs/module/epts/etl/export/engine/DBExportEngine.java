@@ -29,7 +29,7 @@ public class DBExportEngine extends TaskProcessor<EtlDatabaseObject> {
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		try {
 			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(records, EtlDatabaseObject.class);

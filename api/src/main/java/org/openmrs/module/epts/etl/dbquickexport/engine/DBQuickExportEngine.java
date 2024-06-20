@@ -29,7 +29,7 @@ public class DBQuickExportEngine extends TaskProcessor<EtlDatabaseObject> {
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		try {
 			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(records, EtlDatabaseObject.class);
@@ -79,12 +79,12 @@ public class DBQuickExportEngine extends TaskProcessor<EtlDatabaseObject> {
 				
 				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
 			}
-		
+			
 			EtlOperationResultHeader<EtlDatabaseObject> h = new EtlOperationResultHeader<>(getLimits());
 			
 			h.addAllToRecordsWithNoError(syncRecordsAsOpenMRSObjects);
 			
-			return h;	
+			return h;
 		}
 		catch (IOException e) {
 			e.printStackTrace();

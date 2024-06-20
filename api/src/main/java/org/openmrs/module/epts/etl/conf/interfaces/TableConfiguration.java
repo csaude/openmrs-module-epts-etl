@@ -1050,7 +1050,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				this.setFullLoaded(true);
 				
-				getRelatedSyncConfiguration().addToFullLoadedTables(this);
+				 getRelatedSyncConfiguration().addToFullLoadedTables(this);
 				
 			}
 			catch (SQLException e) {

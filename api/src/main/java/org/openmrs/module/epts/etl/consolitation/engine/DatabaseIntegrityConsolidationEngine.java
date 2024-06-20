@@ -24,7 +24,7 @@ public class DatabaseIntegrityConsolidationEngine extends TaskProcessor<EtlDatab
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		
 		throw new ForbiddenOperationException("Rever este metodo!");

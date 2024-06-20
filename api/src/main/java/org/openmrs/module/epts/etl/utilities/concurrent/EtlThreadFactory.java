@@ -2,20 +2,24 @@ package org.openmrs.module.epts.etl.utilities.concurrent;
 
 import java.util.concurrent.ThreadFactory;
 
-public class EtlThreadFactory implements ThreadFactory {
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.monitor.Engine;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+
+public class EtlThreadFactory<T extends EtlDatabaseObject> implements ThreadFactory {
 	
-	private ThreadLocal<String> taskId = new ThreadLocal<>();
+	CommonUtilities utilities = CommonUtilities.getInstance();
+	
+	private Engine<T> engine;
+	
+	public EtlThreadFactory(Engine<T> engine) {
+		this.engine = engine;
+	}
 	
 	@Override
 	public Thread newThread(Runnable r) {
-		return new Thread(r, taskId.get());
+		return new Thread(r, engine.getEngineId() + "_"
+		        + utilities.garantirXCaracterOnNumber(engine.getCurrentTaskProcessor().size(), 2));
 	}
 	
-	public void setTaskId(String id) {
-		taskId.set(id);
-	}
-	
-	public ThreadLocal<String> getTaskId() {
-		return taskId;
-	}
 }

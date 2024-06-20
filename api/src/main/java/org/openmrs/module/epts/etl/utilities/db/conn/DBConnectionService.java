@@ -130,7 +130,14 @@ public class DBConnectionService {
 	public OpenConnection openConnection() throws DBException {
 		OpenConnection conn = new OpenConnection(openConnection(50, null), this);
 		
-		//incriseOpenConnections();
+		/*
+		try {
+			conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}*/
+		
 		return conn;
 	}
 	

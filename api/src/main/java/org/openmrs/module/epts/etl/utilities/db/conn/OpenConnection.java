@@ -309,7 +309,7 @@ public class OpenConnection implements Connection, Closeable {
 	public void setTransactionIsolation(int level) throws SQLException {
 		tryToReopen();
 		
-		connection.setTransactionIsolation(TRANSACTION_NONE);
+		connection.setTransactionIsolation(level);
 	}
 	
 	@Override

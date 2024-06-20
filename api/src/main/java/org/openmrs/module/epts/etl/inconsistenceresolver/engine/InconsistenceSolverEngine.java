@@ -23,7 +23,7 @@ public class InconsistenceSolverEngine extends TaskProcessor<EtlDatabaseObject> 
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
 		

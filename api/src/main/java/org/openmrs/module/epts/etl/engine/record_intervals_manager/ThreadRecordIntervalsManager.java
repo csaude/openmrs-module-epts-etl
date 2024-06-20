@@ -49,6 +49,8 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 	
 	private ThreadIntervalsManagerStatusType status;
 	
+	private FinalizerThreadRecordIntervalsManager<T> finalCheckIntervalsManager;
+	
 	public ThreadRecordIntervalsManager() {
 		this.status = ThreadIntervalsManagerStatusType.NOT_INITIALIZED;
 		
@@ -65,6 +67,27 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 		this.maxSupportedProcessors = maxAllowedProcessors;
 		
 		this.reset();
+	}
+	
+	public int getMaxSupportedProcessors() {
+		return maxSupportedProcessors;
+	}
+	
+	public void setMaxSupportedProcessors(int maxSupportedProcessors) {
+		this.maxSupportedProcessors = maxSupportedProcessors;
+	}
+	
+	@JsonIgnore
+	public Engine<T> getEngine() {
+		return engine;
+	}
+	
+	public FinalizerThreadRecordIntervalsManager<T> getFinalCheckIntervalsManager() {
+		return finalCheckIntervalsManager;
+	}
+	
+	public void setFinalCheckIntervalsManager(FinalizerThreadRecordIntervalsManager<T> finalCheckIntervalsManager) {
+		this.finalCheckIntervalsManager = finalCheckIntervalsManager;
 	}
 	
 	public void setCurrentLimits(ThreadCurrentIntervals currentLimits) {
@@ -172,6 +195,7 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 		return getCurrentLimits().getMinRecordId();
 	}
 	
+	@JsonIgnore
 	public long getCurrentLastRecordId() {
 		return getCurrentLimits().getMaxRecordId();
 	}
@@ -200,15 +224,18 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 		this.qtyRecordsPerProcessing = qtyRecordsPerProcessing;
 	}
 	
-	public void save(Engine<T> monitor) {
+	public void save() {
+		
+		if (this.engine == null)
+			throw new ForbiddenOperationException("You cannot save limits without engine");
 		
 		if (!hasThreadCode())
 			throw new ForbiddenOperationException("You cannot save limits without threadCode");
 		
 		if (isOutOfLimits() || isNotInitialized()) {
-			monitor.logWarn("You cannot save out of limit/not initialized thread limits manager");
+			engine.logWarn("You cannot save out of limit/not initialized thread limits manager");
 		} else {
-			String fileName = generateFilePath(monitor);
+			String fileName = generateFilePath(engine);
 			
 			if (new File(fileName).exists()) {
 				FileUtilities.removeFile(fileName);
@@ -325,6 +352,7 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 		this.status = copyFrom.status;
 		this.currentLimits = copyFrom.getCurrentLimits().cloneMe();
 		this.maxSupportedProcessors = copyFrom.maxSupportedProcessors;
+		this.finalCheckIntervalsManager = copyFrom.finalCheckIntervalsManager;
 		
 		this.setMinRecordId(copyFrom.getMinRecordId());
 		this.setMaxRecordId(copyFrom.getMaxRecordId());
@@ -418,6 +446,11 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 	@Override
 	public int compareTo(ThreadRecordIntervalsManager<T> other) {
 		return this.getThreadCode().compareTo(other.getThreadCode());
+	}
+	
+	public void initializeFinalCheckIntervalManager() {
+		this.finalCheckIntervalsManager = new FinalizerThreadRecordIntervalsManager<>(this, this.getMinRecordId(),
+		        this.getMaxRecordId(), this.getQtyRecordsPerProcessing(), 1);
 	}
 	
 }

@@ -229,7 +229,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		return this.savedCount;
 	}
 	
-	public List<T> search(Engine<T> monitor, IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
+	public List<T> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
 	        Connection dstCOnn) throws DBException {
 		SearchClauses<T> searchClauses = this.generateSearchClauses(intervalExtremeRecord, srcConn, dstCOnn);
 		
@@ -242,56 +242,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		return BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, searchClauses.getParameters(), srcConn);
 	}
 	
-	/*
-	public List<T> searchNextRecords(Engine<T> monitor, Connection srcConn, Connection dstConn) throws DBException {
-		
-		if (hasLimits() && getThreadRecordIntervalsManager().isOutOfLimits())
-			return null;
-		
-		SearchClauses<T> searchClauses = this.generateSearchClauses(getThreadRecordIntervalsManager().getCurrentLimits(),
-		    srcConn, dstConn);
-		
-		if (this.getOrderByFields() != null) {
-			searchClauses.addToOrderByFields(this.getOrderByFields());
-		}
-		
-		String sql = searchClauses.generateSQL(srcConn);
-		
-		List<T> l = BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, searchClauses.getParameters(),
-		    srcConn);
-		
-		int i = 0;
-		
-		while (utilities.arrayHasNoElement(l) && this.getThreadRecordIntervalsManager().canGoNext()) {
-			this.getThreadRecordIntervalsManager().save(monitor);
-			
-			if (i++ == 0) {
-				this.getRelatedController()
-				        .logInfo("Empty result on fased quering... The application will keep searching next pages");
-			} else {
-				this.getRelatedController()
-				        .logDebug("Empty result on fased quering... The application will keep searching next pages "
-				                + this.getThreadRecordIntervalsManager());
-			}
-			this.getThreadRecordIntervalsManager().moveNext();
-			
-			searchClauses = this.generateSearchClauses(getThreadRecordIntervalsManager().getCurrentLimits(), srcConn,
-			    dstConn);
-			
-			if (this.getOrderByFields() != null) {
-				searchClauses.addToOrderByFields(this.getOrderByFields());
-			}
-			
-			sql = searchClauses.generateSQL(srcConn);
-			
-			l = BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, searchClauses.getParameters(), srcConn);
-		}
-		
-		return l;
-	}
-	*/
-	
-	protected List<T> searchNextRecordsInMultiThreads(Engine<T> engine, Connection srcConn, Connection dstConn) {
+	public List<T> searchNextRecordsInMultiThreads(Connection srcConn, Connection dstConn) {
 		if (!hasLimits()) {
 			throw new ForbiddenOperationException(
 			        "For multithreading search you must specify the threadRecordIntervalsManager with min and max records in the searching range");
@@ -313,7 +264,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 			
 			tasks.add(CompletableFuture.supplyAsync(() -> {
 				try {
-					return this.search(engine, limits, srcConn, dstConn);
+					return this.search(limits, srcConn, dstConn);
 				}
 				catch (DBException e) {
 					throw new EtlException(e);
@@ -343,7 +294,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		}
 		
 		if (utilities.arrayHasNoElement(allSearchedRecords) && this.getThreadRecordIntervalsManager().canGoNext()) {
-			this.getThreadRecordIntervalsManager().save(engine);
+			this.getThreadRecordIntervalsManager().save();
 			
 			this.getRelatedController()
 			        .logDebug("Empty result on fased quering... The application will keep searching next pages "
@@ -351,7 +302,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 			
 			this.getThreadRecordIntervalsManager().moveNext();
 			
-			return searchNextRecordsInMultiThreads(engine, srcConn, dstConn);
+			return searchNextRecordsInMultiThreads(srcConn, dstConn);
 		}
 		
 		return allSearchedRecords;
@@ -363,7 +314,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	 * 
 	 * @return the cloned search params
 	 */
-	protected abstract AbstractEtlSearchParams<T> cloneMe();
+	public abstract AbstractEtlSearchParams<T> cloneMe();
 	
 	protected abstract VOLoaderHelper getLoaderHealper();
 	

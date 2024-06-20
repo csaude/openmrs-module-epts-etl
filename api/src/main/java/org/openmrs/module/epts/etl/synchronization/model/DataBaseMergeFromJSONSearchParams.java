@@ -108,7 +108,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+	public AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}

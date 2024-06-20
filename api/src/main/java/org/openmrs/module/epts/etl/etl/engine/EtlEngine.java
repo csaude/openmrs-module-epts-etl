@@ -221,13 +221,13 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 	}
 	
 	private void process(LoadRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
-	        Connection destConn) throws DBException {
+	        Connection destConnn) throws DBException {
 		String reprocessingMessage = reprocessingCount == 0 ? "Merging Record"
 		        : "Re-merging " + reprocessingCount + " Record";
 		
 		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + etlData.getRecord() + "]");
 		
-		etlData.load(srcConn, destConn);
+		etlData.load(srcConn, destConnn);
 	}
 	
 	public LoadRecord initEtlRecord(EtlDatabaseObject destObject, DstConf mappingInfo, boolean writeOperationHistory) {

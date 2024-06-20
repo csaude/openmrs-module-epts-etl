@@ -84,8 +84,7 @@ public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchPara
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
-		// TODO Auto-generated method stub
+	public AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
 		return null;
 	}
 	

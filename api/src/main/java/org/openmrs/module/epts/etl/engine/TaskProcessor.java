@@ -85,14 +85,14 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		return getMonitor().getSearchParams();
 	}
 	
-	public EtlOperationResultHeader<T> performe(Connection srcConn, Connection dstCon) throws DBException {
+	public EtlOperationResultHeader<T> performe(Connection ownSrcConn, Connection ownDstCon) throws DBException {
 		if (getLimits() != null) {
 			logDebug("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
 		} else {
 			logDebug("SERCHING NEXT RECORDS");
 		}
 		
-		List<T> records = getSearchParams().search(this.getMonitor(), getLimits(), srcConn, dstCon);
+		List<T> records = getSearchParams().search(getLimits(), ownSrcConn, ownDstCon);
 		
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
 		        + getSrcConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records) + "' RECORDS.");
@@ -103,12 +103,12 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 			logDebug("INITIALIZING " + getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '"
 			        + records.size() + "' RECORDS OF TABLE '" + this.getSrcConf().getTableName() + "'");
 			
-			beforeSync(records, srcConn, dstCon);
+			beforeSync(records, ownSrcConn, ownDstCon);
 			
-			r = performeSync(records, srcConn, dstCon);
+			r = performeSync(records, ownSrcConn, ownDstCon);
 		}
 		
-		refreshProgressMeter(r.countAllSuccessfulyProcessedRecords(), srcConn);
+		refreshProgressMeter(r.countAllSuccessfulyProcessedRecords(), ownSrcConn);
 		
 		reportProgress();
 		
@@ -122,10 +122,6 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 				((EtlDatabaseObject) rec).loadObjectIdData(getSrcConf());
 			}
 		}
-	}
-	
-	public synchronized void refreshProgressMeter(int newlyProcessedRecords, Connection conn) throws DBException {
-		this.monitor.refreshProgressMeter(newlyProcessedRecords, conn);
 	}
 	
 	public void reportProgress() {
@@ -173,6 +169,6 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		return this.getEngineId().equals(e.getEngineId());
 	}
 	
-	protected abstract EtlOperationResultHeader<T> performeSync(List<T> records, Connection srcConn, Connection dstConn)
+	public abstract EtlOperationResultHeader<T> performeSync(List<T> records, Connection srcConn, Connection dstConn)
 	        throws DBException;
 }

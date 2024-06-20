@@ -32,6 +32,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
+import org.openmrs.module.epts.etl.utilities.tools.model.TmpVO;
 
 public class QuickTest {
 	
@@ -61,7 +62,37 @@ public class QuickTest {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		runInConcurrency();
+		testResourceSharingBetweenConnections();
+	}
+	
+	public static void testResourceSharingBetweenConnections() throws SQLException {
+		OpenConnection conn1 = openConnection();
+		OpenConnection conn2 = openConnection();
+		
+		conn2.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+		
+		String taskId1 = "Task-12";
+		
+		int result = testConcurrency(taskId1, "insert into tmp(name) values(' " + taskId1 + " ')", conn1);
+		
+		Object[] params = { result };
+		
+
+		TmpVO usr1 = DatabaseObjectDAO.find(TmpVO.class, "select * from tmp where id = ?", params, conn1);
+		
+		TmpVO usr2 = DatabaseObjectDAO.find(TmpVO.class, "select * from tmp where id = ?", params, conn2);
+		
+		System.err.println(usr1);
+		System.err.println(usr2);
+		
+		
+		conn1.markAsSuccessifullyTerminated();
+		conn1.finalizeConnection();
+		
+		TmpVO usr3 = DatabaseObjectDAO.find(TmpVO.class, "select * from tmp where id = ?", params, conn2);
+		System.err.println(usr3);
+		
+		
 	}
 	
 	public static void runInConcurrency() throws DBException {
@@ -219,7 +250,7 @@ public class QuickTest {
 		
 		OpenConnection srcConn = conf.getMainApp().openConnection();
 		
-		List<EtlDatabaseObject> syncRecords = searchParams.search(null, null, srcConn, srcConn);
+		List<EtlDatabaseObject> syncRecords = searchParams.search(null, srcConn, srcConn);
 		
 		OpenConnection dstConn = dstApp.openConnection();
 		

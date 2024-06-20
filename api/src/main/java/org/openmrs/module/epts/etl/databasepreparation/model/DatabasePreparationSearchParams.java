@@ -10,22 +10,22 @@ import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtre
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
-import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DatabasePreparationSearchParams extends AbstractEtlSearchParams<DatabasePreparationRecord> {
 	
 	DatabasePreparationEngine processor;
 	
-	public DatabasePreparationSearchParams(DatabasePreparationEngine processor, ThreadRecordIntervalsManager<DatabasePreparationRecord> limits) {
+	public DatabasePreparationSearchParams(DatabasePreparationEngine processor,
+	    ThreadRecordIntervalsManager<DatabasePreparationRecord> limits) {
 		super(processor.getMonitor(), limits);
 		
 		this.processor = processor;
 	}
 	
 	@Override
-	public List<DatabasePreparationRecord> search(Engine<DatabasePreparationRecord> monitor,
-	        IntervalExtremeRecord intervalExtremeRecord, Connection srcConn, Connection dstCOnn) throws DBException {
+	public List<DatabasePreparationRecord> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
+	        Connection dstCOnn) throws DBException {
 		if (processor.isUpdateDone())
 			return null;
 		
@@ -60,7 +60,7 @@ public class DatabasePreparationSearchParams extends AbstractEtlSearchParams<Dat
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<DatabasePreparationRecord> cloneMe() {
+	public AbstractEtlSearchParams<DatabasePreparationRecord> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -25,7 +25,7 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
 		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(etlObjects);

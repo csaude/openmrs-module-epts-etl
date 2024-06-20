@@ -94,7 +94,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	}
 
 	@Override
-	protected AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+	public AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}

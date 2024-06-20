@@ -31,7 +31,7 @@ public class TransportEngine extends TaskProcessor<TransportRecord> {
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<TransportRecord> performeSync(List<TransportRecord> migrationRecords,
+	public EtlOperationResultHeader<TransportRecord> performeSync(List<TransportRecord> migrationRecords,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
 		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords,
@@ -59,7 +59,7 @@ public class TransportEngine extends TaskProcessor<TransportRecord> {
 		
 		this.getMonitor().logInfo(
 		    "'" + migrationRecords.size() + "' " + getMainSrcTableName() + " SOURCE FILES COPIED TO IMPORT AREA");
-	
+		
 		return new EtlOperationResultHeader<>(migrationRecordAsTransportRecord);
 	}
 	

@@ -38,7 +38,7 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	}
 	
 	@Override
-	public List<TransportRecord> search(Engine<TransportRecord> monitor, IntervalExtremeRecord intervalExtremeRecord,
+	public List<TransportRecord> search(IntervalExtremeRecord intervalExtremeRecord,
 	        Connection srcConn, Connection dstCOnn) throws DBException {
 		
 		try {
@@ -133,7 +133,7 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<TransportRecord> cloneMe() {
+	public AbstractEtlSearchParams<TransportRecord> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -64,7 +64,7 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> search(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord intervalExtremeRecord,
+	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord,
 	        Connection srcConn, Connection dstCOnn) throws DBException {
 		
 		this.currJSONSourceFile = getNextJSONFileToLoad();
@@ -201,7 +201,7 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+	public AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}

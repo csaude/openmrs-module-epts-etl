@@ -126,4 +126,11 @@ public class ThreadCurrentIntervals extends IntervalExtremeRecord {
 	public boolean isFullProcessed() {
 		return utilities.arrayHasNoElement(getAllNotProcessed());
 	}
+	
+	@Override
+	public void markAsProcessed() {
+		for (IntervalExtremeRecord i : getInternalIntervals()) {
+			i.markAsProcessed();
+		}
+	}
 }

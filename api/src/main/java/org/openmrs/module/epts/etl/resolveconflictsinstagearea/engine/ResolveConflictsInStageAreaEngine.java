@@ -24,7 +24,7 @@ public class ResolveConflictsInStageAreaEngine extends TaskProcessor<SyncImportI
 	
 	
 	@Override
-	protected EtlOperationResultHeader<SyncImportInfoVO> performeSync(List<SyncImportInfoVO> records, Connection srcConn,
+	public EtlOperationResultHeader<SyncImportInfoVO> performeSync(List<SyncImportInfoVO> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 
 		utilities.throwReviewMethodException();

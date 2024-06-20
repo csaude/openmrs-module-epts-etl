@@ -85,6 +85,12 @@ public class Field implements Serializable {
 		return f;
 	}
 	
+	public static Field fastCreate(String name) {
+		Field f = new Field(name);
+		
+		return f;
+	}
+	
 	public String getName() {
 		return name;
 	}

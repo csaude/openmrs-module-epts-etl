@@ -74,7 +74,7 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 	}
 	
 	@Override
-	protected AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
+	public AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}

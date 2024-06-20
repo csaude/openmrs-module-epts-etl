@@ -32,7 +32,7 @@ public class DataBasesMergeFromSourceEngine extends TaskProcessor<EtlDatabaseObj
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		logInfo("PERFORMING MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		

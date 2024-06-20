@@ -41,7 +41,7 @@ public class ReEtlEngine extends EtlEngine {
 		        + "' RECORDS");
 		
 		int i = 1;
-
+		
 		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		for (EtlObject record : etlObjects) {
@@ -138,18 +138,17 @@ public class ReEtlEngine extends EtlEngine {
 			}
 		}
 		
-		
 		return result;
 	}
 	
 	private void process(LoadRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,
-	        Connection destConn) throws DBException {
+	        Connection dstConnn) throws DBException {
 		String reprocessingMessage = reprocessingCount == 0 ? "Re Merging Record"
 		        : "Re re-merging " + reprocessingCount + " Record";
 		
 		logDebug(startingStrLog + ": " + reprocessingMessage + ": [" + etlData.getRecord() + "]");
 		
-		etlData.reLoad(srcConn, destConn);
+		etlData.reLoad(srcConn, dstConnn);
 	}
 	
 }

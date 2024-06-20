@@ -24,7 +24,7 @@ public class DataLoadEngine extends TaskProcessor<EtlDatabaseObject> {
 	}
 	
 	@Override
-	protected EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(records, SyncImportInfoVO.class);
 		
@@ -41,8 +41,7 @@ public class DataLoadEngine extends TaskProcessor<EtlDatabaseObject> {
 		
 		logDebug(
 		    "SOURCE JSON [" + this.getSearchParams().getCurrJSONSourceFile().getAbsolutePath() + "] MOVED TO BACKUP AREA.");
-	
-	
+		
 		return new EtlOperationResultHeader<>(records);
 	}
 	
