@@ -1303,4 +1303,28 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		tabConfig.setTableAlias(generatedTableAlias);
 	}
+	
+	public OpenConnection openDstConn() throws DBException {
+		OpenConnection dstConn = null;
+		
+		List<AppInfo> otherApps = this.exposeAllAppsNotMain();
+		
+		if (utilities.arrayHasElement(otherApps)) {
+			
+			if (utilities.arrayHasMoreThanOneElements(otherApps)) {
+				throw new ForbiddenOperationException("Not supported more that one destination apps");
+			}
+			
+			dstConn = otherApps.get(0).openConnection();
+			
+		} else {
+			throw new ForbiddenOperationException("No dst conn config defined!");
+		}
+		
+		return dstConn;
+	}
+	
+	public OpenConnection openSrcConn() throws DBException, ForbiddenOperationException {
+		return getMainApp().openConnection();
+	}
 }

@@ -359,20 +359,7 @@ public class LoadRecord {
 				parent = refInfo.getDefaultObject(dstConn);
 				
 				if (parent == null) {
-					try {
-						parent = getDstConf().generateAndSaveDefaultObject(dstConn);
-					}
-					catch (ConflictWithRecordNotYetAvaliableException e) {
-						
-						if (catchConflictException) {
-							
-							getEngine().logWarn("Conflict with not avaliable reacord. Reloading in 5secs... [Instance ID "
-							        + System.identityHashCode(this.getRecord()) + "] [Object :" + this.getRecord() + "]");
-							
-							return loadDstParentInfo(srcConn, dstConn);
-						} else
-							throw e;
-					}
+					parent = refInfo.generateAndSaveDefaultObject(dstConn);
 				}
 				this.getParentsWithDefaultValues().add(new ParentInfo(refInfo, parentInOrigin));
 			}

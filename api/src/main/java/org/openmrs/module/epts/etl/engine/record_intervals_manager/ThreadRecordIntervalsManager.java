@@ -331,6 +331,17 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 				limits.setExcludedIntervals(engine.getExcludedRecordsIntervals());
 				
 				limits.setEngine(engine);
+				
+				limits.setMaxSupportedProcessors(engine.getMaxSupportedProcessors());
+				limits.setQtyRecordsPerProcessing(engine.getMaxRecordsPerProcessing());
+				
+				if (limits.hasFinalCheckIntervalsManager()) {
+					limits.getFinalCheckIntervalsManager().setEngine(engine);
+					limits.getFinalCheckIntervalsManager().setParent(limits);
+					
+					limits.getFinalCheckIntervalsManager().setMaxSupportedProcessors(engine.getMaxSupportedProcessors());
+					limits.getFinalCheckIntervalsManager().setQtyRecordsPerProcessing(engine.getMaxRecordsPerProcessing());
+				}
 			}
 			
 		}
@@ -387,6 +398,10 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 	@JsonIgnore
 	public boolean isOutOfLimits() {
 		return this.getStatus().isOutOfLimits();
+	}
+	
+	public boolean hasFinalCheckIntervalsManager() {
+		return getFinalCheckIntervalsManager() != null;
 	}
 	
 	public void refreshCode() {

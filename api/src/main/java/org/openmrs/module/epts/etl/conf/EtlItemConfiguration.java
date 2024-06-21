@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -82,6 +83,43 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return utilities.arrayHasElement(this.getDstConf());
 	}
 	
+	public void tryToCreateDefaultRecordsForAllTables() throws DBException {
+		OpenConnection dstConn = getRelatedSyncConfiguration().openDstConn();
+		
+		try {
+			if (!this.hasDstConf()) {
+				this.generateDefaultDstConf();
+			}
+			
+			if (this.hasDstConf()) {
+				
+				for (DstConf dst : this.getDstConf()) {
+					if (!dst.isParentsLoaded()) {
+						dst.loadParents(dstConn);
+					}
+					
+					if (!dst.hasParentRefInfo()) {
+						continue;
+					}
+					
+					for (ParentTable refInfo : dst.getParentRefInfo()) {
+						if (refInfo.getDefaultObject(dstConn) == null) {
+							refInfo.fullLoad(dstConn);
+							
+							refInfo.generateAndSaveDefaultObject(dstConn);
+						}
+					}
+				}
+				
+				dstConn.markAsSuccessifullyTerminated();
+			}
+		}
+		finally {
+			dstConn.finalizeConnection();
+		}
+		
+	}
+	
 	public synchronized void fullLoad() throws DBException {
 		if (this.isFullLoaded()) {
 			return;
@@ -103,19 +141,10 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				dstConn = otherApps.get(0).openConnection();
 				
 				if (!this.hasDstConf()) {
-					setDstConf(utilities.parseToList(new DstConf()));
-					
+					this.generateDefaultDstConf();
 				}
 				
 				for (DstConf map : this.getDstConf()) {
-					if (map.getTableName() == null) {
-						map.setTableName(this.getSrcConf().getTableName());
-						map.setObservationDateFields(getSrcConf().getObservationDateFields());
-						map.setRemoveForbidden(this.getSrcConf().isRemoveForbidden());
-						map.setSchema(dstConn.getSchema());
-						map.setAutomaticalyGenerated(true);
-					}
-					
 					map.setRelatedAppInfo(otherApps.get(0));
 					
 					map.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
@@ -142,9 +171,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			
 			this.setFullLoaded(true);
 		}
-		catch (
-		
-		SQLException e) {
+		catch (SQLException e) {
 			throw new DBException(e);
 		}
 		finally {
@@ -268,5 +295,45 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			}
 		}
 		return null;
+	}
+	
+	public void generateDefaultDstConf() throws DBException {
+		OpenConnection dstConn;
+		
+		List<AppInfo> otherApps = getRelatedSyncConfiguration().exposeAllAppsNotMain();
+		
+		if (utilities.arrayHasElement(otherApps)) {
+			
+			if (utilities.arrayHasMoreThanOneElements(otherApps)) {
+				throw new ForbiddenOperationException("Not supported more that one destination apps");
+			}
+			
+			dstConn = otherApps.get(0).openConnection();
+			
+			try {
+				DstConf map = new DstConf();
+				
+				map.setTableName(this.getSrcConf().getTableName());
+				map.setObservationDateFields(getSrcConf().getObservationDateFields());
+				map.setRemoveForbidden(this.getSrcConf().isRemoveForbidden());
+				map.setSchema(dstConn.getSchema());
+				map.setAutomaticalyGenerated(true);
+				
+				map.setRelatedAppInfo(otherApps.get(0));
+				
+				map.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
+				
+				map.setParentConf(this);
+				
+				if (!map.isAutomaticalyGenerated()) {
+					map.loadSchemaInfo(dstConn);
+				}
+				
+				this.setDstConf(utilities.parseToList(map));
+			}
+			catch (SQLException e) {
+				throw new DBException(e);
+			}
+		}
 	}
 }

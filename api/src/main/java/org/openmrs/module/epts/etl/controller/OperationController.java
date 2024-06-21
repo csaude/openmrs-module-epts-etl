@@ -778,7 +778,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	
 	public abstract void afterEtl(List<T> objs, Connection srcConn, Connection dstConn) throws DBException;
 	
-	public abstract AbstractEtlSearchParams<T> initMainSearchParams(ThreadRecordIntervalsManager <T>intervalsMgt,
+	public abstract AbstractEtlSearchParams<T> initMainSearchParams(ThreadRecordIntervalsManager<T> intervalsMgt,
 	        Engine<T> engine);
 	
 }

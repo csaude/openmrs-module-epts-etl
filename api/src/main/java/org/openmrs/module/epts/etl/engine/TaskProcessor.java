@@ -108,10 +108,6 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 			r = performeSync(records, ownSrcConn, ownDstCon);
 		}
 		
-		refreshProgressMeter(r.countAllSuccessfulyProcessedRecords(), ownSrcConn);
-		
-		reportProgress();
-		
 		return r;
 		
 	}
@@ -122,10 +118,6 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 				((EtlDatabaseObject) rec).loadObjectIdData(getSrcConf());
 			}
 		}
-	}
-	
-	public void reportProgress() {
-		this.monitor.reportProgress();
 	}
 	
 	@Override

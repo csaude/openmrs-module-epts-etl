@@ -20,7 +20,6 @@ import org.openmrs.module.epts.etl.engine.MigrationFinalCheckStatus;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
@@ -275,8 +274,12 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				
 				doFirstSaveAllLimits();
 				
+				logDebug("CREATING DEFAULT PARENT OBJECTS");
+				
+				getEtlItemConfiguration().tryToCreateDefaultRecordsForAllTables();
+				
 				if (getMaxSupportedProcessors() > 1) {
-					performeInMultiProcessors();
+					performeInMultiProcessorsWithMultipleConnection();
 				} else {
 					performeInSingleProcessor();
 				}
@@ -287,6 +290,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				
 				changeStatusToFinished();
 				
+				getRelatedOperationController().markTableOperationAsFinished(this.getEtlItemConfiguration());
 			}
 		}
 		catch (Exception e) {
@@ -368,7 +372,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
-	public void performeInMultiProcessors() throws DBException, InterruptedException, ExecutionException {
+	public void performeInMultiProcessorsWithOneConnection() throws DBException, InterruptedException, ExecutionException {
 		while (this.getThreadRecordIntervalsManager().canGoNext()) {
 			
 			if (this.getThreadRecordIntervalsManager().getCurrentLimits().isFullProcessed()) {
@@ -422,6 +426,48 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	
 	/**
 	 * @throws DBException
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
+	public void performeInMultiProcessorsWithMultipleConnection()
+	        throws DBException, InterruptedException, ExecutionException {
+		while (this.getThreadRecordIntervalsManager().canGoNext()) {
+			
+			if (this.getThreadRecordIntervalsManager().getCurrentLimits().isFullProcessed()) {
+				this.getThreadRecordIntervalsManager().moveNext();
+			}
+			
+			List<EtlOperationResultHeader<T>> results = this.performeTask(null, null);
+			
+			for (EtlOperationResultHeader<T> result : results) {
+				if (!result.hasFatalError()) {
+					result.getInterval().markAsProcessed();
+				}
+			}
+			
+			if (EtlOperationResultHeader.hasAtLeastOneFatalError(results)) {
+				logInfo("Some errors where encountered on current processing, the process will be aborted");
+				
+				for (EtlOperationResultHeader<T> result : results) {
+					if (result.hasFatalError()) {
+						logInfo("Encountered erros on intervals: " + result.getInterval());
+						
+						result.printStackErrorOfFatalErrors();
+					}
+				}
+				
+				EtlOperationResultHeader<T> r = EtlOperationResultHeader.getDefaultResultWithFatalError(results);
+				
+				r.throwDefaultExcetions();
+			}
+			
+			getThreadRecordIntervalsManager().save();
+			
+		}
+	}
+	
+	/**
+	 * @throws DBException
 	 */
 	public void perfomeFinalization() throws DBException {
 		this.finalCheckStatus = MigrationFinalCheckStatus.ONGOING;
@@ -444,7 +490,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	 * @throws ExecutionException
 	 * @throws InterruptedException
 	 */
-	public List<EtlOperationResultHeader<T>> performeTask(Connection srcConn, Connection dstConn)
+	public List<EtlOperationResultHeader<T>> performeTask(OpenConnection sharedSrcConn, OpenConnection sharedDstConn)
 	        throws DBException, InterruptedException, ExecutionException {
 		List<IntervalExtremeRecord> avaliableIntervals = getThreadRecordIntervalsManager().getCurrentLimits()
 		        .getAllNotProcessed();
@@ -474,7 +520,13 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				
 				tasks.add(CompletableFuture.supplyAsync(() -> {
 					
+					OpenConnection srcConn = null;
+					OpenConnection dstConn = null;
+					
 					try {
+						srcConn = sharedSrcConn == null ? openSrcConn() : sharedSrcConn;
+						dstConn = sharedSrcConn == null ? tryToOpenDstConn() : sharedDstConn;
+						
 						EtlOperationResultHeader<T> result = taskProcessor.performe(srcConn, dstConn);
 						
 						if (!result.hasFatalError()) {
@@ -487,14 +539,42 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 								result.documentErrors(srcConn, dstConn);
 							}
 							
-							refreshProgressMeter_(result.countAllSuccessfulyProcessedRecords(), srcConn);
+							//Mean that the Thread created it owns connections, so commit them
+							if (sharedSrcConn == null) {
+								
+								if (srcConn != null) {
+									srcConn.markAsSuccessifullyTerminated();
+								}
+								
+								if (dstConn != null) {
+									dstConn.markAsSuccessifullyTerminated();
+								}
+							}
 							
+							refreshProgressMeter_(result.countAllSuccessfulyProcessedRecords(), srcConn);
 						}
 						
 						return result;
 					}
 					catch (DBException e) {
-						throw new EtlException(e);
+						EtlOperationResultHeader<T> result = new EtlOperationResultHeader<>(interval);
+						result.setFatalException(e);
+						
+						return result;
+					}
+					finally {
+						
+						//Mean that the Thread created it owns connections, so commit them
+						if (sharedSrcConn == null) {
+							
+							if (srcConn != null) {
+								srcConn.finalizeConnection();
+							}
+							
+							if (dstConn != null) {
+								dstConn.markAsSuccessifullyTerminated();
+							}
+						}
 					}
 					
 				}, executorService));
@@ -806,6 +886,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		}
 		
 		logDebug("PROGRESS METER REFRESHED");
+		
+		reportProgress();
 	}
 	
 	public void reportProgress() {

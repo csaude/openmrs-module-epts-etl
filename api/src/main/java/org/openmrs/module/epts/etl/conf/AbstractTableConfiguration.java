@@ -95,6 +95,18 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private boolean tableNameInfoLoaded;
 	
+	private boolean parentsLoaded;
+	
+	@Override
+	public boolean isParentsLoaded() {
+		return parentsLoaded;
+	}
+	
+	@Override
+	public void setParentsLoaded(boolean parentsLoaded) {
+		this.parentsLoaded = parentsLoaded;
+	}
+	
 	@Override
 	public boolean isFieldsLoaded() {
 		return fieldsLoaded;
