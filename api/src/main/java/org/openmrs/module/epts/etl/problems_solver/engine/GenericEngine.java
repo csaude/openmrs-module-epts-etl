@@ -13,8 +13,8 @@ public abstract class GenericEngine extends EtlEngine {
 	
 	public static boolean done;
 	
-	public GenericEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public GenericEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

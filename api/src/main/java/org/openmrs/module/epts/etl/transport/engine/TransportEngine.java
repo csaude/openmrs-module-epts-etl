@@ -26,13 +26,13 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class TransportEngine extends TaskProcessor<TransportRecord> {
 	
-	public TransportEngine(Engine<TransportRecord> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public TransportEngine(Engine<TransportRecord> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
-	public EtlOperationResultHeader<TransportRecord> performeSync(List<TransportRecord> migrationRecords,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	public EtlOperationResultHeader<TransportRecord> performeSync(List<TransportRecord> migrationRecords, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		
 		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords,
 		    TransportRecord.class);

@@ -32,9 +32,9 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	}
 	
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
-		return new DatabaseIntegrityConsolidationEngine(monitor, limits);
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		return new DatabaseIntegrityConsolidationEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
@@ -103,8 +103,8 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
-	        Engine<EtlDatabaseObject> engine) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
 		
 		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new DatabaseIntegrityConsolidationSearchParams(engine,
 		        intervalsMgt);

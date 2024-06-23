@@ -32,9 +32,9 @@ public class ResolveConflictsInStageAreaController extends OperationController<S
 	}
 	
 	@Override
-	public TaskProcessor<SyncImportInfoVO> initRelatedEngine(Engine<SyncImportInfoVO> monitor,
-	        IntervalExtremeRecord limits) {
-		return new ResolveConflictsInStageAreaEngine(monitor, limits);
+	public TaskProcessor<SyncImportInfoVO> initRelatedTaskProcessor(Engine<SyncImportInfoVO> monitor,
+	        IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+		return new ResolveConflictsInStageAreaEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

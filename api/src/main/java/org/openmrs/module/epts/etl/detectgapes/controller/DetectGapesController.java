@@ -35,9 +35,9 @@ public class DetectGapesController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
-		return new DetectGapesEngine(monitor, limits);
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		return new DetectGapesEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
@@ -108,8 +108,8 @@ public class DetectGapesController extends EtlController {
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
-	        Engine<EtlDatabaseObject> engine) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
 		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new DetectGapesSearchParams(engine, intervalsMgt);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());

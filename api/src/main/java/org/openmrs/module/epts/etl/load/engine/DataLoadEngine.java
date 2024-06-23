@@ -19,8 +19,8 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DataLoadEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public DataLoadEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public DataLoadEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

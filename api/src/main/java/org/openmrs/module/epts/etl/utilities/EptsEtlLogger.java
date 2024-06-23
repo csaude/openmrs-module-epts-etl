@@ -28,7 +28,7 @@ public class EptsEtlLogger {
 		this.level = determineLogLevel();
 	}
 	
-	public  static <T>   EptsEtlLogger getLogger(Class<T> clazz) {
+	public static <T> EptsEtlLogger getLogger(Class<T> clazz) {
 		return new EptsEtlLogger(clazz);
 	}
 	
@@ -54,6 +54,8 @@ public class EptsEtlLogger {
 			return Level.WARN;
 		if (log.equals("ERROR"))
 			return Level.ERROR;
+		if (log.equals("TRACE"))
+			return Level.TRACE;
 		
 		throw new ForbiddenOperationException("Unsupported Log Level [" + log + "]");
 	}
@@ -111,7 +113,17 @@ public class EptsEtlLogger {
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.debug(msg);
-			//logger.error(msg);
+			
+			updateLastLogDate();
+		}
+	}
+	
+	public void trace(String msg) {
+		if (Level.TRACE.compareTo(level) <= 0) {
+			
+			msg = putAdditionalInfoOnLog(msg);
+			
+			logger.trace(msg);
 			
 			updateLastLogDate();
 		}

@@ -34,13 +34,14 @@ public class TransportController extends SiteOperationController<TransportRecord
 	}
 	
 	@Override
-	public TaskProcessor<TransportRecord> initRelatedEngine(Engine<TransportRecord> monitor, IntervalExtremeRecord limits) {
-		return new TransportEngine(monitor, limits);
+	public TaskProcessor<TransportRecord> initRelatedTaskProcessor(Engine<TransportRecord> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		return new TransportEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<TransportRecord> initMainSearchParams(ThreadRecordIntervalsManager<TransportRecord> intervalsMgt,
-	        Engine<TransportRecord> engine) {
+	public AbstractEtlSearchParams<TransportRecord> initMainSearchParams(
+	        ThreadRecordIntervalsManager<TransportRecord> intervalsMgt, Engine<TransportRecord> engine) {
 		AbstractEtlSearchParams<TransportRecord> searchParams = new TransportSyncSearchParams(engine, intervalsMgt);
 		searchParams.setQtdRecordPerSelected(2500);
 		
@@ -50,7 +51,8 @@ public class TransportController extends SiteOperationController<TransportRecord
 	@SuppressWarnings("unchecked")
 	@Override
 	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
-		File[] files = getSyncDirectory(engine.getSrcConf()).listFiles(new TransportSyncSearchParams((Engine<TransportRecord>) engine, null));
+		File[] files = getSyncDirectory(engine.getSrcConf())
+		        .listFiles(new TransportSyncSearchParams((Engine<TransportRecord>) engine, null));
 		
 		if (files == null || files.length == 0)
 			return 0;
@@ -69,7 +71,8 @@ public class TransportController extends SiteOperationController<TransportRecord
 	@SuppressWarnings("unchecked")
 	@Override
 	public long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine) {
-		File[] files = getSyncDirectory(engine.getSrcConf()).listFiles(new TransportSyncSearchParams((Engine<TransportRecord>) engine, null));
+		File[] files = getSyncDirectory(engine.getSrcConf())
+		        .listFiles(new TransportSyncSearchParams((Engine<TransportRecord>) engine, null));
 		
 		if (files == null || files.length == 0)
 			return 0;
@@ -149,7 +152,7 @@ public class TransportController extends SiteOperationController<TransportRecord
 	public boolean canBeRunInMultipleEngines() {
 		return false;
 	}
-
+	
 	@Override
 	public void afterEtl(List<TransportRecord> objs, Connection srcConn, Connection dstConn) throws DBException {
 	}

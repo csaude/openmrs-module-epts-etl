@@ -32,8 +32,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public EtlEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public EtlEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

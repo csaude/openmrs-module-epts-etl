@@ -15,8 +15,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DataBaseMergeFromJSONEngine extends TaskProcessor<SyncImportInfoVO> {
 	
-	public DataBaseMergeFromJSONEngine(Engine<SyncImportInfoVO> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public DataBaseMergeFromJSONEngine(Engine<SyncImportInfoVO> monitor, IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

@@ -30,9 +30,9 @@ public class PojoGenerationController extends OperationController<PojoGeneration
 	}
 	
 	@Override
-	public TaskProcessor<PojoGenerationRecord> initRelatedEngine(Engine<PojoGenerationRecord> monitor,
-	        IntervalExtremeRecord limits) {
-		return new PojoGenerationEngine(monitor, limits);
+	public TaskProcessor<PojoGenerationRecord> initRelatedTaskProcessor(Engine<PojoGenerationRecord> monitor,
+	        IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+		return new PojoGenerationEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

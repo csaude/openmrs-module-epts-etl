@@ -27,8 +27,8 @@ public class DetectGapesEngine extends EtlEngine {
 	 */
 	private EtlDatabaseObject prevRec;
 	
-	public DetectGapesEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public DetectGapesEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
@@ -64,6 +64,5 @@ public class DetectGapesEngine extends EtlEngine {
 		
 		return new EtlOperationResultHeader<>(etlObjects);
 	}
-
 	
 }

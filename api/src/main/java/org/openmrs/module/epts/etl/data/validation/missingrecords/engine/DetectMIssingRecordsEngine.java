@@ -8,8 +8,9 @@ import org.openmrs.module.epts.etl.monitor.Engine;
 
 public class DetectMIssingRecordsEngine extends EtlEngine {
 	
-	public DetectMIssingRecordsEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public DetectMIssingRecordsEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
+	    boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

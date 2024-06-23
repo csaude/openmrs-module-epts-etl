@@ -19,7 +19,6 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
-import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -122,7 +121,7 @@ public class LoadRecord {
 			getDstConf().fullLoad();
 		}
 		
-		loadDstParentInfo(true, srcConn, dstConn);
+		loadDstParentInfo(srcConn, dstConn);
 		
 		try {
 			
@@ -145,8 +144,13 @@ public class LoadRecord {
 				if (existObservationDateFields || existWinningRecInfo) {
 					EtlDatabaseObject recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this.getRecord(), dstConn);
 					
-					((AbstractDatabaseObject) getRecord()).resolveConflictWithExistingRecord(recordOnDB, this.getDstConf(),
-					    dstConn);
+					if (recordOnDB != null) {
+						((AbstractDatabaseObject) getRecord()).resolveConflictWithExistingRecord(recordOnDB,
+						    this.getDstConf(), dstConn);
+					} else {
+						getEngine().logWarn(
+						    "Conflict with non avaliable record found. This will be igored and the issue will be documented");
+					}
 					
 					if (getDstConf().useSimpleNumericPk()) {
 						this.setDestinationRecordId(getRecord().getObjectId().getSimpleValueAsInt());
@@ -171,7 +175,7 @@ public class LoadRecord {
 		if (!getDstConf().isFullLoaded())
 			dstConf.fullLoad();
 		
-		loadDstParentInfo(true, srcConn, dstConn);
+		loadDstParentInfo(srcConn, dstConn);
 		
 		EtlDatabaseObject recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this.getRecord(), dstConn);
 		
@@ -223,44 +227,20 @@ public class LoadRecord {
 			
 			EtlDatabaseObject parent = DatabaseObjectDAO.getByUniqueKeys(dstParent, dstConn);
 			
-			getRecord().changeParentValue(parentInfo.getParentTableConfInDst(), parent);
+			if (parent != null) {
+				getRecord().changeParentValue(parentInfo.getParentTableConfInDst(), parent);
+			} else {
+				getEngine().logWarn(
+				    "The parent " + parentInfo.getParentRecordInOrigin() + " exists on db but not avaliable yet. record "
+				            + this.getRecord() + ". The task will keep trying...");
+				
+				TimeCountDown.sleep(10);
+			}
 		}
 	}
 	
 	protected EtlOperationItemResult<EtlDatabaseObject> loadDstParentInfo(Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, MissingParentException, DBException {
-		
-		EtlOperationItemResult<EtlDatabaseObject> a = null;
-		
-		EtlCounter counter = new EtlCounter();
-		
-		while (true) {
-			
-			counter.increese();
-			
-			boolean error = false;
-			
-			this.getEngine().logDebug(counter.getCurrentCount() + " Reprocessing Object" + this.getRecord());
-			
-			try {
-				a = loadDstParentInfo(false, srcConn, dstConn);
-			}
-			catch (ConflictWithRecordNotYetAvaliableException e) {
-				error = true;
-			}
-			
-			this.getEngine().logDebug("Reprocessing Object successed " + this.getRecord());
-			
-			if (!error)
-				return a;
-			
-			TimeCountDown.sleep(5);
-		}
-		
-	}
-	
-	protected EtlOperationItemResult<EtlDatabaseObject> loadDstParentInfo(boolean catchConflictException, Connection srcConn,
-	        Connection dstConn) throws ParentNotYetMigratedException, MissingParentException, DBException {
 		
 		EtlOperationItemResult<EtlDatabaseObject> itemResult = new EtlOperationItemResult<>(getRecord());
 		
@@ -446,19 +426,38 @@ public class LoadRecord {
 			config.fullLoad();
 		}
 		
+		EtlEngine engine = mergingRecs.get(0).getEngine();
+		
 		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
+		List<LoadRecord> processedRecors = new ArrayList<>();
 		
 		EtlOperationResultHeader<EtlDatabaseObject> currResult = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
 		for (LoadRecord loadRecord : mergingRecs) {
-			EtlOperationItemResult<EtlDatabaseObject> r = loadRecord.loadDstParentInfo(true, srcConn, dstConn);
 			
-			if (!r.hasUnresolvedInconsistences()) {
-				objects.add(loadRecord.getRecord());
-			}
+			boolean recursiveKeys = engine.isRunningInConcurrency()
+			        ? loadRecord.hasUnresolvedRecursiveRelationship(srcConn, dstConn)
+			        : false;
 			
-			if (r.hasInconsistences()) {
-				currResult.addToRecordsWithUnresolvedErrors(r);
+			if (recursiveKeys) {
+				engine.logDebug("Record " + loadRecord.getRecord()
+				        + " has recursive relationship and will be skipped to avoid dedlocks!");
+				
+				currResult.addAllToRecordsWithRecursiveRelashionship(loadRecord.getRecord());
+				
+				loadRecord.getDstConf().saveSkippedRecord(loadRecord.getRecord(), srcConn);
+			} else {
+				EtlOperationItemResult<EtlDatabaseObject> r = loadRecord.loadDstParentInfo(srcConn, dstConn);
+				
+				if (!r.hasUnresolvedInconsistences()) {
+					objects.add(loadRecord.getRecord());
+				}
+				
+				if (r.hasInconsistences()) {
+					currResult.addToRecordsWithUnresolvedErrors(r);
+				}
+				
+				processedRecors.add(loadRecord);
 			}
 		}
 		
@@ -467,8 +466,11 @@ public class LoadRecord {
 		
 		if (config.hasParentRefInfo()) {
 			
-			for (LoadRecord r : mergingRecs) {
+			for (LoadRecord r : processedRecors) {
 				if (r.hasParentsWithDefaultValues()) {
+					
+					engine.logTrace("Reloading parents for record " + r.getRecord());
+					
 					r.reloadParentsWithDefaultValues(srcConn, dstConn);
 					
 					Oid originalOid = r.getRecord().getObjectId();
@@ -478,7 +480,11 @@ public class LoadRecord {
 					if (!r.getEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
 						recByUniqueKeys = DatabaseObjectDAO.getByUniqueKeys(r.getRecord(), dstConn);
 						
-						r.getRecord().setObjectId(recByUniqueKeys.getObjectId());
+						if (recByUniqueKeys != null) {
+							r.getRecord().setObjectId(recByUniqueKeys.getObjectId());
+						} else {
+							throw new ForbiddenOperationException("The record " + r.getRecord() + " where not found!");
+						}
 					}
 					
 					r.getRecord().update(r.getDstConf(), dstConn);
@@ -489,6 +495,73 @@ public class LoadRecord {
 		}
 		
 		return currResult;
+	}
+	
+	private boolean hasUnresolvedRecursiveRelationship(Connection srcConn, Connection dstConn) throws DBException {
+		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo())) {
+			return false;
+		}
+		
+		for (ParentTable refInfo : getDstConf().getParentRefInfo()) {
+			
+			if (refInfo.isMetadata()) {
+				continue;
+			}
+			
+			if (!refInfo.getTableName().equals(getDstConf().getTableName())) {
+				continue;
+			}
+			
+			if (!refInfo.isFullLoaded()) {
+				refInfo.tryToGenerateTableAlias(this.getEtlConfiguration());
+				
+				refInfo.fullLoad(dstConn);
+			}
+			
+			if (!getRecord().hasAllPerentFieldsFilled(refInfo)) {
+				continue;
+			}
+			
+			Oid key = refInfo.generateParentOidFromChild(getRecord());
+			
+			TableConfiguration tabConfInSrc = this.getSrcConf().findFullConfiguredConfInAllRelatedTable(
+			    refInfo.generateFullTableNameOnSchema(getSrcConf().getSchema()));
+			
+			if (tabConfInSrc == null) {
+				tabConfInSrc = new GenericTableConfiguration(this.getSrcConf());
+				tabConfInSrc.setTableName(refInfo.getTableName());
+				tabConfInSrc.setRelatedSyncConfiguration(this.getEtlConfiguration());
+				tabConfInSrc.fullLoad(srcConn);
+			}
+			
+			EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(tabConfInSrc, key, srcConn);
+			
+			if (parentInOrigin == null) {
+				continue;
+			}
+			
+			EtlDatabaseObject parent;
+			
+			if (getEngine().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
+				parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
+			} else {
+				EtlDatabaseObject recInDst = refInfo.createRecordInstance();
+				recInDst.setRelatedConfiguration(refInfo);
+				recInDst.copyFrom(parentInOrigin);
+				recInDst.loadUniqueKeyValues(refInfo);
+				recInDst.loadObjectIdData(refInfo);
+				
+				parent = retrieveParentByUnikeKeys(recInDst, dstConn);
+			}
+			
+			if (parent == null) {
+				return true;
+			}
+			
+		}
+		
+		return false;
+		
 	}
 	
 	public static EtlOperationResultHeader<EtlDatabaseObject> loadAll(Map<String, List<LoadRecord>> mergingRecs,

@@ -24,6 +24,8 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	
 	private List<EtlOperationItemResult<T>> recordsWithResolvedErrors;
 	
+	private List<T> recordsWithRecursiveRelashionship;
+	
 	private List<T> recordsWithNoError;
 	
 	private Exception fatalException;
@@ -32,6 +34,23 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	
 	public EtlOperationResultHeader(IntervalExtremeRecord interval) {
 		this.interval = interval;
+	}
+	
+	public EtlOperationResultHeader(IntervalExtremeRecord interval, Exception fatalException) {
+		this.interval = interval;
+		this.fatalException = fatalException;
+	}
+	
+	public boolean hasFatalException() {
+		return getFatalException() != null;
+	}
+	
+	public List<T> getRecordsWithRecursiveRelashionship() {
+		return recordsWithRecursiveRelashionship;
+	}
+	
+	public void setRecordsWithRecursiveRelashionship(List<T> recordsWithRecursiveRelashionship) {
+		this.recordsWithRecursiveRelashionship = recordsWithRecursiveRelashionship;
 	}
 	
 	public IntervalExtremeRecord getInterval() {
@@ -69,6 +88,9 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 				addAllToRecordsWithResolvedErrors(otherResult.getRecordsWithResolvedErrors());
 			}
 			
+			if (otherResult.hasRecordsWithRecursiveRelashionships()) {
+				addAllToRecordsWithRecursiveRelashionship(otherResult.getRecordsWithRecursiveRelashionship());
+			}
 		}
 	}
 	
@@ -78,6 +100,14 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 		
 		this.recordsWithResolvedErrors.addAll(records);
+	}
+	
+	private void addAllToRecordsWithRecursiveRelashionship(List<T> records) {
+		if (this.recordsWithRecursiveRelashionship == null) {
+			this.recordsWithRecursiveRelashionship = new ArrayList<>();
+		}
+		
+		this.recordsWithRecursiveRelashionship.addAll(records);
 	}
 	
 	private void addAllToRecordsWithUnresolvedErrors(List<EtlOperationItemResult<T>> records) {
@@ -94,6 +124,14 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 		
 		this.recordsWithNoError.addAll(records);
+	}
+	
+	public void addAllToRecordsWithRecursiveRelashionship(T record) {
+		if (this.recordsWithRecursiveRelashionship == null) {
+			this.recordsWithRecursiveRelashionship = new ArrayList<>();
+		}
+		
+		this.recordsWithRecursiveRelashionship.add(record);
 	}
 	
 	public void setRecordsWithNoError(List<T> recordsWithNoError) {
@@ -160,6 +198,10 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	
 	public boolean hasRecordsWithUnresolvedErrors() {
 		return utilities.arrayHasElement(getRecordsWithUnresolvedErrors());
+	}
+	
+	public boolean hasRecordsWithRecursiveRelashionships() {
+		return utilities.arrayHasElement(getRecordsWithRecursiveRelashionship());
 	}
 	
 	public boolean hasRecordsWithResolvedErrors() {
@@ -237,10 +279,14 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 	}
 	
-	public void throwDefaultExcetions() throws DBException {
+	public void throwDefaultExcetions() throws RuntimeException {
+		if (hasFatalException()) {
+			throw new RuntimeException(getFatalException());
+		}
+		
 		for (EtlOperationItemResult<T> o : getRecordsWithUnresolvedErrors()) {
 			if (o.getException() != null) {
-				throw o.getException();
+				throw new RuntimeException(o.getException());
 			}
 		}
 		
@@ -249,6 +295,22 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	
 	public int countAllSuccessfulyProcessedRecords() {
 		return utilities.arraySize(getRecordsWithNoError()) + utilities.arraySize(getRecordsWithResolvedErrors());
+	}
+	
+	public List<T> getAllSuccessfulyProcessedRecords() {
+		List<T> success = new ArrayList<>();
+		
+		if (hasRecordsWithNoError()) {
+			success.addAll(getRecordsWithNoError());
+		}
+		
+		if (hasRecordsWithResolvedErrors()) {
+			for (EtlOperationItemResult<T> r : getRecordsWithResolvedErrors()) {
+				success.add(r.getRecord());
+			}
+		}
+		
+		return success;
 	}
 	
 	public static <T extends EtlDatabaseObject> boolean hasAtLeastOneFatalError(List<EtlOperationResultHeader<T>> results)
@@ -273,6 +335,18 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 		
 		return null;
+	}
+	
+	public static <T extends EtlDatabaseObject> boolean hasAtLeastOneRecordsWithRecursiveRelashionships(
+	        List<EtlOperationResultHeader<T>> results) {
+		
+		for (EtlOperationResultHeader<T> result : results) {
+			if (result.hasRecordsWithRecursiveRelashionships()) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 }

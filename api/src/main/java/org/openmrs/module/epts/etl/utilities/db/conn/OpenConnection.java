@@ -19,6 +19,7 @@ import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,14 @@ public class OpenConnection implements Connection, Closeable {
 	
 	public void markAsSuccessifullyTerminated() {
 		this.operationTerminatedSuccessifully = true;
+	}
+	
+	public static void markAllAsSuccessifullyTerminected(OpenConnection... conns) {
+		markAllAsSuccessifullyTerminected(Arrays.asList(conns));
+	}
+	
+	public static void finalizeAllConnections(OpenConnection... conns) {
+		finalizeAllConnections(Arrays.asList(conns));
 	}
 	
 	public static void markAllAsSuccessifullyTerminected(List<OpenConnection> conns) {

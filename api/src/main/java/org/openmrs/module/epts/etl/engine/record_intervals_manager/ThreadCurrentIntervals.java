@@ -20,6 +20,8 @@ public class ThreadCurrentIntervals extends IntervalExtremeRecord {
 	
 	private int qtyProcessors;
 	
+	private boolean skippedRecordProcessed;
+	
 	public ThreadCurrentIntervals() {
 	}
 	
@@ -29,6 +31,14 @@ public class ThreadCurrentIntervals extends IntervalExtremeRecord {
 		this.qtyProcessors = qtyProcessors;
 		
 		init();
+	}
+	
+	public boolean isSkippedRecordProcessed() {
+		return skippedRecordProcessed;
+	}
+	
+	public void setSkippedRecordProcessed(boolean skippedRecordProcessed) {
+		this.skippedRecordProcessed = skippedRecordProcessed;
 	}
 	
 	public List<IntervalExtremeRecord> getInternalIntervals() {
@@ -124,7 +134,7 @@ public class ThreadCurrentIntervals extends IntervalExtremeRecord {
 	}
 	
 	public boolean isFullProcessed() {
-		return utilities.arrayHasNoElement(getAllNotProcessed());
+		return utilities.arrayHasNoElement(getAllNotProcessed()) && isSkippedRecordProcessed();
 	}
 	
 	@Override
@@ -132,5 +142,9 @@ public class ThreadCurrentIntervals extends IntervalExtremeRecord {
 		for (IntervalExtremeRecord i : getInternalIntervals()) {
 			i.markAsProcessed();
 		}
+	}
+	
+	public void markSkippedRecordsAsProcessed() {
+		setSkippedRecordProcessed(true);
 	}
 }

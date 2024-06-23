@@ -224,7 +224,7 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 		this.qtyRecordsPerProcessing = qtyRecordsPerProcessing;
 	}
 	
-	public void save() {
+	public synchronized void save() {
 		
 		if (this.engine == null)
 			throw new ForbiddenOperationException("You cannot save limits without engine");

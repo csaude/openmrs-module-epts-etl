@@ -38,9 +38,9 @@ public class DBQuickExportController extends OperationController<EtlDatabaseObje
 	}
 	
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
-		return new DBQuickExportEngine(monitor, limits);
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		return new DBQuickExportEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

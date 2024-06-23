@@ -235,7 +235,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 					logDebug("USING SAVED MAX RECORD " + getEtlItemConfiguration() + " = " + maxRecId);
 				}
 			} else {
-				logDebug("MIN RECORD IS ZERO! SKIPING MAX RECORD VERIFICATION...");
+				logWarn("MIN RECORD IS ZERO! SKIPING MAX RECORD VERIFICATION...");
 			}
 			
 			if (maxRecId == 0 && minRecId == 0) {
@@ -278,10 +278,12 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				
 				getEtlItemConfiguration().tryToCreateDefaultRecordsForAllTables();
 				
+				logTrace("DEFAULT PARENT OBJECTS CREATED");
+				
 				if (getMaxSupportedProcessors() > 1) {
-					performeInMultiProcessorsWithMultipleConnection();
+					performeTaskInMultiProcessors();
 				} else {
-					performeInSingleProcessor();
+					performeTaskInSingleProcessor();
 				}
 				
 				if (mustDoFinalCheck()) {
@@ -305,164 +307,26 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	/**
 	 * @throws DBException
 	 */
-	public void performeInSingleProcessor() throws DBException {
+	public void performeTaskInSingleProcessor() throws DBException {
 		
 		while (getThreadRecordIntervalsManager().canGoNext()) {
-			OpenConnection srcConn = openSrcConn();
-			OpenConnection dstConn = tryToOpenDstConn();
-			
-			try {
-				
-				if (this.getThreadRecordIntervalsManager().getCurrentLimits().isFullProcessed()) {
-					this.getThreadRecordIntervalsManager().moveNext();
-				}
-				
-				List<T> records = getSearchParams().searchNextRecordsInMultiThreads(srcConn, dstConn);
-				
-				if (!utilities.arrayHasElement(records))
-					return;
-				
-				TaskProcessor<T> taskProcessor = getController().initRelatedEngine(this,
-				    getThreadRecordIntervalsManager().getCurrentLimits());
-				taskProcessor.setEngineId(this.getEngineId());
-				
-				EtlOperationResultHeader<T> result = taskProcessor.performeSync(records, srcConn, dstConn);
-				
-				if (result.hasFatalError()) {
-					result.throwDefaultExcetions();
-				} else {
-					getController().afterEtl(result.getRecordsWithNoError(), srcConn, dstConn);
-					
-					if (result.hasRecordsWithUnresolvedErrors() || result.hasRecordsWithResolvedErrors()) {
-						logWarn("Some errors where found loading '" + result.getRecordsWithUnresolvedErrors().size()
-						        + "! The errors will be documented");
-						
-						result.documentErrors(srcConn, dstConn);
-					}
-					
-					getThreadRecordIntervalsManager().getCurrentLimits().markAsProcessed();
-					
-					refreshProgressMeter_(records.size(), srcConn);
-					
-					if (srcConn != null) {
-						srcConn.markAsSuccessifullyTerminated();
-					}
-					if (dstConn != null) {
-						dstConn.markAsSuccessifullyTerminated();
-					}
-				}
-				
-				getThreadRecordIntervalsManager().save();
-			}
-			finally {
-				if (srcConn != null) {
-					srcConn.finalizeConnection();
-				}
-				if (dstConn != null) {
-					dstConn.finalizeConnection();
-				}
-			}
-		}
-		
-		this.finalCheckStatus = MigrationFinalCheckStatus.DONE;
-	}
-	
-	/**
-	 * @throws DBException
-	 * @throws InterruptedException
-	 * @throws ExecutionException
-	 */
-	public void performeInMultiProcessorsWithOneConnection() throws DBException, InterruptedException, ExecutionException {
-		while (this.getThreadRecordIntervalsManager().canGoNext()) {
-			
 			if (this.getThreadRecordIntervalsManager().getCurrentLimits().isFullProcessed()) {
 				this.getThreadRecordIntervalsManager().moveNext();
 			}
 			
-			OpenConnection srcConn = openSrcConn();
-			OpenConnection dstConn = tryToOpenDstConn();
+			TaskProcessor<T> taskProcessor = getController().initRelatedTaskProcessor(this,
+			    getThreadRecordIntervalsManager().getCurrentLimits(), false);
+			taskProcessor.setEngineId(this.getEngineId());
 			
-			try {
-				List<EtlOperationResultHeader<T>> results = this.performeTask(srcConn, dstConn);
-				
-				if (EtlOperationResultHeader.hasAtLeastOneFatalError(results)) {
-					logInfo("Some errors where encountered on current processing, the process will be aborted");
-					
-					for (EtlOperationResultHeader<T> result : results) {
-						if (result.hasFatalError()) {
-							logInfo("Encountered erros on intervals: " + result.getInterval());
-							
-							result.printStackErrorOfFatalErrors();
-						}
-					}
-					
-					EtlOperationResultHeader<T> r = EtlOperationResultHeader.getDefaultResultWithFatalError(results);
-					
-					r.throwDefaultExcetions();
-					
-				} else {
-					getThreadRecordIntervalsManager().getCurrentLimits().markAsProcessed();
-					
-					if (srcConn != null) {
-						srcConn.markAsSuccessifullyTerminated();
-					}
-					if (dstConn != null) {
-						dstConn.markAsSuccessifullyTerminated();
-					}
-				}
-				
-				getThreadRecordIntervalsManager().save();
+			boolean persistTheWork = true;
+			boolean useMultiThreadSearch = true;
+			
+			EtlOperationResultHeader<T> result = performeTask(taskProcessor, useMultiThreadSearch, persistTheWork,
+			    openSrcConn(), tryToOpenDstConn());
+			
+			if (result.hasFatalError()) {
+				result.throwDefaultExcetions();
 			}
-			finally {
-				if (srcConn != null) {
-					srcConn.finalizeConnection();
-				}
-				if (dstConn != null) {
-					dstConn.finalizeConnection();
-				}
-			}
-		}
-	}
-	
-	/**
-	 * @throws DBException
-	 * @throws InterruptedException
-	 * @throws ExecutionException
-	 */
-	public void performeInMultiProcessorsWithMultipleConnection()
-	        throws DBException, InterruptedException, ExecutionException {
-		while (this.getThreadRecordIntervalsManager().canGoNext()) {
-			
-			if (this.getThreadRecordIntervalsManager().getCurrentLimits().isFullProcessed()) {
-				this.getThreadRecordIntervalsManager().moveNext();
-			}
-			
-			List<EtlOperationResultHeader<T>> results = this.performeTask(null, null);
-			
-			for (EtlOperationResultHeader<T> result : results) {
-				if (!result.hasFatalError()) {
-					result.getInterval().markAsProcessed();
-				}
-			}
-			
-			if (EtlOperationResultHeader.hasAtLeastOneFatalError(results)) {
-				logInfo("Some errors where encountered on current processing, the process will be aborted");
-				
-				for (EtlOperationResultHeader<T> result : results) {
-					if (result.hasFatalError()) {
-						logInfo("Encountered erros on intervals: " + result.getInterval());
-						
-						result.printStackErrorOfFatalErrors();
-					}
-				}
-				
-				EtlOperationResultHeader<T> r = EtlOperationResultHeader.getDefaultResultWithFatalError(results);
-				
-				r.throwDefaultExcetions();
-			}
-			
-			getThreadRecordIntervalsManager().save();
-			
 		}
 	}
 	
@@ -472,13 +336,17 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	public void perfomeFinalization() throws DBException {
 		this.finalCheckStatus = MigrationFinalCheckStatus.ONGOING;
 		
+		logDebug("INITIALIZING FINAL CHECK...");
+		
 		if (getThreadRecordIntervalsManager().getFinalCheckIntervalsManager() == null) {
 			getThreadRecordIntervalsManager().initializeFinalCheckIntervalManager();
 		}
 		
 		getSearchParams().setThreadRecordIntervalsManager(getThreadRecordIntervalsManager().getFinalCheckIntervalsManager());
 		
-		performeInSingleProcessor();
+		performeTaskInSingleProcessor();
+		
+		logDebug("FINAL CHECK FINISHED!");
 		
 		this.finalCheckStatus = MigrationFinalCheckStatus.DONE;
 	}
@@ -490,116 +358,225 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	 * @throws ExecutionException
 	 * @throws InterruptedException
 	 */
-	public List<EtlOperationResultHeader<T>> performeTask(OpenConnection sharedSrcConn, OpenConnection sharedDstConn)
-	        throws DBException, InterruptedException, ExecutionException {
-		List<IntervalExtremeRecord> avaliableIntervals = getThreadRecordIntervalsManager().getCurrentLimits()
-		        .getAllNotProcessed();
+	public void performeTaskInMultiProcessors() throws DBException, InterruptedException, ExecutionException {
 		
-		this.currentTaskProcessor = new ArrayList<>(avaliableIntervals.size());
-		
-		logDebug("Initializing " + avaliableIntervals.size() + " processors to performe task on a interval "
-		        + getThreadRecordIntervalsManager().getCurrentLimits() + "!");
-		
-		List<CompletableFuture<EtlOperationResultHeader<T>>> tasks = new ArrayList<>(avaliableIntervals.size());
+		logDebug("INITIALIZING PROCESS IN MULTI-THREAD");
 		
 		EtlThreadFactory<T> threadFactor = new EtlThreadFactory<>(this);
+		boolean useSharedConnection = getRelatedOperationController().getOperationConfig().isUseSharedConnectionPerThread();
 		
-		ExecutorService executorService = Executors.newFixedThreadPool(avaliableIntervals.size(), threadFactor);
+		while (this.getThreadRecordIntervalsManager().canGoNext()) {
+			
+			if (this.getThreadRecordIntervalsManager().getCurrentLimits().isFullProcessed()) {
+				this.getThreadRecordIntervalsManager().moveNext();
+			}
+			
+			List<IntervalExtremeRecord> avaliableIntervals = getThreadRecordIntervalsManager().getCurrentLimits()
+			        .getAllNotProcessed();
+			
+			if (avaliableIntervals.size() == 0) {
+				
+				logTrace(
+				    "PROCESSING SKIPPED RECORDS ON INTERVAL " + this.getThreadRecordIntervalsManager().getCurrentLimits());
+				
+				//Mean that all intervals were processed but there are skipped records that were not yet processed
+				String originalExtraCondition = getSearchParams().getExtraCondition();
+				
+				getSearchParams().setExtraCondition(
+				    utilities.concatCondition(originalExtraCondition, getSrcConf().generateSkippedRecordInclusionClause()));
+				
+				TaskProcessor<T> taskProcessor = getController().initRelatedTaskProcessor(this,
+				    getThreadRecordIntervalsManager().getCurrentLimits(), false);
+				taskProcessor.setEngineId(this.getEngineId());
+				
+				boolean persistTheWork = true;
+				boolean useMultiThreadSearch = true;
+				
+				EtlOperationResultHeader<T> result = performeTask(taskProcessor, useMultiThreadSearch, persistTheWork,
+				    openSrcConn(), tryToOpenDstConn());
+				
+				if (result.hasFatalError()) {
+					result.throwDefaultExcetions();
+				} else {
+					
+					OpenConnection srcConn = openSrcConn();
+					
+					try {
+						getSrcConf().deleteAllSkippedRecord(srcConn);
+						
+						srcConn.markAsSuccessifullyTerminated();
+					}
+					finally {
+						srcConn.finalizeConnection();
+					}
+					
+					getThreadRecordIntervalsManager().getCurrentLimits().markSkippedRecordsAsProcessed();
+					getThreadRecordIntervalsManager().save();
+					
+					getSearchParams().setExtraCondition(originalExtraCondition);
+				}
+				
+			} else {
+				
+				logDebug("Initializing " + avaliableIntervals.size() + " processors to performe task on a interval "
+				        + getThreadRecordIntervalsManager().getCurrentLimits() + "!".toUpperCase());
+				
+				resetCurrentTaskProcessor(avaliableIntervals.size());
+				
+				List<CompletableFuture<EtlOperationResultHeader<T>>> tasks = new ArrayList<>(avaliableIntervals.size());
+				
+				ExecutorService executorService = Executors.newFixedThreadPool(avaliableIntervals.size(), threadFactor);
+				
+				final OpenConnection sharedSrcConn = openSrcConn();
+				final OpenConnection sharedDstConn = tryToOpenDstConn();
+				
+				try {
+					for (int i = 0; i < avaliableIntervals.size(); i++) {
+						TaskProcessor<T> taskProcessor = getController().initRelatedTaskProcessor(this,
+						    avaliableIntervals.get(i), true);
+						
+						taskProcessor.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
+						
+						logDebug("Processor initialized for records between interval: [" + taskProcessor.getLimits()
+						        + "]".toUpperCase());
+						
+						getCurrentTaskProcessor().add(taskProcessor);
+						
+						tasks.add(CompletableFuture.supplyAsync(() -> {
+							boolean useMultiThreadSearch = false;
+							
+							if (useSharedConnection) {
+								boolean persistTheWork = false;
+								
+								return performeTask(taskProcessor, useMultiThreadSearch, persistTheWork, sharedSrcConn,
+								    sharedDstConn);
+							} else {
+								try {
+									boolean persistTheWork = true;
+									
+									return performeTask(taskProcessor, useMultiThreadSearch, persistTheWork, openSrcConn(),
+									    tryToOpenDstConn());
+								}
+								catch (DBException e) {
+									return new EtlOperationResultHeader<>(taskProcessor.getLimits(), e);
+								}
+							}
+							
+						}, executorService));
+						
+					}
+					
+					CompletableFuture<Void> allOf = CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
+					
+					//Wait until all tasks are finished
+					allOf.get();
+					
+					List<EtlOperationResultHeader<T>> results = tasks.stream().map(CompletableFuture::join)
+					        .collect(Collectors.toList());
+					
+					if (EtlOperationResultHeader.hasAtLeastOneFatalError(results)) {
+						logInfo("Some errors where encountered on current processing, the process will be aborted");
+						
+						for (EtlOperationResultHeader<T> result : results) {
+							if (result.hasFatalError()) {
+								logInfo("Encountered erros on intervals: " + result.getInterval());
+								
+								result.printStackErrorOfFatalErrors();
+							}
+						}
+						
+						EtlOperationResultHeader<T> r = EtlOperationResultHeader.getDefaultResultWithFatalError(results);
+						
+						r.throwDefaultExcetions();
+					} else {
+						
+						if (useSharedConnection) {
+							OpenConnection.markAllAsSuccessifullyTerminected(sharedSrcConn, sharedDstConn);
+							
+							getThreadRecordIntervalsManager().getCurrentLimits().markAsProcessed();
+							getThreadRecordIntervalsManager().save();
+						}
+						
+						if (!EtlOperationResultHeader.hasAtLeastOneRecordsWithRecursiveRelashionships(results)) {
+							getThreadRecordIntervalsManager().getCurrentLimits().markSkippedRecordsAsProcessed();
+						}
+					}
+					
+				}
+				finally {
+					OpenConnection.finalizeAllConnections(sharedSrcConn, sharedDstConn);
+					
+					// Shutdown the executorService service
+					executorService.shutdown();
+					try {
+						if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+							executorService.shutdownNow();
+						}
+					}
+					catch (InterruptedException e) {
+						executorService.shutdownNow();
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * @param persistTheWork
+	 * @param sharedSrcConn
+	 * @param sharedDstConn
+	 * @param interval
+	 * @param taskProcessor
+	 * @return
+	 */
+	public EtlOperationResultHeader<T> performeTask(TaskProcessor<T> taskProcessor, boolean useMultiTreadSearch,
+	        boolean persistTheWork, OpenConnection srcConn, OpenConnection dstConn) {
 		
 		try {
 			
-			for (int i = 0; i < avaliableIntervals.size(); i++) {
-				IntervalExtremeRecord interval = avaliableIntervals.get(i);
-				
-				TaskProcessor<T> taskProcessor = getController().initRelatedEngine(this, interval);
-				taskProcessor.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
-				
-				logDebug("Processor initialized for records between interval: [" + interval + "]");
-				
-				getCurrentTaskProcessor().add(taskProcessor);
-				
-				tasks.add(CompletableFuture.supplyAsync(() -> {
-					
-					OpenConnection srcConn = null;
-					OpenConnection dstConn = null;
-					
-					try {
-						srcConn = sharedSrcConn == null ? openSrcConn() : sharedSrcConn;
-						dstConn = sharedSrcConn == null ? tryToOpenDstConn() : sharedDstConn;
-						
-						EtlOperationResultHeader<T> result = taskProcessor.performe(srcConn, dstConn);
-						
-						if (!result.hasFatalError()) {
-							getController().afterEtl(result.getRecordsWithNoError(), srcConn, dstConn);
-							
-							if (result.hasRecordsWithUnresolvedErrors() || result.hasRecordsWithResolvedErrors()) {
-								logWarn("Some errors where found loading '" + result.getRecordsWithUnresolvedErrors().size()
-								        + "! The errors will be documented");
-								
-								result.documentErrors(srcConn, dstConn);
-							}
-							
-							//Mean that the Thread created it owns connections, so commit them
-							if (sharedSrcConn == null) {
-								
-								if (srcConn != null) {
-									srcConn.markAsSuccessifullyTerminated();
-								}
-								
-								if (dstConn != null) {
-									dstConn.markAsSuccessifullyTerminated();
-								}
-							}
-							
-							refreshProgressMeter_(result.countAllSuccessfulyProcessedRecords(), srcConn);
-						}
-						
-						return result;
-					}
-					catch (DBException e) {
-						EtlOperationResultHeader<T> result = new EtlOperationResultHeader<>(interval);
-						result.setFatalException(e);
-						
-						return result;
-					}
-					finally {
-						
-						//Mean that the Thread created it owns connections, so commit them
-						if (sharedSrcConn == null) {
-							
-							if (srcConn != null) {
-								srcConn.finalizeConnection();
-							}
-							
-							if (dstConn != null) {
-								dstConn.markAsSuccessifullyTerminated();
-							}
-						}
-					}
-					
-				}, executorService));
-				
-			}
+			logTrace("INITIALIZING TASK FOR INTERVAL " + taskProcessor.getLimits());
 			
-			CompletableFuture<Void> allOf = CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
+			EtlOperationResultHeader<T> result = taskProcessor.performe(useMultiTreadSearch, srcConn, dstConn);
 			
-			//Wait until all tasks are finished
-			allOf.get();
-			
-			return tasks.stream().map(CompletableFuture::join).collect(Collectors.toList());
-		}
-		finally {
-			// Shutdown the executorService service
-			executorService.shutdown();
-			try {
-				if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
-					executorService.shutdownNow();
+			if (!result.hasFatalError()) {
+				getController().afterEtl(result.getRecordsWithNoError(), srcConn, dstConn);
+				
+				if (result.hasRecordsWithUnresolvedErrors() || result.hasRecordsWithResolvedErrors()) {
+					logWarn("Some errors where found loading '" + result.getRecordsWithUnresolvedErrors().size()
+					        + "! The errors will be documented");
+					
+					result.documentErrors(srcConn, dstConn);
+				}
+				
+				refreshProgressMeter(result.countAllSuccessfulyProcessedRecords(), srcConn);
+				
+				taskProcessor.getLimits().markAsProcessed();
+				
+				if (persistTheWork) {
+					logTrace("PERSISTING WORK OF TASK ON INTERVAL " + taskProcessor.getLimits());
+					
+					getThreadRecordIntervalsManager().save();
+					
+					OpenConnection.markAllAsSuccessifullyTerminected(srcConn, dstConn);
+					
+					logTrace("WORK OF TASK PERSISTED ON INTERVAL " + taskProcessor.getLimits());
 				}
 			}
-			catch (InterruptedException e) {
-				executorService.shutdownNow();
+			
+			return result;
+		}
+		catch (DBException e) {
+			return new EtlOperationResultHeader<>(taskProcessor.getLimits(), e);
+		}
+		finally {
+			if (persistTheWork) {
+				OpenConnection.finalizeAllConnections(srcConn, dstConn);
 			}
 		}
+	}
+	
+	private void resetCurrentTaskProcessor(int qtyProcessors) {
+		this.currentTaskProcessor = new ArrayList<>(qtyProcessors);
 	}
 	
 	private void calculateStatistics() throws DBException {
@@ -613,7 +590,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			int processed = total - remaining;
 			
 			if (total == 0) {
-				logWarn("No recorded statistic. Loading from Database");
+				logDebug("No recorded statistic. Loading from Database");
 				
 				total = getSearchParams().countAllRecords(conn);
 				remaining = getSearchParams().countNotProcessedRecords(conn);
@@ -625,6 +602,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			if (getRelatedOperationController().isResumable()) {
 				this.getTableOperationProgressInfo().save(conn);
 			}
+			
+			logDebug("CALCULATION DONE. TOTAL RECORDS " + total + "! PROCESSED RECORDS " + processed);
 			
 			conn.markAsSuccessifullyTerminated();
 		}
@@ -638,9 +617,6 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		finally {
 			conn.finalizeConnection();
 		}
-		
-		logDebug("DONE CALCULATING STATISTICS.");
-		
 	}
 	
 	private void doFirstSaveAllLimits() {
@@ -730,6 +706,10 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	
 	public void logWarn(String msg) {
 		getRelatedOperationController().logWarn(msg);
+	}
+	
+	public void logTrace(String msg) {
+		getRelatedOperationController().logTrace(msg);
 	}
 	
 	public void logWarn(String msg, long interval) {
@@ -876,7 +856,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		this.stopRequested = true;
 	}
 	
-	public synchronized void refreshProgressMeter_(int newlyProcessedRecords, Connection conn) throws DBException {
+	public synchronized void refreshProgressMeter(int newlyProcessedRecords, Connection conn) throws DBException {
 		logDebug("REFRESHING PROGRESS METER FOR MORE " + newlyProcessedRecords + " RECORDS.");
 		this.getProgressMeter().refresh("RUNNING", this.getProgressMeter().getTotal(),
 		    this.getProgressMeter().getProcessed() + newlyProcessedRecords);

@@ -25,8 +25,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
  */
 public class ReEtlEngine extends EtlEngine {
 	
-	public ReEtlEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public ReEtlEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

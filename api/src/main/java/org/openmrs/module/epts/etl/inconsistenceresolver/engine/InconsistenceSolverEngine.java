@@ -13,8 +13,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class InconsistenceSolverEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public InconsistenceSolverEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public InconsistenceSolverEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

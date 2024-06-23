@@ -78,6 +78,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean writeOperationHistory;
 	
+	private boolean useSharedConnectionPerThread;
+	
 	/**
 	 * Indicates whether this operation will executed over all tables configured under
 	 * {@link #relatedSyncConfig}. If true, the operation will be run only once (for the first
@@ -88,6 +90,14 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	private boolean nonResumable;
 	
 	public EtlOperationConfig() {
+	}
+	
+	public boolean isUseSharedConnectionPerThread() {
+		return useSharedConnectionPerThread;
+	}
+	
+	public void setUseSharedConnectionPerThread(boolean useSharedConnectionPerThread) {
+		this.useSharedConnectionPerThread = useSharedConnectionPerThread;
 	}
 	
 	public boolean isNonResumable() {

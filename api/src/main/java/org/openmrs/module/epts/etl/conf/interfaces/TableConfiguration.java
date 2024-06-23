@@ -351,9 +351,51 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			catch (InstantiationException | IllegalAccessException | ForbiddenOperationException e) {
 				throw new RuntimeException(e);
 			}
-			
+		}
+	}
+	
+	default void deleteAllSkippedRecord(Connection srcConn) throws DBException {
+		EtlConfigurationTableConf skippedRecordTabConf = getRelatedSyncConfiguration().getSkippedRecordTabConf();
+		
+		DatabaseObjectDAO.removeAll(skippedRecordTabConf, "table_name = '" + getTableName() + "'", srcConn);
+	}
+	
+	default void saveSkippedRecord(EtlDatabaseObject skippedrecord, Connection srcConn) throws DBException {
+		EtlConfigurationTableConf skippedRecordTabConf = getRelatedSyncConfiguration().getSkippedRecordTabConf();
+		
+		if (!skippedRecordTabConf.isFullLoaded()) {
+			skippedRecordTabConf.fullLoad(srcConn);
 		}
 		
+		try {
+			EtlDatabaseObject keyInfo = skippedRecordTabConf.getSyncRecordClass().newInstance();
+			
+			keyInfo.setRelatedConfiguration(skippedRecordTabConf);
+			
+			keyInfo.setFieldValue("table_name", skippedrecord.getObjectName());
+			keyInfo.setFieldValue("object_id", skippedrecord.getObjectId().getSimpleValue());
+			
+			keyInfo.save(skippedRecordTabConf, srcConn);
+		}
+		catch (InstantiationException | IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	default String generateSkippedRecordInclusionClause() {
+		
+		if (!getPrimaryKey().isSimpleKey())
+			throw new ForbiddenOperationException("Only simple pk is supported!");
+		
+		EtlConfigurationTableConf skippedRecordTabConf = getRelatedSyncConfiguration().getSkippedRecordTabConf();
+		
+		String sql = "";
+		sql += getTableAlias() + "." + getPrimaryKey().retrieveSimpleKeyColumnName();
+		sql += " in  (	select object_id \n";
+		sql += "		from " + skippedRecordTabConf.getFullTableName() + "\n";
+		sql += " 		where table_name = '" + getTableName() + "')";
+		
+		return sql;
 	}
 	
 	default EtlDatabaseObject getDefaultObject(Connection conn) throws DBException, ForbiddenOperationException {

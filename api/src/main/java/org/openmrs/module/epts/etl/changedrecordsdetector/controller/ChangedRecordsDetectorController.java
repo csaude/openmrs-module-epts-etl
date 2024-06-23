@@ -58,9 +58,9 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 	}
 	
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
-		return new ChangedRecordsDetectorEngine(monitor, limits);
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		return new ChangedRecordsDetectorEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
@@ -221,8 +221,8 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsManager,
-	        Engine<EtlDatabaseObject> engine) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsManager, Engine<EtlDatabaseObject> engine) {
 		
 		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new ChangedRecordsDetectorSearchParams(engine,
 		        this.getActionPerformeApp().getApplicationCode(), intervalsManager, this.getOperationType());

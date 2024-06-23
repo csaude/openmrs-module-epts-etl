@@ -20,8 +20,8 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DBQuickLoadEngine extends EtlEngine {
 	
-	public DBQuickLoadEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public DBQuickLoadEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

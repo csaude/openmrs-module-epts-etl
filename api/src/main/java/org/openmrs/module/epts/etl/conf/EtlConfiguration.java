@@ -39,6 +39,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class EtlConfiguration extends AbstractBaseConfiguration implements TableAliasesGenerator {
 	
+	public static final String SKIPPED_RECORD_TABLE_NAME = "skipped_record";
+	
 	public static final String DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME = "default_generated_object_key";
 	
 	public static final String ETL_RECORD_ERROR_TABLE_NAME = "etl_record_error";
@@ -107,6 +109,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private EtlConfigurationTableConf etlRecordErrorTabCof;
 	
+	private EtlConfigurationTableConf skippedRecordTabConf;
+	
 	private List<TableConfiguration> fullLoadedTables;
 	
 	private List<String> busyTableAliasName;
@@ -128,6 +132,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.configuredTables = new ArrayList<>();
 		
 		this.busyTableAliasName = new ArrayList<>();
+	}
+	
+	public EtlConfigurationTableConf getSkippedRecordTabConf() {
+		return skippedRecordTabConf;
+	}
+	
+	public void setSkippedRecordTabConf(EtlConfigurationTableConf skippedRecordTabConf) {
+		this.skippedRecordTabConf = skippedRecordTabConf;
 	}
 	
 	public boolean isDoNotTransformsPrimaryKeys() {
@@ -564,8 +576,17 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			        EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME, this);
 			this.defaultGeneratedObjectKeyTabConf.setSchema(getSyncStageSchema());
 			
+			this.skippedRecordTabConf = new EtlConfigurationTableConf(EtlConfiguration.SKIPPED_RECORD_TABLE_NAME, this);
+			this.skippedRecordTabConf.setSchema(getSyncStageSchema());
+			
 			this.etlRecordErrorTabCof = new EtlConfigurationTableConf(EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME, this);
 			this.etlRecordErrorTabCof.setSchema(getSyncStageSchema());
+			
+			for (EtlOperationConfig operation : this.getOperations()) {
+				if (operation.getMaxSupportedEngines() == 1) {
+					operation.setUseSharedConnectionPerThread(false);
+				}
+			}
 			
 			for (EtlItemConfiguration tc : this.etlItemConfiguration) {
 				tc.setRelatedSyncConfiguration(this);

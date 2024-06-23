@@ -34,10 +34,10 @@ public class DBQuickLoadController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		
-		return new DBQuickLoadEngine(monitor, limits);
+		return new DBQuickLoadEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

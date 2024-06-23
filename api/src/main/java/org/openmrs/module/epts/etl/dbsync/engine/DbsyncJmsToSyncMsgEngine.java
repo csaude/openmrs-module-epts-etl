@@ -27,8 +27,9 @@ public class DbsyncJmsToSyncMsgEngine extends EtlEngine {
 	
 	List<GenericDatabaseObject> loadedSites;
 	
-	public DbsyncJmsToSyncMsgEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public DbsyncJmsToSyncMsgEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
+	    boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 		
 		loadedSites = new ArrayList<>();
 	}
@@ -72,8 +73,6 @@ public class DbsyncJmsToSyncMsgEngine extends EtlEngine {
 			return syncMessage;
 		}
 	}
-	
-
 	
 	void addToLoadedSites(GenericDatabaseObject loadedSite) {
 		

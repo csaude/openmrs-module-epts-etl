@@ -24,8 +24,8 @@ public class GenericOperationController extends EtlController {
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
-	        Engine<EtlDatabaseObject> engine) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
 		
 		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new MozartLInkedFileSearchParams(engine, intervalsMgt);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
@@ -36,16 +36,16 @@ public class GenericOperationController extends EtlController {
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		
-		Class[] parameterTypes = { Engine.class, ThreadRecordIntervalsManager.class };
+		Class[] parameterTypes = { Engine.class, ThreadRecordIntervalsManager.class, Boolean.class };
 		
 		try {
 			Constructor<TaskProcessor<? extends EtlDatabaseObject>> a = getOperationConfig().getEngineClazz()
 			        .getConstructor(parameterTypes);
 			
-			return (TaskProcessor<EtlDatabaseObject>) a.newInstance(monitor, limits);
+			return (TaskProcessor<EtlDatabaseObject>) a.newInstance(monitor, limits, runningInConcurrency);
 		}
 		catch (Exception e) {
 			throw new ForbiddenOperationException(e);

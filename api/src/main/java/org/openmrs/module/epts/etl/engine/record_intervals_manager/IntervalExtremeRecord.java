@@ -72,6 +72,11 @@ public class IntervalExtremeRecord {
 	}
 	
 	public void markAsProcessed() {
+		
+		if (getMinRecordId() == 876) {
+			System.out.println("Stop");
+		}
+		
 		this.processed = true;
 	}
 	

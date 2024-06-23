@@ -64,9 +64,9 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 	
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
-		return new CentralAndRemoteDataReconciliationEngine(monitor, limits);
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+		return new CentralAndRemoteDataReconciliationEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	public boolean isMissingRecordsDetector() {

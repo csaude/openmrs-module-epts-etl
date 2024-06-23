@@ -94,8 +94,8 @@ public class ProcessController implements Controller, ControllerStarter {
 		return processInfo;
 	}
 	
-	public OperationProgressInfo initOperationProgressMeter(OperationController<? extends EtlDatabaseObject> operationController, Connection conn)
-	        throws DBException {
+	public OperationProgressInfo initOperationProgressMeter(
+	        OperationController<? extends EtlDatabaseObject> operationController, Connection conn) throws DBException {
 		return this.progressInfo.initAndAddProgressMeterToList(operationController, conn);
 	}
 	
@@ -138,6 +138,10 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		if (!existEtlRecordErrorTable()) {
 			createEtlRecordErrorTable();
+		}
+		
+		if (!existsSkippedRecordsTable()) {
+			createSkippedRecordsTable();
 		}
 		
 		OpenConnection conn = getDefaultApp().openConnection();
@@ -232,7 +236,8 @@ public class ProcessController implements Controller, ControllerStarter {
 	public void finalize(Controller c) {
 		c.killSelfCreatedThreads();
 		
-		List<OperationController<? extends EtlDatabaseObject>> nextOperation = ((OperationController<? extends EtlDatabaseObject>) c).getChildren();
+		List<OperationController<? extends EtlDatabaseObject>> nextOperation = ((OperationController<? extends EtlDatabaseObject>) c)
+		        .getChildren();
 		
 		logDebug("TRY TO INIT NEXT OPERATION");
 		
@@ -722,6 +727,10 @@ public class ProcessController implements Controller, ControllerStarter {
 		logger.warn(msg);
 	}
 	
+	public void logTrace(String msg) {
+		logger.trace(msg);
+	}
+	
 	public void logWarn(String msg, long interval) {
 		logger.warn(msg, interval);
 	}
@@ -851,6 +860,27 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
+	public boolean existsSkippedRecordsTable() throws DBException {
+		OpenConnection conn = openConnection();
+		
+		String schema = getConfiguration().getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = EtlConfiguration.SKIPPED_RECORD_TABLE_NAME;
+		
+		try {
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminated();
+			conn.finalizeConnection();
+		}
+	}
+	
 	public boolean existOperationProgressInfoTable() throws DBException {
 		OpenConnection conn = openConnection();
 		
@@ -932,6 +962,46 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 		catch (SQLException e) {
 			throw new DBException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void createSkippedRecordsTable() throws DBException {
+		OpenConnection conn = openConnection();
+		
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		String schema = getConfiguration().getSyncStageSchema();
+		
+		String tableName = EtlConfiguration.SKIPPED_RECORD_TABLE_NAME;
+		
+		sql += "CREATE TABLE " + schema + "." + tableName + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("table_name", 30, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("object_id", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_key".toLowerCase(), "table_name, object_id",
+		    conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
+		
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+			
+			st.close();
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
 		}
 		finally {
 			conn.finalizeConnection();

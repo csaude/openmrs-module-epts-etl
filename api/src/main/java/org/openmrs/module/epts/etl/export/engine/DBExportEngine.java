@@ -19,8 +19,8 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DBExportEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public DBExportEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public DBExportEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

@@ -36,9 +36,20 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	
 	protected IntervalExtremeRecord limits;
 	
-	public TaskProcessor(Engine<T> monitr, IntervalExtremeRecord limits) {
+	protected boolean runningInConcurrency;
+	
+	public TaskProcessor(Engine<T> monitr, IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		this.monitor = monitr;
 		this.limits = limits;
+		this.runningInConcurrency = runningInConcurrency;
+	}
+	
+	public boolean isRunningInConcurrency() {
+		return runningInConcurrency;
+	}
+	
+	public void setRunningInConcurrency(boolean runningInConcurrency) {
+		this.runningInConcurrency = runningInConcurrency;
 	}
 	
 	public IntervalExtremeRecord getLimits() {
@@ -85,14 +96,24 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		return getMonitor().getSearchParams();
 	}
 	
-	public EtlOperationResultHeader<T> performe(Connection ownSrcConn, Connection ownDstCon) throws DBException {
+	public EtlOperationResultHeader<T> performe(boolean useMultiThreadSearch, Connection srcConn, Connection dstConn)
+	        throws DBException {
+		
+		String threads = useMultiThreadSearch ? " USING MULTI-THREAD" : " USING SINGLE THREAD";
+		
 		if (getLimits() != null) {
-			logDebug("SERCHING NEXT RECORDS FOR LIMITS " + getLimits());
+			logDebug("SERCHING NEXT RECORDS FOR LIMITS " + getLimits() + threads);
 		} else {
-			logDebug("SERCHING NEXT RECORDS");
+			logDebug("SERCHING NEXT RECORDS " + threads);
 		}
 		
-		List<T> records = getSearchParams().search(getLimits(), ownSrcConn, ownDstCon);
+		List<T> records = null;
+		
+		if (useMultiThreadSearch) {
+			records = getSearchParams().searchNextRecordsInMultiThreads(srcConn, dstConn);
+		} else {
+			records = getSearchParams().search(getLimits(), srcConn, dstConn);
+		}
 		
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
 		        + getSrcConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records) + "' RECORDS.");
@@ -103,13 +124,14 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 			logDebug("INITIALIZING " + getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '"
 			        + records.size() + "' RECORDS OF TABLE '" + this.getSrcConf().getTableName() + "'");
 			
-			beforeSync(records, ownSrcConn, ownDstCon);
+			beforeSync(records, srcConn, dstConn);
 			
-			r = performeSync(records, ownSrcConn, ownDstCon);
+			r = performeSync(records, srcConn, dstConn);
+			
+			logDebug("TASK ON " + records.size() + " DONE!");
 		}
 		
 		return r;
-		
 	}
 	
 	private void beforeSync(List<T> records, Connection srcConn, Connection dstConn) {
@@ -135,6 +157,10 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	
 	public void logDebug(String msg) {
 		monitor.logDebug(msg);
+	}
+	
+	public void logTrace(String msg) {
+		monitor.logTrace(msg);
 	}
 	
 	public void logWarn(String msg) {

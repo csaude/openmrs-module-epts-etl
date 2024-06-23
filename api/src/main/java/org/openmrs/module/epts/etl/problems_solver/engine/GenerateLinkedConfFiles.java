@@ -36,8 +36,9 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	
 	private boolean done;
 	
-	public GenerateLinkedConfFiles(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public GenerateLinkedConfFiles(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
+	    boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 		
 		Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("partner");
 		

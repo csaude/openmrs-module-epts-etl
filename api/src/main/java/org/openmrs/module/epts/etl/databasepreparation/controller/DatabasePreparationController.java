@@ -29,10 +29,10 @@ public class DatabasePreparationController extends OperationController<DatabaseP
 	}
 	
 	@Override
-	public TaskProcessor<DatabasePreparationRecord> initRelatedEngine(Engine<DatabasePreparationRecord> monitor,
-	        IntervalExtremeRecord limits) {
+	public TaskProcessor<DatabasePreparationRecord> initRelatedTaskProcessor(Engine<DatabasePreparationRecord> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		
-		return new DatabasePreparationEngine(monitor, limits);
+		return new DatabasePreparationEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
@@ -56,10 +56,10 @@ public class DatabasePreparationController extends OperationController<DatabaseP
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<DatabasePreparationRecord> initMainSearchParams(ThreadRecordIntervalsManager<DatabasePreparationRecord> intervalsMgt,
-	        Engine<DatabasePreparationRecord> engine) {
+	public AbstractEtlSearchParams<DatabasePreparationRecord> initMainSearchParams(
+	        ThreadRecordIntervalsManager<DatabasePreparationRecord> intervalsMgt, Engine<DatabasePreparationRecord> engine) {
 		
-		DatabasePreparationEngine processor = (DatabasePreparationEngine) initRelatedEngine(engine, null);
+		DatabasePreparationEngine processor = (DatabasePreparationEngine) initRelatedTaskProcessor(engine, null, false);
 		
 		return new DatabasePreparationSearchParams(processor, intervalsMgt);
 	}

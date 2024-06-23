@@ -677,7 +677,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		return this.operationConfig.getOperationType();
 	}
 	
-	public abstract TaskProcessor<T> initRelatedEngine(Engine<T> monitor, IntervalExtremeRecord limits);
+	public abstract TaskProcessor<T> initRelatedTaskProcessor(Engine<T> monitor, IntervalExtremeRecord limits,
+	        boolean runningInConcurrency);
 	
 	public abstract long getMinRecordId(Engine<? extends EtlDatabaseObject> engine);
 	
@@ -748,6 +749,10 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	
 	public void logWarn(String msg) {
 		this.processController.logWarn(msg);
+	}
+	
+	public void logTrace(String msg) {
+		this.processController.logTrace(msg);
 	}
 	
 	public void logWarn(String msg, long interval) {

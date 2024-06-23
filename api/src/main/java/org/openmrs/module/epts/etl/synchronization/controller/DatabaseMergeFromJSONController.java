@@ -32,15 +32,15 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Syn
 	}
 	
 	@Override
-	public TaskProcessor<SyncImportInfoVO> initRelatedEngine(Engine<SyncImportInfoVO> monitor,
-	        IntervalExtremeRecord limits) {
+	public TaskProcessor<SyncImportInfoVO> initRelatedTaskProcessor(Engine<SyncImportInfoVO> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		
-		return new DataBaseMergeFromJSONEngine(monitor, limits);
+		return new DataBaseMergeFromJSONEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
-		public AbstractEtlSearchParams<SyncImportInfoVO> initMainSearchParams(ThreadRecordIntervalsManager<SyncImportInfoVO> intervalsMgt,
-		        Engine<SyncImportInfoVO> engine) {
+	public AbstractEtlSearchParams<SyncImportInfoVO> initMainSearchParams(
+	        ThreadRecordIntervalsManager<SyncImportInfoVO> intervalsMgt, Engine<SyncImportInfoVO> engine) {
 		/*AbstractEtlSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromJSONSearchParams(this.getSyncTableConfiguration(), limits, this.getRelatedOperationController().getAppOriginLocationCode());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
@@ -76,7 +76,8 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Syn
 		try {
 			conn = openSrcConnection();
 			
-			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams((Engine<SyncImportInfoVO>) engine, null);
+			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(
+			        (Engine<SyncImportInfoVO>) engine, null);
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
@@ -105,7 +106,8 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Syn
 		try {
 			conn = openSrcConnection();
 			
-			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams((Engine<SyncImportInfoVO>) engine, null);
+			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(
+			        (Engine<SyncImportInfoVO>) engine, null);
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
 			SyncImportInfoVO obj = SyncImportInfoDAO.getLastRecord(searchParams, conn);
@@ -135,7 +137,7 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Syn
 	public boolean canBeRunInMultipleEngines() {
 		return true;
 	}
-
+	
 	@Override
 	public void afterEtl(List<SyncImportInfoVO> objs, Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub

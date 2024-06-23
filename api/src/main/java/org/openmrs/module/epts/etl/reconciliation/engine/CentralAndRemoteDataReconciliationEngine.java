@@ -15,8 +15,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public CentralAndRemoteDataReconciliationEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public CentralAndRemoteDataReconciliationEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

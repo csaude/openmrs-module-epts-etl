@@ -17,8 +17,8 @@ public class DatabasePreparationEngine extends TaskProcessor<DatabasePreparation
 	
 	private boolean updateDone;
 	
-	public DatabasePreparationEngine(Engine<DatabasePreparationRecord> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public DatabasePreparationEngine(Engine<DatabasePreparationRecord> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	public boolean isUpdateDone() {

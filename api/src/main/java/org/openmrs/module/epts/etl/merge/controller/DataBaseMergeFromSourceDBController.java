@@ -57,9 +57,9 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
-		return new DataBasesMergeFromSourceEngine(monitor, limits);
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		return new DataBasesMergeFromSourceEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

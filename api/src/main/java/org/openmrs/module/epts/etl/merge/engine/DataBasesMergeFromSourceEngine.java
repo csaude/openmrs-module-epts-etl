@@ -22,8 +22,9 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DataBasesMergeFromSourceEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public DataBasesMergeFromSourceEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public DataBasesMergeFromSourceEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
+	    boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
@@ -32,8 +33,8 @@ public class DataBasesMergeFromSourceEngine extends TaskProcessor<EtlDatabaseObj
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		logInfo("PERFORMING MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;

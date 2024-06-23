@@ -38,23 +38,23 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		if (getOperationConfig().getEngineClazz() != null) {
 			
-			Class[] parameterTypes = { Engine.class, ThreadRecordIntervalsManager.class };
+			Class[] parameterTypes = { Engine.class, ThreadRecordIntervalsManager.class, Boolean.class };
 			
 			try {
 				Constructor<TaskProcessor<? extends EtlDatabaseObject>> a = getOperationConfig().getEngineClazz()
 				        .getConstructor(parameterTypes);
 				
-				return (TaskProcessor<EtlDatabaseObject>) a.newInstance(monitor, limits);
+				return (TaskProcessor<EtlDatabaseObject>) a.newInstance(monitor, limits, runningInConcurrency);
 			}
 			catch (Exception e) {
 				throw new ForbiddenOperationException(e);
 			}
 		} else {
-			return new EtlEngine(monitor, limits);
+			return new EtlEngine(monitor, limits, runningInConcurrency);
 		}
 	}
 	

@@ -20,8 +20,9 @@ import fgh.spi.changedrecordsdetector.DetectedRecordService;
 
 public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public ChangedRecordsDetectorEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public ChangedRecordsDetectorEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
+	    boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 		
 		DetectedRecordService action = DetectedRecordService.getInstance();
 		

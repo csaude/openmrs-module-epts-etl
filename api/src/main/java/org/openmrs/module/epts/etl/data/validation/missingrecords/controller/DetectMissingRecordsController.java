@@ -25,9 +25,9 @@ public class DetectMissingRecordsController extends EtlController {
 	}
 	
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
-		return new DetectMIssingRecordsEngine(monitor, limits);
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+		return new DetectMIssingRecordsEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

@@ -35,8 +35,9 @@ public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 	
 	private boolean pojoGenerated;
 	
-	public PojoGenerationEngine(Engine<PojoGenerationRecord> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public PojoGenerationEngine(Engine<PojoGenerationRecord> monitor, IntervalExtremeRecord limits,
+	    boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 		
 		this.alreadyGeneratedClasses = new ArrayList<String>();
 	}
@@ -114,11 +115,10 @@ public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 	public boolean isPojoGenerated() {
 		return pojoGenerated;
 	}
-
 	
 	@Override
 	public PojoGenerationController getRelatedOperationController() {
 		return (PojoGenerationController) super.getRelatedOperationController();
 	}
-
+	
 }

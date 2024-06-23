@@ -32,9 +32,9 @@ public class InconsistenceSolverController extends OperationController<EtlDataba
 	}
 	
 	@Override
-	public TaskProcessor<EtlDatabaseObject> initRelatedEngine(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits) {
-		return new InconsistenceSolverEngine(monitor, limits);
+	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
+		return new InconsistenceSolverEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

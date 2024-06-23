@@ -13,8 +13,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class ResolveConflictsInStageAreaEngine extends TaskProcessor<SyncImportInfoVO> {
 	
-	public ResolveConflictsInStageAreaEngine(Engine<SyncImportInfoVO> monitor, IntervalExtremeRecord limits) {
-		super(monitor, limits);
+	public ResolveConflictsInStageAreaEngine(Engine<SyncImportInfoVO> monitor, IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+		super(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

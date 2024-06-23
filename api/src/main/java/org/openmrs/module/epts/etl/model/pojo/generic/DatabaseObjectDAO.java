@@ -435,6 +435,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
+	public static void removeAll(TableConfiguration tabConf, String condition, Connection conn) throws DBException {
+		
+		String sql = " DELETE FROM " + tabConf.getFullTableName() + " WHERE  " + condition;
+		
+		executeQueryWithRetryOnError(sql, null, conn);
+	}
+	
 	public static int countAllOfOriginParentId(String parentField, Integer parentOriginId, String appOriginCode,
 	        TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		
