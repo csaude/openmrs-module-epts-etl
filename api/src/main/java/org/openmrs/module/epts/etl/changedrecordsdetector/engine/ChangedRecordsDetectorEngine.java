@@ -9,7 +9,6 @@ import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordIn
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -37,8 +36,7 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObjec
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public void performeEtl(List<EtlDatabaseObject> records, Connection srcConn, Connection dstConn) throws DBException {
 		
 		List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(records, EtlDatabaseObject.class);
 		List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(records.size());
@@ -76,15 +74,10 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObjec
 			    getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords, getSrcConf());
 		}
 		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
-		
-		result.addAllToRecordsWithNoError(utilities.parseList(processedRecords, EtlDatabaseObject.class));
+		getTaskResultInfo().addAllToRecordsWithNoError(utilities.parseList(processedRecords, EtlDatabaseObject.class));
 		
 		this.getMonitor().logInfo(
 		    "ACTION PERFORMED FOR CHANGED RECORDS '" + records.size() + "' " + getSrcConf().getTableName() + "!");
-		
-		return result;
-		
 	}
 	
 }

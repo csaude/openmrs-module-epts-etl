@@ -341,7 +341,7 @@ public class AttDefinedElements {
 	
 	public static boolean isNumeric(String attType) {
 		return utilities.isStringIn(attType.toLowerCase(), "int", "integer", "long", "byte", "short", "double", "float",
-		    "bit", "tinyint");
+		    "bit", "tinyint", "bigint");
 	}
 	
 	public static boolean isString(String attType) {

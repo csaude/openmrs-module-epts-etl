@@ -7,13 +7,13 @@ import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.inconsistenceresolver.controller.InconsistenceSolverController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class InconsistenceSolverEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public InconsistenceSolverEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+	public InconsistenceSolverEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
+	    boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 	}
 	
@@ -23,19 +23,16 @@ public class InconsistenceSolverEngine extends TaskProcessor<EtlDatabaseObject> 
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
 		List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(etlObjects, EtlDatabaseObject.class);
 		
 		logInfo("DOING INCONSISTENCE SOLVER FOR '" + etlObjects.size() + "' " + getMainSrcTableName());
-		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		for (EtlDatabaseObject obj : syncRecordsAsOpenMRSObjects) {
 			try {
 				obj.resolveInconsistence(getSrcConf(), srcConn);
 				
-				result.addToRecordsWithNoError(obj);
+				getTaskResultInfo().addToRecordsWithNoError(obj);
 			}
 			catch (Exception e) {
 				logError(
@@ -47,6 +44,5 @@ public class InconsistenceSolverEngine extends TaskProcessor<EtlDatabaseObject> 
 		
 		logInfo("INCONSISTENCE SOLVED FOR '" + etlObjects.size() + "' " + getMainSrcTableName() + "!");
 		
-		return result;
 	}
 }

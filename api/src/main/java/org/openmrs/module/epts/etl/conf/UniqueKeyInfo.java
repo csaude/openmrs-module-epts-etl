@@ -267,6 +267,10 @@ public class UniqueKeyInfo {
 			
 			Key keyFromOtherUk = otherUniqueKey.getKey(key.getName());
 			
+			if (key.getValue() == null) {
+				return false;
+			}
+			
 			if (!key.getValue().equals(keyFromOtherUk.getValue())) {
 				return false;
 			}

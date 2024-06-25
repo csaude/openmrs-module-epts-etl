@@ -12,14 +12,14 @@ import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtre
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DBQuickExportEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public DBQuickExportEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+	public DBQuickExportEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
+	    boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 	}
 	
@@ -29,8 +29,7 @@ public class DBQuickExportEngine extends TaskProcessor<EtlDatabaseObject> {
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public void performeEtl(List<EtlDatabaseObject> records, Connection srcConn, Connection dstConn) throws DBException {
 		try {
 			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(records, EtlDatabaseObject.class);
 			
@@ -80,11 +79,7 @@ public class DBQuickExportEngine extends TaskProcessor<EtlDatabaseObject> {
 				throw new ForbiddenOperationException("EMPTY FILE WAS WROTE!!!!!");
 			}
 			
-			EtlOperationResultHeader<EtlDatabaseObject> h = new EtlOperationResultHeader<>(getLimits());
-			
-			h.addAllToRecordsWithNoError(syncRecordsAsOpenMRSObjects);
-			
-			return h;
+			getTaskResultInfo().addAllToRecordsWithNoError(syncRecordsAsOpenMRSObjects);
 		}
 		catch (IOException e) {
 			e.printStackTrace();

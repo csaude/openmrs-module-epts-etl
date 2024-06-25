@@ -25,9 +25,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class DstConf extends AbstractTableConfiguration {
 	
 	/*
-	 * The joinFields with #getSrcConf()
+	 * The user defined joinFields with #getSrcConf()
 	 */
 	private List<FieldsMapping> joinFields;
+	
+	private List<List<FieldsMapping>> generatedJoinFields;
 	
 	private List<FieldsMapping> allMapping;
 	
@@ -56,6 +58,14 @@ public class DstConf extends AbstractTableConfiguration {
 	private boolean automaticalyGenerated;
 	
 	public DstConf() {
+	}
+	
+	public List<List<FieldsMapping>> getGeneratedJoinFields() {
+		return generatedJoinFields;
+	}
+	
+	public void setGeneratedJoinFields(List<List<FieldsMapping>> generatedJoinFields) {
+		this.generatedJoinFields = generatedJoinFields;
 	}
 	
 	public boolean isAutomaticalyGenerated() {
@@ -416,9 +426,18 @@ public class DstConf extends AbstractTableConfiguration {
 		
 	}
 	
+	private void addToGeneratedJoinFields(List<FieldsMapping> toAdd) {
+		if (!hasJoinFields()) {
+			this.setGeneratedJoinFields(new ArrayList<>());
+		}
+		
+		this.getGeneratedJoinFields().add(toAdd);
+	}
+	
 	private void loadJoinFields(Connection conn) {
-		if (this.getJoinFields() != null)
-			return;
+		if (this.getJoinFields() != null) {
+			addToGeneratedJoinFields(getJoinFields());
+		}
 		
 		if (this.hasUniqueKeys()) {
 			//If no joinField is defined but the dst table has uk, tries to map the uk with src fields
@@ -427,7 +446,6 @@ public class DstConf extends AbstractTableConfiguration {
 			if (!hasJoinFields() && this.getSrcConf().hasUniqueKeys()) {
 				tryToAutoGenerateJoinFields(this.getSrcConf(), this);
 			}
-			
 		} else if (this.getSrcConf().hasUniqueKeys()) {
 			//If no joinField is defined but the src table has uk, tries to map the uk with dst fields
 			tryToAutoGenerateJoinFields(this.getSrcConf(), this);
@@ -452,13 +470,13 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 			
 			if (fakeSrcUk.hasFields() && uk.equals(fakeSrcUk)) {
-				if (this.joinFields == null) {
-					this.joinFields = new ArrayList<>();
-				}
+				List<FieldsMapping> joinFieldsFromUniqueKey = new ArrayList<>();
 				
 				for (Key key : uk.getFields()) {
-					this.joinFields.add(FieldsMapping.fastCreate(key.getName()));
+					joinFieldsFromUniqueKey.add(FieldsMapping.fastCreate(key.getName()));
 				}
+				
+				addToGeneratedJoinFields(joinFieldsFromUniqueKey);
 			}
 		}
 	}
@@ -499,6 +517,7 @@ public class DstConf extends AbstractTableConfiguration {
 			EtlDatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
 			
 			mappedObject.setRelatedConfiguration(this);
+			mappedObject.setSrcRelatedObject(srcObject);
 			
 			for (FieldsMapping fieldsMapping : this.allMapping) {
 				Object srcValue;
@@ -607,38 +626,53 @@ public class DstConf extends AbstractTableConfiguration {
 	 */
 	@JsonIgnore
 	public String generateJoinConditionWithSrc() {
-		String joinCondition = "";
+		String fullCondition = "";
 		
-		for (int i = 0; i < this.getJoinFields().size(); i++) {
-			if (i > 0)
-				joinCondition += " AND ";
+		String ownAlias = getTableAlias();
+		String relatedTableAlias = getSrcConf().getTableAlias();
+		
+		for (int outerConter = 0; outerConter < this.getGeneratedJoinFields().size(); outerConter++) {
+			List<FieldsMapping> joindFields = this.getGeneratedJoinFields().get(outerConter);
 			
-			String ownAlias = getTableAlias();
-			String relatedTableAlias = getSrcConf().getTableAlias();
+			String currJoinCondition = "";
 			
-			//Force the alias to be from the sharedPk table
-			if (useSharedPKKey() && !containsField(this.getJoinFields().get(i).getDstField())) {
-				ownAlias = getSharedKeyRefInfo().getAlias();
+			for (int innerCounter = 0; innerCounter < joindFields.size(); innerCounter++) {
+				
+				if (innerCounter > 0)
+					currJoinCondition += " AND ";
+				
+				//Force the alias to be from the sharedPk table
+				if (useSharedPKKey() && !containsField(joindFields.get(innerCounter).getDstField())) {
+					ownAlias = getSharedKeyRefInfo().getAlias();
+				}
+				
+				if (getSrcConf().useSharedPKKey()
+				        && !getSrcConf().containsField(joindFields.get(innerCounter).getSrcField())) {
+					relatedTableAlias = getSrcConf().getSharedKeyRefInfo().getAlias();
+				}
+				
+				currJoinCondition += ownAlias + "." + joindFields.get(innerCounter).getDstField() + " = " + relatedTableAlias
+				        + "." + joindFields.get(innerCounter).getSrcField();
 			}
 			
-			if (getSrcConf().useSharedPKKey() && !getSrcConf().containsField(this.getJoinFields().get(i).getSrcField())) {
-				relatedTableAlias = getSrcConf().getSharedKeyRefInfo().getAlias();
+			if (outerConter > 0) {
+				fullCondition = "(" + fullCondition + ") OR (" + currJoinCondition + ")";
+			} else {
+				fullCondition = "(" + currJoinCondition + ")";
 			}
 			
-			joinCondition += ownAlias + "." + this.getJoinFields().get(i).getDstField() + " = " + relatedTableAlias + "."
-			        + this.getJoinFields().get(i).getSrcField();
 		}
 		
-		if (!utilities.stringHasValue(joinCondition) && this.isMetadata()) {
-			joinCondition = getTableAlias() + "." + getPrimaryKey().retrieveSimpleKeyColumnName() + " = "
+		if (!utilities.stringHasValue(fullCondition) && this.isMetadata()) {
+			fullCondition = getTableAlias() + "." + getPrimaryKey().retrieveSimpleKeyColumnName() + " = "
 			        + getSrcConf().getTableAlias() + "." + getPrimaryKey().retrieveSimpleKeyColumnName();
 		}
 		
-		return joinCondition;
+		return fullCondition;
 	}
 	
 	public boolean hasJoinFields() {
-		return utilities.arrayHasElement(this.getJoinFields());
+		return utilities.arrayHasElement(this.getGeneratedJoinFields());
 	}
 	
 }

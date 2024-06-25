@@ -8,7 +8,6 @@ import java.util.List;
 import org.openmrs.module.epts.etl.databasepreparation.model.DatabasePreparationRecord;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -17,7 +16,8 @@ public class DatabasePreparationEngine extends TaskProcessor<DatabasePreparation
 	
 	private boolean updateDone;
 	
-	public DatabasePreparationEngine(Engine<DatabasePreparationRecord> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+	public DatabasePreparationEngine(Engine<DatabasePreparationRecord> monitor, IntervalExtremeRecord limits,
+	    boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 	}
 	
@@ -30,14 +30,12 @@ public class DatabasePreparationEngine extends TaskProcessor<DatabasePreparation
 	}
 	
 	@Override
-	public EtlOperationResultHeader<DatabasePreparationRecord> performeSync(List<DatabasePreparationRecord> records,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	public void performeEtl(List<DatabasePreparationRecord> records, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		try {
 			updateTableInfo(srcConn);
 			
 			this.updateDone = true;
-			
-			return new EtlOperationResultHeader<>(getLimits());
 		}
 		catch (SQLException e) {
 			e.printStackTrace();

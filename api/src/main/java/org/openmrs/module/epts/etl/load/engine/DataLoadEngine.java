@@ -12,7 +12,6 @@ import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtre
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.load.model.LoadSyncDataSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -24,7 +23,7 @@ public class DataLoadEngine extends TaskProcessor<EtlDatabaseObject> {
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
+	public void performeEtl(List<EtlDatabaseObject> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(records, SyncImportInfoVO.class);
 		
@@ -42,7 +41,7 @@ public class DataLoadEngine extends TaskProcessor<EtlDatabaseObject> {
 		logDebug(
 		    "SOURCE JSON [" + this.getSearchParams().getCurrJSONSourceFile().getAbsolutePath() + "] MOVED TO BACKUP AREA.");
 		
-		return new EtlOperationResultHeader<>(records);
+		getTaskResultInfo().addAllToRecordsWithNoError(records);
 	}
 	
 	private void moveSoureJSONFileToBackup() {

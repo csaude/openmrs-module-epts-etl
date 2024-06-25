@@ -99,7 +99,11 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 			this.recordsWithResolvedErrors = new ArrayList<>();
 		}
 		
-		this.recordsWithResolvedErrors.addAll(records);
+		if (utilities.arrayHasElement(records)) {
+			for (EtlOperationItemResult<T> rec : records) {
+				addToRecordsWithUnresolvedErrors(rec);
+			}
+		}
 	}
 	
 	private void addAllToRecordsWithRecursiveRelashionship(List<T> records) {
@@ -107,15 +111,26 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 			this.recordsWithRecursiveRelashionship = new ArrayList<>();
 		}
 		
-		this.recordsWithRecursiveRelashionship.addAll(records);
+		if (utilities.arrayHasElement(records)) {
+			for (T rec : records) {
+				addAllToRecordsWithRecursiveRelashionship(rec);
+			}
+		}
 	}
 	
-	private void addAllToRecordsWithUnresolvedErrors(List<EtlOperationItemResult<T>> records) {
+	public void addAllToRecordsWithUnresolvedErrors(List<EtlOperationItemResult<T>> records) {
 		if (this.recordsWithUnresolvedErrors == null) {
 			this.recordsWithUnresolvedErrors = new ArrayList<>();
 		}
 		
 		this.recordsWithUnresolvedErrors.addAll(records);
+		
+		if (utilities.arrayHasElement(records)) {
+			for (EtlOperationItemResult<T> rec : records) {
+				addToRecordsWithUnresolvedErrors(rec);
+			}
+		}
+		
 	}
 	
 	public void addAllToRecordsWithNoError(List<T> records) {
@@ -123,7 +138,11 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 			this.recordsWithNoError = new ArrayList<>();
 		}
 		
-		this.recordsWithNoError.addAll(records);
+		if (utilities.arrayHasElement(records)) {
+			for (T rec : records) {
+				addToRecordsWithNoError(rec);
+			}
+		}
 	}
 	
 	public void addAllToRecordsWithRecursiveRelashionship(T record) {
@@ -131,7 +150,9 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 			this.recordsWithRecursiveRelashionship = new ArrayList<>();
 		}
 		
-		this.recordsWithRecursiveRelashionship.add(record);
+		if (!this.recordsWithRecursiveRelashionship.contains(record)) {
+			this.recordsWithRecursiveRelashionship.add(record);
+		}
 	}
 	
 	public void setRecordsWithNoError(List<T> recordsWithNoError) {

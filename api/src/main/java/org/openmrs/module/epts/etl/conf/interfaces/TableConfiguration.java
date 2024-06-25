@@ -317,7 +317,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					
 					defaultObject.loadWithDefaultValues(conn);
 					
-					defaultObject.save(this, conn);
+					try {
+						defaultObject.save(this, conn);
+					}
+					catch (DBException e) {
+						if (!e.isDuplicatePrimaryOrUniqueKeyException()) {
+							throw e;
+						}
+					}
 					
 					defaultObject = getDefaultObject(conn);
 					
@@ -489,6 +496,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default void logDebug(String msg) {
 		getRelatedSyncConfiguration().logDebug(msg);
+	}
+	
+	default void logTrace(String msg) {
+		getRelatedSyncConfiguration().logTrace(msg);
 	}
 	
 	default void logWarn(String msg) {
@@ -1165,6 +1176,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 * @throws DBException
 	 */
 	default void loadFields(Connection conn) throws DBException {
+		logDebug("Loading field for table " + getFullTableDescription());
+		
 		if (isFieldsLoaded())
 			return;
 		
@@ -1177,6 +1190,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				this.getFields().add(f);
 			}
 		}
+		
+		logTrace("Fields for table " + getFullTableDescription() + " Loaded!");
 	}
 	
 	void setFields(List<Field> tableFields);
@@ -2059,6 +2074,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				clonedParent.setTableName(parentToCloneFrom.getTableName());
 				clonedParent.setSchema(tableToCloneTo.getSchema());
+				clonedParent.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
 				clonedParent.loadFields(conn);
 				clonedParent.setChildTableConf(tableToCloneTo);
 				clonedParent.setConditionalFields(parentToCloneFrom.getConditionalFields());
@@ -2079,6 +2095,30 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		return parents;
+	}
+	
+	/**
+	 * Checks if this table configuration has its own unique keys rather that the keys from the
+	 * shared key parent
+	 * 
+	 * @return true if this table configuration has its own unique keys rather that the keys from
+	 *         the shared key parent or false in contrary
+	 */
+	default boolean hasItsOwnKeys() {
+		
+		if (!hasUniqueKeys())
+			return false;
+		
+		if (!useSharedPKKey())
+			return true;
+		
+		for (UniqueKeyInfo keyInfo : getUniqueKeys()) {
+			if (containsAllFields(utilities.parseList(keyInfo.getFields(), Field.class))) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 }

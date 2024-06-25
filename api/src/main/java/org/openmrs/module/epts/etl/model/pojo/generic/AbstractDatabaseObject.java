@@ -58,8 +58,20 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	protected List<ParentInfo> parentsWithDefaultValues;
 	
+	protected EtlDatabaseObject srcRelatedObject;
+	
 	public AbstractDatabaseObject() {
 		this.objectId = new Oid();
+	}
+	
+	@Override
+	public EtlDatabaseObject getSrcRelatedObject() {
+		return srcRelatedObject;
+	}
+	
+	@Override
+	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
+		this.srcRelatedObject = srcRelatedObject;
 	}
 	
 	public void load(ResultSet rs) throws SQLException {
@@ -271,6 +283,10 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	@Override
 	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		if (tableConfiguration.isMetadata()) {
+			
+			this.loadUniqueKeyValues(tableConfiguration);
+			this.loadObjectIdData(tableConfiguration);
+			
 			EtlDatabaseObject recordOnDBByUuid = DatabaseObjectDAO.getByUniqueKeys(this, conn);
 			
 			if (recordOnDBByUuid == null) {
@@ -311,6 +327,13 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 					}
 					
 					if (recordOnDB == null) {
+						TableConfiguration refInfo = (TableConfiguration) getRelatedConfiguration();
+						
+						if (refInfo.useSharedPKKey() && !refInfo.hasItsOwnKeys()) {
+							//Ignore duplication if it uses shared key
+							//TODO resolve conflict
+							return;
+						}
 						
 						this.loadUniqueKeyValues(tableConfiguration);
 						

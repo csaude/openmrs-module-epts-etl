@@ -461,8 +461,16 @@ public class ProcessController implements Controller, ControllerStarter {
 			for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 				controller.requestStop();
 			}
+			
+			for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
+				while (!controller.isStopped()) {
+					logger.warn("WAITING FOR PROCESS " + controller.getControllerId() + " TO STOP...", 120);
+					TimeCountDown.sleep(5);
+				}
+			}
 		}
 		
+		changeStatusToStopped();
 	}
 	
 	@Override

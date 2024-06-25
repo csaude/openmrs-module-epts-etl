@@ -7,7 +7,6 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.synchronization.controller.DatabaseMergeFromJSONController;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
@@ -25,7 +24,7 @@ public class DataBaseMergeFromJSONEngine extends TaskProcessor<SyncImportInfoVO>
 	}
 	
 	@Override
-	public EtlOperationResultHeader<SyncImportInfoVO> performeSync(List<SyncImportInfoVO> records, Connection srcConn,
+	public void performeEtl(List<SyncImportInfoVO> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		
 		throw new ForbiddenOperationException("Rever este metodo!");

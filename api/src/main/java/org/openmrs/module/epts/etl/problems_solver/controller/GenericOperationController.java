@@ -19,6 +19,8 @@ import org.openmrs.module.epts.etl.problems_solver.model.MozartLInkedFileSearchP
  */
 public class GenericOperationController extends EtlController {
 	
+	boolean done;
+	
 	public GenericOperationController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig, null);
 	}
@@ -34,12 +36,20 @@ public class GenericOperationController extends EtlController {
 		return searchParams;
 	}
 	
+	public boolean isDone() {
+		return done;
+	}
+	
+	public void markAsDone() {
+		this.done = true;
+	}
+	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		
-		Class[] parameterTypes = { Engine.class, ThreadRecordIntervalsManager.class, Boolean.class };
+		Class[] parameterTypes = { Engine.class, IntervalExtremeRecord.class, Boolean.class };
 		
 		try {
 			Constructor<TaskProcessor<? extends EtlDatabaseObject>> a = getOperationConfig().getEngineClazz()

@@ -160,18 +160,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
-	public static <T extends EtlDatabaseObject> T getByUniqueKeys(T obj, Connection conn) throws DBException {
-		return getByUniqueKeys(DBUtilities.determineSchemaName(conn), obj, conn);
-	}
-	
 	public static <T extends EtlDatabaseObject> T getByUniqueKey(TableConfiguration tableConfiguration, UniqueKeyInfo uk,
 	        Connection conn) throws DBException {
 		return getByUniqueKey(tableConfiguration, uk, DBUtilities.determineSchemaName(conn), conn);
-	}
-	
-	public static <T extends EtlDatabaseObject> T getByUniqueKeysOnSpecificSchema(T obj, String schema, Connection conn)
-	        throws DBException {
-		return getByUniqueKeys(schema, obj, conn);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -213,8 +204,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static <T extends EtlDatabaseObject> T getByUniqueKeys(String schema, T obj, Connection conn)
-	        throws DBException {
+	public static <T extends EtlDatabaseObject> T getByUniqueKeys(T obj, Connection conn) throws DBException {
 		
 		if (!obj.hasAtLeastOnUniqueKeyWIthAllFieldsFilled()) {
 			return null;
@@ -427,6 +417,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static void remove(EtlDatabaseObject record, Connection conn) throws DBException {
+		record.loadObjectIdData((TableConfiguration) record.getRelatedConfiguration());
+		
 		Object[] params = record.getObjectId().parseValuesToArray();
 		
 		String sql = " DELETE" + " FROM " + record.generateTableName() + " WHERE  "
@@ -572,17 +564,22 @@ public class DatabaseObjectDAO extends BaseDAO {
 			try {
 				executeQueryWithRetryOnError(sql, params, conn);
 				
-				result.addAllToRecordsWithNoError(objects);
+				result.addAllToRecordsWithNoError(EtlDatabaseObject.collectAllSrcrelatedOBjects(objects));
 			}
 			catch (DBException e) {
 				for (EtlDatabaseObject obj : objects) {
 					try {
+						obj.loadObjectIdData(tabConf);
+						
 						obj.save(tabConf, conn);
 						
-						result.addToRecordsWithNoError(obj);
+						result.addToRecordsWithNoError(obj.getSrcRelatedObject());
 					}
 					catch (DBException e1) {
-						result.addToRecordsWithUnresolvedErrors(obj, e1);
+						//Temp code for dbsync
+						if (!tabConf.getTableName().equals("jms_msg_bkp")) {
+							result.addToRecordsWithUnresolvedErrors(obj, e1);
+						}
 					}
 				}
 			}

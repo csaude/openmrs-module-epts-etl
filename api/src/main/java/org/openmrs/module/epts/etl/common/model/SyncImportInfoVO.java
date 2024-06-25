@@ -765,4 +765,16 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public EtlDatabaseObject getSrcRelatedObject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
+		// TODO Auto-generated method stub
+		
+	}
 }

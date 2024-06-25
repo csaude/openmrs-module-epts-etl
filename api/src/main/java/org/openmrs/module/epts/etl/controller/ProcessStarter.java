@@ -72,16 +72,26 @@ public class ProcessStarter implements ControllerStarter {
 				return;
 			}
 			
+			logger.debug("Initializing the ProcessStarter...");
+			
 			List<EtlConfiguration> syncConfigs = loadSyncConfig(this.synConfigFilesPaths);
+			
+			logger.debug("Found " + syncConfigs.size() + " Configuration files!");
 			
 			for (EtlConfiguration conf : syncConfigs) {
 				if (!conf.isAutomaticStart())
 					continue;
 				
+				logger.debug("Initializing ProcessController using " + conf.getConfigFilePath());
+				
 				this.currentController = new ProcessController(this, conf);
+				
+				logger.debug("ProcessController Initialized");
 			}
 			
 			this.initialized = true;
+			
+			logger.debug("Starter Initialization Fineshed");
 		}
 		
 	}

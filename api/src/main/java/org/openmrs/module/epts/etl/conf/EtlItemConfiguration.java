@@ -84,7 +84,10 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	public void tryToCreateDefaultRecordsForAllTables() throws DBException {
-		OpenConnection dstConn = getRelatedSyncConfiguration().openDstConn();
+		OpenConnection dstConn = getRelatedSyncConfiguration().tryOpenDstConn();
+		
+		if (dstConn == null)
+			return;
 		
 		try {
 			if (!this.hasDstConf()) {
@@ -103,10 +106,30 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 					}
 					
 					for (ParentTable refInfo : dst.getParentRefInfo()) {
-						if (refInfo.getDefaultObject(dstConn) == null) {
+						if (refInfo.isMetadata())
+							continue;
+						
+						if (!refInfo.isFullLoaded()) {
 							refInfo.fullLoad(dstConn);
+						}
+						
+						if (refInfo.useSharedPKKey()) {
+							if (!refInfo.getSharedKeyRefInfo().isFullLoaded()) {
+								refInfo.getSharedKeyRefInfo().fullLoad(dstConn);
+							}
+						}
+						
+						if (refInfo.getDefaultObject(dstConn) == null) {
+							getRelatedSyncConfiguration()
+							        .logDebug("Creating default record for table " + refInfo.getFullTableDescription());
 							
-							refInfo.generateAndSaveDefaultObject(dstConn);
+							try {
+								refInfo.generateAndSaveDefaultObject(dstConn);
+							}
+							catch (DBException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 						}
 					}
 				}

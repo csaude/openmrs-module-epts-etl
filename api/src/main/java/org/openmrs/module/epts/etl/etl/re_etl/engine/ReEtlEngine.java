@@ -14,7 +14,6 @@ import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -35,14 +34,11 @@ public class ReEtlEngine extends EtlEngine {
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
 		logInfo("PERFORMING RE ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
 		int i = 1;
-		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		for (EtlObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
@@ -71,7 +67,7 @@ public class ReEtlEngine extends EtlEngine {
 				try {
 					process(data, startingStrLog, 0, srcConn, dstConn);
 					
-					result.addToRecordsWithNoError(rec);
+					getTaskResultInfo().addToRecordsWithNoError(rec);
 					
 					wentWrong = false;
 				}
@@ -84,7 +80,7 @@ public class ReEtlEngine extends EtlEngine {
 					
 					inconsistenceInfo.save(mappingInfo, srcConn);
 					
-					result.addToRecordsWithResolvedErrors(rec, inconsistenceInfo);
+					getTaskResultInfo().addToRecordsWithResolvedErrors(rec, inconsistenceInfo);
 					
 					wentWrong = false;
 				}
@@ -103,7 +99,7 @@ public class ReEtlEngine extends EtlEngine {
 						logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
 						        + e.getLocalizedMessage() + ". Skipping... ");
 						
-						throw e;
+						getTaskResultInfo().setFatalException(e);
 					}
 				}
 				catch (Exception e) {
@@ -111,7 +107,7 @@ public class ReEtlEngine extends EtlEngine {
 					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
 					        + e.getLocalizedMessage());
 					
-					throw e;
+					getTaskResultInfo().setFatalException(e);
 				}
 				finally {
 					
@@ -127,7 +123,7 @@ public class ReEtlEngine extends EtlEngine {
 								dstConn.commit();
 							}
 							catch (SQLException e) {
-								throw new DBException(e);
+								getTaskResultInfo().setFatalException(e);
 							}
 						}
 					}
@@ -137,8 +133,6 @@ public class ReEtlEngine extends EtlEngine {
 				
 			}
 		}
-		
-		return result;
 	}
 	
 	private void process(LoadRecord etlData, String startingStrLog, int reprocessingCount, Connection srcConn,

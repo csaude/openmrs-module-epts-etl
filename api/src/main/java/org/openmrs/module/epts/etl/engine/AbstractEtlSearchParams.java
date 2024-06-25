@@ -229,8 +229,8 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		return this.savedCount;
 	}
 	
-	public List<T> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
-	        Connection dstCOnn) throws DBException {
+	public List<T> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn, Connection dstCOnn)
+	        throws DBException {
 		SearchClauses<T> searchClauses = this.generateSearchClauses(intervalExtremeRecord, srcConn, dstCOnn);
 		
 		if (this.getOrderByFields() != null) {
@@ -242,21 +242,14 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		return BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, searchClauses.getParameters(), srcConn);
 	}
 	
-	public List<T> searchNextRecordsInMultiThreads(Connection srcConn, Connection dstConn) {
-		if (!hasLimits()) {
-			throw new ForbiddenOperationException(
-			        "For multithreading search you must specify the threadRecordIntervalsManager with min and max records in the searching range");
+	public List<T> searchNextRecordsInMultiThreads(IntervalExtremeRecord interval, Connection srcConn, Connection dstConn)
+	        throws DBException {
+		if (interval == null) {
+			throw new ForbiddenOperationException("For multithreading search you must specify the IntervalExtremeRecord");
 		}
 		
-		if (getThreadRecordIntervalsManager().isOutOfLimits())
-			return null;
-		
-		if (getThreadRecordIntervalsManager().getCurrentFirstRecordId() == 0
-		        && getThreadRecordIntervalsManager().getCurrentLastRecordId() == 0) {
-			throw new EtlException("The minRecordId and maxRecordId cannot be zero!!!");
-		}
-		
-		ThreadCurrentIntervals currIntervals = this.getThreadRecordIntervalsManager().getCurrentLimits();
+		ThreadCurrentIntervals currIntervals = new ThreadCurrentIntervals(interval.getMinRecordId(),
+		        interval.getMaxRecordId(), utilities.getAvailableProcessors());
 		
 		List<CompletableFuture<List<T>>> tasks = new ArrayList<>(currIntervals.getInternalIntervals().size());
 		
@@ -293,6 +286,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 			e.printStackTrace();
 		}
 		
+		/*
 		if (utilities.arrayHasNoElement(allSearchedRecords) && this.getThreadRecordIntervalsManager().canGoNext()) {
 			this.getThreadRecordIntervalsManager().save();
 			
@@ -304,6 +298,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 			
 			return searchNextRecordsInMultiThreads(srcConn, dstConn);
 		}
+		*/
 		
 		return allSearchedRecords;
 	}

@@ -16,24 +16,24 @@ public class EptsEtlLogger {
 	
 	Logger logger = LoggerFactory.getLogger(Main.class);
 	
-	private Level level;
+	private Level level_;
 	
 	public <T> EptsEtlLogger(Class<T> clazz) {
 		this.logger = LoggerFactory.getLogger(clazz);
-		this.level = determineLogLevel();
+		this.level_ = determineLogLevel();
 	}
 	
 	public <T> EptsEtlLogger(Logger logger) {
 		this.logger = logger;
-		this.level = determineLogLevel();
+		this.level_ = determineLogLevel();
 	}
 	
 	public static <T> EptsEtlLogger getLogger(Class<T> clazz) {
 		return new EptsEtlLogger(clazz);
 	}
 	
-	public Level getLevel() {
-		return level;
+	public Level getLevel_() {
+		return level_;
 	}
 	
 	public Logger getLogger() {
@@ -76,7 +76,7 @@ public class EptsEtlLogger {
 	}
 	
 	public void warn(String msg) {
-		if (Level.WARN.compareTo(level) <= 0) {
+		if (Level.WARN.compareTo(level_) <= 0) {
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.warn(msg);
@@ -86,7 +86,7 @@ public class EptsEtlLogger {
 	}
 	
 	public void info(String msg) {
-		if (Level.INFO.compareTo(level) <= 0) {
+		if (Level.INFO.compareTo(level_) <= 0) {
 			msg = putAdditionalInfoOnLog(msg);
 			
 			logger.info(msg);
@@ -97,7 +97,7 @@ public class EptsEtlLogger {
 	}
 	
 	public void error(String msg) {
-		if (Level.ERROR.compareTo(level) <= 0) {
+		if (Level.ERROR.compareTo(level_) <= 0) {
 			
 			msg = putAdditionalInfoOnLog(msg);
 			
@@ -108,7 +108,7 @@ public class EptsEtlLogger {
 	}
 	
 	public void debug(String msg) {
-		if (Level.DEBUG.compareTo(level) <= 0) {
+		if (Level.DEBUG.compareTo(level_) <= 0) {
 			
 			msg = putAdditionalInfoOnLog(msg);
 			
@@ -119,7 +119,7 @@ public class EptsEtlLogger {
 	}
 	
 	public void trace(String msg) {
-		if (Level.TRACE.compareTo(level) <= 0) {
+		if (Level.TRACE.compareTo(level_) <= 0) {
 			
 			msg = putAdditionalInfoOnLog(msg);
 			

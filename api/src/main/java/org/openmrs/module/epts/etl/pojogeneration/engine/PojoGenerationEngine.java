@@ -11,7 +11,6 @@ import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
@@ -43,8 +42,7 @@ public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 	}
 	
 	@Override
-	public EtlOperationResultHeader<PojoGenerationRecord> performeSync(List<PojoGenerationRecord> records,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	public void performeEtl(List<PojoGenerationRecord> records, Connection srcConn, Connection dstConn) throws DBException {
 		
 		this.pojoGenerated = true;
 		
@@ -78,7 +76,7 @@ public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 			}
 		}
 		
-		return new EtlOperationResultHeader<>(records);
+		getTaskResultInfo().addAllToRecordsWithNoError(records);
 	}
 	
 	private void generate(AppInfo app, DatabaseObjectConfiguration tableConfiguration) {

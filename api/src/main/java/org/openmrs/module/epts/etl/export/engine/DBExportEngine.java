@@ -12,7 +12,6 @@ import org.openmrs.module.epts.etl.export.controller.DBExportController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -29,8 +28,7 @@ public class DBExportEngine extends TaskProcessor<EtlDatabaseObject> {
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> records, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public void performeEtl(List<EtlDatabaseObject> records, Connection srcConn, Connection dstConn) throws DBException {
 		try {
 			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(records, EtlDatabaseObject.class);
 			
@@ -56,7 +54,8 @@ public class DBExportEngine extends TaskProcessor<EtlDatabaseObject> {
 			
 			FileUtilities.write(jsonFIle.getAbsolutePath(), jsonInfo.parseToJSON());
 			
-			FileUtilities.write(generateTmpMinimalJSONInfoFileName(jsonFIle, srcConn), jsonInfo.generateMinimalInfo().parseToJSON());
+			FileUtilities.write(generateTmpMinimalJSONInfoFileName(jsonFIle, srcConn),
+			    jsonInfo.generateMinimalInfo().parseToJSON());
 			
 			this.getMonitor().logInfo("JSON [" + jsonFIle + ".json] CREATED!");
 			
@@ -82,7 +81,7 @@ public class DBExportEngine extends TaskProcessor<EtlDatabaseObject> {
 			
 			markAllAsSynchronized(utilities.parseList(records, EtlDatabaseObject.class), srcConn);
 			
-			return new EtlOperationResultHeader<>(records);
+			getTaskResultInfo().addAllToRecordsWithNoError(records);
 		}
 		catch (IOException e) {
 			e.printStackTrace();

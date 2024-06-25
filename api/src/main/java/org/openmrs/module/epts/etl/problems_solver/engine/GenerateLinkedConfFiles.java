@@ -16,7 +16,6 @@ import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -36,8 +35,10 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 	
 	private boolean done;
 	
+	static final String DBS_FILE_NAME = "dbs.txt";
+	
 	public GenerateLinkedConfFiles(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
-	    boolean runningInConcurrency) {
+	    Boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 		
 		Extension exItem = this.getRelatedOperationController().getOperationConfig().findExtension("partner");
@@ -51,15 +52,14 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 		this.workingDir = new File(
 		        getRelatedEtlConfiguration().getSyncRootDirectory() + File.separator + partner + File.separator + province);
 		
-		this.fileWithListOfDBs = workingDir + File.separator + "dbs.txt";
+		this.fileWithListOfDBs = workingDir + File.separator + DBS_FILE_NAME;
 		
 		this.templateConfFilePath = getRelatedEtlConfiguration().getSyncRootDirectory() + File.separator + "conf"
 		        + File.separator + "template.json";
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
 		
 		if (this.templateConfFilePath == null || fileWithListOfDBs == null) {
 			throw new ForbiddenOperationException(
@@ -94,8 +94,18 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 		try {
 			List<String> dumps = FileUtilities.readAllFileAsListOfString(fileWithListOfDBs);
 			
-			for (int i = 0; i < dumps.size(); i++) {
-				String dataBaseName = FileUtilities.generateFileNameFromRealPath(dumps.get(i));
+			String[] paramsNames = dumps.get(0).split(",");
+			
+			if (!paramsNames[0].equals("db_name")) {
+				throw new ForbiddenOperationException("The first line of " + DBS_FILE_NAME
+				        + " Should be the header and should start with 'db_name' parameter. Eg. of header: 'db_name,site_id,site_name'");
+			}
+			
+			for (int i = 1; i < dumps.size(); i++) {
+				String[] dbInfo = FileUtilities.generateFileNameFromRealPath(dumps.get(i)).split(",");
+				
+				String dataBaseName = dbInfo[0];
+				
 				String siteName = dataBaseName;
 				
 				Charset charset = StandardCharsets.UTF_8;
@@ -106,7 +116,12 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 				content = content.replaceAll(partnerPathern, this.partner);
 				content = content.replaceAll(provincePathern, this.province);
 				
-				String nextDataBaseName = i < dumps.size() - 1 ? FileUtilities.generateFileNameFromRealPath(dumps.get(i + 1))
+				for (int j = 1; j < paramsNames.length; j++) {
+					content = content.replaceAll(paramsNames[j], dbInfo[j]);
+				}
+				
+				String nextDataBaseName = i < dumps.size() - 1
+				        ? FileUtilities.generateFileNameFromRealPath(dumps.get(i + 1).split(",")[0])
 				        : null;
 				
 				if (nextDataBaseName != null) {
@@ -133,7 +148,7 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 		
 		done = true;
 		
-		return new EtlOperationResultHeader<>(etlObjects);
+		getTaskResultInfo().addAllToRecordsWithNoError(etlObjects);
 	}
 	
 	public static List<File> getDumps(File rootDirectory) {

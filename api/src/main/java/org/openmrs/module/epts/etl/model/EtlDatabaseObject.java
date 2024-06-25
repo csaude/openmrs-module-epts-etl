@@ -7,9 +7,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
+import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -39,6 +41,10 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	void refreshLastSyncDateOnDestination(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn);
+	
+	EtlDatabaseObject getSrcRelatedObject();
+	
+	void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject);
 	
 	Oid getObjectId();
 	
@@ -420,9 +426,109 @@ public interface EtlDatabaseObject extends EtlObject {
 		return false;
 	}
 	
+	static List<EtlDatabaseObject> collectAllSrcrelatedOBjects(List<EtlDatabaseObject> objs) {
+		List<EtlDatabaseObject> list = new ArrayList<>(objs.size());
+		
+		for (EtlDatabaseObject o : objs) {
+			
+			if (!o.hasSrcRelatedObject())
+				throw new ForbiddenOperationException("The object " + o + " has no srcRelatedObject");
+			
+			list.add(o.getSrcRelatedObject());
+		}
+		
+		return list;
+	}
+	
+	default boolean hasSrcRelatedObject() {
+		return this.getSrcRelatedObject() != null;
+	}
+	
 	void copyFrom(EtlDatabaseObject parentRecordInOrigin);
 	
 	default void loadUniqueKeyValues(TableConfiguration tabConf) {
 		this.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(tabConf.getUniqueKeys(), this));
+	}
+	
+	default EtlDatabaseObject getSharedKeyParentRelatedObject(Connection conn) throws DBException {
+		TableConfiguration tabConf = (TableConfiguration) this.getRelatedConfiguration();
+		
+		if (!tabConf.useSharedPKKey())
+			throw new ForbiddenOperationException(
+			        "The table '" + tabConf.getFullTableDescription() + " does not use shared key");
+		
+		ParentTable sharedKeyConf = tabConf.getSharedKeyRefInfo();
+		
+		Oid key = sharedKeyConf.generateParentOidFromChild(this);
+		
+		return DatabaseObjectDAO.getByOid(sharedKeyConf, key, conn);
+		
+		/*
+		if (sharedKeyParentInOrigin != null) {
+			EtlDatabaseObject sharedKeyParent = sharedKeyConf.createRecordInstance();
+			sharedKeyParent.setRelatedConfiguration(sharedKeyConf);
+			sharedKeyParent.copyFrom(sharedKeyParentInOrigin);
+			sharedKeyParent.loadUniqueKeyValues(sharedKeyConf);
+			sharedKeyParent.loadObjectIdData(sharedKeyConf);
+			
+			return DatabaseObjectDAO.getByOid(sharedKeyConf, sharedKeyParent.getObjectId(), conn);
+		}
+		
+		return null;
+		*/
+	}
+	
+	default EtlDatabaseObject getSharedKeyChildRelatedObject(TableConfiguration childTabConf, Connection conn)
+	        throws DBException {
+		TableConfiguration tabConf = (TableConfiguration) this.getRelatedConfiguration();
+		
+		if (!childTabConf.useSharedPKKey())
+			throw new ForbiddenOperationException(
+			        "The table '" + childTabConf.getFullTableDescription() + " does not use shared key");
+		
+		if (!childTabConf.getSharedKeyRefInfo().equals(tabConf)) {
+			throw new ForbiddenOperationException("The table '" + childTabConf.getFullTableDescription()
+			        + " does not share primary key with " + tabConf.getFullTableDescription());
+		}
+		
+		Oid key = childTabConf.getSharedKeyRefInfo().generateChildOidFromParent(this);
+		
+		return DatabaseObjectDAO.getByOid(childTabConf, key, conn);
+		
+		/*
+		if (sharedKeyChildInOrigin != null) {
+			EtlDatabaseObject sharedKeyChild = childTabConf.createRecordInstance();
+			sharedKeyChild.setRelatedConfiguration(childTabConf);
+			sharedKeyChild.copyFrom(sharedKeyChildInOrigin);
+			sharedKeyChild.loadUniqueKeyValues(childTabConf);
+			sharedKeyChild.loadObjectIdData(childTabConf);
+			
+			return DatabaseObjectDAO.getByOid(childTabConf, sharedKeyChild.getObjectId(), conn);
+		}
+		
+		return null;*/
+		
+	}
+	
+	default EtlDatabaseObject getRelatedParentObject(ParentTable refInfo, SrcConf src, Connection conn) throws DBException {
+		return getRelatedParentObjectOnSrc(refInfo, refInfo.generateParentOidFromChild(this), src, conn);
+	}
+	
+	default EtlDatabaseObject getRelatedParentObjectOnSrc(ParentTable refInfo, Oid prentOid, SrcConf src, Connection conn)
+	        throws DBException {
+		
+		TableConfiguration tabConfInSrc = src
+		        .findFullConfiguredConfInAllRelatedTable(refInfo.generateFullTableNameOnSchema(src.getSchema()));
+		
+		if (tabConfInSrc == null) {
+			tabConfInSrc = new GenericTableConfiguration(src);
+			tabConfInSrc.setTableName(refInfo.getTableName());
+			
+			tabConfInSrc.setRelatedSyncConfiguration(src.getRelatedSyncConfiguration());
+			
+			tabConfInSrc.fullLoad(conn);
+		}
+		
+		return DatabaseObjectDAO.getByOid(tabConfInSrc, prentOid, conn);
 	}
 }

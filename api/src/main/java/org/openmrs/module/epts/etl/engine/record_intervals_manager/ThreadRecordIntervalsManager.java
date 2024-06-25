@@ -468,6 +468,16 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 		        this.getMaxRecordId(), this.getQtyRecordsPerProcessing(), 1);
 	}
 	
+	public static void main(String[] args) {
+		long min = 52764646;
+		long max = 53097646;
+		
+		ThreadRecordIntervalsManager<EtlDatabaseObject> tm = new ThreadRecordIntervalsManager<>(min, max, 2000, 8);
+		 
+		System.out.println(CommonUtilities.getInstance().parseToJSON(tm));
+		
+	}
+	
 }
 
 class LimitSearcher implements FilenameFilter {

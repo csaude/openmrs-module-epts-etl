@@ -283,23 +283,15 @@ public class LoadRecord {
 					continue;
 			}
 			
-			Oid key = refInfo.generateParentOidFromChild(getRecord());
+			EtlDatabaseObject parentInOrigin = getRecord().getRelatedParentObject(refInfo, getSrcConf(), srcConn);
 			
-			TableConfiguration tabConfInSrc = this.getSrcConf().findFullConfiguredConfInAllRelatedTable(
-			    refInfo.generateFullTableNameOnSchema(getSrcConf().getSchema()));
-			
-			if (tabConfInSrc == null) {
-				tabConfInSrc = new GenericTableConfiguration(this.getSrcConf());
-				tabConfInSrc.setTableName(refInfo.getTableName());
-				tabConfInSrc.setRelatedSyncConfiguration(this.getEtlConfiguration());
-				tabConfInSrc.fullLoad(srcConn);
-			}
-			
-			EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(tabConfInSrc, key, srcConn);
+			EtlDatabaseObject sharedkeyParentInOrigin = null;
 			
 			if (parentInOrigin == null) {
 				
 				if (refInfo.hasDefaultValueDueInconsistency()) {
+					
+					Oid key = refInfo.generateParentOidFromChild(getRecord());
 					
 					if (refInfo.useSimplePk()) {
 						key.asSimpleKey().setValue(refInfo.getDefaultValueDueInconsistency());
@@ -308,7 +300,7 @@ public class LoadRecord {
 						        "There is a defaultValueDueInconsistency but the key is not simple on table "
 						                + refInfo.getTableName());
 					
-					parentInOrigin = DatabaseObjectDAO.getByOid(tabConfInSrc, key, srcConn);
+					parentInOrigin = getRecord().getRelatedParentObjectOnSrc(refInfo, key, getSrcConf(), srcConn);
 				}
 				
 				itemResult.addInconsistence(
@@ -321,18 +313,49 @@ public class LoadRecord {
 				}
 			}
 			
-			EtlDatabaseObject parent;
+			//Try to load the shared key parent and generate inconsistence if is not exists
+			if (refInfo.useSharedPKKey() && !refInfo.hasItsOwnKeys()) {
+				sharedkeyParentInOrigin = parentInOrigin.getSharedKeyParentRelatedObject(srcConn);
+				
+				if (sharedkeyParentInOrigin == null && !refInfo.hasDefaultValueDueInconsistency()) {
+					itemResult.addInconsistence(
+					    InconsistenceInfo.generate(getRecord().generateTableName(), getRecord().getObjectId(),
+					        refInfo.getTableName(), refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
+					        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+					
+					continue;
+				}
+			}
+			
+			EtlDatabaseObject parent = null;
 			
 			if (getEngine().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
 				parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
 			} else {
-				EtlDatabaseObject recInDst = refInfo.createRecordInstance();
-				recInDst.setRelatedConfiguration(refInfo);
-				recInDst.copyFrom(parentInOrigin);
-				recInDst.loadUniqueKeyValues(refInfo);
-				recInDst.loadObjectIdData(refInfo);
 				
-				parent = retrieveParentByUnikeKeys(recInDst, dstConn);
+				//Retrieve parent using shared key parent unique key
+				if (sharedkeyParentInOrigin != null) {
+					EtlDatabaseObject recInDst = refInfo.getSharedKeyRefInfo().createRecordInstance();
+					recInDst.setRelatedConfiguration(refInfo.getSharedKeyRefInfo());
+					recInDst.copyFrom(sharedkeyParentInOrigin);
+					recInDst.loadUniqueKeyValues(refInfo.getSharedKeyRefInfo());
+					recInDst.loadObjectIdData(refInfo.getSharedKeyRefInfo());
+					
+					EtlDatabaseObject sharedPkParent = retrieveParentByUnikeKeys(recInDst, dstConn);
+					
+					if (sharedPkParent != null) {
+						parent = sharedPkParent.getSharedKeyChildRelatedObject(refInfo, dstConn);
+					}
+					
+				} else {
+					EtlDatabaseObject recInDst = refInfo.createRecordInstance();
+					recInDst.setRelatedConfiguration(refInfo);
+					recInDst.copyFrom(parentInOrigin);
+					recInDst.loadUniqueKeyValues(refInfo);
+					recInDst.loadObjectIdData(refInfo);
+					
+					parent = retrieveParentByUnikeKeys(recInDst, dstConn);
+				}
 			}
 			
 			if (parent == null) {
@@ -357,10 +380,8 @@ public class LoadRecord {
 		return DatabaseObjectDAO.getByOid(refInfo, parentInOrigin.getObjectId(), dstConn);
 	}
 	
-	private EtlDatabaseObject retrieveParentByUnikeKeys(EtlDatabaseObject parentInOrigin, Connection dstConn)
-	        throws DBException {
-		
-		return DatabaseObjectDAO.getByUniqueKeys(parentInOrigin, dstConn);
+	private EtlDatabaseObject retrieveParentByUnikeKeys(EtlDatabaseObject parent, Connection dstConn) throws DBException {
+		return DatabaseObjectDAO.getByUniqueKeys(parent, dstConn);
 	}
 	
 	/**
@@ -417,8 +438,8 @@ public class LoadRecord {
 		consolidateAndSaveData(false, srcConn, destConn);
 	}
 	
-	public static EtlOperationResultHeader<EtlDatabaseObject> loadAll_(List<LoadRecord> mergingRecs, Connection srcConn,
-	        Connection dstConn) throws ParentNotYetMigratedException, DBException {
+	public static void loadAll_(List<LoadRecord> mergingRecs, Connection srcConn, Connection dstConn)
+	        throws ParentNotYetMigratedException, DBException {
 		
 		AbstractTableConfiguration config = mergingRecs.get(0).dstConf;
 		
@@ -431,9 +452,10 @@ public class LoadRecord {
 		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
 		List<LoadRecord> processedRecors = new ArrayList<>();
 		
-		EtlOperationResultHeader<EtlDatabaseObject> currResult = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
+		engine.logDebug("Preparing the load of " + mergingRecs.size());
 		
 		for (LoadRecord loadRecord : mergingRecs) {
+			engine.logTrace("Preparing the load of record " + loadRecord.getRecord());
 			
 			boolean recursiveKeys = engine.isRunningInConcurrency()
 			        ? loadRecord.hasUnresolvedRecursiveRelationship(srcConn, dstConn)
@@ -443,7 +465,7 @@ public class LoadRecord {
 				engine.logDebug("Record " + loadRecord.getRecord()
 				        + " has recursive relationship and will be skipped to avoid dedlocks!");
 				
-				currResult.addAllToRecordsWithRecursiveRelashionship(loadRecord.getRecord());
+				engine.getTaskResultInfo().addAllToRecordsWithRecursiveRelashionship(loadRecord.getRecord());
 				
 				loadRecord.getDstConf().saveSkippedRecord(loadRecord.getRecord(), srcConn);
 			} else {
@@ -454,15 +476,21 @@ public class LoadRecord {
 				}
 				
 				if (r.hasInconsistences()) {
-					currResult.addToRecordsWithUnresolvedErrors(r);
+					
+					engine.logTrace("Found inconsistences on record " + r);
+					
+					engine.getTaskResultInfo().addToRecordsWithUnresolvedErrors(r);
 				}
 				
 				processedRecors.add(loadRecord);
 			}
 		}
 		
-		currResult.addAllFromOtherResult(
+		engine.logDebug("Starting the insertion of " + objects.size() + " on db...");
+		engine.getTaskResultInfo().addAllFromOtherResult(
 		    DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn));
+		
+		engine.logDebug(objects.size() + " records inserted on db!");
 		
 		if (config.hasParentRefInfo()) {
 			
@@ -493,8 +521,6 @@ public class LoadRecord {
 				}
 			}
 		}
-		
-		return currResult;
 	}
 	
 	private boolean hasUnresolvedRecursiveRelationship(Connection srcConn, Connection dstConn) throws DBException {
@@ -570,9 +596,7 @@ public class LoadRecord {
 		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
 		for (String key : mergingRecs.keySet()) {
-			EtlOperationResultHeader<EtlDatabaseObject> currresult = loadAll_(mergingRecs.get(key), srcConn, dstConn);
-			
-			result.addAllFromOtherResult(currresult);
+			loadAll_(mergingRecs.get(key), srcConn, dstConn);
 		}
 		
 		return result;

@@ -68,6 +68,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private String childConfigFilePath;
 	
+	private String configFilePath;
+	
 	private EtlConfiguration childConfig;
 	
 	private boolean disabled;
@@ -132,6 +134,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.configuredTables = new ArrayList<>();
 		
 		this.busyTableAliasName = new ArrayList<>();
+	}
+	
+	public String getConfigFilePath() {
+		return configFilePath;
+	}
+	
+	public void setConfigFilePath(String configFilePath) {
+		this.configFilePath = configFilePath;
 	}
 	
 	public EtlConfigurationTableConf getSkippedRecordTabConf() {
@@ -513,6 +523,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromFile(File file) throws IOException {
 		EtlConfiguration conf = EtlConfiguration.loadFromJSON(FileUtilities.realAllFileAsString(file));
 		
+		conf.setConfigFilePath(file.getAbsolutePath());
+		
 		conf.setRelatedConfFile(file);
 		
 		return conf;
@@ -539,6 +551,13 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			initLogger();
 		
 		this.logger.debug(msg);
+	}
+	
+	public void logTrace(String msg) {
+		if (logger == null)
+			initLogger();
+		
+		this.logger.trace(msg);
 	}
 	
 	public void logInfo(String msg) {
@@ -1325,7 +1344,16 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		tabConfig.setTableAlias(generatedTableAlias);
 	}
 	
-	public OpenConnection openDstConn() throws DBException {
+	public OpenConnection tryOpenDstConn() throws DBException {
+		try {
+			return openDstConn();
+		}
+		catch (ForbiddenOperationException e) {
+			return null;
+		}
+	}
+	
+	public OpenConnection openDstConn() throws DBException, ForbiddenOperationException {
 		OpenConnection dstConn = null;
 		
 		List<AppInfo> otherApps = this.exposeAllAppsNotMain();

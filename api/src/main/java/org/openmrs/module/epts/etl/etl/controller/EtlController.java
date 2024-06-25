@@ -42,7 +42,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		if (getOperationConfig().getEngineClazz() != null) {
 			
-			Class[] parameterTypes = { Engine.class, ThreadRecordIntervalsManager.class, Boolean.class };
+			Class[] parameterTypes = { Engine.class, IntervalExtremeRecord.class, Boolean.class };
 			
 			try {
 				Constructor<TaskProcessor<? extends EtlDatabaseObject>> a = getOperationConfig().getEngineClazz()
@@ -130,8 +130,8 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 		return true;
 	}
 	
-	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
-	        Engine<EtlDatabaseObject> engine) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
 		
 		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new EtlDatabaseObjectSearchParams(engine, intervalsMgt);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());

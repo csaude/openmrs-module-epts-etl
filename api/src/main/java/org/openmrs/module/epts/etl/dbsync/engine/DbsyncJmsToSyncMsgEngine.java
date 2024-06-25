@@ -28,7 +28,7 @@ public class DbsyncJmsToSyncMsgEngine extends EtlEngine {
 	List<GenericDatabaseObject> loadedSites;
 	
 	public DbsyncJmsToSyncMsgEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
-	    boolean runningInConcurrency) {
+	    Boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 		
 		loadedSites = new ArrayList<>();
@@ -70,6 +70,8 @@ public class DbsyncJmsToSyncMsgEngine extends EtlEngine {
 			
 			syncMessage.setFieldValue("id", (id + syncMsgMaxId));
 			
+			syncMessage.setSrcRelatedObject(rec);
+			
 			return syncMessage;
 		}
 	}
@@ -107,5 +109,12 @@ public class DbsyncJmsToSyncMsgEngine extends EtlEngine {
 		}
 		
 		return null;
+	}
+	
+	@Override
+	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
+		for (EtlObject obj : objs) {
+			DatabaseObjectDAO.remove((EtlDatabaseObject) obj, srcConn);
+		}
 	}
 }

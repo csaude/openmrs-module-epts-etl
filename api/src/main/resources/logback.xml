@@ -7,7 +7,7 @@
     <property name="LOGS_FILE_NAME" value="eptssync" />
     <property name="LOGS_FILE_NAME_EXT" value="log" />
     <property name="LOGS_FILE" value="${LOGS_DIR}${file.separator}${LOGS_FILE_NAME}.${LOGS_FILE_NAME_EXT}" />
-    <property name="LOGS_MAX_FILE_SIZE" value="50MB" />
+    <property name="LOGS_MAX_FILE_SIZE" value="10MB" />
 
     <!-- Console Appender -->
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
@@ -33,9 +33,9 @@
 
 	
     <!-- Root Logger -->
-    <root level="debug">
+    <root level="trace">
         <appender-ref ref="console" />
-     <appender-ref ref="fileApp" />
+		<appender-ref ref="fileApp" />
     </root>
 
 </configuration>

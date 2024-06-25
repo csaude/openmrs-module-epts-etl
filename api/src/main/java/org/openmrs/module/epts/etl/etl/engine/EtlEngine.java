@@ -21,7 +21,6 @@ import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -55,24 +54,21 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
 		if (getRelatedEtlOperationConfig().writeOperationHistory()
 		        || getEtlConfiguration().getSrcConf().hasWinningRecordsInfo()) {
-			return performeSyncOneByOne(etlObjects, srcConn, dstConn);
+			performeSyncOneByOne(etlObjects, srcConn, dstConn);
 		} else {
-			return performeBatchSync(etlObjects, srcConn, dstConn);
+			performeBatchSync(etlObjects, srcConn, dstConn);
 		}
 	}
 	
-	public EtlOperationResultHeader<EtlDatabaseObject> performeBatchSync(List<EtlDatabaseObject> etlObjects,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	public void performeBatchSync(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
 		Map<String, List<LoadRecord>> mergingRecs = new HashMap<>();
-		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
 		
 		try {
 			
@@ -81,9 +77,13 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 				
 				for (DstConf mappingInfo : getEtlConfiguration().getDstConf()) {
 					
+					logTrace("Transforming record " + rec);
+					
 					EtlDatabaseObject destObject = transform(rec, mappingInfo, etlObjects, srcConn, dstConn);
 					
 					if (destObject != null) {
+						logTrace("record " + rec + " transforming to " + dstConn);
+						
 						LoadRecord etlRec = initEtlRecord(destObject, mappingInfo, false);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
@@ -91,11 +91,19 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 						}
 						
 						mergingRecs.get(mappingInfo.getTableName()).add(etlRec);
+					} else {
+						logTrace("The record " + rec + " could not be transformed");
 					}
 				}
 			}
 			
-			result = LoadRecord.loadAll(mergingRecs, srcConn, dstConn);
+			logDebug("Initializing the loading of " + etlObjects.size() + " records...");
+			
+			LoadRecord.loadAll(mergingRecs, srcConn, dstConn);
+			
+			logDebug("Performing after etl on " + etlObjects.size() + " records!");
+			
+			afterEtl(etlObjects, srcConn, dstConn);
 			
 			logInfo(
 			    "ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
@@ -103,23 +111,19 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 		catch (Exception e) {
 			logWarn("Error ocurred on thread " + getEngineId() + " On Records [" + getLimits() + "]... \n");
 			
-			result.setFatalException(e);
+			getTaskResultInfo().setFatalException(e);
 		}
-		
-		return result;
 		
 	}
 	
-	private EtlOperationResultHeader<EtlDatabaseObject> performeSyncOneByOne(List<EtlDatabaseObject> etlObjects,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	private void performeSyncOneByOne(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		logInfo("PERFORMING ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] ON " + etlObjects.size()
 		        + "' RECORDS");
 		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<EtlDatabaseObject>(getLimits());
-		
 		int i = 1;
 		
-		for (EtlObject record : etlObjects) {
+		for (EtlDatabaseObject record : etlObjects) {
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
 			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
@@ -139,9 +143,9 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 				
 				try {
 					process(data, startingStrLog, 0, srcConn, dstConn);
-					afterEtl(utilities.parseObjectToList_(record, rec.getClass()), srcConn, dstConn);
+					afterEtl(utilities.parseObjectToList_(record, EtlDatabaseObject.class), srcConn, dstConn);
 					
-					result.addToRecordsWithNoError(rec);
+					getTaskResultInfo().addToRecordsWithNoError(rec);
 				}
 				catch (MissingParentException e) {
 					logWarn(
@@ -152,7 +156,7 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 					
 					EtlOperationItemResult<EtlDatabaseObject> r = new EtlOperationItemResult<>(rec, inconsistenceInfo);
 					
-					result.addToRecordsWithResolvedErrors(r);
+					getTaskResultInfo().addToRecordsWithResolvedErrors(r);
 				}
 				catch (ConflictWithRecordNotYetAvaliableException e) {
 					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "
@@ -186,10 +190,6 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 		}
 		
 		logInfo("ETL OPERATION [" + getEtlConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
-		
-		result.setInterval(getLimits());
-		
-		return result;
 	}
 	
 	/**
@@ -206,6 +206,7 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 		EtlDatabaseObject transformed = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
 		
 		if (transformed != null) {
+			transformed.setSrcRelatedObject(rec);
 			
 			if (!mappingInfo.isAutoIncrementId() && mappingInfo.useSimpleNumericPk()) {
 				
@@ -234,6 +235,6 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 		return new LoadRecord(destObject, getSrcConf(), mappingInfo, this, writeOperationHistory);
 	}
 	
-	public void afterEtl(List<? extends EtlObject> objs, Connection srcConn, Connection dstConn) throws DBException {
+	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
 	}
 }

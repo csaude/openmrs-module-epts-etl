@@ -9,7 +9,6 @@ import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtre
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -37,8 +36,7 @@ public class DetectGapesEngine extends EtlEngine {
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
 		logDebug("DETECTING GAPES ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		if (this.prevRec == null) {
@@ -62,7 +60,7 @@ public class DetectGapesEngine extends EtlEngine {
 			prevRec = rec;
 		}
 		
-		return new EtlOperationResultHeader<>(etlObjects);
+		getTaskResultInfo().addAllToRecordsWithNoError(etlObjects);
 	}
 	
 }

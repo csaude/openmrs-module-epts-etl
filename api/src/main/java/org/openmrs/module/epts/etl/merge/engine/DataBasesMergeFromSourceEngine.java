@@ -16,7 +16,6 @@ import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBCon
 import org.openmrs.module.epts.etl.merge.model.MergingRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -33,8 +32,7 @@ public class DataBasesMergeFromSourceEngine extends TaskProcessor<EtlDatabaseObj
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
 		logInfo("PERFORMING MERGE ON " + etlObjects.size() + "' " + getMainSrcTableName());
 		
 		int i = 1;
@@ -57,7 +55,6 @@ public class DataBasesMergeFromSourceEngine extends TaskProcessor<EtlDatabaseObj
 			
 			i++;
 		}
-		
-		return new EtlOperationResultHeader<>(etlObjects);
+		getTaskResultInfo().addAllToRecordsWithNoError(etlObjects);
 	}
 }

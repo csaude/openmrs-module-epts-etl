@@ -436,4 +436,16 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public EtlDatabaseObject getSrcRelatedObject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
+		// TODO Auto-generated method stub
+		
+	}
 }

@@ -38,10 +38,21 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	
 	protected boolean runningInConcurrency;
 	
+	protected EtlOperationResultHeader<T> taskResultInfo;
+	
 	public TaskProcessor(Engine<T> monitr, IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		this.monitor = monitr;
 		this.limits = limits;
 		this.runningInConcurrency = runningInConcurrency;
+		this.taskResultInfo = new EtlOperationResultHeader<>(limits);
+	}
+	
+	public EtlOperationResultHeader<T> getTaskResultInfo() {
+		return taskResultInfo;
+	}
+	
+	public void setTaskResultInfo(EtlOperationResultHeader<T> taskResultInfo) {
+		this.taskResultInfo = taskResultInfo;
 	}
 	
 	public boolean isRunningInConcurrency() {
@@ -96,8 +107,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		return getMonitor().getSearchParams();
 	}
 	
-	public EtlOperationResultHeader<T> performe(boolean useMultiThreadSearch, Connection srcConn, Connection dstConn)
-	        throws DBException {
+	public void performe(boolean useMultiThreadSearch, Connection srcConn, Connection dstConn) throws DBException {
 		
 		String threads = useMultiThreadSearch ? " USING MULTI-THREAD" : " USING SINGLE THREAD";
 		
@@ -110,7 +120,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		List<T> records = null;
 		
 		if (useMultiThreadSearch) {
-			records = getSearchParams().searchNextRecordsInMultiThreads(srcConn, dstConn);
+			records = getSearchParams().searchNextRecordsInMultiThreads(getLimits(), srcConn, dstConn);
 		} else {
 			records = getSearchParams().search(getLimits(), srcConn, dstConn);
 		}
@@ -118,20 +128,18 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
 		        + getSrcConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records) + "' RECORDS.");
 		
-		EtlOperationResultHeader<T> r = null;
-		
 		if (utilities.arrayHasElement(records)) {
 			logDebug("INITIALIZING " + getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '"
 			        + records.size() + "' RECORDS OF TABLE '" + this.getSrcConf().getTableName() + "'");
 			
 			beforeSync(records, srcConn, dstConn);
 			
-			r = performeSync(records, srcConn, dstConn);
+			performeEtl(records, srcConn, dstConn);
 			
 			logDebug("TASK ON " + records.size() + " DONE!");
+		} else {
+			logDebug("No record found for etl");
 		}
-		
-		return r;
 	}
 	
 	private void beforeSync(List<T> records, Connection srcConn, Connection dstConn) {
@@ -187,6 +195,5 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		return this.getEngineId().equals(e.getEngineId());
 	}
 	
-	public abstract EtlOperationResultHeader<T> performeSync(List<T> records, Connection srcConn, Connection dstConn)
-	        throws DBException;
+	public abstract void performeEtl(List<T> records, Connection srcConn, Connection dstConn) throws DBException;
 }

@@ -6,7 +6,6 @@ import java.util.List;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.reconciliation.controller.CentralAndRemoteDataReconciliationController;
 import org.openmrs.module.epts.etl.reconciliation.model.ConciliationReasonType;
@@ -15,7 +14,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlDatabaseObject> {
 	
-	public CentralAndRemoteDataReconciliationEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+	public CentralAndRemoteDataReconciliationEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
+	    boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 	}
 	
@@ -25,36 +25,29 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 	}
 	
 	@Override
-	public EtlOperationResultHeader<EtlDatabaseObject> performeSync(List<EtlDatabaseObject> etlObjects,
-	        Connection srcConn, Connection dstConn) throws DBException {
-		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(etlObjects);
+	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
 		
 		try {
 			this.getMonitor()
 			        .logInfo("PERFORMING DATA RECONCILIATION ON " + etlObjects.size() + "' " + this.getMainSrcTableName());
 			
 			if (getMainSrcTableName().equalsIgnoreCase("users")) {
-				result.addAllToRecordsWithNoError(etlObjects);
+				getTaskResultInfo().addAllToRecordsWithNoError(etlObjects);
 			} else if (getRelatedOperationController().isMissingRecordsDetector()) {
-				result = performeMissingRecordsCreation(etlObjects, srcConn, dstConn);
+				performeMissingRecordsCreation(etlObjects, srcConn, dstConn);
 			} else if (getRelatedOperationController().isOutdateRecordsDetector()) {
-				result = performeOutdatedRecordsUpdate(etlObjects, srcConn, dstConn);
+				performeOutdatedRecordsUpdate(etlObjects, srcConn, dstConn);
 			} else if (getRelatedOperationController().isPhantomRecordsDetector()) {
-				result = performePhantomRecordsRemotion(etlObjects, srcConn, dstConn);
+				performePhantomRecordsRemotion(etlObjects, srcConn, dstConn);
 			}
 		}
 		finally {
 			this.getMonitor().logInfo("RECONCILIATION DONE ON " + etlObjects.size() + " " + getMainSrcTableName() + "!");
 		}
-		
-		return result;
 	}
 	
-	private EtlOperationResultHeader<EtlDatabaseObject> performeMissingRecordsCreation(List<EtlDatabaseObject> etlObjects,
-	        Connection srcConn, Connection dstConn) throws DBException {
-		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
+	private void performeMissingRecordsCreation(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		
 		int i = 1;
 		
@@ -73,18 +66,15 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 			
 			data.save(srcConn);
 			
-			result.addToRecordsWithNoError(record);
+			getTaskResultInfo().addToRecordsWithNoError(record);
 			
 			i++;
 		}
 		
-		return result;
 	}
 	
-	private EtlOperationResultHeader<EtlDatabaseObject> performeOutdatedRecordsUpdate(List<EtlDatabaseObject> etlObjects,
-	        Connection srcConn, Connection dstConn) throws DBException {
-		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
+	private void performeOutdatedRecordsUpdate(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		
 		int i = 1;
 		
@@ -96,17 +86,14 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 			
 			DataReconciliationRecord.tryToReconciliate((EtlDatabaseObject) record, getSrcConf(), srcConn);
 			
-			result.addToRecordsWithNoError(record);
+			getTaskResultInfo().addToRecordsWithNoError(record);
 			i++;
 		}
 		
-		return result;
 	}
 	
-	private EtlOperationResultHeader<EtlDatabaseObject> performePhantomRecordsRemotion(List<EtlDatabaseObject> etlObjects,
-	        Connection srcConn, Connection dstConn) throws DBException {
-		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(getLimits());
+	private void performePhantomRecordsRemotion(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		
 		int i = 1;
 		
@@ -122,11 +109,9 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 			data.removeRelatedRecord(srcConn);
 			data.save(srcConn);
 			
-			result.addToRecordsWithNoError(record);
+			getTaskResultInfo().addToRecordsWithNoError(record);
 			i++;
 		}
-		
-		return result;
 	}
 	
 }

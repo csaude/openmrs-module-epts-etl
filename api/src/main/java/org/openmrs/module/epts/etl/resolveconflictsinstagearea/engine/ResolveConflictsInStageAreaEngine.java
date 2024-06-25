@@ -6,7 +6,6 @@ import java.util.List;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -24,12 +23,11 @@ public class ResolveConflictsInStageAreaEngine extends TaskProcessor<SyncImportI
 	
 	
 	@Override
-	public EtlOperationResultHeader<SyncImportInfoVO> performeSync(List<SyncImportInfoVO> records, Connection srcConn,
+	public void performeEtl(List<SyncImportInfoVO> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 
 		utilities.throwReviewMethodException();
 
-		return null;
 		/*List<SyncImportInfoVO> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, SyncImportInfoVO.class);
 		
 		this.getMonitor().logInfo("PERFORMING CONFLICTS RESOLUTION ACTION '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());

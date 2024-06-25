@@ -800,8 +800,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return this.getRelatedSyncConfig().isSupposedToHaveOriginAppCode();
 	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized void tryToLoadEngine() throws ForbiddenOperationException {
-		/*
 		try {
 			if (engineClazz == null) {
 				
@@ -809,7 +809,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 					
 					ClassLoader loader = TaskProcessor.class.getClassLoader();
 					
-					Class<? extends EtlDatabaseObject> c = (Class<? extends EtlDatabaseObject>) loader
+					Class<TaskProcessor<? extends EtlDatabaseObject>> c = (Class<TaskProcessor< ? extends EtlDatabaseObject>>) loader
 					        .loadClass(this.getEngineFullClassName());
 					
 					this.engineClazz = (Class<TaskProcessor<? extends EtlDatabaseObject>>) c;
@@ -827,7 +827,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		}
 		catch (
 		
-		ClassNotFoundException e) {}*/
+		ClassNotFoundException e) {}
 	}
 	
 }

@@ -184,6 +184,30 @@ public interface RelatedTable extends TableConfiguration {
 		return oid;
 	}
 	
+	/**
+	 * Generates the child oid based on data within a parent record
+	 * 
+	 * @param obj
+	 * @return
+	 */
+	default Oid generateChildOidFromParent(EtlDatabaseObject obj) {
+		
+		Oid oid = new Oid();
+		
+		for (RefMapping map : this.getRefMapping()) {
+			
+			Key k = new Key(map.getChildFieldName());
+			
+			k.setValue(obj.getFieldValue(map.getParentFieldName()));
+			
+			oid.addKey(k);
+		}
+		
+		oid.setFieldValuesLoaded(true);
+		
+		return oid;
+	}
+	
 	default boolean hasMapping() {
 		return utilities.arrayHasElement(this.getRefMapping());
 	}
