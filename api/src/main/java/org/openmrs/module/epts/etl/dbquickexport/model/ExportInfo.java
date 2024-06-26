@@ -60,4 +60,10 @@ public class ExportInfo extends BaseVO{
 	
 		return info;
 	}
+
+	@Override
+	public void setFieldValue(String fieldName, Object value) {
+		// TODO Auto-generated method stub
+		
+	}
 }

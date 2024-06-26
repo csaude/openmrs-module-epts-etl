@@ -1064,7 +1064,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	@JsonIgnore
 	public File getSqlScriptsDirectory() {
-		String scriptsDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "sql-scripts";
+		String scriptsDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "dump-scripts";
 		
 		return new File(scriptsDir);
 	}

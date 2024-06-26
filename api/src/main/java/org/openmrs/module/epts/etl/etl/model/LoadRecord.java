@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.etl.model;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -17,21 +18,22 @@ import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
-import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.VO;
 import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
+import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class LoadRecord {
 	
@@ -51,6 +53,8 @@ public class LoadRecord {
 	
 	private SrcConf srcConf;
 	
+	private EtlOperationItemResult<EtlDatabaseObject> resultItem;
+	
 	public LoadRecord(EtlDatabaseObject record, SrcConf srcConf, DstConf dstConf, EtlEngine engine,
 	    boolean writeOperationHistory) {
 		this.record = record;
@@ -64,22 +68,28 @@ public class LoadRecord {
 		this.parentsWithDefaultValues = new ArrayList<ParentInfo>();
 		
 		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(this.dstConf.getUniqueKeys(), this.record));
+		
+		this.resultItem = new EtlOperationItemResult<EtlDatabaseObject>(record);
+	}
+	
+	public EtlOperationItemResult<EtlDatabaseObject> getResultItem() {
+		return resultItem;
 	}
 	
 	public boolean isWriteOperationHistory() {
 		return writeOperationHistory;
 	}
 	
-	public EtlEngine getEngine() {
+	public EtlEngine getTaskProcessor() {
 		return engine;
 	}
 	
 	public AppInfo getSrcApp() {
-		return getEngine().getSrcApp();
+		return getTaskProcessor().getSrcApp();
 	}
 	
 	public AppInfo getDstApp() {
-		return getEngine().getDstApp();
+		return getTaskProcessor().getDstApp();
 	}
 	
 	public SrcConf getSrcConf() {
@@ -148,7 +158,7 @@ public class LoadRecord {
 						((AbstractDatabaseObject) getRecord()).resolveConflictWithExistingRecord(recordOnDB,
 						    this.getDstConf(), dstConn);
 					} else {
-						getEngine().logWarn(
+						getTaskProcessor().logWarn(
 						    "Conflict with non avaliable record found. This will be igored and the issue will be documented");
 					}
 					
@@ -214,7 +224,7 @@ public class LoadRecord {
 				
 				if (dstParent != null) {
 					LoadRecord parentData = new LoadRecord(dstParent,
-					        parentInfo.getParentTableConfInDst().findRelatedSrcConf(), dst, getEngine(),
+					        parentInfo.getParentTableConfInDst().findRelatedSrcConf(), dst, getTaskProcessor(),
 					        this.isWriteOperationHistory());
 					
 					parentData.load(srcConn, dstConn);
@@ -230,7 +240,7 @@ public class LoadRecord {
 			if (parent != null) {
 				getRecord().changeParentValue(parentInfo.getParentTableConfInDst(), parent);
 			} else {
-				getEngine().logWarn(
+				getTaskProcessor().logWarn(
 				    "The parent " + parentInfo.getParentRecordInOrigin() + " exists on db but not avaliable yet. record "
 				            + this.getRecord() + ". The task will keep trying...");
 				
@@ -239,20 +249,14 @@ public class LoadRecord {
 		}
 	}
 	
-	protected EtlOperationItemResult<EtlDatabaseObject> loadDstParentInfo(Connection srcConn, Connection dstConn)
+	protected void loadDstParentInfo(Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, MissingParentException, DBException {
 		
-		EtlOperationItemResult<EtlDatabaseObject> itemResult = new EtlOperationItemResult<>(getRecord());
-		
 		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo())) {
-			return itemResult;
+			return;
 		}
 		
 		for (ParentTable refInfo : getDstConf().getParentRefInfo()) {
-			if (refInfo.isMetadata()) {
-				continue;
-			}
-			
 			if (!refInfo.isFullLoaded()) {
 				refInfo.tryToGenerateTableAlias(this.getEtlConfiguration());
 				
@@ -260,6 +264,37 @@ public class LoadRecord {
 			}
 			
 			if (!getRecord().hasAllPerentFieldsFilled(refInfo)) {
+				continue;
+			}
+			
+			if (refInfo.isMetadata()) {
+				
+				EtlDatabaseObject parentInOrigin = getRecord().getRelatedParentObject(refInfo, getSrcConf(), srcConn);
+				EtlDatabaseObject parent = null;
+				
+				if (parentInOrigin != null) {
+					parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
+					
+					if (parent == null) {
+						getTaskProcessor().logWarn("Missing metadata " + parentInOrigin
+						        + ". This issue will be documented on inconsitence_info table");
+						
+						this.getResultItem().addInconsistence(
+						    InconsistenceInfo.generate(getRecord().generateTableName(), getRecord().getObjectId(),
+						        refInfo.getTableName(), refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
+						        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+					}
+				} else {
+					getTaskProcessor().logWarn("Missing metadata " + refInfo.generateParentOidFromChild(getRecord())
+					        + ". This issue will be documented on inconsitence_info table");
+					
+					this.getResultItem()
+					        .addInconsistence(InconsistenceInfo.generate(getRecord().generateTableName(),
+					            getRecord().getObjectId(), refInfo.getTableName(),
+					            refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
+					            refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+				}
+				
 				continue;
 			}
 			
@@ -303,7 +338,7 @@ public class LoadRecord {
 					parentInOrigin = getRecord().getRelatedParentObjectOnSrc(refInfo, key, getSrcConf(), srcConn);
 				}
 				
-				itemResult.addInconsistence(
+				this.getResultItem().addInconsistence(
 				    InconsistenceInfo.generate(getRecord().generateTableName(), getRecord().getObjectId(),
 				        refInfo.getTableName(), refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
 				        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
@@ -318,10 +353,11 @@ public class LoadRecord {
 				sharedkeyParentInOrigin = parentInOrigin.getSharedKeyParentRelatedObject(srcConn);
 				
 				if (sharedkeyParentInOrigin == null && !refInfo.hasDefaultValueDueInconsistency()) {
-					itemResult.addInconsistence(
-					    InconsistenceInfo.generate(getRecord().generateTableName(), getRecord().getObjectId(),
-					        refInfo.getTableName(), refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
-					        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+					this.getResultItem()
+					        .addInconsistence(InconsistenceInfo.generate(getRecord().generateTableName(),
+					            getRecord().getObjectId(), refInfo.getTableName(),
+					            refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
+					            refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
 					
 					continue;
 				}
@@ -329,7 +365,7 @@ public class LoadRecord {
 			
 			EtlDatabaseObject parent = null;
 			
-			if (getEngine().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
+			if (getTaskProcessor().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
 				parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
 			} else {
 				
@@ -371,7 +407,6 @@ public class LoadRecord {
 			
 		}
 		
-		return itemResult;
 	}
 	
 	private EtlDatabaseObject retrieveParentByOid(ParentTable refInfo, EtlDatabaseObject parentInOrigin, Connection dstConn)
@@ -447,7 +482,7 @@ public class LoadRecord {
 			config.fullLoad();
 		}
 		
-		EtlEngine engine = mergingRecs.get(0).getEngine();
+		EtlEngine engine = mergingRecs.get(0).getTaskProcessor();
 		
 		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
 		List<LoadRecord> processedRecors = new ArrayList<>();
@@ -469,20 +504,18 @@ public class LoadRecord {
 				
 				loadRecord.getDstConf().saveSkippedRecord(loadRecord.getRecord(), srcConn);
 			} else {
-				EtlOperationItemResult<EtlDatabaseObject> r = loadRecord.loadDstParentInfo(srcConn, dstConn);
+				loadRecord.loadDstParentInfo(srcConn, dstConn);
 				
-				if (!r.hasUnresolvedInconsistences()) {
+				if (!loadRecord.getResultItem().hasUnresolvedInconsistences()) {
 					objects.add(loadRecord.getRecord());
+					processedRecors.add(loadRecord);
 				}
 				
-				if (r.hasInconsistences()) {
+				if (loadRecord.getResultItem().hasInconsistences()) {
+					engine.logTrace("Found inconsistences on record " + loadRecord.getRecord());
 					
-					engine.logTrace("Found inconsistences on record " + r);
-					
-					engine.getTaskResultInfo().addToRecordsWithUnresolvedErrors(r);
+					engine.getTaskResultInfo().addToRecordsWithResolvedErrors(loadRecord.getResultItem());
 				}
-				
-				processedRecors.add(loadRecord);
 			}
 		}
 		
@@ -568,7 +601,7 @@ public class LoadRecord {
 			
 			EtlDatabaseObject parent;
 			
-			if (getEngine().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
+			if (getTaskProcessor().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
 				parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
 			} else {
 				EtlDatabaseObject recInDst = refInfo.createRecordInstance();
@@ -590,15 +623,80 @@ public class LoadRecord {
 		
 	}
 	
-	public static EtlOperationResultHeader<EtlDatabaseObject> loadAll(Map<String, List<LoadRecord>> mergingRecs,
-	        Connection srcConn, Connection dstConn) throws ParentNotYetMigratedException, DBException {
-		
-		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
+	public static void loadAll(Map<String, List<LoadRecord>> mergingRecs, Connection srcConn, Connection dstConn)
+	        throws ParentNotYetMigratedException, DBException {
 		
 		for (String key : mergingRecs.keySet()) {
 			loadAll_(mergingRecs.get(key), srcConn, dstConn);
 		}
-		
-		return result;
 	}
+	
+	public EtlDatabaseObject parseToEtlObject() {
+		return this.getRecord();
+	}
+	
+	public static List<EtlDatabaseObject> parseAllToEtlObject(List<LoadRecord> mergingRecs) {
+		List<EtlDatabaseObject> objs = new ArrayList<>(mergingRecs.size());
+		
+		for (LoadRecord l : mergingRecs) {
+			objs.add(l.parseToEtlObject());
+		}
+		
+		return objs;
+	}
+	
+	public static void writeAllToFile(List<LoadRecord> mergingRecs) throws ParentNotYetMigratedException, DBException {
+		
+		EtlEngine taskProcessor = mergingRecs.get(0).getTaskProcessor();
+		
+		Engine<EtlDatabaseObject> engine = taskProcessor.getEngine();
+		
+		List<EtlDatabaseObject> objs = parseAllToEtlObject(mergingRecs);
+		
+		String dataFile = engine.getDataDir().getAbsolutePath() + File.separator + objs.get(0).generateTableName();
+		
+		synchronized (engine) {
+			if (engine.getRelatedEtlOperationConfig().isJsonDst()) {
+				String json = utilities.parseToJSON(objs);
+				
+				FileUtilities.write(dataFile, json);
+			} else if (engine.getRelatedEtlOperationConfig().isCsvDst()) {
+				String csv = utilities.parseToCSV(objs);
+				
+				if (FileUtilities.isEmpty(new File(dataFile))) {
+					//Write header
+					StringBuilder csvBuilder = new StringBuilder();
+					
+					VO firstObj = objs.get(0);
+					
+					List<String> headers = org.openmrs.module.epts.etl.model.Field
+					        .parseAllToListOfName(firstObj.getFields());
+					
+					csvBuilder.append(String.join(",", headers)).append("\n");
+				}
+				
+				FileUtilities.write(dataFile, csv);
+			} else if (engine.getRelatedEtlOperationConfig().isDumpDst()) {
+				String dump = TableConfiguration.generateInsertDump(objs);
+				
+				FileUtilities.write(dataFile, dump);
+			}
+			
+			taskProcessor.getTaskResultInfo().addAllToRecordsWithNoError(objs);
+		}
+	}
+	
+	public static void writeAllToFile(Map<String, List<LoadRecord>> mergingRecs)
+	        throws ParentNotYetMigratedException, DBException {
+		
+		for (String key : mergingRecs.keySet()) {
+			writeAllToFile(mergingRecs.get(key));
+		}
+		
+	}
+	
+	public static String parseToJson(List<EtlDatabaseObject> objs) {
+		return utilities.parseToJSON(objs);
+	}
+	
 }

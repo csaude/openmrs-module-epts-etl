@@ -46,7 +46,7 @@ public abstract class BaseDAO {
 	 * Perform an SQL Select, using prepared statement.
 	 * 
 	 * @param loaderHelper the helper for loading extra information
-	 * @param sql string to perform.
+	 * @param dump string to perform.
 	 * @param params Array of objects to fill question marks in the update string.
 	 * @return generated object with retrieved data from DB
 	 */
@@ -78,7 +78,7 @@ public abstract class BaseDAO {
 	/**
 	 * Perform an SQL Select, using prepared statement.
 	 * 
-	 * @param sql string to perform.
+	 * @param dump string to perform.
 	 * @param params Array of objects to fill question marks in the update string.
 	 * @return generated object with retrieved data from DB
 	 */
@@ -131,7 +131,7 @@ public abstract class BaseDAO {
 	/**
 	 * Perform an SQL Select, using prepared statement.
 	 * 
-	 * @param sql to perform.
+	 * @param dump to perform.
 	 * @param params Array of objects to fill question marks in the update string.
 	 * @return generated list os object using retrived data from DB.
 	 */
@@ -145,7 +145,7 @@ public abstract class BaseDAO {
 	 * 
 	 * @param voDataLoader the data loader for searched objects
 	 * @param voClass the class of searched records
-	 * @param sql to perform.
+	 * @param dump to perform.
 	 * @param params Array of objects to fill question marks in the update string.
 	 * @return generated list os object using retrived data from DB.
 	 */
@@ -235,7 +235,7 @@ public abstract class BaseDAO {
 	/**
 	 * Perform an SQL, using prepared statement.
 	 * 
-	 * @param sql string to perform.
+	 * @param dump string to perform.
 	 * @param params array of objects to fill question marks in the update string.
 	 * @param connection to use
 	 */
@@ -445,7 +445,7 @@ public abstract class BaseDAO {
 	 * for especificado, uma excepcao sera lancada.
 	 * 
 	 * @param vo
-	 * @param sql
+	 * @param dump
 	 * @param params
 	 * @param conn
 	 * @throws DBException

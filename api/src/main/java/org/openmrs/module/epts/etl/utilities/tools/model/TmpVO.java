@@ -29,4 +29,10 @@ public class TmpVO extends BaseVO {
 		return id + ", " + name;
 	}
 	
+	@Override
+	public void setFieldValue(String fieldName, Object value) {
+		// TODO Auto-generated method stub
+		
+	}
+	
 }

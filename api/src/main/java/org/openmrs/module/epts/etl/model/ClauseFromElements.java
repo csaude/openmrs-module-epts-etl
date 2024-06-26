@@ -47,7 +47,7 @@ public class ClauseFromElements {
 	
 	/**
 	 * Indica se a string passada pelo parametro é uma clausula de juncao "LEFT", "INNER", "RIGHT"
-	 * @param sql
+	 * @param dump
 	 * @return
 	 */
 	public static boolean isJoinClause(String sql){
@@ -56,7 +56,7 @@ public class ClauseFromElements {
 	
 	
 	/**
-	 * @param sql
+	 * @param dump
 	 * @return
 	 */
 	public static boolean isConditionConcatenation(String sql){

@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -45,10 +46,12 @@ public class Field implements Serializable {
 	public Field() {
 	}
 	
+	@JsonIgnore
 	public boolean allowNull() {
 		return this.allowNull;
 	}
 	
+	@JsonIgnore
 	public boolean isAllowNull() {
 		return allowNull;
 	}
@@ -57,6 +60,7 @@ public class Field implements Serializable {
 		this.allowNull = allowNull;
 	}
 	
+	@JsonIgnore
 	public AttDefinedElements getAttDefinedElements() {
 		return attDefinedElements;
 	}
@@ -65,6 +69,7 @@ public class Field implements Serializable {
 		this.attDefinedElements = attDefinedElements;
 	}
 	
+	@JsonIgnore
 	public String getType() {
 		return type;
 	}
@@ -81,6 +86,14 @@ public class Field implements Serializable {
 		Field f = new Field(name);
 		
 		f.setValue(value);
+		
+		return f;
+	}
+	
+	public static Field fastCreateWithType(String name, String type) {
+		Field f = new Field(name);
+		
+		f.setType(type);
 		
 		return f;
 	}
@@ -108,6 +121,7 @@ public class Field implements Serializable {
 		return value;
 	}
 	
+	@JsonIgnore
 	boolean hasType() {
 		return type != null;
 	}
@@ -279,6 +293,7 @@ public class Field implements Serializable {
 		return AttDefinedElements.isLong(this.type);
 	}
 	
+	@JsonIgnore
 	public boolean isString() {
 		return AttDefinedElements.isString(this.type);
 	}
@@ -338,6 +353,21 @@ public class Field implements Serializable {
 		return commaSeparatedNames;
 	}
 	
+	public static List<String> parseAllToListOfName(List<Field> fields) {
+		
+		if (!utilities.arrayHasElement(fields))
+			return null;
+		
+		List<String> list = new ArrayList<>(fields.size());
+		
+		for (Field f : fields) {
+			list.add(f.getName());
+		}
+		
+		return list;
+	}
+	
+	@JsonIgnore
 	public boolean hasValue() {
 		return getValue() != null;
 	}
@@ -360,6 +390,7 @@ public class Field implements Serializable {
 		return tabConf.getTableAlias() + "_" + this.name;
 	}
 	
+	@JsonIgnore
 	public String getValueAsSqlPart() {
 		String v = "";
 		
@@ -381,10 +412,12 @@ public class Field implements Serializable {
 		return v;
 	}
 	
+	@JsonIgnore
 	public boolean isTimeStamp() {
 		return timeStamp;
 	}
 	
+	@JsonIgnore
 	public void setTimeStamp(boolean timeStamp) {
 		this.timeStamp = timeStamp;
 	}

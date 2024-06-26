@@ -1985,9 +1985,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	void loadOwnElements(Connection conn) throws DBException;
 	
 	/**
-	 * Generates a full sql select from query.
+	 * Generates a full dump select from query.
 	 * 
-	 * @return the generated select sql query
+	 * @return the generated select dump query
 	 */
 	default String generateSelectFromQuery() {
 		String sql = " SELECT " + generateFullAliasedSelectColumns() + "\n";
@@ -2119,6 +2119,26 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		return false;
+	}
+	
+	static String generateInsertDump(List<EtlDatabaseObject> objects) throws DBException {
+		if (utilities.arrayHasNoElement(objects))
+			return null;
+		
+		String sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
+		
+		sql += " VALUES";
+		
+		sql = sql.toLowerCase();
+		
+		String values = "";
+		
+		for (int i = 0; i < objects.size(); i++) {
+			
+			values += "(" + objects.get(i).generateInsertValuesWithObjectId() + "),";
+		}
+		
+		return utilities.removeLastChar(values);
 	}
 	
 }

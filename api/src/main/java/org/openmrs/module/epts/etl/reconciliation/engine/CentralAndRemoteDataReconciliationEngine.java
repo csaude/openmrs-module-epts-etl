@@ -28,7 +28,7 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
 		
 		try {
-			this.getMonitor()
+			this.getEngine()
 			        .logInfo("PERFORMING DATA RECONCILIATION ON " + etlObjects.size() + "' " + this.getMainSrcTableName());
 			
 			if (getMainSrcTableName().equalsIgnoreCase("users")) {
@@ -42,7 +42,7 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 			}
 		}
 		finally {
-			this.getMonitor().logInfo("RECONCILIATION DONE ON " + etlObjects.size() + " " + getMainSrcTableName() + "!");
+			this.getEngine().logInfo("RECONCILIATION DONE ON " + etlObjects.size() + " " + getMainSrcTableName() + "!");
 		}
 	}
 	

@@ -70,7 +70,7 @@ public class ExportDBs {
 			File[] files = file.listFiles(new FilenameFilter() {
 				@Override
 				public boolean accept(File dir, String name) {
-					return name.toLowerCase().endsWith("sql");
+					return name.toLowerCase().endsWith("dump");
 				}
 			});
 			

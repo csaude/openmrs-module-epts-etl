@@ -571,7 +571,7 @@ public class FuncoesGenericas {
 		*/
 	
 	/**
-	 * Concatena duas condicoes sql
+	 * Concatena duas condicoes dump
 	 * 
 	 * @param condition
 	 * @param otherCondition
@@ -588,7 +588,7 @@ public class FuncoesGenericas {
 	}
 	
 	/**
-	 * Concatena duas condicoes sql
+	 * Concatena duas condicoes dump
 	 * 
 	 * @param condition
 	 * @param otherCondition

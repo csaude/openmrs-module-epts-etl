@@ -229,7 +229,7 @@ public class ImportMozatDBs {
 			File[] files = null;
 			
 			if (!file.isDirectory()) {
-				if (file.getName().endsWith("sql")) {
+				if (file.getName().endsWith("dump")) {
 					dumps.add(file);
 				}
 			} else {
@@ -237,7 +237,7 @@ public class ImportMozatDBs {
 					
 					@Override
 					public boolean accept(File dir, String name) {
-						return name.toLowerCase().endsWith("sql");
+						return name.toLowerCase().endsWith("dump");
 					}
 				});
 				

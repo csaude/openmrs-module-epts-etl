@@ -18,7 +18,7 @@ public class DatabasePreparationSearchParams extends AbstractEtlSearchParams<Dat
 	
 	public DatabasePreparationSearchParams(DatabasePreparationEngine processor,
 	    ThreadRecordIntervalsManager<DatabasePreparationRecord> limits) {
-		super(processor.getMonitor(), limits);
+		super(processor.getEngine(), limits);
 		
 		this.processor = processor;
 	}

@@ -166,7 +166,7 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 				
 				@Override
 				public boolean accept(File dir, String name) {
-					return name.toLowerCase().endsWith("sql");
+					return name.toLowerCase().endsWith("dump");
 				}
 			});
 			

@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.Date;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.Key;
@@ -22,8 +22,6 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	private DatabaseObjectConfiguration relatedConfiguration;
 	
-	private List<Field> fields;
-	
 	private GenericDatabaseObject sharedPkObj;
 	
 	private boolean loadedFromDb;
@@ -32,13 +30,25 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	@JsonIgnore
+	public Oid getObjectId() {
+		return super.getObjectId();
+	}
+	
+	@Override
+	@JsonIgnore
+	public String getUuid() {
+		return super.getUuid();
+	}
+	
+	@Override
+	@JsonIgnore
 	public GenericDatabaseObject getSharedPkObj() {
 		return sharedPkObj;
 	}
 	
 	public GenericDatabaseObject(DatabaseObjectConfiguration relatedConfiguration) {
 		setRelatedConfiguration(relatedConfiguration);
-		
 	}
 	
 	@Override
@@ -156,6 +166,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	@JsonIgnore
 	public DatabaseObjectConfiguration getRelatedConfiguration() {
 		return this.relatedConfiguration;
 	}
@@ -261,6 +272,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	@JsonIgnore
 	public String generateInsertValuesWithoutObjectId() {
 		if (this.relatedConfiguration instanceof TableConfiguration) {
 			return ((TableConfiguration) this.relatedConfiguration).generateInsertValuesWithoutObjectId(this);
@@ -270,6 +282,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	@JsonIgnore
 	public String generateInsertValuesWithObjectId() {
 		if (this.relatedConfiguration instanceof TableConfiguration) {
 			return ((TableConfiguration) this.relatedConfiguration).generateInsertValuesWithObjectId(this);
@@ -286,6 +299,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	@JsonIgnore
 	public String getInsertSQLQuestionMarksWithObjectId() {
 		if (this.relatedConfiguration instanceof TableConfiguration) {
 			return ((TableConfiguration) this.relatedConfiguration).getInsertSQLQuestionMarksWithObjectId();
@@ -302,6 +316,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	@JsonIgnore
 	public String getInsertSQLQuestionMarksWithoutObjectId() {
 		if (this.relatedConfiguration instanceof TableConfiguration) {
 			return ((TableConfiguration) this.relatedConfiguration).getInsertSQLQuestionMarksWithoutObjectId();
@@ -311,6 +326,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	@JsonIgnore
 	public String generateFullFilledUpdateSql() {
 		if (this.relatedConfiguration instanceof TableConfiguration) {
 			return ((TableConfiguration) this.relatedConfiguration).generateFullFilledUpdateSql(this);
@@ -352,6 +368,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	@JsonIgnore
 	public String generateTableName() {
 		if (this.relatedConfiguration == null) {
 			throw new ForbiddenOperationException("The relatedConfiguration  is not set for record [" + this + "]");
@@ -361,6 +378,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	@JsonIgnore
 	public String getObjectName() {
 		return generateTableName();
 	}
@@ -395,6 +413,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	@JsonIgnore
 	public String toString() {
 		
 		String tableName = this.relatedConfiguration != null ? this.relatedConfiguration.getObjectName() : "Aknown Object";
@@ -423,11 +442,40 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
+	public void generateFields() {
+		if (this.relatedConfiguration == null) {
+			throw new ForbiddenOperationException("The relatedConfiguration  is not set");
+		}
+		
+		if (fields == null)
+			throw new ForbiddenOperationException(
+			        "Unkown object state, the field should not be empty as the relatedConfiguration is not empty");
+	}
+	
+	@Override
 	public void setObjectId(Oid objectId) {
 		for (Key key : objectId.getFields()) {
 			setFieldValue(key.getName(), key.getValue());
 		}
 		
 		loadObjectIdData((TableConfiguration) getRelatedConfiguration());
+	}
+	
+	@Override
+	@JsonIgnore
+	public Date getDateChanged() {
+		return super.getDateChanged();
+	}
+	
+	@Override
+	@JsonIgnore
+	public Date getDateCreated() {
+		return super.getDateCreated();
+	}
+	
+	@Override
+	@JsonIgnore
+	public Date getDateVoided() {
+		return super.getDateVoided();
 	}
 }

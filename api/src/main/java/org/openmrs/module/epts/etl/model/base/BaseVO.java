@@ -1,6 +1,5 @@
 package org.openmrs.module.epts.etl.model.base;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Blob;
@@ -13,6 +12,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -31,6 +31,8 @@ public abstract class BaseVO implements VO {
 	protected Date dateVoided;
 	
 	protected boolean excluded;
+	
+	protected List<Field> fields;
 	
 	/**
 	 * Cria uma instancia de {@link BaseVO} com os atributos iniciados com valores
@@ -122,6 +124,7 @@ public abstract class BaseVO implements VO {
 	 * 
 	 * @author JPBOANE
 	 */
+	@JsonIgnore
 	public String generateTableName() {
 		return toTableName(getClass().getSimpleName());
 	}
@@ -133,8 +136,22 @@ public abstract class BaseVO implements VO {
 	 * @return todos os atributos de instancia desta classe independentemento do modificador de
 	 *         acesso
 	 */
-	public Field[] getFields() {
-		return utilities.getFields(this);
+	@JsonIgnore
+	public List<java.lang.reflect.Field> getInstanceFields() {
+		return utilities.getInstanceFields(this);
+	}
+	
+	@Override
+	public List<Field> getFields() {
+		if (fields == null)
+			generateFields();
+		
+		return fields;
+	}
+	
+	@Override
+	public void setFields(List<Field> fields) {
+		this.fields = fields;
 	}
 	
 	@JsonIgnore
@@ -153,7 +170,7 @@ public abstract class BaseVO implements VO {
 	 * @param resultSet contendo os valores a copiar
 	 */
 	public void load(ResultSet resultSet) throws SQLException {
-		for (Field field : this.getFields()) {
+		for (java.lang.reflect.Field field : this.getInstanceFields()) {
 			String name = toColumnName(field.getName());
 			
 			try {
@@ -334,7 +351,7 @@ public abstract class BaseVO implements VO {
 	}
 	
 	public boolean checkIfAttExists(String attName) {
-		for (Object obj : getFields()) {
+		for (Object obj : getInstanceFields()) {
 			Field field = (Field) obj;
 			
 			if (attName.equals(field.getName())) {

@@ -40,4 +40,10 @@ public class SenderRetryQueueItem extends BaseRetryQueueItem {
         return getClass().getSimpleName() + " {destination=" + destination + ", attemptCount=" + getAttemptCount() + ", " + event + "}";
     }
 
+	@Override
+	public void setFieldValue(String fieldName, Object value) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

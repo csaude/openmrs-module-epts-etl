@@ -10,7 +10,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -197,6 +199,14 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		return this.tableOperationProgressInfo != null ? this.tableOperationProgressInfo.getProgressMeter() : null;
 	}
 	
+	public AppInfo getDstApp() {
+		return this.getRelatedOperationController().getDstApp();
+	}
+	
+	public AppInfo getSrcApp() {
+		return this.getRelatedOperationController().getSrcApp();
+	}
+	
 	@Override
 	public void run() {
 		try {
@@ -290,7 +300,10 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				}
 				
 				if (mustDoFinalCheck()) {
-					perfomeFinalization();
+					
+					if (getProgressMeter().getTotal() > getProgressMeter().getProcessed()) {
+						perfomeFinalization();
+					}
 				}
 				
 				changeStatusToFinished();
@@ -565,10 +578,9 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			if (!taskProcessor.getTaskResultInfo().hasFatalError()) {
 				getController().afterEtl(taskProcessor.getTaskResultInfo().getRecordsWithNoError(), srcConn, dstConn);
 				
-				if (taskProcessor.getTaskResultInfo().hasRecordsWithUnresolvedErrors()
-				        || taskProcessor.getTaskResultInfo().hasRecordsWithResolvedErrors()) {
+				if (taskProcessor.getTaskResultInfo().hasRecordsWithResolvedErrors()) {
 					logWarn("Some errors where found loading '"
-					        + taskProcessor.getTaskResultInfo().getRecordsWithUnresolvedErrors().size()
+					        + taskProcessor.getTaskResultInfo().getRecordsWithResolvedErrors().size()
 					        + "! The errors will be documented");
 					
 					taskProcessor.getTaskResultInfo().documentErrors(srcConn, dstConn);
@@ -668,6 +680,14 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		return new File(subFolder);
 	}
 	
+	public File getDataDir() {
+		String subFolder = this.getRelatedOperationController().generateOperationStatusFolder();
+		
+		subFolder += FileUtilities.getPathSeparator() + "data";
+		
+		return new File(subFolder);
+	}
+	
 	@SuppressWarnings("unused")
 	private void tryToLoadExcludedRecordsLimits() {
 		List<ThreadRecordIntervalsManager<T>> limitsManagers = ThreadRecordIntervalsManager
@@ -718,6 +738,10 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	
 	public OperationController<T> getRelatedOperationController() {
 		return controller;
+	}
+	
+	public EtlOperationConfig getRelatedEtlOperationConfig() {
+		return getRelatedOperationController().getOperationConfig();
 	}
 	
 	public void logInfo(String msg) {

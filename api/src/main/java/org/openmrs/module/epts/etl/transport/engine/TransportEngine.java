@@ -36,7 +36,7 @@ public class TransportEngine extends TaskProcessor<TransportRecord> {
 		List<TransportRecord> migrationRecordAsTransportRecord = utilities.parseList(migrationRecords,
 		    TransportRecord.class);
 		
-		this.getMonitor().logInfo(
+		this.getEngine().logInfo(
 		    "COPYING  '" + migrationRecords.size() + "' " + getMainSrcTableName() + " SOURCE FILES TO IMPORT AREA");
 		
 		for (TransportRecord t : migrationRecordAsTransportRecord) {
@@ -56,7 +56,7 @@ public class TransportEngine extends TaskProcessor<TransportRecord> {
 			    "TRANSPORTED FILE " + t.getDestinationFile().getPath() + " WITH SIZE " + t.getDestinationFile().length());
 		}
 		
-		this.getMonitor().logInfo(
+		this.getEngine().logInfo(
 		    "'" + migrationRecords.size() + "' " + getMainSrcTableName() + " SOURCE FILES COPIED TO IMPORT AREA");
 		
 		getTaskResultInfo().addAllToRecordsWithNoError(migrationRecordAsTransportRecord);

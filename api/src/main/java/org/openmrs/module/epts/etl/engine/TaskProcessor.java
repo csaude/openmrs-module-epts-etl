@@ -67,7 +67,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		return limits;
 	}
 	
-	public Engine<T> getMonitor() {
+	public Engine<T> getEngine() {
 		return monitor;
 	}
 	
@@ -104,7 +104,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	}
 	
 	public AbstractEtlSearchParams<T> getSearchParams() {
-		return getMonitor().getSearchParams();
+		return getEngine().getSearchParams();
 	}
 	
 	public void performe(boolean useMultiThreadSearch, Connection srcConn, Connection dstConn) throws DBException {

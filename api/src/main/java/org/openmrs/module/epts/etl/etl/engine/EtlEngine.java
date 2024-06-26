@@ -99,7 +99,11 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 			
 			logDebug("Initializing the loading of " + etlObjects.size() + " records...");
 			
-			LoadRecord.loadAll(mergingRecs, srcConn, dstConn);
+			if (getRelatedEtlOperationConfig().isDbDst()) {
+				LoadRecord.loadAll(mergingRecs, srcConn, dstConn);
+			} else if (getRelatedEtlOperationConfig().isFileDst()) {
+				LoadRecord.writeAllToFile(mergingRecs);
+			}
 			
 			logDebug("Performing after etl on " + etlObjects.size() + " records!");
 			

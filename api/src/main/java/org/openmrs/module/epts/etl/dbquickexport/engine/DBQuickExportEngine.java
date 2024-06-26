@@ -33,7 +33,7 @@ public class DBQuickExportEngine extends TaskProcessor<EtlDatabaseObject> {
 		try {
 			List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(records, EtlDatabaseObject.class);
 			
-			this.getMonitor().logInfo("GENERATING '" + records.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
+			this.getEngine().logInfo("GENERATING '" + records.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
 			
 			for (EtlDatabaseObject rec : syncRecordsAsOpenMRSObjects) {
 				rec.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(getSrcConf().getUniqueKeys(), rec));
@@ -49,7 +49,7 @@ public class DBQuickExportEngine extends TaskProcessor<EtlDatabaseObject> {
 			    syncRecordsAsOpenMRSObjects.get(0).getObjectId().getSimpleValueAsInt(),
 			    syncRecordsAsOpenMRSObjects.get(records.size() - 1).getObjectId().getSimpleValueAsInt());
 			
-			this.getMonitor().logInfo("WRITING '" + records.size() + "' " + getMainSrcTableName() + " TO JSON FILE ["
+			this.getEngine().logInfo("WRITING '" + records.size() + "' " + getMainSrcTableName() + " TO JSON FILE ["
 			        + jsonFIle.getAbsolutePath() + ".json]");
 			
 			//Try to remove not terminate files

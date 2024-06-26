@@ -57,7 +57,7 @@ public class DBExportEngine extends TaskProcessor<EtlDatabaseObject> {
 			FileUtilities.write(generateTmpMinimalJSONInfoFileName(jsonFIle, srcConn),
 			    jsonInfo.generateMinimalInfo().parseToJSON());
 			
-			this.getMonitor().logInfo("JSON [" + jsonFIle + ".json] CREATED!");
+			this.getEngine().logInfo("JSON [" + jsonFIle + ".json] CREATED!");
 			
 			logDebug("MARKING '" + records.size() + "' " + getMainSrcTableName() + " AS SYNCHRONIZED");
 			

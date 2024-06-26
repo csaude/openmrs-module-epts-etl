@@ -24,6 +24,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.base.VO;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -390,7 +391,7 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	/**
-	 * Concatena duas condicoes sql
+	 * Concatena duas condicoes dump
 	 * 
 	 * @param condition
 	 * @param otherCondition
@@ -401,7 +402,7 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	/**
-	 * Concatena duas condicoes sql
+	 * Concatena duas condicoes dump
 	 * 
 	 * @param condition
 	 * @param otherCondition
@@ -815,6 +816,21 @@ public class CommonUtilities implements Serializable {
 		}
 	}
 	
+	/**
+	 * Converte um objecto em Json
+	 * 
+	 * @param objecto a converter
+	 * @return O JSON correspondente a este objecto
+	 */
+	public String parseListToJSON(List<? extends Object> objecto) {
+		try {
+			return new ObjectMapperProvider().getContext(List.class).writeValueAsString(objecto);
+		}
+		catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	public String parseToJSON(Map<String, Object> map) {
 		List<Map<String, Object>> mapers = new ArrayList<Map<String, Object>>();
 		mapers.add(map);
@@ -905,6 +921,22 @@ public class CommonUtilities implements Serializable {
 		catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public String parseToCSV(List<? extends VO> objs) {
+		if (objs == null || objs.isEmpty()) {
+			return "";
+		}
+		
+		StringBuilder csvBuilder = new StringBuilder();
+		
+		for (VO obj : objs) {
+			List<String> values = obj.getFieldValuesAsString();
+			
+			csvBuilder.append(String.join(",", values)).append("\n");
+		}
+		
+		return csvBuilder.toString();
 	}
 	
 	public String toUpperCase(String str) {
@@ -1075,10 +1107,8 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	private Object getFieldValue(String objectName, Object obj, String fieldName) throws ForbiddenOperationException {
-		Object[] fields = getFields(obj);
 		
-		for (int i = 0; i < fields.length; i++) {
-			Field field = (Field) fields[i];
+		for (Field field : getInstanceFields(obj)) {
 			
 			if (field.getName().equals(fieldName)) {
 				
@@ -1100,10 +1130,7 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	public Field getField(Object obj, String fieldName) throws ForbiddenOperationException {
-		Object[] fields = getFields(obj);
-		
-		for (int i = 0; i < fields.length; i++) {
-			Field field = (Field) fields[i];
+		for (Field field : getInstanceFields(obj)) {
 			
 			if (field.getName().equals(fieldName)) {
 				return field;
@@ -1149,7 +1176,7 @@ public class CommonUtilities implements Serializable {
 	 * @return todos os atributos de instancia de da classe de um objecto independentemento do
 	 *         modificador de acesso
 	 */
-	public Field[] getFields(Object obj) {
+	public List<Field> getInstanceFields(Object obj) {
 		List<Field> fields = new ArrayList<Field>();
 		Class<?> cl = obj.getClass();
 		
@@ -1164,7 +1191,7 @@ public class CommonUtilities implements Serializable {
 			}
 			cl = cl.getSuperclass();
 		}
-		return utilities.parseListToArray(fields);
+		return fields;
 	}
 	
 	public void throwReviewMethodException() {

@@ -89,7 +89,38 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean nonResumable;
 	
+	private AppInfoType dstType;
+	
 	public EtlOperationConfig() {
+		this.dstType = AppInfoType.db;
+	}
+	
+	public AppInfoType getDstType() {
+		return dstType;
+	}
+	
+	public void setDstType(AppInfoType dstType) {
+		this.dstType = dstType;
+	}
+	
+	public boolean isDbDst() {
+		return getDstType().isDb();
+	}
+	
+	public boolean isJsonDst() {
+		return getDstType().isJson();
+	}
+	
+	public boolean isDumpDst() {
+		return getDstType().isDump();
+	}
+	
+	public boolean isCsvDst() {
+		return getDstType().isCsv();
+	}
+	
+	public boolean isFileDst() {
+		return getDstType().isFile();
 	}
 	
 	public boolean isUseSharedConnectionPerThread() {
@@ -809,7 +840,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 					
 					ClassLoader loader = TaskProcessor.class.getClassLoader();
 					
-					Class<TaskProcessor<? extends EtlDatabaseObject>> c = (Class<TaskProcessor< ? extends EtlDatabaseObject>>) loader
+					Class<TaskProcessor<? extends EtlDatabaseObject>> c = (Class<TaskProcessor<? extends EtlDatabaseObject>>) loader
 					        .loadClass(this.getEngineFullClassName());
 					
 					this.engineClazz = (Class<TaskProcessor<? extends EtlDatabaseObject>>) c;

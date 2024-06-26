@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.model;
 
+import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,6 +36,26 @@ public interface EtlDatabaseObject extends EtlObject {
 	public static final int CONSISTENCE_STATUS = 1;
 	
 	public static final int INCONSISTENCE_STATUS = -1;
+	
+	default void generateFields() {
+		List<Field> fields = new ArrayList<Field>();
+		Class<?> cl = getClass();
+		
+		while (cl != null) {
+			java.lang.reflect.Field[] in = cl.getDeclaredFields();
+			for (int i = 0; i < in.length; i++) {
+				java.lang.reflect.Field field = in[i];
+				if (Modifier.isStatic(field.getModifiers()))
+					continue;
+				
+				field.setAccessible(true);
+				fields.add(Field.fastCreateWithType(field.getName(), field.getType().getTypeName()));
+			}
+			cl = cl.getSuperclass();
+		}
+		
+		setFields(fields);
+	}
 	
 	void refreshLastSyncDateOnOrigin(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn);
@@ -205,16 +226,6 @@ public interface EtlDatabaseObject extends EtlObject {
 	 * @return true if this record has exactily the same values in all fields with the given object
 	 */
 	boolean hasExactilyTheSameDataWith(EtlDatabaseObject srcObj);
-	
-	/**
-	 * Return a value of given field
-	 * 
-	 * @param fieldName of field to retrieve
-	 * @return Return a value of given field
-	 */
-	Object getFieldValue(String fieldName) throws ForbiddenOperationException;
-	
-	void setFieldValue(String fieldName, Object value);
 	
 	/**
 	 * Retrive values for all {@link TableConfiguration#getUniqueKeys()} fields. The values follow

@@ -206,4 +206,10 @@ public class SimpleValue extends BaseVO {
 	public double doubleValue() {
 		return Double.parseDouble(value);
 	}
+
+	@Override
+	public void setFieldValue(String fieldName, Object value) {
+		// TODO Auto-generated method stub
+		
+	}
 }

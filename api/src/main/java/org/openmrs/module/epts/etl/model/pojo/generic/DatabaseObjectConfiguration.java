@@ -211,9 +211,9 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	}
 	
 	/**
-	 * Generates a full sql select from query.
+	 * Generates a full dump select from query.
 	 * 
-	 * @return the generated select sql query
+	 * @return the generated select dump query
 	 */
 	String generateSelectFromQuery();
 	

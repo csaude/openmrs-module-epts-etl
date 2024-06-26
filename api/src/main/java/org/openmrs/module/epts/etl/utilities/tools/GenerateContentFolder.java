@@ -126,7 +126,7 @@ public class GenerateContentFolder {
 					
 					@Override
 					public boolean accept(File dir, String name) {
-						return name.toLowerCase().endsWith("sql");
+						return name.toLowerCase().endsWith("dump");
 					}
 				});
 				

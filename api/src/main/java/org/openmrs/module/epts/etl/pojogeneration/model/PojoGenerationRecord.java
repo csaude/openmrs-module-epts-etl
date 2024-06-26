@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
@@ -381,6 +382,18 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 
 	@Override
 	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public List<Field> getFields() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setFields(List<Field> fields) {
 		// TODO Auto-generated method stub
 		
 	}

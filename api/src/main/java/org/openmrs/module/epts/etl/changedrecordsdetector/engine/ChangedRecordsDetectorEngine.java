@@ -41,7 +41,7 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObjec
 		List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(records, EtlDatabaseObject.class);
 		List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(records.size());
 		
-		this.getMonitor()
+		this.getEngine()
 		        .logInfo("PERFORMING CHANGE DETECTED ACTION '" + records.size() + "' " + getSrcConf().getTableName());
 		
 		for (EtlDatabaseObject obj : syncRecordsAsOpenMRSObjects) {
@@ -50,7 +50,7 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObjec
 				
 				processedRecords.add(DetectedRecordInfo.generate(obj,
 				    getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
-				    getMonitor().getSrcConf().getOriginAppLocationCode()));
+				    getEngine().getSrcConf().getOriginAppLocationCode()));
 				
 				if (getRelatedOperationController().getActionPerformeApp().isSinglePerformingMode()) {
 					DetectedRecordService.getInstance().performeAction(
@@ -76,7 +76,7 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObjec
 		
 		getTaskResultInfo().addAllToRecordsWithNoError(utilities.parseList(processedRecords, EtlDatabaseObject.class));
 		
-		this.getMonitor().logInfo(
+		this.getEngine().logInfo(
 		    "ACTION PERFORMED FOR CHANGED RECORDS '" + records.size() + "' " + getSrcConf().getTableName() + "!");
 	}
 	

@@ -211,7 +211,7 @@ public class DBUtilities {
 	}
 	
 	/**
-	 * Replaces all sql parameters with a question mark. It assumes that the parameters will have
+	 * Replaces all dump parameters with a question mark. It assumes that the parameters will have
 	 * format '@paramName'
 	 * 
 	 * @param sqlQuery
@@ -840,7 +840,7 @@ public class DBUtilities {
 	}
 	
 	/**
-	 * Extract all the parameters presents in a sql query. This assume that the parameter will start
+	 * Extract all the parameters presents in a dump query. This assume that the parameter will start
 	 * with @
 	 * 
 	 * @param sqlQuery the query to extract from

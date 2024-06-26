@@ -113,4 +113,10 @@ public class InconsistenceInfo extends BaseVO {
 	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		InconsistenceInfoDAO.insert(this, tableConfiguration, conn);
 	}
+
+	@Override
+	public void setFieldValue(String fieldName, Object value) {
+		// TODO Auto-generated method stub
+		
+	}
 }

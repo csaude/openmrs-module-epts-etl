@@ -492,7 +492,7 @@ public class SQLUtilitie  {
 	}
 	
 	/**
-	 * Gera as colunas[table fields] presentes numa instrucao sql insert 
+	 * Gera as colunas[table fields] presentes numa instrucao dump insert 
 	 * @param insertInstrunction
 	 * @return um array de Strings contendo as colunas [table fields] da instrucao SQL recebida pelo parametro
 	 * @author JPBOANE 17/12/2012
@@ -610,7 +610,7 @@ public class SQLUtilitie  {
 	public static String createPhasedSelectOracle(String originalSelect, int start, int qtdRecordSuported, Connection conn) throws DBException{
 		originalSelect = originalSelect.toUpperCase();
 		
-		if (originalSelect.contains("ROW_NUM")) throw new IllegalArgumentException("Rever a sql. Remova a coluna ROW_NUM"); 
+		if (originalSelect.contains("ROW_NUM")) throw new IllegalArgumentException("Rever a dump. Remova a coluna ROW_NUM"); 
 		
 		String sqlPlusRowNum =  " SELECT TAB_TEMP.*, ROWNUM ROW_NUM ";
 			   sqlPlusRowNum += " FROM ("; 

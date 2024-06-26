@@ -2,7 +2,6 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Connection;
@@ -29,6 +28,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
@@ -65,6 +65,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	}
 	
 	@Override
+	@JsonIgnore
 	public EtlDatabaseObject getSrcRelatedObject() {
 		return srcRelatedObject;
 	}
@@ -161,29 +162,18 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	@Override
 	public boolean hasExactilyTheSameDataWith(EtlDatabaseObject srcObj) {
-		Object[] fields = getFields();
-		
-		for (int i = 0; i < fields.length; i++) {
-			Field field = (Field) fields[i];
+		for (Field field : getFields()) {
+			Object thisValue = this.getFieldValue(field.getNameAsClassAtt());
+			Object otherValue = srcObj.getFieldValue(field.getNameAsClassAtt());
 			
-			try {
-				Object thisValue = field.get(this);
-				Object otherValue = field.get(srcObj);
-				
-				if (thisValue == null && otherValue != null || otherValue == null && thisValue != null) {
-					return false;
-				}
-				
-				if (thisValue != null && !thisValue.equals(otherValue)) {
-					return false;
-				}
+			if (thisValue == null && otherValue != null || otherValue == null && thisValue != null) {
+				return false;
 			}
-			catch (IllegalArgumentException e) {
-				throw new RuntimeException(e);
+			
+			if (thisValue != null && !thisValue.equals(otherValue)) {
+				return false;
 			}
-			catch (IllegalAccessException e) {
-				throw new RuntimeException(e);
-			}
+			
 		}
 		
 		return true;
@@ -193,7 +183,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	public void setFieldValue(String fieldName, Object value) {
 		try {
 			
-			for (Field field : getFields()) {
+			for (java.lang.reflect.Field field : getInstanceFields()) {
 				
 				if (field.getName().equals(fieldName)) {
 					if (value == null) {
@@ -236,6 +226,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	}
 	
 	@Override
+	@JsonIgnore
 	public List<UniqueKeyInfo> getUniqueKeysInfo() {
 		return this.uniqueKeysInfo;
 	}
@@ -252,6 +243,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	}
 	
 	@Override
+	@JsonIgnore
 	public SyncImportInfoVO getRelatedSyncInfo() {
 		return relatedSyncInfo;
 	}
@@ -623,7 +615,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		getRelatedSyncInfo().save(tableConfiguration, conn);
 	}
 	
-	@SuppressWarnings("unused")
 	private void saveInconsistence(TableConfiguration tableConfiguration,
 	        Entry<ParentTableImpl, Integer> inconsistenceInfoSource, boolean inconsistenceResoloved,
 	        String recordOriginLocationCode, Connection conn) throws DBException {
@@ -1064,6 +1055,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	}
 	
 	@Override
+	@JsonIgnore
 	public String toString() {
 		
 		String objectId = "objectId = " + (this.getObjectId() != null ? this.getObjectId() : "");
