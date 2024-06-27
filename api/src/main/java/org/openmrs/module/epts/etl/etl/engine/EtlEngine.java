@@ -158,9 +158,7 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 					InconsistenceInfo inconsistenceInfo = InconsistenceInfo.generate(rec.generateTableName(),
 					    rec.getObjectId(), e.getParentTable(), e.getParentId(), null, e.getOriginAppLocationConde());
 					
-					EtlOperationItemResult<EtlDatabaseObject> r = new EtlOperationItemResult<>(rec, inconsistenceInfo);
-					
-					getTaskResultInfo().addToRecordsWithResolvedErrors(r);
+					getTaskResultInfo().add(new EtlOperationItemResult<>(rec, inconsistenceInfo));
 				}
 				catch (ConflictWithRecordNotYetAvaliableException e) {
 					logWarn(startingStrLog + ".  Problem while merging record: [" + data.getRecord() + "]! "

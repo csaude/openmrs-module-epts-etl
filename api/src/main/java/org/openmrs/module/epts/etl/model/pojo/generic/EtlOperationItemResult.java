@@ -3,10 +3,10 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 	
@@ -14,17 +14,23 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 	
 	private T record;
 	
-	private DBException exception;
+	private EtlException exception;
 	
 	private List<InconsistenceInfo> inconsistenceInfo;
 	
+	private EtlOperationResultItemType type;
+	
 	public EtlOperationItemResult(T record) {
 		this.record = record;
+		
+		this.type = EtlOperationResultItemType.NO_ERROR;
 	}
 	
 	public EtlOperationItemResult(T record, List<InconsistenceInfo> inconsistence) {
 		this.record = record;
 		this.inconsistenceInfo = inconsistence;
+		
+		tryToDetermineType();
 	}
 	
 	public EtlOperationItemResult(T record, InconsistenceInfo inconsistence) {
@@ -32,8 +38,20 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 		this.inconsistenceInfo = utilities.parseToList(inconsistence);
 	}
 	
-	public EtlOperationItemResult(T record, DBException exception) {
+	public EtlOperationItemResult(T record, EtlException exception) {
 		this.record = record;
+		this.exception = exception;
+	}
+	
+	public EtlOperationResultItemType getType() {
+		return type;
+	}
+	
+	public void setType(EtlOperationResultItemType type) {
+		this.type = type;
+	}
+	
+	public void setException(EtlException exception) {
 		this.exception = exception;
 	}
 	
@@ -43,6 +61,8 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 	
 	public void setInconsistenceInfo(List<InconsistenceInfo> inconsistenceInfo) {
 		this.inconsistenceInfo = inconsistenceInfo;
+		
+		tryToDetermineType();
 	}
 	
 	public void addInconsistence(InconsistenceInfo info) {
@@ -51,9 +71,10 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 		
 		this.inconsistenceInfo.add(info);
 		
+		tryToDetermineType();
 	}
 	
-	public DBException getException() {
+	public EtlException getException() {
 		return exception;
 	}
 	
@@ -61,20 +82,34 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 		return record;
 	}
 	
-	public boolean hasFatalError() throws DBException {
+	public static <T extends EtlDatabaseObject> List<EtlOperationItemResult<T>> parseFromEtlDatabaseObject(
+	        List<T> etlObjects) {
 		
-		return false;
+		if (!utilities.arrayHasElement(etlObjects))
+			return null;
 		
-		/*
-		if (getException().isDuplicatePrimaryOrUniqueKeyException()) {
-			return false;
+		List<EtlOperationItemResult<T>> converted = new ArrayList<>(etlObjects.size());
+		
+		for (T record : etlObjects) {
+			converted.add(new EtlOperationItemResult<T>(record));
 		}
 		
-		if (getException().isIntegrityConstraintViolationException()) {
-			return false;
+		return converted;
+	}
+	
+	public static <T extends EtlDatabaseObject> List<T> parseToEtlDatabaseObject(
+	        List<EtlOperationItemResult<T>> etlObjects) {
+		
+		if (!utilities.arrayHasElement(etlObjects))
+			return null;
+		
+		List<T> converted = new ArrayList<>(etlObjects.size());
+		
+		for (EtlOperationItemResult<T> record : etlObjects) {
+			converted.add(record.getRecord());
 		}
 		
-		return true;*/
+		return converted;
 	}
 	
 	public boolean hasInconsistences() {
@@ -106,4 +141,22 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 	public boolean hasException() {
 		return getException() != null;
 	}
+	
+	public void tryToDetermineType() {
+		
+		if (hasException()) {
+			setType(EtlOperationResultItemType.UNEXPECTED_ERRORS);
+		} else if (hasUnresolvedInconsistences()) {
+			setType(EtlOperationResultItemType.UNRESOLVED_INCONSISTENCES);
+		} else if (hasInconsistences()) {
+			setType(EtlOperationResultItemType.RESOLVED_INCONSISTENCES);
+		} else if (!hasException()) {
+			setType(EtlOperationResultItemType.NO_ERROR);
+		}
+	}
+	
+	public boolean hasType() {
+		return this.getType() != null;
+	}
+	
 }

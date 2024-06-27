@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordIn
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -74,7 +75,8 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObjec
 			    getRelatedOperationController().getActionPerformeApp().getApplicationCode(), processedRecords, getSrcConf());
 		}
 		
-		getTaskResultInfo().addAllToRecordsWithNoError(utilities.parseList(processedRecords, EtlDatabaseObject.class));
+		getTaskResultInfo().addAllToRecordsWithNoError(EtlOperationItemResult
+		        .parseFromEtlDatabaseObject(utilities.parseList(processedRecords, EtlDatabaseObject.class)));
 		
 		this.getEngine().logInfo(
 		    "ACTION PERFORMED FOR CHANGED RECORDS '" + records.size() + "' " + getSrcConf().getTableName() + "!");

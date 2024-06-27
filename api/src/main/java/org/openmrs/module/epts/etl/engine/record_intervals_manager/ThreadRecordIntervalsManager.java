@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
@@ -453,7 +453,7 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 			return allLImitsOfEngine;
 		}
 		catch (IOException e) {
-			throw new EtlException(e);
+			throw new EtlExceptionImpl(e);
 		}
 		
 	}

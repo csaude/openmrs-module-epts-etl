@@ -16,7 +16,7 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
-import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
@@ -242,7 +242,7 @@ public interface EtlDatabaseObject extends EtlObject {
 				tableConfiguration.fullLoad();
 			}
 			catch (DBException e) {
-				throw new EtlException(e) {
+				throw new EtlExceptionImpl(e) {
 					
 					private static final long serialVersionUID = 6237531946353999983L;
 				};
@@ -437,15 +437,16 @@ public interface EtlDatabaseObject extends EtlObject {
 		return false;
 	}
 	
-	static List<EtlDatabaseObject> collectAllSrcrelatedOBjects(List<EtlDatabaseObject> objs) {
-		List<EtlDatabaseObject> list = new ArrayList<>(objs.size());
+	@SuppressWarnings("unchecked")
+	static <T extends EtlDatabaseObject> List<T> collectAllSrcRelatedOBjects(List<EtlDatabaseObject> objs) {
+		List<T> list = new ArrayList<>(objs.size());
 		
 		for (EtlDatabaseObject o : objs) {
 			
 			if (!o.hasSrcRelatedObject())
 				throw new ForbiddenOperationException("The object " + o + " has no srcRelatedObject");
 			
-			list.add(o.getSrcRelatedObject());
+			list.add((T) o.getSrcRelatedObject());
 		}
 		
 		return list;

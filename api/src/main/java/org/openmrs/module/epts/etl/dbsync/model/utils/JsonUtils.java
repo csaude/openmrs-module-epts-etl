@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.openmrs.module.epts.etl.dbsync.model.SyncModel;
-import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -44,7 +44,7 @@ public final class JsonUtils {
 			return MAPPER.writeValueAsString(object);
 		}
 		catch (JsonProcessingException e) {
-			throw new EtlException(e);
+			throw new EtlExceptionImpl(e);
 		}
 	}
 	
@@ -59,7 +59,7 @@ public final class JsonUtils {
 			return MAPPER.writeValueAsBytes(object);
 		}
 		catch (IOException e) {
-			throw new EtlException(e);
+			throw new EtlExceptionImpl(e);
 		}
 	}
 	
@@ -78,7 +78,7 @@ public final class JsonUtils {
 		catch (IOException e) {
 			e.printStackTrace();
 			
-			throw new EtlException(e);
+			throw new EtlExceptionImpl(e);
 		}
 	}
 	
@@ -94,7 +94,7 @@ public final class JsonUtils {
 			return MAPPER.readValue(data, objectClass);
 		}
 		catch (IOException e) {
-			throw new EtlException(e);
+			throw new EtlExceptionImpl(e);
 		}
 	}
 	

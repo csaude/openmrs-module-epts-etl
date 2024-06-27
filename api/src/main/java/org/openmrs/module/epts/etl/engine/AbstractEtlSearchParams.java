@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadCurrentIntervals;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -173,7 +173,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 			progressInfo = this.getRelatedController().getProgressInfo().retrieveProgressInfo(getConfig());
 		}
 		catch (NullPointerException e) {
-			throw new EtlException("Error on thread " + this.getRelatedController().getControllerId()
+			throw new EtlExceptionImpl("Error on thread " + this.getRelatedController().getControllerId()
 			        + ": Progress meter not found for Etl Confinguration [" + getConfig().getConfigCode() + "].");
 		}
 		
@@ -199,7 +199,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 					return SearchParamsDAO.countAll(this, limits, conn);
 				}
 				catch (DBException e) {
-					throw new EtlException(e);
+					throw new EtlExceptionImpl(e);
 				}
 			}));
 		}
@@ -260,7 +260,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 					return this.search(limits, srcConn, dstConn);
 				}
 				catch (DBException e) {
-					throw new EtlException(e);
+					throw new EtlExceptionImpl(e);
 				}
 			}));
 		}

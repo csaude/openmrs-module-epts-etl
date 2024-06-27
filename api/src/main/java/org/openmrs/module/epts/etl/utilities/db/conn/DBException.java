@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.utilities.db.conn;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -10,7 +11,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 /**
  * Exception is thrown when any DB error occurs.
  */
-public class DBException extends SQLException {
+public class DBException extends SQLException implements EtlException {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -55,6 +56,11 @@ public class DBException extends SQLException {
 		/*if (this.SQLCodeError == 0) {
 			throw new ForbiddenOperationException("The SQLCodeError could not be zero", e);
 		}*/
+	}
+	
+	@Override
+	public Throwable getException() {
+		return this;
 	}
 	
 	public DBException(SQLException e) {

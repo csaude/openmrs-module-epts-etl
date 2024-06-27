@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -148,7 +149,8 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 		
 		done = true;
 		
-		getTaskResultInfo().addAllToRecordsWithNoError(etlObjects);
+		getTaskResultInfo().addAllToRecordsWithNoError(EtlOperationItemResult.parseFromEtlDatabaseObject(etlObjects));
+		
 	}
 	
 	public static List<File> getDumps(File rootDirectory) {

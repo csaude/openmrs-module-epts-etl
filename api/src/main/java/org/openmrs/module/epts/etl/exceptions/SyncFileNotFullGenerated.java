@@ -7,7 +7,7 @@ import java.io.File;
  * @author jpboane
  *
  */
-public class SyncFileNotFullGenerated extends EtlException{
+public class SyncFileNotFullGenerated extends EtlExceptionImpl{
 	private static final long serialVersionUID = 1L;
 	
 	public SyncFileNotFullGenerated(File file) {

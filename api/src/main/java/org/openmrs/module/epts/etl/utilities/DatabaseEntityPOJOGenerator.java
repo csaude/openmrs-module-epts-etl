@@ -21,7 +21,7 @@ import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
-import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
@@ -347,7 +347,7 @@ public class DatabaseEntityPOJOGenerator {
 		existingCLass = tryToGetExistingCLass(fullClassName, pojoble.getRelatedSyncConfiguration());
 		
 		if (existingCLass == null)
-			throw new EtlException("The class for " + pojoble.getObjectName() + " was not created!") {
+			throw new EtlExceptionImpl("The class for " + pojoble.getObjectName() + " was not created!") {
 				
 				private static final long serialVersionUID = 1L;
 			};

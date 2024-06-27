@@ -23,7 +23,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
-import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
@@ -642,14 +642,14 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		}
 		
 		if (!syncTableInfo.getRelatedSyncConfiguration().isSourceSyncProcess())
-			throw new EtlException("You cannot move record to stage area in a installation different to source") {
+			throw new EtlExceptionImpl("You cannot move record to stage area in a installation different to source") {
 				
 				private static final long serialVersionUID = 1L;
 				
 			};
 		
 		if ((syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden()) && !syncTableInfo.isRemovableMetadata())
-			throw new EtlException("This metadata metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId()
+			throw new EtlExceptionImpl("This metadata metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId()
 			        + ". is missing its some parents [" + generateMissingInfo(missingParents)
 			        + "] You must resolve this inconsistence manual") {
 				
@@ -834,7 +834,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		
 		/*
 		if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden())
-			throw new EtlException("This metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId()
+			throw new EtlExceptionImpl("This metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId()
 			        + ". is missing its some parents [" + generateMissingInfo(missingParents)
 			        + "] You must resolve this inconsistence manual") {
 				

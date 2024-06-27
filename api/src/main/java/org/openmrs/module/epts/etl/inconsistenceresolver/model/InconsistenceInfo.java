@@ -37,6 +37,10 @@ public class InconsistenceInfo extends BaseVO {
 		this.defaultParentId = defaultParentId;
 	}
 	
+	public boolean isResolved() {
+		return this.getDefaultParentId() != null;
+	}
+	
 	public String getRecordOriginLocationCode() {
 		return recordOriginLocationCode;
 	}
@@ -113,7 +117,7 @@ public class InconsistenceInfo extends BaseVO {
 	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		InconsistenceInfoDAO.insert(this, tableConfiguration, conn);
 	}
-
+	
 	@Override
 	public void setFieldValue(String fieldName, Object value) {
 		// TODO Auto-generated method stub

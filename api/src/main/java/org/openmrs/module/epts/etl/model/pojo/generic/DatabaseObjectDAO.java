@@ -564,7 +564,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 			try {
 				executeQueryWithRetryOnError(sql, params, conn);
 				
-				result.addAllToRecordsWithNoError(EtlDatabaseObject.collectAllSrcrelatedOBjects(objects));
+				result.addAllToRecordsWithNoError(EtlOperationItemResult
+				        .parseFromEtlDatabaseObject(EtlDatabaseObject.collectAllSrcRelatedOBjects(objects)));
 			}
 			catch (DBException e) {
 				for (EtlDatabaseObject obj : objects) {

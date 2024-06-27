@@ -1,7 +1,7 @@
 package org.openmrs.module.epts.etl.exceptions;
 
 
-public class FieldNotAvaliableInAnyDataSource extends EtlException {
+public class FieldNotAvaliableInAnyDataSource extends EtlExceptionImpl {
 
 	private static final long serialVersionUID = -4799473775930078338L;
 	

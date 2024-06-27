@@ -227,7 +227,24 @@ public class LoadRecord {
 					        parentInfo.getParentTableConfInDst().findRelatedSrcConf(), dst, getTaskProcessor(),
 					        this.isWriteOperationHistory());
 					
-					parentData.load(srcConn, dstConn);
+					try {
+						parentData.load(srcConn, dstConn);
+					}
+					catch (DBException e) {
+						if (e.isIntegrityConstraintViolationException()) {
+							engine.logDebug("The parent for default for parent [" + parentInfo.getParentRecordInOrigin()
+							        + "] could not be loaded. The record [");
+							
+							this.getResultItem()
+							        .addInconsistence(InconsistenceInfo.generate(getRecord().generateTableName(),
+							            getRecord().getObjectId(), parentInfo.getParentTableConfInDst().getTableName(),
+							            parentInfo.getParentRecordInOrigin().getObjectId().getSimpleValueAsInt(), null,
+							            this.getDstConf().getOriginAppLocationCode()));
+							
+						} else {
+							this.getResultItem().setException(e);
+						}
+					}
 					
 					dstConf = dst;
 					
@@ -482,25 +499,25 @@ public class LoadRecord {
 			config.fullLoad();
 		}
 		
-		EtlEngine engine = mergingRecs.get(0).getTaskProcessor();
+		EtlEngine processor = mergingRecs.get(0).getTaskProcessor();
 		
 		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
 		List<LoadRecord> processedRecors = new ArrayList<>();
 		
-		engine.logDebug("Preparing the load of " + mergingRecs.size());
+		processor.logDebug("Preparing the load of " + mergingRecs.size());
 		
 		for (LoadRecord loadRecord : mergingRecs) {
-			engine.logTrace("Preparing the load of record " + loadRecord.getRecord());
+			processor.logTrace("Preparing the load of record " + loadRecord.getRecord());
 			
-			boolean recursiveKeys = engine.isRunningInConcurrency()
+			boolean recursiveKeys = processor.isRunningInConcurrency()
 			        ? loadRecord.hasUnresolvedRecursiveRelationship(srcConn, dstConn)
 			        : false;
 			
 			if (recursiveKeys) {
-				engine.logDebug("Record " + loadRecord.getRecord()
+				processor.logDebug("Record " + loadRecord.getRecord()
 				        + " has recursive relationship and will be skipped to avoid dedlocks!");
 				
-				engine.getTaskResultInfo().addAllToRecordsWithRecursiveRelashionship(loadRecord.getRecord());
+				processor.getTaskResultInfo().addToRecordsWithRecursiveRelashionship(loadRecord.getRecord());
 				
 				loadRecord.getDstConf().saveSkippedRecord(loadRecord.getRecord(), srcConn);
 			} else {
@@ -509,48 +526,65 @@ public class LoadRecord {
 				if (!loadRecord.getResultItem().hasUnresolvedInconsistences()) {
 					objects.add(loadRecord.getRecord());
 					processedRecors.add(loadRecord);
+					
+					if (loadRecord.getResultItem().hasInconsistences()) {
+						processor.logTrace(
+						    "Found inconsistences on record " + loadRecord.getRecord() + " but all were resolved!");
+					}
 				}
 				
-				if (loadRecord.getResultItem().hasInconsistences()) {
-					engine.logTrace("Found inconsistences on record " + loadRecord.getRecord());
-					
-					engine.getTaskResultInfo().addToRecordsWithResolvedErrors(loadRecord.getResultItem());
-				}
+				processor.getTaskResultInfo().add(loadRecord.getResultItem());
 			}
 		}
 		
-		engine.logDebug("Starting the insertion of " + objects.size() + " on db...");
-		engine.getTaskResultInfo().addAllFromOtherResult(
+		processor.logDebug("Starting the insertion of " + objects.size() + " on db...");
+		processor.getTaskResultInfo().addAllFromOtherResult(
 		    DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn));
 		
-		engine.logDebug(objects.size() + " records inserted on db!");
+		processor.logDebug(objects.size() + " records inserted on db!");
 		
 		if (config.hasParentRefInfo()) {
 			
 			for (LoadRecord r : processedRecors) {
 				if (r.hasParentsWithDefaultValues()) {
 					
-					engine.logTrace("Reloading parents for record " + r.getRecord());
+					processor.logTrace("Reloading parents for record " + r.getRecord());
 					
 					r.reloadParentsWithDefaultValues(srcConn, dstConn);
 					
-					Oid originalOid = r.getRecord().getObjectId();
-					
-					EtlDatabaseObject recByUniqueKeys = null;
-					
-					if (!r.getEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
-						recByUniqueKeys = DatabaseObjectDAO.getByUniqueKeys(r.getRecord(), dstConn);
+					if (r.getResultItem().hasUnresolvedInconsistences()) {
+						processor.logDebug(
+						    "The record has inconsistence after reloading of default parent.  Removing it " + r.getRecord());
+						r.getRecord().remove(dstConn);
 						
-						if (recByUniqueKeys != null) {
-							r.getRecord().setObjectId(recByUniqueKeys.getObjectId());
+						processor.getTaskResultInfo().remove(r.getResultItem());
+						
+						processor.getTaskResultInfo().add(r.getResultItem());
+					} else {
+						
+						Oid originalOid = r.getRecord().getObjectId();
+						
+						EtlDatabaseObject recByUniqueKeys = null;
+						
+						if (!r.getEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
+							recByUniqueKeys = DatabaseObjectDAO.getByUniqueKeys(r.getRecord(), dstConn);
+							
+							if (recByUniqueKeys != null) {
+								r.getRecord().setObjectId(recByUniqueKeys.getObjectId());
+								
+								r.getRecord().update(r.getDstConf(), dstConn);
+								
+								r.getRecord().setObjectId(originalOid);
+							} else {
+								r.getResultItem().setException(new ForbiddenOperationException("The record " + r.getRecord()
+								        + " where not found after the it has been loaded to db!"));
+							}
 						} else {
-							throw new ForbiddenOperationException("The record " + r.getRecord() + " where not found!");
+							r.getRecord().update(r.getDstConf(), dstConn);
+							
+							r.getRecord().setObjectId(originalOid);
 						}
 					}
-					
-					r.getRecord().update(r.getDstConf(), dstConn);
-					
-					r.getRecord().setObjectId(originalOid);
 				}
 			}
 		}
@@ -682,7 +716,8 @@ public class LoadRecord {
 				FileUtilities.write(dataFile, dump);
 			}
 			
-			taskProcessor.getTaskResultInfo().addAllToRecordsWithNoError(objs);
+			taskProcessor.getTaskResultInfo()
+			        .addAllToRecordsWithNoError(EtlOperationItemResult.parseFromEtlDatabaseObject(objs));
 		}
 	}
 	

@@ -15,7 +15,7 @@ package org.openmrs.module.epts.etl.exceptions;
  *
  */
 
-public class MetadataInconsistentException extends EtlException{
+public class MetadataInconsistentException extends EtlExceptionImpl{
 	private static final long serialVersionUID = -2623572759817537893L;
 
 	public MetadataInconsistentException(String msg) {

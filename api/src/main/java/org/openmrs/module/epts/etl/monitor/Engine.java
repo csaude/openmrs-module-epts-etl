@@ -576,12 +576,13 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			taskProcessor.performe(useMultiTreadSearch, srcConn, dstConn);
 			
 			if (!taskProcessor.getTaskResultInfo().hasFatalError()) {
-				getController().afterEtl(taskProcessor.getTaskResultInfo().getRecordsWithNoError(), srcConn, dstConn);
+				getController().afterEtl(taskProcessor.getTaskResultInfo().getAllSuccessfulyProcessedRecords(), srcConn,
+				    dstConn);
 				
-				if (taskProcessor.getTaskResultInfo().hasRecordsWithResolvedErrors()) {
-					logWarn("Some errors where found loading '"
-					        + taskProcessor.getTaskResultInfo().getRecordsWithResolvedErrors().size()
-					        + "! The errors will be documented");
+				if (taskProcessor.getTaskResultInfo().hasRecordsWithErrors()) {
+					logWarn(
+					    "Some errors where found loading '" + taskProcessor.getTaskResultInfo().getRecordsWithErrorsAsEtlDatabaseObject().size()
+					            + "! The errors will be documented");
 					
 					taskProcessor.getTaskResultInfo().documentErrors(srcConn, dstConn);
 				}
