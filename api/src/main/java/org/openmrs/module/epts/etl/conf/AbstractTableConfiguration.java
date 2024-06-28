@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.conf;
 
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.interfaces.ConflictResolutionType;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -97,6 +98,19 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private boolean parentsLoaded;
 	
+	private ConflictResolutionType onConflict;
+	
+	public AbstractTableConfiguration() {
+		this.loadHealper = new DatabaseObjectLoaderHelper(this);
+		this.onConflict = ConflictResolutionType.MAKE_YOUR_DECISION;
+	}
+	
+	public AbstractTableConfiguration(String tableName) {
+		this();
+		
+		this.tableName = tableName;
+	}
+	
 	@Override
 	public boolean isParentsLoaded() {
 		return parentsLoaded;
@@ -181,16 +195,6 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.insertSQLQuestionMarksWithoutObjectId = insertSQLQuestionMarksWithoutObjectId;
 	}
 	
-	public AbstractTableConfiguration() {
-		this.loadHealper = new DatabaseObjectLoaderHelper(this);
-	}
-	
-	public AbstractTableConfiguration(String tableName) {
-		this();
-		
-		this.tableName = tableName;
-	}
-	
 	public void setUsingManualDefinedAlias(boolean usingManualDefinedAlias) {
 		this.usingManualDefinedAlias = usingManualDefinedAlias;
 	}
@@ -242,6 +246,19 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 			if (conn != null)
 				conn.finalizeConnection();
 		}
+	}
+	
+	public ConflictResolutionType getOnConflict() {
+		return onConflict;
+	}
+	
+	public void setOnConflict(ConflictResolutionType onConflict) {
+		this.onConflict = onConflict;
+	}
+	
+	@Override
+	public ConflictResolutionType onConflict() {
+		return getOnConflict();
 	}
 	
 	public void setPrimaryKey(PrimaryKey primaryKey) {
