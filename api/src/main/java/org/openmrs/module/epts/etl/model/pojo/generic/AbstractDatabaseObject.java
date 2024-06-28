@@ -352,7 +352,11 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	        Connection conn) throws DBException, ForbiddenOperationException {
 		boolean existingRecordIsOutdated = false;
 		
-		if (utilities.arrayHasElement(tableConfiguration.getWinningRecordFieldsInfo())) {
+		if (tableConfiguration.onConflict().keepExisting()) {
+			return;
+		} else if (tableConfiguration.onConflict().updateExisting()) {
+			existingRecordIsOutdated = true;
+		} else if (utilities.arrayHasElement(tableConfiguration.getWinningRecordFieldsInfo())) {
 			for (List<org.openmrs.module.epts.etl.model.Field> fields : tableConfiguration.getWinningRecordFieldsInfo()) {
 				
 				//Start assuming that this record is updated
