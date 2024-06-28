@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.openmrs.module.epts.etl.conf.AppInfo;
+import org.openmrs.module.epts.etl.conf.EtlDstType;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.SrcConf;
@@ -46,8 +47,6 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	
 	private EtlItemConfiguration etlItemConfiguration;
 	
-	private String engineMonitorId;
-	
 	private String engineId;
 	
 	private int operationStatus;
@@ -69,13 +68,16 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		this.controller = controller;
 		this.etlItemConfiguration = etlItemConfiguration;
 		
-		this.engineMonitorId = (controller.getControllerId() + "_" + this.getEtlConfigCode() + "_monitor").toLowerCase();
 		this.engineId = (getController().getControllerId() + "_" + this.getEtlConfigCode()).toLowerCase();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
 		
 		this.finalCheckStatus = MigrationFinalCheckStatus.NOT_INITIALIZED;
+	}
+	
+	public EtlDstType getDstType() {
+		return getRelatedEtlOperationConfig().getDstType();
 	}
 	
 	public List<TaskProcessor<T>> getCurrentTaskProcessor() {
@@ -112,6 +114,26 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		}
 		
 		return conns;
+	}
+	
+	public boolean isDbDst() {
+		return getRelatedEtlOperationConfig().isDbDst();
+	}
+	
+	public boolean isJsonDst() {
+		return getRelatedEtlOperationConfig().isJsonDst();
+	}
+	
+	public boolean isDumpDst() {
+		return getRelatedEtlOperationConfig().isDumpDst();
+	}
+	
+	public boolean isCsvDst() {
+		return getRelatedEtlOperationConfig().isCsvDst();
+	}
+	
+	public boolean isFileDst() {
+		return getRelatedEtlOperationConfig().isFileDst();
 	}
 	
 	protected boolean mustDoFinalCheck() {
@@ -177,10 +199,6 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	
 	public String getEngineId() {
 		return engineId;
-	}
-	
-	public String getEngineMonitorId() {
-		return engineMonitorId;
 	}
 	
 	public EtlItemConfiguration getEtlItemConfiguration() {
@@ -580,9 +598,9 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				    dstConn);
 				
 				if (taskProcessor.getTaskResultInfo().hasRecordsWithErrors()) {
-					logWarn(
-					    "Some errors where found loading '" + taskProcessor.getTaskResultInfo().getRecordsWithErrorsAsEtlDatabaseObject().size()
-					            + "! The errors will be documented");
+					logWarn("Some errors where found loading '"
+					        + taskProcessor.getTaskResultInfo().getRecordsWithErrorsAsEtlDatabaseObject().size()
+					        + "! The errors will be documented");
 					
 					taskProcessor.getTaskResultInfo().documentErrors(srcConn, dstConn);
 				}
@@ -767,7 +785,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	
 	@Override
 	public String toString() {
-		return this.engineMonitorId;
+		return this.getEngineId();
 	}
 	
 	public static <T extends EtlDatabaseObject> Engine<T> init(OperationController<T> controller,

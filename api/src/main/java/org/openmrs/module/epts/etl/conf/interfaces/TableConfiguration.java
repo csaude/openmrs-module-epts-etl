@@ -2140,5 +2140,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		return utilities.removeLastChar(values);
 	}
+
+	ConflictResolutionType onConflict();
 	
 }

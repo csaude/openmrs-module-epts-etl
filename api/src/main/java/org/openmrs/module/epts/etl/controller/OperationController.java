@@ -8,6 +8,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlDstType;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
@@ -77,8 +78,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
-		this.controllerId = (getOperationType().name().toLowerCase() + "_on_" + processController.getControllerId())
-		        .toLowerCase();
+		this.controllerId = (getDstType() + "_" + getOperationType().name().toLowerCase() + "_on_"
+		        + processController.getControllerId()).toLowerCase();
 		
 		OpenConnection conn = null;
 		try {
@@ -96,6 +97,10 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				conn.finalizeConnection();
 		}
 		
+	}
+	
+	public EtlDstType getDstType() {
+		return getOperationConfig().getDstType();
 	}
 	
 	public AppInfo getSrcApp() {
@@ -366,7 +371,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	private void startAndAddToEnginesActivititieMonitor(Engine<T> activitityMonitor) {
 		this.enginesActivititieMonitor.add(activitityMonitor);
 		
-		ThreadPoolService.getInstance().createNewThreadPoolExecutor(activitityMonitor.getEngineMonitorId())
+		ThreadPoolService.getInstance().createNewThreadPoolExecutor(activitityMonitor.getEngineId())
 		        .execute(activitityMonitor);
 	}
 	
@@ -656,7 +661,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		if (this.enginesActivititieMonitor != null) {
 			for (Engine<T> monitor : this.enginesActivititieMonitor) {
-				ThreadPoolService.getInstance().terminateTread(logger, monitor.getEngineMonitorId(), monitor);
+				ThreadPoolService.getInstance().terminateTread(logger, monitor.getEngineId(), monitor);
 			}
 		}
 		

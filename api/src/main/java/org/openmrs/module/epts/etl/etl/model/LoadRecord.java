@@ -24,7 +24,6 @@ import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.base.VO;
 import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
@@ -689,36 +688,31 @@ public class LoadRecord {
 		
 		String dataFile = engine.getDataDir().getAbsolutePath() + File.separator + objs.get(0).generateTableName();
 		
-		synchronized (engine) {
-			if (engine.getRelatedEtlOperationConfig().isJsonDst()) {
-				String json = utilities.parseToJSON(objs);
-				
-				FileUtilities.write(dataFile, json);
-			} else if (engine.getRelatedEtlOperationConfig().isCsvDst()) {
-				String csv = utilities.parseToCSV(objs);
-				
-				if (FileUtilities.isEmpty(new File(dataFile))) {
-					//Write header
-					StringBuilder csvBuilder = new StringBuilder();
-					
-					VO firstObj = objs.get(0);
-					
-					List<String> headers = org.openmrs.module.epts.etl.model.Field
-					        .parseAllToListOfName(firstObj.getFields());
-					
-					csvBuilder.append(String.join(",", headers)).append("\n");
-				}
-				
-				FileUtilities.write(dataFile, csv);
-			} else if (engine.getRelatedEtlOperationConfig().isDumpDst()) {
-				String dump = TableConfiguration.generateInsertDump(objs);
-				
-				FileUtilities.write(dataFile, dump);
-			}
+		String data = null;
+		
+		if (engine.isJsonDst()) {
+			data = utilities.parseToJSON(objs);
 			
-			taskProcessor.getTaskResultInfo()
-			        .addAllToRecordsWithNoError(EtlOperationItemResult.parseFromEtlDatabaseObject(objs));
+			dataFile += ".json";
+		} else if (engine.isCsvDst()) {
+			
+			boolean includeHeader = FileUtilities.isEmpty(new File(dataFile));
+			
+			data = utilities.parseToCSV(objs, includeHeader);
+			
+			dataFile += ".csv";
+		} else if (engine.isDumpDst()) {
+			data = TableConfiguration.generateInsertDump(objs);
+		
+			dataFile += ".sql";
 		}
+		
+		synchronized (engine) {
+			FileUtilities.write(dataFile, data);
+		}
+		
+		taskProcessor.getTaskResultInfo()
+		        .addAllToRecordsWithNoError(EtlOperationItemResult.parseFromEtlDatabaseObject(objs));
 	}
 	
 	public static void writeAllToFile(Map<String, List<LoadRecord>> mergingRecs)

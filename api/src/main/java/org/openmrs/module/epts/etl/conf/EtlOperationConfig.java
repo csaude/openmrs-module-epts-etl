@@ -89,17 +89,17 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean nonResumable;
 	
-	private AppInfoType dstType;
+	private EtlDstType dstType;
 	
 	public EtlOperationConfig() {
-		this.dstType = AppInfoType.db;
+		this.dstType = EtlDstType.db;
 	}
 	
-	public AppInfoType getDstType() {
+	public EtlDstType getDstType() {
 		return dstType;
 	}
 	
-	public void setDstType(AppInfoType dstType) {
+	public void setDstType(EtlDstType dstType) {
 		this.dstType = dstType;
 	}
 	

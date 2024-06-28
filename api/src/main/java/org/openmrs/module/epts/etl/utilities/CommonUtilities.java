@@ -923,12 +923,20 @@ public class CommonUtilities implements Serializable {
 		}
 	}
 	
-	public String parseToCSV(List<? extends VO> objs) {
+	public String parseToCSV(List<? extends VO> objs, boolean includeHeader) {
 		if (objs == null || objs.isEmpty()) {
 			return "";
 		}
 		
 		StringBuilder csvBuilder = new StringBuilder();
+		
+		if (includeHeader) {
+			VO firstObj = objs.get(0);
+			
+			List<String> headers = org.openmrs.module.epts.etl.model.Field.parseAllToListOfName(firstObj.getFields());
+			
+			csvBuilder.append(String.join(",", headers)).append("\n");
+		}
 		
 		for (VO obj : objs) {
 			List<String> values = obj.getFieldValuesAsString();

@@ -183,6 +183,26 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		return getRelatedEtlOperationConfig().writeOperationHistory();
 	}
 	
+	public boolean isDbDst() {
+		return getRelatedEtlOperationConfig().isDbDst();
+	}
+	
+	public boolean isJsonDst() {
+		return getRelatedEtlOperationConfig().isJsonDst();
+	}
+	
+	public boolean isDumpDst() {
+		return getRelatedEtlOperationConfig().isDumpDst();
+	}
+	
+	public boolean isCsvDst() {
+		return getRelatedEtlOperationConfig().isCsvDst();
+	}
+	
+	public boolean isFileDst() {
+		return getRelatedEtlOperationConfig().isFileDst();
+	}
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	public boolean equals(Object obj) {

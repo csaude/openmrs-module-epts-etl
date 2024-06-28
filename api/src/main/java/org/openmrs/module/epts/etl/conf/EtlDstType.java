@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.conf;
 
-public enum AppInfoType {
+public enum EtlDstType {
 	
 	// @formatter:off
 	db,
