@@ -341,7 +341,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				map.setRemoveForbidden(this.getSrcConf().isRemoveForbidden());
 				map.setSchema(dstConn.getSchema());
 				map.setAutomaticalyGenerated(true);
-				
+				map.setOnConflict(getSrcConf().onConflict());
 				map.setRelatedAppInfo(otherApps.get(0));
 				
 				map.setRelatedSyncConfiguration(getRelatedSyncConfiguration());

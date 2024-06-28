@@ -203,6 +203,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setTableName(toCloneFrom.getTableName());
 		this.setParents(toCloneFrom.getParents());
 		this.setMustLoadChildrenInfo(toCloneFrom.isMustLoadChildrenInfo());
+		this.setOnConflict(toCloneFrom.onConflict());
 		
 		if (isMustLoadChildrenInfo()) {
 			this.setChildRefInfo(toCloneFrom.getChildRefInfo());
@@ -2140,7 +2141,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		return utilities.removeLastChar(values);
 	}
-
+	
 	ConflictResolutionType onConflict();
 	
+	ConflictResolutionType getOnConflict();
+	
+	void setOnConflict(ConflictResolutionType onConflict);
 }
