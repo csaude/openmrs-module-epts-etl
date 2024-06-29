@@ -94,7 +94,7 @@ public class DataLoadController extends EtlController {
 	public File getSyncDirectory(AbstractTableConfiguration syncInfo) {
 		String fileName = "";
 		
-		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
+		fileName += syncInfo.getRelatedSyncConfiguration().getEtlRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += "import";
@@ -111,7 +111,7 @@ public class DataLoadController extends EtlController {
 	public File getSyncBkpDirectory(AbstractTableConfiguration syncInfo) throws IOException {
 		String fileName = "";
 		
-		fileName += syncInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
+		fileName += syncInfo.getRelatedSyncConfiguration().getEtlRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		
 		fileName += "import_bkp";

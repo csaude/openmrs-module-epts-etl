@@ -43,7 +43,7 @@ public class DbQuickExportFinalizer extends AbstractProcessFinalizer {
 		
 		String fileName = "";
 		
-		fileName += getConfiguration().getSyncRootDirectory();
+		fileName += getConfiguration().getEtlRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		
 		//Use "_" at begining of folder name to avoid situation were the starting character cause escape (ex: 't' on '\t')

@@ -132,7 +132,7 @@ public class ProcessInfo {
 			subFolder = "destination";
 		}
 		
-		return getConfiguration().getSyncRootDirectory() + FileUtilities.getPathSeparator() + "process_status"
+		return getConfiguration().getEtlRootDirectory() + FileUtilities.getPathSeparator() + "process_status"
 		        + FileUtilities.getPathSeparator() + subFolder + FileUtilities.getPathSeparator()
 		        + getConfiguration().getDesignation();
 	}

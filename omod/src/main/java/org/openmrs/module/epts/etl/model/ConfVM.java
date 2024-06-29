@@ -162,7 +162,7 @@ public class ConfVM {
 		
 			reloadedSyncConfiguration = EtlConfiguration.loadFromJSON(json);
 			
-			reloadedSyncConfiguration.setSyncRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "data");
+			reloadedSyncConfiguration.setEtlRootDirectory(rootDirectory+ FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "data");
 			reloadedSyncConfiguration.setRelatedConfFile(this.configFile);
 			
 			Properties properties = new Properties();

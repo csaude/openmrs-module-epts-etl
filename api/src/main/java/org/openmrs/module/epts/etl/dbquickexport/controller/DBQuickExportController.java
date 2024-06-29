@@ -104,7 +104,7 @@ public class DBQuickExportController extends OperationController<EtlDatabaseObje
 			
 			String fileName = "";
 			
-			fileName += tableInfo.getParentConf().getRelatedSyncConfiguration().getSyncRootDirectory();
+			fileName += tableInfo.getParentConf().getRelatedSyncConfiguration().getEtlRootDirectory();
 			fileName += FileUtilities.getPathSeparator();
 			
 			//Use "_" at begining of folder name to avoid situation were the starting character cause escape (ex: 't' on '\t')

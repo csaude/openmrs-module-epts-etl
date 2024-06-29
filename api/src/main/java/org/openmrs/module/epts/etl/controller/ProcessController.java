@@ -313,7 +313,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	public File generateStopRequestFile() {
 		return new File(
-		        getConfiguration().getSyncRootDirectory() + "/process_status/stop_requested_" + getControllerId() + ".info");
+		        getConfiguration().getEtlRootDirectory() + "/process_status/stop_requested_" + getControllerId() + ".info");
 	}
 	
 	@Override

@@ -45,7 +45,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	public static final String ETL_RECORD_ERROR_TABLE_NAME = "etl_record_error";
 	
-	private String syncRootDirectory;
+	private String etlRootDirectory;
 	
 	private String originAppLocationCode;
 	
@@ -449,12 +449,12 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return tableConfigurationsAsString;
 	}
 	
-	public String getSyncRootDirectory() {
-		return syncRootDirectory;
+	public String getEtlRootDirectory() {
+		return etlRootDirectory;
 	}
 	
-	public void setSyncRootDirectory(String syncRootDirectory) {
-		this.syncRootDirectory = syncRootDirectory;
+	public void setEtlRootDirectory(String etlRootDirectory) {
+		this.etlRootDirectory = etlRootDirectory;
 	}
 	
 	public String generateProcessStatusFolder() {
@@ -466,7 +466,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			subFolder = "destination";
 		}
 		
-		return this.getSyncRootDirectory() + FileUtilities.getPathSeparator() + "process_status"
+		return this.getEtlRootDirectory() + FileUtilities.getPathSeparator() + "process_status"
 		        + FileUtilities.getPathSeparator() + subFolder + FileUtilities.getPathSeparator() + this.getDesignation();
 	}
 	
@@ -886,8 +886,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				errorMsg += ++errNum + ". You must specify value for 'originAppLocationCode' parameter \n";
 		}
 		
-		if (!utilities.stringHasValue(getSyncRootDirectory()))
-			errorMsg += ++errNum + ". You must specify value for 'syncRootDirectory' parameter\n";
+		if (!utilities.stringHasValue(getEtlRootDirectory()))
+			errorMsg += ++errNum + ". You must specify value for 'etlRootDirectory' parameter\n";
 		
 		if (!this.isSupposedToHaveOriginAppCode()) {
 			if (utilities.stringHasValue(getOriginAppLocationCode()))
@@ -1049,7 +1049,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	@JsonIgnore
 	public File getPOJOCompiledFilesDirectory() {
-		String packageDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo"
+		String packageDir = getEtlRootDirectory() + FileUtilities.getPathSeparator() + "pojo"
 		        + FileUtilities.getPathSeparator();
 		
 		return new File(packageDir + "bin");
@@ -1057,7 +1057,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	@JsonIgnore
 	public File getPOJOSourceFilesDirectory() {
-		String packageDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "pojo"
+		String packageDir = getEtlRootDirectory() + FileUtilities.getPathSeparator() + "pojo"
 		        + FileUtilities.getPathSeparator();
 		
 		return new File(packageDir + FileUtilities.getPathSeparator() + "src");
@@ -1065,7 +1065,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	@JsonIgnore
 	public File getSqlScriptsDirectory() {
-		String scriptsDir = getSyncRootDirectory() + FileUtilities.getPathSeparator() + "dump-scripts";
+		String scriptsDir = getEtlRootDirectory() + FileUtilities.getPathSeparator() + "dump-scripts";
 		
 		return new File(scriptsDir);
 	}

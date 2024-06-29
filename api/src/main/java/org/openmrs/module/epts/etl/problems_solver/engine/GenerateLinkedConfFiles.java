@@ -51,11 +51,11 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 		this.province = exItem.getValueString();
 		
 		this.workingDir = new File(
-		        getRelatedEtlConfiguration().getSyncRootDirectory() + File.separator + partner + File.separator + province);
+		        getRelatedEtlConfiguration().getEtlRootDirectory() + File.separator + partner + File.separator + province);
 		
 		this.fileWithListOfDBs = workingDir + File.separator + DBS_FILE_NAME;
 		
-		this.templateConfFilePath = getRelatedEtlConfiguration().getSyncRootDirectory() + File.separator + "conf"
+		this.templateConfFilePath = getRelatedEtlConfiguration().getEtlRootDirectory() + File.separator + "conf"
 		        + File.separator + "template.json";
 	}
 	

@@ -24,7 +24,7 @@ import org.openmrs.util.OpenmrsUtil;
 public class ModuleContentUpdater {
 	
 	public static void copyPOJOContentToModule(EtlConfiguration etlConfiguration, AppInfo app) throws IOException {
-		File jarTmpFolder = new File (etlConfiguration.getSyncRootDirectory() + FileUtilities.getPathSeparator() + "temp");
+		File jarTmpFolder = new File (etlConfiguration.getEtlRootDirectory() + FileUtilities.getPathSeparator() + "temp");
 	
 		FileUtilities.tryToCreateDirectoryStructure(jarTmpFolder.getAbsolutePath());
 		

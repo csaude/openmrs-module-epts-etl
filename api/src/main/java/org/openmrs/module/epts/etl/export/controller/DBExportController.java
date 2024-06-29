@@ -115,7 +115,7 @@ public class DBExportController extends OperationController<EtlDatabaseObject> {
 	        Integer startRecord, Integer lastRecord) throws IOException {
 		String fileName = "";
 		
-		fileName += tableInfo.getRelatedSyncConfiguration().getSyncRootDirectory();
+		fileName += tableInfo.getRelatedSyncConfiguration().getEtlRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += tableInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
 		fileName += FileUtilities.getPathSeparator();
