@@ -541,10 +541,10 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		String subFolder = "";
 		
-		if (operationConfig.getRelatedSyncConfig().isSupposedToRunInOrigin()) {
+		if (operationConfig.getRelatedEtlConfig().isSupposedToRunInOrigin()) {
 			subFolder = getOperationType().name().toLowerCase() + FileUtilities.getPathSeparator()
 			        + getEtlConfiguration().getOriginAppLocationCode();
-		} else if (operationConfig.getRelatedSyncConfig().isSupposedToHaveOriginAppCode()
+		} else if (operationConfig.getRelatedEtlConfig().isSupposedToHaveOriginAppCode()
 		        && !operationConfig.isDatabasePreparationOperation()) {
 			subFolder = getOperationType().name().toLowerCase() + FileUtilities.getPathSeparator()
 			        + getEtlConfiguration().getOriginAppLocationCode();

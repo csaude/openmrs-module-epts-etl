@@ -52,7 +52,7 @@ public class DetectGapesController extends EtlController {
 		try {
 			conn = openSrcConnection();
 			
-			String syncStageSchema = operationConfig.getRelatedSyncConfig().getSyncStageSchema();
+			String syncStageSchema = operationConfig.getRelatedEtlConfig().getSyncStageSchema();
 			
 			if (!DBUtilities.isTableExists(syncStageSchema, "sync_table_gape", conn)) {
 				createGapesTable(conn);
@@ -71,7 +71,7 @@ public class DetectGapesController extends EtlController {
 	}
 	
 	private void createGapesTable(Connection conn) throws DBException {
-		String tableName = operationConfig.getRelatedSyncConfig().getSyncStageSchema() + ".sync_table_gape";
+		String tableName = operationConfig.getRelatedEtlConfig().getSyncStageSchema() + ".sync_table_gape";
 		String sql = "";
 		String notNullConstraint = "NOT NULL";
 		String endLineMarker = ",\n";

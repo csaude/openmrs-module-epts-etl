@@ -203,7 +203,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			
 			for (EtlOperationConfig operation : configuration.getOperations()) {
 				List<OperationController<? extends EtlDatabaseObject>> controller = operation.generateRelatedController(this,
-				    operation.getRelatedSyncConfig().getOriginAppLocationCode(), conn);
+				    operation.getRelatedEtlConfig().getOriginAppLocationCode(), conn);
 				
 				this.operationsControllers.addAll(controller);
 			}

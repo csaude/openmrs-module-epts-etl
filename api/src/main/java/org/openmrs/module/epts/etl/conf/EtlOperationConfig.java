@@ -49,7 +49,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private EtlOperationConfig parent;
 	
-	private EtlConfiguration relatedSyncConfig;
+	private EtlConfiguration relatedEtlConfig;
 	
 	private boolean disabled;
 	
@@ -73,7 +73,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	/**
 	 * Indicates whether this operation will executed over all tables configured under
-	 * {@link #relatedSyncConfig}. If true, the operation will be run only once (for the first
+	 * {@link #relatedEtlConfig}. If true, the operation will be run only once (for the first
 	 * table)
 	 */
 	private boolean runOnce;
@@ -85,6 +85,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	public EtlOperationConfig() {
 		this.dstType = EtlDstType.db;
 		this.processingMode = EtlProcessingModeType.SERIAL;
+		this.operationType = EtlOperationType.ETL;
 	}
 	
 	public EtlDstType getDstType() {
@@ -182,7 +183,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	@JsonIgnore
 	public String getDesignation() {
-		return this.getRelatedSyncConfig().getDesignation() + "_" + this.getOperationType();
+		return this.getRelatedEtlConfig().getDesignation() + "_" + this.getOperationType();
 	}
 	
 	public List<String> getSourceFolders() {
@@ -295,12 +296,12 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public EtlConfiguration getRelatedSyncConfig() {
-		return relatedSyncConfig;
+	public EtlConfiguration getRelatedEtlConfig() {
+		return relatedEtlConfig;
 	}
 	
-	public void setRelatedSyncConfig(EtlConfiguration relatedSyncConfig) {
-		this.relatedSyncConfig = relatedSyncConfig;
+	public void setRelatedEtlConfig(EtlConfiguration relatedEtlConfig) {
+		this.relatedEtlConfig = relatedEtlConfig;
 	}
 	
 	public EtlOperationType getOperationType() {
@@ -535,64 +536,64 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		String errorMsg = "";
 		int errNum = 0;
 		
-		if (this.getRelatedSyncConfig().isReEtlProcess()) {
+		if (this.getRelatedEtlConfig().isReEtlProcess()) {
 			if (!this.canBeRunInReEtlProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in Re Etl process\n";
-		} else if (this.getRelatedSyncConfig().isEtlProcess()) {
+		} else if (this.getRelatedEtlConfig().isEtlProcess()) {
 			if (!this.canBeRunInEtlProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in Etl process\n";
-		} else if (this.getRelatedSyncConfig().isDetectMissingRecords()) {
+		} else if (this.getRelatedEtlConfig().isDetectMissingRecords()) {
 			if (!this.canBeRunInDetectMissingRecordsProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in Detect Missing Records process\n";
-		} else if (this.getRelatedSyncConfig().isDataBaseMergeFromJSONProcess()) {
+		} else if (this.getRelatedEtlConfig().isDataBaseMergeFromJSONProcess()) {
 			if (!this.canBeRunInDestinationSyncProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in destination sync process\n";
 			
 			if (this.isLoadOperation() && (this.getSourceFolders() == null || this.getSourceFolders().size() == 0))
 				errorMsg += ++errNum + ". There is no source folder defined";
-		} else if (this.getRelatedSyncConfig().isSourceSyncProcess()) {
+		} else if (this.getRelatedEtlConfig().isSourceSyncProcess()) {
 			if (!this.canBeRunInSourceSyncProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in source sync process\n";
-		} else if (this.getRelatedSyncConfig().isDBReSyncProcess()) {
+		} else if (this.getRelatedEtlConfig().isDBReSyncProcess()) {
 			if (!this.canBeRunInReSyncProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in re-sync process\n";
-		} else if (this.getRelatedSyncConfig().isDBQuickExportProcess()) {
+		} else if (this.getRelatedEtlConfig().isDBQuickExportProcess()) {
 			if (!this.canBeRunInDBQuickExportProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db quick export process\n";
-		} else if (this.getRelatedSyncConfig().isDBQuickLoadProcess()) {
+		} else if (this.getRelatedEtlConfig().isDBQuickLoadProcess()) {
 			if (!this.canBeRunInDBQuickLoadProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db quick load process\n";
-		} else if (this.getRelatedSyncConfig().isDataReconciliationProcess()) {
+		} else if (this.getRelatedEtlConfig().isDataReconciliationProcess()) {
 			if (!this.canBeRunInDataReconciliationProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in data reconciliation process\n";
-		} else if (this.getRelatedSyncConfig().isDataBaseMergeFromSourceDBProcess()) {
+		} else if (this.getRelatedEtlConfig().isDataBaseMergeFromSourceDBProcess()) {
 			if (!this.canBeRunInDataBasesMergeFromSourceDBProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in data reconciliation process\n";
-		} else if (this.getRelatedSyncConfig().isDBInconsistencyCheckProcess()) {
+		} else if (this.getRelatedEtlConfig().isDBInconsistencyCheckProcess()) {
 			if (!this.canBeRunInDBInconsistencyCheckProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db inconsistency check process\n";
-		} else if (this.getRelatedSyncConfig().isPojoGeneration()) {
+		} else if (this.getRelatedEtlConfig().isPojoGeneration()) {
 			if (!this.canBeRunInDbPojoGenerationProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in pojo generation process\n";
 		}
 		
-		else if (this.getRelatedSyncConfig().isDetectGapesOnDbTables()) {
+		else if (this.getRelatedEtlConfig().isDetectGapesOnDbTables()) {
 			if (!this.canBeRunInDetectGapesOnDBTables())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in detect gapes on db tables process\n";
-		} else if (this.getRelatedSyncConfig().isResolveProblems()) {
+		} else if (this.getRelatedEtlConfig().isResolveProblems()) {
 			if (!this.canBeRunInResolveProblemsProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db problems resolution process\n";
@@ -602,7 +603,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		try {
 			tryToLoadEngine();
 			
-			if (this.getRelatedSyncConfig().isResolveProblems() && !GenericEngine.class.isAssignableFrom(this.engineClazz)) {
+			if (this.getRelatedEtlConfig().isResolveProblems() && !GenericEngine.class.isAssignableFrom(this.engineClazz)) {
 				errorMsg += ++errNum + ". The engine class [" + this.getEngineFullClassName()
 				        + "] is not any org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine \n";
 			}
@@ -614,7 +615,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		
 		if (utilities.stringHasValue(errorMsg)) {
 			errorMsg = "There are errors on dstConf operation configuration " + this.getOperationType() + "[File:  "
-			        + this.getRelatedSyncConfig().getRelatedConfFile().getAbsolutePath() + "]\n" + errorMsg;
+			        + this.getRelatedEtlConfig().getRelatedConfFile().getAbsolutePath() + "]\n" + errorMsg;
 			throw new ForbiddenOperationException(errorMsg);
 		} else if (this.getChild() != null) {
 			this.getChild().validate();
@@ -623,7 +624,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	public boolean requireEngine() {
-		return this.getRelatedSyncConfig().isResolveProblems();
+		return this.getRelatedEtlConfig().isResolveProblems();
 	}
 	
 	@JsonIgnore
@@ -790,17 +791,17 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	@Override
 	@JsonIgnore
 	public String toString() {
-		return (getRelatedSyncConfig().getDesignation() + "_" + this.operationType).toLowerCase();
+		return (getRelatedEtlConfig().getDesignation() + "_" + this.operationType).toLowerCase();
 	}
 	
 	public String generateControllerId() {
-		String controllerId = relatedSyncConfig.generateControllerId() + "_" + getOperationType();
+		String controllerId = relatedEtlConfig.generateControllerId() + "_" + getOperationType();
 		
 		return controllerId.toLowerCase();
 	}
 	
 	public boolean isSupposedToHaveOriginAppCode() {
-		return this.getRelatedSyncConfig().isSupposedToHaveOriginAppCode();
+		return this.getRelatedEtlConfig().isSupposedToHaveOriginAppCode();
 	}
 	
 	@SuppressWarnings("unchecked")
