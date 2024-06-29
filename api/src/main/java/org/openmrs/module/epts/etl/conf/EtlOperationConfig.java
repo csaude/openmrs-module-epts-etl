@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.changedrecordsdetector.controller.ChangedRecordsDetectorController;
+import org.openmrs.module.epts.etl.conf.types.EtlProcessingModeType;
 import org.openmrs.module.epts.etl.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
@@ -38,12 +39,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	public static String PROCESSING_MODE_SEQUENCIAL = "sequencial";
-	
-	public static String PROCESSING_MODE_PARALLEL = "parallel";
-	
-	private static final String[] supportedProcessingModes = { PROCESSING_MODE_SEQUENCIAL, PROCESSING_MODE_PARALLEL };
-	
 	private EtlOperationType operationType;
 	
 	private int maxRecordPerProcessing;
@@ -60,7 +55,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean disabled;
 	
-	private String processingMode;
+	private EtlProcessingModeType processingMode;
 	
 	private List<String> sourceFolders;
 	
@@ -253,26 +248,22 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.sourceFolders = sourceFolders;
 	}
 	
-	@JsonIgnore
-	public boolean isParallelModeProcessing() {
-		return this.processingMode.equalsIgnoreCase(EtlConfiguration.PROCESSING_MODE_PARALLEL);
-	}
-	
-	@JsonIgnore
-	public boolean isSequencialModeProcessing() {
-		return this.processingMode.equalsIgnoreCase(EtlConfiguration.PROCESSING_MODE_SEQUENCIAL);
-	}
-	
-	public String getProcessingMode() {
+	public EtlProcessingModeType getProcessingMode() {
 		return processingMode;
 	}
 	
-	public void setProcessingMode(String processingMode) {
-		if (!utilities.isStringIn(processingMode, supportedProcessingModes))
-			throw new ForbiddenOperationException("The processing mode '" + processingMode
-			        + "' is not supported. Supported modes are: " + supportedProcessingModes);
-		
+	public void setProcessingMode(EtlProcessingModeType processingMode) {
 		this.processingMode = processingMode;
+	}
+	
+	@JsonIgnore
+	public boolean isParallelModeProcessing() {
+		return this.processingMode.isParallel();
+	}
+	
+	@JsonIgnore
+	public boolean isSerialModeProcessing() {
+		return this.processingMode.isSerial();
 	}
 	
 	@JsonIgnore
