@@ -75,7 +75,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	 */
 	private boolean runOnce;
 	
-	private boolean nonResumable;
+	private boolean doNotSaveOperationProgress;
 	
 	private EtlDstType dstType;
 	
@@ -121,12 +121,12 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.useSharedConnectionPerThread = useSharedConnectionPerThread;
 	}
 	
-	public boolean isNonResumable() {
-		return nonResumable;
+	public boolean isDoNotSaveOperationProgress() {
+		return doNotSaveOperationProgress;
 	}
 	
-	public void setNonResumable(boolean nonResumable) {
-		this.nonResumable = nonResumable;
+	public void setDoNotSaveOperationProgress(boolean doNotSaveOperationProgress) {
+		this.doNotSaveOperationProgress = doNotSaveOperationProgress;
 	}
 	
 	public boolean writeOperationHistory() {

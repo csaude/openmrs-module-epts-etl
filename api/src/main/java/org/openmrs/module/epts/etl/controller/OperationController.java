@@ -813,7 +813,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	public boolean isResumable() {
-		return !getOperationConfig().isNonResumable();
+		return !getOperationConfig().isDoNotSaveOperationProgress();
 	}
 	
 	public abstract boolean canBeRunInMultipleEngines();
