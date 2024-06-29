@@ -20,23 +20,14 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 	
 	private boolean selectAllRecords;
 	
-	private String appCode;
-	
 	private EtlOperationType type;
 	
-	public ChangedRecordsDetectorSearchParams(Engine<EtlDatabaseObject> engine, String appCode,
+	public ChangedRecordsDetectorSearchParams(Engine<EtlDatabaseObject> engine,
 	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits, EtlOperationType type) {
 		super(engine, limits);
 		
-		this.appCode = appCode;
-		
 		this.type = type;
 	}
-	
-	public String getAppCode() {
-		return appCode;
-	}
-	
 	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
 	        Connection dstConn) throws DBException {

@@ -91,9 +91,9 @@ public class TransportController extends SiteOperationController<TransportRecord
 	public File getSyncDirectory(AbstractTableConfiguration syncInfo) {
 		String fileName = "";
 		
-		fileName += syncInfo.getRelatedSyncConfiguration().getEtlRootDirectory();
+		fileName += syncInfo.getRelatedEtlConf().getEtlRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		fileName += syncInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
+		fileName += syncInfo.getRelatedEtlConf().getOriginAppLocationCode().toLowerCase();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += "export";
 		fileName += FileUtilities.getPathSeparator();
@@ -105,9 +105,9 @@ public class TransportController extends SiteOperationController<TransportRecord
 	public File getSyncBkpDirectory(AbstractTableConfiguration syncInfo) throws IOException {
 		String fileName = "";
 		
-		fileName += syncInfo.getRelatedSyncConfiguration().getEtlRootDirectory();
+		fileName += syncInfo.getRelatedEtlConf().getEtlRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
-		fileName += syncInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
+		fileName += syncInfo.getRelatedEtlConf().getOriginAppLocationCode().toLowerCase();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += "export_bkp";
 		fileName += FileUtilities.getPathSeparator();
@@ -126,11 +126,11 @@ public class TransportController extends SiteOperationController<TransportRecord
 	public File getSyncDestinationDirectory(AbstractTableConfiguration syncInfo) throws IOException {
 		String fileName = "";
 		
-		fileName += syncInfo.getRelatedSyncConfiguration().getEtlRootDirectory();
+		fileName += syncInfo.getRelatedEtlConf().getEtlRootDirectory();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += "import";
 		fileName += FileUtilities.getPathSeparator();
-		fileName += syncInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
+		fileName += syncInfo.getRelatedEtlConf().getOriginAppLocationCode().toLowerCase();
 		fileName += FileUtilities.getPathSeparator();
 		fileName += syncInfo.getTableName();
 		

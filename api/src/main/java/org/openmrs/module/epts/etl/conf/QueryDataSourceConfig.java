@@ -19,6 +19,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -128,8 +129,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	private void loadQueryFromFile() {
-		String pathToScript = getRelatedSyncConfiguration().getSqlScriptsDirectory().getAbsolutePath() + File.separator
-		        + this.script;
+		String pathToScript = getRelatedEtlConf().getSqlScriptsDirectory().getAbsolutePath() + File.separator + this.script;
 		
 		try {
 			this.query = new String(Files.readAllBytes(Paths.get(pathToScript)));
@@ -149,7 +149,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	@Override
 	public void fullLoad() throws DBException {
-		OpenConnection conn = this.relatedSrcConf.getRelatedAppInfo().openConnection();
+		OpenConnection conn = this.relatedSrcConf.getRelatedConnInfo().openConnection();
 		
 		try {
 			fullLoad(conn);
@@ -171,25 +171,26 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	@JsonIgnore
 	@Override
 	public Class<? extends EtlDatabaseObject> getSyncRecordClass() throws ForbiddenOperationException {
-		return this.getSyncRecordClass(this.relatedSrcConf.getRelatedAppInfo());
+		return this.getSyncRecordClass(this.relatedSrcConf.getRelatedConnInfo());
 	}
 	
 	@Override
-	public Class<? extends EtlDatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	public Class<? extends EtlDatabaseObject> getSyncRecordClass(DBConnectionInfo connInfo)
+	        throws ForbiddenOperationException {
 		if (syncRecordClass == null)
 			syncRecordClass = GenericDatabaseObject.class;
 		
 		return syncRecordClass;
 	}
 	
-	public EtlConfiguration getRelatedSyncConfiguration() {
-		return this.relatedSrcConf.getRelatedSyncConfiguration();
+	public EtlConfiguration getRelatedEtlConf() {
+		return this.relatedSrcConf.getRelatedEtlConf();
 	}
 	
 	@JsonIgnore
-	public boolean existsSyncRecordClass(AppInfo application) {
+	public boolean existsSyncRecordClass(DBConnectionInfo connInfo) {
 		try {
-			return getSyncRecordClass(application) != null;
+			return getSyncRecordClass(connInfo) != null;
 		}
 		catch (ForbiddenOperationException e) {
 			
@@ -203,16 +204,16 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	@JsonIgnore
 	@Override
-	public String getClasspackage(AppInfo application) {
-		return application.getPojoPackageName() + "._query_result";
+	public String getClasspackage(DBConnectionInfo connInfo) {
+		return connInfo.getPojoPackageName() + "._query_result";
 	}
 	
 	@JsonIgnore
 	@Override
-	public String generateFullClassName(AppInfo application) {
+	public String generateFullClassName(DBConnectionInfo connInfo) {
 		String rootPackageName = "org.openmrs.module.epts.etl.model.pojo";
 		
-		String packageName = getClasspackage(application);
+		String packageName = getClasspackage(connInfo);
 		
 		String fullPackageName = utilities.concatStringsWithSeparator(rootPackageName, packageName, ".");
 		
@@ -220,22 +221,22 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@JsonIgnore
-	public String generateFullPackageName(AppInfo application) {
+	public String generateFullPackageName(DBConnectionInfo connInfo) {
 		String rootPackageName = "org.openmrs.module.epts.etl.model.pojo";
 		
-		String packageName = getClasspackage(application);
+		String packageName = getClasspackage(connInfo);
 		
 		String fullPackageName = utilities.concatStringsWithSeparator(rootPackageName, packageName, ".");
 		
 		return fullPackageName;
 	}
 	
-	public void generateRecordClass(AppInfo application, boolean fullClass) {
+	public void generateRecordClass(DBConnectionInfo connInfo, boolean fullClass) {
 		try {
 			if (fullClass) {
-				this.syncRecordClass = DatabaseEntityPOJOGenerator.generate(this, application);
+				this.syncRecordClass = DatabaseEntityPOJOGenerator.generate(this, connInfo);
 			} else {
-				this.syncRecordClass = DatabaseEntityPOJOGenerator.generateSkeleton(this, application);
+				this.syncRecordClass = DatabaseEntityPOJOGenerator.generateSkeleton(this, connInfo);
 			}
 		}
 		catch (ClassNotFoundException e) {
@@ -255,9 +256,9 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		}
 	}
 	
-	public void generateSkeletonRecordClass(AppInfo application) {
+	public void generateSkeletonRecordClass(DBConnectionInfo connInfo) {
 		try {
-			this.syncRecordClass = DatabaseEntityPOJOGenerator.generateSkeleton(this, application);
+			this.syncRecordClass = DatabaseEntityPOJOGenerator.generateSkeleton(this, connInfo);
 		}
 		catch (ClassNotFoundException e) {
 			e.printStackTrace();
@@ -301,7 +302,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	@Override
 	public File getPOJOSourceFilesDirectory() {
-		return getRelatedSyncConfiguration().getPOJOSourceFilesDirectory();
+		return getRelatedEtlConf().getPOJOSourceFilesDirectory();
 	}
 	
 	@Override
@@ -331,12 +332,12 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	@Override
 	public File getPOJOCopiledFilesDirectory() {
-		return getRelatedSyncConfiguration().getPOJOCompiledFilesDirectory();
+		return getRelatedEtlConf().getPOJOCompiledFilesDirectory();
 	}
 	
 	@Override
 	public File getClassPath() {
-		return new File(getRelatedSyncConfiguration().getClassPath());
+		return new File(getRelatedEtlConf().getClassPath());
 	}
 	
 	@Override
@@ -345,11 +346,11 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
-	        throws DBException {
+	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn,
+	        DBConnectionInfo srcAppInfo) throws DBException {
 		
 		//@formatter:off
-		Object[] params = DBUtilities.loadParamsValues(this.getQuery(), this.paramConfig, mainObject, getRelatedSyncConfiguration());
+		Object[] params = DBUtilities.loadParamsValues(this.getQuery(), this.paramConfig, mainObject, getRelatedEtlConf());
 		
 		String query = DBUtilities.replaceSqlParametersWithQuestionMarks(this.getQuery());
 		
@@ -406,8 +407,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 
 	@Override
-	public AppInfo getRelatedAppInfo() {
-		return getRelatedSrcConf().getMainApp();
+	public DBConnectionInfo getRelatedConnInfo() {
+		return getRelatedSrcConf().getSrcConnInfo();
 	}
 
 	@Override

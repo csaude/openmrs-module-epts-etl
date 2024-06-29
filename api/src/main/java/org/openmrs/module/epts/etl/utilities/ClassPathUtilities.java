@@ -17,12 +17,12 @@ import java.util.zip.ZipOutputStream;
 
 import org.openmrs.module.ModuleUtil;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsClassLoader;
 
@@ -191,6 +191,7 @@ public class ClassPathUtilities {
 		FileUtilities.copyFile(file, new File(tagDir.getAbsolutePath() + FileUtilities.getPathSeparator() + file.getName()));
 	}
 	
+	@SuppressWarnings("resource")
 	public static void copyModuleTagsToOpenMRS() {
 		try {
 			ZipFile zipfile = new ZipFile(retrieveModuleJar());
@@ -218,16 +219,16 @@ public class ClassPathUtilities {
 		}
 	}
 	
-	public static void addClassToClassPath(DatabaseObjectConfiguration pojoble, AppInfo app) {
-		String pojoPackageDir = pojoble.getRelatedSyncConfiguration().getPojoPackageAsDirectory(app).getAbsolutePath();
+	public static void addClassToClassPath(DatabaseObjectConfiguration pojoble, DBConnectionInfo connInfo) {
+		String pojoPackageDir = pojoble.getRelatedEtlConf().getPojoPackageAsDirectory(connInfo).getAbsolutePath();
 		
 		File clazzFile = new File(
 		        pojoPackageDir + FileUtilities.getPathSeparator() + pojoble.generateClassName() + ".class");
 		
 		if (clazzFile.exists()) {
 			addClassToClassPath(utilities.parseObjectToArray(clazzFile),
-			    pojoble.getRelatedSyncConfiguration().getPojoPackageRelativePath(app),
-			    pojoble.getRelatedSyncConfiguration());
+			    pojoble.getRelatedEtlConf().getPojoPackageRelativePath(connInfo),
+			    pojoble.getRelatedEtlConf());
 		}
 	}
 	
@@ -263,29 +264,29 @@ public class ClassPathUtilities {
 		catch (Exception e) {}
 	}
 	
-	public static void tryToCopyPOJOToClassPath(EtlConfiguration etlConfiguration, AppInfo app) {
-		if (etlConfiguration.getPojoPackageAsDirectory(app).exists()) {
+	public static void tryToCopyPOJOToClassPath(EtlConfiguration etlConfiguration, DBConnectionInfo connInfo) {
+		if (etlConfiguration.getPojoPackageAsDirectory(connInfo).exists()) {
 			
 			List<File> clazzListFiless = new ArrayList<File>();
 			
 			for (EtlItemConfiguration config : etlConfiguration.getEtlItemConfiguration()) {
 				AbstractTableConfiguration tableConfiguration = config.getSrcConf();
 				
-				tryToCopyPOJOToClassPath(tableConfiguration, clazzListFiless, app);
+				tryToCopyPOJOToClassPath(tableConfiguration, clazzListFiless, connInfo);
 				
 				for (DstConf dstConf : config.getDstConf()) {
-					tryToCopyPOJOToClassPath(dstConf, clazzListFiless, app);
+					tryToCopyPOJOToClassPath(dstConf, clazzListFiless, connInfo);
 				}
 			}
 			
 			addClassToClassPath(utilities.parseListToArray(clazzListFiless),
-			    etlConfiguration.getPojoPackageRelativePath(app), etlConfiguration);
+			    etlConfiguration.getPojoPackageRelativePath(connInfo), etlConfiguration);
 		}
 	}
 	
 	public static void tryToCopyPOJOToClassPath(AbstractTableConfiguration tableConfiguration, List<File> clazzListFiless,
-	        AppInfo app) {
-		String pojoPackageDir = tableConfiguration.getRelatedSyncConfiguration().getPojoPackageAsDirectory(app)
+	        DBConnectionInfo connInfo) {
+		String pojoPackageDir = tableConfiguration.getRelatedEtlConf().getPojoPackageAsDirectory(connInfo)
 		        .getAbsolutePath();
 		
 		File clazzFile = new File(

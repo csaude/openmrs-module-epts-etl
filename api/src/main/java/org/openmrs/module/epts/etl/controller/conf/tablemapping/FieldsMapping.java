@@ -3,11 +3,11 @@ package org.openmrs.module.epts.etl.controller.conf.tablemapping;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
@@ -101,7 +101,7 @@ public class FieldsMapping {
 		return "[srcField: " + srcField + ", dstField: " + dstField + ", dataSourceName: " + this.dataSourceName + "]";
 	}
 	
-	public Object retrieveValue(EtlDatabaseObject dstObject, List<EtlDatabaseObject> srcObjects, AppInfo appInfo, Connection conn)
+	public Object retrieveValue(EtlDatabaseObject dstObject, List<EtlDatabaseObject> srcObjects, DBConnectionInfo appInfo, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
 		if (this.srcValue != null) {

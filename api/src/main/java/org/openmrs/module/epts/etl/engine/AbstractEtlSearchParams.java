@@ -106,7 +106,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
 			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
 			
-			Object[] params = DBUtilities.loadParamsValues(extraContidion, getConfig().getRelatedSyncConfiguration());
+			Object[] params = DBUtilities.loadParamsValues(extraContidion, getConfig().getRelatedEtlConf());
 			
 			String query = DBUtilities.replaceSqlParametersWithQuestionMarks(extraContidion);
 			
@@ -135,7 +135,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	
 	@SuppressWarnings("unchecked")
 	public Class<T> getRecordClass() {
-		return (Class<T>) getSrcTableConf().getSyncRecordClass(getSrcTableConf().getMainApp());
+		return (Class<T>) getSrcTableConf().getSyncRecordClass(getSrcTableConf().getSrcConnInfo());
 	}
 	
 	public SrcConf getSrcConf() {

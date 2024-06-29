@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -15,6 +14,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class MergingRecord {
@@ -29,11 +29,11 @@ public class MergingRecord {
 	
 	private List<ParentInfo> parentsWithDefaultValues;
 	
-	private AppInfo srcApp;
+	private DBConnectionInfo srcApp;
 	
-	private AppInfo destApp;
+	private DBConnectionInfo destApp;
 	
-	public MergingRecord(SyncImportInfoVO stageInfo, TableConfiguration config, AppInfo srcApp, AppInfo destApp) {
+	public MergingRecord(SyncImportInfoVO stageInfo, TableConfiguration config, DBConnectionInfo srcApp, DBConnectionInfo destApp) {
 		this.srcApp = srcApp;
 		this.destApp = destApp;
 		this.stageInfo = stageInfo;

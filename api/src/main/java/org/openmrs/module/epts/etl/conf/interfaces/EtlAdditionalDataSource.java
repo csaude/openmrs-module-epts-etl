@@ -2,9 +2,9 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public interface EtlAdditionalDataSource extends EtlDataSource {
@@ -13,7 +13,7 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	
 	void setRelatedSrcConf(SrcConf relatedSrcConf);
 	
-	EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection conn, AppInfo srcAppInfo)
+	EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection conn, DBConnectionInfo srcAppInfo)
 	        throws DBException;
 	
 	/**

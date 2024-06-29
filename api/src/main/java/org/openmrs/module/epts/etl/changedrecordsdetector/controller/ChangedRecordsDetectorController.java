@@ -8,7 +8,6 @@ import java.util.List;
 import org.openmrs.module.epts.etl.changedrecordsdetector.engine.ChangedRecordsDetectorEngine;
 import org.openmrs.module.epts.etl.changedrecordsdetector.model.ChangedRecordsDetectorSearchParams;
 import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordInfoDAO;
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
@@ -30,17 +29,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class ChangedRecordsDetectorController extends OperationController<EtlDatabaseObject> {
 	
-	private AppInfo actionPerformeApp;
-	
 	public ChangedRecordsDetectorController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
-		
-		//We assume that there is only one application listed in appConf
-		this.actionPerformeApp = getEtlConfiguration().exposeAllAppsNotMain().get(0);
-	}
-	
-	public AppInfo getActionPerformeApp() {
-		return actionPerformeApp;
 	}
 	
 	@Override
@@ -71,11 +61,11 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 			conn = openSrcConnection();
 			
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstChangedRecord(engine.getSrcConf(),
-				    this.getActionPerformeApp().getApplicationCode(), getEtlConfiguration().getStartDate(), conn);
+				return DetectedRecordInfoDAO.getFirstChangedRecord(engine.getSrcConf(), getEtlConfiguration().getStartDate(),
+				    conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getFirstNewRecord(engine.getSrcConf(),
-				    this.getActionPerformeApp().getApplicationCode(), getEtlConfiguration().getStartDate(), conn);
+				return DetectedRecordInfoDAO.getFirstNewRecord(engine.getSrcConf(), getEtlConfiguration().getStartDate(),
+				    conn);
 			} else
 				throw new ForbiddenOperationException(
 				        "The operation '" + getOperationType() + "' is not supported in this controller!");
@@ -99,11 +89,11 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 			conn = openSrcConnection();
 			
 			if (operationConfig.isChangedRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastChangedRecord(engine.getSrcConf(),
-				    this.getActionPerformeApp().getApplicationCode(), getEtlConfiguration().getStartDate(), conn);
+				return DetectedRecordInfoDAO.getLastChangedRecord(engine.getSrcConf(), getEtlConfiguration().getStartDate(),
+				    conn);
 			} else if (operationConfig.isNewRecordsDetector()) {
-				return DetectedRecordInfoDAO.getLastNewRecord(engine.getSrcConf(),
-				    this.getActionPerformeApp().getApplicationCode(), getEtlConfiguration().getStartDate(), conn);
+				return DetectedRecordInfoDAO.getLastNewRecord(engine.getSrcConf(), getEtlConfiguration().getStartDate(),
+				    conn);
 			} else
 				throw new ForbiddenOperationException(
 				        "The operation '" + getOperationType() + "' is not supported in this controller!");
@@ -208,7 +198,7 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsManager, Engine<EtlDatabaseObject> engine) {
 		
 		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new ChangedRecordsDetectorSearchParams(engine,
-		        this.getActionPerformeApp().getApplicationCode(), intervalsManager, this.getOperationType());
+		        intervalsManager, this.getOperationType());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		
 		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());

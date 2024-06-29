@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
@@ -245,10 +244,10 @@ public class QuickTest {
 		
 		searchParams.setQtdRecordPerSelected(conf.getOperations().get(0).getProcessingBatch());
 		
-		AppInfo srcApp = conf.getMainApp();
-		AppInfo dstApp = etlConf.getDstConf().get(0).getRelatedAppInfo();
+		DBConnectionInfo srcApp = conf.getSrcConnInfo();
+		DBConnectionInfo dstApp = etlConf.getDstConf().get(0).getRelatedConnInfo();
 		
-		OpenConnection srcConn = conf.getMainApp().openConnection();
+		OpenConnection srcConn = conf.getSrcConnInfo().openConnection();
 		
 		List<EtlDatabaseObject> syncRecords = searchParams.search(null, srcConn, srcConn);
 		
@@ -388,7 +387,7 @@ public class QuickTest {
 		
 		//tbConf.getSyncRecordClass(conf.getMainApp());
 		
-		DatabaseEntityPOJOGenerator.generate(tbConf, conf.getMainApp());
+		DatabaseEntityPOJOGenerator.generate(tbConf, conf.getSrcConnInfo());
 		
 		System.out.println(conf);
 	}

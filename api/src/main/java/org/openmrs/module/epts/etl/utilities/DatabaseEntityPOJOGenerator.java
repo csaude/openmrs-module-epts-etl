@@ -16,7 +16,6 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.RefMapping;
@@ -25,6 +24,7 @@ import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DatabaseEntityPOJOGenerator {
@@ -33,7 +33,7 @@ public class DatabaseEntityPOJOGenerator {
 	
 	static final String[] ignorableFields = { "date_changed", "date_created", "uuid" };
 	
-	public static Class<EtlDatabaseObject> generate(DatabaseObjectConfiguration pojoble, AppInfo application)
+	public static Class<EtlDatabaseObject> generate(DatabaseObjectConfiguration pojoble, DBConnectionInfo connInfo)
 	        throws IOException, SQLException, ClassNotFoundException {
 		if (!pojoble.isFullLoaded())
 			pojoble.fullLoad();
@@ -43,9 +43,9 @@ public class DatabaseEntityPOJOGenerator {
 		pojoRootFolder += "/org/openmrs/module/epts.etl/model/pojo/";
 		
 		File sourceFile = new File(
-		        pojoRootFolder + pojoble.getClasspackage(application) + "/" + pojoble.generateClassName() + ".java");
+		        pojoRootFolder + pojoble.getClasspackage(connInfo) + "/" + pojoble.generateClassName() + ".java");
 		
-		String fullClassName = pojoble.generateFullClassName(application);
+		String fullClassName = pojoble.generateFullClassName(connInfo);
 		
 		Class<EtlDatabaseObject> existingCLass = null;
 		
@@ -309,7 +309,7 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "		return " + utilities.quote(pojoble.getObjectName()) + ";\n";
 		methodFromSuperClass += "	}\n\n";
 		
-		String classDefinition = "package " + pojoble.generateFullPackageName(application) + ";\n\n";
+		String classDefinition = "package " + pojoble.generateFullPackageName(connInfo) + ";\n\n";
 		
 		classDefinition += "import org.openmrs.module.epts.etl.model.pojo.generic.*; \n \n";
 		
@@ -342,9 +342,9 @@ public class DatabaseEntityPOJOGenerator {
 		
 		writer.close();
 		
-		compile(sourceFile, pojoble, application);
+		compile(sourceFile, pojoble, connInfo);
 		
-		existingCLass = tryToGetExistingCLass(fullClassName, pojoble.getRelatedSyncConfiguration());
+		existingCLass = tryToGetExistingCLass(fullClassName, pojoble.getRelatedEtlConf());
 		
 		if (existingCLass == null)
 			throw new EtlExceptionImpl("The class for " + pojoble.getObjectName() + " was not created!") {
@@ -365,7 +365,7 @@ public class DatabaseEntityPOJOGenerator {
 		return false;
 	}
 	
-	public static Class<EtlDatabaseObject> generateSkeleton(DatabaseObjectConfiguration pojoable, AppInfo application)
+	public static Class<EtlDatabaseObject> generateSkeleton(DatabaseObjectConfiguration pojoable, DBConnectionInfo connInfo)
 	        throws IOException, SQLException, ClassNotFoundException {
 		if (!pojoable.isFullLoaded())
 			pojoable.fullLoad();
@@ -376,17 +376,17 @@ public class DatabaseEntityPOJOGenerator {
 		        : "/org/openmrs/module/epts.etl/model/pojo/source/";
 		
 		File sourceFile = new File(
-		        pojoRootPackage + pojoable.getClasspackage(application) + "/" + pojoable.generateClassName() + ".java");
+		        pojoRootPackage + pojoable.getClasspackage(connInfo) + "/" + pojoable.generateClassName() + ".java");
 		
 		String fullClassName = "org.openmrs.module.epts.etl.model.pojo";
 		
 		fullClassName += pojoable.isDestinationInstallationType() ? "." : fullClassName + "source.";
 		
-		fullClassName += pojoable.getClasspackage(application) + "."
+		fullClassName += pojoable.getClasspackage(connInfo) + "."
 		        + FileUtilities.generateFileNameFromRealPathWithoutExtension(sourceFile.getName());
 		
 		Class<EtlDatabaseObject> existingCLass = tryToGetExistingCLass(fullClassName,
-		    pojoable.getRelatedSyncConfiguration());
+		    pojoable.getRelatedEtlConf());
 		
 		if (existingCLass != null)
 			return existingCLass;
@@ -395,7 +395,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		classDefinition += pojoable.isDestinationInstallationType() ? "" : "source.";
 		
-		classDefinition += pojoable.getClasspackage(application) + "; \n \n";
+		classDefinition += pojoable.getClasspackage(connInfo) + "; \n \n";
 		
 		classDefinition += "import org.openmrs.module.epts.etl.model.pojo.generic.*; \n \n";
 		
@@ -413,9 +413,9 @@ public class DatabaseEntityPOJOGenerator {
 		
 		writer.close();
 		
-		compile(sourceFile, pojoable, application);
+		compile(sourceFile, pojoable, connInfo);
 		
-		return tryToGetExistingCLass(fullClassName, pojoable.getRelatedSyncConfiguration());
+		return tryToGetExistingCLass(fullClassName, pojoable.getRelatedEtlConf());
 	}
 	
 	public static Class<EtlDatabaseObject> tryToGetExistingCLass(String fullClassName, EtlConfiguration etlConfiguration) {
@@ -487,7 +487,7 @@ public class DatabaseEntityPOJOGenerator {
 		}
 	}
 	
-	public static void compile(File sourceFile, DatabaseObjectConfiguration pojoble, AppInfo app) throws IOException {
+	public static void compile(File sourceFile, DatabaseObjectConfiguration pojoble, DBConnectionInfo connInfo) throws IOException {
 		File destinationFile = pojoble.getPOJOCopiledFilesDirectory();
 		
 		if (!destinationFile.exists())
@@ -511,7 +511,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		fileManager.close();
 		
-		ClassPathUtilities.addClassToClassPath(pojoble, app);
+		ClassPathUtilities.addClassToClassPath(pojoble, connInfo);
 	}
 	
 }

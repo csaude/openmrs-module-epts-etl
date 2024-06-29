@@ -52,7 +52,7 @@ public class ReEtlEngine extends EtlEngine {
 				
 				EtlDatabaseObject destObject = null;
 				
-				destObject = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
+				destObject = mappingInfo.transform(rec, srcConn, this.getSrcConnInfo(), this.getDstConnInfo());
 				
 				if (destObject == null) {
 					continue;

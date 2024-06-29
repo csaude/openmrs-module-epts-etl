@@ -21,8 +21,6 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.SimpleValue;
-import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
@@ -39,6 +37,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class EtlConfiguration extends AbstractBaseConfiguration implements TableAliasesGenerator {
 	
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
+	
 	public static final String SKIPPED_RECORD_TABLE_NAME = "skipped_record";
 	
 	public static final String DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME = "default_generated_object_key";
@@ -51,9 +51,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private List<EtlItemConfiguration> etlItemConfiguration;
 	
-	private List<AppInfo> appsInfo;
+	private DBConnectionInfo srcConnInfo;
 	
-	private static CommonUtilities utilities = CommonUtilities.getInstance();
+	private DBConnectionInfo dstConnInfo;
 	
 	private EtlProcessType processType;
 	
@@ -221,54 +221,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return relatedController;
 	}
 	
-	@JsonIgnore
-	public DBConnectionInfo getMainDBConnInfo() {
-		return find(AppInfo.init(AppInfo.MAIN_APP_CODE)).getConnInfo();
-	}
-	
-	@JsonIgnore
-	public AppInfo getMainApp() throws ForbiddenOperationException {
-		AppInfo mainApp = find(AppInfo.init(AppInfo.MAIN_APP_CODE));
-		
-		if (mainApp == null)
-			throw new ForbiddenOperationException("No main app found on configurations!");
-		
-		return mainApp;
-	}
-	
-	public boolean hasDstApp() {
-		List<AppInfo> allInfo = exposeAllAppsNotMain();
-		
-		if (allInfo != null) {
-			for (AppInfo info : allInfo) {
-				if (info.getApplicationCode().equals(AppInfo.DST_APP_CODE)) {
-					return true;
-				}
-			}
-		}
-		
-		return false;
-	}
-	
-	@JsonIgnore
-	public AppInfo getDstApp() {
-		if (!hasDstApp()) {
-			throw new ForbiddenOperationException("No dst App is configured");
-		}
-		
-		List<AppInfo> allInfo = exposeAllAppsNotMain();
-		
-		if (allInfo != null) {
-			for (AppInfo info : allInfo) {
-				if (info.getApplicationCode().equals(AppInfo.DST_APP_CODE)) {
-					return info;
-				}
-			}
-		}
-		
-		return null;
-	}
-	
 	public boolean isDisabled() {
 		return disabled;
 	}
@@ -421,16 +373,24 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	@JsonIgnore
-	public String getPojoPackage(AppInfo app) {
-		return app.getPojoPackageName();
+	public String getPojoPackage(DBConnectionInfo connInfo) {
+		return connInfo.getPojoPackageName();
 	}
 	
-	public List<AppInfo> getAppsInfo() {
-		return appsInfo;
+	public DBConnectionInfo getSrcConnInfo() {
+		return srcConnInfo;
 	}
 	
-	public void setAppsInfo(List<AppInfo> appsInfo) {
-		this.appsInfo = appsInfo;
+	public void setSrcConnInfo(DBConnectionInfo srcConnInfo) {
+		this.srcConnInfo = srcConnInfo;
+	}
+	
+	public DBConnectionInfo getDstConnInfo() {
+		return dstConnInfo;
+	}
+	
+	public void setDstConnInfo(DBConnectionInfo dstConnInfo) {
+		this.dstConnInfo = dstConnInfo;
 	}
 	
 	public List<EtlItemConfiguration> getEtlItemConfiguration() {
@@ -720,8 +680,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		OpenConnection conn = null;
 		
 		try {
-			conn = getMainApp().openConnection();
-			;
+			conn = getSrcConnInfo().openConnection();
 			
 			DatabaseMetaData dbmd = conn.getMetaData();
 			String[] types = { "TABLE" };
@@ -790,16 +749,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		tableConfiguration.setTableName(tableName);
 		
 		return utilities.findOnList(this.allTables, tableConfiguration);
-	}
-	
-	public AppInfo find(AppInfo appToFind) throws ForbiddenOperationException {
-		AppInfo app = utilities.findOnArray(this.appsInfo, appToFind);
-		
-		if (app == null)
-			throw new ForbiddenOperationException(
-			        "No configured app found with code [" + appToFind.getApplicationCode() + "]");
-		
-		return app;
 	}
 	
 	public EtlItemConfiguration find(EtlItemConfiguration config) {
@@ -951,11 +900,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			}
 		}
 		
-		try {
-			getMainApp();
-		}
-		catch (ForbiddenOperationException e) {
-			errorMsg += ++errNum + ". No main app were configured!";
+		if (!hasSrcConnInfo()) {
+			errorMsg += ++errNum + ". No Src conn were configured!";
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
@@ -1102,29 +1048,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return utilities.parseToJSON(this);
 	}
 	
-	public void tryToDetermineOriginAppL_ocationCode() throws DBException {
-		OpenConnection conn = getMainApp().openConnection();
-		
-		String sql = " SELECT location.name as designacao, count(*) as value "
-		        + " FROM visit INNER JOIN location on location.location_id = visit.location_id "
-		        + " GROUP BY location.name ";
-		
-		List<SimpleValue> locations = BaseDAO.search(SimpleValue.class, sql, null, conn);
-		
-		SimpleValue locationWithMoreRecords = !locations.isEmpty() ? locations.get(0) : null;
-		
-		for (SimpleValue location : locations) {
-			if (location.intValue() > locationWithMoreRecords.intValue()) {
-				locationWithMoreRecords = location;
-			}
-		}
-		
-		if (locationWithMoreRecords != null) {
-			this.setOriginAppLocationCode(
-			    utilities.replaceAllEmptySpace(locationWithMoreRecords.getDesignacao(), '_').toLowerCase());
-		}
-	}
-	
 	public String generateControllerId() {
 		String controllerId = this.processType.name().toLowerCase();
 		
@@ -1145,18 +1068,18 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	@JsonIgnore
-	public File getPojoPackageAsDirectory(AppInfo app) {
+	public File getPojoPackageAsDirectory(DBConnectionInfo connInfo) {
 		String pojoPackageDir = "";
 		pojoPackageDir += getPOJOCompiledFilesDirectory().getAbsolutePath() + FileUtilities.getPathSeparator();
 		
-		pojoPackageDir += getPojoPackageRelativePath(app).replaceAll("/",
+		pojoPackageDir += getPojoPackageRelativePath(connInfo).replaceAll("/",
 		    Matcher.quoteReplacement(FileUtilities.getPathSeparator()));
 		
 		return new File(pojoPackageDir);
 	}
 	
 	@JsonIgnore
-	public String getPojoPackageRelativePath(AppInfo app) {
+	public String getPojoPackageRelativePath(DBConnectionInfo app) {
 		String relativePathSeparator = "/";
 		
 		String pojoPackageDir = "";
@@ -1172,20 +1095,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		pojoPackageDir += this.getPojoPackage(app) + relativePathSeparator;
 		
 		return pojoPackageDir;
-	}
-	
-	public List<AppInfo> exposeAllAppsNotMain() {
-		List<AppInfo> apps = new ArrayList<AppInfo>();
-		
-		AppInfo mainApp = AppInfo.init(AppInfo.MAIN_APP_CODE);
-		
-		for (AppInfo app : this.appsInfo) {
-			if (!app.equals(mainApp)) {
-				apps.add(app);
-			}
-		}
-		
-		return apps;
 	}
 	
 	public boolean isSupposedToHaveOriginAppCode() {
@@ -1210,10 +1119,21 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return this.isResolveProblems() || this.isDBInconsistencyCheckProcess();
 	}
 	
+	public boolean hasSrcConnInfo() {
+		return getSrcConnInfo() != null;
+	}
+	
+	public boolean hasDstConnInfo() {
+		return getDstConnInfo() != null;
+	}
+	
 	public void finalizeAllApps() {
-		for (AppInfo app : getAppsInfo()) {
-			app.finalize();
-		}
+		if (hasSrcConnInfo())
+			getSrcConnInfo().finalize();
+		
+		if (hasDstConnInfo())
+			getDstConnInfo().finalize();
+		
 	}
 	
 	@SuppressWarnings("rawtypes")
@@ -1264,7 +1184,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public TableConfiguration findTableInSrc(TableConfiguration tableConf, Connection srcConn) throws DBException {
-		String srcSchema = getMainApp().getConnInfo().determineSchema();
+		String srcSchema = getSrcConnInfo().determineSchema();
 		
 		if (!DBUtilities.isTableExists(srcSchema, tableConf.getTableName(), srcConn)) {
 			throw new ForbiddenOperationException(
@@ -1357,15 +1277,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	public OpenConnection openDstConn() throws DBException, ForbiddenOperationException {
 		OpenConnection dstConn = null;
 		
-		List<AppInfo> otherApps = this.exposeAllAppsNotMain();
-		
-		if (utilities.arrayHasElement(otherApps)) {
-			
-			if (utilities.arrayHasMoreThanOneElements(otherApps)) {
-				throw new ForbiddenOperationException("Not supported more that one destination apps");
-			}
-			
-			dstConn = otherApps.get(0).openConnection();
+		if (hasDstConnInfo()) {
+			dstConn = getDstConnInfo().openConnection();
 			
 		} else {
 			throw new ForbiddenOperationException("No dst conn config defined!");
@@ -1375,6 +1288,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public OpenConnection openSrcConn() throws DBException, ForbiddenOperationException {
-		return getMainApp().openConnection();
+		return getSrcConnInfo().openConnection();
 	}
 }

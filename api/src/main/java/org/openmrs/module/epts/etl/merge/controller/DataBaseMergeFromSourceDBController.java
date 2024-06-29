@@ -2,7 +2,6 @@ package org.openmrs.module.epts.etl.merge.controller;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -24,20 +23,13 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  */
 public class DataBaseMergeFromSourceDBController extends EtlController {
 	
-	private AppInfo mainApp;
-	
-	private AppInfo remoteApp;
-	
 	public DataBaseMergeFromSourceDBController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig, null);
-		
-		this.mainApp = getEtlConfiguration().find(AppInfo.init("main"));
-		this.remoteApp = getEtlConfiguration().find(AppInfo.init("remote"));
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
-	        Engine<EtlDatabaseObject> engine) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
 		
 		throw new ForbiddenOperationException("Review this method");
 		
@@ -46,14 +38,6 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
 		
 		return searchParams;*/
-	}
-	
-	public AppInfo getMainApp() {
-		return mainApp;
-	}
-	
-	public AppInfo getRemoteApp() {
-		return remoteApp;
 	}
 	
 	@Override

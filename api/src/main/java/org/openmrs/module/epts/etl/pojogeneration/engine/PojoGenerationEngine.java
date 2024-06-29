@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
@@ -15,6 +14,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -47,7 +47,7 @@ public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 		
 		this.pojoGenerated = true;
 		
-		AppInfo mainApp = getEtlConfiguration().getMainApp();
+		DBConnectionInfo mainApp = getEtlConfiguration().getSrcConnInfo();
 		
 		if (!getEtlConfiguration().isFullLoaded()) {
 			getEtlConfiguration().fullLoad();
@@ -62,15 +62,13 @@ public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 			generate(mainApp, t);
 		}
 		
-		List<AppInfo> otherApps = getEtlConfiguration().getRelatedSyncConfiguration().exposeAllAppsNotMain();
+		DBConnectionInfo mappingAppInfo = null;
 		
-		AppInfo mappingAppInfo = null;
-		
-		if (utilities.arrayHasElement(otherApps)) {
-			mappingAppInfo = otherApps.get(0);
+		if (getRelatedEtlConfiguration().hasDstConnInfo()) {
+			mappingAppInfo = getRelatedEtlConfiguration().getDstConnInfo();
 			
 			for (DstConf map : getEtlConfiguration().getDstConf()) {
-				map.setRelatedAppInfo(mappingAppInfo);
+				map.setRelatedConnInfo(mappingAppInfo);
 				
 				generate(mappingAppInfo, map);
 				
@@ -81,9 +79,9 @@ public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 		
 	}
 	
-	private void generate(AppInfo app, DatabaseObjectConfiguration tableConfiguration) {
+	private void generate(DBConnectionInfo app, DatabaseObjectConfiguration tableConfiguration) {
 		if (!utilities.stringHasValue(app.getPojoPackageName())) {
-			throw new ForbiddenOperationException("The app " + app.getApplicationCode() + " has no package name!");
+			throw new ForbiddenOperationException("The app " + app + " has no package name!");
 		}
 		
 		String fullClassName = tableConfiguration.generateFullClassName(app);

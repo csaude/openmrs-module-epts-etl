@@ -9,7 +9,6 @@ import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
@@ -31,6 +30,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -83,12 +83,12 @@ public class LoadRecord {
 		return engine;
 	}
 	
-	public AppInfo getSrcApp() {
-		return getTaskProcessor().getSrcApp();
+	public DBConnectionInfo getSrcConnInfo() {
+		return getTaskProcessor().getSrcConnInfo();
 	}
 	
-	public AppInfo getDstApp() {
-		return getTaskProcessor().getDstApp();
+	public DBConnectionInfo getDstConnInfo() {
+		return getTaskProcessor().getDstConnInfo();
 	}
 	
 	public SrcConf getSrcConf() {
@@ -96,7 +96,7 @@ public class LoadRecord {
 	}
 	
 	public EtlConfiguration getEtlConfiguration() {
-		return getDstConf().getRelatedSyncConfiguration();
+		return getDstConf().getRelatedEtlConf();
 	}
 	
 	public EtlDatabaseObject getRecord() {
@@ -219,7 +219,7 @@ public class LoadRecord {
 				
 				recordAsSrc.copyFrom(parentInfo.getParentRecordInOrigin());
 				
-				dstParent = dst.transform(recordAsSrc, srcConn, getSrcApp(), getDstApp());
+				dstParent = dst.transform(recordAsSrc, srcConn, getSrcConnInfo(), getDstConnInfo());
 				
 				if (dstParent != null) {
 					LoadRecord parentData = new LoadRecord(dstParent,

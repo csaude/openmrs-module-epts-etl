@@ -47,7 +47,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 				
 				if (utilities.stringHasValue(extraJoinQuery)) {
 					Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,
-					    getConfig().getRelatedSyncConfiguration());
+					    getConfig().getRelatedEtlConf());
 					
 					extraJoinQuery = DBUtilities.replaceSqlParametersWithQuestionMarks(extraJoinQuery);
 					

@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -64,7 +65,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			for (ParentTable ref : this.getParentRefInfo()) {
 				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());
 				
-				ref.tryToGenerateTableAlias(getRelatedSyncConfiguration());
+				ref.tryToGenerateTableAlias(getRelatedEtlConf());
 				
 				if (fullLoadedTab != null) {
 					ref.clone(fullLoadedTab, conn);
@@ -76,7 +77,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getSharedKeyRefInfo().getFullTableName());
 					
 					if (!ref.getSharedKeyRefInfo().hasAlias()) {
-						ref.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedSyncConfiguration());
+						ref.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
 					}
 					if (fullLoadedTab != null) {
 						ref.getSharedKeyRefInfo().clone(fullLoadedTab, conn);
@@ -88,14 +89,14 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			}
 		}
 		
-		OpenConnection srcConn = this.getRelatedAppInfo().openConnection();
+		OpenConnection srcConn = this.getRelatedConnInfo().openConnection();
 		
 		try {
 			
 			if (hasSelfJoinTables()) {
 				for (AuxExtractTable t : this.getSelfJoinTables()) {
 					t.setParentConf(this);
-					t.tryToGenerateTableAlias(getRelatedSyncConfiguration());
+					t.tryToGenerateTableAlias(getRelatedEtlConf());
 					t.setMainExtractTable(this);
 					
 					TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName());
@@ -107,7 +108,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					}
 					
 					if (t.useSharedPKKey()) {
-						t.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedSyncConfiguration());
+						t.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
 						
 						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName());
 						
@@ -127,7 +128,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					
 					TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName());
 					
-					t.tryToGenerateTableAlias(getRelatedSyncConfiguration());
+					t.tryToGenerateTableAlias(getRelatedEtlConf());
 					
 					if (fullLoadedTab != null) {
 						t.clone(fullLoadedTab, conn);
@@ -138,7 +139,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					t.setRelatedSrcConf(this);
 					
 					if (t.useSharedPKKey()) {
-						t.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedSyncConfiguration());
+						t.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
 						
 						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getSharedKeyRefInfo().getFullTableName());
 						
@@ -209,8 +210,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	@Override
-	public AppInfo getRelatedAppInfo() {
-		return getMainApp();
+	public DBConnectionInfo getRelatedConnInfo() {
+		return getSrcConnInfo();
 	}
 	
 	@Override

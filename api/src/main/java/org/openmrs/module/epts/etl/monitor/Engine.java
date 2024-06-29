@@ -10,7 +10,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlDstType;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
@@ -29,6 +28,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.EtlThreadFactory;
 import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeController;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -217,12 +217,12 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		return this.tableOperationProgressInfo != null ? this.tableOperationProgressInfo.getProgressMeter() : null;
 	}
 	
-	public AppInfo getDstApp() {
-		return this.getRelatedOperationController().getDstApp();
+	public DBConnectionInfo getDstConnInfo() {
+		return this.getRelatedOperationController().getDstConnInfo();
 	}
 	
-	public AppInfo getSrcApp() {
-		return this.getRelatedOperationController().getSrcApp();
+	public DBConnectionInfo getSrcConnInfo() {
+		return this.getRelatedOperationController().getSrcConnInfo();
 	}
 	
 	@Override

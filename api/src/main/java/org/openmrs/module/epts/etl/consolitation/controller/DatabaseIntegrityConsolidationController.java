@@ -83,7 +83,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	}
 	
 	public OpenConnection openSrcConnection() throws DBException {
-		OpenConnection conn = getDefaultApp().openConnection();
+		OpenConnection conn = getDefaultConnInfo().openConnection();
 		
 		try {
 			DBUtilities.disableForegnKeyChecks(conn);

@@ -45,7 +45,7 @@ public class DataBasesMergeFromSourceEngine extends TaskProcessor<EtlDatabaseObj
 			logDebug(startingStrLog + ": Merging Record: [" + record + "]");
 			
 			MergingRecord data = new MergingRecord((SyncImportInfoVO) record, getSrcConf(),
-			        getRelatedOperationController().getRemoteApp(), getRelatedOperationController().getMainApp());
+			        getRelatedOperationController().getSrcConnInfo(), getRelatedOperationController().getDstConnInfo());
 			
 			try {
 				data.merge(srcConn);

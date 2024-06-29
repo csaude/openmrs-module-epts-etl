@@ -8,6 +8,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -51,7 +52,7 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	public void setChildTableConf(TableConfiguration childTableConf) {
 		this.childTableConf = (TableConfiguration) childTableConf;
 		
-		this.setRelatedSyncConfiguration(childTableConf.getRelatedSyncConfiguration());
+		this.setRelatedSyncConfiguration(childTableConf.getRelatedEtlConf());
 	}
 	
 	public List<Field> getConditionalFields() {
@@ -68,8 +69,8 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	}
 	
 	@Override
-	public AppInfo getRelatedAppInfo() {
-		return this.childTableConf.getRelatedAppInfo();
+	public DBConnectionInfo	getRelatedConnInfo() {
+		return this.childTableConf.getRelatedConnInfo();
 	}
 	
 	public Object getDefaultValueDueInconsistency() {

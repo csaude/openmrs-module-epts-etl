@@ -356,13 +356,13 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 		EtlDatabaseObject rec = null;
 		
 		try {
-			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(tableInfo.getMainApp()), modifiedJSON);
+			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(tableInfo.getSrcConnInfo()), modifiedJSON);
 		}
 		catch (Exception e) {
 			
 			//try to resolve pathern problems
 			modifiedJSON = utilities.resolveScapeCharacter(modifiedJSON);
-			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(tableInfo.getMainApp()), modifiedJSON);
+			rec = utilities.loadObjectFormJSON(tableInfo.getSyncRecordClass(tableInfo.getSrcConnInfo()), modifiedJSON);
 		}
 		
 		if (!tableInfo.isMetadata()) {

@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractRelatedTable;
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.Key;
@@ -27,6 +26,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -137,7 +137,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default String getId() {
-		return this.getRelatedSyncConfiguration().getDesignation() + "_" + this.getTableName();
+		return this.getRelatedEtlConf().getDesignation() + "_" + this.getTableName();
 	}
 	
 	default boolean hasExtraConditionForExtract() {
@@ -229,10 +229,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setInsertSQLWithObjectId(toCloneFrom.getInsertSQLWithObjectId());
 		this.setInsertSQLWithoutObjectId(toCloneFrom.getInsertSQLWithoutObjectId());
 		this.setUpdateSql(toCloneFrom.getUpdateSql());
-		this.setRelatedSyncConfiguration(toCloneFrom.getRelatedSyncConfiguration());
+		this.setRelatedSyncConfiguration(toCloneFrom.getRelatedEtlConf());
 		this.setSchema(toCloneFrom.getSchema());
 		
-		this.tryToGenerateTableAlias(toCloneFrom.getRelatedSyncConfiguration());
+		this.tryToGenerateTableAlias(toCloneFrom.getRelatedEtlConf());
 		
 		if (toCloneFrom.hasExtraConditionForExtract()) {
 			//First try to replace the alias
@@ -324,12 +324,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					
 					defaultObject = getDefaultObject(conn);
 					
-					EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf = getRelatedSyncConfiguration()
+					EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf = getRelatedEtlConf()
 					        .getDefaultGeneratedObjectKeyTabConf();
 					
 					if (!defaultGeneratedObjectKeyTabConf.isFullLoaded()) {
 						
-						defaultGeneratedObjectKeyTabConf.setTableName(getRelatedSyncConfiguration().getSyncStageSchema()
+						defaultGeneratedObjectKeyTabConf.setTableName(getRelatedEtlConf().getSyncStageSchema()
 						        + "." + defaultGeneratedObjectKeyTabConf.getTableName());
 						
 						defaultGeneratedObjectKeyTabConf.setTableAlias(defaultGeneratedObjectKeyTabConf.getTableName());
@@ -358,13 +358,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default void deleteAllSkippedRecord(Connection srcConn) throws DBException {
-		EtlConfigurationTableConf skippedRecordTabConf = getRelatedSyncConfiguration().getSkippedRecordTabConf();
+		EtlConfigurationTableConf skippedRecordTabConf = getRelatedEtlConf().getSkippedRecordTabConf();
 		
 		DatabaseObjectDAO.removeAll(skippedRecordTabConf, "table_name = '" + getTableName() + "'", srcConn);
 	}
 	
 	default void saveSkippedRecord(EtlDatabaseObject skippedrecord, Connection srcConn) throws DBException {
-		EtlConfigurationTableConf skippedRecordTabConf = getRelatedSyncConfiguration().getSkippedRecordTabConf();
+		EtlConfigurationTableConf skippedRecordTabConf = getRelatedEtlConf().getSkippedRecordTabConf();
 		
 		if (!skippedRecordTabConf.isFullLoaded()) {
 			skippedRecordTabConf.fullLoad(srcConn);
@@ -390,7 +390,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		if (!getPrimaryKey().isSimpleKey())
 			throw new ForbiddenOperationException("Only simple pk is supported!");
 		
-		EtlConfigurationTableConf skippedRecordTabConf = getRelatedSyncConfiguration().getSkippedRecordTabConf();
+		EtlConfigurationTableConf skippedRecordTabConf = getRelatedEtlConf().getSkippedRecordTabConf();
 		
 		String sql = "";
 		sql += getTableAlias() + "." + getPrimaryKey().retrieveSimpleKeyColumnName();
@@ -413,7 +413,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		OpenConnection conn = null;
 		
 		try {
-			conn = getRelatedSyncConfiguration().getMainApp().openConnection();
+			conn = getRelatedEtlConf().getSrcConnInfo().openConnection();
 			
 			loadUniqueKeys(conn);
 		}
@@ -487,23 +487,23 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default void logInfo(String msg) {
-		getRelatedSyncConfiguration().logInfo(msg);
+		getRelatedEtlConf().logInfo(msg);
 	}
 	
 	default void logDebug(String msg) {
-		getRelatedSyncConfiguration().logDebug(msg);
+		getRelatedEtlConf().logDebug(msg);
 	}
 	
 	default void logTrace(String msg) {
-		getRelatedSyncConfiguration().logTrace(msg);
+		getRelatedEtlConf().logTrace(msg);
 	}
 	
 	default void logWarn(String msg) {
-		getRelatedSyncConfiguration().logWarn(msg);
+		getRelatedEtlConf().logWarn(msg);
 	}
 	
 	default void logErr(String msg) {
-		getRelatedSyncConfiguration().logErr(msg);
+		getRelatedEtlConf().logErr(msg);
 	}
 	
 	default int countParents(Connection conn) throws SQLException {
@@ -581,7 +581,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 							
 							parentTabConf.setParentConf(this.getParentConf());
 							parentTabConf.setChildTableConf(this);
-							parentTabConf.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
+							parentTabConf.setRelatedSyncConfiguration(getRelatedEtlConf());
 							
 							parentTabConf.setSchema(foreignKeyRS.getString("PKTABLE_SCHEM"));
 							
@@ -762,7 +762,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						
 						childTabConf.setParentTableConf(this);
 						childTabConf.setParentConf(this.getParentConf());
-						childTabConf.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
+						childTabConf.setRelatedSyncConfiguration(getRelatedEtlConf());
 						childTabConf.setSchema(foreignKeyRS.getString("FKTABLE_SCHEM"));
 						
 						if (!childTabConf.hasSchema()) {
@@ -886,9 +886,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	@JsonIgnore
-	default boolean existsSyncRecordClass(AppInfo application) {
+	default boolean existsSyncRecordClass(DBConnectionInfo connInfo) {
 		try {
-			return getSyncRecordClass(application) != null;
+			return getSyncRecordClass(connInfo) != null;
 		}
 		catch (ForbiddenOperationException e) {
 			
@@ -896,12 +896,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
-	default void generateRecordClass(AppInfo application, boolean fullClass) {
+	default void generateRecordClass(DBConnectionInfo connInfo, boolean fullClass) {
 		try {
 			if (fullClass) {
-				this.setSyncRecordClass(DatabaseEntityPOJOGenerator.generate(this, application));
+				this.setSyncRecordClass(DatabaseEntityPOJOGenerator.generate(this, connInfo));
 			} else {
-				this.setSyncRecordClass(DatabaseEntityPOJOGenerator.generateSkeleton(this, application));
+				this.setSyncRecordClass(DatabaseEntityPOJOGenerator.generateSkeleton(this, connInfo));
 			}
 		}
 		catch (ClassNotFoundException e) {
@@ -921,7 +921,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
-	default void generateSkeletonRecordClass(AppInfo application) {
+	default void generateSkeletonRecordClass(DBConnectionInfo application) {
 		try {
 			this.setSyncRecordClass(DatabaseEntityPOJOGenerator.generateSkeleton(this, application));
 		}
@@ -981,7 +981,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default String getSyncStageSchema() {
-		return getRelatedSyncConfiguration().getSyncStageSchema();
+		return getRelatedEtlConf().getSyncStageSchema();
 	}
 	
 	@JsonIgnore
@@ -1061,7 +1061,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default boolean isConfigured() {
-		for (TableConfiguration tabConf : getRelatedSyncConfiguration().getConfiguredTables()) {
+		for (TableConfiguration tabConf : getRelatedEtlConf().getConfiguredTables()) {
 			if (tabConf.equals(this))
 				return true;
 		}
@@ -1071,7 +1071,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@Override
 	default void fullLoad(Connection conn) throws DBException {
-		tryToGenerateTableAlias(getRelatedSyncConfiguration());
+		tryToGenerateTableAlias(getRelatedEtlConf());
 		
 		synchronized (this) {
 			
@@ -1115,7 +1115,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				this.setFullLoaded(true);
 				
-				getRelatedSyncConfiguration().addToFullLoadedTables(this);
+				getRelatedEtlConf().addToFullLoadedTables(this);
 				
 			}
 			catch (SQLException e) {
@@ -1238,7 +1238,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@Override
 	default void fullLoad() throws DBException {
 		synchronized (this) {
-			OpenConnection mainConn = getRelatedSyncConfiguration().getMainApp().openConnection();
+			OpenConnection mainConn = getRelatedEtlConf().getSrcConnInfo().openConnection();
 			
 			OpenConnection dstConn = null;
 			
@@ -1343,22 +1343,22 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default boolean isDestinationInstallationType() {
-		return getRelatedSyncConfiguration().isDataBaseMergeFromJSONProcess();
+		return getRelatedEtlConf().isDataBaseMergeFromJSONProcess();
 	}
 	
 	@JsonIgnore
 	default boolean isDataReconciliationProcess() {
-		return getRelatedSyncConfiguration().isDataReconciliationProcess();
+		return getRelatedEtlConf().isDataReconciliationProcess();
 	}
 	
 	@JsonIgnore
 	default boolean isDBQuickLoad() {
-		return getRelatedSyncConfiguration().isDBQuickLoadProcess();
+		return getRelatedEtlConf().isDBQuickLoadProcess();
 	}
 	
 	@JsonIgnore
 	default boolean isDataBasesMergeFromSourceDBProcess() {
-		return getRelatedSyncConfiguration().isDataBaseMergeFromSourceDBProcess();
+		return getRelatedEtlConf().isDataBaseMergeFromSourceDBProcess();
 	}
 	
 	@JsonIgnore
@@ -2070,7 +2070,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				clonedParent.setTableName(parentToCloneFrom.getTableName());
 				clonedParent.setSchema(tableToCloneTo.getSchema());
-				clonedParent.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
+				clonedParent.setRelatedSyncConfiguration(getRelatedEtlConf());
 				clonedParent.loadFields(conn);
 				clonedParent.setChildTableConf(tableToCloneTo);
 				clonedParent.setConditionalFields(parentToCloneFrom.getConditionalFields());

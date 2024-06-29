@@ -6,7 +6,7 @@ public abstract class AbstractEtlDataConfiguration extends AbstractBaseConfigura
 	
 	private EtlConfiguration relatedSyncConfiguration;
 	
-	public EtlConfiguration getRelatedSyncConfiguration() {
+	public EtlConfiguration getRelatedEtlConf() {
 		return relatedSyncConfiguration;
 	}
 	
@@ -14,8 +14,4 @@ public abstract class AbstractEtlDataConfiguration extends AbstractBaseConfigura
 		this.relatedSyncConfiguration = relatedSyncConfiguration;
 	}
 	
-	public AppInfo getMainApp() {
-		return this.relatedSyncConfiguration.getMainApp();
-	}
-
 }

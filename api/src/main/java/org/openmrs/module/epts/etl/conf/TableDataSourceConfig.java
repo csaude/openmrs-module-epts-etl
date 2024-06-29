@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
@@ -61,7 +62,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			return;
 		}
 		
-		this.tryToGenerateTableAlias(getRelatedSyncConfiguration());
+		this.tryToGenerateTableAlias(getRelatedEtlConf());
 		
 		super.fullLoad(conn);
 	}
@@ -100,19 +101,19 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public EtlConfiguration getRelatedSyncConfiguration() {
-		return getParentConf().getRelatedSyncConfiguration();
+	public EtlConfiguration getRelatedEtlConf() {
+		return getParentConf().getRelatedEtlConf();
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
-	        throws DBException {
+	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn,
+	        DBConnectionInfo srcConnInfo) throws DBException {
 		
 		String condition = super.generateConditionsFields(mainObject, this.joinFields, this.joinExtraCondition);
 		
 		String sql = this.generateSelectFromQuery() + " WHERE " + condition;
 		
-		return DatabaseObjectDAO.find(this.getLoadHealper(), this.getSyncRecordClass(srcAppInfo), sql, null, srcConn);
+		return DatabaseObjectDAO.find(this.getLoadHealper(), this.getSyncRecordClass(srcConnInfo), sql, null, srcConn);
 	}
 	
 	public String generateJoinCondition() {
@@ -125,8 +126,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public AppInfo getRelatedAppInfo() {
-		return this.relatedSrcConf.getRelatedAppInfo();
+	public DBConnectionInfo getRelatedConnInfo() {
+		return this.relatedSrcConf.getRelatedConnInfo();
 	}
 	
 	@Override
@@ -152,8 +153,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 				t.setParentConf(this);
 				t.setMainExtractTable(this);
 				
-				t.tryToGenerateTableAlias(this.getRelatedSyncConfiguration());
-					
+				t.tryToGenerateTableAlias(this.getRelatedEtlConf());
+				
 				t.fullLoad(conn);
 			}
 			

@@ -1,34 +1,20 @@
 package org.openmrs.module.epts.etl.changedrecordsdetector.engine;
 
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.changedrecordsdetector.controller.ChangedRecordsDetectorController;
-import org.openmrs.module.epts.etl.changedrecordsdetector.model.DetectedRecordInfo;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
-import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-
-import fgh.spi.changedrecordsdetector.ChangedRecord;
-import fgh.spi.changedrecordsdetector.DetectedRecordService;
 
 public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObject> {
 	
 	public ChangedRecordsDetectorEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
 	    boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
-		
-		DetectedRecordService action = DetectedRecordService.getInstance();
-		
-		DBConnectionInfo connInfo = getRelatedOperationController().getActionPerformeApp().getConnInfo();
-		
-		action.configureDBService(getRelatedOperationController().getActionPerformeApp().getApplicationCode(), connInfo);
 	}
 	
 	@Override
@@ -39,6 +25,9 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObjec
 	@Override
 	public void performeEtl(List<EtlDatabaseObject> records, Connection srcConn, Connection dstConn) throws DBException {
 		
+		utilities.throwForbiddenMethodException();
+		
+		/*
 		List<EtlDatabaseObject> syncRecordsAsOpenMRSObjects = utilities.parseList(records, EtlDatabaseObject.class);
 		List<ChangedRecord> processedRecords = new ArrayList<ChangedRecord>(records.size());
 		
@@ -49,9 +38,7 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObjec
 			try {
 				((GenericDatabaseObject) obj).setRelatedConfiguration(getSrcConf());
 				
-				processedRecords.add(DetectedRecordInfo.generate(obj,
-				    getRelatedOperationController().getActionPerformeApp().getApplicationCode(),
-				    getEngine().getSrcConf().getOriginAppLocationCode()));
+				processedRecords.add(DetectedRecordInfo.generate(obj, getEngine().getSrcConf().getOriginAppLocationCode()));
 				
 				if (getRelatedOperationController().getActionPerformeApp().isSinglePerformingMode()) {
 					DetectedRecordService.getInstance().performeAction(
@@ -80,6 +67,7 @@ public class ChangedRecordsDetectorEngine extends TaskProcessor<EtlDatabaseObjec
 		
 		this.getEngine().logInfo(
 		    "ACTION PERFORMED FOR CHANGED RECORDS '" + records.size() + "' " + getSrcConf().getTableName() + "!");
+		*/
 	}
 	
 }

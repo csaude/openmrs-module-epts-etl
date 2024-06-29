@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditionalDataSource {
@@ -32,8 +33,8 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn, AppInfo srcAppInfo)
-	        throws DBException {
+	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn,
+	        DBConnectionInfo srcAppInfo) throws DBException {
 		
 		return mainObject.getSharedPkObj();
 	}

@@ -5,6 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
@@ -22,7 +23,7 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public EtlConfiguration getRelatedSyncConfiguration() {
+	public EtlConfiguration getRelatedEtlConf() {
 		return this.relatedEtlConfiguration;
 	}
 	
@@ -32,12 +33,8 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public AppInfo getRelatedAppInfo() {
-		return this.relatedEtlConfiguration.getMainApp();
-	}
-	
-	@Override
-	public Class<? extends EtlDatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	public Class<? extends EtlDatabaseObject> getSyncRecordClass(DBConnectionInfo connInfo)
+	        throws ForbiddenOperationException {
 		return GenericDatabaseObject.class;
 	}
 	
@@ -50,6 +47,17 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	
 	@Override
 	public void loadOwnElements(Connection conn) throws DBException {
+		
+	}
+	
+	@Override
+	public DBConnectionInfo getRelatedConnInfo() {
+		return getSrcConnInfo();
+	}
+	
+	@Override
+	public void generateRecordClass(DBConnectionInfo app, boolean fullClass) {
+		// TODO Auto-generated method stub
 		
 	}
 }

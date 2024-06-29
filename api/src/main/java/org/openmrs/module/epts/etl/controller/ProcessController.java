@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -24,6 +23,7 @@ import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.epts.etl.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeController;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -54,8 +54,6 @@ public class ProcessController implements Controller, ControllerStarter {
 	private TimeController timer;
 	
 	private boolean progressInfoLoaded;
-	
-	protected List<AppInfo> appsInfo;
 	
 	private ProcessStarter starter;
 	
@@ -111,7 +109,6 @@ public class ProcessController implements Controller, ControllerStarter {
 	public void init(EtlConfiguration configuration) throws DBException {
 		this.configuration = configuration;
 		this.configuration.setRelatedController(this);
-		this.appsInfo = configuration.getAppsInfo();
 		this.processInfo = new ProcessInfo(getConfiguration());
 		
 		this.controllerId = configuration.generateControllerId();
@@ -144,16 +141,15 @@ public class ProcessController implements Controller, ControllerStarter {
 			createSkippedRecordsTable();
 		}
 		
-		OpenConnection conn = getDefaultApp().openConnection();
+		OpenConnection conn = getDefaultConnInfo().openConnection();
 		
-		if (getConfiguration().hasDstApp()) {
-			AppInfo dstApp = getConfiguration().getDstApp();
+		if (getConfiguration().hasDstConnInfo()) {
 			
 			//Try to openConnection to determine if db schama exists
 			boolean dstDbExists = false;
 			
 			try {
-				OpenConnection dstConn = dstApp.openConnection();
+				OpenConnection dstConn = configuration.openDstConn();
 				dstConn.finalizeConnection();
 				
 				dstDbExists = true;
@@ -169,23 +165,23 @@ public class ProcessController implements Controller, ControllerStarter {
 			
 			if (!dstDbExists) {
 				
-				String databaseName = dstApp.getConnInfo().determineSchema();
+				String databaseName = getDstConnInfo().determineSchema();
 				
-				if (!DBUtilities.isSameDatabaseServer(getDefaultApp().getConnInfo().getConnectionURI(),
-				    dstApp.getConnInfo().getConnectionURI())) {
+				if (!DBUtilities.isSameDatabaseServer(getDefaultConnInfo().getConnectionURI(),
+				    getDstConnInfo().getConnectionURI())) {
 					throw new ForbiddenOperationException("The database '" + databaseName
 					        + "' does not exists and the application cannot connect to the related database to automcatically create it!");
 				}
 				
-				if (dstApp.getConnInfo().getDatabaseSchemaPath() != null) {
+				if (getDstConnInfo().getDatabaseSchemaPath() != null) {
 					DBUtilities.createDatabaseSchema(databaseName, conn);
 					
 					OpenConnection dstConn = null;
 					
 					try {
-						dstConn = dstApp.openConnection();
+						dstConn = getDstConnInfo().openConnection();
 						
-						DBUtilities.executeSqlScript(dstConn, dstApp.getConnInfo().getDatabaseSchemaPath());
+						DBUtilities.executeSqlScript(dstConn, getDstConnInfo().getDatabaseSchemaPath());
 						
 						dstConn.markAsSuccessifullyTerminated();
 					}
@@ -274,11 +270,6 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	@JsonIgnore
-	public List<AppInfo> getAppsInfo() {
-		return appsInfo;
-	}
-	
-	@JsonIgnore
 	public EtlConfiguration getConfiguration() {
 		return configuration;
 	}
@@ -288,16 +279,13 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	@JsonIgnore
-	public AppInfo getDefaultApp() {
-		return getConfiguration().getMainApp();
+	public DBConnectionInfo getDefaultConnInfo() {
+		return getConfiguration().getSrcConnInfo();
 	}
 	
 	@JsonIgnore
-	public AppInfo getPossibleDstApp() {
-		if (!getConfiguration().hasDstApp())
-			return null;
-		
-		return getConfiguration().getDstApp();
+	public DBConnectionInfo getDstConnInfo() {
+		return getConfiguration().getDstConnInfo();
 	}
 	
 	@Override
@@ -502,7 +490,7 @@ public class ProcessController implements Controller, ControllerStarter {
 					performePreReRunActions();
 				}
 				
-				conn = getDefaultApp().openConnection();
+				conn = getDefaultConnInfo().openConnection();
 				
 				initOperationsControllers(conn);
 				conn.markAsSuccessifullyTerminated();
@@ -770,19 +758,19 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	public OpenConnection openConnection() throws DBException {
-		return getDefaultApp().openConnection();
+		return getDefaultConnInfo().openConnection();
 	}
 	
 	public OpenConnection tryToOpenDstConn() throws DBException {
-		if (getConfiguration().hasDstApp()) {
-			return getPossibleDstApp().openConnection();
+		if (getConfiguration().hasDstConnInfo()) {
+			return getDstConnInfo().openConnection();
 		}
 		
 		return null;
 	}
 	
 	private void createStageSchema() throws DBException {
-		OpenConnection conn = getDefaultApp().openConnection();
+		OpenConnection conn = getDefaultConnInfo().openConnection();
 		
 		try {
 			Statement st = conn.createStatement();

@@ -29,6 +29,10 @@ public class DBConnectionInfo {
 	
 	private String databaseSchemaPath;
 	
+	private DBConnectionInfo connInfo;
+	
+	private DBConnectionService dbService;
+	
 	public DBConnectionInfo() {
 	}
 	
@@ -45,6 +49,28 @@ public class DBConnectionInfo {
 		this(dataBaseUserName, dataBaseUserPassword, connectionURI, driveClassName);
 		
 		this.schema = schema;
+	}
+	
+	public void finalize() {
+		if (dbService != null)
+			dbService.finalize();
+	}
+	
+	private DBConnectionService getRelatedDBConnectionService() {
+		if (this.dbService == null)
+			initRelatedDBConnectionService();
+		
+		return this.dbService;
+	}
+	
+	public OpenConnection openConnection() throws DBException {
+		return getRelatedDBConnectionService().openConnection();
+	}
+	
+	private synchronized void initRelatedDBConnectionService() {
+		if (dbService == null) {
+			dbService = DBConnectionService.init(this.connInfo);
+		}
 	}
 	
 	public String getDatabaseSchemaPath() {
@@ -154,7 +180,7 @@ public class DBConnectionInfo {
 		if (isMySQLConnection()) {
 			String[] urlParts = this.getConnectionURI().split("/");
 			
-			return urlParts[urlParts.length-1].split("\\?")[0];
+			return urlParts[urlParts.length - 1].split("\\?")[0];
 		}
 		
 		throw new ForbiddenOperationException("Unrecognized dbms");
@@ -162,6 +188,10 @@ public class DBConnectionInfo {
 	
 	private boolean isMySQLConnection() {
 		return this.connectionURI.toUpperCase().contains("MYSQL");
+	}
+	
+	public String getPojoPackageName() {
+		throw new ForbiddenOperationException("Rever esta logica");
 	}
 	
 }

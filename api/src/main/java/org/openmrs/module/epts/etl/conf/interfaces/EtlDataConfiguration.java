@@ -1,16 +1,16 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 
 public interface EtlDataConfiguration extends BaseConfiguration {
 	
-	EtlConfiguration getRelatedSyncConfiguration();
+	EtlConfiguration getRelatedEtlConf();
 	
 	void setRelatedSyncConfiguration(EtlConfiguration relatedSyncConfiguration);
 	
-	default AppInfo getMainApp() {
-		return this.getRelatedSyncConfiguration().getMainApp();
+	default DBConnectionInfo getSrcConnInfo() {
+		return this.getRelatedEtlConf().getSrcConnInfo();
 	}
 	
 }

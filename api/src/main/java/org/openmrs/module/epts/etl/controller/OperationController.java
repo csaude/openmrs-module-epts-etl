@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlDstType;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
@@ -28,6 +27,7 @@ import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.epts.etl.utilities.concurrent.ThreadPoolService;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeController;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
@@ -103,12 +103,12 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		return getOperationConfig().getDstType();
 	}
 	
-	public AppInfo getSrcApp() {
-		return getEtlConfiguration().find(AppInfo.init("main"));
+	public DBConnectionInfo getSrcConnInfo() {
+		return getEtlConfiguration().getSrcConnInfo();
 	}
 	
-	public AppInfo getDstApp() {
-		return getEtlConfiguration().find(AppInfo.init("destination"));
+	public DBConnectionInfo getDstConnInfo() {
+		return getEtlConfiguration().getDstConnInfo();
 	}
 	
 	public void resetProgressInfo(Connection conn) throws DBException {
@@ -231,7 +231,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				logTrace("Opening connection for saving Progress Info");
 				
-				OpenConnection conn = getDefaultApp().openConnection();
+				OpenConnection conn = getDefaultConnInfo().openConnection();
 				
 				try {
 					if (isResumable()) {
@@ -299,7 +299,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				Engine<T> engine = Engine.init(this, config, progressInfo);
 				
-				OpenConnection conn = getDefaultApp().openConnection();
+				OpenConnection conn = getDefaultConnInfo().openConnection();
 				
 				try {
 					
@@ -502,7 +502,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		progressInfo.getProgressMeter().changeStatusToFinished();
 		
-		OpenConnection conn = getDefaultApp().openConnection();
+		OpenConnection conn = getDefaultConnInfo().openConnection();
 		
 		try {
 			progressInfo.save(conn);
@@ -767,7 +767,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	public TableOperationProgressInfo retrieveProgressInfo(EtlItemConfiguration config) {
 		if (progressInfo != null && utilities().arrayHasElement(progressInfo.getItemsProgressInfo())) {
 			for (TableOperationProgressInfo item : progressInfo.getItemsProgressInfo()) {
-				if (item.getEtlConfiguration().equals(config))
+				if (item.getEtlConfiguration().	equals(config))
 					return item;
 			}
 		}
@@ -776,8 +776,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	@JsonIgnore
-	public AppInfo getDefaultApp() {
-		return getProcessController().getDefaultApp();
+	public DBConnectionInfo getDefaultConnInfo() {
+		return getProcessController().getDefaultConnInfo();
 	}
 	
 	public OpenConnection openSrcConnection() throws DBException {

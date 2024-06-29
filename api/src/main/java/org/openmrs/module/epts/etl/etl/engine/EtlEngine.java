@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
@@ -23,6 +22,7 @@ import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.Engine;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
@@ -40,12 +40,12 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 		return (EtlDatabaseObjectSearchParams) super.getSearchParams();
 	}
 	
-	public AppInfo getDstApp() {
-		return this.getRelatedOperationController().getDstApp();
+	public DBConnectionInfo getDstConnInfo() {
+		return this.getRelatedOperationController().getDstConnInfo();
 	}
 	
-	public AppInfo getSrcApp() {
-		return this.getRelatedOperationController().getSrcApp();
+	public DBConnectionInfo getSrcConnInfo() {
+		return this.getRelatedOperationController().getSrcConnInfo();
 	}
 	
 	@Override
@@ -205,7 +205,7 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 	public EtlDatabaseObject transform(EtlDatabaseObject rec, DstConf mappingInfo, List<? extends EtlObject> etlObjects,
 	        Connection srcConn, Connection dstConn) throws DBException, ForbiddenOperationException {
 		
-		EtlDatabaseObject transformed = mappingInfo.transform(rec, srcConn, this.getSrcApp(), this.getDstApp());
+		EtlDatabaseObject transformed = mappingInfo.transform(rec, srcConn, this.getSrcConnInfo(), this.getDstConnInfo());
 		
 		if (transformed != null) {
 			transformed.setSrcRelatedObject(rec);

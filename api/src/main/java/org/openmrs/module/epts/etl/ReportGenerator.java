@@ -26,7 +26,7 @@ public class ReportGenerator {
 		
 		ProcessController controller = new ProcessController(null, syncConfigs.get(0));
 		
-		OpenConnection conn = controller.getDefaultApp().openConnection();
+		OpenConnection conn = controller.getDefaultConnInfo().openConnection();
 		
 		generateDataInconsistencyReport(syncConfigs.get(0), conn);
 		

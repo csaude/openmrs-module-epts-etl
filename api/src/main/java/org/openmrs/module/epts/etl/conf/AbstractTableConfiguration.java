@@ -233,7 +233,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		OpenConnection conn = null;
 		
 		try {
-			conn = getRelatedAppInfo().openConnection();
+			conn = getRelatedConnInfo().openConnection();
 			
 			loadPrimaryKeyInfo(conn);
 			

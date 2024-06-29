@@ -314,7 +314,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 					
 					EtlDatabaseObject recordOnDB = null;
 					
-					if (tableConfiguration.getRelatedSyncConfiguration().isDoNotTransformsPrimaryKeys()) {
+					if (tableConfiguration.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
 						recordOnDB = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
 					}
 					
@@ -645,7 +645,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			        + ") has composite pk. You cannot performe the request action!");
 		}
 		
-		if (!syncTableInfo.getRelatedSyncConfiguration().isSourceSyncProcess())
+		if (!syncTableInfo.getRelatedEtlConf().isSourceSyncProcess())
 			throw new EtlExceptionImpl("You cannot move record to stage area in a installation different to source") {
 				
 				private static final long serialVersionUID = 1L;
@@ -665,7 +665,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 				continue;
 			
 			Integer qtyChildren = DatabaseObjectDAO.countAllOfParentId(
-			    refInfo.getSyncRecordClass(syncTableInfo.getMainApp()),
+			    refInfo.getSyncRecordClass(syncTableInfo.getSrcConnInfo()),
 			    refInfo.getSimpleRefMapping().getChildField().getName(), this.getObjectId().getSimpleValueAsInt(), conn);
 			
 			if (qtyChildren == 0) {

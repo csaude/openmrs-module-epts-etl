@@ -6,6 +6,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class GenericTableConfiguration extends AbstractTableConfiguration {
@@ -31,21 +32,22 @@ public class GenericTableConfiguration extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public AppInfo getRelatedAppInfo() {
+	public DBConnectionInfo getRelatedConnInfo() {
 		
 		if (this.relatedTableConf == null) {
 			throw new ForbiddenOperationException("The generic table Conf should have a related to use this method");
 			
 		}
 		
-		return this.relatedTableConf.getRelatedAppInfo();
+		return this.relatedTableConf.getRelatedConnInfo();
 	}
 	
 	@Override
-	public Class<? extends EtlDatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	public Class<? extends EtlDatabaseObject> getSyncRecordClass(DBConnectionInfo application)
+	        throws ForbiddenOperationException {
 		return GenericDatabaseObject.class;
 	}
-
+	
 	@Override
 	public void loadOwnElements(Connection conn) throws DBException {
 		// TODO Auto-generated method stub

@@ -12,7 +12,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 	
 	public static void insert(TableOperationProgressInfo record, EtlItemConfiguration config, Connection conn)
 	        throws DBException {
-		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
+		String syncStageSchema = config.getRelatedEtlConf().getSyncStageSchema();
 		
 		//@// @formatter:off
 		Object[] params = { record.getOperationId(), 
@@ -59,7 +59,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 	
 	public static void update(TableOperationProgressInfo record, EtlItemConfiguration config, Connection conn)
 	        throws DBException {
-		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
+		String syncStageSchema = config.getRelatedEtlConf().getSyncStageSchema();
 		
 		//@// @formatter:off
 		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), 
@@ -86,7 +86,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 	
 	public static <T extends EtlDatabaseObject> TableOperationProgressInfo find(OperationController<T> controller, EtlItemConfiguration config,
 	        Connection conn) throws DBException {
-		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
+		String syncStageSchema = config.getRelatedEtlConf().getSyncStageSchema();
 		
 		Object[] params = { TableOperationProgressInfo.generateOperationId(controller, config) };
 		
@@ -105,7 +105,7 @@ public class TableOperationProgressInfoDAO extends BaseDAO {
 	
 	public static void delete(TableOperationProgressInfo record, EtlItemConfiguration config, Connection conn)
 	        throws DBException {
-		String syncStageSchema = config.getRelatedSyncConfiguration().getSyncStageSchema();
+		String syncStageSchema = config.getRelatedEtlConf().getSyncStageSchema();
 		
 		Object[] params = { record.getOperationId() };
 		

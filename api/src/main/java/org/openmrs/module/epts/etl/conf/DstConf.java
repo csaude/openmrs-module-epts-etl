@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -35,7 +36,7 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private List<FieldsMapping> mapping;
 	
-	private AppInfo relatedAppInfo;
+	private DBConnectionInfo relatedConnInfo;
 	
 	private static final int DEFAULT_NEXT_TREAD_ID = -1;
 	
@@ -252,7 +253,7 @@ public class DstConf extends AbstractTableConfiguration {
 			if (fm.getSrcValue().startsWith("@")) {
 				String paramName = utilities.removeCharactersOnString(fm.getSrcValue(), "@");
 				
-				fm.setSrcValue(getRelatedSyncConfiguration().getParamValue(paramName));
+				fm.setSrcValue(getRelatedEtlConf().getParamValue(paramName));
 			} else if (fm.getSrcValue().isEmpty() || fm.getSrcValue().equals("null")) {
 				fm.setMapToNullValue(true);
 			}
@@ -316,17 +317,17 @@ public class DstConf extends AbstractTableConfiguration {
 		return machedFields.get(0).getDstField();
 	}
 	
-	public AppInfo getRelatedAppInfo() {
-		return relatedAppInfo;
+	public DBConnectionInfo getRelatedConnInfo() {
+		return relatedConnInfo;
 	}
 	
-	public void setRelatedAppInfo(AppInfo relatedAppInfo) {
-		this.relatedAppInfo = relatedAppInfo;
+	public void setRelatedConnInfo(DBConnectionInfo relatedConnInfo) {
+		this.relatedConnInfo = relatedConnInfo;
 	}
 	
 	@Override
 	public synchronized void fullLoad() throws DBException {
-		OpenConnection conn = this.relatedAppInfo.openConnection();
+		OpenConnection conn = this.relatedConnInfo.openConnection();
 		
 		try {
 			this.fullLoad(conn);
@@ -338,7 +339,7 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
-		this.tryToGenerateTableAlias(getRelatedSyncConfiguration());
+		this.tryToGenerateTableAlias(getRelatedEtlConf());
 		
 		super.fullLoad(conn);
 	}
@@ -381,7 +382,7 @@ public class DstConf extends AbstractTableConfiguration {
 			        .addAll(utilities.parseList(getSrcConf().getAvaliableExtraDataSource(), EtlDataSource.class));
 		}
 		
-		this.fullLoadAllRelatedTables(getRelatedSyncConfiguration(), null, conn);
+		this.fullLoadAllRelatedTables(getRelatedEtlConf(), null, conn);
 		
 		determinePrefferredDataSources();
 	}
@@ -485,8 +486,8 @@ public class DstConf extends AbstractTableConfiguration {
 		return this.getParentConf().getSrcConf();
 	}
 	
-	public EtlDatabaseObject transform(EtlDatabaseObject srcObject, Connection srcConn, AppInfo srcAppInfo,
-	        AppInfo dstAppInfo) throws DBException, ForbiddenOperationException {
+	public EtlDatabaseObject transform(EtlDatabaseObject srcObject, Connection srcConn, DBConnectionInfo srcAppInfo,
+	        DBConnectionInfo dstAppInfo) throws DBException, ForbiddenOperationException {
 		try {
 			
 			List<EtlDatabaseObject> srcObjects = new ArrayList<>();

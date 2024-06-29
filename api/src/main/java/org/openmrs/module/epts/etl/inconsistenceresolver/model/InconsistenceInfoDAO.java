@@ -11,7 +11,7 @@ public class InconsistenceInfoDAO extends BaseDAO {
 	//@// @formatter:off
 	public static void insert(InconsistenceInfo record, TableConfiguration tableConfiguration, Connection conn) throws DBException{
 		try {
-			String syncStageSchema = tableConfiguration.getRelatedSyncConfiguration().getSyncStageSchema();
+			String syncStageSchema = tableConfiguration.getRelatedEtlConf().getSyncStageSchema();
 			
 			Object[] params = {record.getTableName(),
 							   record.getRecordId().getSimpleValue(),

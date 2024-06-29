@@ -5,6 +5,7 @@ import java.sql.Connection;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -34,7 +35,7 @@ public class ChildTable extends AbstractRelatedTable {
 	public void setParentTableConf(TableConfiguration parentTableConf) {
 		this.parentTableConf = parentTableConf;
 		
-		this.setRelatedSyncConfiguration(parentTableConf.getRelatedSyncConfiguration());
+		this.setRelatedSyncConfiguration(parentTableConf.getRelatedEtlConf());
 	}
 	
 	@Override
@@ -43,8 +44,8 @@ public class ChildTable extends AbstractRelatedTable {
 	}
 	
 	@Override
-	public AppInfo getRelatedAppInfo() {
-		return this.parentTableConf.getRelatedAppInfo();
+	public DBConnectionInfo getRelatedConnInfo() {
+		return this.parentTableConf.getRelatedConnInfo();
 	}
 	
 	public boolean isSharedPk() {

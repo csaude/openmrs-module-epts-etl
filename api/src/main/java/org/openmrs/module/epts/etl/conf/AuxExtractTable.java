@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
@@ -65,13 +66,13 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public EtlConfiguration getRelatedSyncConfiguration() {
-		return getParentConf().getRelatedSyncConfiguration();
+	public EtlConfiguration getRelatedEtlConf() {
+		return getParentConf().getRelatedEtlConf();
 	}
 	
 	@Override
-	public AppInfo getRelatedAppInfo() {
-		return this.getParentConf().getRelatedAppInfo();
+	public DBConnectionInfo getRelatedConnInfo() {
+		return this.getParentConf().getRelatedConnInfo();
 	}
 	
 	@Override

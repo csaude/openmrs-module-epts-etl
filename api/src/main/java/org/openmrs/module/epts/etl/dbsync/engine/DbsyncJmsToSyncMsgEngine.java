@@ -42,7 +42,7 @@ public class DbsyncJmsToSyncMsgEngine extends EtlEngine {
 		rec.getObjectId().setTabConf(getSrcConf());
 		
 		if (mappingInfo.getTableName().equals("jms_msg_bkp")) {
-			return mappingInfo.transform(rec, srcConn, getSrcApp(), getDstApp());
+			return mappingInfo.transform(rec, srcConn, getSrcConnInfo(), getDstConnInfo());
 		} else {
 			
 			String body = new String((byte[]) rec.getFieldValue("body"), StandardCharsets.UTF_8);

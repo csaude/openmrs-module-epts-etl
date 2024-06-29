@@ -104,18 +104,18 @@ public class DBQuickExportController extends OperationController<EtlDatabaseObje
 			
 			String fileName = "";
 			
-			fileName += tableInfo.getParentConf().getRelatedSyncConfiguration().getEtlRootDirectory();
+			fileName += tableInfo.getParentConf().getRelatedEtlConf().getEtlRootDirectory();
 			fileName += FileUtilities.getPathSeparator();
 			
 			//Use "_" at begining of folder name to avoid situation were the starting character cause escape (ex: 't' on '\t')
 			
-			fileName += "_" + tableInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase();
+			fileName += "_" + tableInfo.getRelatedEtlConf().getOriginAppLocationCode().toLowerCase();
 			fileName += FileUtilities.getPathSeparator();
 			fileName += "export";
 			fileName += FileUtilities.getPathSeparator();
 			fileName += tableInfo.getTableName();
 			fileName += FileUtilities.getPathSeparator();
-			fileName += "_" + tableInfo.getRelatedSyncConfiguration().getOriginAppLocationCode().toLowerCase() + "_";
+			fileName += "_" + tableInfo.getRelatedEtlConf().getOriginAppLocationCode().toLowerCase() + "_";
 			fileName += tableInfo.getTableName();
 			fileName += "_" + utilities().garantirXCaracterOnNumber(startRecord, 10);
 			fileName += "_" + utilities().garantirXCaracterOnNumber(lastRecord, 10);

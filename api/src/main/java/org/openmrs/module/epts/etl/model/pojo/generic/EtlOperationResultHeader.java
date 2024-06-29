@@ -314,7 +314,7 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 				}
 			} else {
 				
-				EtlConfigurationTableConf etlErr = r.getRecord().getRelatedConfiguration().getRelatedSyncConfiguration()
+				EtlConfigurationTableConf etlErr = r.getRecord().getRelatedConfiguration().getRelatedEtlConf()
 				        .getEtlRecordErrorTabCof();
 				
 				if (!etlErr.isFullLoaded()) {
@@ -328,7 +328,7 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 				obj.setFieldValue("record_id", r.getRecord().getObjectId().getSimpleValue());
 				obj.setFieldValue("table_name", r.getRecord().generateTableName());
 				obj.setFieldValue("origin_location_code",
-				    r.getRecord().getRelatedConfiguration().getRelatedSyncConfiguration().getOriginAppLocationCode());
+				    r.getRecord().getRelatedConfiguration().getRelatedEtlConf().getOriginAppLocationCode());
 				obj.setFieldValue("exception", r.getException().getClass().getName());
 				obj.setFieldValue("exception_description", r.getException().getLocalizedMessage());
 				obj.setFieldValue("table_name", r.getRecord().generateTableName());

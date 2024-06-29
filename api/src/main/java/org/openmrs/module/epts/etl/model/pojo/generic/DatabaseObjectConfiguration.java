@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
@@ -14,6 +13,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -32,23 +32,23 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	@JsonIgnore
 	default File getPOJOCopiledFilesDirectory() {
-		return getRelatedSyncConfiguration().getPOJOCompiledFilesDirectory();
+		return getRelatedEtlConf().getPOJOCompiledFilesDirectory();
 	}
 	
 	@JsonIgnore
 	default File getPOJOSourceFilesDirectory() {
-		return getRelatedSyncConfiguration().getPOJOSourceFilesDirectory();
+		return getRelatedEtlConf().getPOJOSourceFilesDirectory();
 	}
 	
-	default AppInfo getMainApp() {
-		return getRelatedSyncConfiguration().getMainApp();
+	default DBConnectionInfo getSrcConnInfo() {
+		return getRelatedEtlConf().getSrcConnInfo();
 	}
 	
 	@JsonIgnore
-	default String generateFullPackageName(AppInfo application) {
+	default String generateFullPackageName(DBConnectionInfo connInfo) {
 		String rootPackageName = "org.openmrs.module.epts.etl.model.pojo";
 		
-		String packageName = getClasspackage(application);
+		String packageName = getClasspackage(connInfo);
 		
 		String fullPackageName = utilities.concatStringsWithSeparator(rootPackageName, packageName, ".");
 		
@@ -57,19 +57,19 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	@JsonIgnore
 	default String getOriginAppLocationCode() {
-		return getRelatedSyncConfiguration().getOriginAppLocationCode();
+		return getRelatedEtlConf().getOriginAppLocationCode();
 	}
 	
 	@JsonIgnore
-	default String getClasspackage(AppInfo application) {
-		return application.getPojoPackageName();
+	default String getClasspackage(DBConnectionInfo connInfo) {
+		return connInfo.getPojoPackageName();
 	}
 	
 	@JsonIgnore
-	default String generateFullClassName(AppInfo application) {
+	default String generateFullClassName(DBConnectionInfo connInfo) {
 		String rootPackageName = "org.openmrs.module.epts.etl.model.pojo";
 		
-		String packageName = getClasspackage(application);
+		String packageName = getClasspackage(connInfo);
 		
 		String fullPackageName = utilities.concatStringsWithSeparator(rootPackageName, packageName, ".");
 		
@@ -78,7 +78,7 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	@JsonIgnore
 	default File getClassPath() {
-		return new File(this.getParentConf().getRelatedSyncConfiguration().getClassPath());
+		return new File(this.getParentConf().getRelatedEtlConf().getClassPath());
 	}
 	
 	String generateClassName();
@@ -102,12 +102,12 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	boolean isMetadata();
 	
-	AppInfo getRelatedAppInfo();
+	DBConnectionInfo getRelatedConnInfo();
 	
 	void setSyncRecordClass(Class<? extends EtlDatabaseObject> syncRecordClass);
 	
-	default EtlConfiguration getRelatedSyncConfiguration() {
-		return this.getParentConf().getRelatedSyncConfiguration();
+	default EtlConfiguration getRelatedEtlConf() {
+		return this.getParentConf().getRelatedEtlConf();
 	}
 	
 	default boolean hasDateFields() {
@@ -122,11 +122,11 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	@JsonIgnore
 	default Class<? extends EtlDatabaseObject> getSyncRecordClass() throws ForbiddenOperationException {
-		return this.getSyncRecordClass(getRelatedAppInfo());
+		return this.getSyncRecordClass(getRelatedConnInfo());
 	}
 	
 	@JsonIgnore
-	default Class<? extends EtlDatabaseObject> getSyncRecordClass(AppInfo application) throws ForbiddenOperationException {
+	default Class<? extends EtlDatabaseObject> getSyncRecordClass(DBConnectionInfo connInfo) throws ForbiddenOperationException {
 		
 		if (getSyncRecordClass() == null) {
 			Class<? extends EtlDatabaseObject> syncRecordClass = GenericDatabaseObject.class;
@@ -138,7 +138,7 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	boolean isDestinationInstallationType();
 	
-	void generateRecordClass(AppInfo app, boolean fullClass);
+	void generateRecordClass(DBConnectionInfo connInfo, boolean fullClass);
 	
 	List<ParentTable> getParentRefInfo();
 	

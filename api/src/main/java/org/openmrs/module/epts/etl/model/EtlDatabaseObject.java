@@ -536,7 +536,7 @@ public interface EtlDatabaseObject extends EtlObject {
 			tabConfInSrc = new GenericTableConfiguration(src);
 			tabConfInSrc.setTableName(refInfo.getTableName());
 			
-			tabConfInSrc.setRelatedSyncConfiguration(src.getRelatedSyncConfiguration());
+			tabConfInSrc.setRelatedSyncConfiguration(src.getRelatedEtlConf());
 			
 			tabConfInSrc.fullLoad(conn);
 		}

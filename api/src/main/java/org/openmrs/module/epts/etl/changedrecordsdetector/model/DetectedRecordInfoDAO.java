@@ -62,23 +62,23 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 		
 	}
 	
-	public static int getFirstNewRecord(TableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "min", EtlOperationType.NEW_RECORDS_DETECTOR, conn);
+	public static int getFirstNewRecord(TableConfiguration tableConf,Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+		return getChangedRecord(tableConf,  observationDate, "min", EtlOperationType.NEW_RECORDS_DETECTOR, conn);
 	}
 	
-	public static int getLastNewRecord(TableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "max",  EtlOperationType.NEW_RECORDS_DETECTOR, conn);
+	public static int getLastNewRecord(TableConfiguration tableConf, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+		return getChangedRecord(tableConf, observationDate, "max",  EtlOperationType.NEW_RECORDS_DETECTOR, conn);
 	}
 	
-	public static int getFirstChangedRecord(TableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "min", EtlOperationType.CHANGED_RECORDS_DETECTOR, conn);
+	public static int getFirstChangedRecord(TableConfiguration tableConf, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+		return getChangedRecord(tableConf, observationDate, "min", EtlOperationType.CHANGED_RECORDS_DETECTOR, conn);
 	}
 	
-	public static int getLastChangedRecord(TableConfiguration tableConf, String appCode, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
-		return getChangedRecord(tableConf, appCode, observationDate, "max",  EtlOperationType.CHANGED_RECORDS_DETECTOR, conn);
+	public static int getLastChangedRecord(TableConfiguration tableConf, Date observationDate, Connection conn) throws DBException, ForbiddenOperationException {
+		return getChangedRecord(tableConf,  observationDate, "max",  EtlOperationType.CHANGED_RECORDS_DETECTOR, conn);
 	}
 	
-	public static int getChangedRecord(TableConfiguration tableConf, String appCode, Date observationDate, String function, EtlOperationType type, Connection conn) throws DBException, ForbiddenOperationException {
+	public static int getChangedRecord(TableConfiguration tableConf, Date observationDate, String function, EtlOperationType type, Connection conn) throws DBException, ForbiddenOperationException {
 		
 		List<String> excludedtablesOnVoided =  utilities.parseToList("users", "provider", "location", "orders", "note");
 		

@@ -3,7 +3,6 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
@@ -12,6 +11,7 @@ import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -34,8 +34,8 @@ public interface ParentTable extends RelatedTable {
 		return false;
 	}
 	
-	default AppInfo getRelatedAppInfo() {
-		return this.getChildTableConf().getRelatedAppInfo();
+	default DBConnectionInfo getRelatedConnInfo() {
+		return this.getChildTableConf().getRelatedConnInfo();
 	}
 	
 	default UniqueKeyInfo parseRelationshipToSelfKey() {
@@ -72,7 +72,7 @@ public interface ParentTable extends RelatedTable {
 	default List<DstConf> findRelatedDstConf() throws DBException {
 		List<DstConf> allDstForTable = new ArrayList<>();
 		
-		for (EtlItemConfiguration conf : getRelatedSyncConfiguration().getEtlItemConfiguration()) {
+		for (EtlItemConfiguration conf : getRelatedEtlConf().getEtlItemConfiguration()) {
 			
 			if (conf.containsDstTable(getTableName())) {
 				if (!conf.isFullLoaded()) {
@@ -91,7 +91,7 @@ public interface ParentTable extends RelatedTable {
 	}
 	
 	default SrcConf findRelatedSrcConf() throws DBException {
-		for (EtlItemConfiguration conf : getRelatedSyncConfiguration().getEtlItemConfiguration()) {
+		for (EtlItemConfiguration conf : getRelatedEtlConf().getEtlItemConfiguration()) {
 			
 			if (!conf.isFullLoaded()) {
 				conf.fullLoad();
@@ -115,7 +115,7 @@ public interface ParentTable extends RelatedTable {
 	default List<SrcConf> findRelatedSrcConfWhichAsAtLeastOnematchingDst() throws DBException {
 		List<SrcConf> srcs = new ArrayList<>();
 		
-		for (EtlItemConfiguration conf : getRelatedSyncConfiguration().getEtlItemConfiguration()) {
+		for (EtlItemConfiguration conf : getRelatedEtlConf().getEtlItemConfiguration()) {
 			
 			if (conf.getSrcConf().getTableName().equals(this.getTableName())) {
 				

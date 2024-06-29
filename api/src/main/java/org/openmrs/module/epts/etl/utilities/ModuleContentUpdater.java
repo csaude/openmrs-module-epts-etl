@@ -15,15 +15,15 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
-import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 import org.openmrs.util.OpenmrsUtil;
 
 public class ModuleContentUpdater {
 	
-	public static void copyPOJOContentToModule(EtlConfiguration etlConfiguration, AppInfo app) throws IOException {
+	public static void copyPOJOContentToModule(EtlConfiguration etlConfiguration, DBConnectionInfo app) throws IOException {
 		File jarTmpFolder = new File (etlConfiguration.getEtlRootDirectory() + FileUtilities.getPathSeparator() + "temp");
 	
 		FileUtilities.tryToCreateDirectoryStructure(jarTmpFolder.getAbsolutePath());
@@ -133,11 +133,11 @@ public class ModuleContentUpdater {
 		jar.close();
 	}
 	
-	public static void addToClasspath(File file, EtlConfiguration etlConfiguration, AppInfo app) throws IOException {
+	public static void addToClasspath(File file, EtlConfiguration etlConfiguration, DBConnectionInfo app) throws IOException {
 		FileUtilities.copyFile(file, new File(retrievePojoFolderOnModuleDirectory(etlConfiguration, app) + FileUtilities.getPathSeparator() + file.getName()));
 	}	
 	
-	public static void tryToAddAllPOJOToClassPath(EtlConfiguration etlConfiguration, AppInfo app) {
+	public static void tryToAddAllPOJOToClassPath(EtlConfiguration etlConfiguration, DBConnectionInfo app) {
 		File pojoPackageDir = new File(etlConfiguration.getPOJOCompiledFilesDirectory().getAbsolutePath() + "/org/openmrs/module/epts/etl/model/pojo/" + etlConfiguration.getPojoPackage(app));
 		
 		File[] existingClasses = pojoPackageDir.listFiles();
@@ -182,7 +182,7 @@ public class ModuleContentUpdater {
 		return allFiles[0];
 	}
 	
-	protected static File retrievePojoFolderOnModuleDirectory(EtlConfiguration etlConfiguration, AppInfo app) {
+	protected static File retrievePojoFolderOnModuleDirectory(EtlConfiguration etlConfiguration, DBConnectionInfo app) {
 		String pojoFolderOnModule = "";
 		
 		pojoFolderOnModule += etlConfiguration.getModuleRootDirectory().getAbsoluteFile() + FileUtilities.getPathSeparator();

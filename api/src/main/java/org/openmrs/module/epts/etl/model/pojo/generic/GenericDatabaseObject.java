@@ -92,7 +92,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 					
 					try {
 						if (!p.hasAlias()) {
-							p.tryToGenerateTableAlias(conf.getRelatedSyncConfiguration());
+							p.tryToGenerateTableAlias(conf.getRelatedEtlConf());
 						}
 						
 						defaultParent = p.getDefaultObject(conn);

@@ -6,11 +6,11 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.Engine;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -84,7 +84,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	public void tryToCreateDefaultRecordsForAllTables() throws DBException {
-		OpenConnection dstConn = getRelatedSyncConfiguration().tryOpenDstConn();
+		OpenConnection dstConn = getRelatedEtlConf().tryOpenDstConn();
 		
 		if (dstConn == null)
 			return;
@@ -120,7 +120,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 						}
 						
 						if (refInfo.getDefaultObject(dstConn) == null) {
-							getRelatedSyncConfiguration()
+							getRelatedEtlConf()
 							        .logDebug("Creating default record for table " + refInfo.getFullTableDescription());
 							
 							try {
@@ -153,24 +153,19 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		OpenConnection dstConn = null;
 		
 		try {
-			List<AppInfo> otherApps = getRelatedSyncConfiguration().exposeAllAppsNotMain();
 			
-			if (utilities.arrayHasElement(otherApps)) {
+			if (getRelatedEtlConf().hasDstConnInfo()) {
 				
-				if (utilities.arrayHasMoreThanOneElements(otherApps)) {
-					throw new ForbiddenOperationException("Not supported more that one destination apps");
-				}
-				
-				dstConn = otherApps.get(0).openConnection();
+				dstConn = getRelatedEtlConf().openDstConn();
 				
 				if (!this.hasDstConf()) {
 					this.generateDefaultDstConf();
 				}
 				
 				for (DstConf map : this.getDstConf()) {
-					map.setRelatedAppInfo(otherApps.get(0));
+					map.setRelatedConnInfo(getRelatedEtlConf().getDstConnInfo());
 					
-					map.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
+					map.setRelatedSyncConfiguration(getRelatedEtlConf());
 					
 					map.setParentConf(this);
 					
@@ -237,11 +232,11 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	public String getOriginAppLocationCode() {
-		return getRelatedSyncConfiguration().getOriginAppLocationCode();
+		return getRelatedEtlConf().getOriginAppLocationCode();
 	}
 	
-	public AppInfo getMainApp() {
-		return getRelatedSyncConfiguration().getMainApp();
+	public DBConnectionInfo getSrcConnInfo() {
+		return getRelatedEtlConf().getSrcConnInfo();
 	}
 	
 	public boolean hasDstWithJoinFieldsToSrc() {
@@ -272,7 +267,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			
 			searchParams.setExtraCondition(this.getSrcConf().getPrimaryKey().parseToParametrizedStringConditionWithAlias());
 			
-			searchParams.setSyncStartDate(getRelatedSyncConfiguration().getStartDate());
+			searchParams.setSyncStartDate(getRelatedEtlConf().getStartDate());
 			
 			SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(null, srcConn, null);
 			
@@ -281,7 +276,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			String sql = searchClauses.generateSQL(srcConn);
 			
 			EtlDatabaseObject simpleValue = DatabaseObjectDAO.find(getSrcConf().getLoadHealper(),
-			    getSrcConf().getSyncRecordClass(getMainApp()), sql, searchClauses.getParameters(), srcConn);
+			    getSrcConf().getSyncRecordClass(getSrcConnInfo()), sql, searchClauses.getParameters(), srcConn);
 			
 			return simpleValue;
 		}
@@ -323,16 +318,9 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	public void generateDefaultDstConf() throws DBException {
 		OpenConnection dstConn;
 		
-		List<AppInfo> otherApps = getRelatedSyncConfiguration().exposeAllAppsNotMain();
-		
-		if (utilities.arrayHasElement(otherApps)) {
+		if (hasDstConf()) {
 			
-			if (utilities.arrayHasMoreThanOneElements(otherApps)) {
-				throw new ForbiddenOperationException("Not supported more that one destination apps");
-			}
-			
-			dstConn = otherApps.get(0).openConnection();
-			
+			dstConn = getRelatedEtlConf().openDstConn();
 			try {
 				DstConf map = new DstConf();
 				
@@ -342,9 +330,9 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				map.setSchema(dstConn.getSchema());
 				map.setAutomaticalyGenerated(true);
 				map.setOnConflict(getSrcConf().onConflict());
-				map.setRelatedAppInfo(otherApps.get(0));
+				map.setRelatedConnInfo(getRelatedEtlConf().getDstConnInfo());
 				
-				map.setRelatedSyncConfiguration(getRelatedSyncConfiguration());
+				map.setRelatedSyncConfiguration(getRelatedEtlConf());
 				
 				map.setParentConf(this);
 				
