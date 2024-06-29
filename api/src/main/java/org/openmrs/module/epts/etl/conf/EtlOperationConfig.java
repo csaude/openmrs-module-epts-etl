@@ -63,7 +63,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private String processorFullClassName;
 	
-	private Class<TaskProcessor<? extends EtlDatabaseObject>> engineClazz;
+	private Class<TaskProcessor<? extends EtlDatabaseObject>> processorClazz;
 	
 	private boolean skipFinalDataVerification;
 	
@@ -160,8 +160,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return processorFullClassName;
 	}
 	
-	public Class<TaskProcessor<? extends EtlDatabaseObject>> getEngineClazz() {
-		return engineClazz;
+	public Class<TaskProcessor<? extends EtlDatabaseObject>> getProcessorClazz() {
+		return processorClazz;
 	}
 	
 	public void setProcessorFullClassName(String processorFullClassName) {
@@ -603,7 +603,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		try {
 			tryToLoadEngine();
 			
-			if (this.getRelatedEtlConfig().isResolveProblems() && !GenericEngine.class.isAssignableFrom(this.engineClazz)) {
+			if (this.getRelatedEtlConfig().isResolveProblems() && !GenericEngine.class.isAssignableFrom(this.processorClazz)) {
 				errorMsg += ++errNum + ". The engine class [" + this.getProcessorFullClassName()
 				        + "] is not any org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine \n";
 			}
@@ -807,7 +807,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	@SuppressWarnings("unchecked")
 	public synchronized void tryToLoadEngine() throws ForbiddenOperationException {
 		try {
-			if (engineClazz == null) {
+			if (processorClazz == null) {
 				
 				if (utilities.stringHasValue(this.getProcessorFullClassName())) {
 					
@@ -816,9 +816,9 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 					Class<TaskProcessor<? extends EtlDatabaseObject>> c = (Class<TaskProcessor<? extends EtlDatabaseObject>>) loader
 					        .loadClass(this.getProcessorFullClassName());
 					
-					this.engineClazz = (Class<TaskProcessor<? extends EtlDatabaseObject>>) c;
+					this.processorClazz = (Class<TaskProcessor<? extends EtlDatabaseObject>>) c;
 					
-					if (this.engineClazz == null) {
+					if (this.processorClazz == null) {
 						throw new ForbiddenOperationException(
 						        "The engine class [" + this.getProcessorFullClassName() + "] cannot be found");
 					}

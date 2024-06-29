@@ -52,7 +52,7 @@ public class GenericOperationController extends EtlController {
 		Class[] parameterTypes = { Engine.class, IntervalExtremeRecord.class, Boolean.class };
 		
 		try {
-			Constructor<TaskProcessor<? extends EtlDatabaseObject>> a = getOperationConfig().getEngineClazz()
+			Constructor<TaskProcessor<? extends EtlDatabaseObject>> a = getOperationConfig().getProcessorClazz()
 			        .getConstructor(parameterTypes);
 			
 			return (TaskProcessor<EtlDatabaseObject>) a.newInstance(monitor, limits, runningInConcurrency);

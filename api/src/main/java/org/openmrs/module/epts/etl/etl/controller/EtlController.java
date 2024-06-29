@@ -40,12 +40,12 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 	@Override
 	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
-		if (getOperationConfig().getEngineClazz() != null) {
+		if (getOperationConfig().getProcessorClazz() != null) {
 			
 			Class[] parameterTypes = { Engine.class, IntervalExtremeRecord.class, Boolean.class };
 			
 			try {
-				Constructor<TaskProcessor<? extends EtlDatabaseObject>> a = getOperationConfig().getEngineClazz()
+				Constructor<TaskProcessor<? extends EtlDatabaseObject>> a = getOperationConfig().getProcessorClazz()
 				        .getConstructor(parameterTypes);
 				
 				return (TaskProcessor<EtlDatabaseObject>) a.newInstance(monitor, limits, runningInConcurrency);
