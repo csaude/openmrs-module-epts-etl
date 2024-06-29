@@ -732,7 +732,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	}
 	
 	public int getMaxRecordsPerProcessing() {
-		return getController().getOperationConfig().getMaxRecordPerProcessing();
+		return getController().getOperationConfig().getProcessingBatch();
 	}
 	
 	public int getMaxSupportedProcessors() {
@@ -744,7 +744,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	}
 	
 	public void setMaxRecordsPerProcessing(int maxRecordsPerProcessing) {
-		getController().getOperationConfig().setMaxRecordPerProcessing(maxRecordsPerProcessing);
+		getController().getOperationConfig().setProcessingBatch(maxRecordsPerProcessing);
 	}
 	
 	private boolean mustRestartInTheEnd() {

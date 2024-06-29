@@ -243,7 +243,7 @@ public class QuickTest {
 		
 		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(null, null);
 		
-		searchParams.setQtdRecordPerSelected(conf.getOperations().get(0).getMaxRecordPerProcessing());
+		searchParams.setQtdRecordPerSelected(conf.getOperations().get(0).getProcessingBatch());
 		
 		AppInfo srcApp = conf.getMainApp();
 		AppInfo dstApp = etlConf.getDstConf().get(0).getRelatedAppInfo();

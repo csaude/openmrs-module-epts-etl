@@ -819,7 +819,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	public abstract boolean canBeRunInMultipleEngines();
 	
 	public int getQtyRecordsPerProcessing() {
-		return this.getOperationConfig().getMaxRecordPerProcessing();
+		return this.getOperationConfig().getProcessingBatch();
 	}
 	
 	public abstract void afterEtl(List<T> objs, Connection srcConn, Connection dstConn) throws DBException;

@@ -41,7 +41,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private EtlOperationType operationType;
 	
-	private int maxRecordPerProcessing;
+	private int processingBatch;
 	
 	private int maxSupportedEngines;
 	
@@ -316,12 +316,12 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.operationType = operationType;
 	}
 	
-	public int getMaxRecordPerProcessing() {
-		return maxRecordPerProcessing;
+	public int getProcessingBatch() {
+		return processingBatch;
 	}
 	
-	public void setMaxRecordPerProcessing(int maxRecordPerProcessing) {
-		this.maxRecordPerProcessing = maxRecordPerProcessing;
+	public void setProcessingBatch(int processingBatch) {
+		this.processingBatch = processingBatch;
 	}
 	
 	public int getMaxSupportedEngines() {
