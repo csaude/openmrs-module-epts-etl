@@ -50,8 +50,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private int maxSupportedEngines;
 	
-	private int minRecordsPerEngine;
-	
 	private boolean doIntegrityCheckInTheEnd;
 	
 	private EtlOperationConfig child;
@@ -340,14 +338,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public void setMaxSupportedEngines(int maxSupportedEngines) {
 		this.maxSupportedEngines = maxSupportedEngines;
-	}
-	
-	public int getMinRecordsPerEngine() {
-		return minRecordsPerEngine;
-	}
-	
-	public void setMinRecordsPerEngine(int minRecordsPerEngine) {
-		this.minRecordsPerEngine = minRecordsPerEngine;
 	}
 	
 	public void setDoIntegrityCheckInTheEnd(boolean doIntegrityCheckInTheEnd) {
