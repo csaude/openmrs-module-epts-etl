@@ -20,7 +20,6 @@ import org.openmrs.module.epts.etl.model.SyncJSONInfo;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -89,26 +88,8 @@ public class DBQuickExportController extends OperationController<EtlDatabaseObje
 	}
 	
 	@Override
-	public OpenConnection openSrcConnection() throws DBException {
-		OpenConnection conn = super.openSrcConnection();
-		
-		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
-			try {
-				DBUtilities.disableForegnKeyChecks(conn);
-			}
-			catch (DBException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
-		}
-		
-		return conn;
-	}
-	
-	@Override
-	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
-	        Engine<EtlDatabaseObject> engine) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
 		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new DBQuickExportSearchParams(engine, intervalsMgt);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());

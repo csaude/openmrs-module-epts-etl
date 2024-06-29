@@ -17,7 +17,6 @@ import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.synchronization.engine.DataBaseMergeFromJSONEngine;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
@@ -48,24 +47,6 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Syn
 		return searchParams;*/
 		
 		return null;
-	}
-	
-	@Override
-	public OpenConnection openSrcConnection() throws DBException {
-		OpenConnection conn = super.openSrcConnection();
-		
-		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
-			try {
-				DBUtilities.disableForegnKeyChecks(conn);
-			}
-			catch (DBException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
-		}
-		
-		return conn;
 	}
 	
 	@SuppressWarnings("unchecked")

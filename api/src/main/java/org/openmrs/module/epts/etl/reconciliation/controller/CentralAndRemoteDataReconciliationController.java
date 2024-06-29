@@ -36,11 +36,11 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
-	        Engine<EtlDatabaseObject> engine) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
 		
-		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new CentralAndRemoteDataReconciliationSearchParams(
-		        engine, intervalsMgt, this.getOperationType());
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new CentralAndRemoteDataReconciliationSearchParams(engine,
+		        intervalsMgt, this.getOperationType());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		
 		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
@@ -65,7 +65,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	
 	@Override
 	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
-	        IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		return new CentralAndRemoteDataReconciliationEngine(monitor, limits, runningInConcurrency);
 	}
 	
@@ -160,24 +160,6 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		return false;
 	}
 	
-	@Override
-	public OpenConnection openSrcConnection() throws DBException {
-		OpenConnection conn = super.openSrcConnection();
-		
-		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
-			try {
-				DBUtilities.disableForegnKeyChecks(conn);
-			}
-			catch (DBException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
-		}
-		
-		return conn;
-	}
-	
 	public boolean existDataReconciliationInfoTable() throws DBException {
 		
 		String schema = getEtlConfiguration().getSyncStageSchema();
@@ -242,7 +224,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 	public boolean canBeRunInMultipleEngines() {
 		return false;
 	}
-
+	
 	@Override
 	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub

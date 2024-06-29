@@ -17,7 +17,6 @@ import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.resolveconflictsinstagearea.engine.ResolveConflictsInStageAreaEngine;
 import org.openmrs.module.epts.etl.resolveconflictsinstagearea.model.ResolveConflictsInStageAreaSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
@@ -33,13 +32,13 @@ public class ResolveConflictsInStageAreaController extends OperationController<S
 	
 	@Override
 	public TaskProcessor<SyncImportInfoVO> initRelatedTaskProcessor(Engine<SyncImportInfoVO> monitor,
-	        IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		return new ResolveConflictsInStageAreaEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<SyncImportInfoVO> initMainSearchParams(ThreadRecordIntervalsManager<SyncImportInfoVO> intervalsMgt,
-	        Engine<SyncImportInfoVO> engine) {
+	public AbstractEtlSearchParams<SyncImportInfoVO> initMainSearchParams(
+	        ThreadRecordIntervalsManager<SyncImportInfoVO> intervalsMgt, Engine<SyncImportInfoVO> engine) {
 		
 		AbstractEtlSearchParams<SyncImportInfoVO> searchParams = new ResolveConflictsInStageAreaSearchParams(engine,
 		        intervalsMgt);
@@ -55,7 +54,8 @@ public class ResolveConflictsInStageAreaController extends OperationController<S
 	public long getMinRecordId(Engine<? extends EtlDatabaseObject> engine) {
 		OpenConnection conn = null;
 		
-		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams((Engine<SyncImportInfoVO>) engine, null);
+		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(
+		        (Engine<SyncImportInfoVO>) engine, null);
 		
 		try {
 			conn = openSrcConnection();
@@ -106,24 +106,6 @@ public class ResolveConflictsInStageAreaController extends OperationController<S
 	@Override
 	public boolean mustRestartInTheEnd() {
 		return false;
-	}
-	
-	@Override
-	public OpenConnection openSrcConnection() throws DBException {
-		OpenConnection conn = super.openSrcConnection();
-		
-		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
-			try {
-				DBUtilities.disableForegnKeyChecks(conn);
-			}
-			catch (DBException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
-		}
-		
-		return conn;
 	}
 	
 	@Override

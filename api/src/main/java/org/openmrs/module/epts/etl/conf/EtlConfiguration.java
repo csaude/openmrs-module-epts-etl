@@ -433,13 +433,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.appsInfo = appsInfo;
 	}
 	
-	@JsonIgnore
-	public boolean isDoIntegrityCheckInTheEnd(EtlOperationType operationType) {
-		EtlOperationConfig op = findOperation(operationType);
-		
-		return op.isDoIntegrityCheckInTheEnd();
-	}
-	
 	public List<EtlItemConfiguration> getEtlItemConfiguration() {
 		return etlItemConfiguration;
 	}

@@ -38,8 +38,8 @@ public class InconsistenceSolverController extends OperationController<EtlDataba
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
-	        Engine<EtlDatabaseObject> engine) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
 		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new InconsistenceSolverSearchParams(engine, intervalsMgt);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getProgressInfo().getStartTime());
@@ -103,28 +103,10 @@ public class InconsistenceSolverController extends OperationController<EtlDataba
 	}
 	
 	@Override
-	public OpenConnection openSrcConnection() throws DBException {
-		OpenConnection conn = super.openSrcConnection();
-		
-		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
-			try {
-				DBUtilities.disableForegnKeyChecks(conn);
-			}
-			catch (DBException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
-		}
-		
-		return conn;
-	}
-	
-	@Override
 	public boolean canBeRunInMultipleEngines() {
 		return true;
 	}
-
+	
 	@Override
 	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub

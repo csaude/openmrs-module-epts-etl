@@ -45,8 +45,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private int maxSupportedEngines;
 	
-	private boolean doIntegrityCheckInTheEnd;
-	
 	private EtlOperationConfig child;
 	
 	private EtlOperationConfig parent;
@@ -330,14 +328,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public void setMaxSupportedEngines(int maxSupportedEngines) {
 		this.maxSupportedEngines = maxSupportedEngines;
-	}
-	
-	public void setDoIntegrityCheckInTheEnd(boolean doIntegrityCheckInTheEnd) {
-		this.doIntegrityCheckInTheEnd = doIntegrityCheckInTheEnd;
-	}
-	
-	public boolean isDoIntegrityCheckInTheEnd() {
-		return doIntegrityCheckInTheEnd;
 	}
 	
 	public static <T extends EtlDatabaseObject> EtlOperationConfig fastCreate(EtlOperationType operationType) {

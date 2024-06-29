@@ -9,21 +9,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.exceptions.MetadataInconsistentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
-import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
 
@@ -264,10 +260,10 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 	
 	public void sync(TableConfiguration tableInfo, Class<EtlDatabaseObject> objectClass, Connection conn)
 	        throws DBException {
+		/*
 		EtlDatabaseObject source = utilities.loadObjectFormJSON(objectClass, this.json);
 		source.setRelatedSyncInfo(this);
 		try {
-			
 			if (tableInfo.isDoIntegrityCheckInTheEnd(EtlOperationType.DB_MERGE_FROM_JSON)) {
 				if (source.hasParents()) {
 					this.markAsConsistent(tableInfo, conn);
@@ -279,7 +275,6 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 					source.setObjectId(new Oid());
 				}
 				
-				//Migrate now and ajust later
 				SyncImportInfoDAO.refreshLastMigrationTrySyncDate(tableInfo, this, conn);
 			} else {
 				source.loadDestParentInfo(tableInfo, this.recordOriginLocationCode, conn);
@@ -306,35 +301,7 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 		catch (Exception e) {
 			markAsFailedToMigrate(tableInfo, e.getLocalizedMessage(), conn);
 		}
-	}
-	
-	/**
-	 * @param source
-	 * @param qtyTry number of attempts before "give up"
-	 * @param conn
-	 * @throws ParentNotYetMigratedException
-	 * @throws DBException
-	 */
-	private void refrieveSharedPKKey(TableConfiguration tableConfiguration, EtlDatabaseObject source, int qtyTry,
-	        Connection conn) throws ParentNotYetMigratedException, DBException {
-		try {
-			EtlDatabaseObject obj = DatabaseObjectDAO.getByUniqueKeys(source, conn);
-			
-			if (obj != null) {
-				source.setObjectId(obj.getObjectId());
-			} else
-				throw new ParentNotYetMigratedException(null);
-			
-		}
-		catch (ParentNotYetMigratedException e) {
-			
-			if (qtyTry > 0) {
-				//Wait 10 seconds before try again
-				TimeCountDown.sleep(1);
-				refrieveSharedPKKey(tableConfiguration, source, --qtyTry, conn);
-			} else
-				throw e;
-		}
+		*/
 	}
 	
 	public void markAsToBeCompletedInFuture(TableConfiguration tableInfo, Connection conn) throws DBException {
@@ -765,13 +732,13 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public EtlDatabaseObject getSrcRelatedObject() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
 		// TODO Auto-generated method stub

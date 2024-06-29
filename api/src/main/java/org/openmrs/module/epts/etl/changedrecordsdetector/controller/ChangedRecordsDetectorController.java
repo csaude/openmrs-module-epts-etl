@@ -124,23 +124,6 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 		return false;
 	}
 	
-	public OpenConnection openSrcConnection() throws DBException {
-		OpenConnection conn = getDefaultApp().openConnection();
-		
-		if (getOperationConfig().isDoIntegrityCheckInTheEnd()) {
-			try {
-				DBUtilities.disableForegnKeyChecks(conn);
-			}
-			catch (DBException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException(e);
-			}
-		}
-		
-		return conn;
-	}
-	
 	public boolean existDetectedRecordInfoTable() throws DBException {
 		OpenConnection conn = openSrcConnection();
 		

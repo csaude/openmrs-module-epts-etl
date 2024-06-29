@@ -11,7 +11,6 @@ import org.openmrs.module.epts.etl.conf.AbstractRelatedTable;
 import org.openmrs.module.epts.etl.conf.AppInfo;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
-import org.openmrs.module.epts.etl.conf.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.PrimaryKey;
@@ -135,10 +134,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	boolean isRemoveForbidden();
 	
 	public void setRemoveForbidden(boolean removeForbidden);
-	
-	default boolean isDoIntegrityCheckInTheEnd(EtlOperationType operationType) {
-		return getRelatedSyncConfiguration().isDoIntegrityCheckInTheEnd(operationType);
-	}
 	
 	@JsonIgnore
 	default String getId() {
