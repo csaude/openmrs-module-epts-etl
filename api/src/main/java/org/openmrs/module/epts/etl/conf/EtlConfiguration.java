@@ -838,7 +838,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public EtlOperationConfig findOperation(EtlOperationType operationType) {
-		EtlOperationConfig toFind = EtlOperationConfig.fastCreate(operationType);
+		EtlOperationConfig toFind = EtlOperationConfig.fastCreate(operationType, this);
 		
 		for (EtlOperationConfig op : this.operations) {
 			if (op.equals(toFind))
@@ -897,6 +897,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		if (getProcessType() == null || !utilities.stringHasValue(getProcessType().name()))
 			errorMsg += ++errNum + ". You must specify value for 'processType' parameter\n";
+		
+		if (!hasOperation()) {
+			this.setOperations(utilities.parseToList(EtlOperationConfig.createDefaultOperation(this)));
+		}
 		
 		for (EtlOperationConfig operation : this.getOperations()) {
 			operation.validate();
@@ -961,6 +965,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			this.childConfig.validate();
 		}
 		
+	}
+	
+	private boolean hasOperation() {
+		return utilities.arrayHasElement(this.getOperations());
 	}
 	
 	private boolean isOperationConfigured(EtlOperationType operationType) {

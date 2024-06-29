@@ -37,6 +37,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
+	private static final int DEFAULT_BATCH_PROCESSING = 1000;
+	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private EtlOperationType operationType;
@@ -83,6 +85,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.dstType = EtlDstType.db;
 		this.processingMode = EtlProcessingModeType.SERIAL;
 		this.operationType = EtlOperationType.ETL;
+		this.processingBatch = EtlOperationConfig.DEFAULT_BATCH_PROCESSING;
+		this.maxSupportedEngines = utilities.getAvailableProcessors();
 	}
 	
 	public EtlDstType getDstType() {
@@ -320,9 +324,11 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.maxSupportedEngines = maxSupportedEngines;
 	}
 	
-	public static <T extends EtlDatabaseObject> EtlOperationConfig fastCreate(EtlOperationType operationType) {
+	public static <T extends EtlDatabaseObject> EtlOperationConfig fastCreate(EtlOperationType operationType,
+	        EtlConfiguration relatedEtlConfig) {
 		EtlOperationConfig op = new EtlOperationConfig();
 		op.setOperationType(operationType);
+		op.setRelatedEtlConfig(relatedEtlConfig);
 		
 		return op;
 	}
@@ -822,6 +828,10 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		catch (
 		
 		ClassNotFoundException e) {}
+	}
+	
+	public static EtlOperationConfig createDefaultOperation(EtlConfiguration relatedConfig) {
+		return fastCreate(EtlOperationType.ETL, relatedConfig);
 	}
 	
 }
