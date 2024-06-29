@@ -86,6 +86,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public EtlOperationConfig() {
 		this.dstType = EtlDstType.db;
+		this.processingMode = EtlProcessingModeType.SERIAL;
 	}
 	
 	public EtlDstType getDstType() {
