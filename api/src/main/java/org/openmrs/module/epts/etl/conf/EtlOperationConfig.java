@@ -59,8 +59,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private List<OperationController<? extends EtlDatabaseObject>> relatedControllers;
 	
-	private boolean mustRunToAllApps;
-	
 	private String processorFullClassName;
 	
 	private Class<TaskProcessor<? extends EtlDatabaseObject>> processorClazz;
@@ -73,8 +71,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	/**
 	 * Indicates whether this operation will executed over all tables configured under
-	 * {@link #relatedEtlConfig}. If true, the operation will be run only once (for the first
-	 * table)
+	 * {@link #relatedEtlConfig}. If true, the operation will be run only once (for the first table)
 	 */
 	private boolean runOnce;
 	
@@ -166,14 +163,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public void setProcessorFullClassName(String processorFullClassName) {
 		this.processorFullClassName = processorFullClassName;
-	}
-	
-	public boolean isMustRunToAllApps() {
-		return mustRunToAllApps;
-	}
-	
-	public void setMustRunToAllApps(boolean mustRunToAllApps) {
-		this.mustRunToAllApps = mustRunToAllApps;
 	}
 	
 	@JsonIgnore
@@ -603,7 +592,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		try {
 			tryToLoadEngine();
 			
-			if (this.getRelatedEtlConfig().isResolveProblems() && !GenericEngine.class.isAssignableFrom(this.processorClazz)) {
+			if (this.getRelatedEtlConfig().isResolveProblems()
+			        && !GenericEngine.class.isAssignableFrom(this.processorClazz)) {
 				errorMsg += ++errNum + ". The engine class [" + this.getProcessorFullClassName()
 				        + "] is not any org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine \n";
 			}
