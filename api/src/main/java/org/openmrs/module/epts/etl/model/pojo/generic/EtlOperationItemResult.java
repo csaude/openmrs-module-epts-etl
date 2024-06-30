@@ -41,6 +41,7 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 	public EtlOperationItemResult(T record, EtlException exception) {
 		this.record = record;
 		this.exception = exception;
+		this.type = EtlOperationResultItemType.UNEXPECTED_ERRORS;
 	}
 	
 	public EtlOperationResultItemType getType() {

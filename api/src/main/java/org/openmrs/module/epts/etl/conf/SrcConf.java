@@ -25,6 +25,19 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	private List<QueryDataSourceConfig> extraQueryDataSource;
 	
+	private EtlDstType dstType;
+	
+	public SrcConf() {
+	}
+	
+	public EtlDstType getDstType() {
+		return dstType;
+	}
+	
+	public void setDstType(EtlDstType dstType) {
+		this.dstType = dstType;
+	}
+	
 	public List<AuxExtractTable> getSelfJoinTables() {
 		return selfJoinTables;
 	}
@@ -59,8 +72,13 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		return false;
 	}
 	
+	public boolean hasDstType() {
+		return getDstType() != null;
+	}
+	
 	@Override
 	public void loadOwnElements(Connection conn) throws DBException {
+		
 		if (this.hasParentRefInfo()) {
 			for (ParentTable ref : this.getParentRefInfo()) {
 				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());

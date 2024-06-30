@@ -335,6 +335,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				map.setRelatedSyncConfiguration(getRelatedEtlConf());
 				
 				map.setParentConf(this);
+				map.setDstType(getSrcConf().getDstType());
 				
 				if (!map.isAutomaticalyGenerated()) {
 					map.loadSchemaInfo(dstConn);

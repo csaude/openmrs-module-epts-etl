@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlDstType;
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
@@ -126,57 +127,65 @@ public class LoadRecord {
 	public void consolidateAndSaveData(boolean create, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		
-		if (!getDstConf().isFullLoaded()) {
-			getDstConf().fullLoad();
-		}
+		EtlDstType dstType = getTaskProcessor().determineDstType(this.getDstConf());
 		
-		loadDstParentInfo(srcConn, dstConn);
-		
-		try {
-			
-			if (create) {
-				getRecord().save(getDstConf(), dstConn);
-			} else {
-				getRecord().update(getDstConf(), dstConn);
+		if (dstType.isDb()) {
+			if (!getDstConf().isFullLoaded()) {
+				getDstConf().fullLoad();
 			}
 			
-			if (getDstConf().useSimpleNumericPk()) {
-				this.setDestinationRecordId(getRecord().getObjectId().getSimpleValueAsInt());
-			}
-		}
-		catch (DBException e) {
-			if (e.isDuplicatePrimaryOrUniqueKeyException()) {
+			loadDstParentInfo(srcConn, dstConn);
+			
+			try {
 				
-				boolean existWinningRecInfo = utilities.arrayHasElement(getDstConf().getWinningRecordFieldsInfo());
-				boolean existObservationDateFields = utilities.arrayHasElement(getDstConf().getObservationDateFields());
-				
-				if (existObservationDateFields || existWinningRecInfo) {
-					EtlDatabaseObject recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this.getRecord(), dstConn);
-					
-					if (recordOnDB != null) {
-						((AbstractDatabaseObject) getRecord()).resolveConflictWithExistingRecord(recordOnDB,
-						    this.getDstConf(), dstConn);
-					} else {
-						getTaskProcessor().logWarn(
-						    "Conflict with non avaliable record found. This will be igored and the issue will be documented");
-					}
-					
-					if (getDstConf().useSimpleNumericPk()) {
-						this.setDestinationRecordId(getRecord().getObjectId().getSimpleValueAsInt());
-					}
+				if (create) {
+					getRecord().save(getDstConf(), dstConn);
+				} else {
+					getRecord().update(getDstConf(), dstConn);
 				}
 				
-			} else if (e.isIntegrityConstraintViolationException()) {
-				determineMissingMetadataParent(this, srcConn, dstConn);
-				
-				//If there is no missing metadata parent, throw exception
-				throw e;
-			} else
-				throw e;
-		}
-		
-		if (this.hasParentsWithDefaultValues()) {
-			reloadParentsWithDefaultValues(srcConn, dstConn);
+				if (getDstConf().useSimpleNumericPk()) {
+					this.setDestinationRecordId(getRecord().getObjectId().getSimpleValueAsInt());
+				}
+			}
+			catch (DBException e) {
+				if (e.isDuplicatePrimaryOrUniqueKeyException()) {
+					
+					boolean existWinningRecInfo = utilities.arrayHasElement(getDstConf().getWinningRecordFieldsInfo());
+					boolean existObservationDateFields = utilities.arrayHasElement(getDstConf().getObservationDateFields());
+					
+					if (existObservationDateFields || existWinningRecInfo) {
+						EtlDatabaseObject recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this.getRecord(), dstConn);
+						
+						if (recordOnDB != null) {
+							((AbstractDatabaseObject) getRecord()).resolveConflictWithExistingRecord(recordOnDB,
+							    this.getDstConf(), dstConn);
+						} else {
+							getTaskProcessor().logWarn(
+							    "Conflict with non avaliable record found. This will be igored and the issue will be documented");
+						}
+						
+						if (getDstConf().useSimpleNumericPk()) {
+							this.setDestinationRecordId(getRecord().getObjectId().getSimpleValueAsInt());
+						}
+					}
+					
+				} else if (e.isIntegrityConstraintViolationException()) {
+					determineMissingMetadataParent(this, srcConn, dstConn);
+					
+					//If there is no missing metadata parent, throw exception
+					throw e;
+				} else
+					throw e;
+			}
+			
+			if (this.hasParentsWithDefaultValues()) {
+				reloadParentsWithDefaultValues(srcConn, dstConn);
+			}
+		} else if (dstType.isFile()) {
+			loadAllToFile(utilities.parseObjectToList_(this, LoadRecord.class));
+		} else {
+			throw new ForbiddenOperationException("Unsupported dstType '" + dstType + "'");
 		}
 	}
 	
@@ -489,7 +498,7 @@ public class LoadRecord {
 		consolidateAndSaveData(false, srcConn, destConn);
 	}
 	
-	public static void loadAll_(List<LoadRecord> mergingRecs, Connection srcConn, Connection dstConn)
+	public static void loadAllToDb(List<LoadRecord> mergingRecs, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		
 		AbstractTableConfiguration config = mergingRecs.get(0).dstConf;
@@ -660,7 +669,17 @@ public class LoadRecord {
 	        throws ParentNotYetMigratedException, DBException {
 		
 		for (String key : mergingRecs.keySet()) {
-			loadAll_(mergingRecs.get(key), srcConn, dstConn);
+			LoadRecord defaultRec = mergingRecs.get(key).get(0);
+			
+			EtlDstType dstType = defaultRec.getTaskProcessor().determineDstType(defaultRec.getDstConf());
+			
+			if (dstType.isDb()) {
+				loadAllToDb(mergingRecs.get(key), srcConn, dstConn);
+			} else if (dstType.isFile()) {
+				loadAllToFile(mergingRecs.get(key));
+			} else {
+				throw new ForbiddenOperationException("Unsupported dstType '" + dstType + "'");
+			}
 		}
 	}
 	
@@ -678,7 +697,7 @@ public class LoadRecord {
 		return objs;
 	}
 	
-	public static void writeAllToFile(List<LoadRecord> mergingRecs) throws ParentNotYetMigratedException, DBException {
+	public static void loadAllToFile(List<LoadRecord> mergingRecs) throws ParentNotYetMigratedException, DBException {
 		
 		EtlEngine taskProcessor = mergingRecs.get(0).getTaskProcessor();
 		
@@ -703,7 +722,7 @@ public class LoadRecord {
 			dataFile += ".csv";
 		} else if (engine.isDumpDst()) {
 			data = TableConfiguration.generateInsertDump(objs);
-		
+			
 			dataFile += ".sql";
 		}
 		
@@ -713,15 +732,6 @@ public class LoadRecord {
 		
 		taskProcessor.getTaskResultInfo()
 		        .addAllToRecordsWithNoError(EtlOperationItemResult.parseFromEtlDatabaseObject(objs));
-	}
-	
-	public static void writeAllToFile(Map<String, List<LoadRecord>> mergingRecs)
-	        throws ParentNotYetMigratedException, DBException {
-		
-		for (String key : mergingRecs.keySet()) {
-			writeAllToFile(mergingRecs.get(key));
-		}
-		
 	}
 	
 	public static String parseToJson(List<EtlDatabaseObject> objs) {

@@ -74,10 +74,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private boolean disabled;
 	
-	public static String PROCESSING_MODE_SEQUENCIAL = "sequencial";
-	
-	public static String PROCESSING_MODE_PARALLEL = "parallel";
-	
 	private File moduleRootDirectory;
 	
 	private boolean fullLoaded;

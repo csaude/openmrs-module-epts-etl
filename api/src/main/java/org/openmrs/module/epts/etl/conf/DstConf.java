@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.etl.engine.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
 import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -58,7 +59,41 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private boolean automaticalyGenerated;
 	
+	private EtlDstType dstType;
+	
+	private String transformer;
+	
+	private EtlRecordTransformer transformerInstance;
+	
 	public DstConf() {
+	}
+	
+	public EtlRecordTransformer getTransformerInstance() {
+		return transformerInstance;
+	}
+	
+	public void setTransformerInstance(EtlRecordTransformer transformerInstance) {
+		this.transformerInstance = transformerInstance;
+	}
+	
+	public String getTransformer() {
+		return transformer;
+	}
+	
+	public void setTransformer(String transformer) {
+		this.transformer = transformer;
+	}
+	
+	public boolean hasTransformer() {
+		return getTransformer() != null;
+	}
+	
+	public EtlDstType getDstType() {
+		return dstType;
+	}
+	
+	public void setDstType(EtlDstType dstType) {
+		this.dstType = dstType;
 	}
 	
 	public List<List<FieldsMapping>> getGeneratedJoinFields() {
@@ -140,6 +175,10 @@ public class DstConf extends AbstractTableConfiguration {
 	}
 	
 	public void generateAllFieldsMapping(Connection conn) throws DBException {
+		if (hasTransformer()) {
+			return;
+		}
+		
 		this.allMapping = new ArrayList<>();
 		
 		List<String> avaliableInMultiDataSources = new ArrayList<>();
@@ -260,6 +299,12 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			return;
 			
+		}
+		
+		if (fm.hasTransformer()) {
+			fm.tryToLoadTransformer();
+			
+			return;
 		}
 		
 		for (EtlDataSource pref : this.allPrefferredDataSource) {
@@ -385,6 +430,28 @@ public class DstConf extends AbstractTableConfiguration {
 		this.fullLoadAllRelatedTables(getRelatedEtlConf(), null, conn);
 		
 		determinePrefferredDataSources();
+		
+		tryToLoadTransformer(conn);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void tryToLoadTransformer(Connection conn) {
+		if (this.hasTransformer()) {
+			
+			try {
+				ClassLoader loader = EtlRecordTransformer.class.getClassLoader();
+				
+				Class<? extends EtlRecordTransformer> transformerClazz = (Class<? extends EtlRecordTransformer>) loader
+				        .loadClass(this.getTransformer());
+				
+				this.transformerInstance = transformerClazz.newInstance();
+			}
+			catch (Exception e) {
+				throw new ForbiddenOperationException(
+				        "Error loading transformer class [" + this.getTransformer() + "]!!! " + e.getLocalizedMessage());
+			}
+			
+		}
 	}
 	
 	private void determinePrefferredDataSources() {
@@ -489,6 +556,10 @@ public class DstConf extends AbstractTableConfiguration {
 	public EtlDatabaseObject transform(EtlDatabaseObject srcObject, Connection srcConn, DBConnectionInfo srcAppInfo,
 	        DBConnectionInfo dstAppInfo) throws DBException, ForbiddenOperationException {
 		try {
+			
+			if (hasTransformer()) {
+				return getTransformerInstance().transform(srcObject, this, srcConn, srcConn);
+			}
 			
 			List<EtlDatabaseObject> srcObjects = new ArrayList<>();
 			

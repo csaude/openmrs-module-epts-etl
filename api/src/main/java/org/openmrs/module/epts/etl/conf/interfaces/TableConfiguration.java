@@ -329,8 +329,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					
 					if (!defaultGeneratedObjectKeyTabConf.isFullLoaded()) {
 						
-						defaultGeneratedObjectKeyTabConf.setTableName(getRelatedEtlConf().getSyncStageSchema()
-						        + "." + defaultGeneratedObjectKeyTabConf.getTableName());
+						defaultGeneratedObjectKeyTabConf.setTableName(getRelatedEtlConf().getSyncStageSchema() + "."
+						        + defaultGeneratedObjectKeyTabConf.getTableName());
 						
 						defaultGeneratedObjectKeyTabConf.setTableAlias(defaultGeneratedObjectKeyTabConf.getTableName());
 						defaultGeneratedObjectKeyTabConf.fullLoad(conn);
@@ -2032,7 +2032,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default EtlDatabaseObject createRecordInstance() {
 		try {
-			return getSyncRecordClass().newInstance();
+			EtlDatabaseObject rec = getSyncRecordClass().newInstance();
+			
+			rec.setRelatedConfiguration(this);
+			
+			return rec;
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);

@@ -8,6 +8,11 @@ public enum EtlDstType {
 	dump,
 	csv;
 	
+	// @formatter:on
+	public boolean isDefault() {
+		return this.isDb();
+	}
+	
 	public boolean isDb() {
 		return this.equals(db);
 	}
@@ -23,8 +28,8 @@ public enum EtlDstType {
 	public boolean isCsv() {
 		return this.equals(csv);
 	}
-
-	boolean isFile() {
+	
+	public boolean isFile() {
 		return isCsv() || isJson() || isDump();
 	}
 	

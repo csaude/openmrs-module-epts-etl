@@ -76,7 +76,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		this.finalCheckStatus = MigrationFinalCheckStatus.NOT_INITIALIZED;
 	}
 	
-	public EtlDstType getDstType() {
+	public EtlDstType getGlobalDstType() {
 		return getRelatedEtlOperationConfig().getDstType();
 	}
 	

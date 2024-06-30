@@ -3,6 +3,8 @@ package org.openmrs.module.epts.etl.controller.conf.tablemapping;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.etl.engine.transformer.EtlFieldTransformer;
+import org.openmrs.module.epts.etl.etl.engine.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
@@ -26,8 +28,12 @@ public class FieldsMapping {
 	private String dataSourceName;
 	
 	private String dstField;
-
+	
 	private boolean mapToNullValue;
+	
+	private String transformer;
+	
+	private EtlFieldTransformer transformerInstance;
 	
 	public FieldsMapping() {
 	}
@@ -44,6 +50,52 @@ public class FieldsMapping {
 	
 	public static FieldsMapping fastCreate(String fieldName) {
 		return fastCreate(fieldName, fieldName);
+	}
+	
+	public EtlFieldTransformer getTransformerInstance() {
+		if (this.transformerInstance == null) {
+			tryToLoadTransformer();
+		}
+		
+		return this.transformerInstance;
+	}
+	
+	/**
+	 * @throws ForbiddenOperationException
+	 */
+	@SuppressWarnings("unchecked")
+	public void tryToLoadTransformer() throws ForbiddenOperationException {
+		if (this.hasTransformer()) {
+			try {
+				ClassLoader loader = EtlRecordTransformer.class.getClassLoader();
+				
+				Class<? extends EtlFieldTransformer> t = (Class<? extends EtlFieldTransformer>) loader
+				        .loadClass(this.getTransformer());
+				
+				this.transformerInstance = t.newInstance();
+			}
+			catch (Exception e) {
+				throw new ForbiddenOperationException(
+				        ". Error loading the transformer [" + this.getTransformer() + "] !!! " + e.getLocalizedMessage());
+			}
+			
+		}
+	}
+	
+	public void setTransformerInstance(EtlFieldTransformer transformerInstance) {
+		this.transformerInstance = transformerInstance;
+	}
+	
+	public String getTransformer() {
+		return transformer;
+	}
+	
+	public void setTransformer(String transformer) {
+		this.transformer = transformer;
+	}
+	
+	public boolean hasTransformer() {
+		return getTransformer() != null;
 	}
 	
 	public String getSrcValue() {
@@ -101,8 +153,12 @@ public class FieldsMapping {
 		return "[srcField: " + srcField + ", dstField: " + dstField + ", dataSourceName: " + this.dataSourceName + "]";
 	}
 	
-	public Object retrieveValue(EtlDatabaseObject dstObject, List<EtlDatabaseObject> srcObjects, DBConnectionInfo appInfo, Connection conn)
-	        throws DBException, ForbiddenOperationException {
+	public Object retrieveValue(EtlDatabaseObject dstObject, List<EtlDatabaseObject> srcObjects, DBConnectionInfo appInfo,
+	        Connection conn) throws DBException, ForbiddenOperationException {
+		
+		if (hasTransformer()) {
+			return getTransformerInstance().transform(srcObjects.get(0), this.getSrcField(), this.getDstField(), conn, conn);
+		}
 		
 		if (this.srcValue != null) {
 			return utilities.parseValue(this.srcValue, utilities.getFieldType(dstObject, this.dstField));
@@ -122,13 +178,17 @@ public class FieldsMapping {
 		throw new ForbiddenOperationException(
 		        "The field '" + this.srcField + " does not belong to any configured source table");
 	}
-
+	
+	public boolean hasTransformerInstance() {
+		return this.getTransformerInstance() != null;
+	}
+	
 	public void setMapToNullValue(boolean b) {
 		mapToNullValue = b;
 	}
 	
-	
 	public boolean isMapToNullValue() {
 		return mapToNullValue;
 	}
+	
 }

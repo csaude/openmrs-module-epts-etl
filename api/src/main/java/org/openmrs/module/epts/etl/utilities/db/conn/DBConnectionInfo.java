@@ -29,8 +29,6 @@ public class DBConnectionInfo {
 	
 	private String databaseSchemaPath;
 	
-	private DBConnectionInfo connInfo;
-	
 	private DBConnectionService dbService;
 	
 	public DBConnectionInfo() {
@@ -69,7 +67,7 @@ public class DBConnectionInfo {
 	
 	private synchronized void initRelatedDBConnectionService() {
 		if (dbService == null) {
-			dbService = DBConnectionService.init(this.connInfo);
+			dbService = DBConnectionService.init(this);
 		}
 	}
 	

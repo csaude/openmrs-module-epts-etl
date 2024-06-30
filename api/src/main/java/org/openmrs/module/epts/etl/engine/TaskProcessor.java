@@ -3,7 +3,9 @@ package org.openmrs.module.epts.etl.engine;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlDstType;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.EtlOperationType;
@@ -140,6 +142,20 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		} else {
 			logDebug("No record found for etl");
 		}
+	}
+	
+	public EtlDstType determineDstType(DstConf dstConf) {
+		EtlDstType dstType = dstConf.getDstType();
+		
+		if (dstType == null) {
+			dstType = dstConf.getSrcConf().getDstType();
+		}
+		
+		if (dstType == null) {
+			dstType = getEngine().getGlobalDstType();
+		}
+		
+		return dstType;
 	}
 	
 	private void beforeSync(List<T> records, Connection srcConn, Connection dstConn) {
