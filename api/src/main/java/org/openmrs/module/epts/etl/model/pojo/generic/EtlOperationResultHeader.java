@@ -11,7 +11,7 @@ import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
@@ -19,7 +19,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	
-	private static parseToCSV utilities = parseToCSV.getInstance();
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private List<EtlOperationItemResult<T>> recordsWithUnexpectedErrors;
 	

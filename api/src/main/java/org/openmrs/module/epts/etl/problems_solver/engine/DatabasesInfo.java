@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.problems_solver.engine;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -754,7 +754,7 @@ public class DatabasesInfo {
 		
 		
 	public static void main(String[] args) {
-		parseToCSV utilities = parseToCSV.getInstance();
+		CommonUtilities utilities = CommonUtilities.getInstance();
 		
 		List<String> q3 = utilities.parseArrayToList(dbsQ3);
 		List<String> q4 = utilities.parseArrayToList(dbsQ4);

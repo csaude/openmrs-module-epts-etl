@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.fileupload.FileItem;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBOperation;
@@ -40,7 +40,7 @@ public abstract class BaseDAO {
 	
 	public static final DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
-	public static parseToCSV utilities = parseToCSV.getInstance();
+	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	/**
 	 * Perform an SQL Select, using prepared statement.

@@ -13,13 +13,13 @@ import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class MergingRecord {
 	
-	private static parseToCSV utilities = parseToCSV.getInstance();
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private EtlDatabaseObject record;
 	

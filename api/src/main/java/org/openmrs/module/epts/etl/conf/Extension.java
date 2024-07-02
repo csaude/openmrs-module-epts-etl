@@ -6,14 +6,14 @@ import java.util.List;
 import javax.ws.rs.ForbiddenException;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Extension {
 	
-	private static parseToCSV utilities = parseToCSV.getInstance();
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String coding;
 	

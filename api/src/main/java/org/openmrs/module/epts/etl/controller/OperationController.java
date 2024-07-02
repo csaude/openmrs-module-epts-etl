@@ -20,7 +20,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
@@ -364,8 +364,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	@JsonIgnore
-	public parseToCSV utilities() {
-		return parseToCSV.getInstance();
+	public CommonUtilities utilities() {
+		return CommonUtilities.getInstance();
 	}
 	
 	private void startAndAddToEnginesActivititieMonitor(Engine<T> activitityMonitor) {

@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.conf;
 
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
  * Suported operation type in sync process
@@ -123,7 +123,7 @@ public enum EtlOperationType {
 	}
 	
 	public static boolean isSupportedOperation(String operationType) {
-		return parseToCSV.getInstance().getPosOnArray(EtlOperationType.values(),
+		return CommonUtilities.getInstance().getPosOnArray(EtlOperationType.values(),
 		    EtlOperationType.valueOf(operationType)) >= 0;
 	}
 	
@@ -216,6 +216,6 @@ public enum EtlOperationType {
 	}
 	
 	public boolean isSupportedOperation() {
-		return parseToCSV.getInstance().getPosOnArray(EtlOperationType.values(), this) >= 0;
+		return CommonUtilities.getInstance().getPosOnArray(EtlOperationType.values(), this) >= 0;
 	}
 }

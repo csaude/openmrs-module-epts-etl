@@ -28,7 +28,7 @@ import org.openmrs.util.OpenmrsClassLoader;
 
 public class ClassPathUtilities {
 	
-	private static parseToCSV utilities = parseToCSV.getInstance();
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public static void addFileToZip(File source, File file, String path) {
 		File[] files = { file };

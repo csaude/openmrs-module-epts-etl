@@ -28,7 +28,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
@@ -39,7 +39,7 @@ import org.openmrs.module.epts.etl.utilities.tools.model.TmpVO;
 
 public class QuickTest {
 	
-	static parseToCSV utilities = parseToCSV.getInstance();
+	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	@SuppressWarnings("unused")
 	public static OpenConnection openConnection() throws DBException {
@@ -59,13 +59,45 @@ public class QuickTest {
 		
 		DBConnectionInfo connInfo_mozart = DBConnectionInfo.loadFromJson(json);
 		
-		DBConnectionService service = DBConnectionService.init(connInfo_localhost);
+		DBConnectionService service = DBConnectionService.init(connInfo_quelimane);
 		
 		return service.openConnection();
 	}
 	
 	public static void main(String[] args) throws Exception {
-		copyFileContentExcludingSomeLines();
+		searchOnDbs(openConnection());
+	}
+	
+	public static void searchOnDbs(Connection conn) throws IOException, DBException {
+		List<String> alldbs = FileUtilities
+		        .readAllFileAsListOfString("D:\\PRG\\JEE\\Workspace\\CSaude\\eptssync\\_quelimane\\dbs.txt");
+		
+		String newLine = "\n";
+		
+		for (String dbName : alldbs) {
+			String sql = "";
+			sql += " select count(*) as value " + newLine;
+			sql += " from  " + dbName + ".encounter inner join " + dbName + ".location using (location_id)" + newLine;
+			sql += " where encounter.uuid in ('dfa96496-54aa-4c83-bce2-3cb8c3e4ffd5', '49d6a0ea-aa71-461d-95f5-45cb9b66878e', '15d0ea8e-a1b6-4e68-8891-88474c4f701f', 'ded002e7-b24d-49e1-9be0-e112e333dc4d', '22403449-77c5-466c-a5c5-071e861d9b43', '7a45dfc1-2baa-446e-951c-440b4f2ee5ab', 'a38ea590-3103-4240-acd7-9aaed6951cfd', 'b3cfac54-56da-4271-8c56-6f7141ed9306', 'ee25ca52-d27f-46dd-b1a2-ed355052bb76', 'beabf800-582d-413a-8d37-5470431870cb', '38ca70df-0713-4539-9c1a-03966dc67bc8', '78c79009-f81f-4282-9eeb-1b6220858c35', '1e65d82b-56ae-41d7-8ad8-94bafec2c308', '95ea6e43-639e-4251-9e30-d89e8ca7ca4d', 'b0173511-b4bf-4975-84ea-721a3f95caa6')";
+			
+			SimpleValue result = null;
+			try {
+				result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
+				
+				if (result != null && result.intValue() > 0) {
+					System.out.println("Record found on " + dbName + " Rec: " + result.intValue());
+				}
+			}
+			catch (DBException e) {
+				if (!e.getLocalizedMessage().contains("Table '" + dbName + ".encounter'")) {
+					throw e;
+				}
+				
+			}
+			
+		}
+		
+		System.out.println("Finished ");
 	}
 	
 	public static void testResourceSharingBetweenConnections() throws SQLException {
@@ -203,28 +235,6 @@ public class QuickTest {
 			
 			if (result != null) {
 				System.out.println("Record found on" + uuid);
-			}
-		}
-		
-		System.out.println("Finished ");
-	}
-	
-	public static void searchOnDbs(Connection conn) throws IOException, DBException {
-		List<String> alldbs = FileUtilities.readAllFileAsListOfString(
-		    "D:/ORG/C-SAUDE/PROJECTOS/Centralizacao/Tickets/Data-Community/Cacum/Analyse/alldbs.txt");
-		
-		String newLine = "\n";
-		
-		for (String dbName : alldbs) {
-			String sql = "";
-			sql += " select person_id as value " + newLine;
-			sql += " from  " + dbName + ".person " + newLine;
-			sql += " where uuid = 'd203ee32-e000-11e6-a91f-4485001ec084' ";
-			
-			SimpleValue result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
-			
-			if (result != null) {
-				System.out.println("Record found on" + dbName);
 			}
 		}
 		

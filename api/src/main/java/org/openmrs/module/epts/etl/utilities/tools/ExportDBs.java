@@ -5,7 +5,7 @@ import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -76,7 +76,7 @@ public class ExportDBs {
 			
 			
 			if (files.length > 0) {
-				 dumps.addAll(parseToCSV.getInstance().parseArrayToList(files));
+				 dumps.addAll(CommonUtilities.getInstance().parseArrayToList(files));
 			}
 		}
 		

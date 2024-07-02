@@ -21,7 +21,7 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
@@ -37,7 +37,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class EtlConfiguration extends AbstractBaseConfiguration implements TableAliasesGenerator {
 	
-	private static parseToCSV utilities = parseToCSV.getInstance();
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public static final String SKIPPED_RECORD_TABLE_NAME = "skipped_record";
 	
@@ -1133,9 +1133,55 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	@SuppressWarnings("rawtypes")
+	public boolean hasDefinedParameter(String paramName) {
+		if (this.hasConfiguredParams()) {
+			if (this.getParams().containsKey(paramName)) {
+				return true;
+			}
+		}
+		
+		String[] paramElements = paramName.split("\\.");
+		
+		Object paramObject = this;
+		
+		//Try to lookup for parameter inside the configuration fields
+		for (String paramElement : paramElements) {
+			
+			String[] arrayParamElements = paramElement.split("\\[");
+			
+			String simpleParamName = arrayParamElements[0];
+			
+			try {
+				if (paramObject instanceof List) {
+					
+					int pos = Integer.parseInt((arrayParamElements[1]).split("\\]")[0]);
+					
+					paramObject = ((List) paramObject).get(pos);
+				} else {
+					paramObject = utilities.getFieldValue(paramObject, simpleParamName);
+				}
+				
+				return true;
+				
+			}
+			catch (ForbiddenOperationException e) {
+				return false;
+			}
+		}
+		
+		return false;
+	}
+	
+	public boolean hasConfiguredParams() {
+		return this.params != null && !this.params.isEmpty();
+	}
+	
+	@SuppressWarnings("rawtypes")
 	public String getParamValue(String paramName) {
-		if (this.params != null) {
-			return this.params.get(paramName);
+		if (hasConfiguredParams()) {
+			if (this.getParams().containsKey(paramName)) {
+				return this.getParams().get(paramName);
+			}
 		}
 		
 		String[] paramElements = paramName.split("\\.");

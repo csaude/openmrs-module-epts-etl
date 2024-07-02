@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.PreparedQuery;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -27,13 +28,12 @@ import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> extends AbstractSearchParams<T> {
 	
-	public static parseToCSV utilities = parseToCSV.getInstance();
+	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private Date syncStartDate;
 	
@@ -105,12 +105,13 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses) {
 		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
 			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
+			PreparedQuery pQ = PreparedQuery.prepare(extraContidion, getConfig().getRelatedEtlConf(), false);
 			
-			Object[] params = DBUtilities.loadParamsValues(extraContidion, getConfig().getRelatedEtlConf());
+			List<Object> paramsAsList = pQ.generateQueryParameters();
 			
-			String query = DBUtilities.replaceSqlParametersWithQuestionMarks(extraContidion);
+			Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
 			
-			searchClauses.addToClauses(query);
+			searchClauses.addToClauses(pQ.generatePreparedQuery());
 			
 			searchClauses.addToParameters(params);
 		}

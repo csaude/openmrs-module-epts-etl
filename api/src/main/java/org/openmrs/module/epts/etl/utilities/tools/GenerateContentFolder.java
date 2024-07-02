@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class GenerateContentFolder {
@@ -20,7 +20,7 @@ public class GenerateContentFolder {
 	
 	public static final String destProject = "D:\\PRG\\JEE\\Projects\\dinat\\sigit\\lims_3.3";
 	
-	static parseToCSV utilities = parseToCSV.getInstance();
+	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public static void main(String[] args) throws IOException {
 		
@@ -75,8 +75,8 @@ public class GenerateContentFolder {
 		
 		String separator = FileUtilities.getPathSeparator();
 		
-		//List<String> excluded = parseToCSV.getInstance().parseToList("lims_ladm");
-		//List<String> include = parseToCSV.getInstance().parseToList();
+		//List<String> excluded = CommonUtilities.getInstance().parseToList("lims_ladm");
+		//List<String> include = CommonUtilities.getInstance().parseToList();
 		
 		for (File srcProjectFolder : projects) {
 			
@@ -131,7 +131,7 @@ public class GenerateContentFolder {
 				});
 				
 				if (files.length > 0) {
-					dumps.addAll(parseToCSV.getInstance().parseArrayToList(files));
+					dumps.addAll(CommonUtilities.getInstance().parseArrayToList(files));
 				}*/
 			}
 		}

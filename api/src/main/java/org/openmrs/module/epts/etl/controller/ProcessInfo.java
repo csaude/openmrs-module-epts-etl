@@ -7,14 +7,14 @@ import java.nio.file.NoSuchFileException;
 import java.util.Date;
 
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ProcessInfo {
 	
-	static parseToCSV utilities = parseToCSV.getInstance();
+	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String processId;
 	

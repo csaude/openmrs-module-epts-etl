@@ -4,11 +4,11 @@ import java.util.concurrent.ThreadFactory;
 
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 public class EtlThreadFactory<T extends EtlDatabaseObject> implements ThreadFactory {
 	
-	parseToCSV utilities = parseToCSV.getInstance();
+	CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private Engine<T> engine;
 	

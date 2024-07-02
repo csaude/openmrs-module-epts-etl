@@ -24,7 +24,7 @@ import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordI
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.EtlThreadFactory;
 import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeController;
@@ -41,7 +41,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
  */
 public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	
-	private static parseToCSV utilities = parseToCSV.getInstance();
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private OperationController<T> controller;
 	

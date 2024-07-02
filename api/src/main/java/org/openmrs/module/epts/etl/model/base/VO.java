@@ -8,7 +8,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -33,7 +33,7 @@ public interface VO {
 	 * @return Return a value of given field
 	 */
 	default Object getFieldValue(String fieldName) throws ForbiddenOperationException {
-		return parseToCSV.getInstance().getFieldValue(this, fieldName);
+		return CommonUtilities.getInstance().getFieldValue(this, fieldName);
 	}
 	
 	void setFieldValue(String fieldName, Object value);

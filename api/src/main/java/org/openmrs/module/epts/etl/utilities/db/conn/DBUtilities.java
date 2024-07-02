@@ -12,21 +12,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.conf.ParameterValueType;
-import org.openmrs.module.epts.etl.conf.QueryParameter;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
-import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
  * @author JPBOANE
@@ -34,7 +27,7 @@ import org.openmrs.module.epts.etl.utilities.parseToCSV;
  */
 public class DBUtilities {
 	
-	static parseToCSV utilities = parseToCSV.getInstance();
+	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public static final String ORACLE_DATABASE = "ORACLE";
 	
@@ -211,28 +204,6 @@ public class DBUtilities {
 		
 	}
 	
-	/**
-	 * Replaces all dump parameters with a question mark. It assumes that the parameters will have
-	 * format '@paramName'
-	 * 
-	 * @param sqlQuery
-	 * @return
-	 */
-	public static String replaceSqlParametersWithQuestionMarks(String sqlQuery) {
-		// Regular expression to match parameters starting with @, considering optional spaces or newlines
-		String parameterRegex = "@\\s*\\w+";
-		Pattern pattern = Pattern.compile(parameterRegex);
-		Matcher matcher = pattern.matcher(sqlQuery);
-		
-		// Replace each parameter with a question mark
-		StringBuffer replacedQuery = new StringBuffer();
-		while (matcher.find()) {
-			matcher.appendReplacement(replacedQuery, "?");
-		}
-		matcher.appendTail(replacedQuery);
-		
-		return replacedQuery.toString();
-	}
 	
 	public static String tryToPutSchemaOnDatabaseObject(String tableName, Connection conn) throws DBException {
 		
@@ -840,51 +811,6 @@ public class DBUtilities {
 		return query.toLowerCase().split("where ")[0];
 	}
 	
-	/**
-	 * Extract all the parameters presents in a dump query. This assume that the parameter will
-	 * start with @
-	 * 
-	 * @param sqlQuery the query to extract from
-	 * @return the list of extracted parameters name
-	 */
-	public static List<QueryParameter> extractAllParamOnQuery(String sqlQuery) {
-		List<QueryParameter> parameters = new ArrayList<>();
-		
-		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
-		String parameterRegex = "@\\s*(\\w+)";
-		Pattern pattern = Pattern.compile(parameterRegex);
-		Matcher matcher = pattern.matcher(sqlQuery);
-		
-		while (matcher.find()) {
-			String paramName = matcher.group(1);
-			int paramStart = matcher.start();
-			
-			QueryParameter params = new QueryParameter(paramName);
-			params.setContextType(determineContext(sqlQuery, paramStart));
-			
-			parameters.add(params);
-		}
-		
-		return parameters;
-	}
-	
-	private static ParameterContextType determineContext(String sqlQuery, int paramStart) {
-		String beforeParam = sqlQuery.substring(0, paramStart).toLowerCase();
-		String afterParam = sqlQuery.substring(paramStart).toLowerCase();
-		
-		if (beforeParam.contains("select ") && !beforeParam.contains(" from ")) {
-			return ParameterContextType.SELECT_FIELD;
-		} else if (beforeParam.matches(".*\\bin\\s*\\($") || afterParam.matches("^\\s*\\)\\s*(and|or|$)")) {
-			return ParameterContextType.IN_CLAUSE;
-		} else if (beforeParam.matches(".*(=|>|<|>=|<=|!=|<>|like)\\s*$")) {
-			return ParameterContextType.COMPARE_CLAUSE;
-		} else if (beforeParam.contains(" from ") || beforeParam.contains(" join ") || beforeParam.contains(" exists ")) {
-			return ParameterContextType.DB_RESOURCE;
-		} else {
-			return ParameterContextType.DB_RESOURCE;
-		}
-	}
-	
 	public static List<Field> determineFieldsFromQuery(String query) {
 		
 		String sqlFields = (query.toLowerCase().split("select")[1]).split("from")[0];
@@ -1183,194 +1109,6 @@ public class DBUtilities {
 	public static String generateTableCheckConstraintDefinition(String keyName, String checkCondition, Connection conn)
 	        throws DBException {
 		return "CONSTRAINT " + keyName + " CHECK (" + checkCondition + ")";
-	}
-	
-	public static Object[] loadParamsValues(String query, EtlConfiguration relatedSyncConfiguration) {
-		List<QueryParameter> paramConfig = new ArrayList<>();
-		
-		List<QueryParameter> params = extractAllParamOnQuery(query);
-		
-		for (QueryParameter param : params) {
-			QueryParameter qp = new QueryParameter(param.getName());
-			qp.setValueType(ParameterValueType.CONFIGURATION_PARAM);
-			
-			paramConfig.add(qp);
-		}
-		
-		EtlDatabaseObject srcObject = null;
-		
-		return loadParamsValues(query, paramConfig, srcObject, relatedSyncConfiguration);
-	}
-	
-	/**
-	 * Load values to given query parameters
-	 * 
-	 * @param queryParameters
-	 * @param srcObject
-	 * @return
-	 */
-	public static Object[] loadParamsValues(String query, List<QueryParameter> paramConfig, EtlDatabaseObject srcObject,
-	        EtlConfiguration configuration) {
-		List<QueryParameter> queryParameters = DBUtilities.extractAllParamOnQuery(query);
-		
-		if (!utilities.arrayHasElement(queryParameters)) {
-			return null;
-		}
-		
-		if (paramConfig == null) {
-			paramConfig = new ArrayList<>();
-		}
-		
-		//Find missing parameters on configured parameters
-		
-		for (int i = 0; i < queryParameters.size(); i++) {
-			QueryParameter param = queryParameters.get(i);
-			
-			if (!paramConfig.contains(param)) {
-				QueryParameter qp = new QueryParameter(param.getName());
-				qp.setValueType(ParameterValueType.UNDEFINED);
-				
-				paramConfig.add(qp);
-			}
-		}
-		
-		List<QueryParameter> paramConfigValues = loadParamConfigValue(paramConfig, srcObject, configuration);
-		
-		Object[] params = new Object[queryParameters.size()];
-		
-		for (int i = 0; i < queryParameters.size(); i++) {
-			QueryParameter param = queryParameters.get(i);
-			
-			
-			
-			
-			Object paramValue = retrieveParamValue(paramConfigValues, param.getName());
-			
-			if (param.getContextType().inClause()) {
-				
-			} else {
-				params[i] = paramValue;
-			}
-		}
-		
-		return params;
-	}
-	
-	/*
-	 * Retrieves the parameter value from configured parameters
-	 */
-	static Object retrieveParamValue(List<QueryParameter> queryParameters, String paramName) {
-		for (QueryParameter param : queryParameters) {
-			if (param.getName().equals(paramName)) {
-				return param.getValue();
-			}
-		}
-		
-		throw new ForbiddenOperationException("Not found param '" + paramName + "' on configured parameters!");
-	}
-	
-	/**
-	 * Loads the values given paramConfig
-	 * 
-	 * @param paramConfig the Parameters Configuration where the values will be loades
-	 * @param srcObject the object holding the source object parameters values
-	 * @param configuration the configuration holding configuration values
-	 * @return the configuration parameters loaded with values
-	 */
-	static List<QueryParameter> loadParamConfigValue(List<QueryParameter> paramConfig, EtlDatabaseObject srcObject,
-	        EtlConfiguration configuration) {
-		List<QueryParameter> params = null;
-		
-		if (utilities.arrayHasElement(paramConfig)) {
-			params = new ArrayList<>(paramConfig.size());
-			
-			for (int i = 0; i < paramConfig.size(); i++) {
-				QueryParameter field = paramConfig.get(i);
-				
-				Object paramValue = null;
-				String paramName = null;
-				String fieldValueName = "";
-				
-				if (field.getValueType().isConstant()) {
-					fieldValueName = field.getName();
-				} else {
-					fieldValueName = field.getValue() != null ? field.getValue().toString() : field.getName();
-				}
-				
-				if (field.getValueType().isConfiguration()) {
-					paramName = field.getName();
-					
-					paramValue = getParamValueFromSyncConfiguration(configuration, fieldValueName);
-				} else if (field.getValueType().isMainObject()) {
-					if (srcObject == null)
-						throw new ForbiddenOperationException("The source object is null!");
-					
-					paramName = fieldValueName;
-					
-					paramValue = getParamValueFromSourceMainObject(srcObject, paramName);
-				} else if (field.getValueType().isConstant()) {
-					paramValue = field.getValue();
-					paramName = fieldValueName;
-				} else if (field.getValueType().isUndefined()) {
-					String bkpParamName = paramName;
-					
-					// First get from configuration
-					Object paramValueFromConfig = null;
-					
-					try {
-						paramValueFromConfig = getParamValueFromSyncConfiguration(configuration, fieldValueName);
-					}
-					catch (ForbiddenOperationException e) {}
-					
-					//Then get from main object
-					paramName = fieldValueName;
-					
-					Object paramValueFromMainObject = null;
-					
-					try {
-						paramValueFromMainObject = getParamValueFromSourceMainObject(srcObject, paramName);
-					}
-					catch (ForbiddenOperationException e) {}
-					
-					if (paramValueFromConfig != null && paramValueFromMainObject != null) {
-						throw new ForbiddenOperationException("There was found 2 sources for param [" + bkpParamName
-						        + "]. You must specificaly configure this parameter!!!!");
-					} else if (paramValueFromConfig != null) {
-						paramValue = paramValueFromConfig;
-					} else if (paramValueFromMainObject != null) {
-						paramValue = paramValueFromMainObject;
-					}
-				}
-				
-				params.add(QueryParameter.fastCreateWithValue(paramName, paramValue));
-			}
-		}
-		
-		return params;
-	}
-	
-	static Object getParamValueFromSyncConfiguration(EtlConfiguration configuration, String param)
-	        throws ForbiddenOperationException {
-		Object paramValue = configuration.getParamValue(param);
-		
-		if (paramValue == null) {
-			throw new ForbiddenOperationException("The configuration param '" + param + "' is needed to load source object");
-		}
-		
-		return paramValue;
-	}
-	
-	static Object getParamValueFromSourceMainObject(EtlDatabaseObject mainObject, String paramName)
-	        throws ForbiddenOperationException {
-		
-		Object paramValue = mainObject.getFieldValue(paramName);
-		
-		if (paramValue == null) {
-			throw new ForbiddenOperationException(
-			        "The field '" + paramName + "' has no value and it is needed to load source object");
-		}
-		
-		return paramValue;
 	}
 	
 	public static void createDatabaseSchema(String databaseName, OpenConnection conn) throws DBException {

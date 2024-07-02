@@ -46,8 +46,6 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	private Class<? extends EtlDatabaseObject> syncRecordClass;
 	
-	private List<QueryParameter> paramConfig;
-	
 	private boolean required;
 	
 	private DatabaseObjectLoaderHelper loadHealper;
@@ -72,14 +70,6 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	public void setRequired(boolean required) {
 		this.required = required;
-	}
-	
-	public List<QueryParameter> getParamConfig() {
-		return paramConfig;
-	}
-	
-	public void setParamConfig(List<QueryParameter> paramConfig) {
-		this.paramConfig = paramConfig;
 	}
 	
 	@Override
@@ -161,9 +151,9 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
-		String query = DBUtilities.replaceSqlParametersWithQuestionMarks(this.getQuery());
+		PreparedQuery query = PreparedQuery.prepare(this.getQuery(), getRelatedEtlConf(), true);
 		
-		setFields(DBUtilities.determineFieldsFromQuery(query, conn));
+		setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), conn));
 		
 		this.fullLoaded = true;
 	}
@@ -349,19 +339,21 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn,
 	        DBConnectionInfo srcAppInfo) throws DBException {
 		
-		//@formatter:off
-		Object[] params = DBUtilities.loadParamsValues(this.getQuery(), this.paramConfig, mainObject, getRelatedEtlConf());
+		PreparedQuery pQ = PreparedQuery.prepare(this.getQuery(), mainObject, getRelatedEtlConf(), false);
 		
-		String query = DBUtilities.replaceSqlParametersWithQuestionMarks(this.getQuery());
+		List<Object> paramsAsList = pQ.generateQueryParameters();
 		
-		return DatabaseObjectDAO.find(this.loadHealper, this.getSyncRecordClass(srcAppInfo), query, params, srcConn);
+		Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
+		
+		return DatabaseObjectDAO.find(this.loadHealper, this.getSyncRecordClass(srcAppInfo), pQ.generatePreparedQuery(),
+		    params, srcConn);
 	}
-
+	
 	@Override
 	public List<ParentTable> getParentRefInfo() {
 		return null;
 	}
-
+	
 	@Override
 	public List<ChildTable> getChildRefInfo() {
 		return null;
@@ -369,7 +361,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	@Override
 	public boolean hasDateFields() {
-		for (Field t : this.fields){
+		for (Field t : this.fields) {
 			if (t.isDateField()) {
 				return true;
 			}
@@ -395,36 +387,35 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	public String getAlias() {
 		return getName();
 	}
-
+	
 	@Override
 	public void setRelatedSyncConfiguration(EtlConfiguration relatedSyncConfiguration) {
 	}
 	
-
 	@Override
 	public boolean hasPK(Connection conn) {
 		return false;
 	}
-
+	
 	@Override
 	public DBConnectionInfo getRelatedConnInfo() {
 		return getRelatedSrcConf().getSrcConnInfo();
 	}
-
+	
 	@Override
 	public List<AuxExtractTable> getSelfJoinTables() {
 		return null;
 	}
-
+	
 	@Override
 	public void setSelfJoinTables(List<AuxExtractTable> setSelfJoinTables) {
 	}
-
+	
 	@Override
 	public String generateSelectFromQuery() {
 		return null;
 	}
-
+	
 	@Override
 	public boolean isMustLoadChildrenInfo() {
 		return false;

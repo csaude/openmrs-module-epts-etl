@@ -20,7 +20,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -113,7 +113,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 		
 		SimpleValue simpleValue = BaseDAO.find(SimpleValue.class, sql, null, conn);
 		
-		if (simpleValue != null && parseToCSV.getInstance().stringHasValue(simpleValue.getValue())) {
+		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
 			return simpleValue.intValue();
 		}
 		

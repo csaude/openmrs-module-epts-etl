@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.FuncoesGenericas;
 
@@ -26,7 +26,7 @@ public class TimeController implements Runnable, Serializable{
 	
 	private Date startTime;
 	
-	private static final parseToCSV utilities = parseToCSV.getInstance();
+	private static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public TimeController(){
 		segundos = 0;

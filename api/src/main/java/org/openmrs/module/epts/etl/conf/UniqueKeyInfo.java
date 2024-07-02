@@ -12,7 +12,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class UniqueKeyInfo {
 	
-	public static parseToCSV utilities = parseToCSV.getInstance();
+	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String keyName;
 	

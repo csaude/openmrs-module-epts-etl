@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguratio
  */
 public class AttDefinedElements {
 	
-	private static parseToCSV utilities = parseToCSV.getInstance();
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private String attDefinition;
 	

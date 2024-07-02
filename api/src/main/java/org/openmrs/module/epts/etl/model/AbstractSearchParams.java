@@ -8,7 +8,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.base.VO;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -22,7 +22,7 @@ public abstract class AbstractSearchParams<T extends VO> {
 	
 	protected SearchResult<T> searchResult;
 	
-	public static parseToCSV utilities = parseToCSV.getInstance();
+	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	/**
 	 * Indica o inicio da seleccao de registos na BD no caso de pesquisa faseada. O valor desta

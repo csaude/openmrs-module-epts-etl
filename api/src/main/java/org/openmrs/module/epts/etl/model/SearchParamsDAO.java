@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtre
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.VO;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class SearchParamsDAO extends BaseDAO {
@@ -25,7 +25,7 @@ public class SearchParamsDAO extends BaseDAO {
 		
 		searchClauses.getSearchParameters().setQtdRecordPerSelected(bkpQtyRecsPerSelect);
 		
-		if (simpleValue != null && parseToCSV.getInstance().stringHasValue(simpleValue.getValue())) {
+		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
 			return simpleValue.intValue();
 		}
 		

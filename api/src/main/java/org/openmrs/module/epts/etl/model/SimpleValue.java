@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 
 import org.openmrs.module.epts.etl.model.base.BaseVO;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
  * Classe auxiliar para representar um valor do tipo String ou de tipos primitivos. O Objectivo
@@ -24,7 +24,7 @@ public class SimpleValue extends BaseVO {
 	
 	private String designacao;
 	
-	static parseToCSV utilities = parseToCSV.getInstance();
+	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public SimpleValue() {
 		setValue("");

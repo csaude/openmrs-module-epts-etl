@@ -18,7 +18,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -173,7 +173,7 @@ public class GenerateLinkedConfFiles extends GenericEngine {
 			});
 			
 			if (files.length > 0) {
-				dumps.addAll(parseToCSV.getInstance().parseArrayToList(files));
+				dumps.addAll(CommonUtilities.getInstance().parseArrayToList(files));
 			}
 		}
 		

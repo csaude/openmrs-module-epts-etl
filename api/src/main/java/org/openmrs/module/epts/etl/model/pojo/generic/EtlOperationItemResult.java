@@ -6,11 +6,11 @@ import java.util.List;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 	
-	private static final parseToCSV utilities = parseToCSV.getInstance();
+	private static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private T record;
 	

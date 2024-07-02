@@ -40,7 +40,7 @@ public class Key extends Field {
 	public Key createACopy() {
 		Key k = new Key();
 		
-		k.clone(this);
+		k.copyFrom(this);
 		
 		return k;
 	}

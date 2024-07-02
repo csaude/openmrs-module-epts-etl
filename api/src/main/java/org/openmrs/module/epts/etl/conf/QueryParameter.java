@@ -1,5 +1,8 @@
 package org.openmrs.module.epts.etl.conf;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
@@ -104,6 +107,33 @@ public class QueryParameter extends Field {
 		toString += ", Context: " + this.getContextType() + "]";
 		
 		return toString;
+	}
+	
+	@Override
+	public void copyFrom(Field f) {
+		super.copyFrom(f);
+		
+		if (f instanceof QueryParameter) {
+			QueryParameter other = (QueryParameter) f;
+			
+			this.valueType = other.valueType;
+		}
+	}
+	
+	public static List<QueryParameter> cloneAll(List<QueryParameter> configParams) {
+		if (configParams == null)
+			return null;
+		
+		List<QueryParameter> allCloned = new ArrayList<>(configParams.size());
+		
+		for (QueryParameter configuredParam : configParams) {
+			QueryParameter cloned = new QueryParameter();
+			cloned.copyFrom(configuredParam);
+			
+			allCloned.add(cloned);
+		}
+		
+		return allCloned;
 	}
 	
 }

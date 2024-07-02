@@ -29,7 +29,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -37,7 +37,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class LoadRecord {
 	
-	protected static parseToCSV utilities = parseToCSV.getInstance();
+	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	protected EtlDatabaseObject record;
 	

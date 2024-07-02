@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends IntervalExtremeRecord implements Comparable<ThreadRecordIntervalsManager<T>> {
 	
-	protected static parseToCSV utilities = parseToCSV.getInstance();
+	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	protected String threadCode;
 	
@@ -474,7 +474,7 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 		
 		ThreadRecordIntervalsManager<EtlDatabaseObject> tm = new ThreadRecordIntervalsManager<>(min, max, 2000, 8);
 		 
-		System.out.println(parseToCSV.getInstance().parseToJSON(tm));
+		System.out.println(CommonUtilities.getInstance().parseToJSON(tm));
 		
 	}
 	

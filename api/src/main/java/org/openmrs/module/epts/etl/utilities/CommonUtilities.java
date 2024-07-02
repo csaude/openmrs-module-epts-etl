@@ -25,7 +25,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VO;
-import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,19 +32,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class parseToCSV implements Serializable {
+public class CommonUtilities implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	protected static parseToCSV utilities;
+	protected static CommonUtilities utilities;
 	
-	protected parseToCSV() {
+	protected CommonUtilities() {
 		//if (utilities != null) throw new OperacaoProibidaException("Ja foi criada uma instancia Utilitarios! Use o metodo Utilitarios.getInstance()!!!!");
 	}
 	
-	public static synchronized parseToCSV getInstance() {
+	public static synchronized CommonUtilities getInstance() {
 		if (utilities == null)
-			utilities = new parseToCSV();
+			utilities = new CommonUtilities();
 		
 		return utilities;
 	}
@@ -211,6 +210,38 @@ public class parseToCSV implements Serializable {
 	
 	public String replaceAllEmptySpace(String text, char replacement) {
 		return FuncoesGenericas.replaceAllEmptySpace(text, replacement);
+	}
+	
+	public String replaceNthOccurrenceWithString(String str, String targetStr, String replacementStr, int n) {
+		if (n <= 0) {
+			throw new IllegalArgumentException("n must be greater than 0");
+		}
+		
+		int occurrenceIndex = -1;
+		int currentOccurrence = 0;
+		int targetLength = targetStr.length();
+		
+		for (int i = 0; i <= str.length() - targetLength; i++) {
+			if (str.substring(i, i + targetLength).equals(targetStr)) {
+				currentOccurrence++;
+				if (currentOccurrence == n) {
+					occurrenceIndex = i;
+					break;
+				}
+			}
+		}
+		
+		if (occurrenceIndex == -1) {
+			return str; // If the nth occurrence is not found
+		}
+		
+		// Replace the target substring at the occurrenceIndex with the replacementStr
+		StringBuilder sb = new StringBuilder();
+		sb.append(str, 0, occurrenceIndex);
+		sb.append(replacementStr);
+		sb.append(str.substring(occurrenceIndex + targetLength));
+		
+		return sb.toString();
 	}
 	
 	/**
@@ -955,7 +986,7 @@ public class parseToCSV implements Serializable {
 			return "";
 		}
 		
-		parseToCSV utils = getInstance();
+		CommonUtilities utils = getInstance();
 		
 		StringBuilder csvBuilder = new StringBuilder();
 		
@@ -972,25 +1003,6 @@ public class parseToCSV implements Serializable {
 		}
 		
 		return csvBuilder.toString();
-	}
-	
-	public static void main(String[] args) {
-		String file = "d:\\tmp.txt";
-		
-		parseToCSV u = getInstance();
-		
-		List<String> content = u.parseToList("1,Jorge Paulino", "2,Mirka Boane");
-		
-		String toWright = parseToCSV_(content, true);
-		
-		FileUtilities.write(file, toWright);
-		
-		content = u.parseToList("3,Jorge Paulino Jr", "4,Yumna Boane");
-		
-		toWright = parseToCSV_(content, false);
-		
-		FileUtilities.write(file, toWright);
-		
 	}
 	
 	public String toUpperCase(String str) {

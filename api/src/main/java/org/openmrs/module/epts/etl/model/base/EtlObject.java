@@ -1,12 +1,12 @@
 package org.openmrs.module.epts.etl.model.base;
 
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface EtlObject extends VO {
 	
-	parseToCSV utils = parseToCSV.getInstance();
+	CommonUtilities utils = CommonUtilities.getInstance();
 	
 	@JsonIgnore
 	default String getObjectName() {

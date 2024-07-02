@@ -1,10 +1,12 @@
 package org.openmrs.module.epts.etl.etl.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.PreparedQuery;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -21,7 +23,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
-	public EtlDatabaseObjectSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
+	public EtlDatabaseObjectSearchParams(Engine<EtlDatabaseObject> engine,
+	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		super(engine, limits);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray(getSrcTableConf().getTableAlias()));
@@ -46,10 +49,13 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 				String extraJoinQuery = aux.generateJoinConditionsFields();
 				
 				if (utilities.stringHasValue(extraJoinQuery)) {
-					Object[] params = DBUtilities.loadParamsValues(extraJoinQuery,
-					    getConfig().getRelatedEtlConf());
+					PreparedQuery pQ = PreparedQuery.prepare(extraJoinQuery, getConfig().getRelatedEtlConf(), false);
 					
-					extraJoinQuery = DBUtilities.replaceSqlParametersWithQuestionMarks(extraJoinQuery);
+					List<Object> paramsAsList = pQ.generateQueryParameters();
+					
+					Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
+					
+					extraJoinQuery = pQ.generatePreparedQuery();
 					
 					searchClauses.addToParameters(params);
 				}

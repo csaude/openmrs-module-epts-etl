@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.VO;
-import org.openmrs.module.epts.etl.utilities.parseToCSV;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.FuncoesGenericas;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilitie;
@@ -64,7 +64,7 @@ public class SearchClauses<T extends VO> {
 	
 	private AbstractSearchParams<T> searchParameters;
 	
-	static parseToCSV utilities = parseToCSV.getInstance();
+	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	public SearchClauses(AbstractSearchParams<T> searchParameters) {
 		clauses = "";
