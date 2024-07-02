@@ -31,7 +31,7 @@ import org.openmrs.module.epts.etl.reconciliation.controller.CentralAndRemoteDat
 import org.openmrs.module.epts.etl.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
 import org.openmrs.module.epts.etl.synchronization.controller.DatabaseMergeFromJSONController;
 import org.openmrs.module.epts.etl.transport.controller.TransportController;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -39,7 +39,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private static final int DEFAULT_BATCH_PROCESSING = 1000;
 	
-	public static CommonUtilities utilities = CommonUtilities.getInstance();
+	public static parseToCSV utilities = parseToCSV.getInstance();
 	
 	private EtlOperationType operationType;
 	

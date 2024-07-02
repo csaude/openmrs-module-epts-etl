@@ -10,7 +10,7 @@ import org.slf4j.event.Level;
 
 public class EptsEtlLogger {
 	
-	static CommonUtilities utilities = CommonUtilities.getInstance();
+	static parseToCSV utilities = parseToCSV.getInstance();
 	
 	private Date lastLogDate;
 	

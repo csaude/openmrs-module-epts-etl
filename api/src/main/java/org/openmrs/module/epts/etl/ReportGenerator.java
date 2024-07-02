@@ -13,13 +13,13 @@ import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class ReportGenerator {
 	
-	public static CommonUtilities utilities = CommonUtilities.getInstance();
+	public static parseToCSV utilities = parseToCSV.getInstance();
 	
 	public static void main(String[] synConfigFiles) throws IOException, DBException {
 		List<EtlConfiguration> syncConfigs = loadSyncConfig(synConfigFiles);

@@ -1,7 +1,10 @@
 package org.openmrs.module.epts.etl.conf;
 
+import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Describe a query parameter in a {@link QueryDataSourceConfig}
@@ -12,7 +15,10 @@ public class QueryParameter extends Field {
 	
 	private ParameterValueType valueType;
 	
+	private ParameterContextType contextType;
+	
 	public QueryParameter() {
+		contextType = ParameterContextType.ANKOWN;
 	}
 	
 	public QueryParameter(String name) {
@@ -24,6 +30,14 @@ public class QueryParameter extends Field {
 		q.setValue(paramValue);
 		
 		return q;
+	}
+	
+	public ParameterContextType getContextType() {
+		return contextType;
+	}
+	
+	public void setContextType(ParameterContextType contextType) {
+		this.contextType = contextType;
 	}
 	
 	public ParameterValueType getValueType() {
@@ -77,6 +91,19 @@ public class QueryParameter extends Field {
 			}
 		}
 		
+	}
+	
+	@Override
+	@JsonIgnore
+	public String toString() {
+		String toString = "[Name: " + getName();
+		
+		if (hasValue())
+			toString += ", Value " + getValue();
+		
+		toString += ", Context: " + this.getContextType() + "]";
+		
+		return toString;
 	}
 	
 }

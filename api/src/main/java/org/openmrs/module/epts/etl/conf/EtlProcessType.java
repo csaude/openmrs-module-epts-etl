@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.conf;
 
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 
 public enum EtlProcessType {
 	
@@ -87,7 +87,7 @@ public enum EtlProcessType {
 	}
 	
 	public boolean isSupportedProcessType() {
-		return CommonUtilities.getInstance().getPosOnArray(EtlProcessType.values(), this) >= 0;
+		return parseToCSV.getInstance().getPosOnArray(EtlProcessType.values(), this) >= 0;
 	}
 	
 	public static boolean isDBQuickLoad(String processType) {

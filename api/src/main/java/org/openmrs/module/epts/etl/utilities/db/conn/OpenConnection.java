@@ -26,14 +26,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 
 /**
  * @author jpboane
  */
 public class OpenConnection implements Connection, Closeable {
 	
-	public static CommonUtilities utilities = CommonUtilities.getInstance();
+	public static parseToCSV utilities = parseToCSV.getInstance();
 	
 	private Connection connection;
 	
@@ -80,7 +80,7 @@ public class OpenConnection implements Connection, Closeable {
 	}
 	
 	public static void markAllAsSuccessifullyTerminected(List<OpenConnection> conns) {
-		if (!CommonUtilities.getInstance().arrayHasElement(conns))
+		if (!parseToCSV.getInstance().arrayHasElement(conns))
 			return;
 		
 		for (OpenConnection conn : conns) {
@@ -91,7 +91,7 @@ public class OpenConnection implements Connection, Closeable {
 	}
 	
 	public static void finalizeAllConnections(List<OpenConnection> conns) {
-		if (!CommonUtilities.getInstance().arrayHasElement(conns))
+		if (!parseToCSV.getInstance().arrayHasElement(conns))
 			return;
 		
 		for (OpenConnection conn : conns) {

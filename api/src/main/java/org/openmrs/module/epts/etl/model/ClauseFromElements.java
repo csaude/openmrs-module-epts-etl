@@ -3,10 +3,10 @@ package org.openmrs.module.epts.etl.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 
 public class ClauseFromElements {
-	static CommonUtilities utilities = CommonUtilities.getInstance();
+	static parseToCSV utilities = parseToCSV.getInstance();
 	
 	public static final String LEFT_JOIN_CLAUSE = "LEFT";
 	public static final String RIGHT_JOIN_CLAUSE = "RIGHT";

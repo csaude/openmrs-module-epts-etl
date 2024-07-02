@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.engine.record_intervals_manager;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class ThreadCurrentIntervals extends IntervalExtremeRecord {
 	
-	static final CommonUtilities utilities = CommonUtilities.getInstance();
+	static final parseToCSV utilities = parseToCSV.getInstance();
 	
 	private List<IntervalExtremeRecord> internalIntervals;;
 	

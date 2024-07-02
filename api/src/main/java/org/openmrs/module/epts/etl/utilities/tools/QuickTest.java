@@ -2,6 +2,9 @@ package org.openmrs.module.epts.etl.utilities.tools;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.DstConf;
@@ -24,7 +28,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
@@ -35,7 +39,7 @@ import org.openmrs.module.epts.etl.utilities.tools.model.TmpVO;
 
 public class QuickTest {
 	
-	static CommonUtilities utilities = CommonUtilities.getInstance();
+	static parseToCSV utilities = parseToCSV.getInstance();
 	
 	@SuppressWarnings("unused")
 	public static OpenConnection openConnection() throws DBException {
@@ -61,7 +65,7 @@ public class QuickTest {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		testResourceSharingBetweenConnections();
+		copyFileContentExcludingSomeLines();
 	}
 	
 	public static void testResourceSharingBetweenConnections() throws SQLException {
@@ -76,7 +80,6 @@ public class QuickTest {
 		
 		Object[] params = { result };
 		
-
 		TmpVO usr1 = DatabaseObjectDAO.find(TmpVO.class, "select * from tmp where id = ?", params, conn1);
 		
 		TmpVO usr2 = DatabaseObjectDAO.find(TmpVO.class, "select * from tmp where id = ?", params, conn2);
@@ -84,13 +87,11 @@ public class QuickTest {
 		System.err.println(usr1);
 		System.err.println(usr2);
 		
-		
 		conn1.markAsSuccessifullyTerminated();
 		conn1.finalizeConnection();
 		
 		TmpVO usr3 = DatabaseObjectDAO.find(TmpVO.class, "select * from tmp where id = ?", params, conn2);
 		System.err.println(usr3);
-		
 		
 	}
 	
@@ -290,6 +291,74 @@ public class QuickTest {
 		finally {
 			dstConn.finalizeConnection();
 		}
+	}
+	
+	public static void copyFileContentExcludingSomeLines() throws IOException {
+		File dir = new File(
+		        "D:\\ORG\\C-SAUDE\\PROJECTOS\\Centralizacao\\Tickets\\Data-Community\\Cacum\\zbz-extract\\csv\\selected.corrected");
+		
+		for (File site : dir.listFiles()) {
+			
+			for (File file : site.listFiles()) {
+				File tmpFile = new File(file.getParentFile().getAbsolutePath() + File.separator
+				        + FileUtilities.generateFileNameFromRealPathWithoutExtension(file.getAbsolutePath()) + ".tmp");
+				
+				int i = 0;
+				
+				for (String line : FileUtilities.readAllFileAsListOfString(file.getAbsolutePath())) {
+					String[] linesParth = line.split(",");
+					
+					if (utilities.isNumeric(linesParth[0]) || i == 0) {
+						FileUtilities.write(tmpFile.getAbsolutePath(), line);
+					}
+					i++;
+				}
+				
+				FileUtilities.renameTo(tmpFile.getAbsolutePath(), file.getAbsolutePath());
+			}
+			
+		}
+		
+	}
+	
+	public static void moveContentToRootFolder() throws IOException {
+		File dir = new File(
+		        "D:\\ORG\\C-SAUDE\\PROJECTOS\\Centralizacao\\Tickets\\Data-Community\\Cacum\\zbz-extract\\csv\\selected");
+		
+		for (File site : dir.listFiles()) {
+			
+			if (site.getName().equals("cacum_cs_cololo")) {
+				System.out.println("Stop");
+			}
+			
+			Path sitePath = site.toPath();
+			
+			File dataDir = new File(site.getAbsoluteFile() + File.separator + "data");
+			
+			if (dataDir.exists()) {
+				
+				Path dataPath = dataDir.toPath();
+				
+				// List all files and directories in the child directory
+				try (Stream<Path> paths = Files.list(dataPath)) {
+					paths.forEach(path -> {
+						try {
+							// Move each file/directory to the parent directory
+							Files.move(path, sitePath.resolve(path.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+						}
+						catch (IOException e) {
+							throw new RuntimeException("Failed to move " + path + ": " + e.getMessage());
+						}
+					});
+				}
+				
+				// Optionally, delete the now-empty child directory
+				//Files.delete(sitePath);
+				System.out.println("All contents moved and child directory deleted.");
+			}
+			
+		}
+		
 	}
 	
 	public static void filderTokenToFile() throws IOException {

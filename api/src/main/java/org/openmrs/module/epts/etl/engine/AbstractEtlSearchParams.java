@@ -27,13 +27,13 @@ import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> extends AbstractSearchParams<T> {
 	
-	public static CommonUtilities utilities = CommonUtilities.getInstance();
+	public static parseToCSV utilities = parseToCSV.getInstance();
 	
 	private Date syncStartDate;
 	
@@ -183,6 +183,8 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		long qtyRecordsBetweenLimits = maxRecordId - minRecordId + 1;
 		
 		int qtyProcessors = utilities.getAvailableProcessors();
+		
+		qtyProcessors = 1;
 		
 		if (qtyProcessors > qtyRecordsBetweenLimits) {
 			qtyProcessors = (int) qtyRecordsBetweenLimits;

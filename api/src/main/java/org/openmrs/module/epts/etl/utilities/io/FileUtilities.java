@@ -22,6 +22,9 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,9 +99,15 @@ public class FileUtilities {
 			FileWriter file = new FileWriter(fileName, true);
 			BufferedWriter buffer = new BufferedWriter(file);
 			
-			for (String str : linesToWrite) {
+			for (int i = 0; i < linesToWrite.size(); i++) {
+				String str = linesToWrite.get(i);
+				
 				buffer.write(str);
-				buffer.newLine();
+				
+				//Do not write the new line for last line
+				if (i < linesToWrite.size() - 1) {
+					buffer.newLine();
+				}
 			}
 			buffer.close();
 			file.close();
@@ -349,9 +358,12 @@ public class FileUtilities {
 	public static List<String> readAllFileAsListOfString(String pathToFile) throws IOException {
 		InputStream stream = new FileInputStream(pathToFile);
 		
-		return readAllStreamAsListOfString(stream);
+		List<String> lines = readAllStreamAsListOfString(stream);
+		
+		stream.close();
+		
+		return lines;
 	}
-	
 	
 	public static String realAllFileAsString(File file) throws IOException {
 		InputStream b = null;
@@ -368,7 +380,7 @@ public class FileUtilities {
 				}
 				catch (IOException e) {}
 			}
-		}		
+		}
 	}
 	
 	/**
@@ -420,12 +432,26 @@ public class FileUtilities {
 		return java.io.File.separator;
 	}
 	
+	public static void renameTo(String sourceFileName, String destinationFileName) {
+		Path sourceFile = Paths.get(sourceFileName);
+		Path targetFile = Paths.get(destinationFileName);
+		
+		try {
+			// Move the source file to the target file, replacing the target if it exists
+			Files.move(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		
+	}
+	/*
 	public static boolean renameTo(String sourceFileName, String destinationFileName) {
 		java.io.File sourceFile = new java.io.File(sourceFileName);
 		java.io.File destinationFile = new java.io.File(destinationFileName);
 		
 		return sourceFile.renameTo(destinationFile);
-	}
+	}*/
 	
 	public static boolean removeFile(File sourceFile) {
 		if (sourceFile.isDirectory()) {

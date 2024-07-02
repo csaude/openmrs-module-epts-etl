@@ -318,7 +318,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	public void generateDefaultDstConf() throws DBException {
 		OpenConnection dstConn;
 		
-		if (hasDstConf()) {
+		if (!hasDstConf()) {
 			
 			dstConn = getRelatedEtlConf().openDstConn();
 			try {

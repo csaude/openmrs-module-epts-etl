@@ -13,7 +13,7 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
@@ -242,7 +242,7 @@ public class ImportMozatDBs {
 				});
 				
 				if (files.length > 0) {
-					dumps.addAll(CommonUtilities.getInstance().parseArrayToList(files));
+					dumps.addAll(parseToCSV.getInstance().parseArrayToList(files));
 				}
 			}
 		}

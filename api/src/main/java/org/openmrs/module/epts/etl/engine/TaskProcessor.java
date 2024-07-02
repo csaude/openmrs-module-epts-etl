@@ -16,7 +16,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
@@ -30,7 +30,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	
-	public static CommonUtilities utilities = CommonUtilities.getInstance();
+	public static parseToCSV utilities = parseToCSV.getInstance();
 	
 	protected Engine<T> monitor;
 	

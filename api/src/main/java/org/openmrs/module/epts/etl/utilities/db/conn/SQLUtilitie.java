@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.FuncoesGenericas;
 
@@ -513,7 +513,7 @@ public class SQLUtilitie  {
 	 * @throws TipoDeDadosNaoSuportadoException 
 	 */
 	public static String transformPreparedStatmentToFullSQLStatment(String preparedStatment, Object[] params, Connection conn) throws ForbiddenOperationException{
-		if (!CommonUtilities.getInstance().stringHasValue(preparedStatment)) return "";
+		if (!parseToCSV.getInstance().stringHasValue(preparedStatment)) return "";
 		
 		String fullSQL = "";
 		
@@ -743,7 +743,7 @@ public class SQLUtilitie  {
 		ResultSetMetaData rsMetaData = rs.getMetaData();
 		
 		for (int i=1; i <= rsMetaData.getColumnCount(); i++){
-			colunas = CommonUtilities.getInstance().addAtributeToValidationString(colunas, rsMetaData.getColumnName(i), ",");
+			colunas = parseToCSV.getInstance().addAtributeToValidationString(colunas, rsMetaData.getColumnName(i), ",");
 		}
 	
 		return colunas;

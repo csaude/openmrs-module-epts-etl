@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.engine;
 
 import java.util.Date;
 
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeController;
@@ -17,7 +17,7 @@ public class EtlProgressMeter implements TimeCountDownInitializer {
 	/**
 	 * Utilitarios do sistema
 	 */
-	private CommonUtilities utilities = CommonUtilities.getInstance();
+	private parseToCSV utilities = parseToCSV.getInstance();
 	
 	/**
 	 * Constante usada para indicar o estado de erro

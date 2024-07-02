@@ -29,7 +29,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class DatabaseEntityPOJOGenerator {
 	
-	static CommonUtilities utilities = CommonUtilities.getInstance();
+	static parseToCSV utilities = parseToCSV.getInstance();
 	
 	static final String[] ignorableFields = { "date_changed", "date_created", "uuid" };
 	

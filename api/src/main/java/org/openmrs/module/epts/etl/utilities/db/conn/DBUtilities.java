@@ -20,12 +20,13 @@ import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.ParameterValueType;
 import org.openmrs.module.epts.etl.conf.QueryParameter;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 
 /**
  * @author JPBOANE
@@ -33,7 +34,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
  */
 public class DBUtilities {
 	
-	static CommonUtilities utilities = CommonUtilities.getInstance();
+	static parseToCSV utilities = parseToCSV.getInstance();
 	
 	public static final String ORACLE_DATABASE = "ORACLE";
 	
@@ -840,26 +841,48 @@ public class DBUtilities {
 	}
 	
 	/**
-	 * Extract all the parameters presents in a dump query. This assume that the parameter will start
-	 * with @
+	 * Extract all the parameters presents in a dump query. This assume that the parameter will
+	 * start with @
 	 * 
 	 * @param sqlQuery the query to extract from
 	 * @return the list of extracted parameters name
 	 */
-	public static List<Field> extractAllParamNamesOnQuery(String sqlQuery) {
-		List<Field> parameters = new ArrayList<>();
+	public static List<QueryParameter> extractAllParamOnQuery(String sqlQuery) {
+		List<QueryParameter> parameters = new ArrayList<>();
 		
 		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
 		String parameterRegex = "@\\s*(\\w+)";
 		Pattern pattern = Pattern.compile(parameterRegex);
 		Matcher matcher = pattern.matcher(sqlQuery);
 		
-		// Find all matches and add only the parameter names to the list
 		while (matcher.find()) {
-			parameters.add(new Field(matcher.group(1)));
+			String paramName = matcher.group(1);
+			int paramStart = matcher.start();
+			
+			QueryParameter params = new QueryParameter(paramName);
+			params.setContextType(determineContext(sqlQuery, paramStart));
+			
+			parameters.add(params);
 		}
 		
 		return parameters;
+	}
+	
+	private static ParameterContextType determineContext(String sqlQuery, int paramStart) {
+		String beforeParam = sqlQuery.substring(0, paramStart).toLowerCase();
+		String afterParam = sqlQuery.substring(paramStart).toLowerCase();
+		
+		if (beforeParam.contains("select ") && !beforeParam.contains(" from ")) {
+			return ParameterContextType.SELECT_FIELD;
+		} else if (beforeParam.matches(".*\\bin\\s*\\($") || afterParam.matches("^\\s*\\)\\s*(and|or|$)")) {
+			return ParameterContextType.IN_CLAUSE;
+		} else if (beforeParam.matches(".*(=|>|<|>=|<=|!=|<>|like)\\s*$")) {
+			return ParameterContextType.COMPARE_CLAUSE;
+		} else if (beforeParam.contains(" from ") || beforeParam.contains(" join ") || beforeParam.contains(" exists ")) {
+			return ParameterContextType.DB_RESOURCE;
+		} else {
+			return ParameterContextType.DB_RESOURCE;
+		}
 	}
 	
 	public static List<Field> determineFieldsFromQuery(String query) {
@@ -1135,8 +1158,8 @@ public class DBUtilities {
 		throw new DatabaseNotSupportedException(conn);
 	}
 	
-	public static String generateIndexDefinition(String tableName, String indexName, String uniqueKeyFields,
-	        Connection conn) throws DBException {
+	public static String generateIndexDefinition(String tableName, String indexName, String uniqueKeyFields, Connection conn)
+	        throws DBException {
 		if (isMySQLDB(conn)) {
 			return "ALTER TABLE " + tableName + " ADD INDEX " + indexName + "(" + uniqueKeyFields + ")";
 			
@@ -1165,9 +1188,9 @@ public class DBUtilities {
 	public static Object[] loadParamsValues(String query, EtlConfiguration relatedSyncConfiguration) {
 		List<QueryParameter> paramConfig = new ArrayList<>();
 		
-		List<Field> params = extractAllParamNamesOnQuery(query);
+		List<QueryParameter> params = extractAllParamOnQuery(query);
 		
-		for (Field param : params) {
+		for (QueryParameter param : params) {
 			QueryParameter qp = new QueryParameter(param.getName());
 			qp.setValueType(ParameterValueType.CONFIGURATION_PARAM);
 			
@@ -1188,9 +1211,7 @@ public class DBUtilities {
 	 */
 	public static Object[] loadParamsValues(String query, List<QueryParameter> paramConfig, EtlDatabaseObject srcObject,
 	        EtlConfiguration configuration) {
-		List<Field> queryParameters = null;
-		
-		queryParameters = DBUtilities.extractAllParamNamesOnQuery(query);
+		List<QueryParameter> queryParameters = DBUtilities.extractAllParamOnQuery(query);
 		
 		if (!utilities.arrayHasElement(queryParameters)) {
 			return null;
@@ -1203,7 +1224,7 @@ public class DBUtilities {
 		//Find missing parameters on configured parameters
 		
 		for (int i = 0; i < queryParameters.size(); i++) {
-			Field param = queryParameters.get(i);
+			QueryParameter param = queryParameters.get(i);
 			
 			if (!paramConfig.contains(param)) {
 				QueryParameter qp = new QueryParameter(param.getName());
@@ -1218,9 +1239,18 @@ public class DBUtilities {
 		Object[] params = new Object[queryParameters.size()];
 		
 		for (int i = 0; i < queryParameters.size(); i++) {
-			Field param = queryParameters.get(i);
+			QueryParameter param = queryParameters.get(i);
 			
-			params[i] = retrieveParamValue(paramConfigValues, param.getName());
+			
+			
+			
+			Object paramValue = retrieveParamValue(paramConfigValues, param.getName());
+			
+			if (param.getContextType().inClause()) {
+				
+			} else {
+				params[i] = paramValue;
+			}
 		}
 		
 		return params;

@@ -8,7 +8,7 @@ import org.openmrs.module.epts.etl.etl.engine.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -19,7 +19,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class FieldsMapping {
 	
-	static CommonUtilities utilities = CommonUtilities.getInstance();
+	static parseToCSV utilities = parseToCSV.getInstance();
 	
 	private String srcValue;
 	

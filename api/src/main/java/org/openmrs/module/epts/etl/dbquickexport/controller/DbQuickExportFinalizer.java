@@ -6,7 +6,7 @@ import java.io.IOException;
 import org.openmrs.module.epts.etl.controller.AbstractProcessFinalizer;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.model.SyncJSONInfo;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -35,8 +35,8 @@ public class DbQuickExportFinalizer extends AbstractProcessFinalizer {
 		}
 	}
 	
-	public CommonUtilities utilities() {
-		return CommonUtilities.getInstance();
+	public parseToCSV utilities() {
+		return parseToCSV.getInstance();
 	}
 	
 	public File generateJSONTempFile(SyncJSONInfo jsonInfo) throws IOException {

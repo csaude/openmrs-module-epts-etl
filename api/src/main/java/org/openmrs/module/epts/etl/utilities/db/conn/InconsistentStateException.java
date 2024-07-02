@@ -6,7 +6,7 @@ import java.util.Map.Entry;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 
 /**
  * Indicate that record is in inconsisten state which indicate that the record is orphaned of one or
@@ -18,7 +18,7 @@ public class InconsistentStateException extends EtlExceptionImpl {
 	
 	private static final long serialVersionUID = 4995578586770680131L;
 	
-	public static CommonUtilities utilities = CommonUtilities.getInstance();
+	public static parseToCSV utilities = parseToCSV.getInstance();
 	
 	Map<ParentTableImpl, Integer> missingParents;
 	

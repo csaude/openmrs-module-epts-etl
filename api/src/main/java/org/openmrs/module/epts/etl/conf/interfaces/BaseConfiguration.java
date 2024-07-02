@@ -4,11 +4,11 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 
 public interface BaseConfiguration {
 	
-	public static CommonUtilities utilities = CommonUtilities.getInstance();
+	public static parseToCSV utilities = parseToCSV.getInstance();
 	
 	
 	List<Extension> getExtension();

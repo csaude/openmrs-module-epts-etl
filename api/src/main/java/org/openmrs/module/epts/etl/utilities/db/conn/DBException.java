@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 
 /**
  * Exception is thrown when any DB error occurs.
@@ -15,7 +15,7 @@ public class DBException extends SQLException implements EtlException {
 	
 	private static final long serialVersionUID = 1L;
 	
-	public static final CommonUtilities utilities = CommonUtilities.getInstance();
+	public static final parseToCSV utilities = parseToCSV.getInstance();
 	
 	/**
 	 * Os atributos abaixo só se aplicam no caso de
@@ -244,7 +244,7 @@ public class DBException extends SQLException implements EtlException {
 	}
 	
 	public boolean isDeadLock(Connection conn) throws DBException {
-		if (!CommonUtilities.getInstance().stringHasValue(getMessage()))
+		if (!parseToCSV.getInstance().stringHasValue(getMessage()))
 			return false;
 		
 		if (DBUtilities.isOracleDB(conn) && getMessage().contains("ORA-00060")) {
@@ -261,7 +261,7 @@ public class DBException extends SQLException implements EtlException {
 	
 	public boolean isLockWaitTimeExceded(Connection conn) throws DBException {
 		
-		if (!CommonUtilities.getInstance().stringHasValue(getMessage()))
+		if (!parseToCSV.getInstance().stringHasValue(getMessage()))
 			return false;
 		
 		if (DBUtilities.isMySQLDB(conn) && getMessage().toLowerCase().contains("lock wait timeout exceeded")) {

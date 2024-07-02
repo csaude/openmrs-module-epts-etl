@@ -25,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VO;
+import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,19 +33,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class CommonUtilities implements Serializable {
+public class parseToCSV implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	protected static CommonUtilities utilities;
+	protected static parseToCSV utilities;
 	
-	protected CommonUtilities() {
+	protected parseToCSV() {
 		//if (utilities != null) throw new OperacaoProibidaException("Ja foi criada uma instancia Utilitarios! Use o metodo Utilitarios.getInstance()!!!!");
 	}
 	
-	public static synchronized CommonUtilities getInstance() {
+	public static synchronized parseToCSV getInstance() {
 		if (utilities == null)
-			utilities = new CommonUtilities();
+			utilities = new parseToCSV();
 		
 		return utilities;
 	}
@@ -923,20 +924,22 @@ public class CommonUtilities implements Serializable {
 		}
 	}
 	
-	public String parseToCSV(List<? extends VO> objs, boolean includeHeader) {
+	public <T extends VO> String generateCsvHeader(T firstObj) {
+		StringBuilder csvBuilder = new StringBuilder();
+		
+		List<String> headers = org.openmrs.module.epts.etl.model.Field.parseAllToListOfName(firstObj.getFields());
+		
+		csvBuilder.append(String.join(",", headers)).append("\n");
+		
+		return csvBuilder.toString();
+	}
+	
+	public String parseToCSVWithoutHeader(List<? extends VO> objs) {
 		if (objs == null || objs.isEmpty()) {
 			return "";
 		}
 		
 		StringBuilder csvBuilder = new StringBuilder();
-		
-		if (includeHeader) {
-			VO firstObj = objs.get(0);
-			
-			List<String> headers = org.openmrs.module.epts.etl.model.Field.parseAllToListOfName(firstObj.getFields());
-			
-			csvBuilder.append(String.join(",", headers)).append("\n");
-		}
 		
 		for (VO obj : objs) {
 			List<String> values = obj.getFieldValuesAsString();
@@ -945,6 +948,49 @@ public class CommonUtilities implements Serializable {
 		}
 		
 		return csvBuilder.toString();
+	}
+	
+	public static String parseToCSV_(List<String> objs, boolean includeHeader) {
+		if (objs == null || objs.isEmpty()) {
+			return "";
+		}
+		
+		parseToCSV utils = getInstance();
+		
+		StringBuilder csvBuilder = new StringBuilder();
+		
+		if (includeHeader) {
+			List<String> headers = utils.parseToList("id", "name");
+			
+			csvBuilder.append(String.join(",", headers)).append("\n");
+		}
+		
+		for (String obj : objs) {
+			List<String> values = utils.parseArrayToList(obj.split(","));
+			
+			csvBuilder.append(String.join(",", values)).append("\n");
+		}
+		
+		return csvBuilder.toString();
+	}
+	
+	public static void main(String[] args) {
+		String file = "d:\\tmp.txt";
+		
+		parseToCSV u = getInstance();
+		
+		List<String> content = u.parseToList("1,Jorge Paulino", "2,Mirka Boane");
+		
+		String toWright = parseToCSV_(content, true);
+		
+		FileUtilities.write(file, toWright);
+		
+		content = u.parseToList("3,Jorge Paulino Jr", "4,Yumna Boane");
+		
+		toWright = parseToCSV_(content, false);
+		
+		FileUtilities.write(file, toWright);
+		
 	}
 	
 	public String toUpperCase(String str) {

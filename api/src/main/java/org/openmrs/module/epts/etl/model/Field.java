@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class Field implements Serializable {
 	
-	public static CommonUtilities utilities = CommonUtilities.getInstance();
+	public static parseToCSV utilities = parseToCSV.getInstance();
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -135,7 +135,7 @@ public class Field implements Serializable {
 	}
 	
 	public static Object getParameter(List<? extends Field> fields, String name) {
-		Field field = CommonUtilities.getInstance().findOnArray(fields, new Field(name));
+		Field field = parseToCSV.getInstance().findOnArray(fields, new Field(name));
 		
 		return field != null ? field.value : null;
 	}
@@ -148,7 +148,14 @@ public class Field implements Serializable {
 	@Override
 	@JsonIgnore
 	public String toString() {
-		return "[Name: " + getName() + ", Value " + value + "]";
+		String toString = "[Name: " + getName();
+		
+		if (hasValue())
+			toString += ", Value " + value + "]";
+		else
+			toString += "]";
+		
+		return toString;
 	}
 	
 	@Override

@@ -29,7 +29,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -37,7 +37,7 @@ import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class LoadRecord {
 	
-	protected static CommonUtilities utilities = CommonUtilities.getInstance();
+	protected static parseToCSV utilities = parseToCSV.getInstance();
 	
 	protected EtlDatabaseObject record;
 	
@@ -714,19 +714,22 @@ public class LoadRecord {
 			
 			dataFile += ".json";
 		} else if (engine.isCsvDst()) {
-			
-			boolean includeHeader = FileUtilities.isEmpty(new File(dataFile));
-			
-			data = utilities.parseToCSV(objs, includeHeader);
-			
 			dataFile += ".csv";
-		} else if (engine.isDumpDst()) {
-			data = TableConfiguration.generateInsertDump(objs);
 			
+			data = utilities.parseToCSVWithoutHeader(objs);
+		} else if (engine.isDumpDst()) {
 			dataFile += ".sql";
+			
+			data = TableConfiguration.generateInsertDump(objs);
 		}
 		
 		synchronized (engine) {
+			boolean includeHeader = FileUtilities.isEmpty(new File(dataFile));
+			
+			if (includeHeader) {
+				FileUtilities.write(dataFile, utilities.generateCsvHeader(objs.get(0)));
+			}
+			
 			FileUtilities.write(dataFile, data);
 		}
 		

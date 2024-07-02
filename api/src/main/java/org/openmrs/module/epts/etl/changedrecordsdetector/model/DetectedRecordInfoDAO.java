@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DetectedRecordInfoDAO extends BaseDAO{
@@ -105,9 +105,9 @@ public class DetectedRecordInfoDAO extends BaseDAO{
 						
 		Object[] params = {};
 		
-		if (type.equals(EtlOperationType.NEW_RECORDS_DETECTOR)) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
-		if (type.equals(EtlOperationType.CHANGED_RECORDS_DETECTOR) && !dateVoidedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
-		if (type.equals(EtlOperationType.CHANGED_RECORDS_DETECTOR) && !dateChangedCondition.isEmpty()) params = CommonUtilities.getInstance().addToParams(params.length, params, observationDate);
+		if (type.equals(EtlOperationType.NEW_RECORDS_DETECTOR)) params = parseToCSV.getInstance().addToParams(params.length, params, observationDate);
+		if (type.equals(EtlOperationType.CHANGED_RECORDS_DETECTOR) && !dateVoidedCondition.isEmpty()) params = parseToCSV.getInstance().addToParams(params.length, params, observationDate);
+		if (type.equals(EtlOperationType.CHANGED_RECORDS_DETECTOR) && !dateChangedCondition.isEmpty()) params = parseToCSV.getInstance().addToParams(params.length, params, observationDate);
 		
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
 		

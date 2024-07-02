@@ -11,12 +11,12 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.parseToCSV;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DataReconciliationRecord {
 	
-	public static final CommonUtilities utilities = CommonUtilities.getInstance();
+	public static final parseToCSV utilities = parseToCSV.getInstance();
 	
 	private EtlDatabaseObject record;
 	
