@@ -17,6 +17,8 @@ import java.util.regex.Matcher;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
+import org.openmrs.module.epts.etl.conf.types.EtlProcessType;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;

@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.conf;
+package org.openmrs.module.epts.etl.conf.types;
 
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 

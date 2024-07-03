@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.conf.interfaces;
+package org.openmrs.module.epts.etl.conf.types;
 
 public enum ConflictResolutionType {
 	// @formatter:off

@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.changedrecordsdetector.controller.ChangedRecordsDetectorController;
+import org.openmrs.module.epts.etl.conf.types.EtlDstType;
+import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.types.EtlProcessingModeType;
 import org.openmrs.module.epts.etl.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.epts.etl.controller.OperationController;
