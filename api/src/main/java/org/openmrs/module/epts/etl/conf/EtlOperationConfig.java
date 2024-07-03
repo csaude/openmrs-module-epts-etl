@@ -20,7 +20,6 @@ import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.etl.re_etl.controller.ReEtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.export.controller.DBExportController;
 import org.openmrs.module.epts.etl.inconsistenceresolver.controller.InconsistenceSolverController;
@@ -394,11 +393,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public boolean isReEtl() {
-		return this.operationType.isReEtl();
-	}
-	
-	@JsonIgnore
 	public boolean isPojoGeneration() {
 		return this.operationType.isPojoGeneration();
 	}
@@ -508,9 +502,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	private OperationController<? extends EtlDatabaseObject> generateSingle(ProcessController parent, String appOriginCode,
 	        Connection conn) {
 		
-		if (isReEtl()) {
-			return new ReEtlController(parent, this, appOriginCode);
-		} else if (isDetectMissingRecords()) {
+		if (isDetectMissingRecords()) {
 			return new DetectMissingRecordsController(parent, this, appOriginCode);
 		} else if (isEtl()) {
 			return new EtlController(parent, this, appOriginCode);
@@ -556,11 +548,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		String errorMsg = "";
 		int errNum = 0;
 		
-		if (this.getRelatedEtlConfig().isReEtlProcess()) {
-			if (!this.canBeRunInReEtlProcess())
-				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
-				        + "] Cannot be configured in Re Etl process\n";
-		} else if (this.getRelatedEtlConfig().isEtlProcess()) {
+		if (this.getRelatedEtlConfig().isEtlProcess()) {
 			if (!this.canBeRunInEtlProcess())
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in Etl process\n";
@@ -625,7 +613,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			
 			if (this.getRelatedEtlConfig().isResolveProblems()
 			        && !GenericEngine.class.isAssignableFrom(this.processorClazz)) {
-				errorMsg += ++errNum + ". The engine class [" + this.getProcessorFullClassName()
+				errorMsg += ++errNum + ". The processor class [" + this.getProcessorFullClassName()
 				        + "] is not any org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine \n";
 			}
 			
@@ -691,12 +679,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public static List<EtlOperationType> getSupportedOperationsInEtlProcess() {
 		EtlOperationType[] supported = { EtlOperationType.ETL, EtlOperationType.DB_EXTRACT };
-		
-		return utilities.parseArrayToList(supported);
-	}
-	
-	public static List<EtlOperationType> getSupportedOperationsInReEtlProcess() {
-		EtlOperationType[] supported = { EtlOperationType.RE_ETL };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -797,11 +779,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		return utilities.existOnArray(getSupportedOperationsInEtlProcess(), this.operationType);
 	}
 	
-	@JsonIgnore
-	public boolean canBeRunInReEtlProcess() {
-		return utilities.existOnArray(getSupportedOperationsInReEtlProcess(), this.operationType);
-	}
-	
 	public static List<EtlOperationType> getSupportedOperationsInDestinationSyncProcess() {
 		EtlOperationType[] supported = { EtlOperationType.CONSOLIDATION, EtlOperationType.DB_MERGE_FROM_JSON,
 		        EtlOperationType.LOAD, EtlOperationType.DATABASE_PREPARATION, EtlOperationType.POJO_GENERATION };
@@ -841,11 +818,11 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 					
 					if (this.processorClazz == null) {
 						throw new ForbiddenOperationException(
-						        "The engine class [" + this.getProcessorFullClassName() + "] cannot be found");
+						        "The processor class [" + this.getProcessorFullClassName() + "] cannot be found");
 					}
 				} else if (requireEngine()) {
 					throw new ForbiddenOperationException(
-					        "You should specifie the engine full class on this type of operation "
+					        "You should specifie the processor full class on this type of operation "
 					                + this.getOperationType());
 				}
 			}
