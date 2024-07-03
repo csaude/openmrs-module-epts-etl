@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.changedrecordsdetector.controller.ChangedRecordsDetectorController;
+import org.openmrs.module.epts.etl.conf.types.EtlActionType;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.types.EtlProcessingModeType;
@@ -73,6 +74,10 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean useSharedConnectionPerThread;
 	
+	private EtlActionType actionType;
+	
+	private EtlActionType afterEtlActionType;
+	
 	/**
 	 * Indicates whether this operation will executed over all tables configured under
 	 * {@link #relatedEtlConfig}. If true, the operation will be run only once (for the first table)
@@ -85,10 +90,28 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public EtlOperationConfig() {
 		this.dstType = EtlDstType.db;
+		this.actionType = EtlActionType.CREATE;
+		this.afterEtlActionType = EtlActionType.UNDEFINED;
 		this.processingMode = EtlProcessingModeType.SERIAL;
 		this.operationType = EtlOperationType.ETL;
 		this.processingBatch = EtlOperationConfig.DEFAULT_BATCH_PROCESSING;
 		this.maxSupportedEngines = utilities.getAvailableProcessors();
+	}
+	
+	public EtlActionType getActionType() {
+		return actionType;
+	}
+	
+	public void setActionType(EtlActionType actionType) {
+		this.actionType = actionType;
+	}
+	
+	public EtlActionType getAfterEtlActionType() {
+		return afterEtlActionType;
+	}
+	
+	public void setAfterEtlActionType(EtlActionType afterEtlActionType) {
+		this.afterEtlActionType = afterEtlActionType;
 	}
 	
 	public EtlDstType getDstType() {
