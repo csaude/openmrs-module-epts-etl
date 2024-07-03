@@ -19,6 +19,7 @@ import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.Engine;
@@ -29,9 +30,9 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * @author jpboane
  * @see DbExtractController
  */
-public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
+public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 	
-	public EtlEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
+	public EtlProcessor(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 	}
 	
@@ -234,5 +235,10 @@ public class EtlEngine extends TaskProcessor<EtlDatabaseObject> {
 	}
 	
 	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
+		if (getRelatedEtlOperationConfig().getAfterEtlActionType().isDelete()) {
+			for (EtlObject obj : objs) {
+				DatabaseObjectDAO.remove((EtlDatabaseObject) obj, srcConn);
+			}
+		}
 	}
 }

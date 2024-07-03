@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.UUID;
 
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -81,8 +82,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = null;
 		String sql = null;
 		
-		if (tableConfiguration.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()
-		        || tableConfiguration.useSharedPKKey()) {
+		if (tableConfiguration.getRelatedEtlConf().isDoNotTransformsPrimaryKeys() || tableConfiguration.useSharedPKKey()) {
 			params = record.getInsertParamsWithObjectId();
 			sql = record.getInsertSQLWithObjectId();
 		} else {
@@ -837,5 +837,33 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += "					AND (" + startingClause + dateVoidedClause + dateChangedClause + "))";
 		
 		return find(tableConfiguration.getLoadHealper(), GenericDatabaseObject.class, sql, params, conn);
+	}
+	
+	public static EtlOperationResultHeader<EtlDatabaseObject> updateAll(List<EtlDatabaseObject> objects,
+	        AbstractTableConfiguration config, Connection conn) throws DBException {
+		
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
+		
+		for (EtlDatabaseObject obj : objects) {
+			obj.update(config, conn);
+			
+			result.addToRecordsWithNoError(obj.getSrcRelatedObject());
+		}
+		
+		return result;
+	}
+	
+	public static EtlOperationResultHeader<EtlDatabaseObject> deleteAll(List<EtlDatabaseObject> objects,
+	        AbstractTableConfiguration config, Connection conn) throws DBException {
+		
+		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
+		
+		for (EtlDatabaseObject obj : objects) {
+			obj.delete(conn);
+			
+			result.addToRecordsWithNoError(obj.getSrcRelatedObject());
+		}
+		
+		return result;
 	}
 }

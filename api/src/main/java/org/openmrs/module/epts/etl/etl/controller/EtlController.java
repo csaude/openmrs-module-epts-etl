@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
+import org.openmrs.module.epts.etl.etl.engine.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -54,7 +54,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 				throw new ForbiddenOperationException(e);
 			}
 		} else {
-			return new EtlEngine(monitor, limits, runningInConcurrency);
+			return new EtlProcessor(monitor, limits, runningInConcurrency);
 		}
 	}
 	

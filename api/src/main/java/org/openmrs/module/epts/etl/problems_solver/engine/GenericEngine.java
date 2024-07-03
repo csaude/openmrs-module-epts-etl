@@ -1,7 +1,7 @@
 package org.openmrs.module.epts.etl.problems_solver.engine;
 
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
+import org.openmrs.module.epts.etl.etl.engine.EtlProcessor;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationCo
 /**
  * @author jpboane
  */
-public abstract class GenericEngine extends EtlEngine {
+public abstract class GenericEngine extends EtlProcessor {
 	
 	public static boolean done;
 	

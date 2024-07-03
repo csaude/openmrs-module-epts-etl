@@ -20,7 +20,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
- * Represent a Synchronization TaskProcessor. A Synchronization engine performes the task which will
+ * Represent a Synchronization TaskProcessor. A Synchronization processor performes the task which will
  * end up producing or consuming the synchronization info.
  * <p>
  * There are several kinds of engines that performes diferents kind of operations. All the avaliable

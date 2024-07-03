@@ -6,7 +6,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.detectgapes.model.GapeDAO;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.etl.engine.EtlEngine;
+import org.openmrs.module.epts.etl.etl.engine.EtlProcessor;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
@@ -20,7 +20,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * 
  * @author jpboane
  */
-public class DetectGapesEngine extends EtlEngine {
+public class DetectGapesEngine extends EtlProcessor {
 	
 	/*
 	 * The previous record

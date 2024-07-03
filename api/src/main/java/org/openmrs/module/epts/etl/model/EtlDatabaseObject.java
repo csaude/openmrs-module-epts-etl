@@ -543,4 +543,8 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		return DatabaseObjectDAO.getByOid(tabConfInSrc, prentOid, conn);
 	}
+	
+	default void delete(Connection conn) throws DBException {
+		DatabaseObjectDAO.remove(this, conn);
+	}
 }

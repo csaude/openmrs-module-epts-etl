@@ -227,7 +227,7 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 	public synchronized void save() {
 		
 		if (this.engine == null)
-			throw new ForbiddenOperationException("You cannot save limits without engine");
+			throw new ForbiddenOperationException("You cannot save limits without processor");
 		
 		if (!hasThreadCode())
 			throw new ForbiddenOperationException("You cannot save limits without threadCode");
@@ -306,11 +306,11 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 	}
 	
 	/**
-	 * Tries to load data for this engine from file. If there is no saved limits then will keeped
+	 * Tries to load data for this processor from file. If there is no saved limits then will keeped
 	 * the current limits info
 	 * 
 	 * @param file
-	 * @param engine
+	 * @param processor
 	 */
 	public static <T extends EtlDatabaseObject> ThreadRecordIntervalsManager<T> tryToLoadFromFile(String threadCode,
 	        Engine<T> engine) {

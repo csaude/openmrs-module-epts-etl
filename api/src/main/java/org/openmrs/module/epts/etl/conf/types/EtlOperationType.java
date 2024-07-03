@@ -30,7 +30,6 @@ public enum EtlOperationType {
 	GENERIC_OPERATION,
 	DETECT_GAPES,
 	ETL,
-	RE_ETL,
 	DETECT_MISSING_RECORDS,
 	DB_EXTRACT;
 	
@@ -40,10 +39,6 @@ public enum EtlOperationType {
 	
 	public static boolean isEtl(String operationType) {
 		return EtlOperationType.valueOf(operationType).isEtl();
-	}
-	
-	public static boolean isReEtl(String operationType) {
-		return EtlOperationType.valueOf(operationType).isReEtl();
 	}
 	
 	public static boolean isDetectGapesOperation(String operationType) {
@@ -205,10 +200,6 @@ public enum EtlOperationType {
 	
 	public boolean isEtl() {
 		return this.equals(ETL) || this.equals(DB_EXTRACT);
-	}
-	
-	public boolean isReEtl() {
-		return this.equals(RE_ETL);
 	}
 	
 	public boolean isDetectMIssingRecords() {

@@ -19,7 +19,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
- * The engine responsible for transport synchronization files from origin to destination site
+ * The processor responsible for transport synchronization files from origin to destination site
  * <p>
  * This is temporariy transportation method which suppose that the origin and destination are in the
  * same matchine, so the transport process consist on moving files from export directory to import

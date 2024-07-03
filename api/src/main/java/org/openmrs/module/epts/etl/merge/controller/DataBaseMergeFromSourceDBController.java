@@ -33,7 +33,7 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 		
 		throw new ForbiddenOperationException("Review this method");
 		
-		/*AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new DataBaseMergeFromSourceDBSearchParams(engine, intervalsMgt);
+		/*AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new DataBaseMergeFromSourceDBSearchParams(processor, intervalsMgt);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
 		
