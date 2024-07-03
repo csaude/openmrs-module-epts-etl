@@ -138,8 +138,7 @@ public class UniqueKeyInfo {
 		this.fieldValuesLoaded = true;
 	}
 	
-	public static List<UniqueKeyInfo> loadUniqueKeysInfo(TableConfiguration tableConfiguration, Connection conn)
-	        throws DBException {
+	public static List<UniqueKeyInfo> loadUniqueKeysInfo(TableConfiguration tabConf, Connection conn) throws DBException {
 		
 		List<UniqueKeyInfo> uniqueKeysInfo = new ArrayList<UniqueKeyInfo>();
 		
@@ -147,19 +146,15 @@ public class UniqueKeyInfo {
 		
 		try {
 			
-			String tableName = DBUtilities.extractTableNameFromFullTableName(tableConfiguration.getTableName());
-			
-			String schema = DBUtilities.determineSchemaFromFullTableName(tableConfiguration.getTableName());
-			
-			schema = utilities.stringHasValue(schema) ? schema : conn.getSchema();
+			String tableName = DBUtilities.extractTableNameFromFullTableName(tabConf.getTableName());
 			
 			String catalog = conn.getCatalog();
 			
-			if (DBUtilities.isMySQLDB(conn) && utilities.stringHasValue(schema)) {
-				catalog = schema;
+			if (DBUtilities.isMySQLDB(conn)) {
+				catalog = tabConf.getSchema();
 			}
 			
-			rs = conn.getMetaData().getIndexInfo(catalog, schema, tableName, true, true);
+			rs = conn.getMetaData().getIndexInfo(catalog, tabConf.getSchema(), tableName, true, true);
 			
 			String prevIndexName = null;
 			
@@ -171,23 +166,23 @@ public class UniqueKeyInfo {
 				indexName = rs.getString("INDEX_NAME");
 				
 				if (!indexName.equals(prevIndexName)) {
-					addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);
+					addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tabConf, conn);
 					
 					prevIndexName = indexName;
 					keyElements = new ArrayList<>();
 				}
 				
-				if (!tableConfiguration.isIgnorableField(Field.fastCreate(rs.getString("COLUMN_NAME")))) {
-					Field f = tableConfiguration.getField(rs.getString("COLUMN_NAME"));
+				if (!tabConf.isIgnorableField(Field.fastCreate(rs.getString("COLUMN_NAME")))) {
+					Field f = tabConf.getField(rs.getString("COLUMN_NAME"));
 					
 					keyElements.add(Key.fastCreateTyped(f.getName(), f.getType()));
 				}
 			}
 			
-			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tableConfiguration, conn);
+			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tabConf, conn);
 			
-			if (tableConfiguration.useSharedPKKey()) {
-				ParentTable p = tableConfiguration.getSharedKeyRefInfo();
+			if (tabConf.useSharedPKKey()) {
+				ParentTable p = tabConf.getSharedKeyRefInfo();
 				
 				if (!p.isFullLoaded()) {
 					p.loadFields(conn);

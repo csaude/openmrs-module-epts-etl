@@ -365,9 +365,48 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				}
 			}
 			
-			//There is no skipped records
-			iManager.getCurrentLimits().markSkippedRecordsAsProcessed();
+			tryToProcessSkippedrecords();
+		}
+	}
+	
+	public void tryToProcessSkippedrecords() throws DBException, RuntimeException {
+		ThreadRecordIntervalsManager<T> iManager = this.getThreadRecordIntervalsManager();
+		
+		logDebug("TRY TO PROCESS SKIPPED RECORDS ON INTERVAL " + iManager.getCurrentLimits());
+		
+		String originalExtraCondition = getSearchParams().getExtraCondition();
+		
+		getSearchParams().setExtraCondition(
+		    utilities.concatCondition(originalExtraCondition, getSrcConf().generateSkippedRecordInclusionClause()));
+		
+		TaskProcessor<T> taskProcessor = getController().initRelatedTaskProcessor(this,
+		    getThreadRecordIntervalsManager().getCurrentLimits(), false);
+		taskProcessor.setEngineId(this.getEngineId());
+		
+		boolean persistTheWork = true;
+		boolean useMultiThreadSearch = true;
+		
+		performeTask(taskProcessor, useMultiThreadSearch, persistTheWork, openSrcConn(), tryToOpenDstConn());
+		
+		if (taskProcessor.getTaskResultInfo().hasFatalError()) {
+			taskProcessor.getTaskResultInfo().throwDefaultExcetions();
+		} else {
 			
+			OpenConnection srcConn = openSrcConn();
+			
+			try {
+				getSrcConf().deleteAllSkippedRecord(srcConn);
+				
+				srcConn.markAsSuccessifullyTerminated();
+			}
+			finally {
+				srcConn.finalizeConnection();
+			}
+			
+			iManager.getCurrentLimits().markSkippedRecordsAsProcessed();
+			iManager.save();
+			
+			getSearchParams().setExtraCondition(originalExtraCondition);
 		}
 	}
 	
@@ -429,45 +468,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			}
 			
 			if (avaliableIntervals.size() == 0) {
-				
-				logDebug("PROCESSING SKIPPED RECORDS ON INTERVAL " + iManager.getCurrentLimits());
-				
-				//Mean that all intervals were processed but there are skipped records that were not yet processed
-				String originalExtraCondition = getSearchParams().getExtraCondition();
-				
-				getSearchParams().setExtraCondition(
-				    utilities.concatCondition(originalExtraCondition, getSrcConf().generateSkippedRecordInclusionClause()));
-				
-				TaskProcessor<T> taskProcessor = getController().initRelatedTaskProcessor(this,
-				    getThreadRecordIntervalsManager().getCurrentLimits(), false);
-				taskProcessor.setEngineId(this.getEngineId());
-				
-				boolean persistTheWork = true;
-				boolean useMultiThreadSearch = true;
-				
-				performeTask(taskProcessor, useMultiThreadSearch, persistTheWork, openSrcConn(), tryToOpenDstConn());
-				
-				if (taskProcessor.getTaskResultInfo().hasFatalError()) {
-					taskProcessor.getTaskResultInfo().throwDefaultExcetions();
-				} else {
-					
-					OpenConnection srcConn = openSrcConn();
-					
-					try {
-						getSrcConf().deleteAllSkippedRecord(srcConn);
-						
-						srcConn.markAsSuccessifullyTerminated();
-					}
-					finally {
-						srcConn.finalizeConnection();
-					}
-					
-					iManager.getCurrentLimits().markSkippedRecordsAsProcessed();
-					iManager.save();
-					
-					getSearchParams().setExtraCondition(originalExtraCondition);
-				}
-				
+				tryToProcessSkippedrecords();
 			} else {
 				
 				logDebug("Initializing " + avaliableIntervals.size() + " processors to performe task on a interval "

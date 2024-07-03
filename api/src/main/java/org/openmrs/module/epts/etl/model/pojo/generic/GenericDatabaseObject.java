@@ -192,6 +192,13 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 				try {
 					super.setFieldValue(field.getNameAsClassAtt(), field.getValue());
 				}
+				catch (IllegalArgumentException e) {
+					//ignore if field is objectId as there is name clash with super.objectId
+					if (!field.getNameAsClassAtt().equals("objectId")) {
+						throw e;
+					}
+					
+				}
 				catch (ForbiddenOperationException e) {}
 				
 			}

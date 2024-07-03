@@ -211,9 +211,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			throw new ForbiddenOperationException(
 			        "The field " + fieldName + " was not found on entity " + this.getClass().getName());
 		}
-		catch (IllegalArgumentException e) {
-			throw new RuntimeException(e);
-		}
 		catch (IllegalAccessException e) {
 			throw new RuntimeException(e);
 		}
