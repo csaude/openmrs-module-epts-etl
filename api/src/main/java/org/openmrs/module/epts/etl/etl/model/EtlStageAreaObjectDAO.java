@@ -21,7 +21,7 @@ public class EtlStageAreaObjectDAO extends DatabaseObjectDAO {
 		for (EtlStageAreaObject stage : records) {
 			stage.loadIdToChilds();
 			
-			allDstkeys.addAll(stage.getSrcUniqueKeyInfo());
+			allSrckeys.addAll(stage.getSrcUniqueKeyInfo());
 			
 			for (List<EtlDatabaseObject> dstKeys : stage.getDstUniqueKeyInfo()) {
 				allDstkeys.addAll(dstKeys);

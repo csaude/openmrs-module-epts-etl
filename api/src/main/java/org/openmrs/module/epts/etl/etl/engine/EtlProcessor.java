@@ -54,10 +54,11 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		
 		try {
 			
-			EtlLoadHelper loadHelper = new EtlLoadHelper(this);
+			EtlLoadHelper loadHelper = new EtlLoadHelper(this, etlObjects.size());
 			
 			for (EtlObject record : etlObjects) {
 				EtlDatabaseObject srcRecord = (EtlDatabaseObject) record;
+				srcRecord.loadObjectIdData(getSrcConf());
 				
 				for (DstConf mappingInfo : getEtlItemConfiguration().getDstConf()) {
 					

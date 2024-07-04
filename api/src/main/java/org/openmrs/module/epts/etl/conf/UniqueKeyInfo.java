@@ -226,10 +226,27 @@ public class UniqueKeyInfo {
 		if (config.getPrimaryKey() != null && config.getPrimaryKey().equals(uk)) {
 			return false;
 		} else {
-			uniqueKeys.add(uk);
+			
+			if (!uk.contained(uniqueKeys)) {
+				uniqueKeys.add(uk);
+			}
 			
 			return true;
 		}
+	}
+	
+	private boolean contained(List<UniqueKeyInfo> uniqueKeys) {
+		if (!utilities.arrayHasElement(uniqueKeys)) {
+			return false;
+		}
+		
+		for (UniqueKeyInfo uk : uniqueKeys) {
+			if (this.equals(uk)) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 	@Override
@@ -355,13 +372,28 @@ public class UniqueKeyInfo {
 	}
 	
 	public static List<UniqueKeyInfo> cloneAllAndLoadValues(List<UniqueKeyInfo> uniqueKeysInfo, EtlDatabaseObject obj) {
+		//Since this is usually for an object, null the keyName to avoid "equals" 2 object because they have same keyName
+		return cloneAllAndLoadValues(uniqueKeysInfo, obj, false);
+		
+	}
+	
+	public static List<UniqueKeyInfo> cloneAllWithKeyNameAndLoadValues(List<UniqueKeyInfo> uniqueKeysInfo,
+	        EtlDatabaseObject obj) {
+		return cloneAllAndLoadValues(uniqueKeysInfo, obj, true);
+	}
+	
+	public static List<UniqueKeyInfo> cloneAllAndLoadValues(List<UniqueKeyInfo> uniqueKeysInfo, EtlDatabaseObject obj,
+	        boolean keepUkName) {
 		List<UniqueKeyInfo> uks = cloneAll_(uniqueKeysInfo);
 		
 		if (utilities.arrayHasElement(uks)) {
 			
 			for (UniqueKeyInfo uk : uks) {
-				//Since this is usually for an object, null the keyName to avoid "equals" 2 object because they have same keyName
-				uk.setKeyName(null);
+				
+				if (!keepUkName) {
+					//Since this is usually for an object, null the keyName to avoid "equals" 2 object because they have same keyName
+					uk.setKeyName(null);
+				}
 				
 				uk.loadValuesToFields(obj);
 			}

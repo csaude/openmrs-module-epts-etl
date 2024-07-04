@@ -57,6 +57,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		
 		EtlStageAreaObject eo = new EtlStageAreaObject(stageAreatabConf);
 		eo.setFieldValue("record_origin_location_code", srcTabConf.getOriginAppLocationCode());
+		eo.setSrcRelatedObject(eo);
 		
 		EtlConfigurationTableConf srcKeyInfoTabConf = srcTabConf.generateRelatedStageSrcUniqueKeysTableConf(srcConn);
 		
@@ -77,6 +78,8 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		if (getDstUniqueKeyInfo() == null) {
 			setDstUniqueKeyInfo(new ArrayList<>());
 		}
+		
+		getDstUniqueKeyInfo().add(uniqueKeyInfoRecord);
 	}
 	
 	private List<EtlDatabaseObject> generateUniqueKeyInfoRecord(EtlConfigurationTableConf tabConf,
@@ -85,25 +88,30 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		List<EtlDatabaseObject> ukInfo = new ArrayList<>();
 		List<UniqueKeyInfo> allKeys = new ArrayList<>();
 		
-		allKeys.add(etlObject.getRelatedConfiguration().getPrimaryKey());
+		TableConfiguration etlObjectRelatedTabConf = (TableConfiguration) etlObject.getRelatedConfiguration();
+		
+		allKeys.add(etlObjectRelatedTabConf.getPrimaryKey());
 		
 		if (etlObject.hasUniqueKeys()) {
-			allKeys.addAll(etlObject.getUniqueKeysInfo());
+			allKeys.addAll(etlObjectRelatedTabConf.getUniqueKeys());
 		}
 		
-		for (UniqueKeyInfo uKey : UniqueKeyInfo.cloneAllAndLoadValues(allKeys, etlObject)) {
+		for (UniqueKeyInfo uKey : UniqueKeyInfo.cloneAllWithKeyNameAndLoadValues(allKeys, etlObject)) {
 			
 			for (Key key : uKey.getFields()) {
 				
-				GenericDatabaseObject obj = new GenericDatabaseObject(tabConf);
-				
-				obj.setFieldValue("stage_record_id", this.getFieldValue("id"));
-				obj.setFieldValue("table_name", etlObject.getObjectName());
-				obj.setFieldValue("key_name", uKey.getKeyName());
-				obj.setFieldValue("column_name", key.getName());
-				obj.setFieldValue("key_value", key.getValue());
-				
-				ukInfo.add(obj);
+				if (key.hasValue()) {
+					GenericDatabaseObject obj = new GenericDatabaseObject(tabConf);
+					
+					obj.setFieldValue("table_name", etlObject.getObjectName());
+					obj.setFieldValue("key_name", uKey.getKeyName());
+					obj.setFieldValue("column_name", key.getName());
+					obj.setFieldValue("key_value", key.getValue());
+					
+					obj.setSrcRelatedObject(obj);
+					
+					ukInfo.add(obj);
+				}
 			}
 			
 		}

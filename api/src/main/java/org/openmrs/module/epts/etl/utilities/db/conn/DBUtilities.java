@@ -204,7 +204,6 @@ public class DBUtilities {
 		
 	}
 	
-	
 	public static String tryToPutSchemaOnDatabaseObject(String tableName, Connection conn) throws DBException {
 		
 		try {
@@ -361,12 +360,10 @@ public class DBUtilities {
 		}
 	}
 	
-	public static boolean isTableColumnAllowNull(String tableName, String columnName, Connection conn) throws DBException {
+	public static boolean isTableColumnAllowNull(String tableName, String schema, String columnName, Connection conn)
+	        throws DBException {
 		try {
-			
-			tableName = tryToPutSchemaOnDatabaseObject(tableName, conn);
-			
-			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
+			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + schema + "." + tableName + " WHERE 1 != 1");
 			
 			ResultSet rs = st.executeQuery();
 			ResultSetMetaData rsMetaData = rs.getMetaData();

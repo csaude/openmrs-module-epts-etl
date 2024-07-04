@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.etl.engine.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
@@ -16,13 +17,13 @@ public class EtlLoadHelperRecord {
 	
 	private List<LoadRecord> loadRecord;
 	
-	public EtlLoadHelperRecord(EtlDatabaseObject srcObject) {
+	public EtlLoadHelperRecord(EtlDatabaseObject srcObject, EtlProcessor processor) {
 		this.srcObject = srcObject;
-		this.loadRecord = new ArrayList<>();
+		this.loadRecord = new ArrayList<>(processor.getEtlItemConfiguration().getDstConf().size());
 	}
 	
 	public EtlLoadHelperRecord(LoadRecord loadRecord) {
-		this(loadRecord.getSrcRecord());
+		this(loadRecord.getSrcRecord(), loadRecord.getProcessor());
 		
 		addLoadRecord(loadRecord);
 	}
@@ -82,6 +83,26 @@ public class EtlLoadHelperRecord {
 		}
 		
 		return dstrecords;
+	}
+	
+	public LoadRecord getDstRecrelatedToGlobalStatus() {
+		LoadStatus status = determineGlobalStatus();
+		
+		for (LoadRecord lr : getLoadRecord()) {
+			if (lr.getStatus().equals(status))
+				return lr;
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public String toString() {
+		String str = determineGlobalStatus().isGreaterThan(LoadStatus.UNDEFINED)
+		        ? getDstRecrelatedToGlobalStatus().toString()
+		        : "NONE";
+		
+		return determineGlobalStatus().toString() + ": For " + str;
 	}
 	
 }

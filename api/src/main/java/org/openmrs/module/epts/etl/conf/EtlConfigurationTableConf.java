@@ -14,18 +14,11 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	
-	private EtlConfiguration relatedEtlConfiguration;
-	
 	public EtlConfigurationTableConf(String tableName, EtlConfiguration relatedConf) {
 		super.setTableName(tableName);
 		
 		setRelatedEtlConfig(relatedConf);
 		setSchema(getSyncStageSchema());
-	}
-	
-	@Override
-	public EtlConfiguration getRelatedEtlConf() {
-		return this.relatedEtlConfiguration;
 	}
 	
 	@Override

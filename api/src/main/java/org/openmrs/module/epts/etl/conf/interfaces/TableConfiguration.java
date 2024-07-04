@@ -254,7 +254,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		this.setPrimaryKey(toCloneFrom.getPrimaryKey());
 		
-		if (this.hasPrimaryKey()) {
+		if (this.hasPK()) {
 			this.getPrimaryKey().setTabConf(this);
 		}
 		
@@ -294,10 +294,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		loadOwnElements(conn);
 	}
 	
-	default boolean hasPrimaryKey() {
-		return this.getPrimaryKey() != null;
-	}
-	
 	@JsonIgnore
 	default boolean useSharedPKKey() {
 		return utilities.stringHasValue(this.getSharePkWith());
@@ -317,6 +313,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				while (rs.next()) {
 					primaryKey = new PrimaryKey(this);
+					primaryKey.setKeyName("pk");
 					
 					Key pk = new Key();
 					pk.setName(rs.getString("COLUMN_NAME"));
@@ -619,7 +616,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 							parentTabConf.setParentConf(this.getParentConf());
 							parentTabConf.setChildTableConf(this);
 							parentTabConf.setRelatedEtlConfig(getRelatedEtlConf());
-							
 							parentTabConf.setSchema(foreignKeyRS.getString("PKTABLE_SCHEM"));
 							
 							if (!parentTabConf.hasSchema()) {
@@ -858,7 +854,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			        "The field '" + fieldName + "' was not found on '" + this.getTableName() + "' fields!!!");
 		}
 		
-		boolean ignorable = DBUtilities.isTableColumnAllowNull(this.getTableName(), fieldName, conn);
+		boolean ignorable = DBUtilities.isTableColumnAllowNull(this.getTableName(), this.getSchema(), fieldName, conn);
 		
 		RefMapping map = RefMapping.fastCreate(childFieldname, parentFieldName);
 		
@@ -1101,7 +1097,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default boolean existRelatedExportStageDstUniqueKeysTable(Connection conn) {
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = generateRelatedStageSrcUniqueKeysTableName();
+		String tabName = generateRelatedStageDstUniqueKeysTableName();
 		
 		try {
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
@@ -2247,7 +2243,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				tabConf = new EtlConfigurationTableConf(tableName, this.getRelatedEtlConf());
 			}
 			
-			if (!tabConf.isFieldsLoaded()) {
+			if (!tabConf.isFullLoaded()) {
 				tabConf.fullLoad(conn);
 			}
 			
@@ -2271,7 +2267,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		String parentTableName = this.generateFullStageTableName();
 		
-		sql += "CREATE TABLE " + tableName + "(\n";
+		sql += "CREATE TABLE " + getSyncStageSchema() + "." + tableName + "(\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("table_name", 100, notNullConstraint, conn) + endLineMarker;
@@ -2280,7 +2276,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		sql += DBUtilities.generateTableVarcharField("key_value", 100, "NULL", conn) + endLineMarker;
 		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
 		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
-		    "record_id, table_name, key_name, column_name", conn) + endLineMarker;
+		    "stage_record_id, table_name, key_name, column_name", conn) + endLineMarker;
 		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
 		    parentTableName, "id", conn) + endLineMarker;
 		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
@@ -2317,17 +2313,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		String keyName = "CHK_" + this.generateRelatedStageTableName() + "_MIG_STATUS";
 		
 		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
-		
-		String uniqueKeyName = tableName + "_UNQ_RECORD_ID".toLowerCase();
-		
-		if (this.isDestinationInstallationType() || this.isDBQuickLoad()) {
-			
-			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName,
-			    "record_origin_id, record_origin_location_code", conn) + endLineMarker;
-			
-		} else {
-			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName, "record_origin_id", conn) + endLineMarker;
-		}
 		
 		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
 		sql += ")";

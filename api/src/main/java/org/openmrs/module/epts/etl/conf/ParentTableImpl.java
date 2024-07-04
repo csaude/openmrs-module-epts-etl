@@ -50,7 +50,7 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	}
 	
 	public void setChildTableConf(TableConfiguration childTableConf) {
-		this.childTableConf = (TableConfiguration) childTableConf;
+		this.childTableConf = childTableConf;
 		
 		this.setRelatedEtlConfig(childTableConf.getRelatedEtlConf());
 	}
@@ -69,7 +69,7 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	}
 	
 	@Override
-	public DBConnectionInfo	getRelatedConnInfo() {
+	public DBConnectionInfo getRelatedConnInfo() {
 		return this.childTableConf.getRelatedConnInfo();
 	}
 	
@@ -156,6 +156,7 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 		}
 		
 		return str;
+		
 	}
 	
 	@Override

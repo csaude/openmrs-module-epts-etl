@@ -50,4 +50,16 @@ public enum LoadStatus {
 	public boolean isLessThan(LoadStatus other) {
 		return this.compareTo(other) < 0;
 	}
+	
+	public boolean isLessOrEqualsThan(LoadStatus other) {
+		return this.compareTo(other) <= 0;
+	}
+	
+	public boolean isGreaterThan(LoadStatus other) {
+		return this.compareTo(other) > 0;
+	}
+	
+	public boolean isGreaterOrEqualsThan(LoadStatus other) {
+		return this.compareTo(other) >= 0;
+	}
 }

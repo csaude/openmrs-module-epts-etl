@@ -564,16 +564,20 @@ public class DatabaseObjectDAO extends BaseDAO {
 			try {
 				List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 				
-				result.addAllToRecordsWithNoError(EtlOperationItemResult
-				        .parseFromEtlDatabaseObject(EtlDatabaseObject.collectAllSrcRelatedOBjects(objects)));
-				
 				if (utilities.arrayHasElement(ids) && objects.get(0).getObjectId().isSimpleId()) {
 					
 					int i = 0;
 					for (EtlDatabaseObject obj : objects) {
-						obj.fastCreateSimpleNumericKey(ids.get(++i));
+						obj.loadObjectIdData(tabConf);
+						obj.getObjectId().asSimpleKey().setValue(ids.get(i));
+						obj.setFieldValue(obj.getObjectId().asSimpleKey().getName(), ids.get(i));
+						i += 1;
 					}
 				}
+				
+				result.addAllToRecordsWithNoError(EtlOperationItemResult
+				        .parseFromEtlDatabaseObject(EtlDatabaseObject.collectAllSrcRelatedOBjects(objects)));
+				
 			}
 			catch (DBException e) {
 				for (EtlDatabaseObject obj : objects) {
@@ -585,10 +589,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 						result.addToRecordsWithNoError(obj.getSrcRelatedObject());
 					}
 					catch (DBException e1) {
-						//Temp code for dbsync
-						if (!tabConf.getTableName().equals("jms_msg_bkp")) {
-							result.addToRecordsWithUnresolvedErrors(obj, e1);
-						}
+						result.addToRecordsWithUnresolvedErrors(obj, e1);
 					}
 				}
 			}

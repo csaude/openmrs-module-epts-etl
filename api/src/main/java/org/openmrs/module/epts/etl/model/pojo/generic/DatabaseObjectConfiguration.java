@@ -93,10 +93,7 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	String getSharePkWith();
 	
-	@JsonIgnore
-	default boolean hasPK() {
-		return getPrimaryKey() != null;
-	}
+	boolean hasPK();
 	
 	boolean hasPK(Connection conn) throws DBException;
 	
@@ -126,7 +123,8 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	}
 	
 	@JsonIgnore
-	default Class<? extends EtlDatabaseObject> getSyncRecordClass(DBConnectionInfo connInfo) throws ForbiddenOperationException {
+	default Class<? extends EtlDatabaseObject> getSyncRecordClass(DBConnectionInfo connInfo)
+	        throws ForbiddenOperationException {
 		
 		if (getSyncRecordClass() == null) {
 			Class<? extends EtlDatabaseObject> syncRecordClass = GenericDatabaseObject.class;

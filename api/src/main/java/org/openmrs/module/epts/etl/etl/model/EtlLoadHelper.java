@@ -32,13 +32,13 @@ public class EtlLoadHelper {
 	
 	private EtlProcessor processor;
 	
-	public EtlLoadHelper(EtlProcessor processor) {
+	public EtlLoadHelper(EtlProcessor processor, int qtySrcObjects) {
 		this.processor = processor;
-		this.loadRecordHelper = new ArrayList<>();
+		this.loadRecordHelper = new ArrayList<>(qtySrcObjects);
 	}
 	
 	public EtlLoadHelper(EtlProcessor processor, List<EtlLoadHelperRecord> loadRecordHelper) {
-		this(processor);
+		this(processor, loadRecordHelper.size());
 		
 		this.loadRecordHelper = loadRecordHelper;
 	}
@@ -125,7 +125,29 @@ public class EtlLoadHelper {
 		
 		for (DstConf dst : getProcessor().getEtlItemConfiguration().getDstConf()) {
 			load(dst, srcConn, dstConn);
+			
+			if (hasUnresolvedError(dst)) {
+				logError("Found issues loading to " + dst);
+				logError("Aborting operation");
+				
+				return;
+			}
 		}
+		
+		if (getEtlOperationConfig().writeOperationHistory()) {
+			EtlStageAreaObjectDAO.saveAll(getAllSuccessifulProcessedAsEtlStageAreaObject(srcConn), srcConn);
+		}
+	}
+	
+	private boolean hasUnresolvedError(DstConf dst) {
+		for (LoadRecord lr : this.getAllRecordsAsLoadRecord(dst)) {
+			
+			if (lr.isInFailStatus()) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 	private void load(DstConf dstConf, Connection srcConn, Connection dstConn)
@@ -140,11 +162,6 @@ public class EtlLoadHelper {
 		} else {
 			throw new ForbiddenOperationException("Unsupported dstType '" + dstType + "'");
 		}
-		
-		if (getEtlOperationConfig().writeOperationHistory()) {
-			EtlStageAreaObjectDAO.saveAll(getAllSuccessifulProcessedAsEtlStageAreaObject(srcConn), srcConn);
-		}
-		
 	}
 	
 	private void loadAllToDb(DstConf dstConf, Connection srcConn, Connection dstConn)
@@ -154,11 +171,11 @@ public class EtlLoadHelper {
 			dstConf.fullLoad();
 		}
 		
-		beforeLoadToDb(dstConf, srcConn, dstConn);
+		this.beforeLoadToDb(dstConf, srcConn, dstConn);
 		
-		onLoadToDb(dstConf, dstConn);
+		this.onLoadToDb(dstConf, dstConn);
 		
-		afterLoadToDb(dstConf, srcConn, dstConn);
+		this.afterLoadToDb(dstConf, srcConn, dstConn);
 		
 	}
 	
@@ -175,15 +192,12 @@ public class EtlLoadHelper {
 		
 		if (getActionType().isCreate() || getActionType().isUpdate()) {
 			
-			if (dstConf.hasParentRefInfo()) {
-				for (LoadRecord loadRec : getReadyRecordsAsLoadRecord(dstConf)) {
-					if (loadRec.hasParentsWithDefaultValues()) {
-						tryToReloadDefaultParents(loadRec, srcConn, dstConn);
-					} else {
-						loadRec.setStatus(LoadStatus.SUCCESS);
-					}
+			for (LoadRecord loadRec : getReadyRecordsAsLoadRecord(dstConf)) {
+				if (loadRec.hasParentsWithDefaultValues()) {
+					tryToReloadDefaultParents(loadRec, srcConn, dstConn);
+				} else {
+					loadRec.setStatus(LoadStatus.SUCCESS);
 				}
-				
 			}
 		}
 	}
@@ -253,8 +267,7 @@ public class EtlLoadHelper {
 		if (getActionType().isCreate()) {
 			logDebug("Starting the insertion of " + objects.size() + " on db...");
 			
-			getProcessor().getTaskResultInfo().addAllFromOtherResult(
-			    DatabaseObjectDAO.insertAll(objects, dstConf, dstConn));
+			getProcessor().getTaskResultInfo().addAllFromOtherResult(DatabaseObjectDAO.insertAll(objects, dstConf, dstConn));
 			
 			logDebug(objects.size() + " records inserted on db!");
 		} else if (getActionType().isUpdate()) {

@@ -487,6 +487,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	@Override
+	public boolean hasPK() {
+		return this.primaryKey != null;
+	}
+	
+	@Override
 	@JsonIgnore
 	public String toString() {
 		String toString = "Table [" + getFullTableDescription();

@@ -65,7 +65,9 @@ public class LoadRecord {
 		
 		this.dstRecord.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(this.dstConf.getUniqueKeys(), this.dstRecord));
 		
-		this.resultItem = new EtlOperationItemResult<EtlDatabaseObject>(dstRecord);
+		this.resultItem = new EtlOperationItemResult<EtlDatabaseObject>(srcRecord);
+		
+		this.status = LoadStatus.UNDEFINED;
 	}
 	
 	public EtlDatabaseObject getSrcRecord() {
@@ -588,6 +590,11 @@ public class LoadRecord {
 	}
 	
 	@Override
+	public String toString() {
+		return "Etl from [" + getSrcRecord() + "] to " + getDstRecord();
+	}
+	
+	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof LoadRecord)) {
 			return false;
@@ -595,7 +602,7 @@ public class LoadRecord {
 		
 		LoadRecord other = (LoadRecord) obj;
 		
-		return this.getDstRecord().equals(other.getDstRecord());
+		return this.getSrcRecord().equals(other.getSrcRecord()) && this.getDstConf().equals(other.getDstConf());
 	}
 	
 }
