@@ -36,7 +36,7 @@ public class InconsistenceSolverEngine extends TaskProcessor<EtlDatabaseObject> 
 			}
 			catch (Exception e) {
 				logError(
-				    "Any error occurred processing record [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");
+				    "Any error occurred processing dstRecord [uuid: " + obj.getUuid() + ", id: " + obj.getObjectId() + "]");
 				
 				throw new RuntimeException(e);
 			}

@@ -4,8 +4,8 @@ package org.openmrs.module.epts.etl.exceptions;
  * This exception indicates a metadata Inconsistence state.
  * <pre>
  * 	An metada inconsistent state occure when one of this situations is observed:
- * 		1. The record from the remote site share a uuid from the central DB but both of them as diffents ID.
- * 		2. The record from the remote site share a "ID" from the central DB but both of them as diffents UUID.
+ * 		1. The dstRecord from the remote site share a uuid from the central DB but both of them as diffents ID.
+ * 		2. The dstRecord from the remote site share a "ID" from the central DB but both of them as diffents UUID.
  * </pre>
  * 
  * The metadata in Inconsistence state will be marked on the correspondent Stage table for averiguations by the data administrator. But all

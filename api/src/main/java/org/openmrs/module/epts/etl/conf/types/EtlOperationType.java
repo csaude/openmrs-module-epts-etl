@@ -11,7 +11,6 @@ public enum EtlOperationType {
 	
 	CONSOLIDATION,
 	EXPORT,
-	DATABASE_PREPARATION,
 	LOAD,
 	DB_MERGE_FROM_JSON,
 	TRANSPORT,
@@ -51,10 +50,6 @@ public enum EtlOperationType {
 	
 	public static boolean isDBMerge(String operationType) {
 		return EtlOperationType.valueOf(operationType).isDbMergeFromSourceDB();
-	}
-	
-	public static boolean isDatabasePreparation(String operationType) {
-		return EtlOperationType.valueOf(operationType).isDatabasePreparation();
 	}
 	
 	public static boolean isPojoGeneration(String operationType) {
@@ -120,10 +115,6 @@ public enum EtlOperationType {
 	public static boolean isSupportedOperation(String operationType) {
 		return CommonUtilities.getInstance().getPosOnArray(EtlOperationType.values(),
 		    EtlOperationType.valueOf(operationType)) >= 0;
-	}
-	
-	public boolean isDatabasePreparation() {
-		return this.equals(DATABASE_PREPARATION);
 	}
 	
 	public boolean isPojoGeneration() {

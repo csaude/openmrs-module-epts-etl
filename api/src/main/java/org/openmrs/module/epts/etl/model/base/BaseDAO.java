@@ -239,7 +239,7 @@ public abstract class BaseDAO {
 	 * @param params array of objects to fill question marks in the update string.
 	 * @param connection to use
 	 */
-	public static Integer executeQueryWithRetryOnError(String sql, Object[] params, Connection connection)
+	public static List<Long> executeQueryWithRetryOnError(String sql, Object[] params, Connection connection)
 	        throws DBException {
 		try {
 			return executeQueryWithoutRetry(sql, params, connection);
@@ -248,7 +248,7 @@ public abstract class BaseDAO {
 			if (!tryToSolveIssues(e, sql, params, connection)) {
 				throw e;
 			} else
-				return 0;
+				return null;
 		}
 	}
 	
@@ -270,23 +270,27 @@ public abstract class BaseDAO {
 		}
 	}
 	
-	public static Integer executeQueryWithoutRetry(String sql, Object[] params, Connection connection) throws DBException {
+	public static List<Long> executeQueryWithoutRetry(String sql, Object[] params, Connection connection)
+	        throws DBException {
 		PreparedStatement st = null;
 		
 		try {
+			
 			st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 			
 			loadParamsToStatment(st, params, connection);
 			
 			st.execute();
 			
+			List<Long> generatedKeys = new ArrayList<>();
+			
 			ResultSet rs = st.getGeneratedKeys();
 			
-			if (rs != null && rs.next()) {
-				return rs.getInt(1);
-			} else
-				return 0;
+			while (rs != null && rs.next()) {
+				generatedKeys.add(rs.getLong(1));
+			}
 			
+			return generatedKeys;
 		}
 		catch (SQLException e) {
 			throw new DBException(e);

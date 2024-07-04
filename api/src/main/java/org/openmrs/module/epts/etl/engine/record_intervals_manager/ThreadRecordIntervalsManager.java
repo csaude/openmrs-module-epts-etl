@@ -297,7 +297,7 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 			this.defineCurrentLimits(this.getCurrentLastRecordId() + 1);
 		} else
 			throw new ForbiddenOperationException(
-			        "You reached the max record. Curr Status: [" + this.getMinRecordId() + " - " + this.getMaxRecordId()
+			        "You reached the max dstRecord. Curr Status: [" + this.getMinRecordId() + " - " + this.getMaxRecordId()
 			                + "] Curr [" + this.getCurrentFirstRecordId() + " - " + this.getCurrentLastRecordId() + "]");
 	}
 	

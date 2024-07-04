@@ -90,10 +90,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql = record.getInsertSQLWithoutObjectId();
 		}
 		
-		long id = executeQueryWithRetryOnError(sql, params, conn);
+		List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 		
-		if (record.getObjectId().isSimpleId()) {
-			record.fastCreateSimpleNumericKey(id);
+		if (record.getObjectId().isSimpleId() && utilities.arrayHasElement(ids)) {
+			record.fastCreateSimpleNumericKey(ids.get(0));
 		}
 		
 	}
@@ -150,12 +150,12 @@ public class DatabaseObjectDAO extends BaseDAO {
 			    parentTableConfiguration.getSyncRecordClass(parentTableConfiguration.getSrcConnInfo()), sql, params, conn);
 		}
 		catch (Exception e) {
-			logger.info("Error trying do retrieve record on table " + parentTableConfiguration.getTableName() + "["
+			logger.info("Error trying do retrieve dstRecord on table " + parentTableConfiguration.getTableName() + "["
 			        + e.getMessage() + "]");
 			
 			TimeCountDown.sleep(2000);
 			
-			throw new RuntimeException("Error trying do retrieve record on table " + parentTableConfiguration.getTableName()
+			throw new RuntimeException("Error trying do retrieve dstRecord on table " + parentTableConfiguration.getTableName()
 			        + "[" + e.getMessage() + "]");
 		}
 	}
@@ -562,10 +562,18 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql += utilities.removeLastChar(values);
 			
 			try {
-				executeQueryWithRetryOnError(sql, params, conn);
+				List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 				
 				result.addAllToRecordsWithNoError(EtlOperationItemResult
 				        .parseFromEtlDatabaseObject(EtlDatabaseObject.collectAllSrcRelatedOBjects(objects)));
+				
+				if (utilities.arrayHasElement(ids) && objects.get(0).getObjectId().isSimpleId()) {
+					
+					int i = 0;
+					for (EtlDatabaseObject obj : objects) {
+						obj.fastCreateSimpleNumericKey(ids.get(++i));
+					}
+				}
 			}
 			catch (DBException e) {
 				for (EtlDatabaseObject obj : objects) {

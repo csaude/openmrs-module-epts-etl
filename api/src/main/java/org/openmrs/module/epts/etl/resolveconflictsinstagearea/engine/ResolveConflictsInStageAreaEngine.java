@@ -49,11 +49,11 @@ public class ResolveConflictsInStageAreaEngine extends TaskProcessor<SyncImportI
 					recInConflict.markAsInconsistent(getSyncTableConfiguration(), conn);
 				}
 				
-				logDebug("Done Processing record: " + obj.getRecordUuid() + "! Win: {" + generateRecInfo(mostRecent) + "} loosers: [" + loosers + "]");
+				logDebug("Done Processing dstRecord: " + obj.getRecordUuid() + "! Win: {" + generateRecInfo(mostRecent) + "} loosers: [" + loosers + "]");
 			} catch (Exception e) {
 				e.printStackTrace();
 				
-				logError("Any error occurred processing record [uuid: " + obj.getRecordUuid() + ", id: " + obj.getId() + "]");
+				logError("Any error occurred processing dstRecord [uuid: " + obj.getRecordUuid() + ", id: " + obj.getId() + "]");
 				
 				throw new RuntimeException(e);
 			}

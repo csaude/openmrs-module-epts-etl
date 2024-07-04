@@ -55,7 +55,8 @@ public class TableOperationProgressInfo extends BaseVO {
 		    processed);
 	}
 	
-	public TableOperationProgressInfo(OperationController<? extends EtlDatabaseObject> controller, EtlItemConfiguration etlItemConfiguration) {
+	public TableOperationProgressInfo(OperationController<? extends EtlDatabaseObject> controller,
+	    EtlItemConfiguration etlItemConfiguration) {
 		this.controller = controller;
 		this.etlItemConfiguration = etlItemConfiguration;
 		this.originAppLocationCode = determineAppLocationCode(controller);
@@ -72,8 +73,7 @@ public class TableOperationProgressInfo extends BaseVO {
 			return ((SiteOperationController<? extends EtlDatabaseObject>) controller).getAppOriginLocationCode();
 		}
 		
-		if (controller.getOperationConfig().isDatabasePreparationOperation()
-		        || controller.getOperationConfig().isPojoGeneration()
+		if (controller.getOperationConfig().isPojoGeneration()
 		        || controller.getOperationConfig().isResolveConflictsInStageArea()
 		        || controller.getOperationConfig().isMissingRecordsDetector()
 		        || controller.getOperationConfig().isOutdateRecordsDetector()
@@ -81,7 +81,8 @@ public class TableOperationProgressInfo extends BaseVO {
 		        || controller.getOperationConfig().isDBMergeFromSourceDB()
 		        || controller.getOperationConfig().isDataBaseMergeFromJSONOperation()
 		        || controller.getEtlConfiguration().isResolveProblems()
-		        || controller.getEtlConfiguration().isDetectGapesOnDbTables() || controller.getEtlConfiguration().isEtlProcess())
+		        || controller.getEtlConfiguration().isDetectGapesOnDbTables()
+		        || controller.getEtlConfiguration().isEtlProcess())
 			return "central_site";
 		
 		throw new ForbiddenOperationException("The originAppCode cannot be determined for "
@@ -125,7 +126,8 @@ public class TableOperationProgressInfo extends BaseVO {
 		this.originAppLocationCode = originAppLocationCode;
 	}
 	
-	public static String generateOperationId(OperationController<? extends EtlDatabaseObject> operationController, EtlItemConfiguration config) {
+	public static String generateOperationId(OperationController<? extends EtlDatabaseObject> operationController,
+	        EtlItemConfiguration config) {
 		return operationController.getControllerId() + "_" + config.getConfigCode();
 	}
 	
@@ -195,7 +197,7 @@ public class TableOperationProgressInfo extends BaseVO {
 	public void clear(Connection conn) throws DBException {
 		TableOperationProgressInfoDAO.delete(this, this.etlItemConfiguration, conn);
 	}
-
+	
 	@Override
 	public void setFieldValue(String fieldName, Object value) {
 		// TODO Auto-generated method stub

@@ -10,7 +10,7 @@ public class ConflictWithRecordNotYetAvaliableException extends DBException {
 	private EtlObject record;
 	
 	public ConflictWithRecordNotYetAvaliableException(EtlObject record, DBException e) {
-		super("The current thread tried to created a record that exists but is still not avaliable. Record " + record, e);
+		super("The current thread tried to created a dstRecord that exists but is still not avaliable. Record " + record, e);
 		
 		this.record = record;
 	}

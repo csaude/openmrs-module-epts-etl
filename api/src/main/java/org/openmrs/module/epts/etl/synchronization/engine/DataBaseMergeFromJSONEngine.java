@@ -39,8 +39,8 @@ public class DataBaseMergeFromJSONEngine extends TaskProcessor<SyncImportInfoVO>
 			SyncImportInfoDAO.markAsToBeCompletedInFuture(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
 		}
 		else{
-			for (EtlObject record : syncRecords) {
-				((SyncImportInfoVO)record).sync(this.getSyncTableConfiguration(), conn);
+			for (EtlObject dstRecord : syncRecords) {
+				((SyncImportInfoVO)dstRecord).sync(this.getSyncTableConfiguration(), conn);
 			}
 		}
 		

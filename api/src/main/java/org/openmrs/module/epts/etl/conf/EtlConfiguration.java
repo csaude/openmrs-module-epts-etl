@@ -65,8 +65,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private List<AbstractTableConfiguration> configuredTables;
 	
-	//If true, all operations defined within this conf won't run on start. But may run if this sync configuration is nested to another configuration
-	private boolean automaticStart;
+	private boolean manualStart;
 	
 	private String childConfigFilePath;
 	
@@ -134,6 +133,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.busyTableAliasName = new ArrayList<>();
 	}
 	
+	public boolean isManualStart() {
+		return manualStart;
+	}
+	
+	public void setManualStart(boolean manualStart) {
+		this.manualStart = manualStart;
+	}
+	
 	public String getConfigFilePath() {
 		return configFilePath;
 	}
@@ -148,6 +155,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	public void setSkippedRecordTabConf(EtlConfigurationTableConf skippedRecordTabConf) {
 		this.skippedRecordTabConf = skippedRecordTabConf;
+	}
+	
+	public boolean isDoTransformsPrimaryKeys() {
+		return !isDoNotTransformsPrimaryKeys();
 	}
 	
 	public boolean isDoNotTransformsPrimaryKeys() {
@@ -262,14 +273,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	public void setChildConfigFilePath(String childConfigFilePath) {
 		this.childConfigFilePath = childConfigFilePath;
-	}
-	
-	public boolean isAutomaticStart() {
-		return automaticStart;
-	}
-	
-	public void setAutomaticStart(boolean automaticStart) {
-		this.automaticStart = automaticStart;
 	}
 	
 	public EtlProcessType getProcessType() {

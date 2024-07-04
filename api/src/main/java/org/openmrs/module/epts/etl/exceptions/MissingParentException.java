@@ -30,7 +30,7 @@ public class MissingParentException extends DBException {
 	
 	public MissingParentException(EtlDatabaseObject etlObject, Integer parentId, String parentTable,
 	    String originAppLocationConde, ParentTable refInfo, DBException e) {
-		super("Missing Parent of record " + etlObject + "!!! Parent [table: " + parentTable + ", id: " + parentId + ", from:"
+		super("Missing Parent of dstRecord " + etlObject + "!!! Parent [table: " + parentTable + ", id: " + parentId + ", from:"
 		        + originAppLocationConde + "]", e);
 		
 		this.parentId = parentId;
@@ -46,7 +46,7 @@ public class MissingParentException extends DBException {
 	
 	public MissingParentException(EtlDatabaseObject etlObject, Oid parentId, String parentTable,
 	    String originAppLocationConde, ParentTable refInfo, DBException e) {
-		super("Missing parent of record " + etlObject + "!!! Parent: [table: " + parentTable + ", id: " + parentId
+		super("Missing parent of dstRecord " + etlObject + "!!! Parent: [table: " + parentTable + ", id: " + parentId
 		        + ", from:" + originAppLocationConde + "]", e);
 		
 		this.parentTable = parentTable;

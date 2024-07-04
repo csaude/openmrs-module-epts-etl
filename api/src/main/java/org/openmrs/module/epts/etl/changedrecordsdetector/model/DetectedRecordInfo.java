@@ -35,7 +35,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	private char operationType;
 	
 	/**
-	 * The application which performed the record detection
+	 * The application which performed the dstRecord detection
 	 */
 	private String appCode;
 	

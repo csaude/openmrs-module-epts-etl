@@ -121,7 +121,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 						
 						if (refInfo.getDefaultObject(dstConn) == null) {
 							getRelatedEtlConf()
-							        .logDebug("Creating default record for table " + refInfo.getFullTableDescription());
+							        .logDebug("Creating default dstRecord for table " + refInfo.getFullTableDescription());
 							
 							try {
 								refInfo.generateAndSaveDefaultObject(dstConn);

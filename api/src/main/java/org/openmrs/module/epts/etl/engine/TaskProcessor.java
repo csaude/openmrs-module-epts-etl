@@ -93,7 +93,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		return getRelatedOperationController().getEtlConfiguration();
 	}
 	
-	public EtlItemConfiguration getEtlConfiguration() {
+	public EtlItemConfiguration getEtlItemConfiguration() {
 		return monitor.getEtlItemConfiguration();
 	}
 	
@@ -127,7 +127,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 			records = getSearchParams().search(getLimits(), srcConn, dstConn);
 		}
 		
-		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlConfiguration().getConfigCode() + "' ON TABLE '"
+		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlItemConfiguration().getConfigCode() + "' ON TABLE '"
 		        + getSrcConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records) + "' RECORDS.");
 		
 		if (utilities.arrayHasElement(records)) {
@@ -140,7 +140,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 			
 			logDebug("TASK ON " + records.size() + " DONE!");
 		} else {
-			logDebug("No record found for etl");
+			logDebug("No dstRecord found for etl");
 		}
 	}
 	

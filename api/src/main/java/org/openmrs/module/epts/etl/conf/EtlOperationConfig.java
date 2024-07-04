@@ -14,7 +14,6 @@ import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
-import org.openmrs.module.epts.etl.databasepreparation.controller.DatabasePreparationController;
 import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportController;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
@@ -383,11 +382,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	@JsonIgnore
-	public boolean isDatabasePreparationOperation() {
-		return this.operationType.isDatabasePreparation();
-	}
-	
-	@JsonIgnore
 	public boolean isEtl() {
 		return this.operationType.isEtl();
 	}
@@ -506,8 +500,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			return new DetectMissingRecordsController(parent, this, appOriginCode);
 		} else if (isEtl()) {
 			return new EtlController(parent, this, appOriginCode);
-		} else if (isDatabasePreparationOperation()) {
-			return new DatabasePreparationController(parent, this);
 		} else if (isPojoGeneration()) {
 			return new PojoGenerationController(parent, this);
 		} else if (isExportOperation()) {
@@ -665,8 +657,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public static List<EtlOperationType> getSupportedOperationsInSourceSyncProcess() {
 		EtlOperationType[] supported = { EtlOperationType.EXPORT, EtlOperationType.TRANSPORT,
-		        EtlOperationType.INCONSISTENCY_SOLVER, EtlOperationType.DATABASE_PREPARATION,
-		        EtlOperationType.POJO_GENERATION };
+		        EtlOperationType.INCONSISTENCY_SOLVER, EtlOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -705,8 +696,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	public static List<EtlOperationType> getSupportedOperationsInDBInconsistencyCheckProcess() {
-		EtlOperationType[] supported = { EtlOperationType.INCONSISTENCY_SOLVER, EtlOperationType.DATABASE_PREPARATION,
-		        EtlOperationType.POJO_GENERATION };
+		EtlOperationType[] supported = { EtlOperationType.INCONSISTENCY_SOLVER, EtlOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -728,7 +718,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	public static List<EtlOperationType> getSupportedOperationsInDBQuickLoadProcess() {
-		EtlOperationType[] supported = { EtlOperationType.DATABASE_PREPARATION, EtlOperationType.QUICK_LOAD };
+		EtlOperationType[] supported = { EtlOperationType.QUICK_LOAD };
 		
 		return utilities.parseArrayToList(supported);
 	}
@@ -781,7 +771,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public static List<EtlOperationType> getSupportedOperationsInDestinationSyncProcess() {
 		EtlOperationType[] supported = { EtlOperationType.CONSOLIDATION, EtlOperationType.DB_MERGE_FROM_JSON,
-		        EtlOperationType.LOAD, EtlOperationType.DATABASE_PREPARATION, EtlOperationType.POJO_GENERATION };
+		        EtlOperationType.LOAD, EtlOperationType.POJO_GENERATION };
 		
 		return utilities.parseArrayToList(supported);
 	}

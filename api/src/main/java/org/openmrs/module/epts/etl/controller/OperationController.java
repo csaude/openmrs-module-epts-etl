@@ -544,8 +544,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		if (operationConfig.getRelatedEtlConfig().isSupposedToRunInOrigin()) {
 			subFolder = getOperationType().name().toLowerCase() + FileUtilities.getPathSeparator()
 			        + getEtlConfiguration().getOriginAppLocationCode();
-		} else if (operationConfig.getRelatedEtlConfig().isSupposedToHaveOriginAppCode()
-		        && !operationConfig.isDatabasePreparationOperation()) {
+		} else if (operationConfig.getRelatedEtlConfig().isSupposedToHaveOriginAppCode()) {
 			subFolder = getOperationType().name().toLowerCase() + FileUtilities.getPathSeparator()
 			        + getEtlConfiguration().getOriginAppLocationCode();
 		} else {
@@ -767,7 +766,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	public TableOperationProgressInfo retrieveProgressInfo(EtlItemConfiguration config) {
 		if (progressInfo != null && utilities().arrayHasElement(progressInfo.getItemsProgressInfo())) {
 			for (TableOperationProgressInfo item : progressInfo.getItemsProgressInfo()) {
-				if (item.getEtlConfiguration().	equals(config))
+				if (item.getEtlConfiguration().equals(config))
 					return item;
 			}
 		}

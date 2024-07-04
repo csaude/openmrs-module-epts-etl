@@ -47,15 +47,15 @@ public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 		
 		this.pojoGenerated = true;
 		
-		DBConnectionInfo mainApp = getEtlConfiguration().getSrcConnInfo();
+		DBConnectionInfo mainApp = getEtlItemConfiguration().getSrcConnInfo();
 		
-		if (!getEtlConfiguration().isFullLoaded()) {
-			getEtlConfiguration().fullLoad();
+		if (!getEtlItemConfiguration().isFullLoaded()) {
+			getEtlItemConfiguration().fullLoad();
 		}
 		
 		generate(mainApp, getSrcConf());
 		
-		List<EtlAdditionalDataSource> allAvaliableDataSources = getEtlConfiguration().getSrcConf()
+		List<EtlAdditionalDataSource> allAvaliableDataSources = getEtlItemConfiguration().getSrcConf()
 		        .getAvaliableExtraDataSource();
 		
 		for (EtlAdditionalDataSource t : allAvaliableDataSources) {
@@ -67,7 +67,7 @@ public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
 		if (getRelatedEtlConfiguration().hasDstConnInfo()) {
 			mappingAppInfo = getRelatedEtlConfiguration().getDstConnInfo();
 			
-			for (DstConf map : getEtlConfiguration().getDstConf()) {
+			for (DstConf map : getEtlItemConfiguration().getDstConf()) {
 				map.setRelatedConnInfo(mappingAppInfo);
 				
 				generate(mappingAppInfo, map);

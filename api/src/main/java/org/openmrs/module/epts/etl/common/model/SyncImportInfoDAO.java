@@ -19,8 +19,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		insertAllBatch(records, tableInfo, conn);
 	}
 	
-	public static void insertAllOneByOne(List<SyncImportInfoVO> records, TableConfiguration tableInfo,
-	        Connection conn) throws DBException {
+	public static void insertAllOneByOne(List<SyncImportInfoVO> records, TableConfiguration tableInfo, Connection conn)
+	        throws DBException {
 		for (SyncImportInfoVO record : records) {
 			try {
 				insert(record, tableInfo, conn);
@@ -119,7 +119,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		if (!utilities.arrayHasElement(record.getUniqueKeys()))
 			return;
 		
-		String tableName = tableInfo.generateFullStageUniqueKeysTableName();
+		String tableName = tableInfo.generateFullStageSrcUniqueKeysTableName();
 		
 		for (UniqueKeyInfo uk : record.getUniqueKeys()) {
 			
@@ -152,13 +152,11 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void insert(SyncImportInfoVO record, TableConfiguration tableInfo, Connection conn)
-	        throws DBException {
+	public static void insert(SyncImportInfoVO record, TableConfiguration tableInfo, Connection conn) throws DBException {
 		try {
 			Object[] params = { record.getRecordOriginId(), record.getJson(), record.getMigrationStatus(),
 			        record.getLastSyncTryErr(), record.getRecordOriginLocationCode(), record.getLastUpdateDate(),
-			        record.getDateCreated(), record.getDateChanged(), record.getDateVoided(), record.getConsistent(),
-			        record.getDestinationId() };
+			        record.getDateCreated(), record.getDateChanged(), record.getDateVoided(), record.getConsistent() };
 			
 			String sql = "";
 			
@@ -172,10 +170,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 			sql += "											 		record_date_created,\n";
 			sql += "											 		record_date_changed,\n";
 			sql += "											 		record_date_voided,\n";
-			sql += "													consistent,\n";
-			sql += "													destination_id)\n";
+			sql += "													consistent)\n";
 			sql += "	VALUES(?,\n";
-			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
 			sql += "		   ?,\n";
@@ -186,9 +182,9 @@ public class SyncImportInfoDAO extends BaseDAO {
 			sql += "		   ?,\n";
 			sql += "		   ?);";
 			
-			int id = executeQueryWithRetryOnError(sql, params, conn);
+			List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 			
-			record.setId(id);
+			record.setId(ids.get(0).intValue());
 			
 			insertUniqueKeyInfo(tableInfo, record, conn);
 			
@@ -200,8 +196,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		}
 	}
 	
-	public static void update(SyncImportInfoVO record, TableConfiguration tableInfo, Connection conn)
-	        throws DBException {
+	public static void update(SyncImportInfoVO record, TableConfiguration tableInfo, Connection conn) throws DBException {
 		Object[] params = { record.getJson(), record.getMigrationStatus(), record.getLastSyncTryErr(),
 		        record.getRecordOriginId(), record.getRecordOriginLocationCode() };
 		
@@ -217,8 +212,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static SyncImportInfoVO getByOriginIdAndLocation(TableConfiguration tableConfiguration,
-	        long originRecordId, String originAppLocationCode, Connection conn) throws DBException {
+	public static SyncImportInfoVO getByOriginIdAndLocation(TableConfiguration tableConfiguration, long originRecordId,
+	        String originAppLocationCode, Connection conn) throws DBException {
 		Object[] params = { originRecordId, originAppLocationCode };
 		
 		String sql = "";
@@ -311,18 +306,18 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return getGenericSpecificRecord(searchParams, "max", conn);
 	}
 	
-	public static SyncImportInfoVO getFirstMissingRecordInDestination(TableConfiguration tableConfiguration,
-	        Connection conn) throws DBException {
+	public static SyncImportInfoVO getFirstMissingRecordInDestination(TableConfiguration tableConfiguration, Connection conn)
+	        throws DBException {
 		return getMissingRecordInDestination(tableConfiguration, "min", conn);
 	}
 	
-	public static SyncImportInfoVO getLastMissingRecordInDestination(TableConfiguration tableConfiguration,
-	        Connection conn) throws DBException {
+	public static SyncImportInfoVO getLastMissingRecordInDestination(TableConfiguration tableConfiguration, Connection conn)
+	        throws DBException {
 		return getMissingRecordInDestination(tableConfiguration, "max", conn);
 	}
 	
-	private static SyncImportInfoVO getMissingRecordInDestination(TableConfiguration tableConfiguration,
-	        String function, Connection conn) throws DBException {
+	private static SyncImportInfoVO getMissingRecordInDestination(TableConfiguration tableConfiguration, String function,
+	        Connection conn) throws DBException {
 		Object[] params = {};
 		
 		String sql = "";
@@ -348,13 +343,13 @@ public class SyncImportInfoDAO extends BaseDAO {
 		return find(SyncImportInfoVO.class, sql, params, conn);
 	}
 	
-	public static SyncImportInfoVO getFirstRecordInDestination(TableConfiguration tableConfiguration,
-	        String appOriginCode, Connection conn) throws DBException {
+	public static SyncImportInfoVO getFirstRecordInDestination(TableConfiguration tableConfiguration, String appOriginCode,
+	        Connection conn) throws DBException {
 		return getRecordInDestination(tableConfiguration, "min", appOriginCode, conn);
 	}
 	
-	public static SyncImportInfoVO getLastRecordInDestination(TableConfiguration tableConfiguration,
-	        String appOriginCode, Connection conn) throws DBException {
+	public static SyncImportInfoVO getLastRecordInDestination(TableConfiguration tableConfiguration, String appOriginCode,
+	        Connection conn) throws DBException {
 		return getRecordInDestination(tableConfiguration, "max", appOriginCode, conn);
 	}
 	
@@ -386,7 +381,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 	}
 	
 	/**
-	 * For each originAppLocationId retrieve on record from the diven tableName
+	 * For each originAppLocationId retrieve on dstRecord from the diven tableName
 	 * 
 	 * @param tableName
 	 * @param conn
@@ -416,8 +411,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		SyncImportInfoVO record = BaseDAO.find(SyncImportInfoVO.class, sql, params, conn);
 		
 		if (record == null) {
-			throw new ForbiddenOperationException("This record: " + tableInfo.getTableName() + "[ uuid=" + object.getUuid()
-			        + ", origin=" + recordOriginLocationCode + " was not found on staging area");
+			throw new ForbiddenOperationException("This dstRecord: " + tableInfo.getTableName() + "[ uuid="
+			        + object.getUuid() + ", origin=" + recordOriginLocationCode + " was not found on staging area");
 		}
 		
 		return record;
@@ -441,8 +436,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void refreshLastMigrationTrySyncDate(TableConfiguration tableInfo,
-	        List<SyncImportInfoVO> syncRecords, Connection conn) throws DBException {
+	public static void refreshLastMigrationTrySyncDate(TableConfiguration tableInfo, List<SyncImportInfoVO> syncRecords,
+	        Connection conn) throws DBException {
 		Object[] params = { DateAndTimeUtilities.getCurrentSystemDate(conn), syncRecords.get(0).getId(),
 		        syncRecords.get(syncRecords.size() - 1).getId() };
 		
@@ -493,8 +488,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		changeConsistenceStatus(tableInfo, syncRecord, false, conn);
 	}
 	
-	public static void changeConsistenceStatus(TableConfiguration tableInfo, SyncImportInfoVO syncRecord,
-	        boolean consistent, Connection conn) throws DBException {
+	public static void changeConsistenceStatus(TableConfiguration tableInfo, SyncImportInfoVO syncRecord, boolean consistent,
+	        Connection conn) throws DBException {
 		Object[] params = { consistent, syncRecord.getId() };
 		
 		String sql = " UPDATE " + tableInfo.generateFullStageTableName() + " SET    consistent = ? " + " WHERE  id =  ? ";
@@ -514,8 +509,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void remove(SyncImportInfoVO record, TableConfiguration tableInfo, Connection conn)
-	        throws DBException {
+	public static void remove(SyncImportInfoVO record, TableConfiguration tableInfo, Connection conn) throws DBException {
 		Object[] params = { record.getId() };
 		
 		String sql = "";
@@ -527,13 +521,13 @@ public class SyncImportInfoDAO extends BaseDAO {
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
 	
-	public static void markAsToBeCompletedInFuture(SyncImportInfoVO record, TableConfiguration tableInfo,
-	        Connection conn) throws DBException {
+	public static void markAsToBeCompletedInFuture(SyncImportInfoVO record, TableConfiguration tableInfo, Connection conn)
+	        throws DBException {
 		markAsToBeCompletedInFuture(record, tableInfo, null, conn);
 	}
 	
-	private static void markAsToBeCompletedInFuture(SyncImportInfoVO record, TableConfiguration tableInfo,
-	        String msg, Connection conn) throws DBException {
+	private static void markAsToBeCompletedInFuture(SyncImportInfoVO record, TableConfiguration tableInfo, String msg,
+	        Connection conn) throws DBException {
 		Object[] params = { SyncImportInfoVO.MIGRATION_STATUS_INCOMPLETE,
 		        msg == null ? "Migrated BUT still miss some parent info" : msg, DateAndTimeUtilities.getCurrentDate(),
 		        record.getId() };

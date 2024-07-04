@@ -20,7 +20,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
- * This class is responsible for control record changes process
+ * This class is responsible for control dstRecord changes process
  * 
  * @author jpboane
  */

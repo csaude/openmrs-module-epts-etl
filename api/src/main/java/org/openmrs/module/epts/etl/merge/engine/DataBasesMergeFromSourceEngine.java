@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.merge.engine;
 
 /**
  * The data bases merge performes the merge of db from several sources to the central DB. It cames after {@link DBQuickCopyEngine} process.
- * The data bases merge load the minimal information of records from the stage area and then load the full record info from the origin schema of winning record 
+ * The data bases merge load the minimal information of records from the stage area and then load the full dstRecord info from the origin schema of winning dstRecord 
  * 
  */
 import java.sql.Connection;
@@ -51,7 +51,7 @@ public class DataBasesMergeFromSourceEngine extends TaskProcessor<EtlDatabaseObj
 				data.merge(srcConn);
 			}
 			catch (MissingParentException e) {
-				logWarn(record + " - " + e.getMessage() + " The record will be skipped");
+				logWarn(record + " - " + e.getMessage() + " The dstRecord will be skipped");
 			}
 			
 			i++;

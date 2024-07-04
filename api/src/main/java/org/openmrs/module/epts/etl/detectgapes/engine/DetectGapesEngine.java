@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
- * Detect gapes within records in a specific tables. For Eg. If in a table we have a min record as 1
+ * Detect gapes within records in a specific tables. For Eg. If in a table we have a min dstRecord as 1
  * and the max as 10 then there will be gapes if the table only contains 1,2,3,6,7,8,10. The gapes
  * are 4,5,9. The gapes are writen on an csv file
  * 
@@ -23,7 +23,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 public class DetectGapesEngine extends EtlProcessor {
 	
 	/*
-	 * The previous record
+	 * The previous dstRecord
 	 */
 	private EtlDatabaseObject prevRec;
 	

@@ -79,7 +79,7 @@ public class ProcessStarter implements ControllerStarter {
 			logger.debug("Found " + syncConfigs.size() + " Configuration files!");
 			
 			for (EtlConfiguration conf : syncConfigs) {
-				if (!conf.isAutomaticStart())
+				if (conf.isManualStart())
 					continue;
 				
 				logger.debug("Initializing ProcessController using " + conf.getConfigFilePath());

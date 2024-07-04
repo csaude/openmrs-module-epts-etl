@@ -24,7 +24,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 /**
- * This class is responsible for control record changes process
+ * This class is responsible for control dstRecord changes process
  * 
  * @author jpboane
  */

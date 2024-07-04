@@ -1,14 +1,10 @@
 package org.openmrs.module.epts.etl.etl.model;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
@@ -17,7 +13,6 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
-import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.engine.EtlProcessor;
@@ -26,7 +21,6 @@ import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.AbstractDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
@@ -35,21 +29,18 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class LoadRecord {
 	
 	protected static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	protected EtlDatabaseObject record;
+	protected EtlDatabaseObject srcRecord;
+	
+	protected EtlDatabaseObject dstRecord;
 	
 	protected DstConf dstConf;
 	
 	protected List<ParentInfo> parentsWithDefaultValues;
-	
-	protected boolean writeOperationHistory;
-	
-	protected long destinationRecordId;
 	
 	protected EtlProcessor processor;
 	
@@ -57,21 +48,56 @@ public class LoadRecord {
 	
 	private EtlOperationItemResult<EtlDatabaseObject> resultItem;
 	
-	public LoadRecord(EtlDatabaseObject record, SrcConf srcConf, DstConf dstConf, EtlProcessor engine,
-	    boolean writeOperationHistory) {
-		this.record = record;
+	private LoadStatus status;
+	
+	public LoadRecord(EtlDatabaseObject srcRecord, EtlDatabaseObject dstRecord, SrcConf srcConf, DstConf dstConf,
+	    EtlProcessor engine) {
+		
+		this.srcRecord = srcRecord;
+		this.dstRecord = dstRecord;
+		
 		this.srcConf = srcConf;
 		this.dstConf = dstConf;
 		
 		this.processor = engine;
 		
-		this.writeOperationHistory = writeOperationHistory;
-		
 		this.parentsWithDefaultValues = new ArrayList<ParentInfo>();
 		
-		this.record.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(this.dstConf.getUniqueKeys(), this.record));
+		this.dstRecord.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(this.dstConf.getUniqueKeys(), this.dstRecord));
 		
-		this.resultItem = new EtlOperationItemResult<EtlDatabaseObject>(record);
+		this.resultItem = new EtlOperationItemResult<EtlDatabaseObject>(dstRecord);
+	}
+	
+	public EtlDatabaseObject getSrcRecord() {
+		return srcRecord;
+	}
+	
+	public boolean isInReadyStatus() {
+		return this.getStatus().isReady();
+	}
+	
+	public boolean isInSuccessStatus() {
+		return this.getStatus().isSuccess();
+	}
+	
+	public boolean isInFailStatus() {
+		return this.getStatus().isFail();
+	}
+	
+	public boolean isInSkipStatus() {
+		return this.getStatus().isSkip();
+	}
+	
+	public boolean isInUndefinedStatus() {
+		return this.getStatus().isUndefined();
+	}
+	
+	public LoadStatus getStatus() {
+		return status;
+	}
+	
+	public void setStatus(LoadStatus status) {
+		this.status = status;
 	}
 	
 	public EtlProcessor getProcessor() {
@@ -94,10 +120,6 @@ public class LoadRecord {
 		return resultItem;
 	}
 	
-	public boolean isWriteOperationHistory() {
-		return writeOperationHistory;
-	}
-	
 	public EtlProcessor getTaskProcessor() {
 		return processor;
 	}
@@ -118,20 +140,12 @@ public class LoadRecord {
 		return getDstConf().getRelatedEtlConf();
 	}
 	
-	public EtlDatabaseObject getRecord() {
-		return record;
+	public EtlDatabaseObject getDstRecord() {
+		return dstRecord;
 	}
 	
 	public DstConf getDstConf() {
 		return dstConf;
-	}
-	
-	public void setDestinationRecordId(long destinationRecordId) {
-		this.destinationRecordId = destinationRecordId;
-	}
-	
-	public long getDestinationRecordId() {
-		return destinationRecordId;
 	}
 	
 	public List<ParentInfo> getParentsWithDefaultValues() {
@@ -140,91 +154,6 @@ public class LoadRecord {
 	
 	public boolean hasParentsWithDefaultValues() {
 		return utilities.arrayHasElement(getParentsWithDefaultValues());
-	}
-	
-	public void consolidateAndSaveData(Connection srcConn, Connection dstConn)
-	        throws ParentNotYetMigratedException, DBException {
-		
-		EtlDstType dstType = getTaskProcessor().determineDstType(this.getDstConf());
-		
-		if (dstType.isDb()) {
-			if (!getDstConf().isFullLoaded()) {
-				getDstConf().fullLoad();
-			}
-			
-			loadDstParentInfo(srcConn, dstConn);
-			
-			try {
-				
-				if (getEtlOperationConfig().getActionType().isCreate()) {
-					getRecord().save(getDstConf(), dstConn);
-				} else if (getEtlOperationConfig().getActionType().isUpdate()) {
-					getRecord().update(getDstConf(), dstConn);
-				} else if (getEtlOperationConfig().getActionType().isDelete()) {
-					getRecord().delete(dstConn);
-				} else {
-					throw new ForbiddenOperationException(
-					        "Unsupported operation " + getEtlOperationConfig().getActionType() + " on ETL");
-				}
-				
-				if (getDstConf().useSimpleNumericPk()) {
-					this.setDestinationRecordId(getRecord().getObjectId().getSimpleValueAsInt());
-				}
-			}
-			catch (DBException e) {
-				if (e.isDuplicatePrimaryOrUniqueKeyException()) {
-					
-					boolean existWinningRecInfo = utilities.arrayHasElement(getDstConf().getWinningRecordFieldsInfo());
-					boolean existObservationDateFields = utilities.arrayHasElement(getDstConf().getObservationDateFields());
-					
-					if (existObservationDateFields || existWinningRecInfo) {
-						EtlDatabaseObject recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this.getRecord(), dstConn);
-						
-						if (recordOnDB != null) {
-							((AbstractDatabaseObject) getRecord()).resolveConflictWithExistingRecord(recordOnDB,
-							    this.getDstConf(), dstConn);
-						} else {
-							getTaskProcessor().logWarn(
-							    "Conflict with non avaliable record found. This will be igored and the issue will be documented");
-						}
-						
-						if (getDstConf().useSimpleNumericPk()) {
-							this.setDestinationRecordId(getRecord().getObjectId().getSimpleValueAsInt());
-						}
-					}
-					
-				} else if (e.isIntegrityConstraintViolationException()) {
-					determineMissingMetadataParent(this, srcConn, dstConn);
-					
-					//If there is no missing metadata parent, throw exception
-					throw e;
-				} else
-					throw e;
-			}
-			
-			if (this.hasParentsWithDefaultValues()) {
-				reloadParentsWithDefaultValues(srcConn, dstConn);
-			}
-		} else if (dstType.isFile()) {
-			loadAllToFile(utilities.parseObjectToList_(this, LoadRecord.class));
-		} else {
-			throw new ForbiddenOperationException("Unsupported dstType '" + dstType + "'");
-		}
-	}
-	
-	public void resolveConflict(Connection srcConn, Connection dstConn) throws ParentNotYetMigratedException, DBException {
-		if (!getDstConf().isFullLoaded())
-			dstConf.fullLoad();
-		
-		loadDstParentInfo(srcConn, dstConn);
-		
-		EtlDatabaseObject recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this.getRecord(), dstConn);
-		
-		((AbstractDatabaseObject) record).resolveConflictWithExistingRecord(recordOnDB, this.getDstConf(), dstConn);
-		
-		if (!this.getParentsWithDefaultValues().isEmpty()) {
-			reloadParentsWithDefaultValues(srcConn, dstConn);
-		}
 	}
 	
 	public void reloadParentsWithDefaultValues(Connection srcConn, Connection dstConn)
@@ -254,21 +183,20 @@ public class LoadRecord {
 				dstParent = dst.transform(recordAsSrc, srcConn, getSrcConnInfo(), getDstConnInfo());
 				
 				if (dstParent != null) {
-					LoadRecord parentData = new LoadRecord(dstParent,
-					        parentInfo.getParentTableConfInDst().findRelatedSrcConf(), dst, getTaskProcessor(),
-					        this.isWriteOperationHistory());
+					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent,
+					        parentInfo.getParentTableConfInDst().findRelatedSrcConf(), dst, getTaskProcessor());
 					
 					try {
-						parentData.load(srcConn, dstConn);
+						EtlLoadHelper.quickLoad(parentData, srcConn, dstConn);
 					}
 					catch (DBException e) {
 						if (e.isIntegrityConstraintViolationException()) {
 							processor.logDebug("The parent for default for parent [" + parentInfo.getParentRecordInOrigin()
-							        + "] could not be loaded. The record [");
+							        + "] could not be loaded. The dstRecord [");
 							
 							this.getResultItem()
-							        .addInconsistence(InconsistenceInfo.generate(getRecord().generateTableName(),
-							            getRecord().getObjectId(), parentInfo.getParentTableConfInDst().getTableName(),
+							        .addInconsistence(InconsistenceInfo.generate(getDstRecord().generateTableName(),
+							            getDstRecord().getObjectId(), parentInfo.getParentTableConfInDst().getTableName(),
 							            parentInfo.getParentRecordInOrigin().getObjectId().getSimpleValueAsInt(), null,
 							            this.getDstConf().getOriginAppLocationCode()));
 							
@@ -277,8 +205,6 @@ public class LoadRecord {
 						}
 					}
 					
-					dstConf = dst;
-					
 					break;
 				}
 			}
@@ -286,11 +212,11 @@ public class LoadRecord {
 			EtlDatabaseObject parent = DatabaseObjectDAO.getByUniqueKeys(dstParent, dstConn);
 			
 			if (parent != null) {
-				getRecord().changeParentValue(parentInfo.getParentTableConfInDst(), parent);
+				getDstRecord().changeParentValue(parentInfo.getParentTableConfInDst(), parent);
 			} else {
 				getTaskProcessor().logWarn(
-				    "The parent " + parentInfo.getParentRecordInOrigin() + " exists on db but not avaliable yet. record "
-				            + this.getRecord() + ". The task will keep trying...");
+				    "The parent " + parentInfo.getParentRecordInOrigin() + " exists on db but not avaliable yet. dstRecord "
+				            + this.getDstRecord() + ". The task will keep trying...");
 				
 				TimeCountDown.sleep(10);
 			}
@@ -305,142 +231,42 @@ public class LoadRecord {
 		}
 		
 		for (ParentTable refInfo : getDstConf().getParentRefInfo()) {
-			if (!refInfo.isFullLoaded()) {
-				refInfo.tryToGenerateTableAlias(this.getEtlConfiguration());
-				
-				refInfo.fullLoad(dstConn);
-			}
+			performeParentInfoInitialization(dstConn, refInfo);
 			
-			if (!getRecord().hasAllPerentFieldsFilled(refInfo)) {
+			if (!getDstRecord().hasAllPerentFieldsFilled(refInfo)) {
 				continue;
 			}
 			
 			if (refInfo.isMetadata()) {
-				
-				EtlDatabaseObject parentInOrigin = getRecord().getRelatedParentObject(refInfo, getSrcConf(), srcConn);
-				EtlDatabaseObject parent = null;
-				
-				if (parentInOrigin != null) {
-					parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
-					
-					if (parent == null) {
-						getTaskProcessor().logWarn("Missing metadata " + parentInOrigin
-						        + ". This issue will be documented on inconsitence_info table");
-						
-						this.getResultItem().addInconsistence(
-						    InconsistenceInfo.generate(getRecord().generateTableName(), getRecord().getObjectId(),
-						        refInfo.getTableName(), refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
-						        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
-					}
-				} else {
-					getTaskProcessor().logWarn("Missing metadata " + refInfo.generateParentOidFromChild(getRecord())
-					        + ". This issue will be documented on inconsitence_info table");
-					
-					this.getResultItem()
-					        .addInconsistence(InconsistenceInfo.generate(getRecord().generateTableName(),
-					            getRecord().getObjectId(), refInfo.getTableName(),
-					            refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
-					            refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
-				}
+				tryToLoadMissingMetadataInfo(srcConn, dstConn, refInfo);
 				
 				continue;
 			}
 			
-			if (refInfo.useSharedPKKey()) {
-				if (!refInfo.getSharedKeyRefInfo().isFullLoaded()) {
-					refInfo.getSharedKeyRefInfo().tryToGenerateTableAlias(this.getEtlConfiguration());
-					
-					refInfo.getSharedKeyRefInfo().fullLoad(dstConn);
-				}
+			tryToInitializeSharedParentInfo(dstConn, refInfo);
+			
+			if (!checkIfParentMustBeLoaded(refInfo)) {
+				continue;
 			}
 			
-			if (refInfo.hasConditionalFields()) {
-				if (refInfo.hasMoreThanOneConditionalFields()) {
-					throw new ForbiddenOperationException("Currently not supported multiple conditional fields");
-				}
-				
-				String conditionalFieldName = refInfo.getConditionalFields().get(0).getName();
-				Object conditionalvalue = refInfo.getConditionalFields().get(0).getValue();
-				
-				if (!conditionalvalue.equals(getRecord().getFieldValue(conditionalFieldName).toString()))
-					continue;
-			}
-			
-			EtlDatabaseObject parentInOrigin = getRecord().getRelatedParentObject(refInfo, getSrcConf(), srcConn);
-			
-			EtlDatabaseObject sharedkeyParentInOrigin = null;
+			EtlDatabaseObject parentInOrigin = tryToLoadParentInOrigin(refInfo, srcConn);
 			
 			if (parentInOrigin == null) {
-				
-				if (refInfo.hasDefaultValueDueInconsistency()) {
-					
-					Oid key = refInfo.generateParentOidFromChild(getRecord());
-					
-					if (refInfo.useSimplePk()) {
-						key.asSimpleKey().setValue(refInfo.getDefaultValueDueInconsistency());
-					} else
-						throw new ForbiddenOperationException(
-						        "There is a defaultValueDueInconsistency but the key is not simple on table "
-						                + refInfo.getTableName());
-					
-					parentInOrigin = getRecord().getRelatedParentObjectOnSrc(refInfo, key, getSrcConf(), srcConn);
-				}
-				
-				this.getResultItem().addInconsistence(
-				    InconsistenceInfo.generate(getRecord().generateTableName(), getRecord().getObjectId(),
-				        refInfo.getTableName(), refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
-				        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
-				
-				if (parentInOrigin == null) {
-					continue;
-				}
+				continue;
 			}
 			
-			//Try to load the shared key parent and generate inconsistence if is not exists
-			if (refInfo.useSharedPKKey() && !refInfo.hasItsOwnKeys()) {
-				sharedkeyParentInOrigin = parentInOrigin.getSharedKeyParentRelatedObject(srcConn);
+			EtlDatabaseObject sharedkeyParentInOrigin;
+			
+			try {
+				sharedkeyParentInOrigin = tryToLoadSharedParentInOrigin(refInfo, parentInOrigin, srcConn);
+			}
+			catch (MissingParentException e) {
+				//Inconsistence found
 				
-				if (sharedkeyParentInOrigin == null && !refInfo.hasDefaultValueDueInconsistency()) {
-					this.getResultItem()
-					        .addInconsistence(InconsistenceInfo.generate(getRecord().generateTableName(),
-					            getRecord().getObjectId(), refInfo.getTableName(),
-					            refInfo.generateParentOidFromChild(getRecord()).getSimpleValue(),
-					            refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
-					
-					continue;
-				}
+				continue;
 			}
 			
-			EtlDatabaseObject parent = null;
-			
-			if (getTaskProcessor().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
-				parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
-			} else {
-				
-				//Retrieve parent using shared key parent unique key
-				if (sharedkeyParentInOrigin != null) {
-					EtlDatabaseObject recInDst = refInfo.getSharedKeyRefInfo().createRecordInstance();
-					recInDst.setRelatedConfiguration(refInfo.getSharedKeyRefInfo());
-					recInDst.copyFrom(sharedkeyParentInOrigin);
-					recInDst.loadUniqueKeyValues(refInfo.getSharedKeyRefInfo());
-					recInDst.loadObjectIdData(refInfo.getSharedKeyRefInfo());
-					
-					EtlDatabaseObject sharedPkParent = retrieveParentByUnikeKeys(recInDst, dstConn);
-					
-					if (sharedPkParent != null) {
-						parent = sharedPkParent.getSharedKeyChildRelatedObject(refInfo, dstConn);
-					}
-					
-				} else {
-					EtlDatabaseObject recInDst = refInfo.createRecordInstance();
-					recInDst.setRelatedConfiguration(refInfo);
-					recInDst.copyFrom(parentInOrigin);
-					recInDst.loadUniqueKeyValues(refInfo);
-					recInDst.loadObjectIdData(refInfo);
-					
-					parent = retrieveParentByUnikeKeys(recInDst, dstConn);
-				}
-			}
+			EtlDatabaseObject parent = getParentInDestination(parentInOrigin, sharedkeyParentInOrigin, refInfo, dstConn);
 			
 			if (parent == null) {
 				parent = refInfo.getDefaultObject(dstConn);
@@ -451,10 +277,193 @@ public class LoadRecord {
 				this.getParentsWithDefaultValues().add(new ParentInfo(refInfo, parentInOrigin));
 			}
 			
-			getRecord().changeParentValue(refInfo, parent);
+			getDstRecord().changeParentValue(refInfo, parent);
+		}
+	}
+	
+	/**
+	 * @param dstConn
+	 * @param refInfo
+	 * @param parentInOrigin
+	 * @param sharedkeyParentInOrigin
+	 * @param parent
+	 * @return
+	 * @throws DBException
+	 */
+	private EtlDatabaseObject getParentInDestination(EtlDatabaseObject parentInOrigin,
+	        EtlDatabaseObject sharedkeyParentInOrigin, ParentTable refInfo, Connection dstConn) throws DBException {
+		
+		EtlDatabaseObject parent = null;
+		
+		if (getTaskProcessor().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
+			parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
+		} else {
 			
+			//Retrieve parent using shared key parent unique key
+			if (sharedkeyParentInOrigin != null) {
+				EtlDatabaseObject recInDst = refInfo.getSharedKeyRefInfo().createRecordInstance();
+				recInDst.setRelatedConfiguration(refInfo.getSharedKeyRefInfo());
+				recInDst.copyFrom(sharedkeyParentInOrigin);
+				recInDst.loadUniqueKeyValues(refInfo.getSharedKeyRefInfo());
+				recInDst.loadObjectIdData(refInfo.getSharedKeyRefInfo());
+				
+				EtlDatabaseObject sharedPkParent = retrieveParentByUnikeKeys(recInDst, dstConn);
+				
+				if (sharedPkParent != null) {
+					parent = sharedPkParent.getSharedKeyChildRelatedObject(refInfo, dstConn);
+				}
+				
+			} else {
+				EtlDatabaseObject recInDst = refInfo.createRecordInstance();
+				recInDst.setRelatedConfiguration(refInfo);
+				recInDst.copyFrom(parentInOrigin);
+				recInDst.loadUniqueKeyValues(refInfo);
+				recInDst.loadObjectIdData(refInfo);
+				
+				parent = retrieveParentByUnikeKeys(recInDst, dstConn);
+			}
 		}
 		
+		return parent;
+	}
+	
+	private EtlDatabaseObject tryToLoadSharedParentInOrigin(ParentTable refInfo, EtlDatabaseObject parentInOrigin,
+	        Connection srcConn) throws DBException, MissingParentException {
+		
+		EtlDatabaseObject sharedkeyParentInOrigin = null;
+		
+		//Try to load the shared key parent and generate inconsistence if is not exists
+		if (refInfo.useSharedPKKey() && !refInfo.hasItsOwnKeys()) {
+			sharedkeyParentInOrigin = parentInOrigin.getSharedKeyParentRelatedObject(srcConn);
+			
+			if (sharedkeyParentInOrigin == null && !refInfo.hasDefaultValueDueInconsistency()) {
+				this.getResultItem().addInconsistence(
+				    InconsistenceInfo.generate(getDstRecord().generateTableName(), getDstRecord().getObjectId(),
+				        refInfo.getTableName(), refInfo.generateParentOidFromChild(getDstRecord()).getSimpleValue(),
+				        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+				
+				throw new MissingParentException(null);
+			}
+		}
+		
+		return sharedkeyParentInOrigin;
+	}
+	
+	private EtlDatabaseObject tryToLoadParentInOrigin(ParentTable refInfo, Connection srcConn) throws DBException {
+		EtlDatabaseObject parentInOrigin = getDstRecord().getRelatedParentObject(refInfo, getSrcConf(), srcConn);
+		
+		if (parentInOrigin == null) {
+			
+			if (refInfo.hasDefaultValueDueInconsistency()) {
+				
+				Oid key = refInfo.generateParentOidFromChild(getDstRecord());
+				
+				if (refInfo.useSimplePk()) {
+					key.asSimpleKey().setValue(refInfo.getDefaultValueDueInconsistency());
+				} else
+					throw new ForbiddenOperationException(
+					        "There is a defaultValueDueInconsistency but the key is not simple on table "
+					                + refInfo.getTableName());
+				
+				parentInOrigin = getDstRecord().getRelatedParentObjectOnSrc(refInfo, key, getSrcConf(), srcConn);
+			}
+			
+			this.getResultItem().addInconsistence(
+			    InconsistenceInfo.generate(getDstRecord().generateTableName(), getDstRecord().getObjectId(),
+			        refInfo.getTableName(), refInfo.generateParentOidFromChild(getDstRecord()).getSimpleValue(),
+			        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+		}
+		
+		return parentInOrigin;
+	}
+	
+	/**
+	 * Check if this records fulfill the condition for a parent if it is conditional
+	 * 
+	 * @param refInfo
+	 * @return true if this record fulfill the conditions for parent or if the parent is not
+	 *         conditional
+	 */
+	private boolean checkIfParentMustBeLoaded(ParentTable refInfo) {
+		if (refInfo.hasConditionalFields()) {
+			if (refInfo.hasMoreThanOneConditionalFields()) {
+				throw new ForbiddenOperationException("Currently not supported multiple conditional fields");
+			}
+			
+			String conditionalFieldName = refInfo.getConditionalFields().get(0).getName();
+			Object conditionalvalue = refInfo.getConditionalFields().get(0).getValue();
+			
+			if (!conditionalvalue.equals(getDstRecord().getFieldValue(conditionalFieldName).toString())) {
+				return false;
+			} else {
+				return true;
+			}
+		} else {
+			return true;
+		}
+	}
+	
+	/**
+	 * @param dstConn
+	 * @param refInfo
+	 * @throws DBException
+	 */
+	private void tryToInitializeSharedParentInfo(Connection dstConn, ParentTable refInfo) throws DBException {
+		if (refInfo.useSharedPKKey()) {
+			if (!refInfo.getSharedKeyRefInfo().isFullLoaded()) {
+				refInfo.getSharedKeyRefInfo().tryToGenerateTableAlias(this.getEtlConfiguration());
+				
+				refInfo.getSharedKeyRefInfo().fullLoad(dstConn);
+			}
+		}
+	}
+	
+	/**
+	 * @param srcConn
+	 * @param dstConn
+	 * @param refInfo
+	 * @throws DBException
+	 * @throws ForbiddenOperationException
+	 */
+	private void tryToLoadMissingMetadataInfo(Connection srcConn, Connection dstConn, ParentTable refInfo)
+	        throws DBException, ForbiddenOperationException {
+		EtlDatabaseObject parentInOrigin = getDstRecord().getRelatedParentObject(refInfo, getSrcConf(), srcConn);
+		EtlDatabaseObject parent = null;
+		
+		if (parentInOrigin != null) {
+			parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
+			
+			if (parent == null) {
+				getTaskProcessor().logWarn(
+				    "Missing metadata " + parentInOrigin + ". This issue will be documented on inconsitence_info table");
+				
+				this.getResultItem().addInconsistence(
+				    InconsistenceInfo.generate(getDstRecord().generateTableName(), getDstRecord().getObjectId(),
+				        refInfo.getTableName(), refInfo.generateParentOidFromChild(getDstRecord()).getSimpleValue(),
+				        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+			}
+		} else {
+			getTaskProcessor().logWarn("Missing metadata " + refInfo.generateParentOidFromChild(getDstRecord())
+			        + ". This issue will be documented on inconsitence_info table");
+			
+			this.getResultItem().addInconsistence(
+			    InconsistenceInfo.generate(getDstRecord().generateTableName(), getDstRecord().getObjectId(),
+			        refInfo.getTableName(), refInfo.generateParentOidFromChild(getDstRecord()).getSimpleValue(),
+			        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+		}
+	}
+	
+	/**
+	 * @param dstConn
+	 * @param refInfo
+	 * @throws DBException
+	 */
+	private void performeParentInfoInitialization(Connection dstConn, ParentTable refInfo) throws DBException {
+		if (!refInfo.isFullLoaded()) {
+			refInfo.tryToGenerateTableAlias(this.getEtlConfiguration());
+			
+			refInfo.fullLoad(dstConn);
+		}
 	}
 	
 	private EtlDatabaseObject retrieveParentByOid(ParentTable refInfo, EtlDatabaseObject parentInOrigin, Connection dstConn)
@@ -479,13 +488,13 @@ public class LoadRecord {
 	        throws MissingParentException, DBException {
 		TableConfiguration dstConf = loadRecord.getDstConf();
 		
-		EtlDatabaseObject record = loadRecord.getRecord();
+		EtlDatabaseObject dstRecord = loadRecord.getDstRecord();
 		
 		for (ParentTable refInfo : dstConf.getParentRefInfo()) {
 			if (!refInfo.isMetadata())
 				continue;
 			
-			Object oParentId = record.getParentValue(refInfo);
+			Object oParentId = dstRecord.getParentValue(refInfo);
 			
 			if (oParentId != null) {
 				Integer parentId = (Integer) oParentId;
@@ -494,162 +503,13 @@ public class LoadRecord {
 				    Oid.fastCreate(refInfo.getParentColumnOnSimpleMapping(), parentId), destConn);
 				
 				if (parent == null)
-					throw new MissingParentException(record, parentId, refInfo.getTableName(),
+					throw new MissingParentException(dstRecord, parentId, refInfo.getTableName(),
 					        loadRecord.getDstConf().getOriginAppLocationCode(), refInfo, null);
 			}
 		}
 	}
 	
-	public void save(Connection conn) throws DBException {
-		SyncImportInfoVO syncInfo = SyncImportInfoVO.generateFromSyncRecord(getRecord(),
-		    getDstConf().getOriginAppLocationCode(), false);
-		
-		syncInfo.setDestinationId((int) this.destinationRecordId);
-		
-		syncInfo.save(getDstConf(), conn);
-	}
-	
-	public void load(Connection srcConn, Connection destConn) throws DBException {
-		consolidateAndSaveData(srcConn, destConn);
-		
-		if (writeOperationHistory) {
-			save(srcConn);
-		}
-	}
-	
-	public void reLoad(Connection srcConn, Connection destConn) throws ParentNotYetMigratedException, DBException {
-		consolidateAndSaveData(srcConn, destConn);
-	}
-	
-	public static void loadAllToDb(List<LoadRecord> mergingRecs, Connection srcConn, Connection dstConn)
-	        throws ParentNotYetMigratedException, DBException {
-		
-		AbstractTableConfiguration config = mergingRecs.get(0).dstConf;
-		
-		if (!config.isFullLoaded()) {
-			config.fullLoad();
-		}
-		
-		EtlProcessor processor = mergingRecs.get(0).getTaskProcessor();
-		Engine<? extends EtlDatabaseObject> engine = processor.getEngine();
-		EtlOperationConfig etlOperationConfig = engine.getRelatedEtlOperationConfig();
-		
-		List<EtlDatabaseObject> objects = new ArrayList<EtlDatabaseObject>(mergingRecs.size());
-		List<LoadRecord> processedRecors = new ArrayList<>();
-		
-		processor.logDebug("Preparing the load of " + mergingRecs.size());
-		
-		for (LoadRecord loadRecord : mergingRecs) {
-			processor.logTrace("Preparing the load of record " + loadRecord.getRecord());
-			
-			boolean recursiveKeys = processor.isRunningInConcurrency()
-			        ? loadRecord.hasUnresolvedRecursiveRelationship(srcConn, dstConn)
-			        : false;
-			
-			if (recursiveKeys) {
-				processor.logDebug("Record " + loadRecord.getRecord()
-				        + " has recursive relationship and will be skipped to avoid dedlocks!");
-				
-				processor.getTaskResultInfo().addToRecordsWithRecursiveRelashionship(loadRecord.getRecord());
-				
-				loadRecord.getDstConf().saveSkippedRecord(loadRecord.getRecord(), srcConn);
-			} else {
-				if (etlOperationConfig.getActionType().isCreate() || etlOperationConfig.getActionType().isUpdate()) {
-					loadRecord.loadDstParentInfo(srcConn, dstConn);
-					
-					if (!loadRecord.getResultItem().hasUnresolvedInconsistences()) {
-						objects.add(loadRecord.getRecord());
-						processedRecors.add(loadRecord);
-						
-						if (loadRecord.getResultItem().hasInconsistences()) {
-							processor.logTrace(
-							    "Found inconsistences on record " + loadRecord.getRecord() + " but all were resolved!");
-						}
-					}
-				} else {
-					objects.add(loadRecord.getRecord());
-				}
-				
-				processor.getTaskResultInfo().add(loadRecord.getResultItem());
-			}
-		}
-		
-		if (etlOperationConfig.getActionType().isCreate()) {
-			processor.logDebug("Starting the insertion of " + objects.size() + " on db...");
-			
-			processor.getTaskResultInfo().addAllFromOtherResult(
-			    DatabaseObjectDAO.insertAll(objects, config, config.getOriginAppLocationCode(), dstConn));
-			
-			processor.logDebug(objects.size() + " records inserted on db!");
-		} else if (etlOperationConfig.getActionType().isUpdate()) {
-			processor.logDebug("Starting the upodate of " + objects.size() + " on db...");
-			
-			processor.getTaskResultInfo().addAllFromOtherResult(DatabaseObjectDAO.updateAll(objects, config, dstConn));
-			processor.logDebug(objects.size() + " records updated from db!");
-			
-		} else if (etlOperationConfig.getActionType().isDelete()) {
-			processor.logDebug("Starting the deletion of " + objects.size() + " on db...");
-			
-			processor.getTaskResultInfo().addAllFromOtherResult(DatabaseObjectDAO.deleteAll(objects, config, dstConn));
-			
-			processor.logDebug(objects.size() + " records deleted on db!");
-			
-		} else {
-			throw new ForbiddenOperationException("Unsupported operation " + etlOperationConfig.getActionType() + " on ETL");
-		}
-		
-		if (etlOperationConfig.getActionType().isCreate() || etlOperationConfig.getActionType().isUpdate()) {
-			
-			if (config.hasParentRefInfo()) {
-				
-				for (LoadRecord r : processedRecors) {
-					if (r.hasParentsWithDefaultValues()) {
-						
-						processor.logTrace("Reloading parents for record " + r.getRecord());
-						
-						r.reloadParentsWithDefaultValues(srcConn, dstConn);
-						
-						if (r.getResultItem().hasUnresolvedInconsistences()) {
-							processor
-							        .logDebug("The record has inconsistence after reloading of default parent.  Removing it "
-							                + r.getRecord());
-							r.getRecord().remove(dstConn);
-							
-							processor.getTaskResultInfo().remove(r.getResultItem());
-							
-							processor.getTaskResultInfo().add(r.getResultItem());
-						} else {
-							
-							Oid originalOid = r.getRecord().getObjectId();
-							
-							EtlDatabaseObject recByUniqueKeys = null;
-							
-							if (!r.getEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
-								recByUniqueKeys = DatabaseObjectDAO.getByUniqueKeys(r.getRecord(), dstConn);
-								
-								if (recByUniqueKeys != null) {
-									r.getRecord().setObjectId(recByUniqueKeys.getObjectId());
-									
-									r.getRecord().update(r.getDstConf(), dstConn);
-									
-									r.getRecord().setObjectId(originalOid);
-								} else {
-									r.getResultItem().setException(new ForbiddenOperationException("The record "
-									        + r.getRecord() + " where not found after the it has been loaded to db!"));
-								}
-							} else {
-								r.getRecord().update(r.getDstConf(), dstConn);
-								
-								r.getRecord().setObjectId(originalOid);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	private boolean hasUnresolvedRecursiveRelationship(Connection srcConn, Connection dstConn) throws DBException {
+	public boolean hasUnresolvedRecursiveRelationship(Connection srcConn, Connection dstConn) throws DBException {
 		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo())) {
 			return false;
 		}
@@ -664,17 +524,13 @@ public class LoadRecord {
 				continue;
 			}
 			
-			if (!refInfo.isFullLoaded()) {
-				refInfo.tryToGenerateTableAlias(this.getEtlConfiguration());
-				
-				refInfo.fullLoad(dstConn);
-			}
+			performeParentInfoInitialization(dstConn, refInfo);
 			
-			if (!getRecord().hasAllPerentFieldsFilled(refInfo)) {
+			if (!getDstRecord().hasAllPerentFieldsFilled(refInfo)) {
 				continue;
 			}
 			
-			Oid key = refInfo.generateParentOidFromChild(getRecord());
+			Oid key = refInfo.generateParentOidFromChild(getDstRecord());
 			
 			TableConfiguration tabConfInSrc = this.getSrcConf().findFullConfiguredConfInAllRelatedTable(
 			    refInfo.generateFullTableNameOnSchema(getSrcConf().getSchema()));
@@ -716,80 +572,30 @@ public class LoadRecord {
 		
 	}
 	
-	public static void loadAll(Map<String, List<LoadRecord>> mergingRecs, Connection srcConn, Connection dstConn)
-	        throws ParentNotYetMigratedException, DBException {
-		
-		for (String key : mergingRecs.keySet()) {
-			LoadRecord defaultRec = mergingRecs.get(key).get(0);
-			
-			EtlDstType dstType = defaultRec.getTaskProcessor().determineDstType(defaultRec.getDstConf());
-			
-			if (dstType.isDb()) {
-				loadAllToDb(mergingRecs.get(key), srcConn, dstConn);
-			} else if (dstType.isFile()) {
-				loadAllToFile(mergingRecs.get(key));
-			} else {
-				throw new ForbiddenOperationException("Unsupported dstType '" + dstType + "'");
-			}
-		}
-	}
-	
 	public EtlDatabaseObject parseToEtlObject() {
-		return this.getRecord();
+		return this.getDstRecord();
 	}
 	
-	public static List<EtlDatabaseObject> parseAllToEtlObject(List<LoadRecord> mergingRecs) {
-		List<EtlDatabaseObject> objs = new ArrayList<>(mergingRecs.size());
+	public static List<EtlDatabaseObject> parseToEtlObject(List<LoadRecord> recs) {
+		List<EtlDatabaseObject> parse = new ArrayList<>(recs.size());
 		
-		for (LoadRecord l : mergingRecs) {
-			objs.add(l.parseToEtlObject());
-		}
-		
-		return objs;
-	}
-	
-	public static void loadAllToFile(List<LoadRecord> mergingRecs) throws ParentNotYetMigratedException, DBException {
-		
-		EtlProcessor taskProcessor = mergingRecs.get(0).getTaskProcessor();
-		
-		Engine<EtlDatabaseObject> engine = taskProcessor.getEngine();
-		
-		List<EtlDatabaseObject> objs = parseAllToEtlObject(mergingRecs);
-		
-		String dataFile = engine.getDataDir().getAbsolutePath() + File.separator + objs.get(0).generateTableName();
-		
-		String data = null;
-		
-		if (engine.isJsonDst()) {
-			data = utilities.parseToJSON(objs);
-			
-			dataFile += ".json";
-		} else if (engine.isCsvDst()) {
-			dataFile += ".csv";
-			
-			data = utilities.parseToCSVWithoutHeader(objs);
-		} else if (engine.isDumpDst()) {
-			dataFile += ".sql";
-			
-			data = TableConfiguration.generateInsertDump(objs);
-		}
-		
-		synchronized (engine) {
-			boolean includeHeader = FileUtilities.isEmpty(new File(dataFile));
-			
-			if (includeHeader) {
-				FileUtilities.write(dataFile, utilities.generateCsvHeader(objs.get(0)));
+		if (recs != null) {
+			for (LoadRecord load : recs) {
+				parse.add(load.parseToEtlObject());
 			}
-			
-			FileUtilities.write(dataFile, data);
 		}
-		
-		taskProcessor.getTaskResultInfo()
-		        .addAllToRecordsWithNoError(EtlOperationItemResult.parseFromEtlDatabaseObject(objs));
+		return parse;
 	}
 	
-	public static String parseToJson(List<EtlDatabaseObject> objs) {
-		return utilities.parseToJSON(objs);
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof LoadRecord)) {
+			return false;
+		}
+		
+		LoadRecord other = (LoadRecord) obj;
+		
+		return this.getDstRecord().equals(other.getDstRecord());
 	}
 	
 }

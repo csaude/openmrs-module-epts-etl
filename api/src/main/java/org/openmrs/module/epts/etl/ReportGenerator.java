@@ -102,8 +102,7 @@ public class ReportGenerator {
 		return BaseDAO.find(SimpleValue.class, sql, null, conn).intValue();
 	}
 	
-	private static int countMissingParents(TableConfiguration config, String tableName, Connection conn)
-	        throws DBException {
+	private static int countMissingParents(TableConfiguration config, String tableName, Connection conn) throws DBException {
 		String sql = "SELECT COUNT(*) as value FROM " + config.generateFullStageTableName()
 		        + " WHERE last_migration_try_err LIKE '%" + tableName + ":%'";
 		
@@ -132,7 +131,7 @@ public class ReportGenerator {
 				
 				conf.validate();
 				
-				if (conf.isAutomaticStart()) {
+				if (!conf.isManualStart()) {
 					if (!conf.existsOnArray(syncConfigs)) {
 						syncConfigs.add(conf);
 					} else

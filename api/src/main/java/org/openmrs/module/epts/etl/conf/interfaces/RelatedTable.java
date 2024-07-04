@@ -161,7 +161,7 @@ public interface RelatedTable extends TableConfiguration {
 	}
 	
 	/**
-	 * Generates the parent oid based on data within a child record
+	 * Generates the parent oid based on data within a child dstRecord
 	 * 
 	 * @param obj
 	 * @return
@@ -187,7 +187,7 @@ public interface RelatedTable extends TableConfiguration {
 	}
 	
 	/**
-	 * Generates the child oid based on data within a parent record
+	 * Generates the child oid based on data within a parent dstRecord
 	 * 
 	 * @param obj
 	 * @return

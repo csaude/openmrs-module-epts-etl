@@ -36,7 +36,7 @@ public class DBExportEngine extends TaskProcessor<EtlDatabaseObject> {
 			logDebug("GENERATING '" + records.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
 			
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getMainSrcTableName(), syncRecordsAsOpenMRSObjects,
-			    getEtlConfiguration().getOriginAppLocationCode(), true);
+			    getEtlItemConfiguration().getOriginAppLocationCode(), true);
 			
 			File jsonFIle = generateJSONTempFile(jsonInfo,
 			    syncRecordsAsOpenMRSObjects.get(0).getObjectId().getSimpleValueAsInt(),
@@ -103,7 +103,7 @@ public class DBExportEngine extends TaskProcessor<EtlDatabaseObject> {
 	private void markAllAsSynchronized(List<EtlDatabaseObject> syncRecords, Connection srcConn) throws DBException {
 		
 		DatabaseObjectDAO.refreshLastSyncDateOnOrigin(syncRecords, getSrcConf(),
-		    getEtlConfiguration().getOriginAppLocationCode(), srcConn);
+		    getEtlItemConfiguration().getOriginAppLocationCode(), srcConn);
 		
 	}
 	

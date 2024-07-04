@@ -7,17 +7,17 @@ public enum EtlActionType {
 	
 	// @formatter:off
 	/**
-	 * This action creates new record on ETL operation
+	 * This action creates new dstRecord on ETL operation
 	 */
 	CREATE,
 	
 	/**
-	 * This action deletes the record on ETL operation
+	 * This action deletes the dstRecord on ETL operation
 	 */
 	DELETE,
 	
 	/**
-	 * This action update the record on ETL operation
+	 * This action update the dstRecord on ETL operation
 	 */
 	UPDATE,
 

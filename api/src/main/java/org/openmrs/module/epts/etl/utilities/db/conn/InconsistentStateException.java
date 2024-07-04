@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
- * Indicate that record is in inconsisten state which indicate that the record is orphaned of one or
+ * Indicate that dstRecord is in inconsisten state which indicate that the dstRecord is orphaned of one or
  * more parents
  * 
  * @author jpboane
@@ -23,7 +23,7 @@ public class InconsistentStateException extends EtlExceptionImpl {
 	Map<ParentTableImpl, Integer> missingParents;
 	
 	public InconsistentStateException() {
-		super("The record is in inconsistent state. There are missing some parents");
+		super("The dstRecord is in inconsistent state. There are missing some parents");
 	}
 	
 	public InconsistentStateException(EtlDatabaseObject obj, Map<ParentTableImpl, Integer> missingParents) {
@@ -40,7 +40,7 @@ public class InconsistentStateException extends EtlExceptionImpl {
 			    "[" + missing.getKey().getTableName() + ": " + missing.getValue() + "]", ";");
 		}
 		
-		return "The record [" + obj.generateTableName() + " = " + obj.getObjectId()
+		return "The dstRecord [" + obj.generateTableName() + " = " + obj.getObjectId()
 		        + "] is in inconsistent state. There are missing these parents: " + missingInfo;
 	}
 }

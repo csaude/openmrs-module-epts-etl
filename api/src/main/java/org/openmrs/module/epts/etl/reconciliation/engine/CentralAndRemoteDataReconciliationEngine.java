@@ -56,7 +56,7 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
 			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
-			logInfo(startingStrLog + ": Restoring record: [" + record + "]");
+			logInfo(startingStrLog + ": Restoring dstRecord: [" + record + "]");
 			
 			DataReconciliationRecord data = new DataReconciliationRecord((EtlDatabaseObject) record, getSrcConf(),
 			        ConciliationReasonType.MISSING);
@@ -83,7 +83,7 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
 			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
-			logInfo(startingStrLog + ": Updating record: [" + record + "]");
+			logInfo(startingStrLog + ": Updating dstRecord: [" + record + "]");
 			
 			DataReconciliationRecord.tryToReconciliate((EtlDatabaseObject) record, getSrcConf(), srcConn);
 			
@@ -102,7 +102,7 @@ public class CentralAndRemoteDataReconciliationEngine extends TaskProcessor<EtlD
 			String startingStrLog = utilities.garantirXCaracterOnNumber(i,
 			    ("" + getSearchParams().getQtdRecordPerSelected()).length()) + "/" + etlObjects.size();
 			
-			logInfo(startingStrLog + ": Removing record: [" + record + "]");
+			logInfo(startingStrLog + ": Removing dstRecord: [" + record + "]");
 			
 			DataReconciliationRecord data = new DataReconciliationRecord(((EtlDatabaseObject) record).getUuid(),
 			        getSrcConf(), ConciliationReasonType.PHANTOM);

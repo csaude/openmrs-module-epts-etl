@@ -10,84 +10,72 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.dbsync.model.SyncMetadata;
 import org.openmrs.module.epts.etl.dbsync.model.SyncModel;
 import org.openmrs.module.epts.etl.dbsync.model.utils.JsonUtils;
-import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
-import org.openmrs.module.epts.etl.etl.engine.EtlProcessor;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.etl.engine.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DbsyncJmsToSyncMsgEngine extends EtlProcessor {
+public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 	
-	List<GenericDatabaseObject> loadedSites;
-	
-	public DbsyncJmsToSyncMsgEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
-	    Boolean runningInConcurrency) {
-		super(monitor, limits, runningInConcurrency);
-		
-		loadedSites = new ArrayList<>();
-	}
+	static List<GenericDatabaseObject> loadedSites = new ArrayList<>();
 	
 	@Override
-	public EtlDatabaseObject transform(EtlDatabaseObject rec, DstConf mappingInfo, List<? extends EtlObject> etlObjects,
-	        Connection srcConn, Connection dstConn) throws DBException, ForbiddenOperationException {
+	public EtlDatabaseObject transform(EtlDatabaseObject rec, DstConf mappingInfo, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		
-		rec.loadObjectIdData(getSrcConf());
-		rec.getObjectId().setTabConf(getSrcConf());
+		TableConfiguration srcConf = (TableConfiguration) rec.getRelatedConfiguration();
 		
-		if (mappingInfo.getTableName().equals("jms_msg_bkp")) {
-			return mappingInfo.transform(rec, srcConn, getSrcConnInfo(), getDstConnInfo());
-		} else {
-			
-			String body = new String((byte[]) rec.getFieldValue("body"), StandardCharsets.UTF_8);
-			SyncModel syncModel = JsonUtils.unmarshalSyncModel(body);
-			
-			SyncMetadata md = syncModel.getMetadata();
-			
-			EtlDatabaseObject syncMessage = new GenericDatabaseObject(mappingInfo);
-			
-			syncMessage.setFieldValue("entityPayload", body);
-			syncMessage.setFieldValue("identifier", syncModel.getModel().getUuid());
-			syncMessage.setFieldValue("modelClassName", syncModel.getTableToSyncModelClass());
-			syncMessage.setFieldValue("operation", md.getOperation());
-			
-			syncMessage.setFieldValue("siteId", loadSiteInfo(md.getSourceIdentifier(), srcConn).getFieldValue("id"));
-			
-			syncMessage.setFieldValue("dateCreated", new Date());
-			syncMessage.setFieldValue("isSnapshot", md.getSnapshot());
-			syncMessage.setFieldValue("messageUuid", md.getMessageUuid());
-			syncMessage.setFieldValue("dateSentBySender", md.getDateSent());
-			syncMessage.setFieldValue("dateCreated", rec.getFieldValue("dateCreated"));
-			
-			Integer id = (Integer) rec.getFieldValue("id");
-			Integer syncMsgMaxId = Integer.parseInt(getRelatedEtlConfiguration().getParamValue("syncMsgMaxId"));
-			
-			syncMessage.setFieldValue("id", (id + syncMsgMaxId));
-			
-			syncMessage.setSrcRelatedObject(rec);
-			
-			return syncMessage;
+		rec.loadObjectIdData(srcConf);
+		rec.getObjectId().setTabConf(srcConf);
+		
+		String body = new String((byte[]) rec.getFieldValue("body"), StandardCharsets.UTF_8);
+		SyncModel syncModel = JsonUtils.unmarshalSyncModel(body);
+		
+		SyncMetadata md = syncModel.getMetadata();
+		
+		EtlDatabaseObject syncMessage = new GenericDatabaseObject(mappingInfo);
+		
+		syncMessage.setFieldValue("entityPayload", body);
+		syncMessage.setFieldValue("identifier", syncModel.getModel().getUuid());
+		syncMessage.setFieldValue("modelClassName", syncModel.getTableToSyncModelClass());
+		syncMessage.setFieldValue("operation", md.getOperation());
+		
+		syncMessage.setFieldValue("siteId", loadSiteInfo(srcConf, md.getSourceIdentifier(), srcConn).getFieldValue("id"));
+		
+		syncMessage.setFieldValue("dateCreated", new Date());
+		syncMessage.setFieldValue("isSnapshot", md.getSnapshot());
+		syncMessage.setFieldValue("messageUuid", md.getMessageUuid());
+		syncMessage.setFieldValue("dateSentBySender", md.getDateSent());
+		syncMessage.setFieldValue("dateCreated", rec.getFieldValue("dateCreated"));
+		
+		Integer id = (Integer) rec.getFieldValue("id");
+		Integer syncMsgMaxId = Integer.parseInt(mappingInfo.getRelatedEtlConf().getParamValue("syncMsgMaxId"));
+		
+		syncMessage.setFieldValue("id", (id + syncMsgMaxId));
+		
+		syncMessage.setSrcRelatedObject(rec);
+		
+		return syncMessage;
+	}
+	
+	static void addToLoadedSites(GenericDatabaseObject loadedSite) {
+		
+		if (!loadedSites.contains(loadedSite)) {
+			loadedSites.add(loadedSite);
 		}
 	}
 	
-	void addToLoadedSites(GenericDatabaseObject loadedSite) {
-		
-		if (!this.loadedSites.contains(loadedSite)) {
-			this.loadedSites.add(loadedSite);
-		}
-	}
-	
-	GenericDatabaseObject loadSiteInfo(String identifier, Connection conn) throws DBException {
+	static GenericDatabaseObject loadSiteInfo(TableConfiguration srcConf, String identifier, Connection conn)
+	        throws DBException {
 		GenericDatabaseObject loadedSite = findSiteOnLoadedSites(identifier);
 		
 		if (loadedSite == null) {
-			List<ParentTable> parents = getSrcConf().findAllRefToParent("site_info", getSrcConf().getSchema());
+			List<ParentTable> parents = srcConf.findAllRefToParent("site_info", srcConf.getSchema());
 			
 			ParentTable siteInfo = parents.get(0);
 			
@@ -101,20 +89,13 @@ public class DbsyncJmsToSyncMsgEngine extends EtlProcessor {
 		return loadedSite;
 	}
 	
-	GenericDatabaseObject findSiteOnLoadedSites(String identifier) {
-		for (GenericDatabaseObject site : this.loadedSites) {
+	static GenericDatabaseObject findSiteOnLoadedSites(String identifier) {
+		for (GenericDatabaseObject site : loadedSites) {
 			if (site.getFieldValue("identifier").equals(identifier)) {
 				return site;
 			}
 		}
 		
 		return null;
-	}
-	
-	@Override
-	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
-		for (EtlObject obj : objs) {
-			DatabaseObjectDAO.remove((EtlDatabaseObject) obj, srcConn);
-		}
 	}
 }

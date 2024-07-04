@@ -258,7 +258,7 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		add(new EtlOperationItemResult<T>(record, e), EtlOperationResultItemType.UNEXPECTED_ERRORS);
 	}
 	
-	public void add(EtlOperationItemResult<T> resultItem) {
+	public void addOrUpdate(EtlOperationItemResult<T> resultItem) {
 		if (!resultItem.hasType())
 			throw new ForbiddenOperationException("No type defined for item");
 		

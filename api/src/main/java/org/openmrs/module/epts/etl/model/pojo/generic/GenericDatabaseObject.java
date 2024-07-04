@@ -111,7 +111,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 							} else {
 								throw new ForbiddenOperationException("There are recursive relationship between "
 								        + conf.getTableName() + " and " + p.getTableName()
-								        + " which cannot automatically resolved...! Please manual create default record for one of thise table using id '-1'");
+								        + " which cannot automatically resolved...! Please manual create default dstRecord for one of thise table using id '-1'");
 							}
 						}
 						catch (InstantiationException | IllegalAccessException e) {
@@ -378,7 +378,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@JsonIgnore
 	public String generateTableName() {
 		if (this.relatedConfiguration == null) {
-			throw new ForbiddenOperationException("The relatedConfiguration  is not set for record [" + this + "]");
+			throw new ForbiddenOperationException("The relatedConfiguration  is not set for dstRecord [" + this + "]");
 		}
 		
 		return this.relatedConfiguration.getObjectName();
@@ -432,7 +432,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	public void copyFrom(EtlDatabaseObject copyFrom) {
 		
 		if (!hasRelatedConfiguration())
-			throw new ForbiddenOperationException("The relatedConfiguration  is not set for record [" + this + "]");
+			throw new ForbiddenOperationException("The relatedConfiguration  is not set for dstRecord [" + this + "]");
 		
 		if (!getRelatedConfiguration().isFullLoaded())
 			throw new ForbiddenOperationException("The relatedConfiguration  is not full loaded");

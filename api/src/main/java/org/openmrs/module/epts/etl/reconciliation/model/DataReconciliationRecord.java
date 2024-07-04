@@ -146,18 +146,18 @@ public class DataReconciliationRecord {
 	        throws ParentNotYetMigratedException, DBException {
 		utilities.throwReviewMethodException();
 		
-		/*SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
+		/*SyncImportInfoVO stageInfo = dstRecord.getRelatedSyncInfo();
 			
 			
 			for (RefInfo refInfo: dstConf.getParents()) {
 				if (refInfo.getRefTableConfiguration().isMetadata()) continue;
 				
-				Integer parentIdInOrigin = record.getParentValue(refInfo.getRefColumnAsClassAttName());
+				Integer parentIdInOrigin = dstRecord.getParentValue(refInfo.getRefColumnAsClassAttName());
 					 
 				if (parentIdInOrigin != null) {
 					EtlDatabaseObject parent;
 				
-					parent = record.retrieveParentInDestination(parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  true, conn);
+					parent = dstRecord.retrieveParentInDestination(parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),  true, conn);
 				
 			
 					if (parent == null) {
@@ -181,7 +181,7 @@ public class DataReconciliationRecord {
 						}
 					}
 					
-					record.changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);
+					dstRecord.changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);
 				}
 			}*/
 	}

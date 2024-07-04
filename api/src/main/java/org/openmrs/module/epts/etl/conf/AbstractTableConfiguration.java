@@ -54,7 +54,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	private List<Field> fields;
 	
 	/**
-	 * When merge existing records, the incoming record will win if the listed fields have the
+	 * When merge existing records, the incoming dstRecord will win if the listed fields have the
 	 * specified values. Note that, for the outer list the join condition will be "OR" and for the
 	 * inner list the join condition will be "AND"
 	 */

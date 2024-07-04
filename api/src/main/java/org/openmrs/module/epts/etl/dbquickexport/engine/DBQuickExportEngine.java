@@ -41,7 +41,7 @@ public class DBQuickExportEngine extends TaskProcessor<EtlDatabaseObject> {
 			}
 			
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getMainSrcTableName(), syncRecordsAsOpenMRSObjects,
-			    getEtlConfiguration().getOriginAppLocationCode(), false);
+			    getEtlItemConfiguration().getOriginAppLocationCode(), false);
 			
 			jsonInfo.clearOriginApplicationCodeForAllChildren();
 			

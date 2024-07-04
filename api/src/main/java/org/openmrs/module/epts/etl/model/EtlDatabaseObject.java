@@ -171,11 +171,11 @@ public interface EtlDatabaseObject extends EtlObject {
 	void consolidateData(TableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
 	
 	/**
-	 * Resolve the inconsistency of a record
+	 * Resolve the inconsistency of a dstRecord
 	 * <p>
 	 * The resolution consists on checking if all parent of this records are present in data base.
-	 * If not then this record will be moved to staging area and all its children will be moved in
-	 * cascade
+	 * If not then this dstRecord will be moved to staging area and all its children will be moved
+	 * in cascade
 	 * 
 	 * @param tableInfo
 	 * @param conn
@@ -220,10 +220,11 @@ public interface EtlDatabaseObject extends EtlObject {
 	Date getDateCreated();
 	
 	/**
-	 * Check if this record has exactily the same values in all fields with a given object
+	 * Check if this dstRecord has exactily the same values in all fields with a given object
 	 * 
 	 * @param srcObj
-	 * @return true if this record has exactily the same values in all fields with the given object
+	 * @return true if this dstRecord has exactily the same values in all fields with the given
+	 *         object
 	 */
 	boolean hasExactilyTheSameDataWith(EtlDatabaseObject srcObj);
 	
@@ -403,7 +404,7 @@ public interface EtlDatabaseObject extends EtlObject {
 	}
 	
 	/**
-	 * Check this record has at least one uniqueKey with all fields filled
+	 * Check this dstRecord has at least one uniqueKey with all fields filled
 	 * 
 	 * @param refInfo the parent info to check
 	 * @return true if has at least one uniqueKey with all fields filled or false in all the
@@ -547,4 +548,5 @@ public interface EtlDatabaseObject extends EtlObject {
 	default void delete(Connection conn) throws DBException {
 		DatabaseObjectDAO.remove(this, conn);
 	}
+	
 }

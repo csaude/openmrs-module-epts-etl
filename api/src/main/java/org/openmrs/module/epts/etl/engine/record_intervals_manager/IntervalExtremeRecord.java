@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.engine.record_intervals_manager;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 
 /**
- * Indicate the min and max record id to be processed in a certain thread or thread iteration
+ * Indicate the min and max dstRecord id to be processed in a certain thread or thread iteration
  */
 public class IntervalExtremeRecord {
 	

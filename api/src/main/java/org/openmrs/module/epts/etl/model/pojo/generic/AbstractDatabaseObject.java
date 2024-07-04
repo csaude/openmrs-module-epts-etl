@@ -113,7 +113,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	}
 	
 	/**
-	 * Retrieve a specific parent of this record. The parent is loaded using the origin (source)
+	 * Retrieve a specific parent of this dstRecord. The parent is loaded using the origin (source)
 	 * identification key
 	 * 
 	 * @param <T>
@@ -356,7 +356,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		} else if (utilities.arrayHasElement(tableConfiguration.getWinningRecordFieldsInfo())) {
 			for (List<org.openmrs.module.epts.etl.model.Field> fields : tableConfiguration.getWinningRecordFieldsInfo()) {
 				
-				//Start assuming that this record is updated
+				//Start assuming that this dstRecord is updated
 				boolean thisRecordIsUpdated = true;
 				
 				for (org.openmrs.module.epts.etl.model.Field field : fields) {
@@ -369,7 +369,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 						thisRecordFieldValue = this.getFieldValue(field.getNameAsClassAtt());
 					}
 					
-					//If at least one of field value is different from the winning value, assume that this record is not updated
+					//If at least one of field value is different from the winning value, assume that this dstRecord is not updated
 					if (!thisRecordFieldValue.toString().equals(field.getValue().toString())) {
 						thisRecordIsUpdated = false;
 						
@@ -449,9 +449,9 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			
 			DatabaseObjectDAO.insert(this, tableConfig, conn);
 		} else if (this.getUuid() != null && this.getUuid().equals(recordInConflict.getUuid())) {
-			//In case of uuid collision it is assumed that the records are same then the old record must be changed to the new one
+			//In case of uuid collision it is assumed that the records are same then the old dstRecord must be changed to the new one
 			
-			//1. Change existing record Uuid
+			//1. Change existing dstRecord Uuid
 			recordInConflict.setUuid(recordInConflict.getUuid() + "_");
 			
 			DatabaseObjectDAO.update(recordInConflict, conn);
@@ -460,7 +460,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			EtlDatabaseObject recOnDBById = DatabaseObjectDAO.getByOid(tableConfig, this.getObjectId(), conn);
 			
 			if (recOnDBById == null) {
-				//3. Save the new record
+				//3. Save the new dstRecord
 				DatabaseObjectDAO.insert(this, tableConfig, conn);
 			} else {
 				recOnDBById.changeObjectId(tableConfig, conn);
@@ -481,10 +481,10 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			        + ") has composite pk. YOu cannot change the object Id!");
 		}
 		
-		//1. backup the old record
+		//1. backup the old dstRecord
 		GenericDatabaseObject oldRecod = GenericDatabaseObject.fastCreate(getRelatedSyncInfo(), syncTableInfo);
 		
-		//2. Retrieve any avaliable id for old record
+		//2. Retrieve any avaliable id for old dstRecord
 		Integer avaliableId = DatabaseObjectDAO.getAvaliableObjectId(syncTableInfo, 999999999, conn);
 		
 		this.getObjectId().retrieveSimpleKey().setValue(avaliableId);
@@ -494,13 +494,13 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		//3. Save the new recod
 		DatabaseObjectDAO.insert(this, syncTableInfo, conn);
 		
-		//4. Change existing record's children to point to new parent
+		//4. Change existing dstRecord's children to point to new parent
 		oldRecod.changeParentForAllChildren(this, syncTableInfo, conn);
 		
-		//5. Remove old record
+		//5. Remove old dstRecord
 		oldRecod.remove(conn);
 		
-		//6. Reset record info
+		//6. Reset dstRecord info
 		this.setUuid(oldRecod.getUuid());
 		this.setRelatedSyncInfo(oldRecod.getRelatedSyncInfo());
 		
@@ -643,7 +643,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		}
 		
 		if (!syncTableInfo.getRelatedEtlConf().isSourceSyncProcess())
-			throw new EtlExceptionImpl("You cannot move record to stage area in a installation different to source") {
+			throw new EtlExceptionImpl("You cannot move dstRecord to stage area in a installation different to source") {
 				
 				private static final long serialVersionUID = 1L;
 				
@@ -777,7 +777,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 				}
 				
 				if (parent == null) {
-					//Try to recover the parent from stage_area and check if this record doesnt exist on destination with same uuid
+					//Try to recover the parent from stage_area and check if this dstRecord doesnt exist on destination with same uuid
 					
 					Oid oid = Oid.fastCreate(
 					    refInfo.getRefTableConfiguration().getPrimaryKey().retrieveSimpleKey().getName(), parentId);
@@ -909,7 +909,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 							    refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
 							
 							if (parent == null) {
-								//Try to recover the parent from stage_area and check if this record doesnt exist on destination with same uuid
+								//Try to recover the parent from stage_area and check if this dstRecord doesnt exist on destination with same uuid
 								
 								EtlDatabaseObject parentFromSource = new GenericDatabaseObject(
 								        refInfo.getRefTableConfiguration());
@@ -1017,7 +1017,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			    "[" + missing.getKey().getTableName() + ": " + missing.getValue() + "]", ";");
 		}
 		
-		return "The record [" + this.generateTableName() + " = " + this.getObjectId()
+		return "The dstRecord [" + this.generateTableName() + " = " + this.getObjectId()
 		        + "] is in inconsistent state. There are missing these parents: " + missingInfo;
 	}
 	
@@ -1029,7 +1029,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			    "[" + missing.getKey().getTableName() + ": " + missing.getValue() + "]", ";");
 		}
 		
-		return "The record [" + this.generateTableName() + " = " + this.getObjectId()
+		return "The dstRecord [" + this.generateTableName() + " = " + this.getObjectId()
 		        + "] is was in inconsistent state solved using some default parents.  These are missing parents: "
 		        + missingInfo;
 	}

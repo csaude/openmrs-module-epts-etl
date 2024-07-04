@@ -59,8 +59,6 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 	
 	private Integer migrationStatus;
 	
-	private Integer destinationId;
-	
 	private List<UniqueKeyInfo> uniqueKeys;
 	
 	public SyncImportInfoVO() {
@@ -84,15 +82,6 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 			this.dateVoided = resultSet.getDate("record_date_voided");
 		}
 		catch (SQLException e) {}
-	}
-	
-	@JsonIgnore
-	public Integer getDestinationId() {
-		return destinationId;
-	}
-	
-	public void setDestinationId(Integer destinationId) {
-		this.destinationId = destinationId;
 	}
 	
 	public List<UniqueKeyInfo> getUniqueKeys() {
