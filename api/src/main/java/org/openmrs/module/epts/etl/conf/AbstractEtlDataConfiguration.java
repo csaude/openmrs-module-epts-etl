@@ -10,7 +10,7 @@ public abstract class AbstractEtlDataConfiguration extends AbstractBaseConfigura
 		return relatedSyncConfiguration;
 	}
 	
-	public void setRelatedSyncConfiguration(EtlConfiguration relatedSyncConfiguration) {
+	public void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration) {
 		this.relatedSyncConfiguration = relatedSyncConfiguration;
 	}
 	

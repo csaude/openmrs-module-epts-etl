@@ -19,7 +19,7 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	public EtlConfigurationTableConf(String tableName, EtlConfiguration relatedConf) {
 		super.setTableName(tableName);
 		
-		setRelatedSyncConfiguration(relatedConf);
+		setRelatedEtlConfig(relatedConf);
 		setSchema(getSyncStageSchema());
 	}
 	

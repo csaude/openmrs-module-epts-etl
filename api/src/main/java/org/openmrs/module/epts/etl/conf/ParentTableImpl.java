@@ -52,7 +52,7 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	public void setChildTableConf(TableConfiguration childTableConf) {
 		this.childTableConf = (TableConfiguration) childTableConf;
 		
-		this.setRelatedSyncConfiguration(childTableConf.getRelatedEtlConf());
+		this.setRelatedEtlConfig(childTableConf.getRelatedEtlConf());
 	}
 	
 	public List<Field> getConditionalFields() {

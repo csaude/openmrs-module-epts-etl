@@ -434,7 +434,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	public void setEtlItemConfiguration(List<EtlItemConfiguration> etlItemConfiguration) {
 		if (etlItemConfiguration != null) {
 			for (EtlItemConfiguration config : etlItemConfiguration) {
-				config.setRelatedSyncConfiguration(this);
+				config.setRelatedEtlConfig(this);
 			}
 		}
 		
@@ -559,7 +559,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			}
 			
 			for (EtlItemConfiguration tc : this.etlItemConfiguration) {
-				tc.setRelatedSyncConfiguration(this);
+				tc.setRelatedEtlConfig(this);
 				tc.getSrcConf().setParentConf(tc);
 				
 				if (tc.getSrcConf().hasAlias()) {

@@ -165,7 +165,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				for (DstConf map : this.getDstConf()) {
 					map.setRelatedConnInfo(getRelatedEtlConf().getDstConnInfo());
 					
-					map.setRelatedSyncConfiguration(getRelatedEtlConf());
+					map.setRelatedEtlConfig(getRelatedEtlConf());
 					
 					map.setParentConf(this);
 					
@@ -200,17 +200,17 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	@Override
-	public void setRelatedSyncConfiguration(EtlConfiguration relatedSyncConfiguration) {
-		super.setRelatedSyncConfiguration(relatedSyncConfiguration);
+	public void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration) {
+		super.setRelatedEtlConfig(relatedSyncConfiguration);
 		
 		if (this.srcConf != null) {
-			this.srcConf.setRelatedSyncConfiguration(relatedSyncConfiguration);
+			this.srcConf.setRelatedEtlConfig(relatedSyncConfiguration);
 		}
 		
 		if (this.dstConf != null) {
 			
 			for (DstConf conf : this.dstConf) {
-				conf.setRelatedSyncConfiguration(relatedSyncConfiguration);
+				conf.setRelatedEtlConfig(relatedSyncConfiguration);
 			}
 		}
 	}
@@ -332,7 +332,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				map.setOnConflict(getSrcConf().onConflict());
 				map.setRelatedConnInfo(getRelatedEtlConf().getDstConnInfo());
 				
-				map.setRelatedSyncConfiguration(getRelatedEtlConf());
+				map.setRelatedEtlConfig(getRelatedEtlConf());
 				
 				map.setParentConf(this);
 				map.setDstType(getSrcConf().getDstType());

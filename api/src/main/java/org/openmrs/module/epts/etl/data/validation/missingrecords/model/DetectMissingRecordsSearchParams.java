@@ -30,7 +30,7 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 		this.relatedDstConf.setTableName(getSrcConf().getTableName());
 		this.relatedDstConf.setParentConf(relatedEngine.getEtlItemConfiguration());
 		this.relatedDstConf
-		        .setRelatedSyncConfiguration(relatedEngine.getEtlItemConfiguration().getRelatedEtlConf());
+		        .setRelatedEtlConfig(relatedEngine.getEtlItemConfiguration().getRelatedEtlConf());
 		
 		OpenConnection dstConn = null;
 		

@@ -389,7 +389,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public void setRelatedSyncConfiguration(EtlConfiguration relatedSyncConfiguration) {
+	public void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration) {
 	}
 	
 	@Override

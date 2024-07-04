@@ -7,7 +7,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	
 	EtlConfiguration getRelatedEtlConf();
 	
-	void setRelatedSyncConfiguration(EtlConfiguration relatedSyncConfiguration);
+	void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration);
 	
 	default DBConnectionInfo getSrcConnInfo() {
 		return this.getRelatedEtlConf().getSrcConnInfo();

@@ -35,7 +35,7 @@ public class ChildTable extends AbstractRelatedTable {
 	public void setParentTableConf(TableConfiguration parentTableConf) {
 		this.parentTableConf = parentTableConf;
 		
-		this.setRelatedSyncConfiguration(parentTableConf.getRelatedEtlConf());
+		this.setRelatedEtlConfig(parentTableConf.getRelatedEtlConf());
 	}
 	
 	@Override

@@ -273,7 +273,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setInsertSQLWithObjectId(toCloneFrom.getInsertSQLWithObjectId());
 		this.setInsertSQLWithoutObjectId(toCloneFrom.getInsertSQLWithoutObjectId());
 		this.setUpdateSql(toCloneFrom.getUpdateSql());
-		this.setRelatedSyncConfiguration(toCloneFrom.getRelatedEtlConf());
+		this.setRelatedEtlConfig(toCloneFrom.getRelatedEtlConf());
 		this.setSchema(toCloneFrom.getSchema());
 		
 		this.tryToGenerateTableAlias(toCloneFrom.getRelatedEtlConf());
@@ -618,7 +618,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 							
 							parentTabConf.setParentConf(this.getParentConf());
 							parentTabConf.setChildTableConf(this);
-							parentTabConf.setRelatedSyncConfiguration(getRelatedEtlConf());
+							parentTabConf.setRelatedEtlConfig(getRelatedEtlConf());
 							
 							parentTabConf.setSchema(foreignKeyRS.getString("PKTABLE_SCHEM"));
 							
@@ -799,7 +799,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						
 						childTabConf.setParentTableConf(this);
 						childTabConf.setParentConf(this.getParentConf());
-						childTabConf.setRelatedSyncConfiguration(getRelatedEtlConf());
+						childTabConf.setRelatedEtlConfig(getRelatedEtlConf());
 						childTabConf.setSchema(foreignKeyRS.getString("FKTABLE_SCHEM"));
 						
 						if (!childTabConf.hasSchema()) {
@@ -2108,7 +2108,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				clonedParent.setTableName(parentToCloneFrom.getTableName());
 				clonedParent.setSchema(tableToCloneTo.getSchema());
-				clonedParent.setRelatedSyncConfiguration(getRelatedEtlConf());
+				clonedParent.setRelatedEtlConfig(getRelatedEtlConf());
 				clonedParent.loadFields(conn);
 				clonedParent.setChildTableConf(tableToCloneTo);
 				clonedParent.setConditionalFields(parentToCloneFrom.getConditionalFields());

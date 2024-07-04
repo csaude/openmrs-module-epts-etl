@@ -538,7 +538,7 @@ public class LoadRecord {
 			if (tabConfInSrc == null) {
 				tabConfInSrc = new GenericTableConfiguration(this.getSrcConf());
 				tabConfInSrc.setTableName(refInfo.getTableName());
-				tabConfInSrc.setRelatedSyncConfiguration(this.getEtlConfiguration());
+				tabConfInSrc.setRelatedEtlConfig(this.getEtlConfiguration());
 				tabConfInSrc.fullLoad(srcConn);
 			}
 			
