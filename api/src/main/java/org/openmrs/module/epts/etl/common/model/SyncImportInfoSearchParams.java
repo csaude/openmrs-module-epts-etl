@@ -8,14 +8,14 @@ import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public abstract class SyncImportInfoSearchParams extends AbstractEtlSearchParams<SyncImportInfoVO>{
+public abstract class SyncImportInfoSearchParams extends AbstractEtlSearchParams<EtlStageRecordVO>{
 	private String appOriginLocationCode;
 	
-	public SyncImportInfoSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager<SyncImportInfoVO> limits) {
+	public SyncImportInfoSearchParams(Engine<EtlStageRecordVO> engine, ThreadRecordIntervalsManager<EtlStageRecordVO> limits) {
 		super(engine, limits);
 	}
 	
-	public SyncImportInfoSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager<SyncImportInfoVO> limits, String appOriginLocationCode) {
+	public SyncImportInfoSearchParams(Engine<EtlStageRecordVO> engine, ThreadRecordIntervalsManager<EtlStageRecordVO> limits, String appOriginLocationCode) {
 		super(engine, limits);
 	
 		this.appOriginLocationCode = appOriginLocationCode;
@@ -26,8 +26,8 @@ public abstract class SyncImportInfoSearchParams extends AbstractEtlSearchParams
 	}
 	
 	@Override
-	public Class<SyncImportInfoVO> getRecordClass() {
-		return SyncImportInfoVO.class;
+	public Class<EtlStageRecordVO> getRecordClass() {
+		return EtlStageRecordVO.class;
 	}
 	
 	@Override

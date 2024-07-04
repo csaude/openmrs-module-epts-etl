@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
@@ -184,16 +184,16 @@ public interface EtlDatabaseObject extends EtlObject {
 	 */
 	void resolveInconsistence(TableConfiguration tableInfo, Connection conn) throws InconsistentStateException, DBException;
 	
-	SyncImportInfoVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
+	EtlStageRecordVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws DBException;
 	
 	EtlDatabaseObject retrieveParentInDestination(Integer parentId, String recordOriginLocationCode,
 	        TableConfiguration parentTableConfiguration, boolean ignorable, Connection conn)
 	        throws ParentNotYetMigratedException, DBException;
 	
-	SyncImportInfoVO getRelatedSyncInfo();
+	EtlStageRecordVO getRelatedSyncInfo();
 	
-	void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo);
+	void setRelatedSyncInfo(EtlStageRecordVO relatedSyncInfo);
 	
 	String generateMissingInfo(Map<ParentTableImpl, Integer> missingParents);
 	

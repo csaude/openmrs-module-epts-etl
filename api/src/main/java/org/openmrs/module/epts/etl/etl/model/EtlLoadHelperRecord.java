@@ -73,4 +73,15 @@ public class EtlLoadHelperRecord {
 		
 		throw new ForbiddenOperationException("No dstRecord found for DstConf " + dstConf);
 	}
+	
+	public List<EtlDatabaseObject> getDstRecords() {
+		List<EtlDatabaseObject> dstrecords = new ArrayList<>();
+		
+		for (LoadRecord lr : getLoadRecord()) {
+			dstrecords.add(lr.getDstRecord());
+		}
+		
+		return dstrecords;
+	}
+	
 }

@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
@@ -265,20 +265,20 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public SyncImportInfoVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode,
+	public EtlStageRecordVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode,
 	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public SyncImportInfoVO getRelatedSyncInfo() {
+	public EtlStageRecordVO getRelatedSyncInfo() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo) {
+	public void setRelatedSyncInfo(EtlStageRecordVO relatedSyncInfo) {
 		// TODO Auto-generated method stub
 		
 	}

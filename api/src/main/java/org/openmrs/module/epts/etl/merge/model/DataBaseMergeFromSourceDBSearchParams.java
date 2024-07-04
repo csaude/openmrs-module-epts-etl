@@ -2,7 +2,7 @@ package org.openmrs.module.epts.etl.merge.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
@@ -11,19 +11,19 @@ import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchParams<SyncImportInfoVO> {
+public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchParams<EtlStageRecordVO> {
 	
 	private boolean selectAllRecords;
 	
-	public DataBaseMergeFromSourceDBSearchParams(Engine<SyncImportInfoVO> engine,
-	    ThreadRecordIntervalsManager<SyncImportInfoVO> limits) {
+	public DataBaseMergeFromSourceDBSearchParams(Engine<EtlStageRecordVO> engine,
+	    ThreadRecordIntervalsManager<EtlStageRecordVO> limits) {
 		super(engine, limits);
 	}
 	
 	@Override
-	public SearchClauses<SyncImportInfoVO> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	public SearchClauses<EtlStageRecordVO> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
 	        Connection dstConn) throws DBException {
-		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
+		SearchClauses<EtlStageRecordVO> searchClauses = new SearchClauses<EtlStageRecordVO>(this);
 		
 		searchClauses.addColumnToSelect("*");
 		searchClauses.addToClauseFrom(getSrcTableConf().generateFullStageTableName());
@@ -46,8 +46,8 @@ public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchPara
 	}
 	
 	@Override
-	public Class<SyncImportInfoVO> getRecordClass() {
-		return SyncImportInfoVO.class;
+	public Class<EtlStageRecordVO> getRecordClass() {
+		return EtlStageRecordVO.class;
 	}
 	
 	@Override
@@ -84,7 +84,7 @@ public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchPara
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+	public AbstractEtlSearchParams<EtlStageRecordVO> cloneMe() {
 		return null;
 	}
 	

@@ -309,6 +309,10 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				
 				getEtlItemConfiguration().tryToCreateDefaultRecordsForAllTables();
 				
+				if (getRelatedEtlOperationConfig().writeOperationHistory()) {
+					getEtlItemConfiguration().getSrcConf().generateStagingTables();
+				}
+				
 				logTrace("DEFAULT PARENT OBJECTS CREATED");
 				
 				if (getMaxSupportedProcessors() > 1) {

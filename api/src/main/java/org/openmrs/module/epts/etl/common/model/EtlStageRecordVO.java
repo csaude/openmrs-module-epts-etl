@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  * @author jpboane
  */
-public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
+public class EtlStageRecordVO extends BaseVO implements EtlDatabaseObject {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -59,9 +59,11 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 	
 	private Integer migrationStatus;
 	
-	private List<UniqueKeyInfo> uniqueKeys;
+	private EtlDatabaseObject srcObject;
 	
-	public SyncImportInfoVO() {
+	private List<EtlDatabaseObject> dstObject;
+	
+	public EtlStageRecordVO() {
 		this.migrationStatus = MIGRATION_STATUS_PENDING;
 		this.id = Integer.valueOf(0);
 	}
@@ -84,12 +86,20 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 		catch (SQLException e) {}
 	}
 	
-	public List<UniqueKeyInfo> getUniqueKeys() {
-		return uniqueKeys;
+	public EtlDatabaseObject getSrcObject() {
+		return srcObject;
 	}
 	
-	public void setUniqueKeys(List<UniqueKeyInfo> uniqueKeys) {
-		this.uniqueKeys = uniqueKeys;
+	public void setSrcObject(EtlDatabaseObject srcObject) {
+		this.srcObject = srcObject;
+	}
+	
+	public List<EtlDatabaseObject> getDstObject() {
+		return dstObject;
+	}
+	
+	public void setDstObject(List<EtlDatabaseObject> dstObject) {
+		this.dstObject = dstObject;
 	}
 	
 	@JsonIgnore
@@ -210,37 +220,27 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 		return migrationStatus;
 	}
 	
-	public static List<SyncImportInfoVO> generateFromSyncRecord(List<EtlDatabaseObject> syncRecords,
+	public static EtlStageRecordVO generateFromSyncRecord(EtlDatabaseObject srcRec, List<EtlDatabaseObject> dstRec,
 	        String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
-		List<SyncImportInfoVO> importInfo = new ArrayList<SyncImportInfoVO>();
+		EtlStageRecordVO syncInfo = new EtlStageRecordVO();
 		
-		for (EtlDatabaseObject syncRecord : syncRecords) {
-			importInfo.add(generateFromSyncRecord(syncRecord, recordOriginLocationCode, generateRecordJSON));
-		}
-		
-		return importInfo;
-	}
-	
-	public static SyncImportInfoVO generateFromSyncRecord(EtlDatabaseObject syncRecord, String recordOriginLocationCode,
-	        boolean generateRecordJSON) throws DBException {
-		SyncImportInfoVO syncInfo = new SyncImportInfoVO();
-		
-		syncInfo.setRecordOriginId(syncRecord.getObjectId().getSimpleValueAsInt());
+		syncInfo.setRecordOriginId(srcRec.getObjectId().getSimpleValueAsInt());
 		syncInfo.setRecordOriginLocationCode(recordOriginLocationCode);
 		
-		syncInfo.setDateChanged(syncRecord.getDateChanged());
-		syncInfo.setDateCreated(syncRecord.getDateCreated());
-		syncInfo.setDateVoided(syncRecord.getDateVoided());
-		syncInfo.setJson(generateRecordJSON ? utilities.parseToJSON(syncRecord) : null);
-		syncInfo.setLastUpdateDate(syncRecord.getDateChanged());
-		syncInfo.setUniqueKeys(syncRecord.getUniqueKeysInfo());
+		syncInfo.setDateChanged(srcRec.getDateChanged());
+		syncInfo.setDateCreated(srcRec.getDateCreated());
+		syncInfo.setDateVoided(srcRec.getDateVoided());
+		syncInfo.setJson(generateRecordJSON ? utilities.parseToJSON(srcRec) : null);
+		syncInfo.setLastUpdateDate(srcRec.getDateChanged());
+		syncInfo.setSrcObject(srcRec);
+		syncInfo.setDstObject(dstRec);
 		
 		return syncInfo;
 	}
 	
-	public static SyncImportInfoVO retrieveFromSyncRecord(TableConfiguration tableConfiguration,
+	public static EtlStageRecordVO retrieveFromSyncRecord(TableConfiguration tableConfiguration,
 	        EtlDatabaseObject syncRecord, String recordOriginLocationCode, Connection conn) throws DBException {
-		SyncImportInfoVO syncInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(tableConfiguration, syncRecord,
+		EtlStageRecordVO syncInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(tableConfiguration, syncRecord,
 		    recordOriginLocationCode, conn);
 		syncRecord.setRelatedSyncInfo(syncInfo);
 		
@@ -306,10 +306,10 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	public static List<EtlDatabaseObject> convertAllToOpenMRSObject(TableConfiguration tableInfo,
-	        Class<EtlDatabaseObject> objectClass, List<SyncImportInfoVO> toParse, Connection conn) {
+	        Class<EtlDatabaseObject> objectClass, List<EtlStageRecordVO> toParse, Connection conn) {
 		List<EtlDatabaseObject> records = new ArrayList<EtlDatabaseObject>();
 		
-		for (SyncImportInfoVO imp : toParse) {
+		for (EtlStageRecordVO imp : toParse) {
 			String modifiedJSON = imp.getJson();
 			
 			//String modifiedJSON = imp.getJson().replaceFirst(imp.retrieveSourcePackageName(tableInfo), tableInfo.getClasspackage());
@@ -368,10 +368,10 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 		if (obj == null)
 			return false;
 		
-		if (!(obj instanceof SyncImportInfoVO))
+		if (!(obj instanceof EtlStageRecordVO))
 			return false;
 		
-		SyncImportInfoVO otherObj = (SyncImportInfoVO) obj;
+		EtlStageRecordVO otherObj = (EtlStageRecordVO) obj;
 		
 		return this.getRecordOriginLocationCode().equalsIgnoreCase(otherObj.getRecordOriginLocationCode())
 		        && this.getRecordOriginId() == otherObj.getRecordOriginId();
@@ -394,10 +394,10 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 		return " RecordOriginId: " + recordOriginId + ", recordOriginLocationCode: " + recordOriginLocationCode;
 	}
 	
-	public static SyncImportInfoVO chooseMostRecent(List<SyncImportInfoVO> records) {
-		SyncImportInfoVO mostRecent = records.get(0);
+	public static EtlStageRecordVO chooseMostRecent(List<EtlStageRecordVO> records) {
+		EtlStageRecordVO mostRecent = records.get(0);
 		
-		for (SyncImportInfoVO rec : records) {
+		for (EtlStageRecordVO rec : records) {
 			if (rec.getDateChanged() != null) {
 				if (mostRecent.getDateChanged() == null) {
 					mostRecent = rec;
@@ -609,7 +609,7 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public SyncImportInfoVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode,
+	public EtlStageRecordVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode,
 	        Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
@@ -624,13 +624,13 @@ public class SyncImportInfoVO extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public SyncImportInfoVO getRelatedSyncInfo() {
+	public EtlStageRecordVO getRelatedSyncInfo() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo) {
+	public void setRelatedSyncInfo(EtlStageRecordVO relatedSyncInfo) {
 		// TODO Auto-generated method stub
 		
 	}

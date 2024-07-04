@@ -5,7 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
@@ -390,7 +390,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		return generateTableName();
 	}
 	
-	public static GenericDatabaseObject fastCreate(SyncImportInfoVO syncImportInfo, TableConfiguration tableConf) {
+	public static GenericDatabaseObject fastCreate(EtlStageRecordVO syncImportInfo, TableConfiguration tableConf) {
 		GenericDatabaseObject obj = new GenericDatabaseObject();
 		
 		obj.setRelatedConfiguration(tableConf);

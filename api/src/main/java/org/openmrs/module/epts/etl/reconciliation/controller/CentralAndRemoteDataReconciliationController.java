@@ -6,7 +6,7 @@ import java.sql.Statement;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
@@ -94,7 +94,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			conn = openSrcConnection();
 			
 			if (isMissingRecordsDetector()) {
-				SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(engine.getSrcConf(), conn);
+				EtlStageRecordVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(engine.getSrcConf(), conn);
 				
 				id = record != null ? record.getId() : 0;
 			} else if (isOutdateRecordsDetector()) {
@@ -131,7 +131,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			conn = openSrcConnection();
 			
 			if (isMissingRecordsDetector()) {
-				SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(engine.getSrcConf(), conn);
+				EtlStageRecordVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(engine.getSrcConf(), conn);
 				
 				id = record != null ? record.getId() : 0;
 			} else if (isOutdateRecordsDetector()) {

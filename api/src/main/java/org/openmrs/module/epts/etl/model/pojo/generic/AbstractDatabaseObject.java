@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
@@ -52,7 +52,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	protected String uuid;
 	
-	protected SyncImportInfoVO relatedSyncInfo;
+	protected EtlStageRecordVO relatedSyncInfo;
 	
 	protected List<UniqueKeyInfo> uniqueKeysInfo;
 	
@@ -84,7 +84,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		catch (SQLException e) {}
 		
 		try {
-			this.relatedSyncInfo = new SyncImportInfoVO();
+			this.relatedSyncInfo = new EtlStageRecordVO();
 			this.relatedSyncInfo.load(rs);
 			
 		}
@@ -241,12 +241,12 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	@Override
 	@JsonIgnore
-	public SyncImportInfoVO getRelatedSyncInfo() {
+	public EtlStageRecordVO getRelatedSyncInfo() {
 		return relatedSyncInfo;
 	}
 	
 	@Override
-	public void setRelatedSyncInfo(SyncImportInfoVO relatedSyncInfo) {
+	public void setRelatedSyncInfo(EtlStageRecordVO relatedSyncInfo) {
 		this.relatedSyncInfo = relatedSyncInfo;
 	}
 	
@@ -552,18 +552,13 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		}
 	}
 	
-	private void generateRelatedSyncInfo(TableConfiguration tableConfiguration, String recordOriginLocationCode,
-	        Connection conn) throws DBException {
-		this.relatedSyncInfo = SyncImportInfoVO.generateFromSyncRecord(this, recordOriginLocationCode, true);
-	}
-	
 	@Override
 	public void resolveInconsistence(TableConfiguration tableConfiguration, Connection conn)
 	        throws InconsistentStateException, DBException {
 		if (!tableConfiguration.isFullLoaded())
 			tableConfiguration.fullLoad();
 		
-		this.generateRelatedSyncInfo(tableConfiguration, tableConfiguration.getOriginAppLocationCode(), conn);
+		//this.generateRelatedSyncInfo(tableConfiguration, tableConfiguration.getOriginAppLocationCode(), conn);
 		
 		Map<ParentTableImpl, Integer> missingParents = loadMissingParents(tableConfiguration, conn);
 		
@@ -786,9 +781,9 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 					parentFromSource.setObjectId(oid);
 					
 					parentFromSource.setRelatedSyncInfo(
-					    SyncImportInfoVO.generateFromSyncRecord(parentFromSource, recordOriginLocationCode, true));
+					    EtlStageRecordVO.generateFromSyncRecord(parentFromSource, recordOriginLocationCode, true));
 					
-					SyncImportInfoVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(
+					EtlStageRecordVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(
 					    refInfo.getRefTableConfiguration(), parentFromSource, recordOriginLocationCode, conn);
 					
 					parentFromSource = sourceInfo.convertToOpenMRSObject(refInfo.getRefTableConfiguration(), conn);
@@ -823,7 +818,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	}
 	
 	@Override
-	public SyncImportInfoVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode,
+	public EtlStageRecordVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode,
 	        Connection conn) throws DBException {
 		return SyncImportInfoDAO.retrieveFromOpenMRSObject(tableInfo, this, recordOriginLocationCode, conn);
 	}
@@ -915,10 +910,10 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 								        refInfo.getRefTableConfiguration());
 								parentFromSource.setObjectId(oid);
 								
-								parentFromSource.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(parentFromSource,
+								parentFromSource.setRelatedSyncInfo(EtlStageRecordVO.generateFromSyncRecord(parentFromSource,
 								    getRelatedSyncInfo().getRecordOriginLocationCode(), true));
 								
-								SyncImportInfoVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(
+								EtlStageRecordVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(
 								    refInfo.getRefTableConfiguration(), parentFromSource,
 								    getRelatedSyncInfo().getRecordOriginLocationCode(), conn);
 								
@@ -954,7 +949,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			}
 			catch (ParentNotYetMigratedException e) {
 				EtlDatabaseObject parent = utilities.createInstance(refInfo.getRefObjectClass(tableInfo.getMainApp()));
-				parent.setRelatedSyncInfo(SyncImportInfoVO.generateFromSyncRecord(parent,
+				parent.setRelatedSyncInfo(EtlStageRecordVO.generateFromSyncRecord(parent,
 				    getRelatedSyncInfo().getRecordOriginLocationCode(), true));
 				
 				try {

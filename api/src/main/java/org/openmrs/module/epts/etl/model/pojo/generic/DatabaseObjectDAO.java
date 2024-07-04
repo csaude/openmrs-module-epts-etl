@@ -155,8 +155,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 			
 			TimeCountDown.sleep(2000);
 			
-			throw new RuntimeException("Error trying do retrieve dstRecord on table " + parentTableConfiguration.getTableName()
-			        + "[" + e.getMessage() + "]");
+			throw new RuntimeException("Error trying do retrieve dstRecord on table "
+			        + parentTableConfiguration.getTableName() + "[" + e.getMessage() + "]");
 		}
 	}
 	
@@ -511,7 +511,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static EtlOperationResultHeader<EtlDatabaseObject> insertAll(List<EtlDatabaseObject> objects,
-	        TableConfiguration tabConf, String recordOriginLocationCode, Connection conn) throws DBException {
+	        TableConfiguration tabConf, Connection conn) throws DBException {
 		
 		if (tabConf.isMetadata()) {
 			return insertAllMetadata(objects, tabConf, conn);

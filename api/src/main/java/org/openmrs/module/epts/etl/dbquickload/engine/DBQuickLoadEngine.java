@@ -6,7 +6,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -31,9 +31,9 @@ public class DBQuickLoadEngine extends EtlProcessor {
 	
 	@Override
 	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
-		List<SyncImportInfoVO> migrationRecordAsSyncInfo = utilities.parseList(etlObjects, SyncImportInfoVO.class);
+		List<EtlStageRecordVO> migrationRecordAsSyncInfo = utilities.parseList(etlObjects, EtlStageRecordVO.class);
 		
-		for (SyncImportInfoVO rec : migrationRecordAsSyncInfo)
+		for (EtlStageRecordVO rec : migrationRecordAsSyncInfo)
 			rec.setConsistent(1);
 		
 		this.logInfo("WRITING  '" + etlObjects.size() + "' " + getMainSrcTableName() + " TO STAGING TABLE");

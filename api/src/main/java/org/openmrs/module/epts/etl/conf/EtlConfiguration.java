@@ -547,13 +547,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			
 			this.defaultGeneratedObjectKeyTabConf = new EtlConfigurationTableConf(
 			        EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME, this);
-			this.defaultGeneratedObjectKeyTabConf.setSchema(getSyncStageSchema());
 			
 			this.skippedRecordTabConf = new EtlConfigurationTableConf(EtlConfiguration.SKIPPED_RECORD_TABLE_NAME, this);
-			this.skippedRecordTabConf.setSchema(getSyncStageSchema());
 			
 			this.etlRecordErrorTabCof = new EtlConfigurationTableConf(EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME, this);
-			this.etlRecordErrorTabCof.setSchema(getSyncStageSchema());
 			
 			for (EtlOperationConfig operation : this.getOperations()) {
 				if (operation.getMaxSupportedEngines() == 1) {

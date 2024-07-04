@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.synchronization.engine;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -12,9 +12,9 @@ import org.openmrs.module.epts.etl.synchronization.controller.DatabaseMergeFromJ
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DataBaseMergeFromJSONEngine extends TaskProcessor<SyncImportInfoVO> {
+public class DataBaseMergeFromJSONEngine extends TaskProcessor<EtlStageRecordVO> {
 	
-	public DataBaseMergeFromJSONEngine(Engine<SyncImportInfoVO> monitor, IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+	public DataBaseMergeFromJSONEngine(Engine<EtlStageRecordVO> monitor, IntervalExtremeRecord limits,  boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 	}
 	
@@ -24,7 +24,7 @@ public class DataBaseMergeFromJSONEngine extends TaskProcessor<SyncImportInfoVO>
 	}
 	
 	@Override
-	public void performeEtl(List<SyncImportInfoVO> records, Connection srcConn,
+	public void performeEtl(List<EtlStageRecordVO> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		
 		throw new ForbiddenOperationException("Rever este metodo!");
@@ -32,15 +32,15 @@ public class DataBaseMergeFromJSONEngine extends TaskProcessor<SyncImportInfoVO>
 		/*getRelatedOperationController().logInfo("SYNCHRONIZING '"+syncRecords.size() + "' "+ getSyncTableConfiguration().getTableName().toUpperCase());
 		
 		if (getSyncTableConfiguration().isDoIntegrityCheckInTheEnd(getRelatedOperationController().getOperationType()) && !getSyncTableConfiguration().useSharedPKKey()) {
-			List<OpenMRSObject> objects = SyncImportInfoVO.convertAllToOpenMRSObject(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
+			List<OpenMRSObject> objects = EtlStageRecordVO.convertAllToOpenMRSObject(getSyncTableConfiguration(), utilities.parseList(syncRecords, EtlStageRecordVO.class), conn);
 			
 			OpenMRSObjectDAO.insertAll(objects, getSyncTableConfiguration(), getRelatedOperationController().getAppOriginLocationCode(), conn);
 			
-			SyncImportInfoDAO.markAsToBeCompletedInFuture(getSyncTableConfiguration(), utilities.parseList(syncRecords, SyncImportInfoVO.class), conn);
+			SyncImportInfoDAO.markAsToBeCompletedInFuture(getSyncTableConfiguration(), utilities.parseList(syncRecords, EtlStageRecordVO.class), conn);
 		}
 		else{
 			for (EtlObject dstRecord : syncRecords) {
-				((SyncImportInfoVO)dstRecord).sync(this.getSyncTableConfiguration(), conn);
+				((EtlStageRecordVO)dstRecord).sync(this.getSyncTableConfiguration(), conn);
 			}
 		}
 		

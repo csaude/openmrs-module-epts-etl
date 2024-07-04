@@ -1,7 +1,7 @@
 package org.openmrs.module.epts.etl.merge.controller;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -55,7 +55,7 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 		try {
 			conn = openSrcConnection();
 			
-			SyncImportInfoVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(engine.getSrcConf(), conn);
+			EtlStageRecordVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(engine.getSrcConf(), conn);
 			
 			id = record != null ? record.getId() : 0;
 			
@@ -81,7 +81,7 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 		try {
 			conn = openSrcConnection();
 			
-			SyncImportInfoVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(engine.getSrcConf(), conn);
+			EtlStageRecordVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(engine.getSrcConf(), conn);
 			
 			id = record != null ? record.getId() : 0;
 			

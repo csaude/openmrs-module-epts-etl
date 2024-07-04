@@ -92,6 +92,18 @@ public class EtlLoadHelper {
 		return null;
 	}
 	
+	public List<EtlStageAreaObject> getAllSuccessifulProcessedAsEtlStageAreaObject(Connection conn) throws DBException {
+		List<EtlLoadHelperRecord> sucess = getAllSuccessfullyProcessedRecords();
+		
+		List<EtlStageAreaObject> info = new ArrayList<>(sucess.size());
+		
+		for (EtlLoadHelperRecord rec : sucess) {
+			info.add(EtlStageAreaObject.generate(rec.getSrcObject(), rec.getDstRecords(), conn));
+		}
+		
+		return info;
+	}
+	
 	/**
 	 * Finds all LoadRecord records which as same {@link DstConf} from the #loadRecordHelper
 	 */
@@ -130,7 +142,7 @@ public class EtlLoadHelper {
 		}
 		
 		if (getEtlOperationConfig().writeOperationHistory()) {
-			
+			EtlStageAreaObjectDAO.saveAll(getAllSuccessifulProcessedAsEtlStageAreaObject(srcConn), srcConn);
 		}
 		
 	}
@@ -242,7 +254,7 @@ public class EtlLoadHelper {
 			logDebug("Starting the insertion of " + objects.size() + " on db...");
 			
 			getProcessor().getTaskResultInfo().addAllFromOtherResult(
-			    DatabaseObjectDAO.insertAll(objects, dstConf, dstConf.getOriginAppLocationCode(), dstConn));
+			    DatabaseObjectDAO.insertAll(objects, dstConf, dstConn));
 			
 			logDebug(objects.size() + " records inserted on db!");
 		} else if (getActionType().isUpdate()) {

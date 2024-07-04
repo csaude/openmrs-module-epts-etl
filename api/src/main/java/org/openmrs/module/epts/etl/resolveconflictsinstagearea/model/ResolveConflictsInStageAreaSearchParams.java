@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.resolveconflictsinstagearea.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -18,15 +18,15 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	
 	private boolean selectAllRecords;
 	
-	public ResolveConflictsInStageAreaSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager<SyncImportInfoVO> limits) {
+	public ResolveConflictsInStageAreaSearchParams(Engine<EtlStageRecordVO> engine, ThreadRecordIntervalsManager<EtlStageRecordVO> limits) {
 		super(engine, limits);
 	}
 	
 	@Override
-	public SearchClauses<SyncImportInfoVO> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	public SearchClauses<EtlStageRecordVO> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
 	        Connection dstConn) throws DBException {
 	
-		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
+		SearchClauses<EtlStageRecordVO> searchClauses = new SearchClauses<EtlStageRecordVO>(this);
 		
 		searchClauses.addColumnToSelect("distinct (src_.record_uuid) record_uuid");
 		
@@ -61,8 +61,8 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	}
 	
 	@Override
-	public Class<SyncImportInfoVO> getRecordClass() {
-		return SyncImportInfoVO.class;
+	public Class<EtlStageRecordVO> getRecordClass() {
+		return EtlStageRecordVO.class;
 	}
 	
 	@Override
@@ -76,7 +76,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	
 	@Override
 	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		ThreadRecordIntervalsManager<SyncImportInfoVO> bkpLimits = this.getThreadRecordIntervalsManager();
+		ThreadRecordIntervalsManager<EtlStageRecordVO> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();
 		
@@ -94,7 +94,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	}
 
 	@Override
-	public AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+	public AbstractEtlSearchParams<EtlStageRecordVO> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}

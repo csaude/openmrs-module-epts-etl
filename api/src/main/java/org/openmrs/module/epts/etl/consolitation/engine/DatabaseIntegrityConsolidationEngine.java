@@ -34,7 +34,7 @@ public class DatabaseIntegrityConsolidationEngine extends TaskProcessor<EtlDatab
 		this.getMonitor().logInfo("CONSOLIDATING INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
 		for (OpenMRSObject obj : syncRecordsAsOpenMRSObjects) {
-			obj.setRelatedSyncInfo(SyncImportInfoVO.retrieveFromSyncRecord(getSyncTableConfiguration(), obj, getRelatedOperationController().getAppOriginLocationCode(), conn));
+			obj.setRelatedSyncInfo(EtlStageRecordVO.retrieveFromSyncRecord(getSyncTableConfiguration(), obj, getRelatedOperationController().getAppOriginLocationCode(), conn));
 			
 			obj.consolidateData(getSyncTableConfiguration(), conn);
 		}

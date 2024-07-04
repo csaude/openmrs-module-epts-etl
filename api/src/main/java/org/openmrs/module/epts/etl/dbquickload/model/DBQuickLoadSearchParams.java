@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.dbquickload.engine.QuickLoadLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -85,7 +85,7 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 			this.currJSONInfo = SyncJSONInfo.loadFromJSON(json);
 			this.currJSONInfo.setFileName(currJSONSourceFile.getAbsolutePath());
 			
-			for (SyncImportInfoVO rec : this.currJSONInfo.getSyncInfo()) {
+			for (EtlStageRecordVO rec : this.currJSONInfo.getSyncInfo()) {
 				rec.setRecordOriginLocationCode(this.currJSONInfo.getOriginAppLocationCode());
 			}
 			

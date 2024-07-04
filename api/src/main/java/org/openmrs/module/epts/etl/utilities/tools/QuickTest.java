@@ -280,7 +280,7 @@ public class QuickTest {
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);
 						
-						LoadRecord mr = new LoadRecord(destObject, etlConf.getSrcConf(), mappingInfo, null, false);
+						LoadRecord mr = new LoadRecord(rec, destObject, etlConf.getSrcConf(), mappingInfo, null);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));

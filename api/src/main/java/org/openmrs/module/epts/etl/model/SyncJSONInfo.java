@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
@@ -31,7 +31,7 @@ public class SyncJSONInfo {
 	
 	private String tableName;
 	
-	private List<SyncImportInfoVO> syncInfo;
+	private List<EtlStageRecordVO> syncInfo;
 	
 	/**
 	 * The minimal info of this object
@@ -41,17 +41,16 @@ public class SyncJSONInfo {
 	public SyncJSONInfo() {
 	}
 	
-	public SyncJSONInfo(String tableName, List<EtlDatabaseObject> syncRecords, String recordOriginLocationCode, boolean generateRecordJSON)
-	        throws DBException {
-		this.qtyRecords = utilities.arraySize(syncRecords);
-		this.syncInfo = SyncImportInfoVO.generateFromSyncRecord(syncRecords, recordOriginLocationCode, generateRecordJSON);
+	public SyncJSONInfo(String tableName, List<EtlDatabaseObject> syncRecords, String recordOriginLocationCode,
+	    boolean generateRecordJSON) throws DBException {
+		/*this.qtyRecords = utilities.arraySize(syncRecords);
+		this.syncInfo = EtlStageRecordVO.generateFromSyncRecord(syncRecords, recordOriginLocationCode, generateRecordJSON);
 		this.dateGenerated = DateAndTimeUtilities.getCurrentDate();
 		this.originAppLocationCode = recordOriginLocationCode;
-		this.tableName = tableName;
+		this.tableName = tableName;*/
 	}
 	
-	public SyncJSONInfo(String recordOriginLocationCode)
-	        throws DBException {
+	public SyncJSONInfo(String recordOriginLocationCode) throws DBException {
 		this.dateGenerated = DateAndTimeUtilities.getCurrentDate();
 		this.originAppLocationCode = recordOriginLocationCode;
 	}
@@ -64,11 +63,11 @@ public class SyncJSONInfo {
 		this.tableName = tableName;
 	}
 	
-	public List<SyncImportInfoVO> getSyncInfo() {
+	public List<EtlStageRecordVO> getSyncInfo() {
 		return syncInfo;
 	}
 	
-	public void setSyncInfo(List<SyncImportInfoVO> syncInfo) {
+	public void setSyncInfo(List<EtlStageRecordVO> syncInfo) {
 		this.syncInfo = syncInfo;
 	}
 	
@@ -96,8 +95,8 @@ public class SyncJSONInfo {
 		this.dateGenerated = dateGenerated;
 	}
 	
-	public static SyncJSONInfo generate(String tableName, List<EtlDatabaseObject> syncRecords, String recordOriginLocationCode,
-	        boolean generateRecordJSON) throws DBException {
+	public static SyncJSONInfo generate(String tableName, List<EtlDatabaseObject> syncRecords,
+	        String recordOriginLocationCode, boolean generateRecordJSON) throws DBException {
 		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(tableName, syncRecords, recordOriginLocationCode, generateRecordJSON);
 		
 		return syncJSONInfo;
@@ -107,7 +106,7 @@ public class SyncJSONInfo {
 		SyncJSONInfo syncJSONInfo = new SyncJSONInfo(recordOriginLocationCode);
 		
 		return syncJSONInfo;
-	}	
+	}
 	
 	@JsonIgnore
 	public String parseToJSON() {
@@ -176,7 +175,7 @@ public class SyncJSONInfo {
 		if (utilities.arrayHasNoElement(this.syncInfo))
 			return;
 		
-		for (SyncImportInfoVO info : this.syncInfo) {
+		for (EtlStageRecordVO info : this.syncInfo) {
 			info.setRecordOriginLocationCode(null);
 		}
 		

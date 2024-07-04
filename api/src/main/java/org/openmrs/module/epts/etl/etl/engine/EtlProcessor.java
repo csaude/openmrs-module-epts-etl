@@ -68,7 +68,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 					if (dstObject != null) {
 						logTrace("dstRecord " + srcRecord + " transforming to " + dstConn);
 						
-						LoadRecord etlRec = initEtlRecord(srcRecord, dstObject, mappingInfo, false);
+						LoadRecord etlRec = initEtlRecord(srcRecord, dstObject, mappingInfo);
 						
 						loadHelper.addRecord(etlRec);
 						
@@ -126,9 +126,8 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		return transformed;
 	}
 	
-	public LoadRecord initEtlRecord(EtlDatabaseObject srcObject, EtlDatabaseObject destObject, DstConf mappingInfo,
-	        boolean writeOperationHistory) {
-		return new LoadRecord(srcObject, destObject, getSrcConf(), mappingInfo, this, writeOperationHistory);
+	public LoadRecord initEtlRecord(EtlDatabaseObject srcObject, EtlDatabaseObject destObject, DstConf mappingInfo) {
+		return new LoadRecord(srcObject, destObject, getSrcConf(), mappingInfo, this);
 	}
 	
 	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {

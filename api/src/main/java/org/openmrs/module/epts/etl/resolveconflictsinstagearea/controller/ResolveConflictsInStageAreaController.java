@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
@@ -24,23 +24,23 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class ResolveConflictsInStageAreaController extends OperationController<SyncImportInfoVO> {
+public class ResolveConflictsInStageAreaController extends OperationController<EtlStageRecordVO> {
 	
 	public ResolveConflictsInStageAreaController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig);
 	}
 	
 	@Override
-	public TaskProcessor<SyncImportInfoVO> initRelatedTaskProcessor(Engine<SyncImportInfoVO> monitor,
+	public TaskProcessor<EtlStageRecordVO> initRelatedTaskProcessor(Engine<EtlStageRecordVO> monitor,
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		return new ResolveConflictsInStageAreaEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<SyncImportInfoVO> initMainSearchParams(
-	        ThreadRecordIntervalsManager<SyncImportInfoVO> intervalsMgt, Engine<SyncImportInfoVO> engine) {
+	public AbstractEtlSearchParams<EtlStageRecordVO> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlStageRecordVO> intervalsMgt, Engine<EtlStageRecordVO> engine) {
 		
-		AbstractEtlSearchParams<SyncImportInfoVO> searchParams = new ResolveConflictsInStageAreaSearchParams(engine,
+		AbstractEtlSearchParams<EtlStageRecordVO> searchParams = new ResolveConflictsInStageAreaSearchParams(engine,
 		        intervalsMgt);
 		
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
@@ -55,12 +55,12 @@ public class ResolveConflictsInStageAreaController extends OperationController<S
 		OpenConnection conn = null;
 		
 		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(
-		        (Engine<SyncImportInfoVO>) engine, null);
+		        (Engine<EtlStageRecordVO>) engine, null);
 		
 		try {
 			conn = openSrcConnection();
 			
-			SyncImportInfoVO rec = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
+			EtlStageRecordVO rec = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
 			
 			return rec != null ? rec.getId() : 0;
 			
@@ -82,12 +82,12 @@ public class ResolveConflictsInStageAreaController extends OperationController<S
 		OpenConnection conn = null;
 		
 		ResolveConflictsInStageAreaSearchParams searchParams = new ResolveConflictsInStageAreaSearchParams(
-		        (Engine<SyncImportInfoVO>) engine, null);
+		        (Engine<EtlStageRecordVO>) engine, null);
 		
 		try {
 			conn = openSrcConnection();
 			
-			SyncImportInfoVO rec = SyncImportInfoDAO.getLastRecord(searchParams, conn);
+			EtlStageRecordVO rec = SyncImportInfoDAO.getLastRecord(searchParams, conn);
 			
 			return rec != null ? rec.getId() : 0;
 			
@@ -114,7 +114,7 @@ public class ResolveConflictsInStageAreaController extends OperationController<S
 	}
 	
 	@Override
-	public void afterEtl(List<SyncImportInfoVO> objs, Connection srcConn, Connection dstConn) throws DBException {
+	public void afterEtl(List<EtlStageRecordVO> objs, Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}

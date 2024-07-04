@@ -3,16 +3,16 @@ package org.openmrs.module.epts.etl.resolveconflictsinstagearea.engine;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class ResolveConflictsInStageAreaEngine extends TaskProcessor<SyncImportInfoVO> {
+public class ResolveConflictsInStageAreaEngine extends TaskProcessor<EtlStageRecordVO> {
 	
-	public ResolveConflictsInStageAreaEngine(Engine<SyncImportInfoVO> monitor, IntervalExtremeRecord limits,  boolean runningInConcurrency) {
+	public ResolveConflictsInStageAreaEngine(Engine<EtlStageRecordVO> monitor, IntervalExtremeRecord limits,  boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 	}
 	
@@ -23,26 +23,26 @@ public class ResolveConflictsInStageAreaEngine extends TaskProcessor<SyncImportI
 	
 	
 	@Override
-	public void performeEtl(List<SyncImportInfoVO> records, Connection srcConn,
+	public void performeEtl(List<EtlStageRecordVO> records, Connection srcConn,
 	        Connection dstConn) throws DBException {
 
 		utilities.throwReviewMethodException();
 
-		/*List<SyncImportInfoVO> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, SyncImportInfoVO.class);
+		/*List<EtlStageRecordVO> syncRecordsAsOpenMRSObjects = utilities.parseList(syncRecords, EtlStageRecordVO.class);
 		
 		this.getMonitor().logInfo("PERFORMING CONFLICTS RESOLUTION ACTION '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName());
 		
-		for (SyncImportInfoVO obj : syncRecordsAsOpenMRSObjects) {
+		for (EtlStageRecordVO obj : syncRecordsAsOpenMRSObjects) {
 			try {
-				List<SyncImportInfoVO> recordsInConflict = SyncImportInfoDAO.getAllByUuid(getSyncTableConfiguration(), obj.getRecordUuid(), conn);
+				List<EtlStageRecordVO> recordsInConflict = SyncImportInfoDAO.getAllByUuid(getSyncTableConfiguration(), obj.getRecordUuid(), conn);
 				
-				SyncImportInfoVO mostRecent = SyncImportInfoVO.chooseMostRecent(recordsInConflict);
+				EtlStageRecordVO mostRecent = EtlStageRecordVO.chooseMostRecent(recordsInConflict);
 				
 				recordsInConflict.remove(mostRecent);
 				
 				String loosers = "";
 				
-				for (SyncImportInfoVO recInConflict : recordsInConflict) {
+				for (EtlStageRecordVO recInConflict : recordsInConflict) {
 					
 					loosers += (!loosers.isEmpty() ? "," : "") + "{" + generateRecInfo(recInConflict) + "}";
 					

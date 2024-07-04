@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -25,7 +25,7 @@ public class MergingRecord {
 	
 	private TableConfiguration config;
 	
-	private SyncImportInfoVO stageInfo;
+	private EtlStageRecordVO stageInfo;
 	
 	private List<ParentInfo> parentsWithDefaultValues;
 	
@@ -33,7 +33,7 @@ public class MergingRecord {
 	
 	private DBConnectionInfo destApp;
 	
-	public MergingRecord(SyncImportInfoVO stageInfo, TableConfiguration config, DBConnectionInfo srcApp, DBConnectionInfo destApp) {
+	public MergingRecord(EtlStageRecordVO stageInfo, TableConfiguration config, DBConnectionInfo srcApp, DBConnectionInfo destApp) {
 		this.srcApp = srcApp;
 		this.destApp = destApp;
 		this.stageInfo = stageInfo;
@@ -66,7 +66,7 @@ public class MergingRecord {
 			
 			ParentTable refInfo = parentInfo.getRefInfo();
 			
-			SyncImportInfoVO parentStageInfo = parentInfo.getParentStageInfo();
+			EtlStageRecordVO parentStageInfo = parentInfo.getParentStageInfo();
 			
 			MergingRecord parentData = new MergingRecord(parentStageInfo, refInfo, this.srcApp, this.destApp);
 			parentData.record = DatabaseObjectDAO.getByOid(refInfo, parentStageInfo.getRecordOriginIdAsOid(), conn);
@@ -86,7 +86,7 @@ public class MergingRecord {
 			return;
 		
 		EtlDatabaseObject record = mergingRecord.record;
-		SyncImportInfoVO stageInfo = record.getRelatedSyncInfo();
+		EtlStageRecordVO stageInfo = record.getRelatedSyncInfo();
 		
 		for (ParentTable refInfo : config.getParentRefInfo()) {
 			if (refInfo.isMetadata())
@@ -99,7 +99,7 @@ public class MergingRecord {
 				    stageInfo.getRecordOriginLocationCode(), refInfo, true, conn);
 				
 				if (parent == null) {
-					SyncImportInfoVO parentStageInfo = SyncImportInfoDAO.getByOriginIdAndLocation(refInfo,
+					EtlStageRecordVO parentStageInfo = SyncImportInfoDAO.getByOriginIdAndLocation(refInfo,
 					    Integer.parseInt(parentIdInOrigin.toString()), stageInfo.getRecordOriginLocationCode(), conn);
 					
 					if (parentStageInfo != null) {

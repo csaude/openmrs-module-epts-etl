@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -22,7 +22,7 @@ public class DataReconciliationRecord {
 	
 	private AbstractTableConfiguration config;
 	
-	private SyncImportInfoVO stageInfo;
+	private EtlStageRecordVO stageInfo;
 	
 	private String recordUuid;
 	
@@ -146,7 +146,7 @@ public class DataReconciliationRecord {
 	        throws ParentNotYetMigratedException, DBException {
 		utilities.throwReviewMethodException();
 		
-		/*SyncImportInfoVO stageInfo = dstRecord.getRelatedSyncInfo();
+		/*EtlStageRecordVO stageInfo = dstRecord.getRelatedSyncInfo();
 			
 			
 			for (RefInfo refInfo: dstConf.getParents()) {
@@ -161,7 +161,7 @@ public class DataReconciliationRecord {
 				
 			
 					if (parent == null) {
-						SyncImportInfoVO parentStageInfo = SyncImportInfoDAO.getByOriginIdAndLocation(refInfo.getRefTableConfiguration(), parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), conn);
+						EtlStageRecordVO parentStageInfo = SyncImportInfoDAO.getByOriginIdAndLocation(refInfo.getRefTableConfiguration(), parentIdInOrigin, stageInfo.getRecordOriginLocationCode(), conn);
 						
 						if (parentStageInfo != null) {
 							if (parentStageInfo.getConsistent() != 1) {

@@ -2175,52 +2175,105 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return utilities.removeLastChar(values);
 	}
 	
-	default void generateStagingTables(Connection conn) throws SQLException {
+	default void generateStagingTables() throws DBException {
 		
 		synchronized (getTableName()) {
-			logDebug("UPGRATING TABLE INFO [" + this.getTableName() + "]");
 			
-			if (!existRelatedExportStageTable(conn)) {
-				logDebug("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
+			OpenConnection conn = null;
+			
+			try {
 				
-				createRelatedSyncStageAreaTable(conn);
+				conn = getRelatedEtlConf().openSrcConn();
 				
-				logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
+				logDebug("UPGRATING TABLE INFO [" + this.getTableName() + "]");
+				
+				if (!existRelatedExportStageTable(conn)) {
+					logDebug("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
+					
+					createRelatedSyncStageAreaTable(conn);
+					
+					logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
+				}
+				
+				if (!existRelatedExportStageSrcUniqueKeysTable(conn)) {
+					logDebug("GENERATING RELATED STAGE ORIGIN UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
+					
+					createRelatedSyncStageAreaSrcUniqueKeysTable(conn);
+					
+					logDebug("RELATED STAGE SRC UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
+				}
+				
+				if (!existRelatedExportStageDstUniqueKeysTable(conn)) {
+					logDebug("GENERATING RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
+					
+					createRelatedSyncStageAreaDstUniqueKeysTable(conn);
+					
+					logDebug("RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
+				}
+				
+				logDebug("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
 			}
-			
-			if (!existRelatedExportStageSrcUniqueKeysTable(conn)) {
-				logDebug("GENERATING RELATED STAGE ORIGIN UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
-				
-				createRelatedSyncStageAreaSrcUniqueKeysTable(conn);
-				
-				logDebug("RELATED STAGE SRC UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
+			finally {
+				if (conn != null) {
+					conn.finalizeConnection();
+				}
 			}
-			
-			if (!existRelatedExportStageDstUniqueKeysTable(conn)) {
-				logDebug("GENERATING RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
-				
-				createRelatedSyncStageAreaDstUniqueKeysTable(conn);
-				
-				logDebug("RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
-			}
-			
-			logDebug("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
 			
 		}
 		
 	}
 	
+	default EtlConfigurationTableConf generateRelatedSyncStageTableConf(Connection conn) throws DBException {
+		return generateRelatedStageTabConf(this.generateRelatedStageTableName(), this.getSyncStageSchema(), conn);
+	}
+	
+	default EtlConfigurationTableConf generateRelatedStageDstUniqueKeysTableConf(Connection conn) throws DBException {
+		return generateRelatedStageTabConf(this.generateRelatedStageDstUniqueKeysTableName(), this.getSyncStageSchema(),
+		    conn);
+	}
+	
+	default EtlConfigurationTableConf generateRelatedStageSrcUniqueKeysTableConf(Connection conn) throws DBException {
+		return generateRelatedStageTabConf(this.generateRelatedStageSrcUniqueKeysTableName(), this.getSyncStageSchema(),
+		    conn);
+	}
+	
+	default EtlConfigurationTableConf generateRelatedStageTabConf(String tableName, String schema, Connection conn)
+	        throws DBException {
+		
+		synchronized (tableName) {
+			TableConfiguration tabConf = getRelatedEtlConf().findOnFullLoadedTables(tableName, schema);
+			
+			if (tabConf == null) {
+				tabConf = new EtlConfigurationTableConf(tableName, this.getRelatedEtlConf());
+			}
+			
+			if (!tabConf.isFieldsLoaded()) {
+				tabConf.fullLoad(conn);
+			}
+			
+			return (EtlConfigurationTableConf) tabConf;
+		}
+		
+	}
+	
+	default void createRelatedSyncStageAreaSrcUniqueKeysTable(Connection conn) throws DBException {
+		createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageSrcUniqueKeysTableName(), conn);
+	}
+	
 	default void createRelatedSyncStageAreaDstUniqueKeysTable(Connection conn) throws DBException {
+		createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageDstUniqueKeysTableName(), conn);
+	}
+	
+	default void createRelatedSyncStageAreaUniqueKeysTable(String tableName, Connection conn) throws DBException {
 		String sql = "";
 		String notNullConstraint = "NOT NULL";
 		String endLineMarker = ",\n";
 		
 		String parentTableName = this.generateFullStageTableName();
-		String tableName = this.generateRelatedStageDstUniqueKeysTableName();
 		
-		sql += "CREATE TABLE " + this.generateFullStageDstUniqueKeysTableName() + "(\n";
+		sql += "CREATE TABLE " + tableName + "(\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
-		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("table_name", 100, notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
@@ -2228,38 +2281,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
 		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
 		    "record_id, table_name, key_name, column_name", conn) + endLineMarker;
-		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "record_id", parentTableName,
-		    "id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
+		    parentTableName, "id", conn) + endLineMarker;
 		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
 		sql += ")";
 		
 		BaseDAO.executeBatch(conn, sql);
 		
-	}
-	
-	default void createRelatedSyncStageAreaSrcUniqueKeysTable(Connection conn) throws DBException {
-		String sql = "";
-		String notNullConstraint = "NOT NULL";
-		String endLineMarker = ",\n";
-		
-		String parentTableName = this.generateFullStageTableName();
-		String tableName = this.generateRelatedStageSrcUniqueKeysTableName();
-		
-		sql += "CREATE TABLE " + this.generateFullStageSrcUniqueKeysTableName() + "(\n";
-		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
-		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("key_value", 100, "NULL", conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
-		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
-		    "record_id, key_name, column_name", conn) + endLineMarker;
-		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "record_id", parentTableName,
-		    "id", conn) + endLineMarker;
-		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
-		sql += ")";
-		
-		BaseDAO.executeBatch(conn, sql);
 	}
 	
 	default void createRelatedSyncStageAreaTable(Connection conn) throws DBException {
@@ -2271,7 +2299,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		sql += "CREATE TABLE " + this.generateFullStageTableName() + "(\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
-		sql += DBUtilities.generateTableBigIntField("record_origin_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
 		        + endLineMarker;
 		sql += DBUtilities.generateTableTextField("json", "NULL", conn) + endLineMarker;

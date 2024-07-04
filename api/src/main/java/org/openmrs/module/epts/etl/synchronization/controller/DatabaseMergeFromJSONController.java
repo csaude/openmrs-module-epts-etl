@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoDAO;
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
@@ -24,22 +24,22 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class DatabaseMergeFromJSONController extends SiteOperationController<SyncImportInfoVO> {
+public class DatabaseMergeFromJSONController extends SiteOperationController<EtlStageRecordVO> {
 	
 	public DatabaseMergeFromJSONController(ProcessController processController, EtlOperationConfig operationConfig) {
 		super(processController, operationConfig, null);
 	}
 	
 	@Override
-	public TaskProcessor<SyncImportInfoVO> initRelatedTaskProcessor(Engine<SyncImportInfoVO> monitor,
+	public TaskProcessor<EtlStageRecordVO> initRelatedTaskProcessor(Engine<EtlStageRecordVO> monitor,
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		
 		return new DataBaseMergeFromJSONEngine(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<SyncImportInfoVO> initMainSearchParams(
-	        ThreadRecordIntervalsManager<SyncImportInfoVO> intervalsMgt, Engine<SyncImportInfoVO> engine) {
+	public AbstractEtlSearchParams<EtlStageRecordVO> initMainSearchParams(
+	        ThreadRecordIntervalsManager<EtlStageRecordVO> intervalsMgt, Engine<EtlStageRecordVO> engine) {
 		/*AbstractEtlSearchParams<? extends EtlObject> searchParams = new DataBaseMergeFromJSONSearchParams(this.getSyncTableConfiguration(), limits, this.getRelatedOperationController().getAppOriginLocationCode());
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(this.getRelatedOperationController().getProgressInfo().getStartTime());
@@ -58,10 +58,10 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Syn
 			conn = openSrcConnection();
 			
 			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(
-			        (Engine<SyncImportInfoVO>) engine, null);
+			        (Engine<EtlStageRecordVO>) engine, null);
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
-			SyncImportInfoVO obj = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
+			EtlStageRecordVO obj = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
 			
 			if (obj != null)
 				return obj.getId();
@@ -88,10 +88,10 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Syn
 			conn = openSrcConnection();
 			
 			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(
-			        (Engine<SyncImportInfoVO>) engine, null);
+			        (Engine<EtlStageRecordVO>) engine, null);
 			searchParams.setSyncStartDate(this.progressInfo.getStartTime());
 			
-			SyncImportInfoVO obj = SyncImportInfoDAO.getLastRecord(searchParams, conn);
+			EtlStageRecordVO obj = SyncImportInfoDAO.getLastRecord(searchParams, conn);
 			
 			if (obj != null)
 				return obj.getId();
@@ -120,7 +120,7 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Syn
 	}
 	
 	@Override
-	public void afterEtl(List<SyncImportInfoVO> objs, Connection srcConn, Connection dstConn) throws DBException {
+	public void afterEtl(List<EtlStageRecordVO> objs, Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}

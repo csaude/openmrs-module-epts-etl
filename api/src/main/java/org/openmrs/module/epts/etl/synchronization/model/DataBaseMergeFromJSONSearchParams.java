@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.synchronization.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -22,13 +22,13 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	private DatabaseMergeFromJSONController relatedController;
 	
-	public DataBaseMergeFromJSONSearchParams(Engine<SyncImportInfoVO> engine, ThreadRecordIntervalsManager<SyncImportInfoVO> limits) {
+	public DataBaseMergeFromJSONSearchParams(Engine<EtlStageRecordVO> engine, ThreadRecordIntervalsManager<EtlStageRecordVO> limits) {
 		super(engine, limits);
 		
 		setOrderByFields("id");
 	}
 	
-	public DataBaseMergeFromJSONSearchParams(Engine<SyncImportInfoVO> config, ThreadRecordIntervalsManager<SyncImportInfoVO> limits,
+	public DataBaseMergeFromJSONSearchParams(Engine<EtlStageRecordVO> config, ThreadRecordIntervalsManager<EtlStageRecordVO> limits,
 	    String appOriginLocationCode) {
 		super(config, limits, appOriginLocationCode);
 		setOrderByFields("id");
@@ -39,10 +39,10 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	}
 	
 	@Override
-	public SearchClauses<SyncImportInfoVO> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	public SearchClauses<EtlStageRecordVO> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		
-		SearchClauses<SyncImportInfoVO> searchClauses = new SearchClauses<SyncImportInfoVO>(this);
+		SearchClauses<EtlStageRecordVO> searchClauses = new SearchClauses<EtlStageRecordVO>(this);
 		
 		AbstractTableConfiguration tableInfo = this.getSrcTableConf();
 		
@@ -62,8 +62,8 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 		} else {
 			searchClauses.addToClauses("migration_status in (?, ?)");
 			
-			searchClauses.addToParameters(SyncImportInfoVO.MIGRATION_STATUS_FAILED);
-			searchClauses.addToParameters(SyncImportInfoVO.MIGRATION_STATUS_PENDING);
+			searchClauses.addToParameters(EtlStageRecordVO.MIGRATION_STATUS_FAILED);
+			searchClauses.addToParameters(EtlStageRecordVO.MIGRATION_STATUS_PENDING);
 		}
 		
 		searchClauses.addToClauses("record_origin_location_code = ?");
@@ -77,8 +77,8 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	}
 	
 	@Override
-	public Class<SyncImportInfoVO> getRecordClass() {
-		return SyncImportInfoVO.class;
+	public Class<EtlStageRecordVO> getRecordClass() {
+		return EtlStageRecordVO.class;
 	}
 	
 	@Override
@@ -108,7 +108,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<SyncImportInfoVO> cloneMe() {
+	public AbstractEtlSearchParams<EtlStageRecordVO> cloneMe() {
 		// TODO Auto-generated method stub
 		return null;
 	}

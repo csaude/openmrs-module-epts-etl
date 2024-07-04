@@ -8,7 +8,7 @@ package org.openmrs.module.epts.etl.merge.engine;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoVO;
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -44,7 +44,7 @@ public class DataBasesMergeFromSourceEngine extends TaskProcessor<EtlDatabaseObj
 			
 			logDebug(startingStrLog + ": Merging Record: [" + record + "]");
 			
-			MergingRecord data = new MergingRecord((SyncImportInfoVO) record, getSrcConf(),
+			MergingRecord data = new MergingRecord((EtlStageRecordVO) record, getSrcConf(),
 			        getRelatedOperationController().getSrcConnInfo(), getRelatedOperationController().getDstConnInfo());
 			
 			try {
