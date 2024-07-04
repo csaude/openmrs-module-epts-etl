@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,7 @@ import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
@@ -35,6 +37,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface TableConfiguration extends DatabaseObjectConfiguration {
+	
+	public static final String[] REMOVABLE_METADATA = {};
 	
 	static final String LOCK_STRING = "LOCK_STRING";
 	
@@ -102,6 +106,71 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	void setParentsLoaded(boolean parentsLoaded);
 	
+	ConflictResolutionType onConflict();
+	
+	ConflictResolutionType getOnConflict();
+	
+	void setOnConflict(ConflictResolutionType onConflict);
+	
+	void setParentRefInfo(List<? extends ParentTable> parentRefInfo);
+	
+	void setChildRefInfo(List<ChildTable> childRefInfo);
+	
+	List<UniqueKeyInfo> getUniqueKeys();
+	
+	void setUniqueKeys(List<UniqueKeyInfo> uniqueKeys);
+	
+	List<String> getObservationDateFields();
+	
+	void setObservationDateFields(List<String> observationDateFields);
+	
+	boolean isRemoveForbidden();
+	
+	public void setRemoveForbidden(boolean removeForbidden);
+	
+	List<ParentTable> getParents();
+	
+	boolean isUsingManualDefinedAlias();
+	
+	void setUsingManualDefinedAlias(boolean usingManualDefinedAlias);
+	
+	void setParents(List<ParentTable> parents);
+	
+	void setSharePkWith(String sharePkWith);
+	
+	void setParentConf(EtlDataConfiguration parentConf);
+	
+	void setPrimaryKey(PrimaryKey primaryKey);
+	
+	void setMetadata(boolean metadata);
+	
+	public boolean isDisabled();
+	
+	public void setDisabled(boolean disabled);
+	
+	void setFields(List<Field> tableFields);
+	
+	void setFullLoaded(boolean fullLoaded);
+	
+	void setInsertSQLQuestionMarksWithObjectId(String insertQuestionMarks);
+	
+	String getInsertSQLQuestionMarksWithObjectId();
+	
+	void setInsertSQLQuestionMarksWithoutObjectId(String insertQuestionMarks);
+	
+	String getInsertSQLQuestionMarksWithoutObjectId();
+	
+	void setInsertSQLWithObjectId(String sql);
+	
+	void setSchema(String schema);
+	
+	boolean isAllRelatedTablesFullLoaded();
+	
+	void setAllRelatedTablesFullLoaded(boolean b);
+	
+	@Override
+	PrimaryKey getPrimaryKey();
+	
 	@Override
 	default boolean hasPK(Connection conn) throws DBException {
 		
@@ -119,22 +188,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default boolean hasWinningRecordsInfo() {
 		return this.getWinningRecordFieldsInfo() != null;
 	}
-	
-	void setParentRefInfo(List<? extends ParentTable> parentRefInfo);
-	
-	void setChildRefInfo(List<ChildTable> childRefInfo);
-	
-	List<UniqueKeyInfo> getUniqueKeys();
-	
-	void setUniqueKeys(List<UniqueKeyInfo> uniqueKeys);
-	
-	List<String> getObservationDateFields();
-	
-	void setObservationDateFields(List<String> observationDateFields);
-	
-	boolean isRemoveForbidden();
-	
-	public void setRemoveForbidden(boolean removeForbidden);
 	
 	@JsonIgnore
 	default String getId() {
@@ -159,16 +212,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		return sourceFoldersAsString;
 	}
-	
-	List<ParentTable> getParents();
-	
-	boolean isUsingManualDefinedAlias();
-	
-	void setUsingManualDefinedAlias(boolean usingManualDefinedAlias);
-	
-	void setParents(List<ParentTable> parents);
-	
-	void setSharePkWith(String sharePkWith);
 	
 	default String getObjectName() {
 		return getTableName();
@@ -255,17 +298,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return this.getPrimaryKey() != null;
 	}
 	
-	void setParentConf(EtlDataConfiguration parentConf);
-	
 	@JsonIgnore
 	default boolean useSharedPKKey() {
 		return utilities.stringHasValue(this.getSharePkWith());
 	}
-	
-	void setPrimaryKey(PrimaryKey primaryKey);
-	
-	@Override
-	PrimaryKey getPrimaryKey();
 	
 	default void loadPrimaryKeyInfo(Connection conn) throws DBException {
 		PrimaryKey primaryKey = null;
@@ -872,8 +908,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 	}
 	
-	public static final String[] REMOVABLE_METADATA = {};
-	
 	/**
 	 * By default an metadata cannot be removed, but there are situations where is needed to remove
 	 * a metadata
@@ -968,16 +1002,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return className + "VO";
 	}
 	
-	void setMetadata(boolean metadata);
-	
 	@JsonIgnore
 	default String generateRelatedStageTableName() {
 		return this.getTableName() + "_stage";
 	}
 	
 	@JsonIgnore
-	default String generateRelatedStageUniqueKeysTableName() {
-		return generateRelatedStageTableName() + "_unique_keys";
+	default String generateRelatedStageSrcUniqueKeysTableName() {
+		return generateRelatedStageTableName() + "_src_unique_keys";
+	}
+	
+	@JsonIgnore
+	default String generateRelatedStageDstUniqueKeysTableName() {
+		return generateRelatedStageTableName() + "_dst_unique_keys";
 	}
 	
 	@JsonIgnore
@@ -1022,8 +1059,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	@JsonIgnore
-	default String generateFullStageUniqueKeysTableName() {
-		return getSyncStageSchema() + "." + generateRelatedStageUniqueKeysTableName();
+	default String generateFullStageSrcUniqueKeysTableName() {
+		return getSyncStageSchema() + "." + generateRelatedStageSrcUniqueKeysTableName();
+	}
+	
+	@JsonIgnore
+	default String generateFullStageDstUniqueKeysTableName() {
+		return getSyncStageSchema() + "." + generateRelatedStageDstUniqueKeysTableName();
 	}
 	
 	default boolean existRelatedExportStageTable(Connection conn) {
@@ -1041,10 +1083,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
-	default boolean existRelatedExportStageUniqueKeysTable(Connection conn) {
+	default boolean existRelatedExportStageSrcUniqueKeysTable(Connection conn) {
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = generateRelatedStageUniqueKeysTableName();
+		String tabName = generateRelatedStageSrcUniqueKeysTableName();
 		
 		try {
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
@@ -1056,9 +1098,20 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
-	public boolean isDisabled();
-	
-	public void setDisabled(boolean disabled);
+	default boolean existRelatedExportStageDstUniqueKeysTable(Connection conn) {
+		String schema = getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = generateRelatedStageSrcUniqueKeysTableName();
+		
+		try {
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+	}
 	
 	@JsonIgnore
 	default boolean isConfigured() {
@@ -1190,10 +1243,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		logTrace("Fields for table " + getFullTableDescription() + " Loaded!");
 	}
-	
-	void setFields(List<Field> tableFields);
-	
-	void setFullLoaded(boolean fullLoaded);
 	
 	default void loadAttDefinition(Connection conn) {
 		int qtyAttrs = this.getFields().size();
@@ -1606,16 +1655,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setInsertSQLQuestionMarksWithObjectId(insertSQLQuestionMarksWithObjectId);
 	}
 	
-	void setInsertSQLQuestionMarksWithObjectId(String insertQuestionMarks);
-	
-	String getInsertSQLQuestionMarksWithObjectId();
-	
-	void setInsertSQLQuestionMarksWithoutObjectId(String insertQuestionMarks);
-	
-	String getInsertSQLQuestionMarksWithoutObjectId();
-	
-	void setInsertSQLWithObjectId(String sql);
-	
 	@JsonIgnore
 	default String generateUpdateSQL() {
 		if (this.getPrimaryKey() == null) {
@@ -1907,12 +1946,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
-	void setSchema(String schema);
-	
-	boolean isAllRelatedTablesFullLoaded();
-	
-	void setAllRelatedTablesFullLoaded(boolean b);
-	
 	default void fullLoadAllRelatedTables(TableAliasesGenerator aliasGenerator, TableConfiguration related, Connection conn)
 	        throws DBException {
 		if (isAllRelatedTablesFullLoaded()) {
@@ -2142,9 +2175,184 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return utilities.removeLastChar(values);
 	}
 	
-	ConflictResolutionType onConflict();
+	default void generateStagingTables(Connection conn) throws SQLException {
+		
+		synchronized (getTableName()) {
+			logDebug("UPGRATING TABLE INFO [" + this.getTableName() + "]");
+			
+			if (!existRelatedExportStageTable(conn)) {
+				logDebug("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
+				
+				createRelatedSyncStageAreaTable(conn);
+				
+				logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
+			}
+			
+			if (!existRelatedExportStageSrcUniqueKeysTable(conn)) {
+				logDebug("GENERATING RELATED STAGE ORIGIN UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
+				
+				createRelatedSyncStageAreaSrcUniqueKeysTable(conn);
+				
+				logDebug("RELATED STAGE SRC UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
+			}
+			
+			if (!existRelatedExportStageDstUniqueKeysTable(conn)) {
+				logDebug("GENERATING RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
+				
+				createRelatedSyncStageAreaDstUniqueKeysTable(conn);
+				
+				logDebug("RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
+			}
+			
+			logDebug("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
+			
+		}
+		
+	}
 	
-	ConflictResolutionType getOnConflict();
+	default void createRelatedSyncStageAreaDstUniqueKeysTable(Connection conn) throws DBException {
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		String parentTableName = this.generateFullStageTableName();
+		String tableName = this.generateRelatedStageDstUniqueKeysTableName();
+		
+		sql += "CREATE TABLE " + this.generateFullStageDstUniqueKeysTableName() + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("table_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_value", 100, "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+		    "record_id, table_name, key_name, column_name", conn) + endLineMarker;
+		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "record_id", parentTableName,
+		    "id", conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
+		
+		BaseDAO.executeBatch(conn, sql);
+		
+	}
 	
-	void setOnConflict(ConflictResolutionType onConflict);
+	default void createRelatedSyncStageAreaSrcUniqueKeysTable(Connection conn) throws DBException {
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		String parentTableName = this.generateFullStageTableName();
+		String tableName = this.generateRelatedStageSrcUniqueKeysTableName();
+		
+		sql += "CREATE TABLE " + this.generateFullStageSrcUniqueKeysTableName() + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_value", 100, "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+		    "record_id, key_name, column_name", conn) + endLineMarker;
+		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "record_id", parentTableName,
+		    "id", conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
+		
+		BaseDAO.executeBatch(conn, sql);
+	}
+	
+	default void createRelatedSyncStageAreaTable(Connection conn) throws DBException {
+		String tableName = this.generateRelatedStageTableName();
+		
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		sql += "CREATE TABLE " + this.generateFullStageTableName() + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("record_origin_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
+		        + endLineMarker;
+		sql += DBUtilities.generateTableTextField("json", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("last_sync_date", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("last_sync_try_err", 250, "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("last_update_date", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableNumericField("consistent", 1, "NULL", -1, conn) + endLineMarker;
+		sql += DBUtilities.generateTableNumericField("migration_status", 1, "NULL", 1, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		
+		sql += DBUtilities.generateTableDateTimeField("record_date_created", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("record_date_changed", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeField("record_date_voided", "NULL", conn) + endLineMarker;
+		
+		String checkCondition = "migration_status = -1 OR migration_status = 0 OR migration_status = 1";
+		String keyName = "CHK_" + this.generateRelatedStageTableName() + "_MIG_STATUS";
+		
+		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
+		
+		String uniqueKeyName = tableName + "_UNQ_RECORD_ID".toLowerCase();
+		
+		if (this.isDestinationInstallationType() || this.isDBQuickLoad()) {
+			
+			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName,
+			    "record_origin_id, record_origin_location_code", conn) + endLineMarker;
+			
+		} else {
+			sql += DBUtilities.generateTableUniqueKeyDefinition(uniqueKeyName, "record_origin_id", conn) + endLineMarker;
+		}
+		
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
+		sql += ")";
+		
+		try {
+			Statement st = conn.createStatement();
+			st.addBatch(sql);
+			st.executeBatch();
+			
+			st.close();
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+	}
+	
+	default String generateLastUpdateDateInsertTriggerMonitor() {
+		return this.getTableName() + "_date_changed_insert_monitor";
+	}
+	
+	default String generateLastUpdateDateUpdateTriggerMonitor() {
+		return this.getTableName() + "_date_changed_update_monitor";
+	}
+	
+	default void createLastUpdateDateMonitorTrigger(Connection conn) throws SQLException {
+		Statement st = conn.createStatement();
+		
+		st.addBatch(generateTriggerCode(this.generateLastUpdateDateInsertTriggerMonitor(), "INSERT"));
+		st.addBatch(generateTriggerCode(this.generateLastUpdateDateUpdateTriggerMonitor(), "UPDATE"));
+		
+		st.executeBatch();
+		
+		st.close();
+	}
+	
+	default String generateTriggerCode(String triggerName, String triggerEvent) {
+		String sql = "";
+		
+		sql += "CREATE TRIGGER " + triggerName + " BEFORE " + triggerEvent + " ON " + this.getTableName() + "\n";
+		sql += "FOR EACH ROW\n";
+		sql += "	BEGIN\n";
+		sql += "	UPDATE " + this.generateFullStageTableName() + " SET last_update_date = CURRENT_TIMESTAMP();\n";
+		sql += "	END;\n";
+		
+		return sql;
+	}
+	
+	default boolean isExistRelatedTriggers(Connection conn) throws SQLException {
+		return DBUtilities.isResourceExist(conn.getCatalog(), getTableName(), DBUtilities.RESOURCE_TYPE_TRIGGER,
+		    generateLastUpdateDateInsertTriggerMonitor(), conn);
+	}
+	
 }
