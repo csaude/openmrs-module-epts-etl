@@ -685,7 +685,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		List<ThreadRecordIntervalsManager<T>> oldLImitsManagers = ThreadRecordIntervalsManager
 		        .getAllSavedLimitsOfOperation(this);
 		
-		newIntervals.add(getSearchParams().getThreadRecordIntervalsManager());
+		newIntervals.add( getSearchParams().getThreadRecordIntervalsManager());
 		
 		if (oldLImitsManagers != null) {
 			for (ThreadRecordIntervalsManager<T> limits : oldLImitsManagers) {
@@ -693,6 +693,10 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 					limits.remove(this);
 				}
 			}
+		}
+		
+		for (ThreadRecordIntervalsManager<T> i : newIntervals) {
+			i.save();
 		}
 	}
 	

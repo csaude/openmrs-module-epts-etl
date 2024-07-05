@@ -160,4 +160,13 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 		return this.getType() != null;
 	}
 	
+	public static EtlOperationItemResult<EtlDatabaseObject> fastCreateRecordWithRecursiveRelationship(
+	        EtlDatabaseObject rec) {
+		
+		EtlOperationItemResult<EtlDatabaseObject> result = new EtlOperationItemResult<EtlDatabaseObject>(rec);
+		result.setType(EtlOperationResultItemType.RECURSIVE_RELATIONSHIPS);
+		
+		return result;
+	}
+	
 }

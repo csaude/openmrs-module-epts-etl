@@ -18,6 +18,7 @@ import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -32,23 +33,26 @@ public class EtlLoadHelper {
 	
 	private EtlProcessor processor;
 	
-	public EtlLoadHelper(EtlProcessor processor, int qtySrcObjects) {
+	private LoadingType loadingType;
+	
+	public EtlLoadHelper(EtlProcessor processor, int qtySrcObjects, LoadingType loadingType) {
 		this.processor = processor;
 		this.loadRecordHelper = new ArrayList<>(qtySrcObjects);
+		this.loadingType = loadingType;
 	}
 	
-	public EtlLoadHelper(EtlProcessor processor, List<EtlLoadHelperRecord> loadRecordHelper) {
-		this(processor, loadRecordHelper.size());
+	public EtlLoadHelper(EtlProcessor processor, List<EtlLoadHelperRecord> loadRecordHelper, LoadingType loadingType) {
+		this(processor, loadRecordHelper.size(), loadingType);
 		
 		this.loadRecordHelper = loadRecordHelper;
 	}
 	
-	public EtlLoadHelper(EtlProcessor processor, EtlLoadHelperRecord recordToLoad) {
-		this(processor, utilities.parseToList(recordToLoad));
+	public EtlLoadHelper(EtlProcessor processor, EtlLoadHelperRecord recordToLoad, LoadingType loadingType) {
+		this(processor, utilities.parseToList(recordToLoad), loadingType);
 	}
 	
-	public EtlLoadHelper(EtlProcessor processor, LoadRecord recordToLoad) {
-		this(processor, utilities.parseToList(new EtlLoadHelperRecord(recordToLoad)));
+	public EtlLoadHelper(EtlProcessor processor, LoadRecord recordToLoad, LoadingType loadingType) {
+		this(processor, utilities.parseToList(new EtlLoadHelperRecord(recordToLoad)), loadingType);
 	}
 	
 	public List<EtlLoadHelperRecord> getLoadRecordHelper() {
@@ -69,6 +73,10 @@ public class EtlLoadHelper {
 	
 	public EtlOperationConfig getEtlOperationConfig() {
 		return getController().getOperationConfig();
+	}
+	
+	public boolean isPrincipalLoading() {
+		return this.loadingType.isPrincipal();
 	}
 	
 	public void addRecord(LoadRecord loadRecord) {
@@ -202,6 +210,18 @@ public class EtlLoadHelper {
 		}
 	}
 	
+	void tryToAddToResult(EtlOperationItemResult<EtlDatabaseObject> resultItem) {
+		if (isPrincipalLoading()) {
+			getProcessor().getTaskResultInfo().addOrUpdate(resultItem);
+		}
+	}
+	
+	void tryToAddToResult(EtlOperationResultHeader<EtlDatabaseObject> result) {
+		if (isPrincipalLoading()) {
+			getProcessor().getTaskResultInfo().addAllFromOtherResult_(result);
+		}
+	}
+	
 	/**
 	 * @param srcConn
 	 * @param dstConn
@@ -223,7 +243,8 @@ public class EtlLoadHelper {
 			
 			loadRec.setStatus(LoadStatus.FAIL);
 			
-			getProcessor().getTaskResultInfo().addOrUpdate(loadRec.getResultItem());
+			this.tryToAddToResult(loadRec.getResultItem());
+			
 		} else {
 			Oid originalOid = loadRec.getDstRecord().getObjectId();
 			
@@ -267,19 +288,19 @@ public class EtlLoadHelper {
 		if (getActionType().isCreate()) {
 			logDebug("Starting the insertion of " + objects.size() + " on db...");
 			
-			getProcessor().getTaskResultInfo().addAllFromOtherResult(DatabaseObjectDAO.insertAll(objects, dstConf, dstConn));
+			tryToAddToResult(DatabaseObjectDAO.insertAll(objects, dstConf, dstConn));
 			
 			logDebug(objects.size() + " records inserted on db!");
 		} else if (getActionType().isUpdate()) {
 			logDebug("Starting the upodate of " + objects.size() + " on db...");
 			
-			getProcessor().getTaskResultInfo().addAllFromOtherResult(DatabaseObjectDAO.updateAll(objects, dstConf, dstConn));
+			tryToAddToResult(DatabaseObjectDAO.updateAll(objects, dstConf, dstConn));
 			logDebug(objects.size() + " records updated from db!");
 			
 		} else if (getActionType().isDelete()) {
 			logDebug("Starting the deletion of " + objects.size() + " on db...");
 			
-			getProcessor().getTaskResultInfo().addAllFromOtherResult(DatabaseObjectDAO.deleteAll(objects, dstConf, dstConn));
+			tryToAddToResult(DatabaseObjectDAO.deleteAll(objects, dstConf, dstConn));
 			
 			logDebug(objects.size() + " records deleted on db!");
 			
@@ -328,7 +349,8 @@ public class EtlLoadHelper {
 				this.logDebug("Record " + loadRecord.getDstRecord()
 				        + " has recursive relationship and will be skipped to avoid dedlocks!");
 				
-				this.getProcessor().getTaskResultInfo().addToRecordsWithRecursiveRelashionship(loadRecord.getDstRecord());
+				tryToAddToResult(
+				    EtlOperationItemResult.fastCreateRecordWithRecursiveRelationship(loadRecord.getDstRecord()));
 				
 				loadRecord.getDstConf().saveSkippedRecord(loadRecord.getDstRecord(), srcConn);
 				
@@ -351,7 +373,8 @@ public class EtlLoadHelper {
 					loadRecord.setStatus(LoadStatus.READY);
 				}
 				
-				this.getProcessor().getTaskResultInfo().addOrUpdate(loadRecord.getResultItem());
+				tryToAddToResult(loadRecord.getResultItem());
+				
 			}
 		}
 		
@@ -426,9 +449,10 @@ public class EtlLoadHelper {
 		getProcessor().logError(msg);
 	}
 	
-	public static void quickLoad(LoadRecord loadRecord, Connection srcConn, Connection dstConn)
+	public static void performeParentLoading(LoadRecord loadRecord, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
-		new EtlLoadHelper(loadRecord.getProcessor(), loadRecord).load(loadRecord.getDstConf(), srcConn, dstConn);
+		new EtlLoadHelper(loadRecord.getProcessor(), loadRecord, LoadingType.INNER).load(loadRecord.getDstConf(), srcConn,
+		    dstConn);
 	}
 	
 	public List<EtlDatabaseObject> getAllSuccessfullyProcessedRecordsAsEtlObject() {

@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
+import org.openmrs.module.epts.etl.etl.model.LoadingType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
@@ -54,7 +55,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		
 		try {
 			
-			EtlLoadHelper loadHelper = new EtlLoadHelper(this, etlObjects.size());
+			EtlLoadHelper loadHelper = new EtlLoadHelper(this, etlObjects.size(), LoadingType.PRINCIPAL);
 			
 			for (EtlObject record : etlObjects) {
 				EtlDatabaseObject srcRecord = (EtlDatabaseObject) record;

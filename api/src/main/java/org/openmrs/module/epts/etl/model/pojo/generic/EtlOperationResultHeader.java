@@ -138,7 +138,7 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 	}
 	
-	public void addAllFromOtherResult(EtlOperationResultHeader<T> otherResult) {
+	public void addAllFromOtherResult_(EtlOperationResultHeader<T> otherResult) {
 		if (otherResult != null) {
 			if (otherResult.hasRecordsWithNoError()) {
 				addAllToRecordsWithNoError(otherResult.getRecordsWithNoError());
@@ -166,27 +166,27 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		addAll(records, EtlOperationResultItemType.NO_ERROR);
 	}
 	
-	public void addAllToRecordsWithUnexpectedErrors(List<EtlOperationItemResult<T>> records) {
+	private void addAllToRecordsWithUnexpectedErrors(List<EtlOperationItemResult<T>> records) {
 		addAll(records, EtlOperationResultItemType.UNEXPECTED_ERRORS);
 	}
 	
-	public void addToRecordsWithResolvedInconsistences(List<EtlOperationItemResult<T>> records) {
+	private void addToRecordsWithResolvedInconsistences(List<EtlOperationItemResult<T>> records) {
 		addAll(records, EtlOperationResultItemType.RESOLVED_INCONSISTENCES);
 	}
 	
-	public void addToRecordsWithUnresolvedInconsistences(List<EtlOperationItemResult<T>> records) {
+	private void addToRecordsWithUnresolvedInconsistences(List<EtlOperationItemResult<T>> records) {
 		addAll(records, EtlOperationResultItemType.UNRESOLVED_INCONSISTENCES);
 	}
 	
-	public void addAllToRecordsWithRecursiveRelashionship(List<EtlOperationItemResult<T>> records) {
+	private void addAllToRecordsWithRecursiveRelashionship(List<EtlOperationItemResult<T>> records) {
 		addAll(records, EtlOperationResultItemType.RECURSIVE_RELATIONSHIPS);
 	}
 	
-	public void addToRecordsWithNoError(EtlOperationItemResult<T> record) {
+	private void addToRecordsWithNoError(EtlOperationItemResult<T> record) {
 		add(record, EtlOperationResultItemType.NO_ERROR);
 	}
 	
-	public void addToRecordsWithUnresolvedErrors(EtlOperationItemResult<T> records) {
+	private void addToRecordsWithUnresolvedErrors(EtlOperationItemResult<T> records) {
 		add(records, EtlOperationResultItemType.UNEXPECTED_ERRORS);
 	}
 	
@@ -241,7 +241,7 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		toAddTo.add(record);
 	}
 	
-	public void remove(EtlOperationItemResult<T> resultItem) {
+	private void remove(EtlOperationItemResult<T> resultItem) {
 		List<EtlOperationItemResult<T>> toRemoveFrom = null;
 		
 		if (!resultItem.hasType())
@@ -254,7 +254,7 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 	}
 	
-	public void add(T record, EtlException e) {
+	private void add(T record, EtlException e) {
 		add(new EtlOperationItemResult<T>(record, e), EtlOperationResultItemType.UNEXPECTED_ERRORS);
 	}
 	

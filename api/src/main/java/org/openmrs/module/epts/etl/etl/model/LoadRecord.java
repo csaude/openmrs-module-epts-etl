@@ -189,7 +189,7 @@ public class LoadRecord {
 					        parentInfo.getParentTableConfInDst().findRelatedSrcConf(), dst, getTaskProcessor());
 					
 					try {
-						EtlLoadHelper.quickLoad(parentData, srcConn, dstConn);
+						EtlLoadHelper.performeParentLoading(parentData, srcConn, dstConn);
 					}
 					catch (DBException e) {
 						if (e.isIntegrityConstraintViolationException()) {
