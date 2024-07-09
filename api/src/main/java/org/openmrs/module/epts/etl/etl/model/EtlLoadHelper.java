@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlActionType;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
@@ -19,7 +20,6 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
-import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -35,24 +35,33 @@ public class EtlLoadHelper {
 	
 	private LoadingType loadingType;
 	
-	public EtlLoadHelper(EtlProcessor processor, int qtySrcObjects, LoadingType loadingType) {
+	private List<DstConf> dstConf;
+	
+	public EtlLoadHelper(EtlProcessor processor, List<DstConf> dstConf, int qtySrcObjects, LoadingType loadingType) {
 		this.processor = processor;
 		this.loadRecordHelper = new ArrayList<>(qtySrcObjects);
 		this.loadingType = loadingType;
+		this.dstConf = dstConf;
 	}
 	
-	public EtlLoadHelper(EtlProcessor processor, List<EtlLoadHelperRecord> loadRecordHelper, LoadingType loadingType) {
-		this(processor, loadRecordHelper.size(), loadingType);
+	public EtlLoadHelper(EtlProcessor processor, List<EtlLoadHelperRecord> loadRecordHelper, List<DstConf> dstConf,
+	    LoadingType loadingType) {
+		this(processor, dstConf, loadRecordHelper.size(), loadingType);
 		
 		this.loadRecordHelper = loadRecordHelper;
 	}
 	
-	public EtlLoadHelper(EtlProcessor processor, EtlLoadHelperRecord recordToLoad, LoadingType loadingType) {
-		this(processor, utilities.parseToList(recordToLoad), loadingType);
+	public EtlLoadHelper(EtlProcessor processor, EtlLoadHelperRecord recordToLoad, List<DstConf> dstConf,
+	    LoadingType loadingType) {
+		this(processor, utilities.parseToList(recordToLoad), dstConf, loadingType);
 	}
 	
-	public EtlLoadHelper(EtlProcessor processor, LoadRecord recordToLoad, LoadingType loadingType) {
-		this(processor, utilities.parseToList(new EtlLoadHelperRecord(recordToLoad)), loadingType);
+	public EtlLoadHelper(EtlProcessor processor, LoadRecord recordToLoad, List<DstConf> dstConf, LoadingType loadingType) {
+		this(processor, utilities.parseToList(new EtlLoadHelperRecord(recordToLoad)), dstConf, loadingType);
+	}
+	
+	public List<DstConf> getDstConf() {
+		return dstConf;
 	}
 	
 	public List<EtlLoadHelperRecord> getLoadRecordHelper() {
@@ -131,7 +140,7 @@ public class EtlLoadHelper {
 	
 	public void load(Connection srcConn, Connection dstConn) throws ParentNotYetMigratedException, DBException {
 		
-		for (DstConf dst : getProcessor().getEtlItemConfiguration().getDstConf()) {
+		for (DstConf dst : this.getDstConf()) {
 			load(dst, srcConn, dstConn);
 			
 			if (hasUnresolvedError(dst)) {
@@ -164,15 +173,15 @@ public class EtlLoadHelper {
 		EtlDstType dstType = getProcessor().determineDstType(dstConf);
 		
 		if (dstType.isDb()) {
-			loadAllToDb(dstConf, srcConn, dstConn);
+			loadToDb(dstConf, srcConn, dstConn);
 		} else if (dstType.isFile()) {
-			loadAllToFile(dstConf);
+			loadToFile(dstConf);
 		} else {
 			throw new ForbiddenOperationException("Unsupported dstType '" + dstType + "'");
 		}
 	}
 	
-	private void loadAllToDb(DstConf dstConf, Connection srcConn, Connection dstConn)
+	private void loadToDb(DstConf dstConf, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		
 		if (!dstConf.isFullLoaded()) {
@@ -200,9 +209,9 @@ public class EtlLoadHelper {
 		
 		if (getActionType().isCreate() || getActionType().isUpdate()) {
 			
-			for (LoadRecord loadRec : getReadyRecordsAsLoadRecord(dstConf)) {
+			for (LoadRecord loadRec : this.getReadyRecordsAsLoadRecord(dstConf)) {
 				if (loadRec.hasParentsWithDefaultValues()) {
-					tryToReloadDefaultParents(loadRec, srcConn, dstConn);
+					this.tryToReloadDefaultParents(loadRec, srcConn, dstConn);
 				} else {
 					loadRec.setStatus(LoadStatus.SUCCESS);
 				}
@@ -246,31 +255,8 @@ public class EtlLoadHelper {
 			this.tryToAddToResult(loadRec.getResultItem());
 			
 		} else {
-			Oid originalOid = loadRec.getDstRecord().getObjectId();
-			
-			EtlDatabaseObject recByUniqueKeys = null;
-			
-			if (loadRec.getEtlConfiguration().isDoTransformsPrimaryKeys()) {
-				recByUniqueKeys = DatabaseObjectDAO.getByUniqueKeys(loadRec.getDstRecord(), dstConn);
-				
-				if (recByUniqueKeys != null) {
-					loadRec.getDstRecord().setObjectId(recByUniqueKeys.getObjectId());
-					
-					loadRec.getDstRecord().update(loadRec.getDstConf(), dstConn);
-					
-					loadRec.getDstRecord().setObjectId(originalOid);
-					loadRec.setStatus(LoadStatus.SUCCESS);
-				} else {
-					loadRec.setStatus(LoadStatus.FAIL);
-					
-					loadRec.getResultItem().setException(new ForbiddenOperationException("The dstRecord "
-					        + loadRec.getDstRecord() + " where not found after the it has been loaded to db!"));
-				}
-			} else {
-				loadRec.getDstRecord().update(loadRec.getDstConf(), dstConn);
-				loadRec.getDstRecord().setObjectId(originalOid);
-				loadRec.setStatus(LoadStatus.SUCCESS);
-			}
+			loadRec.getDstRecord().update(loadRec.getDstConf(), dstConn);
+			loadRec.setStatus(LoadStatus.SUCCESS);
 		}
 	}
 	
@@ -338,6 +324,37 @@ public class EtlLoadHelper {
 		
 		this.logDebug("Preparing the load of " + this.qtyRecordsToLoad());
 		
+		if (dstConf.useSharedPKKey()) {
+			this.logDebug("Trying to do the shared pk loading...");
+			
+			List<EtlLoadHelperRecord> parentToLoad = new ArrayList<>();
+			
+			DstConf sharedDstConf = null;
+			
+			for (LoadRecord loadRecord : this.getAllRecordsAsLoadRecord(dstConf)) {
+				if (!loadRecord.getDstRecord().getSharedPkObj().checkIfExistsOnDstDb(dstConn)) {
+					sharedDstConf = (DstConf) loadRecord.getDstRecord().getSharedPkObj().getRelatedConfiguration();
+					SrcConf sharedSrcConf = sharedDstConf.getSrcConf();
+					
+					EtlDatabaseObject sharedDstObj = loadRecord.getDstRecord().getSharedPkObj();
+					EtlDatabaseObject sharedSrcObj = sharedDstObj.getSrcRelatedObject();
+					
+					parentToLoad.add(new EtlLoadHelperRecord(
+					        new LoadRecord(sharedSrcObj, sharedDstObj, sharedSrcConf, sharedDstConf, getProcessor())));
+				}
+			}
+			
+			if (utilities.arrayHasElement(parentToLoad)) {
+				this.logDebug("Found " + parentToLoad.size() + " shared pk that are not present on DB... Loding them first");
+				
+				EtlLoadHelper helper = new EtlLoadHelper(getProcessor(), parentToLoad, utilities.parseToList(sharedDstConf),
+				        LoadingType.INNER);
+				
+				helper.load(srcConn, dstConn);
+			}
+			
+		}
+		
 		for (LoadRecord loadRecord : this.getAllRecordsAsLoadRecord(dstConf)) {
 			this.logTrace("Preparing the load of dstRecord " + loadRecord.getDstRecord());
 			
@@ -357,6 +374,7 @@ public class EtlLoadHelper {
 				loadRecord.setStatus(LoadStatus.SKIP);
 			} else {
 				if (getActionType().isCreate() || getActionType().isUpdate()) {
+					
 					loadRecord.loadDstParentInfo(srcConn, dstConn);
 					
 					if (!loadRecord.getResultItem().hasUnresolvedInconsistences()) {
@@ -394,7 +412,7 @@ public class EtlLoadHelper {
 		return this.getLoadRecordHelper().size();
 	}
 	
-	public void loadAllToFile(DstConf dstConf) throws ParentNotYetMigratedException, DBException {
+	public void loadToFile(DstConf dstConf) throws ParentNotYetMigratedException, DBException {
 		List<EtlDatabaseObject> objs = getReadyOBjectsAsEtlDatabaseObject(dstConf);
 		
 		String dataFile = getEngine().getDataDir().getAbsolutePath() + File.separator + objs.get(0).generateTableName();
@@ -451,8 +469,9 @@ public class EtlLoadHelper {
 	
 	public static void performeParentLoading(LoadRecord loadRecord, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
-		new EtlLoadHelper(loadRecord.getProcessor(), loadRecord, LoadingType.INNER).load(loadRecord.getDstConf(), srcConn,
-		    dstConn);
+		
+		new EtlLoadHelper(loadRecord.getProcessor(), loadRecord, utilities.parseToList(loadRecord.getDstConf()),
+		        LoadingType.INNER).load(loadRecord.getDstConf(), srcConn, dstConn);
 	}
 	
 	public List<EtlDatabaseObject> getAllSuccessfullyProcessedRecordsAsEtlObject() {

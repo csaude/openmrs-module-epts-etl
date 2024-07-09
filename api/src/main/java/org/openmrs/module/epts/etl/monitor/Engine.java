@@ -309,10 +309,6 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				
 				getEtlItemConfiguration().tryToCreateDefaultRecordsForAllTables();
 				
-				if (getRelatedEtlOperationConfig().writeOperationHistory()) {
-					getEtlItemConfiguration().getSrcConf().generateStagingTables();
-				}
-				
 				logTrace("DEFAULT PARENT OBJECTS CREATED");
 				
 				if (getMaxSupportedProcessors() > 1) {
@@ -685,7 +681,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		List<ThreadRecordIntervalsManager<T>> oldLImitsManagers = ThreadRecordIntervalsManager
 		        .getAllSavedLimitsOfOperation(this);
 		
-		newIntervals.add( getSearchParams().getThreadRecordIntervalsManager());
+		newIntervals.add(getSearchParams().getThreadRecordIntervalsManager());
 		
 		if (oldLImitsManagers != null) {
 			for (ThreadRecordIntervalsManager<T> limits : oldLImitsManagers) {

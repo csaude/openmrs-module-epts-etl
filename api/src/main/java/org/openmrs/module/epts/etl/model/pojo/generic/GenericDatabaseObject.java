@@ -47,6 +47,11 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		return sharedPkObj;
 	}
 	
+	@Override
+	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
+		this.sharedPkObj = (GenericDatabaseObject) sharedPkObj;
+	}
+	
 	public GenericDatabaseObject(DatabaseObjectConfiguration relatedConfiguration) {
 		setRelatedConfiguration(relatedConfiguration);
 	}
@@ -66,10 +71,20 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 				    fieldNameInCameCase);
 			}
 			catch (ForbiddenOperationException e1) {
-				
+				if (getRelatedConfiguration() instanceof TableConfiguration) {
+					
+					if (((TableConfiguration) getRelatedConfiguration()).useSharedPKKey()) {
+						
+						if (this.getSharedPkObj() == null) {
+							throw new ForbiddenOperationException("The sharedPkObj pk is not loaded");
+						}
+						
+						return this.getSharedPkObj().getFieldValue(fieldName);
+					}
+				}
 				return super.getFieldValue(fieldName);
+				
 			}
-			
 		}
 		
 	}
@@ -431,6 +446,10 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	public void copyFrom(EtlDatabaseObject copyFrom) {
 		
+		if (copyFrom == null) {
+			throw new ForbiddenOperationException("You cannot copy from empty record!!!");
+		}
+		
 		if (!hasRelatedConfiguration())
 			throw new ForbiddenOperationException("The relatedConfiguration  is not set for dstRecord [" + this + "]");
 		
@@ -444,6 +463,12 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			catch (ForbiddenOperationException e) {
 				f.setValue(copyFrom.getFieldValue(f.getNameAsClassAtt()));
 			}
+		}
+		
+		this.loadUniqueKeyValues((TableConfiguration) getRelatedConfiguration());
+		
+		if (this.shasSharedPkObj()) {
+			this.getSharedPkObj().copyFrom(copyFrom.getSharedPkObj());
 		}
 		
 	}

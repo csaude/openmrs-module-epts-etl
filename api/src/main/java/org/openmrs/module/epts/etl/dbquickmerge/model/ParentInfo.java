@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.dbquickmerge.model;
 
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
 public class ParentInfo {
@@ -10,6 +11,10 @@ public class ParentInfo {
 	private ParentTable parentTabConfInDst;
 	
 	public ParentInfo(ParentTable parentTableConfInDestination, EtlDatabaseObject parentRecordInOrigin) {
+		if (parentRecordInOrigin == null) {
+			throw new ForbiddenOperationException("Empty parent not allowed!");
+		}
+		
 		this.parentRecordInOrigin = parentRecordInOrigin;
 		this.parentTabConfInDst = parentTableConfInDestination;
 	}

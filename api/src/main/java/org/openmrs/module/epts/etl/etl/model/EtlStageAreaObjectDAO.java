@@ -12,6 +12,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 public class EtlStageAreaObjectDAO extends DatabaseObjectDAO {
 	
 	public static void saveAll(List<EtlStageAreaObject> records, Connection srcConn) throws DBException {
+		if (!utilities.arrayHasElement(records))
+			return;
 		
 		insertAll(utilities.parseList(records, EtlDatabaseObject.class), records.get(0).getRelatedConfiguration(), srcConn);
 		

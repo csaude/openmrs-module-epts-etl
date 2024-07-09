@@ -1262,7 +1262,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		fullLoadedTables.add(tableConfiguration);
 	}
 	
-	public TableConfiguration findOnFullLoadedTables(String tableName, String schema) {
+	public synchronized TableConfiguration findOnFullLoadedTables(String tableName, String schema) {
 		if (getFullLoadedTables() == null)
 			return null;
 		

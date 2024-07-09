@@ -606,6 +606,42 @@ public class DstConf extends AbstractTableConfiguration {
 				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
 			}
 			
+			if (this.useSharedPKKey()) {
+				List<SrcConf> srcForSharedPk = this.getSharedKeyRefInfo().findRelatedSrcConfWhichAsAtLeastOnematchingDst();
+				
+				if (utilities.arrayHasNoElement(srcForSharedPk)) {
+					throw new ForbiddenOperationException(
+					        "There are relashioship which cannot auto resolved as there is no configured etl for "
+					                + this.getSharedKeyRefInfo().getTableName() + " as source and destination!");
+				}
+				
+				EtlDatabaseObject dstParent = null;
+				
+				for (SrcConf src : srcForSharedPk) {
+					DstConf dst = src.getParentConf().findDstTable(this.getSharedKeyRefInfo().getTableName());
+					
+					EtlDatabaseObject recordAsSrc = src.createRecordInstance();
+					recordAsSrc.setRelatedConfiguration(src);
+					
+					recordAsSrc.copyFrom(srcObject.getSharedPkObj());
+					dstParent = dst.transform(recordAsSrc, srcConn, srcAppInfo, dstAppInfo);
+					
+					if (dstParent != null) {
+						
+						dstParent.setSrcRelatedObject(srcObject.getSharedPkObj());
+						break;
+					}
+				}
+				
+				if (dstParent == null) {
+					throw new ForbiddenOperationException(
+					        "The related shared pk object for record " + srcObject + " cannot be transformed");
+				} else {
+					mappedObject.setSharedPkObj(dstParent);
+				}
+			}
+			
+			/*
 			if (this.useSharedPKKey() && srcObject.shasSharedPkObj()) {
 				//Force same fields copy as there is no mapping for sharedPktable
 				
@@ -626,7 +662,7 @@ public class DstConf extends AbstractTableConfiguration {
 						catch (ForbiddenOperationException e1) {}
 					}
 				}
-			}
+			}*/
 			
 			mappedObject.loadObjectIdData(this);
 			

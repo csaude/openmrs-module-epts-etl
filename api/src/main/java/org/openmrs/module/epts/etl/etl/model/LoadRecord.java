@@ -8,7 +8,6 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
-import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -26,7 +25,6 @@ import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
-import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -173,11 +171,12 @@ public class LoadRecord {
 			}
 			
 			EtlDatabaseObject dstParent = null;
+			EtlDatabaseObject recordAsSrc = null;
 			
 			for (SrcConf src : avaliableSrcForCurrParent) {
 				DstConf dst = src.getParentConf().findDstTable(parentInfo.getParentTableConfInDst().getTableName());
 				
-				EtlDatabaseObject recordAsSrc = src.createRecordInstance();
+				recordAsSrc = src.createRecordInstance();
 				recordAsSrc.setRelatedConfiguration(src);
 				
 				recordAsSrc.copyFrom(parentInfo.getParentRecordInOrigin());
@@ -185,8 +184,7 @@ public class LoadRecord {
 				dstParent = dst.transform(recordAsSrc, srcConn, getSrcConnInfo(), getDstConnInfo());
 				
 				if (dstParent != null) {
-					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent,
-					        parentInfo.getParentTableConfInDst().findRelatedSrcConf(), dst, getTaskProcessor());
+					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, getTaskProcessor());
 					
 					try {
 						EtlLoadHelper.performeParentLoading(parentData, srcConn, dstConn);
@@ -211,17 +209,7 @@ public class LoadRecord {
 				}
 			}
 			
-			EtlDatabaseObject parent = DatabaseObjectDAO.getByUniqueKeys(dstParent, dstConn);
-			
-			if (parent != null) {
-				getDstRecord().changeParentValue(parentInfo.getParentTableConfInDst(), parent);
-			} else {
-				getTaskProcessor().logWarn(
-				    "The parent " + parentInfo.getParentRecordInOrigin() + " exists on db but not avaliable yet. dstRecord "
-				            + this.getDstRecord() + ". The task will keep trying...");
-				
-				TimeCountDown.sleep(10);
-			}
+			getDstRecord().changeParentValue(parentInfo.getParentTableConfInDst(), dstParent);
 		}
 	}
 	
@@ -240,143 +228,65 @@ public class LoadRecord {
 			}
 			
 			if (refInfo.isMetadata()) {
-				tryToLoadMissingMetadataInfo(srcConn, dstConn, refInfo);
+				tryToLoadMissingMetadataInfo(refInfo, srcConn, dstConn);
 				
 				continue;
 			}
-			
-			tryToInitializeSharedParentInfo(dstConn, refInfo);
 			
 			if (!checkIfParentMustBeLoaded(refInfo)) {
 				continue;
 			}
 			
-			EtlDatabaseObject parentInOrigin = tryToLoadParentInOrigin(refInfo, srcConn);
+			EtlDatabaseObject parentInSrc = this.getDstRecord().retrieveParentInSrcUsingDstParentInfo(refInfo,
+			    this.getSrcConf(), dstConn);
 			
-			if (parentInOrigin == null) {
-				continue;
-			}
+			EtlDatabaseObject parentInDst = null;
 			
-			EtlDatabaseObject sharedkeyParentInOrigin;
-			
-			try {
-				sharedkeyParentInOrigin = tryToLoadSharedParentInOrigin(refInfo, parentInOrigin, srcConn);
-			}
-			catch (MissingParentException e) {
-				//Inconsistence found
-				
-				continue;
-			}
-			
-			EtlDatabaseObject parent = getParentInDestination(parentInOrigin, sharedkeyParentInOrigin, refInfo, dstConn);
-			
-			if (parent == null) {
-				parent = refInfo.getDefaultObject(dstConn);
-				
-				if (parent == null) {
-					parent = refInfo.generateAndSaveDefaultObject(dstConn);
-				}
-				this.getParentsWithDefaultValues().add(new ParentInfo(refInfo, parentInOrigin));
-			}
-			
-			getDstRecord().changeParentValue(refInfo, parent);
-		}
-	}
-	
-	/**
-	 * @param dstConn
-	 * @param refInfo
-	 * @param parentInOrigin
-	 * @param sharedkeyParentInOrigin
-	 * @param parent
-	 * @return
-	 * @throws DBException
-	 */
-	private EtlDatabaseObject getParentInDestination(EtlDatabaseObject parentInOrigin,
-	        EtlDatabaseObject sharedkeyParentInOrigin, ParentTable refInfo, Connection dstConn) throws DBException {
-		
-		EtlDatabaseObject parent = null;
-		
-		if (getTaskProcessor().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
-			parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
-		} else {
-			
-			//Retrieve parent using shared key parent unique key
-			if (sharedkeyParentInOrigin != null) {
-				EtlDatabaseObject recInDst = refInfo.getSharedKeyRefInfo().createRecordInstance();
-				recInDst.setRelatedConfiguration(refInfo.getSharedKeyRefInfo());
-				recInDst.copyFrom(sharedkeyParentInOrigin);
-				recInDst.loadUniqueKeyValues(refInfo.getSharedKeyRefInfo());
-				recInDst.loadObjectIdData(refInfo.getSharedKeyRefInfo());
-				
-				EtlDatabaseObject sharedPkParent = retrieveParentByUnikeKeys(recInDst, dstConn);
-				
-				if (sharedPkParent != null) {
-					parent = sharedPkParent.getSharedKeyChildRelatedObject(refInfo, dstConn);
-				}
-				
+			if (parentInSrc != null) {
+				parentInDst = this.getDstRecord().retrieveParentInDestination(refInfo, parentInSrc, dstConn);
 			} else {
-				EtlDatabaseObject recInDst = refInfo.createRecordInstance();
-				recInDst.setRelatedConfiguration(refInfo);
-				recInDst.copyFrom(parentInOrigin);
-				recInDst.loadUniqueKeyValues(refInfo);
-				recInDst.loadObjectIdData(refInfo);
 				
-				parent = retrieveParentByUnikeKeys(recInDst, dstConn);
-			}
-		}
-		
-		return parent;
-	}
-	
-	private EtlDatabaseObject tryToLoadSharedParentInOrigin(ParentTable refInfo, EtlDatabaseObject parentInOrigin,
-	        Connection srcConn) throws DBException, MissingParentException {
-		
-		EtlDatabaseObject sharedkeyParentInOrigin = null;
-		
-		//Try to load the shared key parent and generate inconsistence if is not exists
-		if (refInfo.useSharedPKKey() && !refInfo.hasItsOwnKeys()) {
-			sharedkeyParentInOrigin = parentInOrigin.getSharedKeyParentRelatedObject(srcConn);
-			
-			if (sharedkeyParentInOrigin == null && !refInfo.hasDefaultValueDueInconsistency()) {
-				this.getResultItem().addInconsistence(
-				    InconsistenceInfo.generate(getDstRecord().generateTableName(), getDstRecord().getObjectId(),
-				        refInfo.getTableName(), refInfo.generateParentOidFromChild(getDstRecord()).getSimpleValue(),
-				        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
-				
-				throw new MissingParentException(null);
-			}
-		}
-		
-		return sharedkeyParentInOrigin;
-	}
-	
-	private EtlDatabaseObject tryToLoadParentInOrigin(ParentTable refInfo, Connection srcConn) throws DBException {
-		EtlDatabaseObject parentInOrigin = getDstRecord().getRelatedParentObject(refInfo, getSrcConf(), srcConn);
-		
-		if (parentInOrigin == null) {
-			
-			if (refInfo.hasDefaultValueDueInconsistency()) {
-				
-				Oid key = refInfo.generateParentOidFromChild(getDstRecord());
-				
-				if (refInfo.useSimplePk()) {
-					key.asSimpleKey().setValue(refInfo.getDefaultValueDueInconsistency());
-				} else
-					throw new ForbiddenOperationException(
-					        "There is a defaultValueDueInconsistency but the key is not simple on table "
-					                + refInfo.getTableName());
-				
-				parentInOrigin = getDstRecord().getRelatedParentObjectOnSrc(refInfo, key, getSrcConf(), srcConn);
+				try {
+					if (refInfo.hasDefaultValueDueInconsistency()) {
+						
+						Oid key = refInfo.generateParentOidFromChild(getDstRecord());
+						
+						if (refInfo.useSimplePk()) {
+							key.asSimpleKey().setValue(refInfo.getDefaultValueDueInconsistency());
+						} else
+							throw new ForbiddenOperationException(
+							        "There is a defaultValueDueInconsistency but the key is not simple on table "
+							                + refInfo.getTableName());
+						
+						parentInDst = getDstRecord().retrieveParentByOid(refInfo, dstConn);
+					} else {
+						continue;
+					}
+				}
+				finally {
+					this.getResultItem()
+					        .addInconsistence(InconsistenceInfo.generate(getDstRecord().generateTableName(),
+					            getDstRecord().getObjectId(), refInfo.getTableName(),
+					            refInfo.generateParentOidFromChild(getDstRecord()).getSimpleValue(),
+					            refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+				}
 			}
 			
-			this.getResultItem().addInconsistence(
-			    InconsistenceInfo.generate(getDstRecord().generateTableName(), getDstRecord().getObjectId(),
-			        refInfo.getTableName(), refInfo.generateParentOidFromChild(getDstRecord()).getSimpleValue(),
-			        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+			if (parentInDst == null) {
+				parentInDst = refInfo.getDefaultObject(dstConn);
+				
+				if (parentInDst == null) {
+					parentInDst = refInfo.generateAndSaveDefaultObject(dstConn);
+				}
+				
+				//The parentInSrc will be null if it does not exists and were used default parent
+				if (parentInSrc != null) {
+					this.getParentsWithDefaultValues().add(new ParentInfo(refInfo, parentInSrc));
+				}
+			}
+			
+			getDstRecord().changeParentValue(refInfo, parentInDst);
 		}
-		
-		return parentInOrigin;
 	}
 	
 	/**
@@ -406,34 +316,22 @@ public class LoadRecord {
 	}
 	
 	/**
-	 * @param dstConn
-	 * @param refInfo
-	 * @throws DBException
-	 */
-	private void tryToInitializeSharedParentInfo(Connection dstConn, ParentTable refInfo) throws DBException {
-		if (refInfo.useSharedPKKey()) {
-			if (!refInfo.getSharedKeyRefInfo().isFullLoaded()) {
-				refInfo.getSharedKeyRefInfo().tryToGenerateTableAlias(this.getEtlConfiguration());
-				
-				refInfo.getSharedKeyRefInfo().fullLoad(dstConn);
-			}
-		}
-	}
-	
-	/**
 	 * @param srcConn
 	 * @param dstConn
 	 * @param refInfo
 	 * @throws DBException
 	 * @throws ForbiddenOperationException
 	 */
-	private void tryToLoadMissingMetadataInfo(Connection srcConn, Connection dstConn, ParentTable refInfo)
+	private void tryToLoadMissingMetadataInfo(ParentTable refInfo, Connection srcConn, Connection dstConn)
 	        throws DBException, ForbiddenOperationException {
-		EtlDatabaseObject parentInOrigin = getDstRecord().getRelatedParentObject(refInfo, getSrcConf(), srcConn);
+		
+		EtlDatabaseObject parentInOrigin = getDstRecord().retrieveParentInSrcUsingDstParentInfo(refInfo, getSrcConf(),
+		    srcConn);
+		
 		EtlDatabaseObject parent = null;
 		
 		if (parentInOrigin != null) {
-			parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
+			parent = this.getDstRecord().retrieveParentByOid(refInfo, dstConn);
 			
 			if (parent == null) {
 				getTaskProcessor().logWarn(
@@ -466,16 +364,6 @@ public class LoadRecord {
 			
 			refInfo.fullLoad(dstConn);
 		}
-	}
-	
-	private EtlDatabaseObject retrieveParentByOid(ParentTable refInfo, EtlDatabaseObject parentInOrigin, Connection dstConn)
-	        throws DBException {
-		
-		return DatabaseObjectDAO.getByOid(refInfo, parentInOrigin.getObjectId(), dstConn);
-	}
-	
-	private EtlDatabaseObject retrieveParentByUnikeKeys(EtlDatabaseObject parent, Connection dstConn) throws DBException {
-		return DatabaseObjectDAO.getByUniqueKeys(parent, dstConn);
 	}
 	
 	/**
@@ -532,19 +420,8 @@ public class LoadRecord {
 				continue;
 			}
 			
-			Oid key = refInfo.generateParentOidFromChild(getDstRecord());
-			
-			TableConfiguration tabConfInSrc = this.getSrcConf().findFullConfiguredConfInAllRelatedTable(
-			    refInfo.generateFullTableNameOnSchema(getSrcConf().getSchema()));
-			
-			if (tabConfInSrc == null) {
-				tabConfInSrc = new GenericTableConfiguration(this.getSrcConf());
-				tabConfInSrc.setTableName(refInfo.getTableName());
-				tabConfInSrc.setRelatedEtlConfig(this.getEtlConfiguration());
-				tabConfInSrc.fullLoad(srcConn);
-			}
-			
-			EtlDatabaseObject parentInOrigin = DatabaseObjectDAO.getByOid(tabConfInSrc, key, srcConn);
+			EtlDatabaseObject parentInOrigin = this.getDstRecord().retrieveParentInSrcUsingDstParentInfo(refInfo, srcConf,
+			    srcConn);
 			
 			if (parentInOrigin == null) {
 				continue;
@@ -553,7 +430,7 @@ public class LoadRecord {
 			EtlDatabaseObject parent;
 			
 			if (getTaskProcessor().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
-				parent = retrieveParentByOid(refInfo, parentInOrigin, dstConn);
+				parent = this.getDstRecord().retrieveParentByOid(refInfo, dstConn);
 			} else {
 				EtlDatabaseObject recInDst = refInfo.createRecordInstance();
 				recInDst.setRelatedConfiguration(refInfo);
@@ -561,7 +438,7 @@ public class LoadRecord {
 				recInDst.loadUniqueKeyValues(refInfo);
 				recInDst.loadObjectIdData(refInfo);
 				
-				parent = retrieveParentByUnikeKeys(recInDst, dstConn);
+				parent = this.getDstRecord().retrieveParentInDestination(refInfo, parentInOrigin, dstConn);
 			}
 			
 			if (parent == null) {

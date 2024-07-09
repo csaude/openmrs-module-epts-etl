@@ -733,4 +733,10 @@ public class EtlStageRecordVO extends BaseVO implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
+		// TODO Auto-generated method stub
+		
+	}
 }

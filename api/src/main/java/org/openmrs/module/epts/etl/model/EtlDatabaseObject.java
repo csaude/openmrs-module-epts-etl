@@ -151,6 +151,8 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	EtlDatabaseObject getSharedPkObj();
 	
+	void setSharedPkObj(EtlDatabaseObject sharedPkObj);
+	
 	default boolean shasSharedPkObj() {
 		return getSharedPkObj() != null;
 	}
@@ -463,7 +465,11 @@ public interface EtlDatabaseObject extends EtlObject {
 		this.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(tabConf.getUniqueKeys(), this));
 	}
 	
-	default EtlDatabaseObject getSharedKeyParentRelatedObject(Connection conn) throws DBException {
+	default void loadUniqueKeyValues() {
+		this.loadUniqueKeyValues((TableConfiguration) getRelatedConfiguration());
+	}
+	
+	default void loadSharedKeyParentRelatedObject(Connection conn) throws DBException {
 		TableConfiguration tabConf = (TableConfiguration) this.getRelatedConfiguration();
 		
 		if (!tabConf.useSharedPKKey())
@@ -474,21 +480,9 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		Oid key = sharedKeyConf.generateParentOidFromChild(this);
 		
-		return DatabaseObjectDAO.getByOid(sharedKeyConf, key, conn);
+		EtlDatabaseObject obj = DatabaseObjectDAO.getByOid(sharedKeyConf, key, conn);
 		
-		/*
-		if (sharedKeyParentInOrigin != null) {
-			EtlDatabaseObject sharedKeyParent = sharedKeyConf.createRecordInstance();
-			sharedKeyParent.setRelatedConfiguration(sharedKeyConf);
-			sharedKeyParent.copyFrom(sharedKeyParentInOrigin);
-			sharedKeyParent.loadUniqueKeyValues(sharedKeyConf);
-			sharedKeyParent.loadObjectIdData(sharedKeyConf);
-			
-			return DatabaseObjectDAO.getByOid(sharedKeyConf, sharedKeyParent.getObjectId(), conn);
-		}
-		
-		return null;
-		*/
+		this.setSharedPkObj(obj);
 	}
 	
 	default EtlDatabaseObject getSharedKeyChildRelatedObject(TableConfiguration childTabConf, Connection conn)
@@ -506,7 +500,13 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		Oid key = childTabConf.getSharedKeyRefInfo().generateChildOidFromParent(this);
 		
-		return DatabaseObjectDAO.getByOid(childTabConf, key, conn);
+		EtlDatabaseObject child = DatabaseObjectDAO.getByOid(childTabConf, key, conn);
+		
+		if (child != null) {
+			child.setSharedPkObj(this);
+		}
+		
+		return child;
 		
 		/*
 		if (sharedKeyChildInOrigin != null) {
@@ -523,12 +523,10 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 	}
 	
-	default EtlDatabaseObject getRelatedParentObject(ParentTable refInfo, SrcConf src, Connection conn) throws DBException {
-		return getRelatedParentObjectOnSrc(refInfo, refInfo.generateParentOidFromChild(this), src, conn);
-	}
-	
-	default EtlDatabaseObject getRelatedParentObjectOnSrc(ParentTable refInfo, Oid prentOid, SrcConf src, Connection conn)
+	default EtlDatabaseObject retrieveParentInSrcUsingDstParentInfo(ParentTable refInfo, SrcConf src, Connection srcConn)
 	        throws DBException {
+		
+		Oid prentOid = refInfo.generateParentOidFromChild(this);
 		
 		TableConfiguration tabConfInSrc = src
 		        .findFullConfiguredConfInAllRelatedTable(refInfo.generateFullTableNameOnSchema(src.getSchema()));
@@ -539,14 +537,70 @@ public interface EtlDatabaseObject extends EtlObject {
 			
 			tabConfInSrc.setRelatedEtlConfig(src.getRelatedEtlConf());
 			
-			tabConfInSrc.fullLoad(conn);
+			tabConfInSrc.fullLoad(srcConn);
 		}
 		
-		return DatabaseObjectDAO.getByOid(tabConfInSrc, prentOid, conn);
+		return DatabaseObjectDAO.getByOid(tabConfInSrc, prentOid, srcConn);
 	}
 	
 	default void delete(Connection conn) throws DBException {
 		DatabaseObjectDAO.remove(this, conn);
+	}
+	
+	default EtlDatabaseObject findDstDb(Connection dstConn) throws DBException {
+		return DatabaseObjectDAO.getByUniqueKeys(this, dstConn);
+	}
+	
+	default boolean checkIfExistsOnDstDb(Connection dstConn) throws DBException {
+		return findDstDb(dstConn) != null;
+	}
+	
+	default boolean checkIfExistsOnSrc(Connection srcConn) throws DBException {
+		EtlDatabaseObject recOnDb = findOnDB((TableConfiguration) this.getRelatedConfiguration(), srcConn);
+		
+		return recOnDb != null;
+	}
+	
+	/*
+	default void tryToLoadSharedParentInOrigin(Connection srcConn) throws DBException, MissingParentException {
+		
+		TableConfiguration tabConf = (TableConfiguration) getRelatedConfiguration();
+		
+		if (!tabConf.useSharedPKKey()) {
+			return;
+		}
+		
+		ParentTable refInfo = tabConf.getSharedKeyRefInfo();
+		
+		Oid parentId = refInfo.generateParentOidFromChild(this);
+		
+		if (this.getSharedPkObj() == null && !refInfo.hasDefaultValueDueInconsistency()) {
+			throw new MissingParentException(this, parentId, refInfo.getTableName(), tabConf.getOriginAppLocationCode(),
+			        refInfo, null);
+		}
+		
+	}*/
+	
+	default EtlDatabaseObject retrieveParentByOid(ParentTable refInfo, Connection conn) throws DBException {
+		return retrieveParentByOid(refInfo, refInfo.generateParentOidFromChild(this), conn);
+	}
+	
+	default EtlDatabaseObject retrieveParentByOid(ParentTable refInfo, Oid parentId, Connection conn) throws DBException {
+		return DatabaseObjectDAO.getByOid(refInfo, parentId, conn);
+	}
+	
+	default EtlDatabaseObject retrieveParentInDestination(ParentTable refInfo, EtlDatabaseObject parentInOrigin,
+	        Connection dstConn) throws DBException {
+		
+		
+		EtlDatabaseObject recInDst = refInfo.createRecordInstance();
+		recInDst.setRelatedConfiguration(refInfo);
+		recInDst.copyFrom(parentInOrigin);
+		recInDst.loadUniqueKeyValues(refInfo);
+		recInDst.loadObjectIdData(refInfo);
+		
+		
+		return DatabaseObjectDAO.getByUniqueKeys(recInDst, dstConn);
 	}
 	
 }

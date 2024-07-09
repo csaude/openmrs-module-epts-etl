@@ -448,4 +448,10 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
+		// TODO Auto-generated method stub
+		
+	}
 }

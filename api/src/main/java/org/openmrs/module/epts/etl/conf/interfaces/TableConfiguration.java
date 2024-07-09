@@ -1024,7 +1024,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default String generateFullTableName(Connection conn) throws DBException {
-		return DBUtilities.tryToPutSchemaOnDatabaseObject(getTableName(), conn);
+		return getSchema() + "." + getTableName();
 	}
 	
 	default String generateFullTableNameWithAlias(Connection conn) throws DBException, ForbiddenOperationException {
@@ -2171,49 +2171,39 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return utilities.removeLastChar(values);
 	}
 	
-	default void generateStagingTables() throws DBException {
+	default void generateStagingTables(Connection conn) throws DBException {
 		
 		synchronized (getTableName()) {
 			
-			OpenConnection conn = null;
+			conn = getRelatedEtlConf().openSrcConn();
 			
-			try {
+			logDebug("UPGRATING TABLE INFO [" + this.getTableName() + "]");
+			
+			if (!existRelatedExportStageTable(conn)) {
+				logDebug("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
 				
-				conn = getRelatedEtlConf().openSrcConn();
+				createRelatedSyncStageAreaTable(conn);
 				
-				logDebug("UPGRATING TABLE INFO [" + this.getTableName() + "]");
-				
-				if (!existRelatedExportStageTable(conn)) {
-					logDebug("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
-					
-					createRelatedSyncStageAreaTable(conn);
-					
-					logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
-				}
-				
-				if (!existRelatedExportStageSrcUniqueKeysTable(conn)) {
-					logDebug("GENERATING RELATED STAGE ORIGIN UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
-					
-					createRelatedSyncStageAreaSrcUniqueKeysTable(conn);
-					
-					logDebug("RELATED STAGE SRC UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
-				}
-				
-				if (!existRelatedExportStageDstUniqueKeysTable(conn)) {
-					logDebug("GENERATING RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
-					
-					createRelatedSyncStageAreaDstUniqueKeysTable(conn);
-					
-					logDebug("RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
-				}
-				
-				logDebug("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
+				logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
 			}
-			finally {
-				if (conn != null) {
-					conn.finalizeConnection();
-				}
+			
+			if (!existRelatedExportStageSrcUniqueKeysTable(conn)) {
+				logDebug("GENERATING RELATED STAGE ORIGIN UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
+				
+				createRelatedSyncStageAreaSrcUniqueKeysTable(conn);
+				
+				logDebug("RELATED STAGE SRC UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
 			}
+			
+			if (!existRelatedExportStageDstUniqueKeysTable(conn)) {
+				logDebug("GENERATING RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
+				
+				createRelatedSyncStageAreaDstUniqueKeysTable(conn);
+				
+				logDebug("RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
+			}
+			
+			logDebug("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
 			
 		}
 		

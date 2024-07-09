@@ -405,10 +405,16 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				logWarn("THE OPERATION " + getControllerId() + " WAS ALREADY FINISHED!");
 				
 				changeStatusToFinished();
-			} else if (isParallelModeProcessing()) {
-				runInParallelMode();
 			} else {
-				runInSequencialMode();
+				if (getOperationConfig().writeOperationHistory()) {
+					initHistoryStageArea();
+				}
+				
+				if (isParallelModeProcessing()) {
+					runInParallelMode();
+				} else {
+					runInSequencialMode();
+				}
 			}
 			
 			boolean running = true;
@@ -431,6 +437,23 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		catch (Exception e) {
 			this.requestStopDueError(null, e);
 		}
+	}
+	
+	private synchronized void initHistoryStageArea() throws DBException {
+		
+		OpenConnection conn = openSrcConnection();
+		
+		try {
+			for (EtlItemConfiguration item : getEtlItemConfiguration()) {
+				item.getSrcConf().generateStagingTables(conn);
+			}
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+		
 	}
 	
 	@Override

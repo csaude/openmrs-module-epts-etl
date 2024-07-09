@@ -77,12 +77,11 @@ public class DatabaseObjectDAO extends BaseDAO {
 		refreshLastSyncDate(syncRecords, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
-	public static void insert(EtlDatabaseObject record, TableConfiguration tableConfiguration, Connection conn)
-	        throws DBException {
+	public static void insert(EtlDatabaseObject record, TableConfiguration tabConf, Connection conn) throws DBException {
 		Object[] params = null;
 		String sql = null;
 		
-		if (tableConfiguration.getRelatedEtlConf().isDoNotTransformsPrimaryKeys() || tableConfiguration.useSharedPKKey()) {
+		if (tabConf.getRelatedEtlConf().isDoNotTransformsPrimaryKeys() || tabConf.useSharedPKKey()) {
 			params = record.getInsertParamsWithObjectId();
 			sql = record.getInsertSQLWithObjectId();
 		} else {
@@ -93,9 +92,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 		List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 		
 		if (record.getObjectId().isSimpleId() && utilities.arrayHasElement(ids)) {
-			record.fastCreateSimpleNumericKey(ids.get(0));
+			record.loadObjectIdData(tabConf);
+			
+			record.setObjectId(Oid.fastCreate(record.getObjectId().asSimpleKey().getName(), ids.get(0)));
 		}
-		
 	}
 	
 	public static void insertWithObjectId(EtlDatabaseObject record, Connection conn) throws DBException {
@@ -204,19 +204,21 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends EtlDatabaseObject> T getByUniqueKeys(T obj, Connection conn) throws DBException {
+	public static <T extends EtlDatabaseObject> T getByUniqueKeys(T record, Connection conn) throws DBException {
+		record.loadUniqueKeyValues();
 		
-		if (!obj.hasAtLeastOnUniqueKeyWIthAllFieldsFilled()) {
-			return null;
+		TableConfiguration tableConfiguration = (TableConfiguration) record.getRelatedConfiguration();
+		
+		if (!record.hasAtLeastOnUniqueKeyWIthAllFieldsFilled()) {
+			throw new ForbiddenOperationException("The object " + record + " has no valued uniqueKey");
 		}
-		
-		TableConfiguration tableConfiguration = (TableConfiguration) obj.getRelatedConfiguration();
 		
 		Object[] params = {};
 		
 		String conditionSQL = "";
 		
-		for (UniqueKeyInfo uniqueKey : obj.getUniqueKeysInfo()) {
+		for (UniqueKeyInfo uniqueKey : record.getUniqueKeysInfo()) {
+			
 			if (!uniqueKey.hasNullFields()) {
 				
 				String tmpCodition = "";
@@ -246,7 +248,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += " FROM     " + tableConfiguration.generateSelectFromClauseContent() + "\n";
 		sql += " WHERE 	" + conditionSQL;
 		
-		return (T) find(tableConfiguration.getLoadHealper(), obj.getClass(), sql, params, conn);
+		return (T) find(tableConfiguration.getLoadHealper(), record.getClass(), sql, params, conn);
 	}
 	
 	public static <T extends EtlDatabaseObject> List<T> getByField(TableConfiguration tableConfiguration, String fieldName,
@@ -280,9 +282,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 			
 			Class<T> openMRSClass = (Class<T>) tabConf.getSyncRecordClass(tabConf.getRelatedConnInfo());
 			
-			T obj = openMRSClass.newInstance();
+			T record = openMRSClass.newInstance();
 			
-			obj.setRelatedConfiguration(tabConf);
+			record.setRelatedConfiguration(tabConf);
 			
 			Object[] params = oid.parseValuesToArray();
 			
@@ -292,13 +294,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql += " FROM  	" + tabConf.generateSelectFromClauseContent() + "\n";
 			sql += " WHERE 	" + oid.parseToParametrizedStringConditionWithAlias();
 			
-			obj = find(tabConf.getLoadHealper(), openMRSClass, sql, params, conn);
+			record = find(tabConf.getLoadHealper(), openMRSClass, sql, params, conn);
 			
-			if (obj != null) {
-				obj.loadObjectIdData(tabConf);
+			if (record != null) {
+				record.loadObjectIdData(tabConf);
 			}
 			
-			return obj;
+			return record;
 			
 		}
 		catch (InstantiationException e) {
@@ -455,9 +457,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 	        Connection conn) throws DBException {
 		Object[] params = { parentId };
 		
-		EtlDatabaseObject obj = utilities.createInstance(clazz);
+		EtlDatabaseObject record = utilities.createInstance(clazz);
 		
-		String sql = " SELECT count(*) value" + " FROM     " + obj.generateTableName() + " WHERE 	" + parentField
+		String sql = " SELECT count(*) value" + " FROM     " + record.generateTableName() + " WHERE 	" + parentField
 		        + " = ? ";
 		
 		SimpleValue v = find(SimpleValue.class, sql, params, conn);
@@ -485,12 +487,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		Class<? extends EtlDatabaseObject> clazz = tabConf.getSyncRecordClass();
 		
-		EtlDatabaseObject obj = utilities.createInstance(clazz);
+		EtlDatabaseObject record = utilities.createInstance(clazz);
 		
-		String sql = " SELECT " + obj.generateTableName() + ".*"
-		        + (obj.generateTableName().equals("patient") ? ", uuid" : "") + " FROM     " + schema + "."
-		        + obj.generateTableName()
-		        + (obj.generateTableName().equals("patient") ? " inner join " + schema + ".person on person_id = patient_id "
+		String sql = " SELECT " + record.generateTableName() + ".*"
+		        + (record.generateTableName().equals("patient") ? ", uuid" : "") + " FROM     " + schema + "."
+		        + record.generateTableName()
+		        + (record.generateTableName().equals("patient")
+		                ? " inner join " + schema + ".person on person_id = patient_id "
 		                : "")
 		        + " WHERE 	" + parentField + " = ?";
 		
@@ -567,10 +570,11 @@ public class DatabaseObjectDAO extends BaseDAO {
 				if (utilities.arrayHasElement(ids) && objects.get(0).getObjectId().isSimpleId()) {
 					
 					int i = 0;
-					for (EtlDatabaseObject obj : objects) {
-						obj.loadObjectIdData(tabConf);
-						obj.getObjectId().asSimpleKey().setValue(ids.get(i));
-						obj.setFieldValue(obj.getObjectId().asSimpleKey().getName(), ids.get(i));
+					
+					for (EtlDatabaseObject record : objects) {
+						record.loadObjectIdData(tabConf);
+						record.setObjectId(Oid.fastCreate(record.getObjectId().asSimpleKey().getName(), ids.get(i)));
+						
 						i += 1;
 					}
 				}
@@ -580,16 +584,16 @@ public class DatabaseObjectDAO extends BaseDAO {
 				
 			}
 			catch (DBException e) {
-				for (EtlDatabaseObject obj : objects) {
+				for (EtlDatabaseObject record : objects) {
 					try {
-						obj.loadObjectIdData(tabConf);
+						record.loadObjectIdData(tabConf);
 						
-						obj.save(tabConf, conn);
+						record.save(tabConf, conn);
 						
-						result.addToRecordsWithNoError(obj.getSrcRelatedObject());
+						result.addToRecordsWithNoError(record.getSrcRelatedObject());
 					}
 					catch (DBException e1) {
-						result.addToRecordsWithUnresolvedErrors(obj, e1);
+						result.addToRecordsWithUnresolvedErrors(record, e1);
 					}
 				}
 			}
@@ -853,10 +857,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
-		for (EtlDatabaseObject obj : objects) {
-			obj.update(config, conn);
+		for (EtlDatabaseObject record : objects) {
+			record.update(config, conn);
 			
-			result.addToRecordsWithNoError(obj.getSrcRelatedObject());
+			result.addToRecordsWithNoError(record.getSrcRelatedObject());
 		}
 		
 		return result;
@@ -867,10 +871,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
-		for (EtlDatabaseObject obj : objects) {
-			obj.delete(conn);
+		for (EtlDatabaseObject record : objects) {
+			record.delete(conn);
 			
-			result.addToRecordsWithNoError(obj.getSrcRelatedObject());
+			result.addToRecordsWithNoError(record.getSrcRelatedObject());
 		}
 		
 		return result;

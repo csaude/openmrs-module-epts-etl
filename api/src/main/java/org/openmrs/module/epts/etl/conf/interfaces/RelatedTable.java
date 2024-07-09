@@ -170,7 +170,7 @@ public interface RelatedTable extends TableConfiguration {
 		
 		Oid oid = new Oid();
 		
-		obj.setRelatedConfiguration(obj.getRelatedConfiguration());
+		oid.setTabConf((TableConfiguration) obj.getRelatedConfiguration());
 		
 		for (RefMapping map : this.getRefMapping()) {
 			

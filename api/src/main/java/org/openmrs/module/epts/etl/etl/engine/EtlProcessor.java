@@ -55,7 +55,8 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		
 		try {
 			
-			EtlLoadHelper loadHelper = new EtlLoadHelper(this, etlObjects.size(), LoadingType.PRINCIPAL);
+			EtlLoadHelper loadHelper = new EtlLoadHelper(this, this.getEtlItemConfiguration().getDstConf(),
+			        etlObjects.size(), LoadingType.PRINCIPAL);
 			
 			for (EtlObject record : etlObjects) {
 				EtlDatabaseObject srcRecord = (EtlDatabaseObject) record;
@@ -68,7 +69,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 					EtlDatabaseObject dstObject = transform(srcRecord, mappingInfo, etlObjects, srcConn, dstConn);
 					
 					if (dstObject != null) {
-						logTrace("dstRecord " + srcRecord + " transforming to " + dstConn);
+						logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
 						
 						LoadRecord etlRec = initEtlRecord(srcRecord, dstObject, mappingInfo);
 						

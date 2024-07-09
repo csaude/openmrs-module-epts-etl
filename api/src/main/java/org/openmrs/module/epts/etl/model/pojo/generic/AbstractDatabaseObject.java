@@ -110,6 +110,13 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	public void setObjectId(Oid objectId) {
 		this.objectId = objectId;
+		
+		if (objectId != null) {
+			for (Key key : objectId.getFields()) {
+				setFieldValue(key.getName(), key.getValue());
+			}
+		}
+		
 	}
 	
 	/**
@@ -342,7 +349,16 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	@Override
 	public void update(TableConfiguration syncTableInfo, Connection conn) throws DBException {
-		DatabaseObjectDAO.update(this, conn);
+		try {
+			DatabaseObjectDAO.update(this, conn);
+		}
+		catch (DBException e) {
+			if (e.isDuplicatePrimaryOrUniqueKeyException()) {
+				System.err.println();
+			}
+			
+			throw e;
+		}
 	}
 	
 	public void resolveConflictWithExistingRecord(EtlDatabaseObject recordOnDB, TableConfiguration tableConfiguration,
