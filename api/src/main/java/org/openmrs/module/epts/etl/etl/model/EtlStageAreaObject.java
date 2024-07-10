@@ -67,7 +67,14 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		
 		if (utilities.arrayHasElement(dstObject)) {
 			for (EtlDatabaseObject obj : dstObject) {
-				eo.addDstKeyInfo(eo.generateUniqueKeyInfoRecord(dstKeyInfoTabConf, obj));
+				try {
+					eo.addDstKeyInfo(eo.generateUniqueKeyInfoRecord(dstKeyInfoTabConf, obj));
+				}
+				catch (NullPointerException e) {
+					e.printStackTrace();
+					
+					throw e;
+				}
 			}
 		}
 		

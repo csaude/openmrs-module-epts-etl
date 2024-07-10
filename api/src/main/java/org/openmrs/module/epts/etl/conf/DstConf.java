@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.etl.engine.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
 import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
@@ -387,6 +388,10 @@ public class DstConf extends AbstractTableConfiguration {
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		this.tryToGenerateTableAlias(getRelatedEtlConf());
 		
+		if (!hasManualMapPrimaryKeyOnField()) {
+			setManualMapPrimaryKeyOnField(getRelatedEtlConf().getManualMapPrimaryKeyOnField());
+		}
+		
 		super.fullLoad(conn);
 	}
 	
@@ -554,24 +559,28 @@ public class DstConf extends AbstractTableConfiguration {
 		return this.getParentConf().getSrcConf();
 	}
 	
-	public EtlDatabaseObject transform(EtlDatabaseObject srcObject, Connection srcConn, DBConnectionInfo srcAppInfo,
-	        DBConnectionInfo dstAppInfo) throws DBException, ForbiddenOperationException {
+	public EtlDatabaseObject transform(EtlDatabaseObject srcRec, Connection srcConn,
+	        TaskProcessor<EtlDatabaseObject> processor) throws DBException, ForbiddenOperationException {
 		try {
+			processor.logTrace("Transforming dstRecord " + srcRec);
+			
+			DBConnectionInfo srcAppInfo = processor.getRelatedEtlConfiguration().getSrcConnInfo();
+			DBConnectionInfo dstAppInfo = processor.getRelatedEtlConfiguration().getDstConnInfo();
 			
 			if (hasTransformer()) {
-				return getTransformerInstance().transform(srcObject, this, srcConn, srcConn);
+				return getTransformerInstance().transform(srcRec, this, srcConn, srcConn);
 			}
 			
 			List<EtlDatabaseObject> srcObjects = new ArrayList<>();
 			
-			srcObjects.add(srcObject);
+			srcObjects.add(srcRec);
 			
-			if (srcObject.shasSharedPkObj()) {
-				srcObjects.add(srcObject.getSharedPkObj());
+			if (srcRec.shasSharedPkObj()) {
+				srcObjects.add(srcRec.getSharedPkObj());
 			}
 			
 			for (EtlAdditionalDataSource mappingInfo : this.getSrcConf().getAvaliableExtraDataSource()) {
-				EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn, srcAppInfo);
+				EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcRec, srcConn, srcAppInfo);
 				
 				if (relatedSrcObject == null) {
 					
@@ -587,10 +596,10 @@ public class DstConf extends AbstractTableConfiguration {
 				
 			}
 			
-			EtlDatabaseObject mappedObject = this.getSyncRecordClass(dstAppInfo).newInstance();
+			EtlDatabaseObject transformedRec = this.getSyncRecordClass(dstAppInfo).newInstance();
 			
-			mappedObject.setRelatedConfiguration(this);
-			mappedObject.setSrcRelatedObject(srcObject);
+			transformedRec.setRelatedConfiguration(this);
+			transformedRec.setSrcRelatedObject(srcRec);
 			
 			for (FieldsMapping fieldsMapping : this.allMapping) {
 				Object srcValue;
@@ -600,10 +609,10 @@ public class DstConf extends AbstractTableConfiguration {
 				} else if (fieldsMapping.getSrcValue() != null) {
 					srcValue = fieldsMapping.getSrcValue();
 				} else {
-					srcValue = fieldsMapping.retrieveValue(mappedObject, srcObjects, dstAppInfo, srcConn);
+					srcValue = fieldsMapping.retrieveValue(transformedRec, srcObjects, dstAppInfo, srcConn);
 				}
 				
-				mappedObject.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
+				transformedRec.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
 			}
 			
 			if (this.useSharedPKKey()) {
@@ -623,50 +632,33 @@ public class DstConf extends AbstractTableConfiguration {
 					EtlDatabaseObject recordAsSrc = src.createRecordInstance();
 					recordAsSrc.setRelatedConfiguration(src);
 					
-					recordAsSrc.copyFrom(srcObject.getSharedPkObj());
-					dstParent = dst.transform(recordAsSrc, srcConn, srcAppInfo, dstAppInfo);
+					recordAsSrc.copyFrom(srcRec.getSharedPkObj());
+					dstParent = dst.transform(recordAsSrc, srcConn, processor);
 					
 					if (dstParent != null) {
 						
-						dstParent.setSrcRelatedObject(srcObject.getSharedPkObj());
+						dstParent.setSrcRelatedObject(srcRec.getSharedPkObj());
 						break;
 					}
 				}
 				
 				if (dstParent == null) {
 					throw new ForbiddenOperationException(
-					        "The related shared pk object for record " + srcObject + " cannot be transformed");
+					        "The related shared pk object for record " + srcRec + " cannot be transformed");
 				} else {
-					mappedObject.setSharedPkObj(dstParent);
+					transformedRec.setSharedPkObj(dstParent);
 				}
 			}
 			
-			/*
-			if (this.useSharedPKKey() && srcObject.shasSharedPkObj()) {
-				//Force same fields copy as there is no mapping for sharedPktable
-				
-				//TODO: create mapped dst configuration for shared pk table in destination
-				
-				for (Field field : this.getSharedKeyRefInfo().getFields()) {
-					EtlDatabaseObject sharedDstObj = mappedObject.getSharedPkObj();
-					EtlDatabaseObject sharedSrcObj = srcObject.getSharedPkObj();
-					
-					try {
-						sharedDstObj.setFieldValue(field.getName(), sharedSrcObj.getFieldValue(field.getName()));
-					}
-					catch (ForbiddenOperationException e) {
-						try {
-							sharedDstObj.setFieldValue(field.getNameAsClassAtt(),
-							    sharedSrcObj.getFieldValue(field.getNameAsClassAtt()));
-						}
-						catch (ForbiddenOperationException e1) {}
-					}
-				}
-			}*/
+			transformedRec.loadObjectIdData(this);
 			
-			mappedObject.loadObjectIdData(this);
+			if (this.useManualGeneratedObjectId()) {
+				transformedRec.getObjectId().asSimpleKey().setValue(retriveNextRecordId(processor));
+			}
 			
-			return mappedObject;
+			processor.logTrace("Record " + srcRec + " transformed to " + transformedRec);
+			
+			return transformedRec;
 		}
 		catch (InstantiationException e) {
 			throw new RuntimeException(e);
@@ -675,6 +667,10 @@ public class DstConf extends AbstractTableConfiguration {
 			throw new RuntimeException(e);
 		}
 		
+	}
+	
+	private long retriveNextRecordId(TaskProcessor<EtlDatabaseObject> processor) {
+		return processor.findIdGenerator(this).retriveNextIdForRecord();
 	}
 	
 	@Override
@@ -687,13 +683,18 @@ public class DstConf extends AbstractTableConfiguration {
 		return (EtlItemConfiguration) super.getParentConf();
 	}
 	
-	public int generateNextStartIdForThread(List<? extends EtlObject> etlObjects, Connection conn)
-	        throws DBException, ForbiddenOperationException {
+	public IdGeneratorManager initIdGenerator(TaskProcessor<? extends EtlDatabaseObject> processor,
+	        List<? extends EtlObject> etlObjects, Connection conn) throws DBException, ForbiddenOperationException {
 		
+		return IdGeneratorManager.init(processor, this, etlObjects, conn);
+		
+	}
+	
+	public long determineNextStartId(IdGeneratorManager idGeneratorMgt, Connection conn)
+	        throws DBException, ForbiddenOperationException {
 		synchronized (stringLock) {
-			
 			if (this.currThreadStartId == DEFAULT_NEXT_TREAD_ID) {
-				this.currQtyRecords = etlObjects.size();
+				this.currQtyRecords = idGeneratorMgt.getEtlObjects().size();
 				
 				this.currThreadStartId = DatabaseObjectDAO.getLastRecord(this, conn);
 				
@@ -701,28 +702,10 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 			
 			this.currThreadStartId += this.currQtyRecords;
-			this.currQtyRecords = etlObjects.size();
+			this.currQtyRecords = idGeneratorMgt.getEtlObjects().size();
 			
 			return this.currThreadStartId;
 		}
-	}
-	
-	public static synchronized int generateNextStartIdForThread(int dbCurrId, int currThreadStartId,
-	        int qtyRecordsPerProcessing) {
-		if (currThreadStartId == DEFAULT_NEXT_TREAD_ID) {
-			
-			currThreadStartId = dbCurrId;
-			
-			if (currThreadStartId == 0) {
-				currThreadStartId = 1 - qtyRecordsPerProcessing;
-			} else {
-				currThreadStartId = dbCurrId - qtyRecordsPerProcessing + 1;
-			}
-		}
-		
-		currThreadStartId += qtyRecordsPerProcessing;
-		
-		return currThreadStartId;
 	}
 	
 	/**

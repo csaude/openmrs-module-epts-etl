@@ -68,7 +68,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean skipFinalDataVerification;
 	
-	private boolean writeOperationHistory;
+	private boolean doNotWriteOperationHistory;
 	
 	private boolean useSharedConnectionPerThread;
 	
@@ -156,12 +156,20 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.doNotSaveOperationProgress = doNotSaveOperationProgress;
 	}
 	
-	public boolean writeOperationHistory() {
-		return writeOperationHistory;
+	public boolean doNotWriteOperationHistory() {
+		return doNotWriteOperationHistory;
 	}
 	
-	public void setWriteOperationHistory(boolean writeOperationHistory) {
-		this.writeOperationHistory = writeOperationHistory;
+	public boolean writeOperationHistory() {
+		return !doNotWriteOperationHistory();
+	}
+	
+	public boolean isDoNotWriteOperationHistory() {
+		return doNotWriteOperationHistory;
+	}
+	
+	public void setDoNotWriteOperationHistory(boolean doNotWriteOperationHistory) {
+		this.doNotWriteOperationHistory = doNotWriteOperationHistory;
 	}
 	
 	public boolean skipFinalDataVerification() {

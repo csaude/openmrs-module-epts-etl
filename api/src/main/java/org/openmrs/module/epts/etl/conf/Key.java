@@ -14,6 +14,12 @@ public class Key extends Field {
 		super(name);
 	}
 	
+	public static Key fastCreateKey(String name) {
+		Key f = new Key(name);
+		
+		return f;
+	}
+	
 	public static Key fastCreateValued(String name, Object value) {
 		Key k = new Key(name);
 		

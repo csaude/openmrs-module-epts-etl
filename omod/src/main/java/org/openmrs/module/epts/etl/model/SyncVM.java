@@ -46,10 +46,8 @@ public class SyncVM {
 		this.avaliableConfigurations = null;//Main.loadSyncConfig(confDir.listFiles());
 		
 		for (EtlConfiguration conf : this.avaliableConfigurations) {
-			if (conf.isAutomaticStart()) {
-				this.activeConfiguration = conf;
-				break;
-			}
+			this.activeConfiguration = conf;
+			break;
 		}
 		
 		String configFileName = this.activeConfiguration.getProcessType().isSourceSync() ? "source_sync_config.json"
@@ -100,12 +98,12 @@ public class SyncVM {
 	}
 	
 	public boolean isActivatedOperationTab(EtlOperationConfig operation) {
-		return this.activeTab.equals(operation.getOperationType());
+		return this.activeTab.equals(operation.getOperationType().toString());
 	}
 	
 	public TableOperationProgressInfo retrieveProgressInfo(EtlOperationConfig operation, EtlItemConfiguration item,
 	        String appOriginCode) {
-		OperationController controller = operation.getRelatedController(appOriginCode);
+		OperationController<?> controller = operation.getRelatedController(appOriginCode);
 		
 		if (controller == null)
 			return null;
@@ -117,9 +115,9 @@ public class SyncVM {
 		return retrieveProgressInfo(operation, item, null);
 	}
 	
-	public OperationController getActiveOperationController() {
+	public OperationController<?> getActiveOperationController() {
 		for (EtlOperationConfig syncConfig : this.getOperations()) {
-			if (syncConfig.getOperationType().equals(this.activeTab)) {
+			if (syncConfig.getOperationType().toString().equals(this.activeTab)) {
 				return syncConfig.getRelatedController(null);
 			}
 		}

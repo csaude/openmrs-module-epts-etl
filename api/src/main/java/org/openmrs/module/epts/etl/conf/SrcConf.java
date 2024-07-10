@@ -78,6 +78,15 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	@Override
+	public void fullLoad(Connection conn) throws DBException {
+		if (!hasManualMapPrimaryKeyOnField()) {
+			setManualMapPrimaryKeyOnField(getRelatedEtlConf().getManualMapPrimaryKeyOnField());
+		}
+		
+		super.fullLoad(conn);
+	}
+	
+	@Override
 	public void loadOwnElements(Connection conn) throws DBException {
 		
 		if (this.hasParentRefInfo()) {

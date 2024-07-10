@@ -318,10 +318,9 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				}
 				
 				if (mustDoFinalCheck()) {
-					
-					if (getProgressMeter().getTotal() > getProgressMeter().getProcessed()) {
-						perfomeFinalization();
-					}
+					//if (getProgressMeter().getTotal() > getProgressMeter().getProcessed()) {
+					perfomeFinalization();
+					//}
 				}
 				
 				changeStatusToFinished();
@@ -353,7 +352,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			
 			for (IntervalExtremeRecord i : iManager.getCurrentLimits().getAllNotProcessed()) {
 				TaskProcessor<T> taskProcessor = getController().initRelatedTaskProcessor(this, i, false);
-				taskProcessor.setEngineId(this.getEngineId());
+				taskProcessor.setProcessorId(this.getEngineId());
 				
 				boolean persistTheWork = true;
 				boolean useMultiThreadSearch = true;
@@ -381,7 +380,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		
 		TaskProcessor<T> taskProcessor = getController().initRelatedTaskProcessor(this,
 		    getThreadRecordIntervalsManager().getCurrentLimits(), false);
-		taskProcessor.setEngineId(this.getEngineId());
+		taskProcessor.setProcessorId(this.getEngineId());
 		
 		boolean persistTheWork = true;
 		boolean useMultiThreadSearch = true;
@@ -488,7 +487,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 						TaskProcessor<T> taskProcessor = getController().initRelatedTaskProcessor(this,
 						    avaliableIntervals.get(i), true);
 						
-						taskProcessor.setEngineId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
+						taskProcessor.setProcessorId(this.getEngineId() + "_" + utilities.garantirXCaracterOnNumber(i, 2));
 						
 						logDebug("Processor initialized for records between interval: [" + taskProcessor.getLimits()
 						        + "]".toUpperCase());

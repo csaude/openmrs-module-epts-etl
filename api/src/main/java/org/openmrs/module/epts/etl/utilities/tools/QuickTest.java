@@ -255,7 +255,6 @@ public class QuickTest {
 		
 		searchParams.setQtdRecordPerSelected(conf.getOperations().get(0).getProcessingBatch());
 		
-		DBConnectionInfo srcApp = conf.getSrcConnInfo();
 		DBConnectionInfo dstApp = etlConf.getDstConf().get(0).getRelatedConnInfo();
 		
 		OpenConnection srcConn = conf.getSrcConnInfo().openConnection();
@@ -275,7 +274,7 @@ public class QuickTest {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.transform(rec, srcConn, srcApp, dstApp);
+					destObject = mappingInfo.transform(rec, srcConn, null);
 					
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);

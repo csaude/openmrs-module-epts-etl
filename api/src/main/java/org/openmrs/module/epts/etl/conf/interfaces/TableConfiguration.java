@@ -74,6 +74,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	void setAutoIncrementId(boolean autoIncrementId);
 	
+	void loadManualConfiguredPk(Connection conn) throws ForbiddenOperationException, DBException;
+	
 	List<List<Field>> getWinningRecordFieldsInfo();
 	
 	void setWinningRecordFieldsInfo(List<List<Field>> winningRecordFieldsInfo);
@@ -168,6 +170,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	void setAllRelatedTablesFullLoaded(boolean b);
 	
+	/**
+	 * If present, the value from this method will be mapped as a primary key for this table if the
+	 * table does not have a primary key but have a field with name matching this field.
+	 */
+	String getManualMapPrimaryKeyOnField();
+	
+	void setManualMapPrimaryKeyOnField(String manualMapPrimaryKeyOnField);
+	
 	@Override
 	PrimaryKey getPrimaryKey();
 	
@@ -179,6 +189,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		return getPrimaryKey() != null;
+	}
+	
+	default boolean useManualGeneratedObjectId() {
+		return !this.isAutoIncrementId() && this.useSimpleNumericPk();
 	}
 	
 	default boolean hasAlias() {
@@ -304,32 +318,54 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		if (!isPrimaryKeyInfoLoaded()) {
 			
-			loadSchemaInfo(conn);
-			loadFields(conn);
-			
-			try {
+			if (hasPK()) {
+				this.loadManualConfiguredPk(conn);
+			} else {
 				
-				ResultSet rs = conn.getMetaData().getPrimaryKeys(getCatalog(conn), getSchema(), getTableName());
+				loadSchemaInfo(conn);
+				loadFields(conn);
 				
-				while (rs.next()) {
-					primaryKey = new PrimaryKey(this);
-					primaryKey.setKeyName("pk");
+				try {
 					
-					Key pk = new Key();
-					pk.setName(rs.getString("COLUMN_NAME"));
+					ResultSet rs = conn.getMetaData().getPrimaryKeys(getCatalog(conn), getSchema(), getTableName());
 					
-					pk.setType(getField(pk.getName()).getType());
+					while (rs.next()) {
+						primaryKey = new PrimaryKey(this);
+						primaryKey.setKeyName("pk");
+						
+						Key pk = new Key();
+						pk.setName(rs.getString("COLUMN_NAME"));
+						
+						pk.setType(getField(pk.getName()).getType());
+						
+						primaryKey.addKey(pk);
+					}
 					
-					primaryKey.addKey(pk);
+					setPrimaryKey(primaryKey);
+				}
+				catch (SQLException e) {
+					throw new DBException(e);
+				}
+				
+				if (primaryKey == null && hasManualMapPrimaryKeyOnField()) {
+					if (this.containsField(getManualMapPrimaryKeyOnField())) {
+						primaryKey = new PrimaryKey();
+						
+						primaryKey.addKey(Key.fastCreateKey(getManualMapPrimaryKeyOnField()));
+						
+						setPrimaryKey(primaryKey);
+						
+						this.loadManualConfiguredPk(conn);
+					}
 				}
 			}
-			catch (SQLException e) {
-				throw new DBException(e);
-			}
 			
-			setPrimaryKey(primaryKey);
 			setPrimaryKeyInfoLoaded(true);
 		}
+	}
+	
+	default boolean hasManualMapPrimaryKeyOnField() {
+		return getManualMapPrimaryKeyOnField() != null;
 	}
 	
 	default EtlDatabaseObject generateAndSaveDefaultObject(Connection conn) throws DBException {
@@ -1150,8 +1186,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				if (!includePrimaryKeyOnInsert()) {
 					
-					//Force the inclusion of primaryKey if the table is not autoincrement
-					if (!isAutoIncrementId()) {
+					//Force the inclusion of primaryKey if the table is not autoincrement or if it uses shared pj
+					if (!isAutoIncrementId() || useSharedPKKey()
+					        || this.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
 						setIncludePrimaryKeyOnInsert(true);
 					}
 				}

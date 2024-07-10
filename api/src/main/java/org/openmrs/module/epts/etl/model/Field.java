@@ -98,7 +98,7 @@ public class Field implements Serializable {
 		return f;
 	}
 	
-	public static Field fastCreate(String name) {
+	public static Field fastCreateField(String name) {
 		Field f = new Field(name);
 		
 		return f;

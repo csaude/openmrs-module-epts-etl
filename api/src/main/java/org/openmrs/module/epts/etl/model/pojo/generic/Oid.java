@@ -90,8 +90,13 @@ public class Oid extends PrimaryKey {
 		for (Key thisKey : this.getFields()) {
 			Key otherKey = oid.getKey(thisKey.getName());
 			
-			if (!thisKey.getValue().equals(otherKey.getValue())) {
-				return false;
+			try {
+				if (!thisKey.getValue().equals(otherKey.getValue())) {
+					return false;
+				}
+			}
+			catch (NullPointerException e) {
+				throw e;
 			}
 		}
 		

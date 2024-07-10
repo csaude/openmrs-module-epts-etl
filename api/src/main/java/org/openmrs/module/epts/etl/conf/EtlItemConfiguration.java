@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
@@ -27,7 +28,24 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private boolean fullLoaded;
 	
+	/**
+	 * If present, the value from this field will be mapped as a primary key for all tables under
+	 * this configuration that don't have a primary key but have a field with name matching this
+	 * field. <br>
+	 * This value will be overridden by the correspondent value on {@link TableConfiguration} if
+	 * present there
+	 */
+	private String manualMapPrimaryKeyOnField;
+	
 	public EtlItemConfiguration() {
+	}
+	
+	public String getManualMapPrimaryKeyOnField() {
+		return manualMapPrimaryKeyOnField;
+	}
+	
+	public void setManualMapPrimaryKeyOnField(String manualMapPrimaryKeyOnField) {
+		this.manualMapPrimaryKeyOnField = manualMapPrimaryKeyOnField;
 	}
 	
 	public SrcConf getSrcConf() {
@@ -143,9 +161,17 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 	}
 	
+	public boolean hasManualMapPrimaryKeyOnField() {
+		return getManualMapPrimaryKeyOnField() != null;
+	}
+	
 	public synchronized void fullLoad() throws DBException {
 		if (this.isFullLoaded()) {
 			return;
+		}
+		
+		if (!hasManualMapPrimaryKeyOnField()) {
+			setManualMapPrimaryKeyOnField(getRelatedEtlConf().getManualMapPrimaryKeyOnField());
 		}
 		
 		this.srcConf.fullLoad();

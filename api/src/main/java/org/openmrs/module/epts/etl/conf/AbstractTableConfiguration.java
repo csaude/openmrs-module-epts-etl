@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.conf;
 
+import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
@@ -50,6 +51,13 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	private List<String> observationDateFields;
 	
 	private List<UniqueKeyInfo> uniqueKeys;
+	
+	/**
+	 * If present, the value from this field will be mapped as a primary key for all tables under
+	 * this configuration that don't have a primary key but have a field with name matching this
+	 * field.
+	 */
+	private String manualMapPrimaryKeyOnField;
 	
 	private List<Field> fields;
 	
@@ -109,6 +117,14 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this();
 		
 		this.tableName = tableName;
+	}
+	
+	public String getManualMapPrimaryKeyOnField() {
+		return manualMapPrimaryKeyOnField;
+	}
+	
+	public void setManualMapPrimaryKeyOnField(String manualMapPrimaryKeyOnField) {
+		this.manualMapPrimaryKeyOnField = manualMapPrimaryKeyOnField;
 	}
 	
 	@Override
@@ -225,6 +241,42 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	@Override
+	public void loadManualConfiguredPk(Connection conn) throws ForbiddenOperationException, DBException {
+		if (this.primaryKey != null) {
+			if (!isPrimaryKeyInfoLoaded()) {
+				this.primaryKey.setManualConfigured(true);
+				this.primaryKey.setTabConf(this);
+				this.setPrimaryKeyInfoLoaded(true);
+				this.primaryKey.setKeyName("pk");
+				
+				if (!isFieldsLoaded()) {
+					loadFields(conn);
+				}
+				
+				for (Field key : this.primaryKey.getFields()) {
+					Field field = getField(key.getName());
+					
+					if (field != null) {
+						key.setType(field.getType());
+					} else {
+						throw new ForbiddenOperationException("The field '" + key.getName()
+						        + "' defined as part of primaryKey cannot found on table " + getFullTableName() + "'");
+					}
+				}
+			}
+		} else {
+			throw new ForbiddenOperationException("The primaryKey is null!");
+		}
+	}
+	
+	private void tryToManualLoadConfiguredPk(Connection conn) throws DBException {
+		try {
+			loadManualConfiguredPk(conn);
+		}
+		catch (ForbiddenOperationException e) {}
+	}
+	
+	@Override
 	public PrimaryKey getPrimaryKey() {
 		if (isPrimaryKeyInfoLoaded()) {
 			return primaryKey;
@@ -234,6 +286,8 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		
 		try {
 			conn = getRelatedConnInfo().openConnection();
+			
+			tryToManualLoadConfiguredPk(conn);
 			
 			loadPrimaryKeyInfo(conn);
 			
@@ -496,7 +550,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	public String toString() {
 		String toString = "Table [" + getFullTableDescription();
 		
-		toString += hasPK() ? ", pk: " + this.getPrimaryKey() : "";
+		toString += hasPK() ? ", pk: " + this.primaryKey : "";
 		
 		toString += "]";
 		

@@ -278,73 +278,57 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	@Override
 	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
-		if (tableConfiguration.isMetadata()) {
-			
-			this.loadUniqueKeyValues(tableConfiguration);
-			this.loadObjectIdData(tableConfiguration);
-			
-			EtlDatabaseObject recordOnDBByUuid = DatabaseObjectDAO.getByUniqueKeys(this, conn);
-			
-			if (recordOnDBByUuid == null) {
-				//Check if ID is free 
-				EtlDatabaseObject recOnDBById = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
-				
-				if (recOnDBById == null) {
-					DatabaseObjectDAO.insertWithObjectId(this, conn);
-				}
-			}
-		} else {
-			try {
-				DatabaseObjectDAO.insert(this, tableConfiguration, conn);
-			}
-			catch (DBException e) {
-				
-				if (e.isDuplicatePrimaryOrUniqueKeyException()) {
-					
-					if (DBUtilities.isPostgresDB(conn)) {
-						/*
-						 * PosgresSql fails when you continue to use a connection which previously encontred an exception
-						 * So we are commiting before try to use the connection again
-						 * 
-						 * NOTE that we are taking risk if some othe bug happen and the transaction need to be aborted
-						 */
-						try {
-							conn.commit();
-						}
-						catch (SQLException e1) {
-							throw new DBException(e);
-						}
-					}
-					
-					EtlDatabaseObject recordOnDB = null;
-					
-					if (tableConfiguration.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
-						recordOnDB = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
-					}
-					
-					if (recordOnDB == null) {
-						TableConfiguration refInfo = (TableConfiguration) getRelatedConfiguration();
-						
-						if (refInfo.useSharedPKKey() && !refInfo.hasItsOwnKeys()) {
-							//Ignore duplication if it uses shared key
-							//TODO resolve conflict
-							return;
-						}
-						
-						this.loadUniqueKeyValues(tableConfiguration);
-						
-						recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this, conn);
-					}
-					
-					if (recordOnDB != null) {
-						resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
-					} else {
-						throw new ConflictWithRecordNotYetAvaliableException(this, e);
-					}
-				} else
-					throw e;
-			}
+		try {
+			DatabaseObjectDAO.insert(this, tableConfiguration, conn);
 		}
+		catch (DBException e) {
+			
+			if (e.isDuplicatePrimaryOrUniqueKeyException()) {
+				
+				if (DBUtilities.isPostgresDB(conn)) {
+					/*
+					 * PosgresSql fails when you continue to use a connection which previously encontred an exception
+					 * So we are commiting before try to use the connection again
+					 * 
+					 * NOTE that we are taking risk if some othe bug happen and the transaction need to be aborted
+					 */
+					try {
+						conn.commit();
+					}
+					catch (SQLException e1) {
+						throw new DBException(e);
+					}
+				}
+				
+				EtlDatabaseObject recordOnDB = null;
+				
+				if (tableConfiguration.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
+					recordOnDB = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
+				}
+				
+				if (recordOnDB == null) {
+					TableConfiguration refInfo = (TableConfiguration) getRelatedConfiguration();
+					
+					if (refInfo.useSharedPKKey() && !refInfo.hasItsOwnKeys()) {
+						//Ignore duplication if it uses shared key
+						//TODO resolve conflict
+						return;
+					}
+					
+					this.loadUniqueKeyValues(tableConfiguration);
+					
+					recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this, conn);
+				}
+				
+				if (recordOnDB != null) {
+					resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
+				} else {
+					throw new ConflictWithRecordNotYetAvaliableException(this, e);
+				}
+			} else
+				throw e;
+		}
+		
 	}
 	
 	@Override

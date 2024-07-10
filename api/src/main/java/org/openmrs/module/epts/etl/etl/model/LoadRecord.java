@@ -181,7 +181,7 @@ public class LoadRecord {
 				
 				recordAsSrc.copyFrom(parentInfo.getParentRecordInOrigin());
 				
-				dstParent = dst.transform(recordAsSrc, srcConn, getSrcConnInfo(), getDstConnInfo());
+				dstParent = dst.transform(recordAsSrc, srcConn, this.getProcessor());
 				
 				if (dstParent != null) {
 					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, getTaskProcessor());

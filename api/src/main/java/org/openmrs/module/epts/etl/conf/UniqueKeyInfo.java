@@ -33,6 +33,8 @@ public class UniqueKeyInfo {
 	
 	private TableConfiguration tabConf;
 	
+	private boolean manualConfigured;
+	
 	public UniqueKeyInfo() {
 	}
 	
@@ -45,6 +47,14 @@ public class UniqueKeyInfo {
 		uk.keyName = keyName;
 		
 		return uk;
+	}
+	
+	public boolean isManualConfigured() {
+		return manualConfigured;
+	}
+	
+	public void setManualConfigured(boolean manualConfigured) {
+		this.manualConfigured = manualConfigured;
 	}
 	
 	public boolean isFieldValuesLoaded() {
@@ -172,7 +182,7 @@ public class UniqueKeyInfo {
 					keyElements = new ArrayList<>();
 				}
 				
-				if (!tabConf.isIgnorableField(Field.fastCreate(rs.getString("COLUMN_NAME")))) {
+				if (!tabConf.isIgnorableField(Field.fastCreateField(rs.getString("COLUMN_NAME")))) {
 					Field f = tabConf.getField(rs.getString("COLUMN_NAME"));
 					
 					keyElements.add(Key.fastCreateTyped(f.getName(), f.getType()));
@@ -717,5 +727,9 @@ public class UniqueKeyInfo {
 		}
 		
 		return false;
+	}
+	
+	public Key asSimpleKey() {
+		return retrieveSimpleKey();
 	}
 }

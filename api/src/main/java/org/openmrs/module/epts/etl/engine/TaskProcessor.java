@@ -1,17 +1,20 @@
 package org.openmrs.module.epts.etl.engine;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.conf.IdGeneratorManager;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
@@ -20,8 +23,8 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
- * Represent a Synchronization TaskProcessor. A Synchronization processor performes the task which will
- * end up producing or consuming the synchronization info.
+ * Represent a Synchronization TaskProcessor. A Synchronization processor performes the task which
+ * will end up producing or consuming the synchronization info.
  * <p>
  * There are several kinds of engines that performes diferents kind of operations. All the avaliable
  * operations are listed in {@link EtlOperationType} enum
@@ -34,7 +37,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	
 	protected Engine<T> monitor;
 	
-	private String engineId;
+	private String processorId;
 	
 	protected IntervalExtremeRecord limits;
 	
@@ -42,11 +45,17 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	
 	protected EtlOperationResultHeader<T> taskResultInfo;
 	
+	protected List<IdGeneratorManager> idGeneratorManager;
+	
 	public TaskProcessor(Engine<T> monitr, IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		this.monitor = monitr;
 		this.limits = limits;
 		this.runningInConcurrency = runningInConcurrency;
 		this.taskResultInfo = new EtlOperationResultHeader<>(limits);
+	}
+	
+	public List<IdGeneratorManager> getIdGeneratorManager() {
+		return idGeneratorManager;
 	}
 	
 	public EtlOperationResultHeader<T> getTaskResultInfo() {
@@ -73,12 +82,12 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		return monitor;
 	}
 	
-	public String getEngineId() {
-		return engineId;
+	public String getProcessorId() {
+		return processorId;
 	}
 	
-	public void setEngineId(String engineId) {
-		this.engineId = engineId;
+	public void setProcessorId(String processorId) {
+		this.processorId = processorId;
 	}
 	
 	public OperationController<T> getRelatedOperationController() {
@@ -109,6 +118,37 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		return getEngine().getSearchParams();
 	}
 	
+	private void addIdGeneratorManager(IdGeneratorManager im) {
+		if (idGeneratorManager == null)
+			idGeneratorManager = new ArrayList<>();
+		
+		if (!idGeneratorManager.contains(im)) {
+			idGeneratorManager.add(im);
+		}
+	}
+	
+	private void tryToInitIdGenerator(List<T> etlObjects, Connection conn) throws DBException, ForbiddenOperationException {
+		
+		for (DstConf dst : getEtlItemConfiguration().getDstConf()) {
+			
+			if (dst.useManualGeneratedObjectId()) {
+				
+				addIdGeneratorManager(dst.initIdGenerator(this, etlObjects, conn));
+			}
+		}
+	}
+	
+	public IdGeneratorManager findIdGenerator(DstConf dstConf) {
+		for (IdGeneratorManager mgt : this.getIdGeneratorManager()) {
+			if (mgt.getDstConf() == dstConf) {
+				return mgt;
+			}
+		}
+		
+		throw new ForbiddenOperationException(
+		        "No IdGeneratorManager found on processor " + getProcessorId() + " For table " + dstConf.getFullTableName());
+	}
+	
 	public void performe(boolean useMultiThreadSearch, Connection srcConn, Connection dstConn) throws DBException {
 		
 		String threads = useMultiThreadSearch ? " USING MULTI-THREAD" : " USING SINGLE THREAD";
@@ -131,6 +171,9 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		        + getSrcConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records) + "' RECORDS.");
 		
 		if (utilities.arrayHasElement(records)) {
+			
+			this.tryToInitIdGenerator(records, dstConn);
+			
 			logDebug("INITIALIZING " + getRelatedOperationController().getOperationType().name().toLowerCase() + " OF '"
 			        + records.size() + "' RECORDS OF TABLE '" + this.getSrcConf().getTableName() + "'");
 			
@@ -168,7 +211,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	
 	@Override
 	public String toString() {
-		return getEngineId() + " Limits [" + getSearchParams().getThreadRecordIntervalsManager() + "]";
+		return getProcessorId() + " Limits [" + getSearchParams().getThreadRecordIntervalsManager() + "]";
 	}
 	
 	public void logError(String msg) {
@@ -228,7 +271,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		
 		TaskProcessor<T> e = (TaskProcessor<T>) obj;
 		
-		return this.getEngineId().equals(e.getEngineId());
+		return this.getProcessorId().equals(e.getProcessorId());
 	}
 	
 	public abstract void performeEtl(List<T> records, Connection srcConn, Connection dstConn) throws DBException;

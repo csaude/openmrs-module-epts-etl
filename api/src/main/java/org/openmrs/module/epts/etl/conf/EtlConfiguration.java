@@ -7,6 +7,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
+import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -121,6 +123,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 */
 	private boolean doNotTransformsPrimaryKeys;
 	
+	/**
+	 * If present, the value from this field will be mapped as a primary key for all tables that
+	 * don't have a primary key but have a field with name matching this field. <br>
+	 * This value will be overridden by the correspondent value on {@link EtlItemConfiguration} if
+	 * present there
+	 */
+	private String manualMapPrimaryKeyOnField;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -131,6 +141,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.configuredTables = new ArrayList<>();
 		
 		this.busyTableAliasName = new ArrayList<>();
+	}
+	
+	public String getManualMapPrimaryKeyOnField() {
+		return manualMapPrimaryKeyOnField;
+	}
+	
+	public void setManualMapPrimaryKeyOnField(String manualMapPrimaryKeyOnField) {
+		this.manualMapPrimaryKeyOnField = manualMapPrimaryKeyOnField;
 	}
 	
 	public boolean isManualStart() {
@@ -1262,16 +1280,29 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		fullLoadedTables.add(tableConfiguration);
 	}
 	
-	public synchronized TableConfiguration findOnFullLoadedTables(String tableName, String schema) {
+	public TableConfiguration findOnFullLoadedTables(String tableName, String schema) {
 		if (getFullLoadedTables() == null)
 			return null;
 		
-		for (TableConfiguration tab : getFullLoadedTables()) {
-			if (tab.getSchema().equals(schema) && tab.getTableName().equals(tableName)) {
-				return tab;
+		boolean done = false;
+		
+		//To avoid failer on ConcurrentModificationException
+		while (!done) {
+			
+			try {
+				for (TableConfiguration tab : this.getFullLoadedTables()) {
+					if (tab.getSchema().equals(schema) && tab.getTableName().equals(tableName)) {
+						return tab;
+					}
+				}
+				
+				done = true;
+			}
+			catch (ConcurrentModificationException e) {
+				logWarn("ConcurrentModificationException found when finding on loaded table. The aplication will retry");
+				TimeCountDown.sleep(2);
 			}
 		}
-		
 		return null;
 	}
 	

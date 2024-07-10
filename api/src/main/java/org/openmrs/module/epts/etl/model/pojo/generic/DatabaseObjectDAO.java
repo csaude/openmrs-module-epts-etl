@@ -78,31 +78,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static void insert(EtlDatabaseObject record, TableConfiguration tabConf, Connection conn) throws DBException {
-		Object[] params = null;
-		String sql = null;
-		
-		if (tabConf.getRelatedEtlConf().isDoNotTransformsPrimaryKeys() || tabConf.useSharedPKKey()) {
-			params = record.getInsertParamsWithObjectId();
-			sql = record.getInsertSQLWithObjectId();
-		} else {
-			params = record.getInsertParamsWithoutObjectId();
-			sql = record.getInsertSQLWithoutObjectId();
-		}
-		
-		List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
-		
-		if (record.getObjectId().isSimpleId() && utilities.arrayHasElement(ids)) {
-			record.loadObjectIdData(tabConf);
-			
-			record.setObjectId(Oid.fastCreate(record.getObjectId().asSimpleKey().getName(), ids.get(0)));
-		}
-	}
-	
-	public static void insertWithObjectId(EtlDatabaseObject record, Connection conn) throws DBException {
-		Object[] params = record.getInsertParamsWithObjectId();
-		String sql = record.getInsertSQLWithObjectId();
-		
-		executeQueryWithRetryOnError(sql, params, conn);
+		insertAllData(utilities.parseToList(record), tabConf, conn);
 	}
 	
 	public static void update(EtlDatabaseObject record, Connection conn) throws DBException {
@@ -519,12 +495,12 @@ public class DatabaseObjectDAO extends BaseDAO {
 		if (tabConf.isMetadata()) {
 			return insertAllMetadata(objects, tabConf, conn);
 		} else {
-			return insertAllData(objects, tabConf, tabConf.includePrimaryKeyOnInsert(), conn);
+			return insertAllData(objects, tabConf, conn);
 		}
 	}
 	
 	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllData(List<EtlDatabaseObject> objects,
-	        TableConfiguration tabConf, boolean includeRecordId, Connection conn) throws DBException {
+	        TableConfiguration tabConf, Connection conn) throws DBException {
 		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
 		if (utilities.arrayHasNoElement(objects))
@@ -532,7 +508,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = null;
 		
-		if (includeRecordId || tabConf.useSharedPKKey()) {
+		if (tabConf.includePrimaryKeyOnInsert()) {
 			sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];
 		} else {
 			sql = objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
@@ -550,7 +526,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
-			if (includeRecordId || tabConf.useSharedPKKey()) {
+			if (tabConf.includePrimaryKeyOnInsert()) {
 				values += "(" + objects.get(i).getInsertSQLQuestionMarksWithObjectId() + "),";
 				
 				params = utilities.setParam(params, objects.get(i).getInsertParamsWithObjectId());
@@ -602,17 +578,20 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return result;
 	}
 	
+	/*
 	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllDataWithoutId(List<EtlDatabaseObject> objects,
 	        TableConfiguration tabConf, Connection conn) throws DBException {
 		
 		return insertAllData(objects, tabConf, false, conn);
 		
-	}
+	}*/
 	
+	/*
 	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllDataWithId(List<EtlDatabaseObject> objects,
 	        TableConfiguration tabConf, Connection conn) throws DBException {
 		return insertAllData(objects, tabConf, true, conn);
 	}
+	*/
 	
 	public static Integer getAvaliableObjectId(TableConfiguration tabConf, Integer maxAcceptableId, Connection conn)
 	        throws DBException {
