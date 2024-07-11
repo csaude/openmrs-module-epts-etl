@@ -472,47 +472,36 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return search(tabConf.getLoadHealper(), clazz, sql, params, conn);
 	}
 	
-	private static EtlOperationResultHeader<EtlDatabaseObject> insertAllMetadata(List<EtlDatabaseObject> records,
-	        TableConfiguration tableInfo, Connection conn) throws DBException {
-		if (!tableInfo.isMetadata())
-			throw new ForbiddenOperationException(
-			        "You tried to insert " + tableInfo.getTableName() + " as metadata but it is not a metadata!!!");
-		
-		for (EtlDatabaseObject record : records) {
-			record.save(tableInfo, conn);
-		}
-		
-		return null;
-	}
-	
-	public static EtlOperationResultHeader<EtlDatabaseObject> insertAll(List<EtlDatabaseObject> objects,
-	        TableConfiguration tabConf, Connection conn) throws DBException {
-		
-		if (tabConf.isMetadata()) {
-			return insertAllMetadata(objects, tabConf, conn);
-		} else {
-			return insertAllData(objects, tabConf, conn);
-		}
-	}
-	
 	public static void insert(EtlDatabaseObject record, TableConfiguration tabConf, Connection conn) throws DBException {
 		
 		//Do not try to resolve exception as it will be resolved by the caller.
 		boolean tryToResolveException = false;
+		boolean generateOperationResult = false;
 		
-		insertAllData(utilities.parseToList(record), tabConf, tryToResolveException, conn);
+		insert(utilities.parseToList(record), tabConf, tryToResolveException, generateOperationResult, conn);
 	}
 	
-	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllData(List<EtlDatabaseObject> objects,
+	public static EtlOperationResultHeader<EtlDatabaseObject> load(List<EtlDatabaseObject> objects,
 	        TableConfiguration tabConf, Connection conn) throws DBException {
 		
 		boolean tryToResolveException = true;
+		boolean generateOperationResult = true;
 		
-		return insertAllData(objects, tabConf, tryToResolveException, conn);
+		return insert(objects, tabConf, tryToResolveException, generateOperationResult, conn);
 	}
 	
-	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllData(List<EtlDatabaseObject> objects,
-	        TableConfiguration tabConf, boolean tryToResolveException, Connection conn) throws DBException {
+	public static void insert(List<EtlDatabaseObject> objects, TableConfiguration tabConf, Connection conn)
+	        throws DBException {
+		
+		boolean tryToResolveException = true;
+		boolean generateOperationResult = false;
+		
+		insert(objects, tabConf, tryToResolveException, generateOperationResult, conn);
+	}
+	
+	public static EtlOperationResultHeader<EtlDatabaseObject> insert(List<EtlDatabaseObject> objects,
+	        TableConfiguration tabConf, boolean tryToResolveException, boolean generateOperationResult, Connection conn)
+	        throws DBException {
 		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
 		if (utilities.arrayHasNoElement(objects))
@@ -567,9 +556,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 					}
 				}
 				
-				result.addAllToRecordsWithNoError(EtlOperationItemResult
-				        .parseFromEtlDatabaseObject(EtlDatabaseObject.collectAllSrcRelatedOBjects(objects)));
-				
+				if (generateOperationResult) {
+					result.addAllToRecordsWithNoError(EtlOperationItemResult
+					        .parseFromEtlDatabaseObject(EtlDatabaseObject.collectAllSrcRelatedOBjects(objects)));
+				}
 			}
 			catch (DBException e) {
 				
@@ -585,10 +575,16 @@ public class DatabaseObjectDAO extends BaseDAO {
 							
 							record.save(tabConf, conn);
 							
-							result.addToRecordsWithNoError(record.getSrcRelatedObject());
+							if (generateOperationResult) {
+								result.addToRecordsWithNoError(record.getSrcRelatedObject());
+							}
 						}
 						catch (DBException e1) {
-							result.addToRecordsWithUnresolvedErrors(record, e1);
+							
+							if (generateOperationResult) {
+								result.addToRecordsWithUnresolvedErrors(record, e1);
+							} else
+								throw e;
 						}
 					}
 				} else

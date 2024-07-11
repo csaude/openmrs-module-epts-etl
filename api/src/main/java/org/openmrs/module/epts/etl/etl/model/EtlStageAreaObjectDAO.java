@@ -15,7 +15,7 @@ public class EtlStageAreaObjectDAO extends DatabaseObjectDAO {
 		if (!utilities.arrayHasElement(records))
 			return;
 		
-		insertAll(utilities.parseList(records, EtlDatabaseObject.class), records.get(0).getRelatedConfiguration(), srcConn);
+		insert(utilities.parseList(records, EtlDatabaseObject.class), records.get(0).getRelatedConfiguration(), srcConn);
 		
 		List<EtlDatabaseObject> allSrckeys = new ArrayList<>();
 		List<EtlDatabaseObject> allDstkeys = new ArrayList<>();
@@ -30,10 +30,10 @@ public class EtlStageAreaObjectDAO extends DatabaseObjectDAO {
 			}
 		}
 		
-		insertAll(allSrckeys, (TableConfiguration) allSrckeys.get(0).getRelatedConfiguration(), srcConn);
+		insert(allSrckeys, (TableConfiguration) allSrckeys.get(0).getRelatedConfiguration(), srcConn);
 		
 		if (utilities.arrayHasElement(allDstkeys)) {
-			insertAll(allDstkeys, (TableConfiguration) allDstkeys.get(0).getRelatedConfiguration(), srcConn);
+			insert(allDstkeys, (TableConfiguration) allDstkeys.get(0).getRelatedConfiguration(), srcConn);
 		}
 	}
 }

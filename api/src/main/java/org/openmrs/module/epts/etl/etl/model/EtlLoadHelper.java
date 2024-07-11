@@ -256,6 +256,7 @@ public class EtlLoadHelper {
 			
 		} else {
 			loadRec.getDstRecord().update(loadRec.getDstConf(), dstConn);
+			
 			loadRec.setStatus(LoadStatus.SUCCESS);
 		}
 	}
@@ -274,7 +275,7 @@ public class EtlLoadHelper {
 		if (getActionType().isCreate()) {
 			logDebug("Starting the insertion of " + objects.size() + " on db...");
 			
-			tryToAddToResult(DatabaseObjectDAO.insertAll(objects, dstConf, dstConn));
+			tryToAddToResult(DatabaseObjectDAO.load(objects, dstConf, dstConn));
 			
 			logDebug(objects.size() + " records inserted on db!");
 		} else if (getActionType().isUpdate()) {

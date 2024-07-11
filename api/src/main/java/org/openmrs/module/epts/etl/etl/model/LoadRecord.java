@@ -159,6 +159,10 @@ public class LoadRecord {
 	public void reloadParentsWithDefaultValues(Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		
+		if (getDstRecord().getFieldValue("uuid").equals("bc2fa069-c85f-4f55-a86d-b3b17d9d146d")) {
+			System.out.println();
+		}
+		
 		for (ParentInfo parentInfo : this.getParentsWithDefaultValues()) {
 			
 			List<SrcConf> avaliableSrcForCurrParent = parentInfo.getParentTableConfInDst()
@@ -184,15 +188,27 @@ public class LoadRecord {
 				dstParent = dst.transform(recordAsSrc, srcConn, this.getProcessor());
 				
 				if (dstParent != null) {
+					
 					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, getTaskProcessor());
+					DBException exception = null;
 					
 					try {
 						EtlLoadHelper.performeParentLoading(parentData, srcConn, dstConn);
 					}
 					catch (DBException e) {
-						if (e.isIntegrityConstraintViolationException()) {
-							processor.logDebug("The parent for default for parent [" + parentInfo.getParentRecordInOrigin()
-							        + "] could not be loaded. The dstRecord [");
+						exception = e;
+						
+						if (!exception.isIntegrityConstraintViolationException()) {
+							this.getResultItem().setException(exception);
+						}
+					}
+					finally {
+						
+						if (parentData.getResultItem().hasInconsistences()
+						        || exception != null && exception.isIntegrityConstraintViolationException()) {
+							
+							getProcessor().logDebug("The parent for default for parent ["
+							        + parentInfo.getParentRecordInOrigin() + "] could not be loaded. The dstRecord [");
 							
 							this.getResultItem()
 							        .addInconsistence(InconsistenceInfo.generate(getDstRecord().generateTableName(),
@@ -200,13 +216,12 @@ public class LoadRecord {
 							            parentInfo.getParentRecordInOrigin().getObjectId().getSimpleValueAsInt(), null,
 							            this.getDstConf().getOriginAppLocationCode()));
 							
-						} else {
-							this.getResultItem().setException(e);
 						}
 					}
 					
 					break;
 				}
+				
 			}
 			
 			getDstRecord().changeParentValue(parentInfo.getParentTableConfInDst(), dstParent);
