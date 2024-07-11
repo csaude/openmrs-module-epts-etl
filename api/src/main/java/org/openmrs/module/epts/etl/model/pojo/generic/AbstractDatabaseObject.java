@@ -7,7 +7,6 @@ import java.net.URLClassLoader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,8 +20,8 @@ import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
-import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -30,8 +29,6 @@ import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
-import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -60,8 +57,22 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	protected EtlDatabaseObject srcRelatedObject;
 	
+	protected ConflictResolutionType conflictResolutionType;
+	
 	public AbstractDatabaseObject() {
 		this.objectId = new Oid();
+		
+		this.conflictResolutionType = ConflictResolutionType.NONE;
+	}
+	
+	@Override
+	public ConflictResolutionType getConflictResolutionType() {
+		return conflictResolutionType;
+	}
+	
+	@Override
+	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
+		this.conflictResolutionType = conflictResolutionType;
 	}
 	
 	@Override
@@ -300,31 +311,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 					}
 				}
 				
-				EtlDatabaseObject recordOnDB = null;
-				
-				if (tableConfiguration.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
-					recordOnDB = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
-				}
-				
-				if (recordOnDB == null) {
-					TableConfiguration refInfo = (TableConfiguration) getRelatedConfiguration();
-					
-					if (refInfo.useSharedPKKey() && !refInfo.hasItsOwnKeys()) {
-						//Ignore duplication if it uses shared key
-						//TODO resolve conflict
-						return;
-					}
-					
-					this.loadUniqueKeyValues(tableConfiguration);
-					
-					recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this, conn);
-				}
-				
-				if (recordOnDB != null) {
-					resolveConflictWithExistingRecord(recordOnDB, tableConfiguration, conn);
-				} else {
-					throw new ConflictWithRecordNotYetAvaliableException(this, e);
-				}
+				resolveConflictWithExistingRecord(tableConfiguration, e, conn);
 			} else
 				throw e;
 		}
@@ -343,91 +330,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			
 			throw e;
 		}
-	}
-	
-	public void resolveConflictWithExistingRecord(EtlDatabaseObject recordOnDB, TableConfiguration tableConfiguration,
-	        Connection conn) throws DBException, ForbiddenOperationException {
-		boolean existingRecordIsOutdated = false;
-		
-		if (tableConfiguration.onConflict().keepExisting()) {
-			return;
-		} else if (tableConfiguration.onConflict().updateExisting()) {
-			existingRecordIsOutdated = true;
-		} else if (utilities.arrayHasElement(tableConfiguration.getWinningRecordFieldsInfo())) {
-			for (List<org.openmrs.module.epts.etl.model.Field> fields : tableConfiguration.getWinningRecordFieldsInfo()) {
-				
-				//Start assuming that this dstRecord is updated
-				boolean thisRecordIsUpdated = true;
-				
-				for (org.openmrs.module.epts.etl.model.Field field : fields) {
-					Object thisRecordFieldValue;
-					
-					try {
-						thisRecordFieldValue = this.getFieldValue(field.getName());
-					}
-					catch (ForbiddenOperationException e) {
-						thisRecordFieldValue = this.getFieldValue(field.getNameAsClassAtt());
-					}
-					
-					//If at least one of field value is different from the winning value, assume that this dstRecord is not updated
-					if (!thisRecordFieldValue.toString().equals(field.getValue().toString())) {
-						thisRecordIsUpdated = false;
-						
-						//Check the next list of fields
-						break;
-					}
-				}
-				
-				if (thisRecordIsUpdated) {
-					existingRecordIsOutdated = true;
-					
-					break;
-				}
-			}
-		} else if (tableConfiguration.hasObservationDateFields()) {
-			for (String dateField : tableConfiguration.getObservationDateFields()) {
-				
-				Date thisRecordDate;
-				Date recordOnDBDate;
-				
-				try {
-					thisRecordDate = (Date) this.getFieldValue(dateField);
-				}
-				catch (ForbiddenOperationException e) {
-					thisRecordDate = (Date) this
-					        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
-				}
-				
-				try {
-					recordOnDBDate = (Date) recordOnDB.getFieldValue(dateField);
-				}
-				catch (NullPointerException e) {
-					recordOnDBDate = null;
-				}
-				catch (ForbiddenOperationException e) {
-					recordOnDBDate = (Date) recordOnDB
-					        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
-				}
-				
-				if (thisRecordDate != null) {
-					if (recordOnDBDate == null) {
-						existingRecordIsOutdated = true;
-						
-						break;
-					} else if (DateAndTimeUtilities.dateDiff(thisRecordDate, recordOnDBDate) > 0) {
-						existingRecordIsOutdated = true;
-						
-						break;
-					}
-				}
-			}
-		}
-		
-		if (existingRecordIsOutdated) {
-			this.setObjectId(recordOnDB.getObjectId());
-			DatabaseObjectDAO.update(this, conn);
-		} else
-			this.setObjectId(recordOnDB.getObjectId());
 	}
 	
 	/**

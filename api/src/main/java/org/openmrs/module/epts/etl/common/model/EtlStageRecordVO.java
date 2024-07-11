@@ -13,6 +13,7 @@ import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -736,6 +737,18 @@ public class EtlStageRecordVO extends BaseVO implements EtlDatabaseObject {
 	
 	@Override
 	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public ConflictResolutionType getConflictResolutionType() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
 		// TODO Auto-generated method stub
 		
 	}

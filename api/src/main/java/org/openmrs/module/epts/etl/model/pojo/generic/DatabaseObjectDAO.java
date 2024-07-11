@@ -77,10 +77,6 @@ public class DatabaseObjectDAO extends BaseDAO {
 		refreshLastSyncDate(syncRecords, tableConfiguration, recordOriginLocationCode, conn);
 	}
 	
-	public static void insert(EtlDatabaseObject record, TableConfiguration tabConf, Connection conn) throws DBException {
-		insertAllData(utilities.parseToList(record), tabConf, conn);
-	}
-	
 	public static void update(EtlDatabaseObject record, Connection conn) throws DBException {
 		Object[] params = record.getUpdateParams();
 		String sql = record.getUpdateSQL();
@@ -499,8 +495,24 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 	}
 	
+	public static void insert(EtlDatabaseObject record, TableConfiguration tabConf, Connection conn) throws DBException {
+		
+		//Do not try to resolve exception as it will be resolved by the caller.
+		boolean tryToResolveException = false;
+		
+		insertAllData(utilities.parseToList(record), tabConf, tryToResolveException, conn);
+	}
+	
 	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllData(List<EtlDatabaseObject> objects,
 	        TableConfiguration tabConf, Connection conn) throws DBException {
+		
+		boolean tryToResolveException = true;
+		
+		return insertAllData(objects, tabConf, tryToResolveException, conn);
+	}
+	
+	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllData(List<EtlDatabaseObject> objects,
+	        TableConfiguration tabConf, boolean tryToResolveException, Connection conn) throws DBException {
 		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
 		if (utilities.arrayHasNoElement(objects))
@@ -560,38 +572,32 @@ public class DatabaseObjectDAO extends BaseDAO {
 				
 			}
 			catch (DBException e) {
-				for (EtlDatabaseObject record : objects) {
-					try {
-						record.loadObjectIdData(tabConf);
-						
-						record.save(tabConf, conn);
-						
-						result.addToRecordsWithNoError(record.getSrcRelatedObject());
-					}
-					catch (DBException e1) {
-						result.addToRecordsWithUnresolvedErrors(record, e1);
-					}
+				
+				if (!tryToResolveException && objects.size() > 1) {
+					throw new ForbiddenOperationException(
+					        "For multiple records you must explicity indicate that the exception must be resolved");
 				}
+				
+				if (tryToResolveException) {
+					for (EtlDatabaseObject record : objects) {
+						try {
+							record.loadObjectIdData(tabConf);
+							
+							record.save(tabConf, conn);
+							
+							result.addToRecordsWithNoError(record.getSrcRelatedObject());
+						}
+						catch (DBException e1) {
+							result.addToRecordsWithUnresolvedErrors(record, e1);
+						}
+					}
+				} else
+					throw e;
 			}
 		}
 		
 		return result;
 	}
-	
-	/*
-	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllDataWithoutId(List<EtlDatabaseObject> objects,
-	        TableConfiguration tabConf, Connection conn) throws DBException {
-		
-		return insertAllData(objects, tabConf, false, conn);
-		
-	}*/
-	
-	/*
-	public static EtlOperationResultHeader<EtlDatabaseObject> insertAllDataWithId(List<EtlDatabaseObject> objects,
-	        TableConfiguration tabConf, Connection conn) throws DBException {
-		return insertAllData(objects, tabConf, true, conn);
-	}
-	*/
 	
 	public static Integer getAvaliableObjectId(TableConfiguration tabConf, Integer maxAcceptableId, Connection conn)
 	        throws DBException {
