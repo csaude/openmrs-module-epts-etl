@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.dbquickload.engine;
+package org.openmrs.module.epts.etl.dbquickload.processor;
 
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;

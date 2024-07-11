@@ -5,17 +5,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
-import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.pojogeneration.engine.PojoGenerationEngine;
+import org.openmrs.module.epts.etl.pojogeneration.processor.PojoGenerationProcessor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGenerationRecord> {
 	
-	private PojoGenerationEngine processor;
+	private PojoGenerationProcessor processor;
 	
 	public PojoGenerationSearchParams(Engine<PojoGenerationRecord> engine,
 	    ThreadRecordIntervalsManager<PojoGenerationRecord> limits) {
@@ -23,7 +23,7 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 		
 	}
 	
-	public void setProcessor(PojoGenerationEngine processor) {
+	public void setProcessor(PojoGenerationProcessor processor) {
 		this.processor = processor;
 	}
 	

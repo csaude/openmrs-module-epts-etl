@@ -2,8 +2,8 @@ package org.openmrs.module.epts.etl.utilities.concurrent;
 
 import java.util.concurrent.ThreadFactory;
 
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 public class EtlThreadFactory<T extends EtlDatabaseObject> implements ThreadFactory {

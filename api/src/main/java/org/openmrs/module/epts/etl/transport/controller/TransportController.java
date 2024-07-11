@@ -11,14 +11,14 @@ import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.transport.engine.TransportEngine;
 import org.openmrs.module.epts.etl.transport.model.TransportRecord;
 import org.openmrs.module.epts.etl.transport.model.TransportSyncSearchParams;
+import org.openmrs.module.epts.etl.transport.processor.TransportProcessor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
@@ -36,7 +36,7 @@ public class TransportController extends SiteOperationController<TransportRecord
 	@Override
 	public TaskProcessor<TransportRecord> initRelatedTaskProcessor(Engine<TransportRecord> monitor,
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
-		return new TransportEngine(monitor, limits, runningInConcurrency);
+		return new TransportProcessor(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

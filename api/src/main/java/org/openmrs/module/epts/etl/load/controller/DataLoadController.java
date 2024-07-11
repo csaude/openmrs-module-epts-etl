@@ -8,14 +8,14 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.load.engine.DataLoadEngine;
 import org.openmrs.module.epts.etl.load.model.LoadSyncDataSearchParams;
+import org.openmrs.module.epts.etl.load.processor.DataLoadProcessor;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 /**
@@ -36,7 +36,7 @@ public class DataLoadController extends EtlController {
 	@Override
 	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
-		return new DataLoadEngine(monitor, limits, runningInConcurrency);
+		return new DataLoadProcessor(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

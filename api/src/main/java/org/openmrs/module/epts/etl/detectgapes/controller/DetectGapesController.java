@@ -7,15 +7,15 @@ import java.sql.Statement;
 
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.detectgapes.engine.DetectGapesEngine;
 import org.openmrs.module.epts.etl.detectgapes.model.DetectGapesSearchParams;
+import org.openmrs.module.epts.etl.detectgapes.processor.DetectGapesProcessor;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -24,7 +24,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * This class is responsible for control the detect gapes process.
  * 
  * @author jpboane
- * @see DetectGapesEngine
+ * @see DetectGapesProcessor
  */
 public class DetectGapesController extends EtlController {
 	
@@ -37,7 +37,7 @@ public class DetectGapesController extends EtlController {
 	@Override
 	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
-		return new DetectGapesEngine(monitor, limits, runningInConcurrency);
+		return new DetectGapesProcessor(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

@@ -9,13 +9,13 @@ import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.synchronization.engine.DataBaseMergeFromJSONEngine;
 import org.openmrs.module.epts.etl.synchronization.model.DataBaseMergeFromJSONSearchParams;
+import org.openmrs.module.epts.etl.synchronization.processor.DataBaseMergeFromJSONProcessor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -34,7 +34,7 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Etl
 	public TaskProcessor<EtlStageRecordVO> initRelatedTaskProcessor(Engine<EtlStageRecordVO> monitor,
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		
-		return new DataBaseMergeFromJSONEngine(monitor, limits, runningInConcurrency);
+		return new DataBaseMergeFromJSONProcessor(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

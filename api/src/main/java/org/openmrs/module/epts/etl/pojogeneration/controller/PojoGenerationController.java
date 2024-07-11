@@ -8,14 +8,14 @@ import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.Engine;
-import org.openmrs.module.epts.etl.pojogeneration.engine.PojoGenerationEngine;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationSearchParams;
+import org.openmrs.module.epts.etl.pojogeneration.processor.PojoGenerationProcessor;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
@@ -32,7 +32,7 @@ public class PojoGenerationController extends OperationController<PojoGeneration
 	@Override
 	public TaskProcessor<PojoGenerationRecord> initRelatedTaskProcessor(Engine<PojoGenerationRecord> monitor,
 	        IntervalExtremeRecord limits,  boolean runningInConcurrency) {
-		return new PojoGenerationEngine(monitor, limits, runningInConcurrency);
+		return new PojoGenerationProcessor(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

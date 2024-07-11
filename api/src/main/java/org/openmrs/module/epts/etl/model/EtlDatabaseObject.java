@@ -16,6 +16,8 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
+import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -23,11 +25,13 @@ import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
+import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
 
 /**
- * This interface represent any Database Entintiy class subject of synchronization records.
+ * This interface represent any Database Entity class subject of synchronization records.
  * 
  * @author jpboane
  */
@@ -37,25 +41,9 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	public static final int INCONSISTENCE_STATUS = -1;
 	
-	default void generateFields() {
-		List<Field> fields = new ArrayList<Field>();
-		Class<?> cl = getClass();
-		
-		while (cl != null) {
-			java.lang.reflect.Field[] in = cl.getDeclaredFields();
-			for (int i = 0; i < in.length; i++) {
-				java.lang.reflect.Field field = in[i];
-				if (Modifier.isStatic(field.getModifiers()))
-					continue;
-				
-				field.setAccessible(true);
-				fields.add(Field.fastCreateWithType(field.getName(), field.getType().getTypeName()));
-			}
-			cl = cl.getSuperclass();
-		}
-		
-		setFields(fields);
-	}
+	ConflictResolutionType getConflictResolutionType();
+	
+	void setConflictResolutionType(ConflictResolutionType conflictResolutionType);
 	
 	void refreshLastSyncDateOnOrigin(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn);
@@ -74,22 +62,6 @@ public interface EtlDatabaseObject extends EtlObject {
 	List<UniqueKeyInfo> getUniqueKeysInfo();
 	
 	void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo);
-	
-	default UniqueKeyInfo getUniqueKeyInfo(UniqueKeyInfo keyToFind) {
-		if (hasUniqueKeys()) {
-			for (UniqueKeyInfo key : this.getUniqueKeysInfo()) {
-				if (keyToFind.equals(key)) {
-					return key;
-				}
-			}
-		}
-		
-		return null;
-	}
-	
-	default boolean hasUniqueKeys() {
-		return utils.arrayHasElement(getUniqueKeysInfo());
-	}
 	
 	/**
 	 * Load the destination parents id to this object
@@ -152,10 +124,6 @@ public interface EtlDatabaseObject extends EtlObject {
 	EtlDatabaseObject getSharedPkObj();
 	
 	void setSharedPkObj(EtlDatabaseObject sharedPkObj);
-	
-	default boolean shasSharedPkObj() {
-		return getSharedPkObj() != null;
-	}
 	
 	/**
 	 * Consolidate data for database consistency
@@ -229,101 +197,6 @@ public interface EtlDatabaseObject extends EtlObject {
 	 *         object
 	 */
 	boolean hasExactilyTheSameDataWith(EtlDatabaseObject srcObj);
-	
-	/**
-	 * Retrive values for all {@link TableConfiguration#getUniqueKeys()} fields. The values follow
-	 * the very same sequence defined with {@link TableConfiguration#getUniqueKeys()}
-	 * 
-	 * @param tableConfiguration the {@link TableConfiguration} from where the
-	 *            {@link TableConfiguration#getUniqueKeys()} will be retrieved from
-	 * @return values for all {@link TableConfiguration#getUniqueKeys()} field.
-	 * @throws ForbiddenOperationException if one or more fields in any key have null value
-	 */
-	default Object[] getUniqueKeysFieldValues(TableConfiguration tableConfiguration) throws ForbiddenOperationException {
-		if (!tableConfiguration.isFullLoaded()) {
-			try {
-				tableConfiguration.fullLoad();
-			}
-			catch (DBException e) {
-				throw new EtlExceptionImpl(e) {
-					
-					private static final long serialVersionUID = 6237531946353999983L;
-				};
-			}
-		}
-		
-		List<Object> values = new ArrayList<Object>();
-		
-		for (UniqueKeyInfo uniqueKey : tableConfiguration.getUniqueKeys()) {
-			Object[] fieldValues = new Object[uniqueKey.getFields().size()];
-			
-			for (int i = 0; i < uniqueKey.getFields().size(); i++) {
-				Field f = uniqueKey.getFields().get(i);
-				
-				Object fv = null;
-				
-				try {
-					fv = this.getFieldValue(f.getName());
-				}
-				catch (ForbiddenOperationException e) {
-					fv = this.getFieldValue(f.getNameAsClassAtt());
-				}
-				
-				if (fv == null) {
-					throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey + "] has no value.");
-				}
-				
-				fieldValues[i] = fv;
-			}
-			
-			values.addAll(utils.parseArrayToList(fieldValues));
-		}
-		
-		return utils.parseListToArray(values);
-	}
-	
-	default void setRelatedConfiguration(DatabaseObjectConfiguration config) {
-	}
-	
-	default DatabaseObjectConfiguration getRelatedConfiguration() {
-		return null;
-	}
-	
-	default boolean hasRelatedConfiguration() {
-		return getRelatedConfiguration() != null;
-	}
-	
-	/**
-	 * Retrive values for all fields in any unique key.
-	 * 
-	 * @param uniqueKeyFields the list of fields in a unique key
-	 * @return values for all fields in a unique key.
-	 * @throws ForbiddenOperationException if one or more fields in any key have null value
-	 */
-	default Object[] getUniqueKeysFieldValues(UniqueKeyInfo uniqueKey) throws ForbiddenOperationException {
-		Object[] fieldValues = new Object[uniqueKey.getFields().size()];
-		
-		for (int i = 0; i < uniqueKey.getFields().size(); i++) {
-			Field f = uniqueKey.getFields().get(i);
-			
-			Object fv = null;
-			
-			try {
-				fv = this.getFieldValue(f.getName());
-			}
-			catch (ForbiddenOperationException e) {
-				fv = this.getFieldValue(f.getNameAsClassAtt());
-			}
-			
-			if (fv == null) {
-				throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey + "] has no value.");
-			}
-			
-			fieldValues[i] = fv;
-		}
-		
-		return fieldValues;
-	}
 	
 	void fastCreateSimpleNumericKey(long i);
 	
@@ -461,6 +334,141 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	void copyFrom(EtlDatabaseObject parentRecordInOrigin);
 	
+	/**
+	 * Retrive values for all {@link TableConfiguration#getUniqueKeys()} fields. The values follow
+	 * the very same sequence defined with {@link TableConfiguration#getUniqueKeys()}
+	 * 
+	 * @param tableConfiguration the {@link TableConfiguration} from where the
+	 *            {@link TableConfiguration#getUniqueKeys()} will be retrieved from
+	 * @return values for all {@link TableConfiguration#getUniqueKeys()} field.
+	 * @throws ForbiddenOperationException if one or more fields in any key have null value
+	 */
+	default Object[] getUniqueKeysFieldValues(TableConfiguration tableConfiguration) throws ForbiddenOperationException {
+		if (!tableConfiguration.isFullLoaded()) {
+			try {
+				tableConfiguration.fullLoad();
+			}
+			catch (DBException e) {
+				throw new EtlExceptionImpl(e) {
+					
+					private static final long serialVersionUID = 6237531946353999983L;
+				};
+			}
+		}
+		
+		List<Object> values = new ArrayList<Object>();
+		
+		for (UniqueKeyInfo uniqueKey : tableConfiguration.getUniqueKeys()) {
+			Object[] fieldValues = new Object[uniqueKey.getFields().size()];
+			
+			for (int i = 0; i < uniqueKey.getFields().size(); i++) {
+				Field f = uniqueKey.getFields().get(i);
+				
+				Object fv = null;
+				
+				try {
+					fv = this.getFieldValue(f.getName());
+				}
+				catch (ForbiddenOperationException e) {
+					fv = this.getFieldValue(f.getNameAsClassAtt());
+				}
+				
+				if (fv == null) {
+					throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey + "] has no value.");
+				}
+				
+				fieldValues[i] = fv;
+			}
+			
+			values.addAll(utils.parseArrayToList(fieldValues));
+		}
+		
+		return utils.parseListToArray(values);
+	}
+	
+	default boolean shasSharedPkObj() {
+		return getSharedPkObj() != null;
+	}
+	
+	default void generateFields() {
+		List<Field> fields = new ArrayList<Field>();
+		Class<?> cl = getClass();
+		
+		while (cl != null) {
+			java.lang.reflect.Field[] in = cl.getDeclaredFields();
+			for (int i = 0; i < in.length; i++) {
+				java.lang.reflect.Field field = in[i];
+				if (Modifier.isStatic(field.getModifiers()))
+					continue;
+				
+				field.setAccessible(true);
+				fields.add(Field.fastCreateWithType(field.getName(), field.getType().getTypeName()));
+			}
+			cl = cl.getSuperclass();
+		}
+		
+		setFields(fields);
+	}
+	
+	default UniqueKeyInfo getUniqueKeyInfo(UniqueKeyInfo keyToFind) {
+		if (hasUniqueKeys()) {
+			for (UniqueKeyInfo key : this.getUniqueKeysInfo()) {
+				if (keyToFind.equals(key)) {
+					return key;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	default boolean hasUniqueKeys() {
+		return utils.arrayHasElement(getUniqueKeysInfo());
+	}
+	
+	default void setRelatedConfiguration(DatabaseObjectConfiguration config) {
+	}
+	
+	default DatabaseObjectConfiguration getRelatedConfiguration() {
+		return null;
+	}
+	
+	default boolean hasRelatedConfiguration() {
+		return getRelatedConfiguration() != null;
+	}
+	
+	/**
+	 * Retrive values for all fields in any unique key.
+	 * 
+	 * @param uniqueKeyFields the list of fields in a unique key
+	 * @return values for all fields in a unique key.
+	 * @throws ForbiddenOperationException if one or more fields in any key have null value
+	 */
+	default Object[] getUniqueKeysFieldValues(UniqueKeyInfo uniqueKey) throws ForbiddenOperationException {
+		Object[] fieldValues = new Object[uniqueKey.getFields().size()];
+		
+		for (int i = 0; i < uniqueKey.getFields().size(); i++) {
+			Field f = uniqueKey.getFields().get(i);
+			
+			Object fv = null;
+			
+			try {
+				fv = this.getFieldValue(f.getName());
+			}
+			catch (ForbiddenOperationException e) {
+				fv = this.getFieldValue(f.getNameAsClassAtt());
+			}
+			
+			if (fv == null) {
+				throw new ForbiddenOperationException("On or more fields of key [" + uniqueKey + "] has no value.");
+			}
+			
+			fieldValues[i] = fv;
+		}
+		
+		return fieldValues;
+	}
+	
 	default void loadUniqueKeyValues(TableConfiguration tabConf) {
 		this.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(tabConf.getUniqueKeys(), this));
 	}
@@ -561,26 +569,6 @@ public interface EtlDatabaseObject extends EtlObject {
 		return recOnDb != null;
 	}
 	
-	/*
-	default void tryToLoadSharedParentInOrigin(Connection srcConn) throws DBException, MissingParentException {
-		
-		TableConfiguration tabConf = (TableConfiguration) getRelatedConfiguration();
-		
-		if (!tabConf.useSharedPKKey()) {
-			return;
-		}
-		
-		ParentTable refInfo = tabConf.getSharedKeyRefInfo();
-		
-		Oid parentId = refInfo.generateParentOidFromChild(this);
-		
-		if (this.getSharedPkObj() == null && !refInfo.hasDefaultValueDueInconsistency()) {
-			throw new MissingParentException(this, parentId, refInfo.getTableName(), tabConf.getOriginAppLocationCode(),
-			        refInfo, null);
-		}
-		
-	}*/
-	
 	default EtlDatabaseObject retrieveParentByOid(ParentTable refInfo, Connection conn) throws DBException {
 		return retrieveParentByOid(refInfo, refInfo.generateParentOidFromChild(this), conn);
 	}
@@ -592,15 +580,132 @@ public interface EtlDatabaseObject extends EtlObject {
 	default EtlDatabaseObject retrieveParentInDestination(ParentTable refInfo, EtlDatabaseObject parentInOrigin,
 	        Connection dstConn) throws DBException {
 		
-		
 		EtlDatabaseObject recInDst = refInfo.createRecordInstance();
 		recInDst.setRelatedConfiguration(refInfo);
 		recInDst.copyFrom(parentInOrigin);
 		recInDst.loadUniqueKeyValues(refInfo);
 		recInDst.loadObjectIdData(refInfo);
 		
-		
 		return DatabaseObjectDAO.getByUniqueKeys(recInDst, dstConn);
+	}
+	
+	default boolean hasResolvedConflict() {
+		return this.getConflictResolutionType() != null;
+	}
+	
+	default void resolveConflictWithExistingRecord(TableConfiguration tableConfiguration, DBException exception,
+	        Connection conn) throws DBException, ForbiddenOperationException {
+		
+		EtlDatabaseObject recordOnDB = null;
+		
+		if (tableConfiguration.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
+			recordOnDB = DatabaseObjectDAO.getByOid(tableConfiguration, this.getObjectId(), conn);
+		}
+		
+		if (recordOnDB == null) {
+			TableConfiguration refInfo = (TableConfiguration) getRelatedConfiguration();
+			
+			if (refInfo.useSharedPKKey() && !refInfo.hasItsOwnKeys()) {
+				//Ignore duplication if it uses shared key
+				//TODO resolve conflict
+				return;
+			}
+			
+			recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this, conn);
+		}
+		
+		if (recordOnDB == null) {
+			throw new ConflictWithRecordNotYetAvaliableException(this, exception);
+		}
+		
+		boolean existingRecordIsOutdated = false;
+		
+		if (tableConfiguration.onConflict().keepExisting()) {
+			this.setConflictResolutionType(ConflictResolutionType.KEEP_EXISTING);
+			
+			return;
+		} else if (tableConfiguration.onConflict().updateExisting()) {
+			existingRecordIsOutdated = true;
+		} else if (utils.arrayHasElement(tableConfiguration.getWinningRecordFieldsInfo())) {
+			for (List<org.openmrs.module.epts.etl.model.Field> fields : tableConfiguration.getWinningRecordFieldsInfo()) {
+				
+				//Start assuming that this dstRecord is updated
+				boolean thisRecordIsUpdated = true;
+				
+				for (org.openmrs.module.epts.etl.model.Field field : fields) {
+					Object thisRecordFieldValue;
+					
+					try {
+						thisRecordFieldValue = this.getFieldValue(field.getName());
+					}
+					catch (ForbiddenOperationException e) {
+						thisRecordFieldValue = this.getFieldValue(field.getNameAsClassAtt());
+					}
+					
+					//If at least one of field value is different from the winning value, assume that this dstRecord is not updated
+					if (!thisRecordFieldValue.toString().equals(field.getValue().toString())) {
+						thisRecordIsUpdated = false;
+						
+						//Check the next list of fields
+						break;
+					}
+				}
+				
+				if (thisRecordIsUpdated) {
+					existingRecordIsOutdated = true;
+					
+					break;
+				}
+			}
+		} else if (tableConfiguration.hasObservationDateFields()) {
+			for (String dateField : tableConfiguration.getObservationDateFields()) {
+				
+				Date thisRecordDate;
+				Date recordOnDBDate;
+				
+				try {
+					thisRecordDate = (Date) this.getFieldValue(dateField);
+				}
+				catch (ForbiddenOperationException e) {
+					thisRecordDate = (Date) this
+					        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
+				}
+				
+				try {
+					recordOnDBDate = (Date) recordOnDB.getFieldValue(dateField);
+				}
+				catch (NullPointerException e) {
+					recordOnDBDate = null;
+				}
+				catch (ForbiddenOperationException e) {
+					recordOnDBDate = (Date) recordOnDB
+					        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
+				}
+				
+				if (thisRecordDate != null) {
+					if (recordOnDBDate == null) {
+						existingRecordIsOutdated = true;
+						
+						break;
+					} else if (DateAndTimeUtilities.dateDiff(thisRecordDate, recordOnDBDate) > 0) {
+						existingRecordIsOutdated = true;
+						
+						break;
+					}
+				}
+			}
+		}
+		
+		if (existingRecordIsOutdated) {
+			this.setConflictResolutionType(ConflictResolutionType.UPDATED_EXISTING);
+			
+			this.setObjectId(recordOnDB.getObjectId());
+			this.update(tableConfiguration, conn);
+		} else {
+			this.setConflictResolutionType(ConflictResolutionType.KEPT_EXISTING);
+			
+			this.setObjectId(recordOnDB.getObjectId());
+		}
 	}
 	
 }

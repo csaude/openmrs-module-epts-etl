@@ -56,6 +56,9 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		EtlConfigurationTableConf stageAreatabConf = srcTabConf.generateRelatedSyncStageTableConf(srcConn);
 		
 		EtlStageAreaObject eo = new EtlStageAreaObject(stageAreatabConf);
+		
+		eo.setFieldValue("conflict_resolution_type", srcObject.getConflictResolutionType().toString());
+		
 		eo.setFieldValue("record_origin_location_code", srcTabConf.getOriginAppLocationCode());
 		eo.setSrcRelatedObject(eo);
 		

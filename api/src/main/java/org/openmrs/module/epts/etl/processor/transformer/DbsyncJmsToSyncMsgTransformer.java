@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.dbsync.engine;
+package org.openmrs.module.epts.etl.processor.transformer;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.dbsync.model.SyncMetadata;
 import org.openmrs.module.epts.etl.dbsync.model.SyncModel;
 import org.openmrs.module.epts.etl.dbsync.model.utils.JsonUtils;
-import org.openmrs.module.epts.etl.etl.engine.transformer.EtlRecordTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;

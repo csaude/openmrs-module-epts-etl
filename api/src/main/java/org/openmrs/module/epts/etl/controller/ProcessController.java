@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -16,6 +15,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.ProcessProgressInfo;
+import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
@@ -773,24 +773,13 @@ public class ProcessController implements Controller, ControllerStarter {
 		OpenConnection conn = getDefaultConnInfo().openConnection();
 		
 		try {
-			Statement st = conn.createStatement();
-			
 			if (DBUtilities.isMySQLDB(conn)) {
-				st.addBatch("CREATE DATABASE " + getConfiguration().getSyncStageSchema());
+				DBUtilities.createDatabaseSchema(getConfiguration().getSyncStageSchema(), conn);
 			} else {
-				st.addBatch("CREATE SCHEMA " + getConfiguration().getSyncStageSchema());
+				BaseDAO.executeBatch(conn, "CREATE SCHEMA " + getConfiguration().getSyncStageSchema());
 			}
 			
-			st.executeBatch();
-			
-			st.close();
-			
 			conn.markAsSuccessifullyTerminated();
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
 		}
 		finally {
 			conn.finalizeConnection();
@@ -948,16 +937,9 @@ public class ProcessController implements Controller, ControllerStarter {
 			
 			sql += ");\n";
 			
-			Statement st = conn.createStatement();
-			st.addBatch(sql);
-			st.executeBatch();
-			
-			st.close();
+			BaseDAO.executeBatch(conn, sql);
 			
 			conn.markAsSuccessifullyTerminated();
-		}
-		catch (SQLException e) {
-			throw new DBException(e);
 		}
 		finally {
 			conn.finalizeConnection();
@@ -986,18 +968,9 @@ public class ProcessController implements Controller, ControllerStarter {
 		sql += ")";
 		
 		try {
-			Statement st = conn.createStatement();
-			st.addBatch(sql);
-			st.executeBatch();
-			
-			st.close();
+			BaseDAO.executeBatch(conn, sql);
 			
 			conn.markAsSuccessifullyTerminated();
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
 		}
 		finally {
 			conn.finalizeConnection();
@@ -1027,18 +1000,9 @@ public class ProcessController implements Controller, ControllerStarter {
 		sql += ")";
 		
 		try {
-			Statement st = conn.createStatement();
-			st.addBatch(sql);
-			st.executeBatch();
-			
-			st.close();
+			BaseDAO.executeBatch(conn, sql);
 			
 			conn.markAsSuccessifullyTerminated();
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
 		}
 		finally {
 			conn.finalizeConnection();
@@ -1067,23 +1031,13 @@ public class ProcessController implements Controller, ControllerStarter {
 		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
 		sql += ")";
 		
+		String idxDefinition = DBUtilities.generateIndexDefinition(schema + "." + tableName,
+		    tableName + "_idx".toLowerCase(), "table_name, origin_location_code", conn) + ";";
+		
 		try {
-			Statement st = conn.createStatement();
-			st.addBatch(sql);
-			
-			st.addBatch(DBUtilities.generateIndexDefinition(schema + "." + tableName, tableName + "_idx".toLowerCase(),
-			    "table_name, origin_location_code", conn) + ";");
-			
-			st.executeBatch();
-			
-			st.close();
+			BaseDAO.executeBatch(conn, sql, idxDefinition);
 			
 			conn.markAsSuccessifullyTerminated();
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
 		}
 		finally {
 			conn.finalizeConnection();
@@ -1112,19 +1066,10 @@ public class ProcessController implements Controller, ControllerStarter {
 		sql += ");";
 		
 		try {
-			Statement st = conn.createStatement();
-			st.addBatch(sql);
-			st.executeBatch();
-			
-			st.close();
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
+			BaseDAO.executeBatch(conn, sql);
+			conn.markAsSuccessifullyTerminated();
 		}
 		finally {
-			conn.markAsSuccessifullyTerminated();
 			conn.finalizeConnection();
 		}
 	}

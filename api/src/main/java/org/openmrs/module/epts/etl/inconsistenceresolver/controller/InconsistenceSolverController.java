@@ -7,14 +7,14 @@ import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.inconsistenceresolver.engine.InconsistenceSolverEngine;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceSolverSearchParams;
+import org.openmrs.module.epts.etl.inconsistenceresolver.processor.InconsistenceSolverProcessor;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -33,7 +33,7 @@ public class InconsistenceSolverController extends OperationController<EtlDataba
 	@Override
 	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
-		return new InconsistenceSolverEngine(monitor, limits, runningInConcurrency);
+		return new InconsistenceSolverProcessor(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override

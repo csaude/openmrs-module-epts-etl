@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.controller.conf.tablemapping;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.etl.engine.transformer.EtlFieldTransformer;
-import org.openmrs.module.epts.etl.etl.engine.transformer.EtlRecordTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;

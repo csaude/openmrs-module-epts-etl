@@ -637,19 +637,24 @@ public class DBUtilities {
 		}
 	}
 	
-	public static boolean isColumnExistOnTable(String tableName, String columnName, Connection conn) throws SQLException {
+	public static boolean isColumnExistOnTable(String tableName, String columnName, Connection conn) throws DBException {
 		tableName = tryToPutSchemaOnDatabaseObject(tableName, conn);
 		
-		PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
-		
-		ResultSet rs = st.executeQuery();
-		ResultSetMetaData rsMetaData = rs.getMetaData();
-		
-		for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
-			String cName = rsMetaData.getColumnName(i);
+		try {
+			PreparedStatement st = conn.prepareStatement("SELECT * FROM " + tableName + " WHERE 1 != 1");
 			
-			if (cName.toLowerCase().equals(columnName))
-				return true;
+			ResultSet rs = st.executeQuery();
+			ResultSetMetaData rsMetaData = rs.getMetaData();
+			
+			for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+				String cName = rsMetaData.getColumnName(i);
+				
+				if (cName.toLowerCase().equals(columnName))
+					return true;
+			}
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
 		}
 		
 		return false;
@@ -1005,6 +1010,11 @@ public class DBUtilities {
 		return fieldName + " VARCHAR(" + precision + ") " + constraint;
 	}
 	
+	public static String generateTableVarcharField(String fieldName, int precision, String constraint, String defaultValue,
+	        Connection conn) throws DBException {
+		return generateTableVarcharField(fieldName, precision, constraint, conn) + " DEFAULT " + defaultValue;
+	}
+	
 	public static String generateTableTextField(String fieldName, String constraint, Connection conn) throws DBException {
 		return fieldName + " text " + constraint;
 	}
@@ -1081,17 +1091,17 @@ public class DBUtilities {
 		throw new DatabaseNotSupportedException(conn);
 	}
 	
-	public static String generateIndexDefinition(String tableName, String indexName, String uniqueKeyFields, Connection conn)
+	public static String generateIndexDefinition(String tableName, String indexName, String indexFields, Connection conn)
 	        throws DBException {
 		if (isMySQLDB(conn)) {
-			return "ALTER TABLE " + tableName + " ADD INDEX " + indexName + "(" + uniqueKeyFields + ")";
+			return "ALTER TABLE " + tableName + " ADD INDEX " + indexName + "(" + indexFields + ")";
 			
 		} else if (isPostgresDB(conn)) {
-			return "CREATE INDEX " + indexName + " ON " + tableName + " (" + uniqueKeyFields + ")";
+			return "CREATE INDEX " + indexName + " ON " + tableName + " (" + indexFields + ")";
 		} else if (isOracleDB(conn)) {
-			return "CREATE INDEX " + indexName + " ON " + tableName + " (" + uniqueKeyFields + ")";
+			return "CREATE INDEX " + indexName + " ON " + tableName + " (" + indexFields + ")";
 		} else if (isSqlServerDB(conn)) {
-			return "CREATE INDEX " + indexName + " ON " + tableName + " (" + uniqueKeyFields + ")";
+			return "CREATE INDEX " + indexName + " ON " + tableName + " (" + indexFields + ")";
 		}
 		
 		throw new DatabaseNotSupportedException(conn);

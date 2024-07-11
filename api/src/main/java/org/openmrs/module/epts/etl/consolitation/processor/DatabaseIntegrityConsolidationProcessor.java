@@ -1,19 +1,19 @@
-package org.openmrs.module.epts.etl.consolitation.engine;
+package org.openmrs.module.epts.etl.consolitation.processor;
 
 import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.consolitation.controller.DatabaseIntegrityConsolidationController;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class DatabaseIntegrityConsolidationEngine extends TaskProcessor<EtlDatabaseObject> {
+public class DatabaseIntegrityConsolidationProcessor extends TaskProcessor<EtlDatabaseObject> {
 	
-	public DatabaseIntegrityConsolidationEngine(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
+	public DatabaseIntegrityConsolidationProcessor(Engine<EtlDatabaseObject> monitor, IntervalExtremeRecord limits,
 	    boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 	}

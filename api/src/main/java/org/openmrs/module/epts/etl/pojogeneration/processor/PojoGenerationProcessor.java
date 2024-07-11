@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.pojogeneration.engine;
+package org.openmrs.module.epts.etl.pojogeneration.processor;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -6,12 +6,12 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
-import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -29,13 +29,13 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
  * 
  * @author jpboane
  */
-public class PojoGenerationEngine extends TaskProcessor<PojoGenerationRecord> {
+public class PojoGenerationProcessor extends TaskProcessor<PojoGenerationRecord> {
 	
 	private List<String> alreadyGeneratedClasses;
 	
 	private boolean pojoGenerated;
 	
-	public PojoGenerationEngine(Engine<PojoGenerationRecord> monitor, IntervalExtremeRecord limits,
+	public PojoGenerationProcessor(Engine<PojoGenerationRecord> monitor, IntervalExtremeRecord limits,
 	    boolean runningInConcurrency) {
 		super(monitor, limits, runningInConcurrency);
 		

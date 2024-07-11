@@ -27,7 +27,7 @@ import org.openmrs.module.epts.etl.merge.controller.DataBaseMergeFromSourceDBCon
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.problems_solver.controller.GenericOperationController;
-import org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine;
+import org.openmrs.module.epts.etl.problems_solver.processor.GenericProcessor;
 import org.openmrs.module.epts.etl.reconciliation.controller.CentralAndRemoteDataReconciliationController;
 import org.openmrs.module.epts.etl.resolveconflictsinstagearea.controller.ResolveConflictsInStageAreaController;
 import org.openmrs.module.epts.etl.synchronization.controller.DatabaseMergeFromJSONController;
@@ -612,9 +612,9 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 			tryToLoadEngine();
 			
 			if (this.getRelatedEtlConfig().isResolveProblems()
-			        && !GenericEngine.class.isAssignableFrom(this.processorClazz)) {
+			        && !GenericProcessor.class.isAssignableFrom(this.processorClazz)) {
 				errorMsg += ++errNum + ". The processor class [" + this.getProcessorFullClassName()
-				        + "] is not any org.openmrs.module.epts.etl.problems_solver.engine.GenericEngine \n";
+				        + "] is not any org.openmrs.module.epts.etl.problems_solver.processor.GenericProcessor \n";
 			}
 			
 		}

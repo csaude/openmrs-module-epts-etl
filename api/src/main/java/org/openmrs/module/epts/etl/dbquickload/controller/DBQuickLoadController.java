@@ -6,16 +6,16 @@ import java.io.IOException;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.dbquickload.engine.DBQuickLoadEngine;
-import org.openmrs.module.epts.etl.dbquickload.engine.QuickLoadLimits;
 import org.openmrs.module.epts.etl.dbquickload.model.DBQuickLoadSearchParams;
+import org.openmrs.module.epts.etl.dbquickload.processor.DBQuickLoadProcessor;
+import org.openmrs.module.epts.etl.dbquickload.processor.QuickLoadLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.monitor.Engine;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 /**
@@ -37,7 +37,7 @@ public class DBQuickLoadController extends EtlController {
 	public TaskProcessor<EtlDatabaseObject> initRelatedTaskProcessor(Engine<EtlDatabaseObject> monitor,
 	        IntervalExtremeRecord limits, boolean runningInConcurrency) {
 		
-		return new DBQuickLoadEngine(monitor, limits, runningInConcurrency);
+		return new DBQuickLoadProcessor(monitor, limits, runningInConcurrency);
 	}
 	
 	@Override
