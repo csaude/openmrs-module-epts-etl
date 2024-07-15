@@ -61,7 +61,7 @@ public class LoadRecord {
 		
 		this.parentsWithDefaultValues = new ArrayList<ParentInfo>();
 		
-		this.dstRecord.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(this.dstConf.getUniqueKeys(), this.dstRecord));
+		this.dstRecord.loadUniqueKeyValues();
 		
 		this.resultItem = new EtlOperationItemResult<EtlDatabaseObject>(srcRecord);
 		

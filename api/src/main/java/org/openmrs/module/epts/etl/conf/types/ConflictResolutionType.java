@@ -3,6 +3,20 @@ package org.openmrs.module.epts.etl.conf.types;
 public enum ConflictResolutionType {
 	// @formatter:off
 	
+	
+	NONE,
+	
+	/**
+	 * Represents the applied resolution
+	 */
+	KEPT_EXISTING,
+	
+	
+	/**
+	 * Represents the applied resolution
+	 */
+	UPDATED_EXISTING,
+	
 	/**
 	 * Represents the resolution to apply on conflict
 	 */
@@ -16,23 +30,9 @@ public enum ConflictResolutionType {
 	/**
 	 * Represents the resolution to apply on conflict
 	 */
-	MAKE_YOUR_DECISION,
-	
-	/**
-	 * Represents the applied resolution
-	 */
-	KEPT_EXISTING,
-	
-	/**
-	 * Represents the applied resolution
-	 */
-	UPDATED_EXISTING,
-	
-	NONE;
-	
+	MAKE_YOUR_DECISION;
 	
 	// @formatter:on
-	
 	public boolean keepExisting() {
 		return this.equals(KEEP_EXISTING);
 	}

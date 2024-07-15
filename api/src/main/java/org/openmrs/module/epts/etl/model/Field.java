@@ -429,4 +429,12 @@ public class Field implements Serializable {
 		this.timeStamp = timeStamp;
 	}
 	
+	public String getFormatedValue() {
+		if (getValue() instanceof Date) {
+			return DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) this.getValue());
+		}
+		
+		return getValue().toString();
+	}
+	
 }

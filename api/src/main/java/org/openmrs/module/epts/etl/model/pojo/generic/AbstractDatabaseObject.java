@@ -27,6 +27,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObjectUniqueKeyInfo;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
@@ -51,7 +52,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	protected EtlStageRecordVO relatedSyncInfo;
 	
-	protected List<UniqueKeyInfo> uniqueKeysInfo;
+	protected List<EtlDatabaseObjectUniqueKeyInfo> uniqueKeysInfo;
 	
 	protected List<ParentInfo> parentsWithDefaultValues;
 	
@@ -100,18 +101,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			
 		}
 		catch (SQLException e) {}
-	}
-	
-	@Override
-	public void loadObjectIdData(TableConfiguration tabConf) {
-		if (tabConf.getPrimaryKey() != null) {
-			
-			tabConf.getPrimaryKey().setTabConf(tabConf);
-			
-			this.objectId = tabConf.getPrimaryKey().generateOid(this);
-			
-			this.objectId.setFullLoaded(true);
-		}
 	}
 	
 	@Override
@@ -242,12 +231,12 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	@Override
 	@JsonIgnore
-	public List<UniqueKeyInfo> getUniqueKeysInfo() {
+	public List<EtlDatabaseObjectUniqueKeyInfo> getUniqueKeysInfo() {
 		return this.uniqueKeysInfo;
 	}
 	
 	@Override
-	public void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo) {
+	public void setUniqueKeysInfo(List<EtlDatabaseObjectUniqueKeyInfo> uniqueKeysInfo) {
 		this.uniqueKeysInfo = uniqueKeysInfo;
 		
 		if (utilities.arrayHasElement(this.uniqueKeysInfo)) {

@@ -2,7 +2,9 @@ package org.openmrs.module.epts.etl.conf;
 
 import org.openmrs.module.epts.etl.model.Field;
 
-public class Key extends Field {
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+public class Key extends Field implements Comparable<Key> {
 	
 	private static final long serialVersionUID = 3689136559355049310L;
 	
@@ -43,6 +45,7 @@ public class Key extends Field {
 	}
 	
 	@Override
+	@JsonIgnore
 	public Key createACopy() {
 		Key k = new Key();
 		
@@ -52,12 +55,18 @@ public class Key extends Field {
 	}
 	
 	@Override
+	@JsonIgnore
 	public Key createACopyWithDefaultValue() {
 		Key k = createACopy();
 		
 		k.loadWithDefaultValue();
 		
 		return k;
+	}
+	
+	@Override
+	public int compareTo(Key o) {
+		return this.getName().compareTo(o.getName());
 	}
 	
 }

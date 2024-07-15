@@ -256,6 +256,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setParents(toCloneFrom.getParents());
 		this.setMustLoadChildrenInfo(toCloneFrom.isMustLoadChildrenInfo());
 		this.setOnConflict(toCloneFrom.onConflict());
+		this.setFullLoaded(toCloneFrom.isFullLoaded());
+		this.setUniqueKeyInfoLoaded(toCloneFrom.isUniqueKeyInfoLoaded());
+		this.setPrimaryKeyInfoLoaded(toCloneFrom.isPrimaryKeyInfoLoaded());
+		this.setFieldsLoaded(toCloneFrom.isFieldsLoaded());
+		this.setTableNameInfoLoaded(toCloneFrom.isTableNameInfoLoaded());
+		this.setParentsLoaded(toCloneFrom.isParentsLoaded());
 		
 		if (isMustLoadChildrenInfo()) {
 			this.setChildRefInfo(toCloneFrom.getChildRefInfo());
@@ -273,7 +279,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		this.setSharePkWith(toCloneFrom.getSharePkWith());
 		this.setMetadata(toCloneFrom.isMetadata());
-		this.setFullLoaded(toCloneFrom.isFullLoaded());
 		this.setRemoveForbidden(toCloneFrom.isRemoveForbidden());
 		this.setObservationDateFields(toCloneFrom.getObservationDateFields());
 		
@@ -410,7 +415,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						
 						keyInfo.setRelatedConfiguration(defaultGeneratedObjectKeyTabConf);
 						
-						keyInfo.setFieldValue("table_name", defaultObject.getObjectName());
 						keyInfo.setFieldValue("column_name", key.getName());
 						keyInfo.setFieldValue("key_value", key.getValue());
 						
@@ -1039,6 +1043,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	@JsonIgnore
+	default String generateRelatedDstStageTableName() {
+		return this.getTableName() + "_dst_stage";
+	}
+	
+	@JsonIgnore
 	default String generateRelatedStageSrcUniqueKeysTableName() {
 		return generateRelatedStageTableName() + "_src_unique_keys";
 	}
@@ -1056,6 +1065,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@JsonIgnore
 	default String generateFullStageTableName() {
 		return getSyncStageSchema() + "." + generateRelatedStageTableName();
+	}
+	
+	@JsonIgnore
+	default String generateFullDstStageTableName() {
+		return getSyncStageSchema() + "." + generateRelatedDstStageTableName();
 	}
 	
 	default String generateFullTableName(Connection conn) throws DBException {
@@ -1114,7 +1128,22 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
-	default boolean existRelatedExportStageSrcUniqueKeysTable(Connection conn) {
+	default boolean existRelatedDstStageTable(Connection conn) {
+		String schema = getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = generateRelatedDstStageTableName();
+		
+		try {
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+	}
+	
+	default boolean existRelatedStageSrcUniqueKeysTable(Connection conn) {
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = generateRelatedStageSrcUniqueKeysTableName();
@@ -1129,7 +1158,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
-	default boolean existRelatedExportStageDstUniqueKeysTable(Connection conn) {
+	default boolean existRelatedStageDstUniqueKeysTable(Connection conn) {
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = generateRelatedStageDstUniqueKeysTableName();
@@ -2218,32 +2247,49 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			if (!existRelatedExportStageTable(conn)) {
 				logDebug("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
 				
-				createRelatedSyncStageAreaTable(conn);
+				createRelatedSrcStageAreaTable(conn);
 				
 				logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
 			} else {
-				//Temporary code
+				//Temporary code to Add Column
 				
-				if (!DBUtilities.isColumnExistOnTable(this.generateFullStageTableName(), "conflict_resolution_type", conn)) {
+				/*if (!DBUtilities.isColumnExistOnTable(this.generateFullStageTableName(), "compacted_object_uk", conn)) {
 					
 					String sql = "ALTER TABLE " + this.generateFullStageTableName() + " ADD COLUMN ";
 					
-					sql += DBUtilities.generateTableVarcharField("conflict_resolution_type", 30, "NOT NULL", "'NONE'", conn);
+					sql += DBUtilities.generateTableVarcharField("compacted_object_uk", 190, "NULL", conn);
 					
 					BaseDAO.executeBatch(conn, sql);
-				}
+				}*/
+				
+				//Temporary code to Remove Column
+				
+				/*if (DBUtilities.isColumnExistOnTable(this.generateFullStageTableName(), "compacted_object_uk", conn)) {
+					String sql = "ALTER TABLE " + this.generateFullStageTableName() + " DROP COLUMN compacted_object_uk";
+					
+					BaseDAO.executeBatch(conn, sql);
+				}*/
 				
 			}
 			
-			if (!existRelatedExportStageSrcUniqueKeysTable(conn)) {
+			if (!existRelatedDstStageTable(conn)) {
+				logDebug("GENERATING RELATED DST STAGE TABLE FOR [" + this.getTableName() + "]");
+				
+				createRelatedDstSyncStage(conn);
+				
+				logDebug("RELATED DST STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
+				
+			}
+			
+			if (!existRelatedStageSrcUniqueKeysTable(conn)) {
 				logDebug("GENERATING RELATED STAGE ORIGIN UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
 				
-				createRelatedSyncStageAreaSrcUniqueKeysTable(conn);
+				createRelatedStageAreaSrcUniqueKeysTable(conn);
 				
 				logDebug("RELATED STAGE SRC UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
 			}
 			
-			if (!existRelatedExportStageDstUniqueKeysTable(conn)) {
+			if (!existRelatedStageDstUniqueKeysTable(conn)) {
 				logDebug("GENERATING RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
 				
 				createRelatedSyncStageAreaDstUniqueKeysTable(conn);
@@ -2257,8 +2303,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 	}
 	
-	default EtlConfigurationTableConf generateRelatedSyncStageTableConf(Connection conn) throws DBException {
+	default EtlConfigurationTableConf generateRelatedSrcStageTableConf(Connection conn) throws DBException {
 		return generateRelatedStageTabConf(this.generateRelatedStageTableName(), this.getSyncStageSchema(), conn);
+	}
+	
+	default EtlConfigurationTableConf generateRelatedDstStageTableConf(Connection conn) throws DBException {
+		return generateRelatedStageTabConf(this.generateRelatedDstStageTableName(), this.getSyncStageSchema(), conn);
 	}
 	
 	default EtlConfigurationTableConf generateRelatedStageDstUniqueKeysTableConf(Connection conn) throws DBException {
@@ -2290,19 +2340,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 	}
 	
-	default void createRelatedSyncStageAreaSrcUniqueKeysTable(Connection conn) throws DBException {
-		createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageSrcUniqueKeysTableName(), conn);
-	}
-	
-	default void createRelatedSyncStageAreaDstUniqueKeysTable(Connection conn) throws DBException {
-		createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageDstUniqueKeysTableName(), conn);
-	}
-	
-	default void createRelatedSyncStageAreaUniqueKeysTable(String tableName, Connection conn) throws DBException {
+	default void createRelatedDstSyncStage(Connection conn) throws DBException {
 		String sql = "";
 		String notNullConstraint = "NOT NULL";
-		String nullConstraint = "NULL";
 		String endLineMarker = ",\n";
+		
+		String tableName = generateRelatedDstStageTableName();
 		
 		String fullTableName = getSyncStageSchema() + "." + tableName;
 		
@@ -2311,27 +2354,73 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		sql += "CREATE TABLE " + fullTableName + "(\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("table_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("key_value", 100, nullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("dst_compacted_object_uk", 190, notNullConstraint, conn)
+		        + endLineMarker;
+		
+		sql += DBUtilities.generateTableVarcharField("conflict_resolution_type", 30, notNullConstraint, conn)
+		        + endLineMarker;
+		
 		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
-		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
-		    "stage_record_id, table_name, key_name, column_name", conn) + endLineMarker;
+		
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_dst".toLowerCase(),
+		    "stage_record_id, dst_table_name", conn) + endLineMarker;
+		
 		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
 		    parentTableName, "id", conn) + endLineMarker;
 		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
 		sql += ")";
 		
 		String indexName = tableName + "_idx";
-		String indexFields = "table_name, key_name, column_name, key_value";
+		String indexFields = "stage_record_id, dst_table_name";
 		
 		String idxDefinition = DBUtilities.generateIndexDefinition(fullTableName, indexName, indexFields, conn);
 		
 		BaseDAO.executeBatch(conn, sql, idxDefinition);
 	}
 	
-	default void createRelatedSyncStageAreaTable(Connection conn) throws DBException {
+	default void createRelatedStageAreaSrcUniqueKeysTable(Connection conn) throws DBException {
+		createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageSrcUniqueKeysTableName(),
+		    this.generateFullStageTableName(), conn);
+	}
+	
+	default void createRelatedSyncStageAreaDstUniqueKeysTable(Connection conn) throws DBException {
+		createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageDstUniqueKeysTableName(),
+		    this.generateFullDstStageTableName(), conn);
+	}
+	
+	default void createRelatedSyncStageAreaUniqueKeysTable(String tableName, String parentTableName, Connection conn)
+	        throws DBException {
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String nullConstraint = "NULL";
+		String endLineMarker = ",\n";
+		
+		String fullTableName = getSyncStageSchema() + "." + tableName;
+		
+		sql += "CREATE TABLE " + fullTableName + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_value", 100, nullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+		    "stage_record_id, key_name, column_name", conn) + endLineMarker;
+		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
+		    parentTableName, "id", conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
+		
+		String indexName = tableName + "_idx";
+		String indexFields = "key_name, column_name, key_value";
+		
+		String idxDefinition = DBUtilities.generateIndexDefinition(fullTableName, indexName, indexFields, conn);
+		
+		BaseDAO.executeBatch(conn, sql, idxDefinition);
+	}
+	
+	default void createRelatedSrcStageAreaTable(Connection conn) throws DBException {
 		String tableName = this.generateRelatedStageTableName();
 		
 		String sql = "";
@@ -2343,10 +2432,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
 		        + endLineMarker;
-		sql += DBUtilities.generateTableTextField("json", nullConstraint, conn) + endLineMarker;
 		
-		sql += DBUtilities.generateTableVarcharField("conflict_resolution_type", 30, notNullConstraint, conn)
-		        + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("compacted_object_uk", 190, notNullConstraint, conn) + endLineMarker;
+		
+		sql += DBUtilities.generateTableTextField("json", nullConstraint, conn) + endLineMarker;
 		
 		sql += DBUtilities.generateTableDateTimeField("last_sync_date", nullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("last_sync_try_err", 250, nullConstraint, conn) + endLineMarker;
@@ -2363,6 +2452,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		String keyName = "CHK_" + this.generateRelatedStageTableName() + "_MIG_STATUS";
 		
 		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
+		
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+		    "compacted_object_uk, record_origin_location_code", conn) + endLineMarker;
 		
 		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
 		sql += ")";

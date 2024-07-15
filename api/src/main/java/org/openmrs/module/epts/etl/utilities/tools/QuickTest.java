@@ -21,6 +21,9 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.Key;
+import org.openmrs.module.epts.etl.conf.SrcConf;
+import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -30,6 +33,7 @@ import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -41,31 +45,68 @@ public class QuickTest {
 	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
+	static DBConnectionInfo connInfo_localhost = new DBConnectionInfo("root", "root",
+	        "jdbc:mysql://localhost:3306/tmp_qlm_hgq", "com.mysql.cj.jdbc.Driver");
+	
+	static DBConnectionInfo connInfo_quelimane = new DBConnectionInfo("root", "Fgh397$@Wy$Q7",
+	        "jdbc:mysql://10.0.0.22:3307/openmrs_gurue_lioma", "com.mysql.cj.jdbc.Driver");
+	
+	static DBConnectionInfo connInfo_zambezia = new DBConnectionInfo("root", "root",
+	        "jdbc:mysql://10.0.0.24:3307/openmrs_derre", "com.mysql.cj.jdbc.Driver");
+	
+	static String json = "{\r\n" + "            \"dataBaseUserName\":\"root\",\r\n"
+	        + "            \"dataBaseUserPassword\":\"#moZart123#\",\r\n"
+	        + "            \"connectionURI\":\"jdbc:mysql://10.10.2.71:3306/mozart_q1_fy24_ariel_cab_consolidated?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true\",\r\n"
+	        + "            \"driveClassName\":\"com.mysql.cj.jdbc.Driver\"\r\n" + "         }";
+	
 	@SuppressWarnings("unused")
 	public static OpenConnection openConnection() throws DBException {
-		DBConnectionInfo connInfo_localhost = new DBConnectionInfo("root", "root", "jdbc:mysql://localhost:3306/tmp_qlm_hgq",
-		        "com.mysql.cj.jdbc.Driver");
-		
-		DBConnectionInfo connInfo_quelimane = new DBConnectionInfo("root", "Fgh397$@Wy$Q7",
-		        "jdbc:mysql://10.0.0.22:3307/openmrs_gurue_lioma", "com.mysql.cj.jdbc.Driver");
-		
-		DBConnectionInfo connInfo_zambezia = new DBConnectionInfo("root", "root",
-		        "jdbc:mysql://10.0.0.24:3307/openmrs_derre", "com.mysql.cj.jdbc.Driver");
-		
-		String json = "{\r\n" + "            \"dataBaseUserName\":\"root\",\r\n"
-		        + "            \"dataBaseUserPassword\":\"#moZart123#\",\r\n"
-		        + "            \"connectionURI\":\"jdbc:mysql://10.10.2.71:3306/mozart_q1_fy24_ariel_cab_consolidated?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true\",\r\n"
-		        + "            \"driveClassName\":\"com.mysql.cj.jdbc.Driver\"\r\n" + "         }";
 		
 		DBConnectionInfo connInfo_mozart = DBConnectionInfo.loadFromJson(json);
 		
-		DBConnectionService service = DBConnectionService.init(connInfo_quelimane);
+		DBConnectionService service = DBConnectionService.init(connInfo_localhost);
 		
 		return service.openConnection();
 	}
 	
 	public static void main(String[] args) throws Exception {
-		searchOnDbs(openConnection());
+		saveToTable();
+	}
+	
+	public static void saveToTable() throws DBException {
+		
+		EtlConfiguration conf = new EtlConfiguration();
+		conf.setSrcConnInfo(connInfo_localhost);
+		conf.setDstConnInfo(connInfo_localhost);
+		
+		EtlItemConfiguration itemConf = new EtlItemConfiguration();
+		itemConf.setRelatedEtlConfig(conf);
+		
+		SrcConf src = new SrcConf();
+		src.setParentConf(itemConf);
+		src.setRelatedEtlConfig(conf);
+		
+		src.setTableName("tmp");
+		
+		OpenConnection conn = conf.openSrcConn();
+		
+		src.fullLoad(conn);
+		
+		UniqueKeyInfo uk = new UniqueKeyInfo();
+		
+		uk.setKeyName("test_key");
+		
+		uk.addKey(Key.fastCreateValued("uuid", "00980f84-4467-475d-8a3f-4136f1358b66"));
+		uk.addKey(Key.fastCreateValued("date", DateAndTimeUtilities.createDate("2016-07-06 ")));
+		
+		EtlDatabaseObject obj = src.createRecordInstance();
+		
+		obj.setFieldValue("uk", uk.toString());
+		
+		DatabaseObjectDAO.insert(obj, src, conn);
+		
+		conn.markAsSuccessifullyTerminated();
+		conn.finalizeConnection();
 	}
 	
 	public static void searchOnDbs(Connection conn) throws IOException, DBException {

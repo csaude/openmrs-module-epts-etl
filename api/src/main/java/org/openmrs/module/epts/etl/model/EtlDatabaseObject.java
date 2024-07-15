@@ -59,9 +59,9 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	void setObjectId(Oid objectId);
 	
-	List<UniqueKeyInfo> getUniqueKeysInfo();
+	List<EtlDatabaseObjectUniqueKeyInfo> getUniqueKeysInfo();
 	
-	void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo);
+	void setUniqueKeysInfo(List<EtlDatabaseObjectUniqueKeyInfo> uniqueKeysInfo);
 	
 	/**
 	 * Load the destination parents id to this object
@@ -113,13 +113,6 @@ public interface EtlDatabaseObject extends EtlObject {
 	String generateTableName();
 	
 	String generateFullFilledUpdateSql();
-	
-	/**
-	 * Load the objectId info
-	 * 
-	 * @param tabConf the table configuration
-	 */
-	void loadObjectIdData(TableConfiguration tabConf);
 	
 	EtlDatabaseObject getSharedPkObj();
 	
@@ -258,6 +251,31 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		return DatabaseObjectDAO.find(tabConf.getLoadHealper(), tabConf.getSyncRecordClass(), sql, pk.parseValuesToArray(),
 		    conn);
+	}
+	
+	/**
+	 * Load the objectId info
+	 * 
+	 * @param tabConf the table configuration
+	 */
+	default void loadObjectIdData(TableConfiguration tabConf) {
+		if (tabConf.getPrimaryKey() != null) {
+			
+			tabConf.getPrimaryKey().setTabConf(tabConf);
+			
+			this.setObjectId(tabConf.getPrimaryKey().generateOid(this));
+			
+			this.getObjectId().setFullLoaded(true);
+		}
+	}
+	
+	default void loadObjectIdData() throws ForbiddenOperationException {
+		TableConfiguration tabConf = (TableConfiguration) getRelatedConfiguration();
+		
+		if (tabConf == null)
+			throw new ForbiddenOperationException("The related tabConf is not specified!");
+		
+		loadObjectIdData(tabConf);
 	}
 	
 	/**
@@ -470,7 +488,7 @@ public interface EtlDatabaseObject extends EtlObject {
 	}
 	
 	default void loadUniqueKeyValues(TableConfiguration tabConf) {
-		this.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(tabConf.getUniqueKeys(), this));
+		this.setUniqueKeysInfo(EtlDatabaseObjectUniqueKeyInfo.generate(tabConf, this));
 	}
 	
 	default void loadUniqueKeyValues() {

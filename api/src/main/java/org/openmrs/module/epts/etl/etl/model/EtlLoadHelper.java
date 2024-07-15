@@ -13,6 +13,8 @@ import org.openmrs.module.epts.etl.conf.types.EtlActionType;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
+import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaInfo;
+import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaObjectDAO;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
@@ -109,13 +111,14 @@ public class EtlLoadHelper {
 		return null;
 	}
 	
-	public List<EtlStageAreaObject> getAllSuccessifulProcessedAsEtlStageAreaObject(Connection conn) throws DBException {
+	public List<EtlStageAreaInfo> getAllSuccessifulProcessedAsEtlStageAreaObject(Connection srcConn, Connection dstConn)
+	        throws DBException {
 		List<EtlLoadHelperRecord> sucess = getAllSuccessfullyProcessedRecords();
 		
-		List<EtlStageAreaObject> info = new ArrayList<>(sucess.size());
+		List<EtlStageAreaInfo> info = new ArrayList<>(sucess.size());
 		
 		for (EtlLoadHelperRecord rec : sucess) {
-			info.add(EtlStageAreaObject.generate(rec.getSrcObject(), rec.getDstRecords(), conn));
+			info.add(EtlStageAreaInfo.generate(rec, srcConn, dstConn));
 		}
 		
 		return info;
@@ -152,7 +155,7 @@ public class EtlLoadHelper {
 		}
 		
 		if (getEtlOperationConfig().writeOperationHistory()) {
-			EtlStageAreaObjectDAO.saveAll(getAllSuccessifulProcessedAsEtlStageAreaObject(srcConn), srcConn);
+			EtlStageAreaObjectDAO.saveAll(getAllSuccessifulProcessedAsEtlStageAreaObject(srcConn, dstConn), srcConn);
 		}
 	}
 	

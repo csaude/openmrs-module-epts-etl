@@ -191,6 +191,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		for (UniqueKeyInfo uniqueKey : record.getUniqueKeysInfo()) {
 			
+			uniqueKey.setTabConf(tableConfiguration);
+			
 			if (!uniqueKey.hasNullFields()) {
 				
 				String tmpCodition = "";
@@ -488,6 +490,13 @@ public class DatabaseObjectDAO extends BaseDAO {
 		boolean generateOperationResult = true;
 		
 		return insert(objects, tabConf, tryToResolveException, generateOperationResult, conn);
+	}
+	
+	public static void insert(List<EtlDatabaseObject> objects, Connection conn) throws DBException {
+		
+		TableConfiguration tabConf = (TableConfiguration) objects.get(0).getRelatedConfiguration();
+		
+		insert(objects, tabConf, conn);
 	}
 	
 	public static void insert(List<EtlDatabaseObject> objects, TableConfiguration tabConf, Connection conn)

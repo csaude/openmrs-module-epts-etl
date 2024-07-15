@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -21,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 /**
  * @author jpboane
  */
-public class UniqueKeyInfo {
+public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -49,6 +50,7 @@ public class UniqueKeyInfo {
 		return uk;
 	}
 	
+	@JsonIgnore
 	public boolean isManualConfigured() {
 		return manualConfigured;
 	}
@@ -57,6 +59,7 @@ public class UniqueKeyInfo {
 		this.manualConfigured = manualConfigured;
 	}
 	
+	@JsonIgnore
 	public boolean isFieldValuesLoaded() {
 		return fieldValuesLoaded;
 	}
@@ -65,6 +68,7 @@ public class UniqueKeyInfo {
 		this.fieldValuesLoaded = fieldValuesLoaded;
 	}
 	
+	@JsonIgnore
 	public boolean isCompositeKey() {
 		return utilities.arrayHasMoreThanOneElements(this.fields);
 	}
@@ -75,6 +79,7 @@ public class UniqueKeyInfo {
 	 * @return the simple key for this unique key
 	 * @throws ForbiddenOperationException if this unique key is composite
 	 */
+	@JsonIgnore
 	public Key retrieveSimpleKey() throws ForbiddenOperationException {
 		if (isCompositeKey())
 			throw new ForbiddenOperationException("The key is composite, you cannot retrive the SimpleKey");
@@ -82,10 +87,12 @@ public class UniqueKeyInfo {
 		return this.fields.get(0);
 	}
 	
+	@JsonIgnore
 	public String retrieveSimpleKeyColumnName() {
 		return retrieveSimpleKey().getName();
 	}
 	
+	@JsonIgnore
 	public String retrieveSimpleKeyColumnNameAsClassAtt() {
 		return retrieveSimpleKey().getNameAsClassAtt();
 	}
@@ -260,6 +267,7 @@ public class UniqueKeyInfo {
 	}
 	
 	@Override
+	@JsonIgnore
 	public boolean equals(Object obj) {
 		if (obj == null)
 			return false;
@@ -316,6 +324,7 @@ public class UniqueKeyInfo {
 		return true;
 	}
 	
+	@JsonIgnore
 	public boolean hasName() {
 		return utilities.stringHasValue(getKeyName());
 	}
@@ -332,10 +341,14 @@ public class UniqueKeyInfo {
 		toString += "[";
 		int i = 0;
 		
+		if (hasFields()) {
+			Collections.sort(this.getFields());
+		}
+		
 		for (Field field : this.getFields()) {
 			String fieldInfo = field.getName();
 			
-			fieldInfo += field.hasValue() ? ": " + field.getValue() : "";
+			fieldInfo += field.hasValue() ? ": " + field.getFormatedValue() : "";
 			
 			if (i > 0) {
 				toString += ",";
@@ -372,13 +385,26 @@ public class UniqueKeyInfo {
 		return uk;
 	}
 	
-	protected UniqueKeyInfo cloneMe() {
+	@JsonIgnore
+	public UniqueKeyInfo cloneMe() {
 		UniqueKeyInfo uk = UniqueKeyInfo.init(this.tabConf, keyName);
 		
-		for (Field field : fields) {
+		for (Field field : this.getFields()) {
 			uk.addKey(Key.fastCreateTyped(field.getName(), field.getType()));
 		}
 		return uk;
+	}
+	
+	public void copy(UniqueKeyInfo srcInfo) {
+		if (srcInfo.hasFields()) {
+			setFields(new ArrayList<>());
+			
+			for (Key key : srcInfo.getFields()) {
+				addKey(key.createACopy());
+			}
+		} else {
+			setFields(null);
+		}
 	}
 	
 	public static List<UniqueKeyInfo> cloneAllAndLoadValues(List<UniqueKeyInfo> uniqueKeysInfo, EtlDatabaseObject obj) {
@@ -453,6 +479,7 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
+	@JsonIgnore
 	public String parseFieldNamesToCommaSeparatedString() {
 		String fields = "";
 		
@@ -469,6 +496,7 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
+	@JsonIgnore
 	public String generateInsertQuetionMark() {
 		String fields = "";
 		
@@ -483,6 +511,7 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
+	@JsonIgnore
 	public Object[] parseValuesToArray() {
 		Object[] values = new Object[this.getFields().size()];
 		
@@ -495,6 +524,7 @@ public class UniqueKeyInfo {
 		return values;
 	}
 	
+	@JsonIgnore
 	public String parseToFilledStringConditionWithAlias() {
 		if (getTabConf() == null) {
 			throw new ForbiddenOperationException("The tabConf is needed");
@@ -507,10 +537,12 @@ public class UniqueKeyInfo {
 		return parseToFilledStringCondition(getTabConf().getAlias());
 	}
 	
+	@JsonIgnore
 	public String parseToFilledStringConditionWithoutAlias() {
 		return parseToFilledStringCondition("");
 	}
 	
+	@JsonIgnore
 	public String parseToParametrizedStringConditionWithAlias() {
 		if (getTabConf() == null) {
 			throw new ForbiddenOperationException("The tabConf is needed");
@@ -523,6 +555,7 @@ public class UniqueKeyInfo {
 		return parseToParametrizedStringCondition(getTabConf().getAlias());
 	}
 	
+	@JsonIgnore
 	public String parseToParametrizedStringConditionWithoutAlias() {
 		return parseToParametrizedStringCondition("");
 	}
@@ -629,6 +662,7 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
+	@JsonIgnore
 	public TableConfiguration getTabConf() {
 		return tabConf;
 	}
@@ -637,6 +671,7 @@ public class UniqueKeyInfo {
 		this.tabConf = tabConf;
 	}
 	
+	@JsonIgnore
 	public String generateSqlNullCheckWithDisjunction() {
 		
 		if (tabConf == null)
@@ -657,6 +692,7 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
+	@JsonIgnore
 	public String generateSqlNotNullCheckWithDisjunction() {
 		
 		if (tabConf == null)
@@ -677,6 +713,7 @@ public class UniqueKeyInfo {
 		return fields;
 	}
 	
+	@JsonIgnore
 	public String generateSqlNotNullCheckWithIntersetion() {
 		String fields = "";
 		
@@ -711,10 +748,12 @@ public class UniqueKeyInfo {
 		return getKey(key.getName()) != null;
 	}
 	
+	@JsonIgnore
 	public boolean hasFields() {
 		return utilities.arrayHasElement(this.fields);
 	}
 	
+	@JsonIgnore
 	public boolean hasNullFields() {
 		if (!isFieldValuesLoaded())
 			throw new ForbiddenOperationException(
@@ -729,7 +768,42 @@ public class UniqueKeyInfo {
 		return false;
 	}
 	
+	@JsonIgnore
 	public Key asSimpleKey() {
 		return retrieveSimpleKey();
 	}
+	
+	@Override
+	public int compareTo(UniqueKeyInfo o) {
+		return this.getKeyName().compareTo(o.getKeyName());
+	}
+	
+	@JsonIgnore
+	public String parseToJson() {
+		if (hasFields()) {
+			Collections.sort(this.getFields());
+		}
+		
+		return utilities.parseToJSON(this);
+	}
+	
+	@JsonIgnore
+	public String generateCompactedObject() {
+		return toString();
+	}
+	
+	public static String compactAll(List<UniqueKeyInfo> uks) {
+		String compacted = "";
+		
+		for (UniqueKeyInfo uk : uks) {
+			if (!compacted.isEmpty()) {
+				compacted += ",";
+			}
+			
+			compacted += uk.generateCompactedObject();
+		}
+		
+		return compacted;
+	}
+	
 }

@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.dbquickexport.controller.DBQuickExportController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
@@ -37,7 +36,7 @@ public class DBQuickExportProcessor extends TaskProcessor<EtlDatabaseObject> {
 			this.getEngine().logInfo("GENERATING '" + records.size() + "' " + getMainSrcTableName() + " TO JSON FILE");
 			
 			for (EtlDatabaseObject rec : syncRecordsAsOpenMRSObjects) {
-				rec.setUniqueKeysInfo(UniqueKeyInfo.cloneAllAndLoadValues(getSrcConf().getUniqueKeys(), rec));
+				rec.loadUniqueKeyValues();
 			}
 			
 			SyncJSONInfo jsonInfo = SyncJSONInfo.generate(getMainSrcTableName(), syncRecordsAsOpenMRSObjects,

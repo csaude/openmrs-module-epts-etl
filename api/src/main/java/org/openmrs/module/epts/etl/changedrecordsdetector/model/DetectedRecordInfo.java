@@ -8,12 +8,12 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
-import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObjectUniqueKeyInfo;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -58,15 +58,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		this.uuid = uuid;
 		this.appCode = appCode;
 		this.recordOriginLocationCode = recordOriginLocationCode;
-	}
-	
-	@Override
-	public void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo) {
-	}
-	
-	@Override
-	public List<UniqueKeyInfo> getUniqueKeysInfo() {
-		return null;
 	}
 	
 	public Integer getId() {
@@ -437,33 +428,45 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public EtlDatabaseObject getSrcRelatedObject() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public ConflictResolutionType getConflictResolutionType() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public List<EtlDatabaseObjectUniqueKeyInfo> getUniqueKeysInfo() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public void setUniqueKeysInfo(List<EtlDatabaseObjectUniqueKeyInfo> uniqueKeysInfo) {
 		// TODO Auto-generated method stub
 		
 	}

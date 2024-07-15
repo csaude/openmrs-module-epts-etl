@@ -10,13 +10,13 @@ import java.util.Map;
 import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
-import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObjectUniqueKeyInfo;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -79,13 +79,13 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public List<UniqueKeyInfo> getUniqueKeysInfo() {
+	public List<EtlDatabaseObjectUniqueKeyInfo> getUniqueKeysInfo() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public void setUniqueKeysInfo(List<UniqueKeyInfo> uniqueKeysInfo) {
+	public void setUniqueKeysInfo(List<EtlDatabaseObjectUniqueKeyInfo> uniqueKeysInfo) {
 		// TODO Auto-generated method stub
 		
 	}

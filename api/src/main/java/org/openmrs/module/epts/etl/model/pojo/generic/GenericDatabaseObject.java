@@ -486,11 +486,12 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public void setObjectId(Oid objectId) {
+		super.setObjectId(objectId);
+		
 		for (Key key : objectId.getFields()) {
 			setFieldValue(key.getName(), key.getValue());
 		}
 		
-		loadObjectIdData((TableConfiguration) getRelatedConfiguration());
 	}
 	
 	@Override

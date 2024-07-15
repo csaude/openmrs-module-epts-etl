@@ -357,7 +357,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				map.setAutomaticalyGenerated(true);
 				map.setOnConflict(getSrcConf().onConflict());
 				map.setRelatedConnInfo(getRelatedEtlConf().getDstConnInfo());
-				
+				map.setWinningRecordFieldsInfo(getSrcConf().getWinningRecordFieldsInfo());
 				map.setRelatedEtlConfig(getRelatedEtlConf());
 				
 				map.setParentConf(this);
