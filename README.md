@@ -199,7 +199,58 @@ As can be seen on the code above, each selfJoiningTable can have the **tableName
 
 The **"extraTableDataSource"** element, allow the specification of extra tables to be used as data source in addition of the main table. There relevant configuration info for extra table dasource is shown bellow    
 
-As can be seen on the code above, each parent can have the **tableName** with represents the name of parent table and the **ref** which has the information of references between the main table and its parents. Note that the ref is defined by the *"mapping"* list which allow the mapping of fields between the main table and its parent. Each mapping have optional attribute *"defaultValueDueInconsistency"* which allow to specify a default value when the main table is orphan of that parent. This is important in a merge or copy process. Another property is *"setNullDueInconsistency"* which is a boolean properity which indicate if the parent can be set to null if it is missing. The *"conditionalFields"*  helps to create conditional reference between the main table and its parent. The conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the person_attribute.value=7)  
+```
+{
+   "srcConf":{
+      "extraTableDataSource":[
+         {
+            "tableName":"",
+            "joinExtraCondition":"", 
+            "joinFields":[
+               {
+                  "srcField":"",
+                  "dstField":""
+               }
+            ],
+            "joinType":"",
+            "selfJoinTables": [
+	    ]
+         }
+      ]
+   }
+}
+```
+
+As can be seen on the code above, each extraTableDataSource can have the **tableName** with represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be spefied if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT. The **selfJoinTables** allow the inclusion of addictional tables which can be joined whith the extraTableDataSource for propose of inclusion of extra condition. 
+
+#### The extraQueryDataSource configuration
+
+The **"extraQueryDataSource"** element, allow the specification of extra queries to be used as data source in addition of the main table. There relevant configuration info for extra table dasource is shown bellow.    
+
+```
+{
+   "srcConf":{
+      "extraQueryDataSource":[
+         {
+            "name":"",
+            "query":"", 
+            "script":
+            "required":""
+         }
+      ]
+   }
+}
+```
+
+As can be seen on the code above, each extraQueryDataSource can have the 
+- **name** wich represents the name of extra datasource query;
+- **query** which define the sql query;
+- **script** which defines the relative path to the file containing the query. The application will look for the query files should under $etlRootDirectory/dump-scripts/. Note that the application will try to load the "script" only if the "query" field is empty.
+- **required** if true, the source record will be ignored if the query does not return an result; 
+
+#### The use of params whithin Src Configuration
+The Src configuration allows the use of params for quering. The params can be presents on "joinExtraCondition", "extraConditionForExtract", "query", etc. Parameters will be defined as idenfiers preceded by "@". Eng. "location_id = @locationId". The parameters can apper in serveral contect whithin queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1".
+
 
 ### DstConf
 
