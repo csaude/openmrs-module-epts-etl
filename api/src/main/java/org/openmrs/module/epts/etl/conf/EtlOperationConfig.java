@@ -820,7 +820,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 					}
 				} else if (requireEngine()) {
 					throw new ForbiddenOperationException(
-					        "You should specifie the processor full class on this type of operation "
+					        "You should specifY the processor full class [processorFullClassName] on this type of operation "
 					                + this.getOperationType());
 				}
 			}

@@ -921,7 +921,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 		
 		if (utilities.stringHasValue(errorMsg)) {
-			errorMsg = "There are errors on dstConf file " + this.relatedConfFile.getAbsolutePath() + "\n" + errorMsg;
+			errorMsg = "There are errors on Configuration file " + this.relatedConfFile.getAbsolutePath() + "\n" + errorMsg;
 			throw new ForbiddenOperationException(errorMsg);
 		} else if (this.childConfig != null) {
 			this.childConfig.validate();
