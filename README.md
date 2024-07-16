@@ -61,11 +61,10 @@ This section allow the configuration of operations. Each operation can be define
 - "doNotWriteOperationHistory": by default the information of each processed record is stored on the Etl Staging table. This information is important as can help to know the source and destination of an record processed on the ETL process. If this field is set to true, the history will not be stored and this could improve the speed of process.
 - "useSharedConnectionPerThread": if the processing is done by multiple threads, then if this field is set to true, all the threads will share the same database connection. This can help when the process is facing many deadlocks, but can act badly on performance;
 - "actionType": represent the action on the ETL process. The supported action are: (1) CREATE: This action creates new dstRecord on ETL operation (2) DELETE:  This action deletes the dstRecord on ETL operation (3) UPDATE: This action update the dstRecord on ETL operation. If not present, a CREATE action will be applied.
-- "afterEtlActionType": defines the action which will be perfomed on the src record afte the operation. Only the action "DELETE" will have effect.
-- "disabled": 
-- "child"  
-
-
+- "afterEtlActionType": defines the action which will be perfomed on the src record afte the operation. Only the action "DELETE" will have effect;
+- "dstType": indicates the destination type which can be: (1) db: the transformed record will be stored on the database (2) json: the transformed record will be written on json file (3) dump: the transformed record will be written os sql file as an sql query (4) csv: the transformed record will be written on csv file.
+- "disabled": if true , the this operation will not be run;
+- "child": a nested operation configuration which will be executed after the main operation is finished.  
 	
 
 ## The etl item configuration
@@ -76,10 +75,10 @@ The etl item configuration section defines the rules of extration, transformatio
    "srcConf":{
       "tableName":"",
       "extraConditionForExtract":"",
+      "manualMapPrimaryKeyOnField":"",
       "observationDateFields":[
          
       ],
-      "sharePkWith":"",
       "metadata":"",
       "removeForbidden":"",
       "uniqueKeys":[
@@ -101,7 +100,7 @@ The etl item configuration section defines the rules of extration, transformatio
 }
 ```
 
-The dstConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source.
+The srcConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source.
 
 Bellow are explained the relevant configuration for "srcConf" and "dstConf".
 
@@ -112,11 +111,11 @@ The "srcConf" allow the configuration of datasource in an etl process. The relev
 - *metadata*: optional boolean indicating that the table is a metadata table;
 - *removeForbidden*: optional boolean that indicate if records from this table can be automatically removed when there is inconsistencies
 - *observationDateFields*: opetional list of date fields which will be checked when an operation need to look for records which had some action in certain period (ex. records created or updated within a period)
-- *sharePkWith*: optional param indicating if the primary key of this table is shared with a parent. In this case that parent should be mentioned here.
 - *extraConditionForExport*: optional param which contains the extra sql condition to be injected when the operation queries for records to process.
-- *uniqueKeys*: optional list containing the unique key info. This is unnecessary if the table has explicit unique keys
+- *uniqueKeys*: optional list containing the unique key info. This is unnecessary if the table has explicit unique keys;
+- *selfJoinTables*: optional list containing the joining tables which helps to add additional extraction conditions; 
 - *extraTableDataSource*: optional list of auxiliary tables to be used as data source or auxiliary extraction condition
-- *extraQueryDataSource*: option list of auxiliary queries to be used as databa source
+- *extraQueryDataSource*: option list of auxiliary queries to be used as databa source;
 
 Bellow are additional explanation of complex configuration on "srcConf"
 
@@ -168,6 +167,33 @@ A parent if configured as an object and can have additional properties. Note tha
    }
 }
 ```
+
+#### The selfJoinTables table configuration
+
+The **"selfJoinTables"** element, allow the specification of extra tables to be used as joining tables to the main table. This allow the inclusion of additional querying condition from those joining tables     
+
+```
+{
+   "srcConf":{
+      "selfJoinTables":[
+         {
+            "tableName":"",
+            "joinExtraCondition":"", 
+            "joinFields":[
+               {
+                  "srcField":"",
+                  "dstField":""
+               }
+            ],
+            "joinType":""
+         }
+      ]
+   }
+}
+```	 
+
+As can be seen on the code above, each selfJoiningTable can have the **tableName** with represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be spefied if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT.  
+
 
 #### The extra datasource table configuration
 
