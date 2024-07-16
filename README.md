@@ -23,24 +23,33 @@ The process configuration file is the heart of the application. For each process
  ![config-sections](docs/config-sections.png)
  
 - **The section 1** contains the general configurations usually applied to all the operations and involved etl items.
-- **The section 2** defines the auxiliary application info. Usually an application info defines database connection info for example for source database and/or destination database.
+- **The section 2** defines the database connection info for example for source database and/or destination database.
 - **The section 3** defines the operations configuration parameters.
 - **The section 4** lists the ETL configuration. This define the rules of how the extraction, transformation and load will be hundled.
 
 ## The common configuration
 Below are listed the parameters which can appear in the first section of the configuration file:
 - *processType*: A string representing the Process Type. The supported type is listed on the section "Supported Types"
-- *modelType*: the database model type. There are two types of models: "OPENMRS" and "OTHER". An OPENMRS model is the OpenMRS Data Model and any other model which is not OpenMRS is treated as "OTHER"
-- *syncRootDirectory*: a full path to directory where the process stuff will be placed on
+- *etlRootDirectory*: a full path to directory where the process stuff will be placed on
 - *childConfigFilePath*: a full path to another JSON configuration file which defines a process which will be executed when the current is finished. This parameter enables the possibility to execute several processes in sequence. This can be useful for ex. if there is a need to perform a merge of multiple databases.
 - *originAppLocationCode*: a token representing the location where the process is running for. In the case of the merge process this will be the source location.
-- *automaticStart*: a boolean indicating that the process related to this configuration file will automatically start or not. 
+- *manualStart*: a boolean indicating that the process related to this configuration file will automatically start or not. If true, the process will not start at application startup 
 - *params*: a map object which enable the configuration of parameters. This parameters are usually used on queries defined on the etl item contiguration.
+- *disabled*: indicate whether the process is disabled or not;
+- *syncStageSchema*: optional token indicating the database name where the process data will be stored. If not present will be used the name "etl_stage_area";
+- *doNotTransformsPrimaryKeys*: Indicates if in this process the primary keys are transformed or not. If yes, the transformed records are given a new pk, if no, the pk is src is the same in dst;
+- *manualMapPrimaryKeyOnField*: If present, the value from this field will be mapped as a primary key for all tables that don't have a primary key but have a field with name matching this field. This value will be overridden by the correspondent value on  ETL configuration session if present there.
 
-## The AppsInfo configuration
-As said before the appsInfo section contains the configurations of source and/or destination database. It is a list of objects each one representing an appInfo. Below are listed the common parameters which can be configured in each appInfo.
-- *applicationCode*: the code of the application.
-- *connInfo*: an object defining the database connection parameters. The fields of this object are: (1) "dataBaseUserName" which represent the database username, (2) "dataBaseUserPassword" which represents the database password (3) "connectionURI" the connection url to the dabase (4) "driveClassName" the jdbc drive class name for database connection (5) "schema" an optional field to specify the database schema if it cannot be determined from the connection url or if it is diffent from this one. 
+## The Database configuration
+This section is enables the database configuration. The "srcConnConf" allows the configuration of source database and the "dstConnConf" allows the configuration of destination database. Each element allow bellows parameters: 
+- "dataBaseUserName" which represent the database username;
+- "dataBaseUserPassword" which represents the database password;
+- "connectionURI" the connection url to the dabase;
+- "driveClassName" the jdbc drive class name for database connection;
+- "schema" an optional field to specify the database schema if it cannot be determined from the connection url or if it is diffent from this one.
+- "databaseSchemaPath": an optional field which indicate the path where the database schema is located. If present, and the specified database is not present on the specified database, the database will be created according to this script;
+- Other configuration for database from jdbc.poll.Datasource: maxActiveConnections, maxIdleConnections, minIdleConnections
+
 
 
 ## The etl item configuration
