@@ -249,7 +249,11 @@ As can be seen on the code above, each extraQueryDataSource can have the
 - **required** if true, the source record will be ignored if the query does not return an result; 
 
 #### The use of params whithin Src Configuration
-The Src configuration allows the use of params for quering. The params can be presents on "joinExtraCondition", "extraConditionForExtract", "query", etc. Parameters will be defined as idenfiers preceded by "@". Eng. "location_id = @locationId". The parameters can apper in serveral contect whithin queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1".
+The Src configuration allows the use of params for quering. The params can be presents on "joinExtraCondition", "extraConditionForExtract", "query", etc. Parameters will be defined as idenfiers preceded by "@". Eng. "location_id = @locationId". The parameters can apper in serveral context whithin queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1".
+
+The parameter value will be lookuped on:
+(1) global configurations parameters if the parameters appers on the main src table configuration
+(2) current main src object if the parameter apper on "extraQueryDataSource", or "extraTableDataSource", but then on the global properties if it is not present on the main src object.  
 
 
 ### DstConf
