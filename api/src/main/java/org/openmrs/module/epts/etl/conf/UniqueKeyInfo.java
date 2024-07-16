@@ -668,7 +668,27 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	public void setTabConf(TableConfiguration tabConf) {
-		this.tabConf = tabConf;
+		setTabConf(tabConf, true);
+	}
+	
+	public void setTabConf(TableConfiguration tabConf, boolean checkFields) {
+		if (!checkFields) {
+			this.tabConf = tabConf;
+		} else {
+			
+			if (!tabConf.containsAllFields(utilities.parseList(this.getFields(), Field.class))) {
+				if (tabConf.useSharedPKKey()) {
+					tabConf = tabConf.getSharedKeyRefInfo();
+				}
+			}
+			
+			if (tabConf.containsAllFields(utilities.parseList(this.getFields(), Field.class))) {
+				this.tabConf = tabConf;
+			} else {
+				throw new ForbiddenOperationException(
+				        "The table you a setting for this UniqueKeyInfo does not contain one or more fields contained by the UniqueKeyInfo");
+			}
+		}
 	}
 	
 	@JsonIgnore

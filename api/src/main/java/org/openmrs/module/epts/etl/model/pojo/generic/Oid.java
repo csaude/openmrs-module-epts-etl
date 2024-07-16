@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.PrimaryKey;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 
 public class Oid extends PrimaryKey {
@@ -125,4 +126,8 @@ public class Oid extends PrimaryKey {
 		throw new ForbiddenOperationException("The key is composite");
 	}
 	
+	@Override
+	public void setTabConf(TableConfiguration tabConf) {
+		super.setTabConf(tabConf, false);
+	}
 }

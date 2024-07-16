@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.conf;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
@@ -19,6 +20,8 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 		
 		setRelatedEtlConfig(relatedConf);
 		setSchema(getSyncStageSchema());
+		
+		setOnConflict(ConflictResolutionType.KEEP_EXISTING);
 	}
 	
 	@Override

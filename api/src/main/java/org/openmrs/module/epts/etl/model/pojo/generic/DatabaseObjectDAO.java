@@ -508,7 +508,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		insert(objects, tabConf, tryToResolveException, generateOperationResult, conn);
 	}
 	
-	public static EtlOperationResultHeader<EtlDatabaseObject> insert(List<EtlDatabaseObject> objects,
+	private static EtlOperationResultHeader<EtlDatabaseObject> insert(List<EtlDatabaseObject> objects,
 	        TableConfiguration tabConf, boolean tryToResolveException, boolean generateOperationResult, Connection conn)
 	        throws DBException {
 		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());

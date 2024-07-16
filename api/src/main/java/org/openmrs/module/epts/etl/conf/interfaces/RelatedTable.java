@@ -170,8 +170,6 @@ public interface RelatedTable extends TableConfiguration {
 		
 		Oid oid = new Oid();
 		
-		oid.setTabConf((TableConfiguration) obj.getRelatedConfiguration());
-		
 		for (RefMapping map : this.getRefMapping()) {
 			
 			Key k = new Key(map.getParentFieldName());
@@ -182,6 +180,8 @@ public interface RelatedTable extends TableConfiguration {
 		}
 		
 		oid.setFieldValuesLoaded(true);
+		
+		oid.setTabConf((TableConfiguration) obj.getRelatedConfiguration());
 		
 		return oid;
 	}
