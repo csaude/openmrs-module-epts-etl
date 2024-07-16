@@ -1,5 +1,5 @@
 # Introduction
-The epts-etl module is an OpenMRS module designed to perform several operations related to data exchange between OpenMRS databases and other data models. The epts-etl module can be integrated to an OpenMRS instance BUT can also run as a stand-alone java application. Take in mind that this module is still in development and some of its features may not well function now.
+The epts-etl module is an OpenMRS module designed to perform generics ETL operations and mutch more. The epts-etl module can be integrated to an OpenMRS instance BUT can also run as a stand-alone java application. Take in mind that this module is still in development and some of its features may not well function now.
 # Architecture overview
 The EPTS-ETL module is written in Java and follows the OpenMRS modules pattern. Its core is implemented on the API level so it can run as a stand-alone application.
 On the top of EPTS-ETL logic there is Processes which represents a set of operations which can be intended as tasks which together complete a certain objective.
@@ -13,7 +13,7 @@ The process and its operations are configured via JSON file on which all the nec
 The process configuration is mapped to [EtlConfiguration](api/src/main/java/org/openmrs/module/epts/etl/conf/EtlConfiguration.java) class and each operation are mapped to [EtlOperationConfig](api/src/main/java/org/openmrs/module/epts/etl/conf/EtlOperationConfig.java).
 Each operation defined in the process configuration file will perform the very same task on all items listed on the configuration file. The etl item configuration is mapped to [EtlItemConfiguration](api/src/main/java/org/openmrs/module/epts/etl/conf/EtlItemConfiguration.java) which defines the rules of ETL.
  
-An [Operation Controller](api/src/main/java/org/openmrs/module/epts/etl/controller/OperationController.java) performs its task using an [Engine](api/src/main/java/org/openmrs/module/epts/etl/engine/Engine.java). The engines are monitored by [EngineMonitor](api/src/main/java/org/openmrs/module/epts/etl/monitor/EngineMonitor.java) class. The interaction between the core classes is illustrated on the image below.
+An [Operation Controller](api/src/main/java/org/openmrs/module/epts/etl/controller/OperationController.java) performs its task using an [Task Processor](api/src/main/java/org/openmrs/module/epts/etl/engine/TaskProcessor.java). The processors are monitored by [Engine](api/src/main/java/org/openmrs/module/epts/etl/engine/Engine.java) class. The interaction between the core classes is illustrated on the image below.
 
 ![how-the-process-is-performed](docs/how-the-process-is-performed.png)
 
