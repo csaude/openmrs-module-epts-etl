@@ -256,7 +256,50 @@ The parameter value will be lookuped on:
 (2) current main src object if the parameter apper on "extraQueryDataSource", or "extraTableDataSource", but then on the global properties if it is not present on the main src object.  
 
 
-### DstConf
+### The DstConf
+The "dstConf" element is used to configure the destination object in an ETL operation. This element can be ommited if its mapping is exactly the same with the "srcConf", i.e the tableName and its fields.
+If the "dstConf" has more than one elements or if its configuration is different from the srcConf, then it could be configured following bellow explanation.
+
+```
+{
+   "dstConf":[
+      {
+         "tableName":"",
+         "prefferredDataSource":[],
+         "ignoreUnmappedFields":"",
+         "dstType":"",
+         "transformer":"",
+         "mapping":[
+            {
+               "dataSourceName":"",
+               "srcField":"",
+               "dstField":"",
+               "srcValue":"",
+               "mapToNullValue":"",
+               "transformer":""
+            }
+         ],
+         "joinFields":[
+            {
+               "srcField":"",
+               "dstField":""
+            }
+         ],
+         "winningRecordFieldsInfo":[
+            
+         ]
+      }
+   ]
+}
+```		
+
+Bellow is the explanation for each field:
+- **tableName** the destination table name;
+- **prefferredDataSource** a comma separated list of tokens representing the datasources names from the "srcConf" in order of preference.  This is important when it cames to auto-mapping, if a certain field is present in multiple datasources. If there is only one datasource or if each field in dst table appears only in one datasource, the this element could be ommited.
+- **ignoreUnmappedFields** if there are mapping that were not configures manually and could  not be resolved automatically then the application will fail. To avoid that, then set this field to true;
+-  **dstType** the destination type for this specific dstConf. If not present will be applied the "dstType" from operationConfiguration;
+-  **transformer** a transformer is a java class which implements a custom transformation of src to dst. The transformers must implement the [EtlRecordTransformer](api/src/main/java/org/openmrs/module/epts/etl/etl/processor/transformer/EtlRecordTransformer.java) interface. If there is a custom transformer you must place here the full class of the transformer. 
+
 
 #### Winning Record Fields Info
 
