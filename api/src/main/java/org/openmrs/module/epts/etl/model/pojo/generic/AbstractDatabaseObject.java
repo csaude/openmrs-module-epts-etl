@@ -207,6 +207,15 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 						String str = utilities.displayDoubleOnIntegerFormat((Double) value);
 						
 						field.set(this, Integer.parseInt(str));
+					} else if (field.getType().isEnum()) {
+						
+						@SuppressWarnings("rawtypes")
+						Class enumClazz = field.getType();
+						
+						@SuppressWarnings("unchecked")
+						Enum<?> eValue = Enum.valueOf(enumClazz, value.toString());
+						
+						field.set(this, eValue);
 					} else {
 						field.set(this, value);
 					}
