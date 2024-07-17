@@ -23,25 +23,49 @@ The process configuration file is the heart of the application. For each process
  ![config-sections](docs/config-sections.png)
  
 - **The section 1** contains the general configurations usually applied to all the operations and involved etl items.
-- **The section 2** defines the auxiliary application info. Usually an application info defines database connection info for example for source database and/or destination database.
+- **The section 2** defines the database connection info for example for source database and/or destination database.
 - **The section 3** defines the operations configuration parameters.
 - **The section 4** lists the ETL configuration. This define the rules of how the extraction, transformation and load will be hundled.
 
 ## The common configuration
 Below are listed the parameters which can appear in the first section of the configuration file:
 - *processType*: A string representing the Process Type. The supported type is listed on the section "Supported Types"
-- *modelType*: the database model type. There are two types of models: "OPENMRS" and "OTHER". An OPENMRS model is the OpenMRS Data Model and any other model which is not OpenMRS is treated as "OTHER"
-- *syncRootDirectory*: a full path to directory where the process stuff will be placed on
+- *etlRootDirectory*: a full path to directory where the process stuff will be placed on
 - *childConfigFilePath*: a full path to another JSON configuration file which defines a process which will be executed when the current is finished. This parameter enables the possibility to execute several processes in sequence. This can be useful for ex. if there is a need to perform a merge of multiple databases.
 - *originAppLocationCode*: a token representing the location where the process is running for. In the case of the merge process this will be the source location.
-- *automaticStart*: a boolean indicating that the process related to this configuration file will automatically start or not. 
+- *manualStart*: a boolean indicating that the process related to this configuration file will automatically start or not. If true, the process will not start at application startup 
 - *params*: a map object which enable the configuration of parameters. This parameters are usually used on queries defined on the etl item contiguration.
+- *disabled*: indicate whether the process is disabled or not;
+- *syncStageSchema*: optional token indicating the database name where the process data will be stored. If not present will be used the name "etl_stage_area";
+- *doNotTransformsPrimaryKeys*: Indicates if in this process the primary keys are transformed or not. If yes, the transformed records are given a new pk, if no, the pk is src is the same in dst;
+- *manualMapPrimaryKeyOnField*: If present, the value from this field will be mapped as a primary key for all tables that don't have a primary key but have a field with name matching this field. This value will be overridden by the correspondent value on  ETL configuration session if present there.
 
-## The AppsInfo configuration
-As said before the appsInfo section contains the configurations of source and/or destination database. It is a list of objects each one representing an appInfo. Below are listed the common parameters which can be configured in each appInfo.
-- *applicationCode*: the code of the application.
-- *connInfo*: an object defining the database connection parameters. The fields of this object are: (1) "dataBaseUserName" which represent the database username, (2) "dataBaseUserPassword" which represents the database password (3) "connectionURI" the connection url to the dabase (4) "driveClassName" the jdbc drive class name for database connection (5) "schema" an optional field to specify the database schema if it cannot be determined from the connection url or if it is diffent from this one. 
+## The Database configuration
+This section is enables the database configuration. The "srcConnConf" allows the configuration of source database and the "dstConnConf" allows the configuration of destination database. Each element allow bellows parameters: 
+- "dataBaseUserName" which represent the database username;
+- "dataBaseUserPassword" which represents the database password;
+- "connectionURI" the connection url to the dabase;
+- "driveClassName" the jdbc drive class name for database connection;
+- "schema" an optional field to specify the database schema if it cannot be determined from the connection url or if it is diffent from this one.
+- "databaseSchemaPath": an optional field which indicate the path where the database schema is located. If present, and the specified database is not present on the specified database, the database will be created according to this script;
+- Other configuration for database from jdbc.poll.Datasource: maxActiveConnections, maxIdleConnections, minIdleConnections
 
+## The Operation configuration
+This section allow the configuration of operations. Each operation can be defined by the following fields:
+- "operationType": indicates the operation to be executed for each item defined on ETL configuration session;
+- "processingBatch": the amount of records to be processed in a batch, if not present, a default batch of 1000 will be applied;
+- "maxSupportedProcessors": an integer representing the quantity of max thread which will applied to execute the operation, if not present, the amount of avaliable server processors will be applied;
+- "processingMode": indicate the way the ETL items will be processed. (1) SERIAL: indicates that one ETL Item will be processed at time (2) PARALLEL: all the listed ETL Item will be processed at same time; if not present, a SERIAL mode will be applied;
+- "processorFullClassName": a full class name indicating a customized processor.
+- "skipFinalDataVerification": the final verification is done to check if all the records on the source were processed to the destination database. If this field is set to false, the final check will be skipped! Since the final verification could take time, disabling it could improve the speed; 
+- "doNotWriteOperationHistory": by default the information of each processed record is stored on the Etl Staging table. This information is important as can help to know the source and destination of an record processed on the ETL process. If this field is set to true, the history will not be stored and this could improve the speed of process.
+- "useSharedConnectionPerThread": if the processing is done by multiple threads, then if this field is set to true, all the threads will share the same database connection. This can help when the process is facing many deadlocks, but can act badly on performance;
+- "actionType": represent the action on the ETL process. The supported action are: (1) CREATE: This action creates new dstRecord on ETL operation (2) DELETE:  This action deletes the dstRecord on ETL operation (3) UPDATE: This action update the dstRecord on ETL operation. If not present, a CREATE action will be applied.
+- "afterEtlActionType": defines the action which will be perfomed on the src record afte the operation. Only the action "DELETE" will have effect;
+- "dstType": indicates the destination type which can be: (1) db: the transformed record will be stored on the database (2) json: the transformed record will be written on json file (3) dump: the transformed record will be written os sql file as an sql query (4) csv: the transformed record will be written on csv file.
+- "disabled": if true , the this operation will not be run;
+- "child": a nested operation configuration which will be executed after the main operation is finished.  
+	
 
 ## The etl item configuration
 The etl item configuration section defines the rules of extration, transformation and load. Each operation in a process will perform its task on these item. Below are listed the properties which can appear in an item configuration. Each item can contains two objects representing the data source configuration and destination configuration.
@@ -51,10 +75,10 @@ The etl item configuration section defines the rules of extration, transformatio
    "srcConf":{
       "tableName":"",
       "extraConditionForExtract":"",
+      "manualMapPrimaryKeyOnField":"",
       "observationDateFields":[
          
       ],
-      "sharePkWith":"",
       "metadata":"",
       "removeForbidden":"",
       "uniqueKeys":[
@@ -76,7 +100,7 @@ The etl item configuration section defines the rules of extration, transformatio
 }
 ```
 
-The dstConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source.
+The srcConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source.
 
 Bellow are explained the relevant configuration for "srcConf" and "dstConf".
 
@@ -87,11 +111,11 @@ The "srcConf" allow the configuration of datasource in an etl process. The relev
 - *metadata*: optional boolean indicating that the table is a metadata table;
 - *removeForbidden*: optional boolean that indicate if records from this table can be automatically removed when there is inconsistencies
 - *observationDateFields*: opetional list of date fields which will be checked when an operation need to look for records which had some action in certain period (ex. records created or updated within a period)
-- *sharePkWith*: optional param indicating if the primary key of this table is shared with a parent. In this case that parent should be mentioned here.
 - *extraConditionForExport*: optional param which contains the extra sql condition to be injected when the operation queries for records to process.
-- *uniqueKeys*: optional list containing the unique key info. This is unnecessary if the table has explicit unique keys
+- *uniqueKeys*: optional list containing the unique key info. This is unnecessary if the table has explicit unique keys;
+- *selfJoinTables*: optional list containing the joining tables which helps to add additional extraction conditions; 
 - *extraTableDataSource*: optional list of auxiliary tables to be used as data source or auxiliary extraction condition
-- *extraQueryDataSource*: option list of auxiliary queries to be used as databa source
+- *extraQueryDataSource*: option list of auxiliary queries to be used as databa source;
 
 Bellow are additional explanation of complex configuration on "srcConf"
 
@@ -144,13 +168,138 @@ A parent if configured as an object and can have additional properties. Note tha
 }
 ```
 
+#### The selfJoinTables table configuration
+
+The **"selfJoinTables"** element, allow the specification of extra tables to be used as joining tables to the main table. This allow the inclusion of additional querying condition from those joining tables     
+
+```
+{
+   "srcConf":{
+      "selfJoinTables":[
+         {
+            "tableName":"",
+            "joinExtraCondition":"", 
+            "joinFields":[
+               {
+                  "srcField":"",
+                  "dstField":""
+               }
+            ],
+            "joinType":""
+         }
+      ]
+   }
+}
+```	 
+
+As can be seen on the code above, each selfJoiningTable can have the **tableName** with represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be spefied if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT.  
+
+
 #### The extra datasource table configuration
 
 The **"extraTableDataSource"** element, allow the specification of extra tables to be used as data source in addition of the main table. There relevant configuration info for extra table dasource is shown bellow    
 
-As can be seen on the code above, each parent can have the **tableName** with represents the name of parent table and the **ref** which has the information of references between the main table and its parents. Note that the ref is defined by the *"mapping"* list which allow the mapping of fields between the main table and its parent. Each mapping have optional attribute *"defaultValueDueInconsistency"* which allow to specify a default value when the main table is orphan of that parent. This is important in a merge or copy process. Another property is *"setNullDueInconsistency"* which is a boolean properity which indicate if the parent can be set to null if it is missing. The *"conditionalFields"*  helps to create conditional reference between the main table and its parent. The conditional parents are parents that have no database referential relationship. For ex. in openmrs model there is a relationship between *person_attribute* and *location*. This relationship exists when some conditions are observed (when the person_attribute.value=7)  
+```
+{
+   "srcConf":{
+      "extraTableDataSource":[
+         {
+            "tableName":"",
+            "joinExtraCondition":"", 
+            "joinFields":[
+               {
+                  "srcField":"",
+                  "dstField":""
+               }
+            ],
+            "joinType":"",
+            "selfJoinTables": [
+	    ]
+         }
+      ]
+   }
+}
+```
 
-### DstConf
+As can be seen on the code above, each extraTableDataSource can have the **tableName** with represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be spefied if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT. The **selfJoinTables** allow the inclusion of addictional tables which can be joined whith the extraTableDataSource for propose of inclusion of extra condition. 
+
+#### The extraQueryDataSource configuration
+
+The **"extraQueryDataSource"** element, allow the specification of extra queries to be used as data source in addition of the main table. There relevant configuration info for extra table dasource is shown bellow.    
+
+```
+{
+   "srcConf":{
+      "extraQueryDataSource":[
+         {
+            "name":"",
+            "query":"", 
+            "script":
+            "required":""
+         }
+      ]
+   }
+}
+```
+
+As can be seen on the code above, each extraQueryDataSource can have the 
+- **name** wich represents the name of extra datasource query;
+- **query** which define the sql query;
+- **script** which defines the relative path to the file containing the query. The application will look for the query files should under $etlRootDirectory/dump-scripts/. Note that the application will try to load the "script" only if the "query" field is empty.
+- **required** if true, the source record will be ignored if the query does not return an result; 
+
+#### The use of params whithin Src Configuration
+The Src configuration allows the use of params for quering. The params can be presents on "joinExtraCondition", "extraConditionForExtract", "query", etc. Parameters will be defined as idenfiers preceded by "@". Eng. "location_id = @locationId". The parameters can apper in serveral context whithin queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1".
+
+The parameter value will be lookuped on:
+(1) global configurations parameters if the parameters appers on the main src table configuration
+(2) current main src object if the parameter apper on "extraQueryDataSource", or "extraTableDataSource", but then on the global properties if it is not present on the main src object.  
+
+
+### The DstConf
+The "dstConf" element is used to configure the destination object in an ETL operation. This element can be ommited if its mapping is exactly the same with the "srcConf", i.e the tableName and its fields.
+If the "dstConf" has more than one elements or if its configuration is different from the srcConf, then it could be configured following bellow explanation.
+
+```
+{
+   "dstConf":[
+      {
+         "tableName":"",
+         "prefferredDataSource":[],
+         "ignoreUnmappedFields":"",
+         "dstType":"",
+         "transformer":"",
+         "mapping":[
+            {
+               "dataSourceName":"",
+               "srcField":"",
+               "dstField":"",
+               "srcValue":"",
+               "mapToNullValue":"",
+               "transformer":""
+            }
+         ],
+         "joinFields":[
+            {
+               "srcField":"",
+               "dstField":""
+            }
+         ],
+         "winningRecordFieldsInfo":[
+            
+         ]
+      }
+   ]
+}
+```		
+
+Bellow is the explanation for each field:
+- **tableName** the destination table name;
+- **prefferredDataSource** a comma separated list of tokens representing the datasources names from the "srcConf" in order of preference.  This is important when it cames to auto-mapping, if a certain field is present in multiple datasources. If there is only one datasource or if each field in dst table appears only in one datasource, the this element could be ommited.
+- **ignoreUnmappedFields** if there are mapping that were not configures manually and could  not be resolved automatically then the application will fail. To avoid that, then set this field to true;
+-  **dstType** the destination type for this specific dstConf. If not present will be applied the "dstType" from operationConfiguration;
+-  **transformer** a transformer is a java class which implements a custom transformation of src to dst. The transformers must implement the [EtlRecordTransformer](api/src/main/java/org/openmrs/module/epts/etl/etl/processor/transformer/EtlRecordTransformer.java) interface. If there is a custom transformer you must place here the full class of the transformer. 
+
 
 #### Winning Record Fields Info
 
