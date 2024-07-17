@@ -278,8 +278,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				logWarn(msg);
 			} else {
 				
-				if (getController().getOperationConfig().getMaxSupportedEngines() > getMaxRecordsPerProcessing()) {
-					setMaxRecordsPerProcessing(getController().getOperationConfig().getMaxSupportedEngines());
+				if (getController().getOperationConfig().getMaxSupportedProcessors() > getMaxRecordsPerProcessing()) {
+					setMaxRecordsPerProcessing(getController().getOperationConfig().getMaxSupportedProcessors());
 				}
 				
 				ThreadRecordIntervalsManager<T> t = null;
@@ -736,11 +736,11 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	}
 	
 	public int getMaxSupportedProcessors() {
-		return getController().getOperationConfig().getMaxSupportedEngines();
+		return getController().getOperationConfig().getMaxSupportedProcessors();
 	}
 	
 	public void setMaxSupportedProcessors(int maxSupportedProcessors) {
-		getController().getOperationConfig().setMaxSupportedEngines(maxSupportedProcessors);
+		getController().getOperationConfig().setMaxSupportedProcessors(maxSupportedProcessors);
 	}
 	
 	public void setMaxRecordsPerProcessing(int maxRecordsPerProcessing) {

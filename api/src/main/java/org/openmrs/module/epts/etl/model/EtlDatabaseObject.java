@@ -614,13 +614,6 @@ public interface EtlDatabaseObject extends EtlObject {
 	default void resolveConflictWithExistingRecord(TableConfiguration tableConfiguration, DBException exception,
 	        Connection conn) throws DBException, ForbiddenOperationException {
 		
-		//Quickly abort the conflict resolution if the resolution type is ConflictResolutionType.KEEP_EXISTING
-		if (tableConfiguration.onConflict().keepExisting()) {
-			this.setConflictResolutionType(ConflictResolutionType.KEEP_EXISTING);
-			
-			return;
-		}
-		
 		EtlDatabaseObject recordOnDB = null;
 		
 		if (tableConfiguration.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
@@ -645,7 +638,10 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		boolean existingRecordIsOutdated = false;
 		
-		if (tableConfiguration.onConflict().updateExisting()) {
+		//Quickly abort the conflict resolution if the resolution type is ConflictResolutionType.KEEP_EXISTING
+		if (tableConfiguration.onConflict().keepExisting()) {
+			//Nothing to do
+		} else if (tableConfiguration.onConflict().updateExisting()) {
 			existingRecordIsOutdated = true;
 		} else if (utils.arrayHasElement(tableConfiguration.getWinningRecordFieldsInfo())) {
 			for (List<org.openmrs.module.epts.etl.model.Field> fields : tableConfiguration.getWinningRecordFieldsInfo()) {

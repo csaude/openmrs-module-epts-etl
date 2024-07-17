@@ -46,7 +46,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private int processingBatch;
 	
-	private int maxSupportedEngines;
+	private int maxSupportedProcessors;
 	
 	private EtlOperationConfig child;
 	
@@ -93,7 +93,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.processingMode = EtlProcessingModeType.SERIAL;
 		this.operationType = EtlOperationType.ETL;
 		this.processingBatch = EtlOperationConfig.DEFAULT_BATCH_PROCESSING;
-		this.maxSupportedEngines = utilities.getAvailableProcessors();
+		this.maxSupportedProcessors = utilities.getAvailableProcessors();
 	}
 	
 	public EtlActionType getActionType() {
@@ -347,12 +347,12 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.processingBatch = processingBatch;
 	}
 	
-	public int getMaxSupportedEngines() {
-		return maxSupportedEngines;
+	public int getMaxSupportedProcessors() {
+		return maxSupportedProcessors;
 	}
 	
-	public void setMaxSupportedEngines(int maxSupportedEngines) {
-		this.maxSupportedEngines = maxSupportedEngines;
+	public void setMaxSupportedProcessors(int maxSupportedEngines) {
+		this.maxSupportedProcessors = maxSupportedEngines;
 	}
 	
 	public static <T extends EtlDatabaseObject> EtlOperationConfig fastCreate(EtlOperationType operationType,

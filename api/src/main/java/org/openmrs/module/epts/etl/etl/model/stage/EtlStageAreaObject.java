@@ -16,6 +16,9 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 	
 	private List<EtlDatabaseObject> keyInfo;
 	
+	public EtlStageAreaObject() {
+	}
+	
 	private EtlStageAreaObject(EtlStageTableType type, EtlDatabaseObject relatedEtlObject, Connection conn)
 	        throws DBException {
 		TableConfiguration etlTable = (TableConfiguration) relatedEtlObject.getRelatedConfiguration();

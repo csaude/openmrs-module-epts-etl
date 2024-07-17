@@ -571,7 +571,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			this.etlRecordErrorTabCof = new EtlConfigurationTableConf(EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME, this);
 			
 			for (EtlOperationConfig operation : this.getOperations()) {
-				if (operation.getMaxSupportedEngines() == 1) {
+				if (operation.getMaxSupportedProcessors() == 1) {
 					operation.setUseSharedConnectionPerThread(false);
 				}
 			}
