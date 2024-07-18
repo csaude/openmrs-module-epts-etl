@@ -117,7 +117,7 @@ public class FieldsMapping {
 		return AttDefinedElements.convertTableAttNameToClassAttName(this.srcField);
 	}
 	
-	public String getDestFieldAsClassField() {
+	public String getDstFieldAsClassField() {
 		return AttDefinedElements.convertTableAttNameToClassAttName(this.dstField);
 	}
 	

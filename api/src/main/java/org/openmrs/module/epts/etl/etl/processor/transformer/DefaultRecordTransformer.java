@@ -84,7 +84,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 				srcValue = fieldsMapping.retrieveValue(transformedRec, srcObjects, srcConn);
 			}
 			
-			transformedRec.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
+			transformedRec.setFieldValue(fieldsMapping.getDstFieldAsClassField(), srcValue);
 		}
 		
 		if (dstConf.useSharedPKKey()) {

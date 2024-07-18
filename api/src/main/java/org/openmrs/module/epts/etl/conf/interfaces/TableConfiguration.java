@@ -1914,7 +1914,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return joinFields;
 	}
 	
-	default String generateConditionsFields(EtlDatabaseObject dbObject, List<FieldsMapping> joinFields,
+	default String generateConditionsFields(EtlDatabaseObject parentObject, List<FieldsMapping> joinFields,
 	        String joinExtraCondition) {
 		String conditionFields = "";
 		
@@ -1927,13 +1927,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			Object value;
 			
 			try {
-				value = dbObject.getFieldValue(field.getSrcField());
+				value = parentObject.getFieldValue(field.getDstField());
 			}
 			catch (ForbiddenOperationException e) {
-				value = dbObject.getFieldValue(field.getSrcFieldAsClassField());
+				value = parentObject.getFieldValue(field.getDstFieldAsClassField());
 			}
 			
-			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getDstField(), value);
+			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getSrcField(), value);
 		}
 		
 		if (utilities.stringHasValue(joinExtraCondition)) {
