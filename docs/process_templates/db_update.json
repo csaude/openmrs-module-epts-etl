@@ -1,0 +1,36 @@
+{
+   "processType":"ETL",
+   "originAppLocationCode":"",
+   "syncStageSchema":"",
+   "etlRootDirectory":"",
+   "doNotTransformsPrimaryKeys":true,
+   "srcConnInfo":{
+      "dataBaseUserName":"",
+      "dataBaseUserPassword":"",
+      "connectionURI":"",
+      "driveClassName":""
+   },
+   "dstConnInfo":{
+      "dataBaseUserName":"",
+      "dataBaseUserPassword":"",
+      "connectionURI":"",
+      "driveClassName":""
+   },
+   "operations":[
+      {
+         "operationType":"ETL",
+         "processingBatch":1000,
+         "maxSupportedProcessors":4,
+         "processingMode":"SERIAL",
+         "dstType":"db",
+		 "actionType": "UPDATE"
+      }
+   ],
+   "etlItemConfiguration":[
+      {
+         "srcConf":{
+            "tableName":""
+         }
+      }
+   ]
+}
