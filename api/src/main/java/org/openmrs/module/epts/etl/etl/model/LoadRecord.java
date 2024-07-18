@@ -184,7 +184,7 @@ public class LoadRecord {
 				
 				recordAsSrc.copyFrom(parentInfo.getParentRecordInOrigin());
 				
-				dstParent = dst.transform(recordAsSrc, srcConn, this.getProcessor());
+				dstParent = dst.getTransformerInstance().transform(this.getProcessor(), recordAsSrc, dst, srcConn, dstConn);
 				
 				if (dstParent != null) {
 					

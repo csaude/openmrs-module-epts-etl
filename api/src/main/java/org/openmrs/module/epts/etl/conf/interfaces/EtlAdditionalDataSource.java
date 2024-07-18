@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.SrcConf;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public interface EtlAdditionalDataSource extends EtlDataSource {
@@ -13,8 +13,7 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	
 	void setRelatedSrcConf(SrcConf relatedSrcConf);
 	
-	EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection conn, DBConnectionInfo srcAppInfo)
-	        throws DBException;
+	EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection conn) throws DBException;
 	
 	/**
 	 * Tels weather this source is mandatory or not. If it is required and it returns an empty
@@ -23,4 +22,13 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	 * @return true if this data source is required or false if not
 	 */
 	boolean isRequired();
+	
+	default EtlDatabaseObject newInstance() {
+		try {
+			return getSyncRecordClass().newInstance();
+		}
+		catch (InstantiationException | IllegalAccessException | ForbiddenOperationException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

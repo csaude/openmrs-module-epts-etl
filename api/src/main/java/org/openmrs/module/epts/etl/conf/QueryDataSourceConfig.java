@@ -336,8 +336,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn,
-	        DBConnectionInfo srcAppInfo) throws DBException {
+	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn) throws DBException {
 		
 		PreparedQuery pQ = PreparedQuery.prepare(this.getQuery(), mainObject, getRelatedEtlConf(), false);
 		
@@ -345,8 +344,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		
 		Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
 		
-		return DatabaseObjectDAO.find(this.loadHealper, this.getSyncRecordClass(srcAppInfo), pQ.generatePreparedQuery(),
-		    params, srcConn);
+		return DatabaseObjectDAO.find(this.loadHealper, this.getSyncRecordClass(), pQ.generatePreparedQuery(), params,
+		    srcConn);
 	}
 	
 	@Override

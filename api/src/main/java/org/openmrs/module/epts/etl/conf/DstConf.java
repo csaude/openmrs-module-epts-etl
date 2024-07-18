@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
+import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultRecordTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
 import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
@@ -450,13 +450,17 @@ public class DstConf extends AbstractTableConfiguration {
 				Class<? extends EtlRecordTransformer> transformerClazz = (Class<? extends EtlRecordTransformer>) loader
 				        .loadClass(this.getTransformer());
 				
-				this.transformerInstance = transformerClazz.newInstance();
+				this.setTransformerInstance(transformerClazz.newInstance());
 			}
 			catch (Exception e) {
 				throw new ForbiddenOperationException(
 				        "Error loading transformer class [" + this.getTransformer() + "]!!! " + e.getLocalizedMessage());
 			}
 			
+		} else {
+			this.setTransformer(DefaultRecordTransformer.class.getCanonicalName());
+			
+			this.setTransformerInstance(DefaultRecordTransformer.getInstance());
 		}
 	}
 	
@@ -559,117 +563,7 @@ public class DstConf extends AbstractTableConfiguration {
 		return this.getParentConf().getSrcConf();
 	}
 	
-	public EtlDatabaseObject transform(EtlDatabaseObject srcRec, Connection srcConn,
-	        TaskProcessor<EtlDatabaseObject> processor) throws DBException, ForbiddenOperationException {
-		try {
-			processor.logTrace("Transforming dstRecord " + srcRec);
-			
-			DBConnectionInfo srcAppInfo = processor.getRelatedEtlConfiguration().getSrcConnInfo();
-			DBConnectionInfo dstAppInfo = processor.getRelatedEtlConfiguration().getDstConnInfo();
-			
-			if (hasTransformer()) {
-				return getTransformerInstance().transform(srcRec, this, srcConn, srcConn);
-			}
-			
-			List<EtlDatabaseObject> srcObjects = new ArrayList<>();
-			
-			srcObjects.add(srcRec);
-			
-			if (srcRec.shasSharedPkObj()) {
-				srcObjects.add(srcRec.getSharedPkObj());
-			}
-			
-			for (EtlAdditionalDataSource mappingInfo : this.getSrcConf().getAvaliableExtraDataSource()) {
-				EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcRec, srcConn, srcAppInfo);
-				
-				if (relatedSrcObject == null) {
-					
-					if (mappingInfo.isRequired()) {
-						return null;
-					} else {
-						relatedSrcObject = mappingInfo.getSyncRecordClass(srcAppInfo).newInstance();
-						relatedSrcObject.setRelatedConfiguration(mappingInfo);
-					}
-				}
-				
-				srcObjects.add(relatedSrcObject);
-				
-			}
-			
-			EtlDatabaseObject transformedRec = this.getSyncRecordClass(dstAppInfo).newInstance();
-			
-			transformedRec.setRelatedConfiguration(this);
-			transformedRec.setSrcRelatedObject(srcRec);
-			
-			for (FieldsMapping fieldsMapping : this.allMapping) {
-				Object srcValue;
-				
-				if (fieldsMapping.isMapToNullValue()) {
-					srcValue = null;
-				} else if (fieldsMapping.getSrcValue() != null) {
-					srcValue = fieldsMapping.getSrcValue();
-				} else {
-					srcValue = fieldsMapping.retrieveValue(transformedRec, srcObjects, dstAppInfo, srcConn);
-				}
-				
-				transformedRec.setFieldValue(fieldsMapping.getDestFieldAsClassField(), srcValue);
-			}
-			
-			if (this.useSharedPKKey()) {
-				List<SrcConf> srcForSharedPk = this.getSharedKeyRefInfo().findRelatedSrcConfWhichAsAtLeastOnematchingDst();
-				
-				if (utilities.arrayHasNoElement(srcForSharedPk)) {
-					throw new ForbiddenOperationException(
-					        "There are relashioship which cannot auto resolved as there is no configured etl for "
-					                + this.getSharedKeyRefInfo().getTableName() + " as source and destination!");
-				}
-				
-				EtlDatabaseObject dstParent = null;
-				
-				for (SrcConf src : srcForSharedPk) {
-					DstConf dst = src.getParentConf().findDstTable(this.getSharedKeyRefInfo().getTableName());
-					
-					EtlDatabaseObject recordAsSrc = src.createRecordInstance();
-					recordAsSrc.setRelatedConfiguration(src);
-					
-					recordAsSrc.copyFrom(srcRec.getSharedPkObj());
-					dstParent = dst.transform(recordAsSrc, srcConn, processor);
-					
-					if (dstParent != null) {
-						
-						dstParent.setSrcRelatedObject(srcRec.getSharedPkObj());
-						break;
-					}
-				}
-				
-				if (dstParent == null) {
-					throw new ForbiddenOperationException(
-					        "The related shared pk object for record " + srcRec + " cannot be transformed");
-				} else {
-					transformedRec.setSharedPkObj(dstParent);
-				}
-			}
-			
-			transformedRec.loadObjectIdData(this);
-			
-			if (this.useManualGeneratedObjectId()) {
-				transformedRec.getObjectId().asSimpleKey().setValue(retriveNextRecordId(processor));
-			}
-			
-			processor.logTrace("Record " + srcRec + " transformed to " + transformedRec);
-			
-			return transformedRec;
-		}
-		catch (InstantiationException e) {
-			throw new RuntimeException(e);
-		}
-		catch (IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
-		
-	}
-	
-	private long retriveNextRecordId(TaskProcessor<EtlDatabaseObject> processor) {
+	public long retriveNextRecordId(TaskProcessor<EtlDatabaseObject> processor) {
 		return processor.findIdGenerator(this).retriveNextIdForRecord();
 	}
 	

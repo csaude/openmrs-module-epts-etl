@@ -273,6 +273,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		this.setPrimaryKey(toCloneFrom.getPrimaryKey());
 		
+		this.setFields(toCloneFrom.getFields());
+		this.setWinningRecordFieldsInfo(toCloneFrom.getWinningRecordFieldsInfo());
+		
 		if (this.hasPK()) {
 			this.getPrimaryKey().setTabConf(this);
 		}
@@ -284,8 +287,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		this.cloneUnikeKeys(toCloneFrom.getUniqueKeys());
 		
-		this.setFields(toCloneFrom.getFields());
-		this.setWinningRecordFieldsInfo(toCloneFrom.getWinningRecordFieldsInfo());
 		this.setFullLoaded(toCloneFrom.isFullLoaded());
 		
 		this.setInsertSQLWithObjectId(toCloneFrom.getInsertSQLWithObjectId());

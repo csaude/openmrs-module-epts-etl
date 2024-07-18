@@ -107,14 +107,13 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn,
-	        DBConnectionInfo srcConnInfo) throws DBException {
+	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn) throws DBException {
 		
 		String condition = super.generateConditionsFields(mainObject, this.joinFields, this.joinExtraCondition);
 		
 		String sql = this.generateSelectFromQuery() + " WHERE " + condition;
 		
-		return DatabaseObjectDAO.find(this.getLoadHealper(), this.getSyncRecordClass(srcConnInfo), sql, null, srcConn);
+		return DatabaseObjectDAO.find(this.getLoadHealper(), this.getSyncRecordClass(), sql, null, srcConn);
 	}
 	
 	public String generateJoinCondition() {

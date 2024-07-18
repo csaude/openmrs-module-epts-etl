@@ -315,7 +315,8 @@ public class QuickTest {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.transform(rec, srcConn, null);
+					destObject = mappingInfo.getTransformerInstance().transform(null, destObject, mappingInfo, srcConn,
+					    dstConn);
 					
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);
