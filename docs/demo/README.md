@@ -1,0 +1,11 @@
+## Etl quick examples
+
+NOTE that All the demo examples use mysql as dbms, but you can change the db configuration to run with any of the following databases: postgres, oracle, sqlserver.
+
+#### Simple etl process.
+This example shows the basic etl process where the records from one database are copied to the destination database. This is a very basic process because there is no transformation between the processes.
+To run this demo follow the instructions below:
+- (1) Download the content of [this directory](docs/demo/quick-demo).
+- (2) Edit the [conf.json](docs/demo/quick-demo/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
+- (3) Run the [sql script](docs/demo/quick-demo/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
+- (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)  
