@@ -359,6 +359,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				map.setRelatedConnInfo(getRelatedEtlConf().getDstConnInfo());
 				map.setWinningRecordFieldsInfo(getSrcConf().getWinningRecordFieldsInfo());
 				map.setRelatedEtlConfig(getRelatedEtlConf());
+				map.setManualMapPrimaryKeyOnField(getSrcConf().getManualMapPrimaryKeyOnField());
 				
 				map.setParentConf(this);
 				map.setDstType(getSrcConf().getDstType());
