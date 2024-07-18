@@ -257,8 +257,8 @@ The parameter value will be lookuped on:
 
 
 ### The DstConf
-The "dstConf" element is used to configure the destination object in an ETL operation. This element can be ommited if its mapping is exactly the same with the "srcConf", i.e the tableName and its fields.
-If the "dstConf" has more than one elements or if its configuration is different from the srcConf, then it could be configured following bellow explanation.
+The "dstConf" element is used to configure the destination object in an ETL operation as well the transformation rules. This element can be ommited there is no transformation needed from the src to destination (eg. if its name and fields areexactly the same with the "srcConf").
+If the "dstConf" has more than one elements or if there is needed a tranformation of src record to dst record, then it could be configured following bellow explanation.
 
 ```
 {
@@ -295,11 +295,15 @@ If the "dstConf" has more than one elements or if its configuration is different
 
 Bellow is the explanation for each field:
 - **tableName** the destination table name;
-- **prefferredDataSource** a comma separated list of tokens representing the datasources names from the "srcConf" in order of preference.  This is important when it cames to auto-mapping, if a certain field is present in multiple datasources. If there is only one datasource or if each field in dst table appears only in one datasource, the this element could be ommited.
-- **ignoreUnmappedFields** if there are mapping that were not configures manually and could  not be resolved automatically then the application will fail. To avoid that, then set this field to true;
+- **prefferredDataSource** a comma separated list of tokens representing the datasources names from the "srcConf" in order of preference.  This is important when it cames to auto-mapping, if a certain field is present in multiple datasources. If there is only one datasource or if each field in dst table appears only in one datasource, then this element could be ommited.
+- **ignoreUnmappedFields** if there are fields on the dst that were not configured manually and could  not be resolved automatically then the application will fail. To avoid that, then set this field to true;
 -  **dstType** the destination type for this specific dstConf. If not present will be applied the "dstType" from operationConfiguration;
--  **transformer** a transformer is a java class which implements a custom transformation of src to dst. The transformers must implement the [EtlRecordTransformer](api/src/main/java/org/openmrs/module/epts/etl/etl/processor/transformer/EtlRecordTransformer.java) interface. If there is a custom transformer you must place here the full class of the transformer. 
+-  **transformer** a transformer is a java class which implements a custom transformation of src to dst. The transformers must implement the [EtlRecordTransformer](api/src/main/java/org/openmrs/module/epts/etl/etl/processor/transformer/EtlRecordTransformer.java) interface. If there is a custom transformer you must place here the full class of the transformer.
+-  **mapping** is used to manualy map the dataSource for specific fields in dst table. The manual mapping is necessary if the dst field could not automatically mapped because it does not apper in any dataSource in the srcConf. The relevant field for each mapping are: (1) *dataSourceName* the datasource from were the data will be picked-up; this can be ommited if the value for this fields is from a constant, parameter or from a transformer (2) *srcField* the field on the dataSource from were the value will be pickedup; this can be ommited if there is no datasource for this dst field (3) *dstField* the field in dst which we want to fill (4) *srcValue* allow to fill the dst field with a constant value or a parameter; a parameter could be specified by using '@' at beggining of identifier. e.g "@siteId" (5) *mapToNullValue* a boolean which indicates that this field should be filled with null value (6) a transformer is a java class which implements a custom transformation of field from src field to dst field. The field transformers must implement the [EtlFieldTransformer](api/src/main/java/org/openmrs/module/epts/etl/etl/processor/transformer/EtlFieldTransformer.java) interface. If there is a custom field transformer you must place here the full class of the transformer.
+-  **joinFields*** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst usa the same unique keys. The joining fields are important when it cames to determine if all the src records were processed. If the joining fields are not present then the final verification of process will be skipped for that specifi table.
+-  **winningRecordFieldsInfo** this represent a list of lists of fields which will be used to determine which record will will when there are conflicts betwee an incoming record and existing one. When merge existing record, the incoming dstRecord will win if the listed fields have the specified values. Note that, for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND". Bellow is an example of winningRecordFieldsInfo.
 
+-  
 
 #### Winning Record Fields Info
 
