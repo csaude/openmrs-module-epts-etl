@@ -155,15 +155,19 @@ public class DstConf extends AbstractTableConfiguration {
 		return allMapping;
 	}
 	
+	private void setAllMapping(List<FieldsMapping> allMapping) {
+		this.allMapping = allMapping;
+	}
+	
 	private void addMapping(FieldsMapping fm) throws ForbiddenOperationException {
-		if (this.allMapping == null) {
-			this.allMapping = new ArrayList<FieldsMapping>();
+		if (this.getAllMapping() == null) {
+			this.setAllMapping(new ArrayList<FieldsMapping>());
 		}
 		
-		if (this.allMapping.contains(fm))
+		if (this.getAllMapping().contains(fm))
 			throw new ForbiddenOperationException("The field [" + fm + "] already exists on mapping");
 		
-		this.allMapping.add(fm);
+		this.getAllMapping().add(fm);
 	}
 	
 	private EtlDataSource findDataSource(String dsName) {
@@ -176,8 +180,12 @@ public class DstConf extends AbstractTableConfiguration {
 		return null;
 	}
 	
+	public boolean useDefaultTransformer() {
+		return getTransformerInstance() instanceof DefaultRecordTransformer;
+	}
+	
 	public void generateAllFieldsMapping(Connection conn) throws DBException {
-		if (hasTransformer()) {
+		if (!useDefaultTransformer()) {
 			return;
 		}
 		
