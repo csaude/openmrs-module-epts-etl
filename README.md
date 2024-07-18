@@ -335,6 +335,8 @@ In this section are listed some templates for configuration files for specific e
 
 ###### The generic etl configuration template
 This could be used for simple or complex etl process. Using this template each src record will be transformed and saved to the destination database. The template for this process can be found [here](docs/process_templates/generic_etl.json)
+For demo please check this session.
+
 
 ###### The database merge configuration template
 The database merge is a process of joining together one or more databases. The template for this process can be found [here](docs/process_templates/db_merge.json) 
@@ -350,11 +352,6 @@ This process performe fisical remotion of records on target database. The templa
 
 ## Examples 
 In this session are presented some examples to performe differents kinds of etl process. 
-
-###### Etl quick example
-
-
-
 
 # Running the application
 To run this application you should (1) get the jar file either from the releases or (2) cloning and compiling the [eptssync project](https://github.com/FriendsInGlobalHealth/openmrs-module-eptssync.git).
