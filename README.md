@@ -300,16 +300,35 @@ Bellow is the explanation for each field:
 -  **dstType** the destination type for this specific dstConf. If not present will be applied the "dstType" from operationConfiguration;
 -  **transformer** a transformer is a java class which implements a custom transformation of src to dst. The transformers must implement the [EtlRecordTransformer](api/src/main/java/org/openmrs/module/epts/etl/etl/processor/transformer/EtlRecordTransformer.java) interface. If there is a custom transformer you must place here the full class of the transformer.
 -  **mapping** is used to manualy map the dataSource for specific fields in dst table. The manual mapping is necessary if the dst field could not automatically mapped because it does not apper in any dataSource in the srcConf. The relevant field for each mapping are: (1) *dataSourceName* the datasource from were the data will be picked-up; this can be ommited if the value for this fields is from a constant, parameter or from a transformer (2) *srcField* the field on the dataSource from were the value will be pickedup; this can be ommited if there is no datasource for this dst field (3) *dstField* the field in dst which we want to fill (4) *srcValue* allow to fill the dst field with a constant value or a parameter; a parameter could be specified by using '@' at beggining of identifier. e.g "@siteId" (5) *mapToNullValue* a boolean which indicates that this field should be filled with null value (6) a transformer is a java class which implements a custom transformation of field from src field to dst field. The field transformers must implement the [EtlFieldTransformer](api/src/main/java/org/openmrs/module/epts/etl/etl/processor/transformer/EtlFieldTransformer.java) interface. If there is a custom field transformer you must place here the full class of the transformer.
--  **joinFields*** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst usa the same unique keys. The joining fields are important when it cames to determine if all the src records were processed. If the joining fields are not present then the final verification of process will be skipped for that specifi table.
--  **winningRecordFieldsInfo** this represent a list of lists of fields which will be used to determine which record will will when there are conflicts betwee an incoming record and existing one. When merge existing record, the incoming dstRecord will win if the listed fields have the specified values. Note that, for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND". Bellow is an example of winningRecordFieldsInfo.
+-  **joinFields** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst usa the same unique keys. The joining fields are important when it cames to determine if all the src records were processed. If the joining fields are not present then the final verification of process will be skipped for that specifi table.
+-  **winningRecordFieldsInfo** optional list indicating the fields to be checked when there are conflict between an record with existing one on the etl process. When merge existing record, the incoming dstRecord will win if the listed fields have the specified values. Bellow is an example of winningRecordFieldsInfo.
+```
+{
+   "dstConf":{
+      "tableName":"location",
+      "winningRecordFieldsInfo":[
+         [
+            {
+               "name":"is_selected",
+               "value":"1"
+            },
+            {
+               "name":"voided",
+               "value":"0"
+            }
+         ],
+         [
+            {
+               "name":"fullProcessed",
+               "value":"tue"
+            }
+         ]
+      ]
+   }
+}
+```	  
 
--  
-
-#### Winning Record Fields Info
-
-In The *"winningRecordFieldsInfo"*
-
-- *winningRecordFieldsInfo*: optional list indicating the fields to be checked when there are conflict between an record with existing one on the etl process
+As can be seen the "winningRecordFieldsInfo" is a list of lists, listing the fields which will be used to determine which record will win when there are conflicts betwee an incoming record and existing one. In above example, if the incoming record has value 1 on field "is_selected" AND has value 0 on field "voided" OR  if the "fullProcessed" field has value true, then the incoming record will win.  Note that for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND".
 
 
 ## Supported processes and its configuration files
