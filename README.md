@@ -330,72 +330,28 @@ Bellow is the explanation for each field:
 
 As can be seen the "winningRecordFieldsInfo" is a list of lists, listing the fields which will be used to determine which record will win when there are conflicts betwee an incoming record and existing one. In above example, if the incoming record has value 1 on field "is_selected" AND has value 0 on field "voided" OR  if the "fullProcessed" field has value true, then the incoming record will win.  Note that for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND".
 
+## Default configuration files templates
+In this section are listed some templates for configuration files for specific etl processes.
 
-## Supported processes and its configuration files
-In this section are listed all the avaliable process and the template of its configuration files.
-
-###### QUICK_MERGE_WITH_ENTITY_GENERATION
-
-This process performs a merge of a source database to a destination database in the same network. The process is called "quick" because no staging area and no data transport is done here. the operation for this process are:
-- *DATABASE_PREPARATION*: prepare the sync stage area database;
-- *POJO_GENERATION*: Generated the java POJO classes of the involved tables
-- *DB_QUICK_MERGE_EXISTING_RECORDS*: performs the updates of existing records in destination database
-- *DB_QUICK_MERGE_MISSING_RECORDS*: performs the merge of missing records in destination database
-
-Note that since the POJO classes are dynamically generated (both for source and destination dbs) the source and destination model can be slightly different.  
-
-The template for this process can be found [here](docs/process_templates/quick_merge_with_entity_generation.json)  
+###### The generic etl configuration template
+This could be used for simple or complex etl process. Using this template each src record will be transformed and saved to the destination database. The template for this process can be found [here](docs/process_templates/generic_etl.json)
+For demo please check this session.
 
 
+###### The database merge configuration template
+The database merge is a process of joining together one or more databases. The template for this process can be found [here](docs/process_templates/db_merge.json) 
 
-###### QUICK_MERGE_WITHOUT_ENTITY_GENERATION
-This process is similar to QUICK_MERGE_WITH_ENTITY_GENERATION BUT here no POJO is generated since the process assumes that the two data models (source and destination) are uniform. But to use this process you need to first run the QUICK_MERGE_WITH_ENTITY_GENERATION so that the POJO will be generated and for the next merges you can use this process.
+###### The database extract configuration template
+The database extraction is a process of extracting a set of data from the src database to a dst database. The template for this process can be found [here](docs/process_templates/db_extract.json) 
 
-The template for this process can be found [here](docs/process_templates/quick_merge_whitout_entity_generation.json)
+###### The records update configuration template
+The record update can be useful if you what to performe the update of records using data from a src database. The template for this process can be found [here](docs/process_templates/db_update.json) 
 
-###### DB_INCONSISTENCY_CHECK
-This process performs a referential inconsistency check on a specific database. One of the follow action will be taken to identified inconsistencies:
-- The offending records will be moved from the database;
-- The missing records will be replaced by the default parents.
+###### The records deletion configuration template
+This process performe fisical remotion of records on target database. The template for this process can be found [here](docs/process_templates/db_delete.json) 
 
-All the affected records will be recorded in a staging area in a table called "inconsistence_info".
-This process is performed by the follow operations:
-- DATABASE_PREPARATION: prepare the sync stage area database;
-- POJO_GENERATION: Generated the java POJO classes of the involved tables
-- INCONSISTENCY_SOLVER: perform the inconsistency check and solver
-
-The template for this process can be found [here](docs/process_templates/db_inconsistency_check.json)
-
-
-###### DB_RE_SYNC
-Performe the database re-sync from an openmrs database to dbsync application. This process is performed using the follow operations
-- DATABASE_PREPARATION: prepare the sync stage area database;
-- CHANGED_RECORDS_DETECTOR: performe a resync of updated records; 
-- NEW_RECORDS_DETECTOR: performe a resync of new records. 
-
-The template for this process can be found [here](docs/process_templates/db_re_sync.json)
-
-###### DB_EXPORT
-This process can be used to perform a remote sync between two databases using json files. The full sync process will need an [DATABASE_MERGE_FROM_JSON](#DATABASE_MERGE_FROM_JSON) to be run in the destination database.
-The DB_EXPORT process is run in the source database and uses below operations:
-- DATABASE_PREPARATION: prepare the sync stage area database;
-- POJO_GENERATION: Generated the java POJO classes of the involved tables
-- INCONSISTENCY_SOLVER: perform the inconsistency check and solver on the database
-- EXPORT: export the database to json files
-- TRANSPORT: transport the json files from source to the destination server. NOTE that by now the transport is using a simple copy command from one folder to another but in the future the transport could support injection of several transport mechanisms.
-
-The template for this process can be found [here](docs/process_templates/db_export.json)
-
-###### DATABASE_MERGE_FROM_JSON
-This process completes the sync process started by a DB_EXPORT process. This process is supposed to run in a destination database.  
-To perform its task this process uses below operations:
-- DATABASE_PREPARATION: prepare the sync stage area database;
-- POJO_GENERATION: Generated the java POJO classes of the involved tables
-- LOAD: load json files to stage area
-- DB_MERGE_FROM_JSON: perform the merge on destination using the stage area json data;
-- CONSOLIDATION: perform the referential data consolidation 
-- 
-The template for this process can be found [here](docs/process_templates/database_merge_from_json.json)
+## Examples 
+In this session are presented some examples to performe differents kinds of etl process. 
 
 # Running the application
 To run this application you should (1) get the jar file either from the releases or (2) cloning and compiling the [eptssync project](https://github.com/FriendsInGlobalHealth/openmrs-module-eptssync.git).
