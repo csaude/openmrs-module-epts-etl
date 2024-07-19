@@ -38,9 +38,9 @@ Let's take a look at the configuration file. We will be focused on "etlItemConfi
 - (1) In this configuration we defined the **person** table as the main source table. Because we need additional data from another table, we added an "extraQueryDataSource" to allow the querying of address data. Note that in some cases we may need to use multiple queries and in that case we can add as many "extraQueryDataSource" as we need. 
 - (2) The query we are using here is a very simple one, as it only query from one table. Note that we are using a parameter called "id" for person_id; this parameter will be picked up from the main src object, in this case the person table.
 - (3) In the dstConf we highlighted the "mapping". Here we map only the fields on the destination table which cannot be automatically mapped, namely: "person_uuid", "person_creation_date". There is no need to map the other fields since they can be automatically mapped.
-  
-  To run this demo example follow the instructions below:
- - (1) Download the content of [this directory](etl-with-query-data-source).
+
+To run this demo example follow the instructions below:
+- (1) Download the content of [this directory](etl-with-query-data-source).
 - (2) Edit the [conf.json](etl-with-query-data-source/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
 - (3) Run the [sql script](etl-with-query-data-source/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
 - (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application) 
