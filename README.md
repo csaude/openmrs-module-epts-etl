@@ -358,13 +358,13 @@ To run this application you should (1) get the jar file either from the releases
 
 If you go for the second option follow the steps bellow from your machine
 ```
-git clone https://github.com/FriendsInGlobalHealth/openmrs-module-eptssync.git
-cd openmrs-module-eptssync
+git clone https://github.com/csaude/openmrs-module-epts-etl.git
+cd openmrs-module-epts-etl
 mvn clean install -DskipTests
 ```
 
 Once you have the jar and have set up the configuration file (or configurations file) you run the application hitting the below command.
 ```
-java -Dlog.level=LOG_LEVEL -jar eptssync-api-1.0-SNAPSHOT.jar "path/to/configuration/file"
+java -Dlog.level=LOG_LEVEL -jar epts-etl-api-1.0.jar "path/to/configuration/file"
 ```
 The LOG_LEVEL can be one of the following: DEBUG, INFO, WARN, ERR
