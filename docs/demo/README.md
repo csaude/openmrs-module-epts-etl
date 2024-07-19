@@ -32,10 +32,10 @@ Let's take a look at the configuration file. We will be focused on "etlItemConfi
 This example demonstrates how to perform a transformation on the ETL process using a sql query as additional data source. This example is similar to the previous one since the data models are the same, but in this case we will be using "extraQueryDataSource" instead of "extraTableDataSource". Note that sometimes we can use both in some cases. The process is based on [this configuration file](etl-with-query-data-source/conf.json).
 Let's take a look at the configuration file. We will be focused on "etlItemConfiguration".
 
- ![etl-transformation](etl-with-transformation/transformation_with_query.png)
+ ![etl-transformation](etl-with-query-data-source/transformation_with_query.png)
 
 
-- (1) In this configuration we defined the **person** table as the main source table. Because we need additional data from another table, we added an "extraQueryDataSource" to allow the queering of address data. Note that in some cases we may need to use multiple queries and in that case we can add as many "extraQueryDataSource" as we need. 
+- (1) In this configuration we defined the **person** table as the main source table. Because we need additional data from another table, we added an "extraQueryDataSource" to allow the querying of address data. Note that in some cases we may need to use multiple queries and in that case we can add as many "extraQueryDataSource" as we need. 
 - (2) The query we are using here is a very simple one, as it only query from one table. Note that we are using a parameter called "id" for person_id; this parameter will be picked up from the main src object, in this case the person table.
 - (3) In the dstConf we highlighted the "mapping". Here we map only the fields on the destination table which cannot be automatically mapped, namely: "person_uuid", "person_creation_date". There is no need to map the other fields since they can be automatically mapped.
   
