@@ -307,10 +307,10 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				
 				logTrace("DEFAULT PARENT OBJECTS CREATED");
 				
-				if (getMaxSupportedProcessors() > 1) {
+				if (this.getMaxSupportedProcessors() > 1) {
 					performeTaskInMultiProcessors();
 				} else {
-					performeTaskInSingleProcessor();
+					this.performeTaskInSingleProcessor();
 				}
 				
 				if (mustDoFinalCheck()) {

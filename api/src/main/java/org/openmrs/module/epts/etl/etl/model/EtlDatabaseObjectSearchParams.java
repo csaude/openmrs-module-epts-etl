@@ -159,7 +159,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 			extraCondition += " NOT EXISTS (" + generateDestinationJoinSubquery(dst, dstConn) + ")";
 		}
 		
-		return extraCondition + ")";
+		return extraCondition.isEmpty() ? extraCondition : (extraCondition + ")");
 		
 	}
 	
