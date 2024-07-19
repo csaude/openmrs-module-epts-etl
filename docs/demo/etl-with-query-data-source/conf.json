@@ -31,7 +31,7 @@
             "extraQueryDataSource":[
                {
                   "name":"address_data",
-                  "query":"select uuid as address_uuid, creation_date as address_creation_date from address where person_id = @id;"
+                  "query":"select full_address, uuid as address_uuid, creation_date as address_creation_date from address where person_id = @id;"
                }
             ]
          },
