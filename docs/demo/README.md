@@ -54,5 +54,11 @@ Here the extra extraction rules are defined by two elements: the "selfJoinTables
  
 - (1) the "selfJoinTables" is a list of tables which helps to add conditions from other tables related to the main table. In this example, the main table is "person" and we want to add an extra extract condition from the table "office". So we listed it as a "selfJoinTable". Note that from the data model there is "joinFields" between the two tables as the "person" table has foreign reference to the "office" table. In case were there is no relationship defined from the data model the "joinFields" could be specified manually (see [selfJoinTables configuration](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#the-selfjointables-table-configuration)).
 - (2) within the selfJoinTable we can include additional joining conditions using the attribute "joinExtraCondition". In our example we want to extract only people which are allocated to an annexed office;
-- (3) we can also add extra extract condition which does not use self joining tables; the attribute "extraConditionForExtract" allow a generic way to include extra condition for extraction in an ETL process. In our example we want to extract only people which are not present in the destination table which is etl_demo_with_extraction_rules_dst_db.person_data.  
+- (3) we can also add extra extract condition which does not use self joining tables; the attribute "extraConditionForExtract" allow a generic way to include extra condition for extraction in an ETL process. In our example we want to extract only people which are not present in the destination table which is etl_demo_with_extraction_rules_dst_db.person_data.
+
+  To run this demo example follow the instrunctions below:
+ - (1) Download the content of [this directory](extraction-rules).
+- (2) Edit the [conf.json](extraction-rules/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
+- (3) Run the [sql script](extraction-rules/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
+- (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)   
 
