@@ -12,6 +12,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 /**
  * Represents a source table configuration. A {@link TableDataSourceConfig} is used as an auxiliary
@@ -158,6 +159,16 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 				t.fullLoad(conn);
 			}
 			
+		}
+		
+		if (hasJoinExtraCondition() && !isUsingManualDefinedAlias()) {
+			this.setJoinExtraCondition(
+			    this.getJoinExtraCondition().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
+			
+			String condition = DBUtilities.tryToPutTableNameInFieldsInASqlClause(this.getJoinExtraCondition(),
+			    this.getTableAlias(), this.getFields());
+			
+			this.setJoinExtraCondition(condition);
 		}
 	}
 	

@@ -2494,5 +2494,4 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return DBUtilities.isResourceExist(conn.getCatalog(), getTableName(), DBUtilities.RESOURCE_TYPE_TRIGGER,
 		    generateLastUpdateDateInsertTriggerMonitor(), conn);
 	}
-	
 }

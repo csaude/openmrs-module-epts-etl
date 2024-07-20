@@ -12,6 +12,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
@@ -219,6 +221,12 @@ public class DBUtilities {
 		}
 	}
 	
+	public static boolean checkIfTableIsPresentInSqlExpretion(String sqlExpression) {
+		String[] tableNameComposition = sqlExpression.split("\\.");
+		
+		return tableNameComposition != null && tableNameComposition.length > 1;
+	}
+	
 	public static String tryToPutSchemaOnInsertScript_(String sql, Connection conn) throws DBException {
 		String tableName = (sql.toLowerCase().split("insert into")[1]).split("\\(")[0];
 		
@@ -276,6 +284,100 @@ public class DBUtilities {
 		} else {
 			return fullTableName;
 		}
+	}
+	
+	public static List<String> extractFieldsInClauses(String condition) {
+		List<String> fields = new ArrayList<>();
+		
+		// Regex pattern to match field names in IN, BETWEEN, and comparison clauses
+		String patternString = "(?i)\\b([\\w\\.]+)\\s*(=|IN|<|>|BETWEEN|LIKE)";
+		Pattern pattern = Pattern.compile(patternString);
+		Matcher matcher = pattern.matcher(condition);
+		
+		// Find all matches and add the field names to the list
+		while (matcher.find()) {
+			fields.add(matcher.group(1));
+		}
+		
+		return fields;
+	}
+	
+	public static List<String> extractFieldsInClauses(String condition, String tableName) {
+		List<String> fields = new ArrayList<>();
+		
+		// Regex pattern to match field names in WHERE, IN, BETWEEN, and comparison clauses
+		String patternString = "(?i)\\b([\\w\\.]+)\\s*(=|IN|<|>|BETWEEN|LIKE)";
+		Pattern pattern = Pattern.compile(patternString);
+		Matcher matcher = pattern.matcher(condition);
+		
+		// Find all matches and add the field names to the list
+		while (matcher.find()) {
+			String field = matcher.group(1);
+			if (!field.contains(".")) {
+				field = tableName + "." + field;
+			}
+			fields.add(field);
+		}
+		
+		return fields;
+	}
+	
+	public static String replaceFieldsInCondition(String condition, List<String> fields) {
+		String updatedCondition = condition;
+		
+		// Regex pattern to match field names in WHERE, IN, BETWEEN, and comparison clauses
+		String patternString = "(?i)\\b([\\w\\.]+)\\s*(=|IN|<|>|BETWEEN|LIKE)";
+		Pattern pattern = Pattern.compile(patternString);
+		Matcher matcher = pattern.matcher(condition);
+		
+		// Replace each matched field with its fully qualified name
+		int fieldIndex = 0;
+		StringBuffer result = new StringBuffer();
+		while (matcher.find()) {
+			// Construct the replacement with the field and a space before the token
+			String replacement = fields.get(fieldIndex) + " " + matcher.group(2);
+			matcher.appendReplacement(result, replacement);
+			fieldIndex++;
+		}
+		matcher.appendTail(result);
+		
+		updatedCondition = result.toString();
+		return updatedCondition;
+	}
+	
+	/**
+	 * Add a table name in fields that does not explicitly indicate the table name. The table name
+	 * will be added if the current table contains the field e.g. given the clause "col1 = 123 and
+	 * tab2.col2 > 1000"<br>
+	 * the result will be "tableName.col1 = 123 and tab2.col2 > 1000"
+	 * 
+	 * @param clauseContent the clause content: e.g. "col1 = 123 and tab2.col2 > 1000";
+	 * @param tableName the table name which will be added
+	 * @param tableFields all the fields of table
+	 * @return the modified clause which include the table name.
+	 */
+	public static String tryToPutTableNameInFieldsInASqlClause(String clauseContent, String tableName,
+	        List<Field> tableFields) {
+		
+		if (!utilities.arrayHasElement(tableFields)) {
+			throw new ForbiddenOperationException("The tableFields is empty!");
+		}
+		
+		List<String> fields = DBUtilities.extractFieldsInClauses(clauseContent);
+		List<String> fieldsWithTabName = new ArrayList<>();
+		
+		for (String field : fields) {
+			if (DBUtilities.checkIfTableIsPresentInSqlExpretion(field)) {
+				fieldsWithTabName.add(field);
+			} else {
+				
+				if (tableFields.contains(Field.fastCreateField(field))) {
+					fieldsWithTabName.add(tableName + "." + field);
+				}
+			}
+		}
+		
+		return DBUtilities.replaceFieldsInCondition(clauseContent, fieldsWithTabName);
 	}
 	
 	public static String determineSchemaName(Connection conn) throws DBException {

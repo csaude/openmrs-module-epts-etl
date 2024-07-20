@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 /**
  * Represents an auxiliary table for data extraction. A {@link AuxExtractTable} is used as an
@@ -98,5 +99,15 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	@Override
 	public void loadOwnElements(Connection conn) throws DBException {
 		loadJoinElements(conn);
+		
+		if (hasJoinExtraCondition() && !isUsingManualDefinedAlias()) {
+			this.setJoinExtraCondition(
+			    this.getJoinExtraCondition().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
+			
+			String condition = DBUtilities.tryToPutTableNameInFieldsInASqlClause(this.getJoinExtraCondition(),
+			    this.getTableAlias(), this.getFields());
+			
+			this.setJoinExtraCondition(condition);
+		}
 	}
 }
