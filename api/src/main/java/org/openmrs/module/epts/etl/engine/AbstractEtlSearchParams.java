@@ -184,8 +184,6 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		
 		int qtyProcessors = utilities.getAvailableProcessors();
 		
-		qtyProcessors = 1;
-		
 		if (qtyProcessors > qtyRecordsBetweenLimits) {
 			qtyProcessors = (int) qtyRecordsBetweenLimits;
 		}
