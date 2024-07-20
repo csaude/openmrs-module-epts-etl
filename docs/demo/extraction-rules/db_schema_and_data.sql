@@ -1,6 +1,6 @@
-create database etl_demo_with_transformation_rules_src_db;
+create database etl_demo_with_extraction_rules_src_db;
 
-use etl_demo_with_transformation_rules_src_db;
+use etl_demo_with_extraction_rules_src_db;
 
 CREATE TABLE `office` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12,7 +12,7 @@ CREATE TABLE `office` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-INSERT INTO etl_demo_with_transformation_rules_src_db.office (id,name,uuid) VALUES
+INSERT INTO etl_demo_with_extraction_rules_src_db.office (id,name,uuid) VALUES
 	 ('10001','Main office','9acc18fb-44ef-11ef-97f0-e86a64ea1bc5'),
 	 ('10002','Anex 1','9acc29ab-44ef-11ef-97f9-e76a64ea1bc5'),
 	 ('10003','Anex 1','9acc2be0-44ef-11ef-96f9-e86a64ea1bc5');
@@ -30,7 +30,7 @@ CREATE TABLE `person` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-INSERT INTO etl_demo_with_transformation_rules_src_db.person (id,full_name, office_id, uuid) VALUES
+INSERT INTO etl_demo_with_extraction_rules_src_db.person (id,full_name, office_id, uuid) VALUES
 	 ('100','Josh Muhamad',10001,'9acc18fb-44ef-11ef-97f9-e86a64ea1bc5'),
 	 ('101','Rasak Bustan',10002,'9acc29ab-44ef-11ef-97f9-e86a64ea1bc5'),
 	 ('102','Mary Cage',10001,'9acc2ab0-44ef-11ef-97f9-e86a64ea1bc5'),
@@ -53,7 +53,7 @@ CREATE TABLE `address` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-INSERT INTO etl_demo_with_transformation_rules_src_db.address (person_id,full_address,creation_date,uuid) VALUES
+INSERT INTO etl_demo_with_extraction_rules_src_db.address (person_id,full_address,creation_date,uuid) VALUES
 	 (100,'Josh Muhamad''s address','2024-07-18 14:20:41','4b6f44d2-4500-11ef-97f9-e86a64ea1bc5'),
 	 (101,'Rasak Bustan''s address','2024-07-18 14:20:41','4b6f48aa-4500-11ef-97f9-e86a64ea1bc5'),
 	 (102,'Mary Cage''s address','2024-07-18 14:20:41','4b6f4987-4500-11ef-97f9-e86a64ea1bc5'),
@@ -65,9 +65,9 @@ INSERT INTO etl_demo_with_transformation_rules_src_db.address (person_id,full_ad
 	 (108,'Rosimaria Augusto''s address','2024-07-18 14:20:41','4b6f4c92-4500-11ef-97f9-e86a64ea1bc5');
 	 
 
-create database etl_demo_with_transformation_rules_dst_db;
+create database etl_demo_with_extraction_rules_dst_db;
 
-CREATE TABLE `etl_demo_with_transformation_rules_dst_db`.`person_data` (
+CREATE TABLE `etl_demo_with_extraction_rules_dst_db`.`person_data` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `full_name` varchar(250) NOT NULL,
   `full_address` varchar(500) NOT NULL,
