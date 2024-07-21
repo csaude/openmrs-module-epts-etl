@@ -1,18 +1,18 @@
 package org.openmrs.module.epts.etl.controller.conf.tablemapping;
 
 import java.sql.Connection;
-import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.Extension;
+import org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
- * This class is used to map fields between an source table and destination table
+ * This class is used to map fields between any source table and destination table
  * 
  * @author jpboane
  */
@@ -34,6 +34,8 @@ public class FieldsMapping {
 	
 	private EtlFieldTransformer transformerInstance;
 	
+	private Extension extension;
+	
 	public FieldsMapping() {
 	}
 	
@@ -52,33 +54,19 @@ public class FieldsMapping {
 	}
 	
 	public EtlFieldTransformer getTransformerInstance() {
-		if (this.transformerInstance == null) {
-			tryToLoadTransformer();
-		}
-		
 		return this.transformerInstance;
 	}
 	
-	/**
-	 * @throws ForbiddenOperationException
-	 */
-	@SuppressWarnings("unchecked")
-	public void tryToLoadTransformer() throws ForbiddenOperationException {
-		if (this.hasTransformer()) {
-			try {
-				ClassLoader loader = EtlRecordTransformer.class.getClassLoader();
-				
-				Class<? extends EtlFieldTransformer> t = (Class<? extends EtlFieldTransformer>) loader
-				        .loadClass(this.getTransformer());
-				
-				this.transformerInstance = t.newInstance();
-			}
-			catch (Exception e) {
-				throw new ForbiddenOperationException(
-				        ". Error loading the transformer [" + this.getTransformer() + "] !!! " + e.getLocalizedMessage());
-			}
-			
-		}
+	public Extension getExtension() {
+		return extension;
+	}
+	
+	public void setExtension(Extension extension) {
+		this.extension = extension;
+	}
+	
+	public boolean useDefaultTransformer() {
+		return getTransformerInstance() instanceof DefaultFieldTransformer;
 	}
 	
 	public void setTransformerInstance(EtlFieldTransformer transformerInstance) {
@@ -152,32 +140,6 @@ public class FieldsMapping {
 		return "[srcField: " + srcField + ", dstField: " + dstField + ", dataSourceName: " + this.dataSourceName + "]";
 	}
 	
-	public Object retrieveValue(EtlDatabaseObject dstObject, List<EtlDatabaseObject> srcObjects, Connection conn)
-	        throws DBException, ForbiddenOperationException {
-		
-		if (hasTransformer()) {
-			return getTransformerInstance().transform(srcObjects.get(0), this.getSrcField(), this.getDstField(), conn, conn);
-		}
-		
-		if (this.srcValue != null) {
-			return utilities.parseValue(this.srcValue, utilities.getFieldType(dstObject, this.dstField));
-		}
-		
-		for (EtlDatabaseObject srcObject : srcObjects) {
-			if (this.getDataSourceName().equals(srcObject.getRelatedConfiguration().getAlias())) {
-				try {
-					return srcObject.getFieldValue(this.getSrcField());
-				}
-				catch (ForbiddenOperationException e) {
-					return srcObject.getFieldValue(this.getSrcFieldAsClassField());
-				}
-			}
-		}
-		
-		throw new ForbiddenOperationException(
-		        "The field '" + this.srcField + " does not belong to any configured source table");
-	}
-	
 	public boolean hasTransformerInstance() {
 		return this.getTransformerInstance() != null;
 	}
@@ -188,6 +150,37 @@ public class FieldsMapping {
 	
 	public boolean isMapToNullValue() {
 		return mapToNullValue;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void tryToLoadTransformer(Connection conn) {
+		if (this.hasTransformer()) {
+			
+			if (this.getTransformer().equals(EtlFieldTransformer.DEFAULT_TRANSFORMER)) {
+				this.setTransformer(DefaultFieldTransformer.class.getCanonicalName());
+				this.setTransformerInstance(DefaultFieldTransformer.getInstance());
+			} else if (this.getTransformer().equals(EtlFieldTransformer.ARITHMETIC_TRANSFORMER)) {
+				this.setTransformer(ArithmeticFieldTransformer.class.getCanonicalName());
+				this.setTransformerInstance(ArithmeticFieldTransformer.getInstance());
+			} else {
+				try {
+					ClassLoader loader = EtlRecordTransformer.class.getClassLoader();
+					
+					Class<? extends EtlFieldTransformer> transformerClazz = (Class<? extends EtlFieldTransformer>) loader
+					        .loadClass(this.getTransformer());
+					
+					this.setTransformerInstance(transformerClazz.newInstance());
+				}
+				catch (Exception e) {
+					throw new ForbiddenOperationException(
+					        "Error loading transformer class [" + this.getTransformer() + "]!!! " + e.getLocalizedMessage());
+				}
+			}
+		} else {
+			this.setTransformer(DefaultFieldTransformer.class.getCanonicalName());
+			
+			this.setTransformerInstance(DefaultFieldTransformer.getInstance());
+		}
 	}
 	
 }

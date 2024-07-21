@@ -265,6 +265,16 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	/**
+	 * Forca a aproximacao por defeito do numero recebido pelo parametro
+	 * 
+	 * @param numero: Valor numerico (inteiro ou decimal)
+	 * @return
+	 */
+	public long forcarAproximacaoPorDefeito(String numero) {
+		return FuncoesGenericas.forcarAproximacaoPorDefeito(numero);
+	}
+	
+	/**
 	 * Forca a aproximacao por excesso do numero recebido pelo parametro
 	 * 
 	 * @param numero: Valor numerico (inteiro ou decimal)
@@ -1221,8 +1231,7 @@ public class CommonUtilities implements Serializable {
 		} else if (destinationType.equals(Double.class) && value instanceof String) {
 			return Double.parseDouble(value);
 		} else if (destinationType.equals(Integer.class) && value instanceof String) {
-			return Integer.parseInt(value);
-			
+			return (int) utilities.forcarAproximacaoPorDefeito(value);
 		} else if (destinationType.equals(Long.class) && value instanceof String) {
 			return Long.parseLong(value);
 		} else if (destinationType.equals(Boolean.class) && value instanceof String) {

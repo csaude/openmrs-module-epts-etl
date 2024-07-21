@@ -267,6 +267,29 @@ public class FuncoesGenericas {
 		}
 	}
 	
+	/**
+	 * Forca a aproximacao por defeito do numero recebido pelo parametro
+	 * 
+	 * @param numero: Valor numerico (inteiro ou decimal)
+	 * @return
+	 */
+	public static long forcarAproximacaoPorDefeito(String numero) {
+		
+		try {
+			long[] tokens = splitDoubleNumber(numero);
+			
+			if (tokens == null)
+				return 0;
+			
+			long parteInteira = tokens[0];
+			
+			return parteInteira;
+		}
+		catch (Exception e) {
+			return 0;
+		}
+	}
+	
 	public static String getNumberInXPrecision(double number, int precision) {
 		String s = ("" + number);
 		

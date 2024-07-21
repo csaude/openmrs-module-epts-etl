@@ -74,17 +74,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		transformedRec.setSrcRelatedObject(srcObject);
 		
 		for (FieldsMapping fieldsMapping : dstConf.getAllMapping()) {
-			Object srcValue;
-			
-			if (fieldsMapping.isMapToNullValue()) {
-				srcValue = null;
-			} else if (fieldsMapping.getSrcValue() != null) {
-				srcValue = fieldsMapping.getSrcValue();
-			} else {
-				srcValue = fieldsMapping.retrieveValue(transformedRec, srcObjects, srcConn);
-			}
-			
-			transformedRec.setFieldValue(fieldsMapping.getDstFieldAsClassField(), srcValue);
+			fieldsMapping.getTransformerInstance().transform(transformedRec, srcObjects, fieldsMapping, srcConn, dstConn);
 		}
 		
 		if (dstConf.useSharedPKKey()) {

@@ -725,4 +725,29 @@ public interface EtlDatabaseObject extends EtlObject {
 		}
 	}
 	
+	default Field getField(String fieldName) {
+		for (Field field : this.getFields()) {
+			if (field.getName().equals(fieldName)) {
+				return field;
+			}
+		}
+		
+		throw new ForbiddenOperationException("The field '" + fieldName + "' cannot be found on object " + this);
+	}
+	
+	default Class<?> getFieldType(String fieldName) {
+		
+		if (this.hasFields()) {
+			Field field = this.getField(fieldName);
+			
+			return field.getTypeClass();
+		}
+		
+		return utils.getFieldType(this, fieldName);
+	}
+	
+	default boolean hasFields() {
+		return utils.arrayHasElement(this.getFields());
+	}
+	
 }

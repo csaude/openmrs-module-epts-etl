@@ -21,6 +21,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class Field implements Serializable {
 	
+	public static final Integer DEFAULT_INT_VALUE = -1;
+	
+	public static final Date DEFAULT_DATE_VALUE = DateAndTimeUtilities.createDate("1975-01-01");
+	
+	public static final String DEFAULT_STRING_VALUE = "UNDEFINED";
+	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private static final long serialVersionUID = 1L;
@@ -37,13 +43,17 @@ public class Field implements Serializable {
 	
 	private boolean timeStamp;
 	
-	public static final Integer DEFAULT_INT_VALUE = -1;
-	
-	public static final Date DEFAULT_DATE_VALUE = DateAndTimeUtilities.createDate("1975-01-01");
-	
-	public static final String DEFAULT_STRING_VALUE = "UNDEFINED";
+	private Class<?> typeClass;
 	
 	public Field() {
+	}
+	
+	public Class<?> getTypeClass() {
+		return typeClass;
+	}
+	
+	public void setTypeClass(Class<?> typeClass) {
+		this.typeClass = typeClass;
 	}
 	
 	@JsonIgnore
@@ -76,6 +86,8 @@ public class Field implements Serializable {
 	
 	public void setType(String type) {
 		this.type = type;
+		
+		determineTypeClass();
 	}
 	
 	public Field(String name) {
@@ -325,6 +337,7 @@ public class Field implements Serializable {
 		this.name = f.name;
 		this.value = f.value;
 		this.allowNull = f.allowNull;
+		this.typeClass = f.typeClass;
 	}
 	
 	@JsonIgnore
@@ -435,6 +448,23 @@ public class Field implements Serializable {
 		}
 		
 		return getValue().toString();
+	}
+	
+	public void determineTypeClass() {
+		if (this.isIntegerField()) {
+			this.setTypeClass(Integer.class);
+		} else if (this.isDateField()) {
+			this.setTypeClass(Date.class);
+			
+		} else if (this.isLongField()) {
+			this.setTypeClass(Long.class);
+		} else if (this.isNumericColumnType()) {
+			this.setTypeClass(Integer.class);
+		} else if (this.isString()) {
+			this.setTypeClass(String.class);
+		} else {
+			this.setTypeClass(Object.class);
+		}
 	}
 	
 }

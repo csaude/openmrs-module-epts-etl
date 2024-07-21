@@ -197,6 +197,7 @@ public class DstConf extends AbstractTableConfiguration {
 		
 		if (utilities.arrayHasElement(this.mapping)) {
 			for (FieldsMapping fm : this.mapping) {
+				fm.tryToLoadTransformer(conn);
 				
 				if (!utilities.stringHasValue(fm.getDataSourceName())) {
 					try {
@@ -251,6 +252,9 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			if (!this.allMapping.contains(fm)) {
 				try {
+					
+					fm.tryToLoadTransformer(conn);
+					
 					tryToLoadDataSourceToFieldMapping(fm);
 					
 					addMapping(fm);
@@ -299,11 +303,7 @@ public class DstConf extends AbstractTableConfiguration {
 		
 		if (fm.getSrcValue() != null) {
 			
-			if (fm.getSrcValue().startsWith("@")) {
-				String paramName = utilities.removeCharactersOnString(fm.getSrcValue(), "@");
-				
-				fm.setSrcValue(getRelatedEtlConf().getParamValue(paramName));
-			} else if (fm.getSrcValue().isEmpty() || fm.getSrcValue().equals("null")) {
+			if (fm.getSrcValue().isEmpty() || fm.getSrcValue().equals("null")) {
 				fm.setMapToNullValue(true);
 			}
 			
@@ -311,9 +311,7 @@ public class DstConf extends AbstractTableConfiguration {
 			
 		}
 		
-		if (fm.hasTransformer()) {
-			fm.tryToLoadTransformer();
-			
+		if (!fm.useDefaultTransformer()) {
 			return;
 		}
 		

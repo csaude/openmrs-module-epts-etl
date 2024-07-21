@@ -11,6 +11,10 @@ public class EtlExceptionImpl extends RuntimeException implements EtlException {
 		super(msg);
 	}
 	
+	public EtlExceptionImpl(String msg, Exception e) {
+		super(e.getLocalizedMessage(), e);
+	}
+	
 	public EtlExceptionImpl(Exception e) {
 		this(e.getLocalizedMessage());
 	}
