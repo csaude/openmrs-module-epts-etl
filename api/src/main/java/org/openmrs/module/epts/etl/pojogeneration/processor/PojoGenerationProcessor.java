@@ -50,7 +50,7 @@ public class PojoGenerationProcessor extends TaskProcessor<PojoGenerationRecord>
 		DBConnectionInfo mainApp = getEtlItemConfiguration().getSrcConnInfo();
 		
 		if (!getEtlItemConfiguration().isFullLoaded()) {
-			getEtlItemConfiguration().fullLoad();
+			getEtlItemConfiguration().fullLoad(this.getRelatedEtlOperationConfig());
 		}
 		
 		generate(mainApp, getSrcConf());

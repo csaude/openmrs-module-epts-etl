@@ -1,0 +1,24 @@
+{
+  "processed" : false,
+  "minRecordId" : 1,
+  "maxRecordId" : 18,
+  "threadCode" : "db_etl_on_etl_from_mz_q3_icap_nam_1demaio_mozart_q3_table_to_mozart_merge_info",
+  "lastSavedOn" : "22-07-2024 11:54:59",
+  "qtyRecordsPerProcessing" : 100,
+  "maxSupportedProcessors" : 1,
+  "currentLimits" : {
+    "processed" : false,
+    "minRecordId" : 1,
+    "maxRecordId" : 18,
+    "internalIntervals" : [ {
+      "processed" : false,
+      "minRecordId" : 1,
+      "maxRecordId" : 18
+    } ],
+    "initialized" : false,
+    "qtyProcessors" : 1,
+    "skippedRecordProcessed" : false,
+    "fullProcessed" : false
+  },
+  "status" : "BETWEEN_LIMITS"
+}

@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -917,34 +918,47 @@ public class DBUtilities {
 	
 	public static List<Field> determineFieldsFromQuery(String query) {
 		
-		String sqlFields = (query.toLowerCase().split("select")[1]).split("from")[0];
-		
-		String[] fieldsName = sqlFields.split(",");
+		// Regular expression to match fields in the SELECT clause
+		String selectRegex = "(?i)select\\s+(.+?)\\s+from";
+		Pattern selectPattern = Pattern.compile(selectRegex);
+		Matcher selectMatcher = selectPattern.matcher(query);
 		
 		List<Field> fields = new ArrayList<>();
 		
-		for (String s : fieldsName) {
-			if (s.contains("*")) {
-				throw new ForbiddenOperationException("Unable to determine field from '*'");
+		if (selectMatcher.find()) {
+			String selectClause = selectMatcher.group(1).trim();
+			
+			String[] fieldsName = selectClause.split(",");
+			
+			for (String s : fieldsName) {
+				// Check if the select clause contains "*" outside of count(*)
+				Pattern invalidAsteriskPattern = Pattern.compile("\\*(?!\\s*\\))");
+				Matcher invalidAsteriskMatcher = invalidAsteriskPattern.matcher(selectClause);
+				if (invalidAsteriskMatcher.find()) {
+					throw new IllegalArgumentException("Query contains a wildcard '*' in the SELECT clause");
+				}
+				
+				s = utilities.removeDuplicatedEmptySpace(s.trim());
+				
+				String fieldName = null;
+				
+				if (s.split(" as ").length > 1) {
+					fieldName = s.split(" as ")[1];
+				} else if (s.split(" ").length > 1) {
+					fieldName = s.split(" ")[1];
+				} else if (s.split("\\.").length > 1) {
+					fieldName = s.split("\\.")[1];
+				} else {
+					fieldName = s;
+				}
+				
+				fields.add(new Field(fieldName.trim()));
+				
 			}
-			
-			s = utilities.removeDuplicatedEmptySpace(s.trim());
-			
-			String fieldName = null;
-			
-			if (s.split(" as ").length > 1) {
-				fieldName = s.split(" as ")[1];
-			} else if (s.split("\\.").length > 1) {
-				fieldName = s.split("\\.")[1];
-			} else {
-				fieldName = s;
-			}
-			
-			fields.add(new Field(fieldName.trim()));
-			
 		}
 		
 		return fields;
+		
 	}
 	
 	public static String determineDataBaseFromConnection(Connection conn) throws DBException {
@@ -1249,6 +1263,66 @@ public class DBUtilities {
 		sql += "RENAME TABLE " + schema + "." + oldTableName + " TO " + schema + "." + newTableName + ";";
 		
 		executeBatch(conn, sql);
+	}
+	
+	public static List<String> findSubqueries(String query) {
+		List<String> subqueries = new ArrayList<>();
+		Stack<Integer> parenthesisStack = new Stack<>();
+		StringBuilder currentSubquery = new StringBuilder();
+		
+		query = query.replaceAll("\\s+", " "); // Normalize whitespace
+		
+		for (int i = 0; i < query.length(); i++) {
+			char c = query.charAt(i);
+			
+			if (c == '(') {
+				parenthesisStack.push(i);
+				if (parenthesisStack.size() == 1) {
+					currentSubquery = new StringBuilder();
+				}
+			}
+			
+			if (!parenthesisStack.isEmpty()) {
+				currentSubquery.append(c);
+			}
+			
+			if (c == ')') {
+				if (parenthesisStack.size() == 1) {
+					String subquery = currentSubquery.toString();
+					// Validate subquery starts with "select"
+					if (subquery.trim().toLowerCase().startsWith("(select")) {
+						subqueries.add(subquery);
+					}
+				}
+				parenthesisStack.pop();
+			}
+		}
+		
+		return subqueries;
+	}
+	
+	/**
+	 * Validates if the syntax of a given query string represent a valid sql select query
+	 * 
+	 * @param query the query to be validated
+	 * @return true if the query is a sql select query or false if not
+	 */
+	public static boolean isValidSelectSqlQuery(String query) {
+		if (query == null || query.trim().isEmpty()) {
+			return false;
+		}
+		
+		// Regular expression for a basic SQL SELECT statement
+		String selectRegex = "(?i)\\s*select\\s+.+\\s+from\\s+.+";
+		
+		// Check if the query matches the regex
+		return query.matches(selectRegex);
+	}
+	
+	public static void main(String[] args) {
+		String sql = "select * from abc where a = b";
+		
+		System.out.println(isValidSelectSqlQuery(sql));
 	}
 	
 }

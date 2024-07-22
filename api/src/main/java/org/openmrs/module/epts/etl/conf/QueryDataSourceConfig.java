@@ -32,6 +32,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class QueryDataSourceConfig extends AbstractBaseConfiguration implements DatabaseObjectConfiguration, EtlAdditionalDataSource {
 	
+	private final String stringLock = new String("LOCK_STRING");
+	
 	private String name;
 	
 	private String query;
@@ -50,6 +52,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	private DatabaseObjectLoaderHelper loadHealper;
 	
+	private PreparedQuery defaultPreparedQuery;
+	
 	public QueryDataSourceConfig() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
@@ -61,6 +65,14 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	public void setLoadHealper(DatabaseObjectLoaderHelper loadHealper) {
 		this.loadHealper = loadHealper;
+	}
+	
+	private boolean isPrepared() {
+		return this.defaultPreparedQuery != null;
+	}
+	
+	private PreparedQuery getDefaultPreparedQuery() {
+		return defaultPreparedQuery;
 	}
 	
 	@Override
@@ -151,11 +163,35 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
-		PreparedQuery query = PreparedQuery.prepare(this.getQuery(), getRelatedEtlConf(), true);
+		PreparedQuery query;
+		try {
+			query = PreparedQuery.prepare(this.getQuery(), getRelatedEtlConf());
+			
+			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), conn));
+			
+			this.fullLoaded = true;
+		}
+		catch (ForbiddenOperationException e) {
+			//Mean that there are missing parameters. Lets try to load the minimal information of fields
+			//Note that we are not marking the record as fullLoaded as there will be missing information on fields
+			
+			setFields(DBUtilities.determineFieldsFromQuery(this.getQuery()));
+		}
 		
-		setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), conn));
+	}
+	
+	public void prepare(EtlDatabaseObject mainObject, Connection conn) throws DBException {
+		if (isPrepared()) {
+			return;
+		}
 		
-		this.fullLoaded = true;
+		synchronized (stringLock) {
+			PreparedQuery query = PreparedQuery.prepare(this.getQuery(), mainObject, getRelatedEtlConf());
+			
+			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), conn));
+			
+			this.defaultPreparedQuery = query;
+		}
 	}
 	
 	@JsonIgnore
@@ -337,8 +373,11 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn) throws DBException {
+		if (!isPrepared()) {
+			prepare(mainObject, srcConn);
+		}
 		
-		PreparedQuery pQ = PreparedQuery.prepare(this.getQuery(), mainObject, getRelatedEtlConf(), false);
+		PreparedQuery pQ = this.getDefaultPreparedQuery().cloneAndLoadValues(mainObject);
 		
 		List<Object> paramsAsList = pQ.generateQueryParameters();
 		

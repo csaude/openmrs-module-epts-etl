@@ -104,7 +104,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses) {
 		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
 			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
-			PreparedQuery pQ = PreparedQuery.prepare(extraContidion, getConfig().getRelatedEtlConf(), false);
+			PreparedQuery pQ = PreparedQuery.prepare(extraContidion, getConfig().getRelatedEtlConf());
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
 			

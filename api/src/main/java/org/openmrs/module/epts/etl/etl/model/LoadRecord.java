@@ -158,14 +158,10 @@ public class LoadRecord {
 	public void reloadParentsWithDefaultValues(Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		
-		if (getDstRecord().getFieldValue("uuid").equals("bc2fa069-c85f-4f55-a86d-b3b17d9d146d")) {
-			System.out.println();
-		}
-		
 		for (ParentInfo parentInfo : this.getParentsWithDefaultValues()) {
 			
 			List<SrcConf> avaliableSrcForCurrParent = parentInfo.getParentTableConfInDst()
-			        .findRelatedSrcConfWhichAsAtLeastOnematchingDst();
+			        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(getEtlOperationConfig());
 			
 			if (utilities.arrayHasNoElement(avaliableSrcForCurrParent)) {
 				throw new ForbiddenOperationException(
@@ -177,7 +173,7 @@ public class LoadRecord {
 			EtlDatabaseObject recordAsSrc = null;
 			
 			for (SrcConf src : avaliableSrcForCurrParent) {
-				DstConf dst = src.getParentConf().findDstTable(parentInfo.getParentTableConfInDst().getTableName());
+				DstConf dst = src.getParentConf().findDstTable(getEtlOperationConfig(), parentInfo.getParentTableConfInDst().getTableName());
 				
 				recordAsSrc = src.createRecordInstance();
 				recordAsSrc.setRelatedConfiguration(src);

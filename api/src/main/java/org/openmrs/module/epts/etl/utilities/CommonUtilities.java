@@ -1311,4 +1311,16 @@ public class CommonUtilities implements Serializable {
 		return camelCase.toString();
 	}
 	
+	/**
+	 * Removes spaces between the next word and the previous within a "."
+	 * 
+	 * @param input
+	 * @return
+	 */
+	public String removeSpacesBeforeAndAfterPeriod(String input) {
+		// Remove spaces before the period
+		String noSpaceBeforePeriod = input.replaceAll("\\s+\\.", ".");
+		// Remove spaces after the period
+		return noSpaceBeforePeriod.replaceAll("\\.\\s+", ".");
+	}
 }

@@ -165,7 +165,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return getManualMapPrimaryKeyOnField() != null;
 	}
 	
-	public synchronized void fullLoad() throws DBException {
+	public synchronized void fullLoad(EtlOperationConfig operationConfig) throws DBException {
 		if (this.isFullLoaded()) {
 			return;
 		}
@@ -177,12 +177,13 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.srcConf.fullLoad();
 		
 		OpenConnection dstConn = null;
+		OpenConnection srcConn = null;
 		
 		try {
 			
-			if (getRelatedEtlConf().hasDstConnInfo()) {
+			if (this.getRelatedEtlConf().hasDstConnInfo()) {
 				
-				dstConn = getRelatedEtlConf().openDstConn();
+				dstConn = this.getRelatedEtlConf().openDstConn();
 				
 				if (!this.hasDstConf()) {
 					this.generateDefaultDstConf();
@@ -213,6 +214,14 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				}
 			}
 			
+			if (operationConfig.writeOperationHistory()) {
+				srcConn = this.getRelatedEtlConf().openSrcConn();
+				
+				this.getSrcConf().generateStagingTables(srcConn);
+				
+				srcConn.markAsSuccessifullyTerminated();
+			}
+			
 			this.setFullLoaded(true);
 		}
 		catch (SQLException e) {
@@ -221,6 +230,10 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		finally {
 			if (dstConn != null) {
 				dstConn.finalizeConnection();
+			}
+			
+			if (srcConn != null) {
+				srcConn.finalizeConnection();
 			}
 		}
 	}
@@ -324,13 +337,13 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return false;
 	}
 	
-	public DstConf findDstTable(String tableName) throws DBException {
+	public DstConf findDstTable(EtlOperationConfig operationConfig, String tableName) throws DBException {
 		
 		if (!containsDstTable(tableName))
 			return null;
 		
 		if (!isFullLoaded()) {
-			fullLoad();
+			fullLoad(operationConfig);
 		}
 		
 		for (DstConf dst : getDstConf()) {

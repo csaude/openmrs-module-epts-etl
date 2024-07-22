@@ -1253,6 +1253,23 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	/**
+	 * @throws ForbiddenOperationException
+	 */
+	default void tryToLoadSchemaInfo() throws ForbiddenOperationException {
+		if (isTableNameInfoLoaded())
+			return;
+		
+		String[] tableNameParts = getTableName().split("\\.");
+		
+		if (tableNameParts.length == 1) {} else if (tableNameParts.length == 2) {
+			setTableName(tableNameParts[1]);
+			setSchema(tableNameParts[0]);
+		} else {
+			throw new ForbiddenOperationException("The table name " + getTableName() + " is malformed!");
+		}
+	}
+	
+	/**
 	 * @param conn
 	 * @throws DBException
 	 * @throws ForbiddenOperationException

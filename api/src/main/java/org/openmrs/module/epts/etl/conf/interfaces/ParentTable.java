@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
@@ -69,14 +70,14 @@ public interface ParentTable extends RelatedTable {
 		return utilities.arrayHasElement(this.getConditionalFields());
 	}
 	
-	default List<DstConf> findRelatedDstConf() throws DBException {
+	default List<DstConf> findRelatedDstConf(EtlOperationConfig operationConf) throws DBException {
 		List<DstConf> allDstForTable = new ArrayList<>();
 		
 		for (EtlItemConfiguration conf : getRelatedEtlConf().getEtlItemConfiguration()) {
 			
 			if (conf.containsDstTable(getTableName())) {
 				if (!conf.isFullLoaded()) {
-					conf.fullLoad();
+					conf.fullLoad(operationConf);
 				}
 				
 				for (DstConf dst : conf.getDstConf()) {
@@ -90,11 +91,11 @@ public interface ParentTable extends RelatedTable {
 		return allDstForTable;
 	}
 	
-	default SrcConf findRelatedSrcConf() throws DBException {
+	default SrcConf findRelatedSrcConf(EtlOperationConfig operationConf) throws DBException {
 		for (EtlItemConfiguration conf : getRelatedEtlConf().getEtlItemConfiguration()) {
 			
 			if (!conf.isFullLoaded()) {
-				conf.fullLoad();
+				conf.fullLoad(operationConf);
 			}
 			
 			if (conf.getSrcConf().getTableName().equals(this.getTableName())) {
@@ -112,7 +113,8 @@ public interface ParentTable extends RelatedTable {
 	 * @return
 	 * @throws DBException
 	 */
-	default List<SrcConf> findRelatedSrcConfWhichAsAtLeastOnematchingDst() throws DBException {
+	default List<SrcConf> findRelatedSrcConfWhichAsAtLeastOnematchingDst(EtlOperationConfig operationConf)
+	        throws DBException {
 		List<SrcConf> srcs = new ArrayList<>();
 		
 		for (EtlItemConfiguration conf : getRelatedEtlConf().getEtlItemConfiguration()) {
@@ -120,7 +122,7 @@ public interface ParentTable extends RelatedTable {
 			if (conf.getSrcConf().getTableName().equals(this.getTableName())) {
 				
 				if (!conf.isFullLoaded()) {
-					conf.fullLoad();
+					conf.fullLoad(operationConf);
 				}
 				
 				if (conf.containsDstTable(this.getTableName())) {

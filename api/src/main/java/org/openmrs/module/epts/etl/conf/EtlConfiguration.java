@@ -492,7 +492,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return relatedConfFile;
 	}
 	
-	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromFile(File file) throws IOException {
+	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromFile(File file)
+	        throws IOException, ForbiddenOperationException {
 		EtlConfiguration conf = EtlConfiguration.loadFromJSON(FileUtilities.realAllFileAsString(file));
 		
 		conf.setConfigFilePath(file.getAbsolutePath());
@@ -555,8 +556,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	/**
 	 * Loads the code for each
+	 * 
+	 * @throws ForbiddenOperationException
+	 * @throws DBException
 	 */
-	public void init() {
+	public void init() throws ForbiddenOperationException {
 		if (initialized) {
 			return;
 		}
@@ -586,6 +590,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				}
 				
 				addConfiguredTable(tc.getSrcConf());
+				
+				tc.getSrcConf().tryToLoadSchemaInfo();
 				
 				List<EtlAdditionalDataSource> allAvaliableDataSources = tc.getSrcConf().getAvaliableExtraDataSource();
 				
@@ -619,6 +625,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				
 				if (utilities.arrayHasElement(tc.getDstConf())) {
 					for (DstConf dst : tc.getDstConf()) {
+						
+						dst.tryToLoadSchemaInfo();
 						
 						if (dst.hasAlias()) {
 							dst.setUsingManualDefinedAlias(true);
@@ -676,7 +684,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			for (EtlItemConfiguration conf : this.getEtlItemConfiguration()) {
 				if (!conf.isFullLoaded()) {
 					logDebug("PERFORMING FULL CONFIGURATION LOAD ON ETL '" + conf.getConfigCode() + "'");
-					conf.fullLoad();
+					conf.fullLoad(null);
 				}
 				
 				logDebug("THE FULL CONFIGURATION LOAD HAS DONE ON ETL '" + conf.getConfigCode() + "'");
@@ -723,7 +731,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 	}
 	
-	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromJSON(String json) {
+	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromJSON(String json)
+	        throws ForbiddenOperationException {
 		try {
 			Class<?>[] types = new Class<?>[1];
 			

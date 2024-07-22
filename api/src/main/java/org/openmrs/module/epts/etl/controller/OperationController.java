@@ -200,7 +200,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 					try {
 						logDebug("Performing the full load of etl item configuration");
 						
-						config.fullLoad();
+						config.fullLoad(this.getOperationConfig());
 					}
 					catch (DBException e) {
 						e.printStackTrace();
@@ -406,10 +406,6 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				changeStatusToFinished();
 			} else {
-				if (getOperationConfig().writeOperationHistory()) {
-					initHistoryStageArea();
-				}
-				
 				if (isParallelModeProcessing()) {
 					runInParallelMode();
 				} else {
@@ -437,23 +433,6 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		catch (Exception e) {
 			this.requestStopDueError(null, e);
 		}
-	}
-	
-	private synchronized void initHistoryStageArea() throws DBException {
-		
-		OpenConnection conn = openSrcConnection();
-		
-		try {
-			for (EtlItemConfiguration item : getEtlItemConfiguration()) {
-				item.getSrcConf().generateStagingTables(conn);
-			}
-			
-			conn.markAsSuccessifullyTerminated();
-		}
-		finally {
-			conn.finalizeConnection();
-		}
-		
 	}
 	
 	@Override

@@ -290,7 +290,7 @@ public class QuickTest {
 		
 		EtlItemConfiguration etlConf = conf.getEtlItemConfiguration().get(0);
 		
-		etlConf.fullLoad();
+		etlConf.fullLoad(conf.getOperations().get(0));
 		
 		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(null, null);
 		
@@ -501,7 +501,7 @@ public class QuickTest {
 		
 		EtlItemConfiguration etlConf = conf.getEtlItemConfiguration().get(1);
 		
-		etlConf.fullLoad();
+		etlConf.fullLoad(conf.getOperations().get(0));
 		
 		AbstractTableConfiguration tbConf = etlConf.getSrcConf();
 		

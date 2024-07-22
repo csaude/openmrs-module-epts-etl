@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 /**
  * Represents an prepared query ready to be executed. It alwas has a ready query and its parameters
@@ -25,31 +26,29 @@ public class PreparedQuery {
 	
 	private List<QueryParameter> queryParams;
 	
-	PreparedQuery(String query, EtlConfiguration config, boolean ignoreMissingParams) {
-		this.setQuery(query);
-		this.setEtlConfig(config);
-		
-		this.setQueryParams(extractAllParamOnQuery(query));
-		
-		if (!hasQueryParams())
-			return;
-		
-		loadQueryParamValues(ignoreMissingParams);
+	PreparedQuery() {
 	}
 	
-	PreparedQuery(String query, EtlDatabaseObject srcObject, EtlConfiguration configuration, boolean ignoreMissingParams) {
+	PreparedQuery(String query, EtlDatabaseObject srcObject, EtlConfiguration configuration) {
 		this.setQuery(query);
 		this.setEtlConfig(configuration);
 		this.setSrcObject(srcObject);
-		this.setQueryParams(extractAllParamOnQuery(query));
+		
+		List<QueryParameter> allParameters = extractAllParamOnQuery(this.getQuery());
+		
+		this.setQueryParams(allParameters);
 		
 		if (!hasQueryParams())
 			return;
 		
-		loadQueryParamValues(ignoreMissingParams);
+		loadQueryParamValues();
 	}
 	
-	void loadQueryParamValues(boolean ignoreMissingParams) {
+	PreparedQuery(String query, EtlConfiguration config) {
+		this(query, null, config);
+	}
+	
+	void loadQueryParamValues() {
 		String error = "";
 		
 		for (QueryParameter field : this.getQueryParams()) {
@@ -66,18 +65,21 @@ public class PreparedQuery {
 						error += ",";
 					}
 					
-					error += e1.getLocalizedMessage();
+					error += field.getName();
 				}
 			}
 		}
 		
-		if (!error.isEmpty() && !ignoreMissingParams)
-			throw new ForbiddenOperationException(error);
+		if (!error.isEmpty()) {
+			throw new ForbiddenOperationException("Missing parameters: " + error);
+		}
 		
 	}
 	
 	public void setQuery(String query) {
 		this.query = query;
+		this.query = utilities.removeDuplicatedEmptySpace(this.query);
+		this.query = utilities.removeSpacesBeforeAndAfterPeriod(this.query);
 	}
 	
 	private EtlDatabaseObject getSrcObject() {
@@ -173,14 +175,28 @@ public class PreparedQuery {
 		return queryParams;
 	}
 	
-	public static PreparedQuery prepare(String query, EtlDatabaseObject srcObject, EtlConfiguration configuration,
-	        boolean ignoreMissingParams) {
+	public static PreparedQuery prepare(String query, EtlDatabaseObject srcObject, EtlConfiguration configuration) {
 		
-		return new PreparedQuery(query, srcObject, configuration, ignoreMissingParams);
+		return new PreparedQuery(query, srcObject, configuration);
 	}
 	
-	public static PreparedQuery prepare(String query, EtlConfiguration etlConfig, boolean ignoreMissingParams) {
-		return new PreparedQuery(query, etlConfig, ignoreMissingParams);
+	public static PreparedQuery prepare(String query, EtlConfiguration etlConfig) throws ForbiddenOperationException {
+		return new PreparedQuery(query, etlConfig);
+	}
+	
+	public PreparedQuery cloneAndLoadValues(EtlDatabaseObject srcObject) {
+		PreparedQuery cloned = new PreparedQuery();
+		
+		cloned.setQuery(this.getQuery());
+		cloned.setEtlConfig(this.getEtlConfig());
+		
+		if (this.hasQueryParams()) {
+			cloned.setQueryParams(QueryParameter.cloneAll(this.getQueryParams()));
+			
+			loadQueryParamValues();
+		}
+		
+		return cloned;
 	}
 	
 	boolean hasQueryParams() {
@@ -221,7 +237,8 @@ public class PreparedQuery {
 	 * @param sqlQuery the query to extract from
 	 * @return the list of extracted parameters name
 	 */
-	public static List<QueryParameter> extractAllParamOnQuery(String sqlQuery) {
+	private List<QueryParameter> extractAllParamOnQuery(String sqlQuery) {
+		
 		List<QueryParameter> parameters = new ArrayList<>();
 		
 		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
@@ -229,24 +246,123 @@ public class PreparedQuery {
 		Pattern pattern = Pattern.compile(parameterRegex);
 		Matcher matcher = pattern.matcher(sqlQuery);
 		
+		int minAllowedParamStart = 0;
+		
 		while (matcher.find()) {
 			String paramName = matcher.group(1);
 			int paramStart = matcher.start();
 			
-			QueryParameter params = new QueryParameter(paramName);
-			params.setContextType(determineContext(sqlQuery, paramStart));
+			if (paramStart < minAllowedParamStart) {
+				continue;
+			}
 			
-			parameters.add(params);
+			QueryParameter params = new QueryParameter(paramName);
+			
+			String containgSubquery = tryToExtractParameterContaingSubQuery(sqlQuery, paramStart);
+			
+			if (utilities.stringHasValue(containgSubquery)) {
+				//Assuming that this is the first parameter on the subquery
+				//Try to determine its position
+				
+				int paramStartInSubQuery = determineFirstParameterPositionInQuery(containgSubquery);
+				
+				//The position where the subquery starts in the main query
+				int subSueryStart = paramStart - paramStartInSubQuery;
+				
+				//We want to exclude all parameters within the subquery in the main parameters extraction
+				minAllowedParamStart = subSueryStart + containgSubquery.length();
+				
+				List<QueryParameter> subqueyParams = extractAllParamOnQuery(containgSubquery);
+				
+				if (utilities.arrayHasElement(subqueyParams)) {
+					parameters.addAll(subqueyParams);
+				}
+				
+			} else {
+				minAllowedParamStart = paramStart;
+				
+				params.setContextType(determineParameterContext(sqlQuery, paramStart));
+				
+				parameters.add(params);
+			}
 		}
 		
 		return parameters;
 	}
 	
-	private static ParameterContextType determineContext(String sqlQuery, int paramStart) {
+	private int determineFirstParameterPositionInQuery(String sqlQuery) {
+		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
+		String parameterRegex = "@\\s*(\\w+)";
+		Pattern pattern = Pattern.compile(parameterRegex);
+		Matcher matcher = pattern.matcher(sqlQuery);
+		
+		while (matcher.find()) {
+			return matcher.start();
+		}
+		
+		throw new ForbiddenOperationException("The query does not contains parameter");
+		
+	}
+	
+	private static String tryToExtractParameterContaingSubQuery(String sqlQuery, int paramStart) {
+		String subQuery = "";
+		
+		boolean foundPossibleSubQueryStarting = false;
+		boolean foundPossibleSubQueryFinishing = false;
+		
+		for (int i = paramStart; i > 0; i--) {
+			char currChar = sqlQuery.charAt(i);
+			
+			if (currChar == '(') {
+				//Found the possible starting sub query
+				
+				foundPossibleSubQueryStarting = true;
+				break;
+			}
+			if (currChar == ')') {
+				//Closing the subquery before found the staring. Abort
+				break;
+			} else {
+				subQuery = currChar + subQuery;
+			}
+		}
+		
+		if (foundPossibleSubQueryStarting) {
+			for (int i = paramStart + 1; i < sqlQuery.length(); i++) {
+				char currChar = sqlQuery.charAt(i);
+				
+				if (currChar == ')') {
+					//Found the possible finishing sub query
+					
+					foundPossibleSubQueryFinishing = true;
+					break;
+				}
+				if (currChar == '(') {
+					//Found the opening subquery before the closing... Abort
+					break;
+					
+				} else {
+					subQuery = subQuery + currChar;
+				}
+			}
+			
+			if (foundPossibleSubQueryFinishing) {
+				if (DBUtilities.isValidSelectSqlQuery(subQuery)) {
+					return subQuery;
+				}
+			}
+		}
+		
+		return null;
+		
+	}
+	
+	private static ParameterContextType determineParameterContext(String sqlQuery, int paramStart) {
+		
 		String beforeParam = sqlQuery.substring(0, paramStart).toLowerCase();
 		String afterParam = sqlQuery.substring(paramStart).toLowerCase();
 		
-		if (beforeParam.contains("select ") && !beforeParam.contains(" from ")) {
+		if (beforeParam.contains("select ") && afterParam.contains(" from ")) {
 			return ParameterContextType.SELECT_FIELD;
 		} else if (beforeParam.matches(".*\\bin\\s*\\($") || afterParam.matches("^\\s*\\)\\s*(and|or|$)")) {
 			return ParameterContextType.IN_CLAUSE;
@@ -257,6 +373,22 @@ public class PreparedQuery {
 		} else {
 			return ParameterContextType.DB_RESOURCE;
 		}
+	}
+	
+	public static void main(String[] args) {
+		String query = "select count(*) from @person where exists (select @a, b from person_name where person.@person_id = person_name.person_id) and not exists (select * from person_attribute where person.person_id = person_id)";
+		
+		/*for (int i = 0; i < query.length(); i++) {
+			String subquery = tryToExtractParameterContaingSubQuery(query, i);
+			
+			System.out.println(i + ": " + subquery);
+		}*/
+		
+		EtlConfiguration conf = new EtlConfiguration();
+		
+		PreparedQuery p = PreparedQuery.prepare(query, conf);
+		
+		System.out.println(p);
 	}
 	
 	/**
@@ -281,5 +413,4 @@ public class PreparedQuery {
 		
 		return replacedQuery.toString();
 	}
-	
 }

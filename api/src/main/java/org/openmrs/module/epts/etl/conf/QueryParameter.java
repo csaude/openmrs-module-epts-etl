@@ -118,6 +118,8 @@ public class QueryParameter extends Field {
 			QueryParameter other = (QueryParameter) f;
 			
 			this.valueType = other.valueType;
+			
+			this.contextType = other.contextType;
 		}
 	}
 	
