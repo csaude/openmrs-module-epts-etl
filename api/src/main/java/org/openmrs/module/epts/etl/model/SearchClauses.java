@@ -196,6 +196,10 @@ public class SearchClauses<T extends VO> {
 		this.parameters = FuncoesGenericas.setParam(this.parameters, parameters);
 	}
 	
+	public void addToParameters(List<Object> parameters) {
+		this.parameters = FuncoesGenericas.setParam(this.parameters, utilities.parseListToArray(parameters));
+	}
+	
 	public String getClauses() {
 		return clauses;
 	}

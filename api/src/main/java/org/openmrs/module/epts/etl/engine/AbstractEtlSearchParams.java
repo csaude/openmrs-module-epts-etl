@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.PreparedQuery;
+import org.openmrs.module.epts.etl.conf.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -104,7 +105,8 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses) {
 		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
 			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
-			PreparedQuery pQ = PreparedQuery.prepare(extraContidion, getConfig().getRelatedEtlConf());
+			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraContidion),
+			    getConfig().getRelatedEtlConf());
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
 			
@@ -164,9 +166,6 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	}
 	
 	public int countAllRecords(Connection conn) throws DBException {
-		if (this.savedCount > 0)
-			return this.savedCount;
-		
 		TableOperationProgressInfo progressInfo = null;
 		
 		try {
@@ -179,6 +178,13 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		
 		long minRecordId = progressInfo.getProgressMeter().getMinRecordId();
 		long maxRecordId = progressInfo.getProgressMeter().getMaxRecordId();
+		
+		return countAllRecords(minRecordId, maxRecordId, conn);
+	}
+	
+	public int countAllRecords(long minRecordId, long maxRecordId, Connection conn) throws DBException {
+		if (this.savedCount > 0)
+			return this.savedCount;
 		
 		long qtyRecordsBetweenLimits = maxRecordId - minRecordId + 1;
 		

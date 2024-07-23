@@ -17,7 +17,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.SqlFunctionInfo;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
@@ -269,6 +271,25 @@ public class DBUtilities {
 		 */
 		if (tabDef.length > 1) {
 			return tabDef[0];
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Extracts the first table name from the FROM clause of an SQL SELECT query.
+	 *
+	 * @param query the SQL query to be parsed
+	 * @return the first table name in the FROM clause, or null if not found
+	 */
+	public static String extractFirstTableFromSelectQuery(String query) {
+		String normalizedQuery = query.toLowerCase();
+		
+		Pattern fromPattern = Pattern.compile("from\\s+([^\\s,]+)", Pattern.CASE_INSENSITIVE);
+		Matcher fromMatcher = fromPattern.matcher(normalizedQuery);
+		
+		if (fromMatcher.find()) {
+			return fromMatcher.group(1);
 		}
 		
 		return null;
@@ -1319,10 +1340,125 @@ public class DBUtilities {
 		return query.matches(selectRegex);
 	}
 	
-	public static void main(String[] args) {
-		String sql = "select * from abc where a = b";
+	public static List<SqlFunctionInfo> extractSqlFunctionsInSelect(String query) {
+		List<SqlFunctionInfo> functions = new ArrayList<>();
 		
-		System.out.println(isValidSelectSqlQuery(sql));
+		// Normalize the query to make it case insensitive
+		String normalizedQuery = query.toLowerCase();
+		
+		// Regex to find the SELECT clause and extract its fields
+		Pattern selectPattern = Pattern.compile("select(.*?)from", Pattern.DOTALL);
+		Matcher selectMatcher = selectPattern.matcher(normalizedQuery);
+		
+		if (selectMatcher.find()) {
+			// Extract the fields part of the SELECT clause
+			String fieldsPart = selectMatcher.group(1).trim();
+			
+			// Regex to identify SQL function calls and their aliases, with or without the "AS" keyword
+			Pattern functionPattern = Pattern
+			        .compile("(\\b\\w+\\s*\\([^\\)]*\\))(\\s+as\\s+(\\w+))?|\\b(\\w+)\\s*\\(([^\\)]*)\\)\\s*(\\w+)?");
+			Matcher functionMatcher = functionPattern.matcher(fieldsPart);
+			
+			// Find all function calls in the fields part
+			while (functionMatcher.find()) {
+				String function = functionMatcher.group(1) != null ? functionMatcher.group(1).trim()
+				        : functionMatcher.group(4).trim() + "(" + functionMatcher.group(5).trim() + ")";
+				String alias = functionMatcher.group(3) != null ? functionMatcher.group(3).trim()
+				        : (functionMatcher.group(6) != null ? functionMatcher.group(6).trim() : null);
+				functions.add(new SqlFunctionInfo(SqlFunctionType.determine(function), alias));
+			}
+		}
+		
+		return functions;
+	}
+	
+	/**
+	 * Extracts the table(s) or subquery part from the FROM clause of a SQL SELECT query.
+	 *
+	 * @param query the SQL query to be parsed
+	 * @return the part after the FROM clause, or null if not found
+	 */
+	public static String extractFromClauseOnSqlSelectQuery(String query) {
+		// Normalize the query to lowercase for case-insensitive matching
+		String normalizedQuery = query.toLowerCase();
+		
+		// Regex to match the FROM clause up to the next SQL keyword or end of the query
+		Pattern fromPattern = Pattern.compile("from\\s+([^\\s,]+(?:\\s+[^\\s,]+)*?)\\s*(where|group by|having|order by|$)",
+		    Pattern.CASE_INSENSITIVE);
+		Matcher fromMatcher = fromPattern.matcher(normalizedQuery);
+		
+		if (fromMatcher.find()) {
+			// Extract the matched group excluding the FROM keyword
+			return query.substring(fromMatcher.start(1), fromMatcher.end(1)).trim();
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Extracts the content of the WHERE clause from a SQL SELECT query, excluding the WHERE
+	 * keyword.
+	 *
+	 * @param query the SQL query to be parsed
+	 * @return the content of the WHERE clause, or null if not found
+	 */
+	public static String extractWhereClauseInASelectQuery(String query) {
+		// Normalize the query to lowercase for case-insensitive matching
+		String normalizedQuery = query.toLowerCase();
+		
+		// Regex to match the WHERE clause up to the next SQL keyword or end of the query
+		Pattern wherePattern = Pattern.compile("where\\s+(.+?)(\\s*(group by|having|order by|$))", Pattern.CASE_INSENSITIVE);
+		Matcher whereMatcher = wherePattern.matcher(normalizedQuery);
+		
+		if (whereMatcher.find()) {
+			// Extract the matched group excluding the WHERE keyword
+			return query.substring(whereMatcher.start(1), whereMatcher.end(1)).trim();
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Extracts the alias of the first table in the FROM clause of a SQL SELECT query.
+	 *
+	 * @param query the SQL query to be parsed
+	 * @return the alias of the first table, or null if not found
+	 */
+	public static String extractFirstTableAliasOnSqlQuery(String query) {
+		
+		query = utilities.removeDuplicatedEmptySpace(query);
+		
+		String from = query.toLowerCase().split("from ")[1];
+		
+		String[] parts = from.split(" ");
+		
+		if (parts.length == 1) {
+			return null;
+		}
+		
+		if (parts.length >= 2) {
+			
+			if ((parts[1]).equals("as")) {
+				return parts[2];
+			}
+			
+			if (!isReserverdWord(parts[1])) {
+				return parts[1];
+			}
+		}
+		
+		return null;
+	}
+	
+	private static boolean isReserverdWord(String alias) {
+		return utilities.isStringIn(alias.toLowerCase(), "inner", "left", "right", "full", "join", "where", "exists", "not",
+		    "select", "order", "group", "by");
+	}
+	
+	public static void main(String[] args) {
+		String sql = "select count(*) as qty, max(id) as maxid from abc as a inner join a where a = b";
+		
+		System.out.println(extractFirstTableAliasOnSqlQuery(sql));
 	}
 	
 }

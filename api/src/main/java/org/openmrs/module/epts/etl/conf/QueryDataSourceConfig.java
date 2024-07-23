@@ -58,6 +58,10 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
 	
+	public QueryDataSourceConfig(String query) {
+		setQuery(query);
+	}
+	
 	@Override
 	public DatabaseObjectLoaderHelper getLoadHealper() {
 		return this.loadHealper;
@@ -165,7 +169,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		PreparedQuery query;
 		try {
-			query = PreparedQuery.prepare(this.getQuery(), getRelatedEtlConf());
+			query = PreparedQuery.prepare(this, getRelatedEtlConf());
 			
 			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), conn));
 			
@@ -186,7 +190,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		}
 		
 		synchronized (stringLock) {
-			PreparedQuery query = PreparedQuery.prepare(this.getQuery(), mainObject, getRelatedEtlConf());
+			PreparedQuery query = PreparedQuery.prepare(this, mainObject, getRelatedEtlConf());
 			
 			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), conn));
 			
@@ -377,14 +381,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 			prepare(mainObject, srcConn);
 		}
 		
-		PreparedQuery pQ = this.getDefaultPreparedQuery().cloneAndLoadValues(mainObject);
-		
-		List<Object> paramsAsList = pQ.generateQueryParameters();
-		
-		Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
-		
-		return DatabaseObjectDAO.find(this.loadHealper, this.getSyncRecordClass(), pQ.generatePreparedQuery(), params,
-		    srcConn);
+		return this.getDefaultPreparedQuery().cloneAndLoadValues(mainObject).query(srcConn);
 	}
 	
 	@Override
@@ -457,6 +454,10 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	@Override
 	public boolean isMustLoadChildrenInfo() {
 		return false;
+	}
+	
+	public static QueryDataSourceConfig fastCreate(String query) {
+		return new QueryDataSourceConfig(query);
 	}
 	
 }

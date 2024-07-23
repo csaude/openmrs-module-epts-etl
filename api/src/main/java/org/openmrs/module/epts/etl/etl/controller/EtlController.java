@@ -4,9 +4,7 @@ import java.lang.reflect.Constructor;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
-import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.SiteOperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -18,9 +16,6 @@ import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.SimpleValue;
-import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -65,7 +60,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 		try {
 			conn = openSrcConnection();
 			
-			return getExtremeRecord(engine.getEtlItemConfiguration(), "min", conn);
+			return engine.getSrcConf().getMinRecordId(conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -85,7 +80,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 		try {
 			conn = openSrcConnection();
 			
-			return getExtremeRecord(engine.getEtlItemConfiguration(), "max", conn);
+			return engine.getSrcConf().getMaxRecordId(conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -96,28 +91,6 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 			if (conn != null)
 				conn.finalizeConnection();
 		}
-	}
-	
-	private long getExtremeRecord(EtlItemConfiguration config, String function, Connection conn) throws DBException {
-		
-		if (!config.getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
-			throw new ForbiddenOperationException("Composite and non numeric keys are not supported for src tables");
-		}
-		
-		SrcConf srcConfig = config.getSrcConf();
-		
-		String sql = "SELECT " + (function + "(" + config.getSrcConf().getTableAlias() + "."
-		        + config.getSrcConf().getPrimaryKey().retrieveSimpleKeyColumnName() + ") as value");
-		
-		sql += " FROM " + srcConfig.generateSelectFromClauseContent() + "\n";
-		
-		SimpleValue simpleValue = BaseDAO.find(SimpleValue.class, sql, null, conn);
-		
-		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
-			return simpleValue.intValue();
-		}
-		
-		return 0;
 	}
 	
 	@Override

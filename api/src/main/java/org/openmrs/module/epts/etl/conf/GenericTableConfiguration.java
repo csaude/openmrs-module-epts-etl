@@ -16,6 +16,10 @@ public class GenericTableConfiguration extends AbstractTableConfiguration {
 	public GenericTableConfiguration() {
 	}
 	
+	public GenericTableConfiguration(String tableName) {
+		setTableName(tableName);
+	}
+	
 	public GenericTableConfiguration(TableConfiguration relatedTableConf) {
 		this.relatedTableConf = (AbstractTableConfiguration) relatedTableConf;
 		

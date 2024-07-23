@@ -1070,6 +1070,10 @@ public class CommonUtilities implements Serializable {
 		return str.substring(0, str.length() - 1);
 	}
 	
+	public String removeFirsChar(String str) {
+		return str.substring(1, str.length());
+	}
+	
 	public String removeCharactersOnString(String str, String... characters) {
 		if (!stringHasValue(str) || characters == null)
 			return str;
@@ -1322,5 +1326,27 @@ public class CommonUtilities implements Serializable {
 		String noSpaceBeforePeriod = input.replaceAll("\\s+\\.", ".");
 		// Remove spaces after the period
 		return noSpaceBeforePeriod.replaceAll("\\.\\s+", ".");
+	}
+	
+	/**
+	 * Masks the ocurrence of token by a given mask E.g <br>
+	 * String input = "love is blind";<br>
+	 * String token = "love";<br>
+	 * char maskChar = '#';<br>
+	 * result="#### is blind"
+	 * 
+	 * @param input the input to mask
+	 * @param token the token to be masked
+	 * @param maskChar the mask
+	 * @return the input which masked token
+	 */
+	public String maskToken(String input, String token, char maskChar) {
+		if (input == null || token == null || token.isEmpty()) {
+			return input;
+		}
+		
+		String mask = new String(new char[token.length()]).replace('\0', maskChar);
+		
+		return input.replace(token, mask);
 	}
 }

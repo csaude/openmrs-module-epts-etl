@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.PreparedQuery;
+import org.openmrs.module.epts.etl.conf.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -49,7 +50,8 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 				String extraJoinQuery = aux.generateJoinConditionsFields();
 				
 				if (utilities.stringHasValue(extraJoinQuery)) {
-					PreparedQuery pQ = PreparedQuery.prepare(extraJoinQuery, getConfig().getRelatedEtlConf());
+					PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraJoinQuery),
+					    getConfig().getRelatedEtlConf());
 					
 					List<Object> paramsAsList = pQ.generateQueryParameters();
 					

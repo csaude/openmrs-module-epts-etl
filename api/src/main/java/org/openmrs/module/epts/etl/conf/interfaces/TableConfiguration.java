@@ -22,11 +22,13 @@ import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -2510,5 +2512,33 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default boolean isExistRelatedTriggers(Connection conn) throws SQLException {
 		return DBUtilities.isResourceExist(conn.getCatalog(), getTableName(), DBUtilities.RESOURCE_TYPE_TRIGGER,
 		    generateLastUpdateDateInsertTriggerMonitor(), conn);
+	}
+	
+	default long getExtremeRecord(SqlFunctionType function, Connection conn) throws DBException {
+		
+		if (!this.getPrimaryKey().isSimpleNumericKey()) {
+			throw new ForbiddenOperationException("Composite and non numeric keys are not supported for src tables");
+		}
+		
+		String sql = "SELECT " + (function.toString() + "(" + this.getTableAlias() + "."
+		        + this.getPrimaryKey().retrieveSimpleKeyColumnName() + ") as value");
+		
+		sql += " FROM " + this.generateSelectFromClauseContent() + "\n";
+		
+		SimpleValue simpleValue = BaseDAO.find(SimpleValue.class, sql, null, conn);
+		
+		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
+			return simpleValue.intValue();
+		}
+		
+		return 0;
+	}
+	
+	default long getMinRecordId(Connection conn) throws DBException {
+		return this.getExtremeRecord(SqlFunctionType.MIN, conn);
+	}
+	
+	default long getMaxRecordId(Connection conn) throws DBException {
+		return this.getExtremeRecord(SqlFunctionType.MAX, conn);
 	}
 }

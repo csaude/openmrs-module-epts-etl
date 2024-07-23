@@ -138,5 +138,4 @@ public class QueryParameter extends Field {
 		
 		return allCloned;
 	}
-	
 }

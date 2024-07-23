@@ -1,14 +1,19 @@
 package org.openmrs.module.epts.etl.conf;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 /**
@@ -26,17 +31,24 @@ public class PreparedQuery {
 	
 	private List<QueryParameter> queryParams;
 	
+	private String mainQuery;
+	
+	private List<String> subqueries;
+	
+	private SqlFunctionInfo countFunctionInfo;
+	
+	private QueryDataSourceConfig dataSource;
+	
 	PreparedQuery() {
 	}
 	
-	PreparedQuery(String query, EtlDatabaseObject srcObject, EtlConfiguration configuration) {
-		this.setQuery(query);
+	PreparedQuery(QueryDataSourceConfig dataSource, EtlDatabaseObject srcObject, EtlConfiguration configuration) {
+		this.setDataSource(dataSource);
+		this.setQuery(dataSource.getQuery());
 		this.setEtlConfig(configuration);
 		this.setSrcObject(srcObject);
 		
-		List<QueryParameter> allParameters = extractAllParamOnQuery(this.getQuery());
-		
-		this.setQueryParams(allParameters);
+		this.setQueryParams(extractAllParamOnQuery());
 		
 		if (!hasQueryParams())
 			return;
@@ -44,8 +56,8 @@ public class PreparedQuery {
 		loadQueryParamValues();
 	}
 	
-	PreparedQuery(String query, EtlConfiguration config) {
-		this(query, null, config);
+	PreparedQuery(QueryDataSourceConfig queryDs, EtlConfiguration config) {
+		this(queryDs, null, config);
 	}
 	
 	void loadQueryParamValues() {
@@ -76,10 +88,87 @@ public class PreparedQuery {
 		
 	}
 	
+	Object retrieveParamValue(String paramName) {
+		String error = "";
+		
+		QueryParameter param = null;
+		
+		for (QueryParameter field : this.getQueryParams()) {
+			
+			if (!field.getName().equals(paramName))
+				continue;
+			
+			try {
+				field.setValue(getParamValueFromEtlConfig(field.getName()));
+			}
+			catch (ForbiddenOperationException e) {
+				try {
+					field.setValue(getParamValueFromSourceMainObject(field.getName()));
+				}
+				catch (ForbiddenOperationException e1) {
+					if (!error.isEmpty()) {
+						error += ",";
+					}
+					
+					error += field.getName();
+				}
+			}
+			
+			param = field;
+			
+			break;
+		}
+		
+		if (!error.isEmpty()) {
+			throw new ForbiddenOperationException("Missing parameters: " + error);
+		}
+		
+		return param.getValue();
+		
+	}
+	
 	public void setQuery(String query) {
 		this.query = query;
 		this.query = utilities.removeDuplicatedEmptySpace(this.query);
 		this.query = utilities.removeSpacesBeforeAndAfterPeriod(this.query);
+		
+		this.setSubqueries(DBUtilities.findSubqueries(this.getQuery()));
+		
+		setMainQuery(this.getQuery());
+		
+		if (hasSubQueries()) {
+			for (String sQuery : this.getSubqueries()) {
+				this.setMainQuery(utilities.maskToken(this.getMainQuery(), sQuery, '#'));
+			}
+		}
+	}
+	
+	public QueryDataSourceConfig getDataSource() {
+		return dataSource;
+	}
+	
+	public void setDataSource(QueryDataSourceConfig dataSource) {
+		this.dataSource = dataSource;
+	}
+	
+	private void setMainQuery(String mainQuery) {
+		this.mainQuery = mainQuery;
+	}
+	
+	private String getMainQuery() {
+		return mainQuery;
+	}
+	
+	private boolean hasSubQueries() {
+		return utilities.arrayHasElement(this.getSubqueries());
+	}
+	
+	private List<String> getSubqueries() {
+		return subqueries;
+	}
+	
+	private void setSubqueries(List<String> subqueries) {
+		this.subqueries = subqueries;
 	}
 	
 	private EtlDatabaseObject getSrcObject() {
@@ -141,8 +230,6 @@ public class PreparedQuery {
 				} else if (param.getContextType().dbResource()) {
 					pQuery = utilities.replaceNthOccurrenceWithString(pQuery, "?", param.getValue().toString(),
 					    questionMarkToBeReplaced);
-					
-					questionMarkToBeReplaced++;
 				}
 			}
 		}
@@ -175,28 +262,63 @@ public class PreparedQuery {
 		return queryParams;
 	}
 	
-	public static PreparedQuery prepare(String query, EtlDatabaseObject srcObject, EtlConfiguration configuration) {
+	public static PreparedQuery prepare(QueryDataSourceConfig queryDs, EtlDatabaseObject srcObject,
+	        EtlConfiguration configuration) {
 		
-		return new PreparedQuery(query, srcObject, configuration);
+		return new PreparedQuery(queryDs, srcObject, configuration);
 	}
 	
-	public static PreparedQuery prepare(String query, EtlConfiguration etlConfig) throws ForbiddenOperationException {
-		return new PreparedQuery(query, etlConfig);
+	public static PreparedQuery prepare(QueryDataSourceConfig queryDs, EtlConfiguration etlConfig)
+	        throws ForbiddenOperationException {
+		return new PreparedQuery(queryDs, etlConfig);
 	}
 	
 	public PreparedQuery cloneAndLoadValues(EtlDatabaseObject srcObject) {
 		PreparedQuery cloned = new PreparedQuery();
-		
+		cloned.setDataSource(this.getDataSource());
 		cloned.setQuery(this.getQuery());
 		cloned.setEtlConfig(this.getEtlConfig());
+		cloned.setSrcObject(srcObject);
 		
 		if (this.hasQueryParams()) {
 			cloned.setQueryParams(QueryParameter.cloneAll(this.getQueryParams()));
 			
-			loadQueryParamValues();
+			cloned.loadQueryParamValues();
 		}
 		
 		return cloned;
+	}
+	
+	private void setCountFunctionInfo(SqlFunctionInfo countFunctionInfo) {
+		this.countFunctionInfo = countFunctionInfo;
+	}
+	
+	public SqlFunctionInfo getCountFunctionInfo() {
+		return countFunctionInfo;
+	}
+	
+	private void tryToLoadSQLFunctionInfo() {
+		List<SqlFunctionInfo> avaliableFunction = DBUtilities.extractSqlFunctionsInSelect(getMainQuery());
+		
+		if (utilities.arrayHasExactlyOneElement(this.getDataSource().getFields())
+		        && utilities.arrayHasExactlyOneElement(avaliableFunction)) {
+			if (avaliableFunction.get(0).isCountFunction()) {
+				this.setCountFunctionInfo(avaliableFunction.get(0));
+				
+				String mainTableName = DBUtilities.extractFirstTableFromSelectQuery(this.getMainQuery());
+				
+				if (mainTableName.startsWith("@")) {
+					mainTableName = retrieveParamValue(utilities.removeFirsChar(mainTableName)).toString();
+				}
+				
+				this.getCountFunctionInfo().setMainTable(new GenericTableConfiguration(mainTableName));
+				
+				new MaintableAliasGenerator(this, mainTableName)
+				        .generateAliasForTable(this.getCountFunctionInfo().getMainTable());
+				
+				this.getCountFunctionInfo().getMainTable().setRelatedEtlConfig(this.getEtlConfig());
+			}
+		}
 	}
 	
 	boolean hasQueryParams() {
@@ -237,14 +359,14 @@ public class PreparedQuery {
 	 * @param sqlQuery the query to extract from
 	 * @return the list of extracted parameters name
 	 */
-	private List<QueryParameter> extractAllParamOnQuery(String sqlQuery) {
+	private List<QueryParameter> extractAllParamOnQuery() {
 		
 		List<QueryParameter> parameters = new ArrayList<>();
 		
 		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
 		String parameterRegex = "@\\s*(\\w+)";
 		Pattern pattern = Pattern.compile(parameterRegex);
-		Matcher matcher = pattern.matcher(sqlQuery);
+		Matcher matcher = pattern.matcher(this.getQuery());
 		
 		int minAllowedParamStart = 0;
 		
@@ -258,21 +380,21 @@ public class PreparedQuery {
 			
 			QueryParameter params = new QueryParameter(paramName);
 			
-			String containgSubquery = tryToExtractParameterContaingSubQuery(sqlQuery, paramStart);
+			String containgSubquery = tryToExtractParameterContaingSubQuery(this.getQuery(), paramStart);
 			
 			if (utilities.stringHasValue(containgSubquery)) {
-				//Assuming that this is the first parameter on the subquery
+				//Assuming that this is the first parameter on the sub query
 				//Try to determine its position
 				
 				int paramStartInSubQuery = determineFirstParameterPositionInQuery(containgSubquery);
 				
-				//The position where the subquery starts in the main query
+				//The position where the sub query starts in the main query
 				int subSueryStart = paramStart - paramStartInSubQuery;
 				
-				//We want to exclude all parameters within the subquery in the main parameters extraction
+				//We want to exclude all parameters within the sub query in the main parameters extraction
 				minAllowedParamStart = subSueryStart + containgSubquery.length();
 				
-				List<QueryParameter> subqueyParams = extractAllParamOnQuery(containgSubquery);
+				List<QueryParameter> subqueyParams = extractQueryParameters(containgSubquery);
 				
 				if (utilities.arrayHasElement(subqueyParams)) {
 					parameters.addAll(subqueyParams);
@@ -281,10 +403,33 @@ public class PreparedQuery {
 			} else {
 				minAllowedParamStart = paramStart;
 				
-				params.setContextType(determineParameterContext(sqlQuery, paramStart));
+				params.setContextType(determineParameterContext(this.getMainQuery(), paramStart));
 				
 				parameters.add(params);
 			}
+		}
+		
+		return parameters;
+	}
+	
+	private List<QueryParameter> extractQueryParameters(String sqlQuery) {
+		
+		List<QueryParameter> parameters = new ArrayList<>();
+		
+		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
+		String parameterRegex = "@\\s*(\\w+)";
+		Pattern pattern = Pattern.compile(parameterRegex);
+		Matcher matcher = pattern.matcher(sqlQuery);
+		
+		while (matcher.find()) {
+			String paramName = matcher.group(1);
+			int paramStart = matcher.start();
+			
+			QueryParameter params = new QueryParameter(paramName);
+			
+			params.setContextType(determineParameterContext(sqlQuery, paramStart));
+			
+			parameters.add(params);
 		}
 		
 		return parameters;
@@ -375,22 +520,6 @@ public class PreparedQuery {
 		}
 	}
 	
-	public static void main(String[] args) {
-		String query = "select count(*) from @person where exists (select @a, b from person_name where person.@person_id = person_name.person_id) and not exists (select * from person_attribute where person.person_id = person_id)";
-		
-		/*for (int i = 0; i < query.length(); i++) {
-			String subquery = tryToExtractParameterContaingSubQuery(query, i);
-			
-			System.out.println(i + ": " + subquery);
-		}*/
-		
-		EtlConfiguration conf = new EtlConfiguration();
-		
-		PreparedQuery p = PreparedQuery.prepare(query, conf);
-		
-		System.out.println(p);
-	}
-	
 	/**
 	 * Replaces all dump parameters with a question mark. It assumes that the parameters will have
 	 * format '@paramName'
@@ -413,4 +542,70 @@ public class PreparedQuery {
 		
 		return replacedQuery.toString();
 	}
+	
+	public boolean isCountQuery() {
+		return this.getCountFunctionInfo() != null;
+	}
+	
+	public void detemineLimits(Connection conn) throws DBException {
+		if (!this.isCountQuery()) {
+			throw new ForbiddenOperationException("The query does not use count function!");
+		}
+		
+		this.getCountFunctionInfo().detemineLimits(conn);
+		
+	}
+	
+	public EtlDatabaseObject query(Connection conn) throws DBException {
+		
+		this.tryToLoadSQLFunctionInfo();
+		
+		if (this.isCountQuery()) {
+			this.detemineLimits(conn);
+			
+			PreparedCountQuerySearchParams searchParams = new PreparedCountQuerySearchParams(this);
+			
+			long count = searchParams.countAllRecords(this.getCountFunctionInfo().getMinRecordId(),
+			    this.getCountFunctionInfo().getMaxRecordId(), conn);
+			
+			EtlDatabaseObject obj = this.getDataSource().newInstance();
+			obj.setRelatedConfiguration(this.getDataSource());
+			
+			obj.setFieldValue(this.getCountFunctionInfo().getAliasName(), count);
+			
+			return obj;
+		}
+		
+		List<Object> paramsAsList = this.generateQueryParameters();
+		
+		Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
+		
+		return DatabaseObjectDAO.find(this.getDataSource().getLoadHealper(), this.getDataSource().getSyncRecordClass(),
+		    this.generatePreparedQuery(), params, conn);
+	}
+	
+}
+
+class MaintableAliasGenerator implements TableAliasesGenerator {
+	
+	PreparedQuery pq;
+	
+	String mainTableName;
+	
+	public MaintableAliasGenerator(PreparedQuery pq, String mainTableName) {
+		this.pq = pq;
+		this.mainTableName = mainTableName;
+	}
+	
+	@Override
+	public void generateAliasForTable(TableConfiguration tabConfig) {
+		String alias = DBUtilities.extractFirstTableAliasOnSqlQuery(this.pq.getQuery());
+		
+		if (alias != null) {
+			tabConfig.setTableAlias(alias);
+		} else {
+			tabConfig.setTableAlias(mainTableName);
+		}
+	}
+	
 }
