@@ -11,6 +11,9 @@ import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
+/**
+ * This search params allow the count query in multi-thread in a {@link PreparedQuery}
+ */
 public class PreparedCountQuerySearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
 	PreparedQuery preparedQuery;

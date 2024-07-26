@@ -553,7 +553,6 @@ public class PreparedQuery {
 		}
 		
 		this.getCountFunctionInfo().detemineLimits(conn);
-		
 	}
 	
 	public EtlDatabaseObject query(Connection conn) throws DBException {

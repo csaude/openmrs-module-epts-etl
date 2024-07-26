@@ -70,7 +70,7 @@ public class QuickTest {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		saveToTable();
+		countAllOnTables();
 	}
 	
 	public static void saveToTable() throws DBException {
@@ -421,6 +421,37 @@ public class QuickTest {
 			}
 		}
 		
+	}
+	
+	public static void countAllOnTables() throws IOException, DBException {
+		
+		Connection conn = openConnection();
+		
+		List<String> alldbs = FileUtilities
+		        .readAllFileAsListOfString("D:/ORG/C-SAUDE/PROJECTOS/EPTS/etl/openmrs_tables.txt");
+		
+		String tablesToExport = "";
+		
+		for (String tabName : alldbs) {
+			
+			String sql = "select count(*) as value from  extracted_openmrs_hgq." + tabName;
+			
+			SimpleValue result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
+			
+			long count = result.integerValue();
+			
+			if (count > 0) {
+				if (!tablesToExport.isEmpty()) {
+					tablesToExport += " ";
+				}
+				
+				tablesToExport += tabName;
+			}
+		}
+		
+		System.out.println(tablesToExport);
+		
+		System.out.println("Finish");
 	}
 	
 	public static void countAll() throws IOException, DBException {

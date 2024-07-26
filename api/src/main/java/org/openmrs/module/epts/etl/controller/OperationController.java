@@ -185,7 +185,12 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		logTrace("Running the Process in Sequencial mode!");
 		
 		for (EtlItemConfiguration config : allSync) {
-			if (operationTableIsAlreadyFinished(config)) {
+			if (config.isDisabled()) {
+				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Confinguration '"
+				        + config.getConfigCode() + "' is disabled! Skipping...").toUpperCase());
+				
+				continue;
+			} else if (operationTableIsAlreadyFinished(config)) {
 				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Confinguration '"
 				        + config.getConfigCode() + "' was already finished!").toUpperCase());
 			} else if (stopRequested()) {

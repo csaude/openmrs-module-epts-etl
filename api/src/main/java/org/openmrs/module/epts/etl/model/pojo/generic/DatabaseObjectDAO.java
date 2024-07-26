@@ -536,6 +536,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 			if (objects.get(i).isExcluded())
 				continue;
 			
+			objects.get(i).loadObjectIdData(tabConf);
+			
 			if (tabConf.includePrimaryKeyOnInsert()) {
 				values += "(" + objects.get(i).getInsertSQLQuestionMarksWithObjectId() + "),";
 				
@@ -553,7 +555,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 			try {
 				List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 				
-				if (utilities.arrayHasElement(ids) && objects.get(0).getObjectId().isSimpleId()) {
+				if (utilities.arrayHasElement(ids) && objects.get(0).getObjectId().isSimpleId()
+				        && !tabConf.includePrimaryKeyOnInsert()) {
 					
 					int i = 0;
 					

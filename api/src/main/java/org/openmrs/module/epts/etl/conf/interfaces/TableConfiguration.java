@@ -454,7 +454,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			keyInfo.setFieldValue("table_name", skippedrecord.getObjectName());
 			keyInfo.setFieldValue("object_id", skippedrecord.getObjectId().getSimpleValue());
 			
-			keyInfo.save(skippedRecordTabConf, srcConn);
+			keyInfo.save(skippedRecordTabConf, ConflictResolutionType.KEEP_EXISTING, srcConn);
 		}
 		catch (InstantiationException | IllegalAccessException e) {
 			throw new RuntimeException(e);
@@ -1218,8 +1218,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				if (!includePrimaryKeyOnInsert()) {
 					
 					//Force the inclusion of primaryKey if the table is not autoincrement or if it uses shared pj
-					if (!isAutoIncrementId() || useSharedPKKey()
-					        || this.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
+					if ((!isAutoIncrementId() || useSharedPKKey()
+					        || this.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) && !(this instanceof EtlConfigurationTableConf)) {
 						setIncludePrimaryKeyOnInsert(true);
 					}
 				}

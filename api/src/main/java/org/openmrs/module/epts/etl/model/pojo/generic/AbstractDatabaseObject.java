@@ -286,7 +286,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	}
 	
 	@Override
-	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
+	public void save(TableConfiguration tableConfiguration, ConflictResolutionType onConflict, Connection conn)
+	        throws DBException {
 		try {
 			DatabaseObjectDAO.insert(this, tableConfiguration, conn);
 		}
@@ -309,11 +310,18 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 					}
 				}
 				
-				resolveConflictWithExistingRecord(tableConfiguration, e, conn);
+				if (onConflict.makeYourDecision()) {
+					resolveConflictWithExistingRecord(tableConfiguration, e, conn);
+				}
 			} else
 				throw e;
 		}
 		
+	}
+	
+	@Override
+	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
+		save(tableConfiguration, ConflictResolutionType.MAKE_YOUR_DECISION, conn);
 	}
 	
 	@Override

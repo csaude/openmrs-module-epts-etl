@@ -173,7 +173,8 @@ public class LoadRecord {
 			EtlDatabaseObject recordAsSrc = null;
 			
 			for (SrcConf src : avaliableSrcForCurrParent) {
-				DstConf dst = src.getParentConf().findDstTable(getEtlOperationConfig(), parentInfo.getParentTableConfInDst().getTableName());
+				DstConf dst = src.getParentConf().findDstTable(getEtlOperationConfig(),
+				    parentInfo.getParentTableConfInDst().getTableName());
 				
 				recordAsSrc = src.createRecordInstance();
 				recordAsSrc.setRelatedConfiguration(src);
@@ -374,6 +375,17 @@ public class LoadRecord {
 			
 			refInfo.fullLoad(dstConn);
 		}
+		
+		if (refInfo.useSharedPKKey()) {
+			TableConfiguration sharedPkConf = refInfo.getSharedKeyRefInfo();
+			
+			if (!sharedPkConf.isFullLoaded()) {
+				sharedPkConf.tryToGenerateTableAlias(this.getEtlConfiguration());
+				
+				sharedPkConf.fullLoad(dstConn);
+			}
+		}
+		
 	}
 	
 	/**

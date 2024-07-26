@@ -88,37 +88,7 @@
                }
             ]
 			
-{
-   "dstConf":[
-      {
-         "tableName":"",
-         "joinFields":[
-            {
-               "srcField":"",
-               "dstField":""
-            }
-         ],
-         "mapping":[
-            {
-               "dataSourceName":"",
-               "srcField":"",
-               "dstField":"",
-               "srcValue":"",
-               "mapToNullValue":"",
-               "transformer":""
-            }
-         ],
-         "prefferredDataSource":"",
-         "ignoreUnmappedFields":"",
-         "dstType":"",
-         "transformer":"",
-         "winningRecordFieldsInfo":[
-            
-         ]
-      }
-   ]
-}
-	
+
 		 
 		 
 		 
@@ -178,7 +148,65 @@
          ]
 		 
 
+```
+{
+   "dstConf":[
+      {
+         "tableName":"",
+         "prefferredDataSource":"",
+         "ignoreUnmappedFields":"",
+         "dstType":"",
+         "transformer":"",
+         "mapping":[
+            {
+               "dataSourceName":"",
+               "srcField":"",
+               "dstField":"",
+               "srcValue":"",
+               "mapToNullValue":"",
+               "transformer":""
+            }
+         ],
+         "joinFields":[
+            {
+               "srcField":"",
+               "dstField":""
+            }
+         ],
+         "winningRecordFieldsInfo":[
+            
+         ]
+      }
+   ]
+}
+```		 
 		 
+
+```
+{
+   "dstConf":{
+      "tableName":"location",
+      "winningRecordFieldsInfo":[
+         [
+            {
+               "name":"selected",
+               "value":"1"
+            },
+            {
+               "name":"voided",
+               "value":"0"
+            }
+         ],
+         [
+            {
+               "name":"fullProcessed",
+               "value":"tue"
+            }
+         ]
+      ]
+   }
+}
+```	  
 		 
 	When merge existing records, the incoming record will win if the listed fields have the specified values. Note that, for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND"
 		 

@@ -15,7 +15,6 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
@@ -171,7 +170,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		try {
 			query = PreparedQuery.prepare(this, getRelatedEtlConf());
 			
-			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), conn));
+			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), null, conn));
 			
 			this.fullLoaded = true;
 		}
@@ -192,7 +191,16 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		synchronized (stringLock) {
 			PreparedQuery query = PreparedQuery.prepare(this, mainObject, getRelatedEtlConf());
 			
-			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), conn));
+			List<Object> paramsAsList = query.generateQueryParameters();
+			
+			Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
+			
+			try {
+				setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), params, conn));
+			}
+			catch (DBException e) {
+				throw new DBException("Error computing the query " + this.getName(), e);
+			}
 			
 			this.defaultPreparedQuery = query;
 		}

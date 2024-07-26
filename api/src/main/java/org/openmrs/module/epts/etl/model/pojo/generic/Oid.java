@@ -126,6 +126,23 @@ public class Oid extends PrimaryKey {
 		throw new ForbiddenOperationException("The key is composite");
 	}
 	
+	public Object asSimpleValue() {
+		return asSimpleKey().getValue();
+	}
+	
+	public Long asSimpleNumericValue() {
+		if (isSimpleNumericKey()) {
+			
+			if (asSimpleKey().hasValue()) {
+				return Long.parseLong(asSimpleKey().getValue().toString());
+			} else {
+				return null;
+			}
+		}
+		
+		throw new ForbiddenOperationException("Not numeric key!!");
+	}
+	
 	@Override
 	public void setTabConf(TableConfiguration tabConf) {
 		super.setTabConf(tabConf, false);

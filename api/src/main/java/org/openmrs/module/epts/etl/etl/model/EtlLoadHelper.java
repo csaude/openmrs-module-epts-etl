@@ -258,7 +258,12 @@ public class EtlLoadHelper {
 			this.tryToAddToResult(loadRec.getResultItem());
 			
 		} else {
-			loadRec.getDstRecord().update(loadRec.getDstConf(), dstConn);
+			try {
+				loadRec.getDstRecord().update(loadRec.getDstConf(), dstConn);
+			}
+			catch (DBException e) {
+				throw new DBException("Error reloading parents on transformation: " + loadRec, e);
+			}
 			
 			loadRec.setStatus(LoadStatus.SUCCESS);
 		}

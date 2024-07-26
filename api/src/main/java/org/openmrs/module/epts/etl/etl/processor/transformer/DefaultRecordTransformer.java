@@ -90,14 +90,15 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			EtlDatabaseObject dstParent = null;
 			
 			for (SrcConf src : srcForSharedPk) {
-				DstConf dst = src.getParentConf().findDstTable(processor.getRelatedEtlOperationConfig(),
+				DstConf sharedPkDstConf = src.getParentConf().findDstTable(processor.getRelatedEtlOperationConfig(),
 				    dstConf.getSharedKeyRefInfo().getTableName());
 				
 				EtlDatabaseObject recordAsSrc = src.createRecordInstance();
 				recordAsSrc.setRelatedConfiguration(src);
 				
 				recordAsSrc.copyFrom(srcObject.getSharedPkObj());
-				dstParent = dst.getTransformerInstance().transform(processor, srcObject, dstConf, srcConn, dstConn);
+				dstParent = sharedPkDstConf.getTransformerInstance().transform(processor, recordAsSrc, sharedPkDstConf,
+				    srcConn, dstConn);
 				
 				if (dstParent != null) {
 					
@@ -116,7 +117,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		
 		transformedRec.loadObjectIdData(dstConf);
 		
-		if (dstConf.useManualGeneratedObjectId()) {
+		if (dstConf.useManualGeneratedObjectId() && !dstConf.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
 			transformedRec.getObjectId().asSimpleKey().setValue(dstConf.retriveNextRecordId(processor));
 		}
 		

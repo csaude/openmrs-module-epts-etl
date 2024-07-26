@@ -886,7 +886,7 @@ public class DBUtilities {
 		}
 	}
 	
-	public static List<Field> determineFieldsFromQuery(String query, Connection conn) throws DBException {
+	public static List<Field> determineFieldsFromQuery(String query, Object[] params, Connection conn) throws DBException {
 		List<Field> fields = new ArrayList<Field>();
 		
 		PreparedStatement st;
@@ -899,10 +899,12 @@ public class DBUtilities {
 			int qtyQuestionMarksOnQuery = getQtyQuestionMarksOnQuery(query);
 			
 			if (qtyQuestionMarksOnQuery > 0) {
-				Object[] params = new Object[qtyQuestionMarksOnQuery];
-				
-				for (int i = 0; i < qtyQuestionMarksOnQuery; i++) {
-					params[i] = null;
+				if (params == null) {
+					params = new Object[qtyQuestionMarksOnQuery];
+					
+					for (int i = 0; i < qtyQuestionMarksOnQuery; i++) {
+						params[i] = null;
+					}
 				}
 				
 				BaseDAO.loadParamsToStatment(st, params, conn);

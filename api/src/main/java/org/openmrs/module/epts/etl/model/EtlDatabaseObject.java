@@ -98,6 +98,8 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	boolean hasIgnoredParent();
 	
+	void save(TableConfiguration syncTableInfo, ConflictResolutionType onConflict, Connection conn) throws DBException;
+	
 	void save(TableConfiguration syncTableInfo, Connection conn) throws DBException;
 	
 	void update(TableConfiguration syncTableInfo, Connection conn) throws DBException;

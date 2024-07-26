@@ -180,6 +180,10 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.skipFinalDataVerification = skipFinalDataVerification;
 	}
 	
+	public boolean isSkipFinalDataVerification() {
+		return skipFinalDataVerification;
+	}
+	
 	public boolean isRunOnce() {
 		return runOnce;
 	}
