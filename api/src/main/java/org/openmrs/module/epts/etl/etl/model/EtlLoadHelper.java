@@ -157,6 +157,12 @@ public class EtlLoadHelper {
 		if (getEtlOperationConfig().writeOperationHistory()) {
 			EtlStageAreaObjectDAO.saveAll(getAllSuccessifulProcessedAsEtlStageAreaObject(srcConn, dstConn), srcConn);
 		}
+		
+		if (getEtlOperationConfig().getAfterEtlActionType().isDelete()) {
+			for (EtlLoadHelperRecord obj : getAllSuccessfullyProcessedRecords()) {
+				DatabaseObjectDAO.remove(obj.getSrcObject(), srcConn);
+			}
+		}
 	}
 	
 	private boolean hasUnresolvedError(DstConf dst) {

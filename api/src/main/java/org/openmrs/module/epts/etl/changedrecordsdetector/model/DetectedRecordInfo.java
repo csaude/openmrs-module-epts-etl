@@ -470,4 +470,11 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void save(TableConfiguration syncTableInfo, ConflictResolutionType onConflict, Connection conn)
+	        throws DBException {
+		// TODO Auto-generated method stub
+		
+	}
 }

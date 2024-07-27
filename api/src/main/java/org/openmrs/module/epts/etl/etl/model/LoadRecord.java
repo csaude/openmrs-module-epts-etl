@@ -15,6 +15,7 @@ import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -181,7 +182,8 @@ public class LoadRecord {
 				
 				recordAsSrc.copyFrom(parentInfo.getParentRecordInOrigin());
 				
-				dstParent = dst.getTransformerInstance().transform(this.getProcessor(), recordAsSrc, dst, srcConn, dstConn);
+				dstParent = dst.getTransformerInstance().transform(this.getProcessor(), recordAsSrc, dst,
+				    TransformationType.INNER, srcConn, dstConn);
 				
 				if (dstParent != null) {
 					
@@ -220,7 +222,14 @@ public class LoadRecord {
 				
 			}
 			
-			getDstRecord().changeParentValue(parentInfo.getParentTableConfInDst(), dstParent);
+			try {
+				getDstRecord().changeParentValue(parentInfo.getParentTableConfInDst(), dstParent);
+			}
+			catch (NullPointerException e) {
+				e.printStackTrace();
+				
+				throw e;
+			}
 		}
 	}
 	

@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.dbsync.model.SyncModel;
 import org.openmrs.module.epts.etl.dbsync.model.utils.JsonUtils;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
@@ -27,7 +28,8 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 	
 	@Override
 	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject rec,
-	        DstConf mappingInfo, Connection srcConn, Connection dstConn) throws DBException {
+	        DstConf mappingInfo, TransformationType transformationType, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		
 		TableConfiguration srcConf = (TableConfiguration) rec.getRelatedConfiguration();
 		
@@ -55,7 +57,7 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 		syncMessage.setFieldValue("dateCreated", rec.getFieldValue("dateCreated"));
 		
 		Integer id = (Integer) rec.getFieldValue("id");
-		Integer syncMsgMaxId = Integer.parseInt(mappingInfo.getRelatedEtlConf().getParamValue("syncMsgMaxId"));
+		Integer syncMsgMaxId = Integer.parseInt(mappingInfo.getRelatedEtlConf().getParamValue("idIncrementValue"));
 		
 		syncMessage.setFieldValue("id", (id + syncMsgMaxId));
 		

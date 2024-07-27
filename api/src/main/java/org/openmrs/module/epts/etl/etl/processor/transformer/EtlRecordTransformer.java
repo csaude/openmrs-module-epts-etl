@@ -11,5 +11,6 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 public interface EtlRecordTransformer {
 	
 	EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject, DstConf dstConf,
-	        Connection srcConn, Connection dstConn) throws DBException, ForbiddenOperationException;
+	        TransformationType transformationType, Connection srcConn, Connection dstConn)
+	        throws DBException, ForbiddenOperationException;
 }

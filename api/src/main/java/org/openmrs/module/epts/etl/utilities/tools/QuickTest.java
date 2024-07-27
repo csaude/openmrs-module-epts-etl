@@ -26,6 +26,7 @@ import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
+import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SimpleValue;
@@ -315,8 +316,8 @@ public class QuickTest {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.getTransformerInstance().transform(null, destObject, mappingInfo, srcConn,
-					    dstConn);
+					destObject = mappingInfo.getTransformerInstance().transform(null, destObject, mappingInfo,
+					    TransformationType.PRINCIPAL, srcConn, dstConn);
 					
 					if (destObject != null) {
 						destObject.loadObjectIdData(mappingInfo);

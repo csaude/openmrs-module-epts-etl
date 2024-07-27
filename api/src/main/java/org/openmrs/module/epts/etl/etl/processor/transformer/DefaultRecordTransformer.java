@@ -39,7 +39,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	
 	@Override
 	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject,
-	        DstConf dstConf, Connection srcConn, Connection dstConn) throws DBException, ForbiddenOperationException {
+	        DstConf dstConf, TransformationType transformationType, Connection srcConn, Connection dstConn)
+	        throws DBException, ForbiddenOperationException {
 		
 		processor.logTrace("Transforming dstRecord " + srcObject);
 		
@@ -56,7 +57,10 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			
 			if (relatedSrcObject == null) {
 				
-				if (mappingInfo.isRequired()) {
+				/*
+				 * If the transformation is not principal, then mean the record is being transformed as parent of other record. So we force the tranformation
+				 */
+				if (mappingInfo.isRequired() && transformationType.isPrincipal()) {
 					return null;
 				} else {
 					relatedSrcObject = mappingInfo.newInstance();
@@ -98,7 +102,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 				
 				recordAsSrc.copyFrom(srcObject.getSharedPkObj());
 				dstParent = sharedPkDstConf.getTransformerInstance().transform(processor, recordAsSrc, sharedPkDstConf,
-				    srcConn, dstConn);
+				    TransformationType.INNER, srcConn, dstConn);
 				
 				if (dstParent != null) {
 					

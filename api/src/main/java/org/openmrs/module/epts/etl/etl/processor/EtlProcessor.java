@@ -13,9 +13,9 @@ import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.etl.model.LoadingType;
+import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -63,7 +63,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 				
 				for (DstConf mappingInfo : getEtlItemConfiguration().getDstConf()) {
 					EtlDatabaseObject dstObject = mappingInfo.getTransformerInstance().transform(this, srcRecord,
-					    mappingInfo, srcConn, dstConn);
+					    mappingInfo, TransformationType.PRINCIPAL, srcConn, dstConn);
 					
 					if (dstObject != null) {
 						logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
@@ -82,10 +82,6 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			
 			loadHelper.load(srcConn, dstConn);
 			
-			logDebug("Performing after etl on " + etlObjects.size() + " records!");
-			
-			afterEtl(loadHelper.getAllSuccessfullyProcessedRecordsAsEtlObject(), srcConn, dstConn);
-			
 			logInfo("ETL OPERATION [" + getEtlItemConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size()
 			        + "' RECORDS");
 		}
@@ -99,13 +95,5 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 	
 	public LoadRecord initEtlRecord(EtlDatabaseObject srcObject, EtlDatabaseObject destObject, DstConf mappingInfo) {
 		return new LoadRecord(srcObject, destObject, getSrcConf(), mappingInfo, this);
-	}
-	
-	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
-		if (getRelatedEtlOperationConfig().getAfterEtlActionType().isDelete()) {
-			for (EtlObject obj : objs) {
-				DatabaseObjectDAO.remove((EtlDatabaseObject) obj, srcConn);
-			}
-		}
 	}
 }
