@@ -60,5 +60,9 @@ Here the extra extraction rules are defined by two elements: the "selfJoinTables
  - (1) Download the content of [this directory](extraction-rules).
 - (2) Edit the [conf.json](extraction-rules/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
 - (3) Run the [sql script](extraction-rules/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
-- (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)   
+- (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)
+
+#### The power of parameters
+Parameters allow the users to pass dynamic values to queries present on the etl item configuration. As stated (here)[https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#the-use-of-params-whithin-src-configuration] they can be used in 3 contexts namely: (1) as SELECT field, (2) in a COMPARISON clause (3) in "IN" clause and (4) as DB RESOURCE.
+In this demo we will try to ilustrate the power of parameters using an example which explore almost all the parameters contexts mentioned above.
 
