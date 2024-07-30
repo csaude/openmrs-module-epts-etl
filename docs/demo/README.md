@@ -46,7 +46,7 @@ To run this demo example follow the instructions below:
 - (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application) 
 
 #### Using complex extraction queries
-Sometime there is a need to use complex queries to define extraction rules. The below example illustrates the ETL configuration were additional rules for extraction. It is based on [this configuration file](extraction-rules/conf.json). Let's take a look at the database model and the complex extraction configuration. Take a look at the img below.
+Sometime there is a need to use complex queries to define extraction rules. The below example illustrates the ETL configuration were additional rules are used for extraction. It is based on [this configuration file](extraction-rules/conf.json). Let's take a look at the database model and the complex extraction configuration. Take a look at the img below.
 
  ![etl-transformation](extraction-rules/extraction_rules.png)
 
