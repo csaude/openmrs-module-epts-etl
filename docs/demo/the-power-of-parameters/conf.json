@@ -1,0 +1,47 @@
+{
+   "processType":"ETL",
+   "originAppLocationCode":"testing_etl_with_parameters",
+   "etlRootDirectory":"/path/to/any/directory",
+   "syncStageSchema":"etl_demo_stage_area",
+   "srcConnInfo":{
+      "dataBaseUserName":"",
+      "dataBaseUserPassword":"",
+      "connectionURI":"jdbc:mysql://localhost:3306/etl_demo_params_power_src_db?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true",
+      "driveClassName":"com.mysql.cj.jdbc.Driver"
+   },
+   "dstConnInfo":{
+      "dataBaseUserName":"",
+      "dataBaseUserPassword":"",
+      "connectionURI":"jdbc:mysql://localhost:3306/etl_demo_params_power_dst_db?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true",
+      "driveClassName":"com.mysql.cj.jdbc.Driver"
+   },
+   "operations":[
+      {
+         "operationType":"ETL",
+         "processingBatch":1000,
+         "maxSupportedProcessors":1,
+         "processingMode":"SERIAL",
+         "dstType":"db"
+      }
+   ],
+   "etlItemConfiguration":[
+      {
+         "srcConf":{
+            "tableName":"system_table",
+            "extraQueryDataSource":[
+               {
+                  "name":"records_on_src",
+                  "query":"select count(*) as qty_records_on_src, @originAppLocationCode as source_db, @table_name as table_name from @table_name"
+               },
+               {
+                  "name":"records_on_dst",
+                  "query":"select count(*) as qty_records_on_dst from @table_name src inner join etl_demo_params_power_dst_db.@table_name dst on dst.@unique_key_field = src.@unique_key_field"
+               }
+            ]
+         },
+         "dstConf":{
+            "tableName":"table_info"
+         }
+      }
+   ]
+}
