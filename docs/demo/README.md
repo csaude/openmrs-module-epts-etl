@@ -26,7 +26,7 @@ Let's take a look at the configuration file. We will be focused on "etlItemConfi
  - (1) Download the content of [this directory](etl-with-transformation).
 - (2) Edit the [conf.json](etl-with-transformation/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
 - (3) Run the [sql script](etl-with-transformation/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
-- (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application) 
+- (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application). 
 
 #### Etl with transformation (Using query datasource)
 This example demonstrates how to perform a transformation on the ETL process using a sql query as additional data source. This example is similar to the previous one since the data models are the same, but in this case we will be using "extraQueryDataSource" instead of "extraTableDataSource". Note that sometimes we can use both in some cases. The process is based on [this configuration file](etl-with-query-data-source/conf.json).
