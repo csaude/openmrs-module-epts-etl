@@ -93,15 +93,17 @@ In this ETL we have "system_table" as the main source table. Our destination tab
 - (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)
 
 #### Exploring the Field Transformer
-A transformer allows custom transformation to a destination field through a java code. There are some field transformers that can be used out of the box, namely (1) the **ArithmeticFieldTransformer** which allow the evaluation of arithmetic expressions (2) **StringTranformer** which allow the transformation through string methods and (3) the SimpleValueTranformer which allow the direct transformation of srcValue.  In this section we will illustrate the use of these transformers.
-In this demo we will generate a *Monthly Payslip* based on data contained in src tables and some transformations on these data. The image below shows the involved tables and the result we want to accompablish.
+A transformer allows custom transformation to a destination field through a java code. There are some field transformers that can be used out of the box, namely (1) the **ArithmeticFieldTransformer** which allow the evaluation of arithmetic expressions (2) **StringTranformer** which allow the transformation through string methods and (3) the **SimpleValueTranformer** which allow the direct transformation of srcValue.  In this section we will illustrate the use of these transformers.
+In this demo we will generate a *Monthly Payslip* based on data contained in src tables and some transformations on these data. The image below shows the involved tables and the result we want to accomplish.
 
 ![transformation-with-transformers](out-of-the-box-transformers/payslip.png)
 
-We will be using [this configuration file](out-of-the-box-transformers/conf.json) and below we hightlight the "dstConf"
+We will be using [this configuration file](out-of-the-box-transformers/conf.json) and below we highlight the "dstConf"
 
 ![transformation-with-transformers](out-of-the-box-transformers/out-of-box-transformers.png)
 
-
+- (1) here we do the necessary transformation to fill the field "pos" in the report. We are using *ArithmeticFieldTransformer*. The value we want to evaluate is contained in the field "srcValue". Note the presence of 3 parameters @year and @month which will be picked from the configuration parameters, @id which will be picked from the main src object.
+- (2) here we do the necessary transformation to fill the field "full_month" in the report. Here we are using the *SimpleValueTranformer*. Note that we omitted the transformer as it will be automatically detected by the application. The *SimpleValueTranformer* allow the transformation of constant values or values from parameters.
+- (3) here we use *StringTransformer*      
 
 
