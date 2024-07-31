@@ -92,7 +92,15 @@ In this ETL we have "system_table" as the main source table. Our destination tab
 - (3) Run the [sql script](the-power-of-parameters/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
 - (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)
 
+#### Exploring the Field Transformer
+A transformer allows custom transformation to a destination field through a java code. There are some field transformers that can be used out of the box, namely (1) the **ArithmeticFieldTransformer** which allow the evaluation of arithmetic expressions (2) **StringTranformer** which allow the transformation through string methods and (3) the SimpleValueTranformer which allow the direct transformation of srcValue.  In this section we will illustrate the use of these transformers.
+In this demo we will generate a *Monthly Payslip* based on data contained in src tables and some transformations on these data. The image below shows the involved tables and the result we want to accompablish.
 
+![transformation-with-transformers](out-of-the-box-transformers/payslip.png)
+
+We will be using [this configuration file](out-of-the-box-transformers/conf.json) and below we hightlight the "dstConf"
+
+![transformation-with-transformers](out-of-the-box-transformers/out-of-box-transformers.png)
 
 
 
