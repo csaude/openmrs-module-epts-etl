@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -15,78 +14,48 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class StringTranformer implements EtlFieldTransformer {
 	
+	private static StringTranformer defaultTransformer;
+	
+	private static final String LOCK_STRING = "LOCK_STRING";
+	
+	private StringTranformer() {
+	}
+	
+	public static StringTranformer getInstance() {
+		if (defaultTransformer != null)
+			return defaultTransformer;
+		
+		synchronized (LOCK_STRING) {
+			if (defaultTransformer != null)
+				return defaultTransformer;
+			
+			defaultTransformer = new StringTranformer();
+			
+			return defaultTransformer;
+		}
+	}
+	
 	@Override
 	public void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects,
 	        FieldsMapping fieldsMapping, Connection srcConn, Connection dstConn)
 	        throws DBException, ForbiddenOperationException {
 		
-		tryToReplaceParametersOnExpression(srcObjects, fieldsMapping);
-		
-		Object dstValue = null;
-		
-		if (fieldsMapping.isMapToNullValue()) {
-			dstValue = null;
-		} else if (fieldsMapping.getSrcValue() != null) {
-			
-			try {
-				dstValue = evaluateStringExpression(fieldsMapping.getSrcValue());
-			}
-			catch (Exception e) {
-				throw new EtlExceptionImpl("Failed to evaluate the string expression: " + fieldsMapping.getSrcValue(), e);
-			}
-		} else {
+		if (fieldsMapping.getSrcValue() == null) {
 			throw new ForbiddenOperationException("Source value must be provided for String transformation.");
 		}
 		
-		transformedRecord.setFieldValue(fieldsMapping.getDstField(), dstValue);
-	}
-	
-	private void tryToReplaceParametersOnExpression(List<EtlDatabaseObject> srcObjects, FieldsMapping fieldsMapping)
-	        throws ForbiddenOperationException {
+		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, fieldsMapping);
 		
-		String expression = fieldsMapping.getSrcValue();
+		Object dstValue = null;
 		
-		Pattern pattern = Pattern.compile("@(\\w+)");
-		Matcher matcher = pattern.matcher(expression);
-		
-		StringBuffer buffer = new StringBuffer();
-		
-		while (matcher.find()) {
-			String paramName = matcher.group(1);
-			Object paramValue = null;
-			
-			boolean found = false;
-			
-			for (EtlDatabaseObject srcObject : srcObjects) {
-				
-				try {
-					paramValue = srcObject.getFieldValue(paramName);
-					
-					found = true;
-				}
-				catch (ForbiddenOperationException e) {
-					//Continue
-				}
-				
-				break;
-			}
-			
-			if (!found) {
-				EtlConfiguration conf = srcObjects.get(0).getRelatedConfiguration().getRelatedEtlConf();
-				
-				paramValue = conf.getParamValue(paramName);
-			}
-			
-			if (paramValue == null) {
-				throw new ForbiddenOperationException("Parameter '" + paramName + "' not found in source objects.");
-			}
-			
-			matcher.appendReplacement(buffer, paramValue.toString());
+		try {
+			dstValue = evaluateStringExpression(srcValueWithParamsReplaced);
+		}
+		catch (Exception e) {
+			throw new EtlExceptionImpl("Failed to evaluate the string expression: " + fieldsMapping.getSrcValue(), e);
 		}
 		
-		matcher.appendTail(buffer);
-		
-		fieldsMapping.setSrcValue(buffer.toString());
+		transformedRecord.setFieldValue(fieldsMapping.getDstField(), dstValue);
 	}
 	
 	private Object evaluateStringExpression(String expression) throws Exception {

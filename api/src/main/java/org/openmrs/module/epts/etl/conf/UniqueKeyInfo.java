@@ -311,6 +311,11 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	public boolean hasSameFields(UniqueKeyInfo other) {
+		
+		if (!this.hasFields() || !other.hasFields()) {
+			return false;
+		}
+		
 		for (Field field : this.getFields()) {
 			if (!other.getFields().contains(field))
 				return false;

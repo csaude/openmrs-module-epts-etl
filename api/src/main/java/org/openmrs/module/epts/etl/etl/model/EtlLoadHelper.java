@@ -334,6 +334,25 @@ public class EtlLoadHelper {
 	 * @throws ParentNotYetMigratedException
 	 * @throws MissingParentException
 	 */
+	public void beforeLoadToFile(DstConf dstConf, Connection srcConn, Connection dstConn)
+	        throws DBException, ParentNotYetMigratedException, MissingParentException {
+		
+		this.logDebug("Preparing the load of " + this.qtyRecordsToLoad());
+		
+		for (LoadRecord loadRecord : this.getAllRecordsAsLoadRecord(dstConf)) {
+			loadRecord.setStatus(LoadStatus.READY);
+		}
+	}
+	
+	/**
+	 * @param srcConn
+	 * @param dstConn
+	 * @param objects
+	 * @param processedRecords
+	 * @throws DBException
+	 * @throws ParentNotYetMigratedException
+	 * @throws MissingParentException
+	 */
 	public void beforeLoadToDb(DstConf dstConf, Connection srcConn, Connection dstConn)
 	        throws DBException, ParentNotYetMigratedException, MissingParentException {
 		
@@ -428,6 +447,12 @@ public class EtlLoadHelper {
 	}
 	
 	public void loadToFile(DstConf dstConf) throws ParentNotYetMigratedException, DBException {
+		this.logDebug("Preparing the load of " + this.qtyRecordsToLoad());
+		
+		for (LoadRecord loadRecord : this.getAllRecordsAsLoadRecord(dstConf)) {
+			loadRecord.setStatus(LoadStatus.READY);
+		}
+		
 		List<EtlDatabaseObject> objs = getReadyOBjectsAsEtlDatabaseObject(dstConf);
 		
 		String dataFile = getEngine().getDataDir().getAbsolutePath() + File.separator + objs.get(0).generateTableName();

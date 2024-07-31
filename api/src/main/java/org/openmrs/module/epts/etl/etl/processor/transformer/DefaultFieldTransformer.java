@@ -3,19 +3,15 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
  * The default field transformer which is based on fields mapping
  */
 public class DefaultFieldTransformer implements EtlFieldTransformer {
-	
-	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private static DefaultFieldTransformer defaultTransformer;
 	
@@ -47,19 +43,6 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 		
 		if (fieldsMapping.isMapToNullValue()) {
 			dstValue = null;
-		} else if (fieldsMapping.getSrcValue() != null) {
-			
-			//We assume that all the parameters refers to configuration params because if not then the value will be configured as "srcField"
-			if (fieldsMapping.getSrcValue().startsWith("@")) {
-				String paramName = utilities.removeCharactersOnString(fieldsMapping.getSrcValue(), "@");
-				
-				EtlConfiguration conf = srcObjects.get(0).getRelatedConfiguration().getRelatedEtlConf();
-				
-				fieldsMapping.setSrcValue(conf.getParamValue(paramName));
-			}
-			
-			dstValue = utilities.parseValue(fieldsMapping.getSrcValue(),
-			    transformedRecord.getFieldType(fieldsMapping.getDstField()));
 		} else {
 			
 			boolean found = false;

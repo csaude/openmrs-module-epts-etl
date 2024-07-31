@@ -7,6 +7,8 @@ import org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTran
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.SimpleValueTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -156,9 +158,9 @@ public class FieldsMapping {
 	public void tryToLoadTransformer(Connection conn) {
 		if (this.hasTransformer()) {
 			
-			if (this.getTransformer().equals(EtlFieldTransformer.DEFAULT_TRANSFORMER)) {
-				this.setTransformer(DefaultFieldTransformer.class.getCanonicalName());
-				this.setTransformerInstance(DefaultFieldTransformer.getInstance());
+			if (this.getTransformer().equals(EtlFieldTransformer.STRING_TRANSFORMER)) {
+				this.setTransformer(StringTranformer.class.getCanonicalName());
+				this.setTransformerInstance(StringTranformer.getInstance());
 			} else if (this.getTransformer().equals(EtlFieldTransformer.ARITHMETIC_TRANSFORMER)) {
 				this.setTransformer(ArithmeticFieldTransformer.class.getCanonicalName());
 				this.setTransformerInstance(ArithmeticFieldTransformer.getInstance());
@@ -176,6 +178,9 @@ public class FieldsMapping {
 					        "Error loading transformer class [" + this.getTransformer() + "]!!! " + e.getLocalizedMessage());
 				}
 			}
+		} else if (this.getSrcValue() != null) {
+			this.setTransformer(SimpleValueTransformer.class.getCanonicalName());
+			this.setTransformerInstance(SimpleValueTransformer.getInstance());
 		} else {
 			this.setTransformer(DefaultFieldTransformer.class.getCanonicalName());
 			

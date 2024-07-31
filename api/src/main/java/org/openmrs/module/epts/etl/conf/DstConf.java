@@ -301,14 +301,8 @@ public class DstConf extends AbstractTableConfiguration {
 	        throws FieldNotAvaliableInAnyDataSource, FieldAvaliableInMultipleDataSources {
 		int qtyOccurences = 0;
 		
-		if (fm.getSrcValue() != null) {
-			
-			if (fm.getSrcValue().isEmpty() || fm.getSrcValue().equals("null")) {
-				fm.setMapToNullValue(true);
-			}
-			
+		if (fm.getSrcValue() != null || fm.isMapToNullValue()) {
 			return;
-			
 		}
 		
 		if (!fm.useDefaultTransformer()) {
