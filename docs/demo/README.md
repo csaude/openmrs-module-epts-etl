@@ -26,7 +26,7 @@ Let's take a look at the configuration file. We will be focused on "etlItemConfi
  - (1) Download the content of [this directory](etl-with-transformation).
 - (2) Edit the [conf.json](etl-with-transformation/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
 - (3) Run the [sql script](etl-with-transformation/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
-- (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application) 
+- (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application). 
 
 #### Etl with transformation (Using query datasource)
 This example demonstrates how to perform a transformation on the ETL process using a sql query as additional data source. This example is similar to the previous one since the data models are the same, but in this case we will be using "extraQueryDataSource" instead of "extraTableDataSource". Note that sometimes we can use both in some cases. The process is based on [this configuration file](etl-with-query-data-source/conf.json).
@@ -63,6 +63,37 @@ Here the extra extraction rules are defined by two elements: the "selfJoinTables
 - (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)
 
 #### The power of parameters
-Parameters allow the users to pass dynamic values to queries present on the etl item configuration. As stated (here)[https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#the-use-of-params-whithin-src-configuration] they can be used in 3 contexts namely: (1) as SELECT field, (2) in a COMPARISON clause (3) in "IN" clause and (4) as DB RESOURCE.
-In this demo we will try to ilustrate the power of parameters using an example which explore almost all the parameters contexts mentioned above.
+Parameters allow users to pass dynamic values to queries within the ETL item configuration. As detailed (here)[https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#the-use-of-params-whithin-src-configuration] , parameters can be utilized in four contexts: (1) as a SELECT field, (2) in a COMPARISON clause, (3) in an "IN" clause, and (4) as a DB RESOURCE.
+
+In this demo, we will illustrate the versatility of parameters with an example that covers nearly all the contexts mentioned above.
+
+Imagine we want to compare the record counts between tables from two databases, "A" and "B". Each database contains three tables: "office," "person," and "address." The image below depicts the data model for these databases.
+
+ ![data-model](the-power-of-parameters/power_of_parameters_data_model.png)
+
+To iterate through all the tables in the data model, we have added an auxiliary table called "system_table." This table lists all the tables we want to check and specifies the unique identifier field for each table, which serves as the join field between the source and destination tables. This example assumes a simple scenario where the unique key is composed of a single field. If the unique key comprised multiple fields, we might need to include additional columns for the unique key fields.
+
+Additionally, we have included a table ("table_info") in the destination database to store the verification results.
+
+Now, let's define the transformation rules. Our main source table is "system_table," and the destination table is "table_info." The image below highlights the use of parameters.
+
+ ![etl-conf-file](the-power-of-parameters/etl_with_parameters.png)
+
+In this ETL we have "system_table" as the main source table. Our destination table is "table_info". We are using two "extraQueryDataSource" to extract the count from the source table and destination table. Note that for each record from the "system_table" we use the field "table_name" as parameter to "extraQueryDataSource". Lets explain each parameter present on the queries
+- (1) originAppLocationCode: here we use a parameter as a SELECT field; the value for this parameter is present on the configuration file;
+- (2) table_name: here the parameter is used again as a SELECT field; the value will be picked up from the main source table. We intentionally put this field here in the "extraQueryDataSource" just for illustration, since this field is present on the main source table and will be automatically be mapped.
+- (3) table_name: here the parameter is used in a context of DB_RESOURCE which is a table resource;
+- (4) table_name: again here the parameter is used in a context of DB_RESOURCE;
+- (5) and (6) unique_key_field: here the parameter is used as DB_RESOURCE of type field.   
+
+  To run this demo example follow the instrunctions below:
+ - (1) Download the content of [this directory](the-power-of-parameters).
+- (2) Edit the [conf.json](the-power-of-parameters/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
+- (3) Run the [sql script](the-power-of-parameters/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
+- (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)
+
+
+
+
+
 
