@@ -63,7 +63,7 @@ Here the extra extraction rules are defined by two elements: the "selfJoinTables
 - (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)
 
 #### The power of parameters
-Parameters allow users to pass dynamic values to queries within the ETL item configuration. As detailed (here)[https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#the-use-of-params-whithin-src-configuration] , parameters can be utilized in four contexts: (1) as a SELECT field, (2) in a COMPARISON clause, (3) in an "IN" clause, and (4) as a DB RESOURCE.
+Parameters allow users to pass dynamic values to queries within the ETL item configuration. As detailed [here](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#the-use-of-params-whithin-src-configuration) , parameters can be utilized in four contexts: (1) as a SELECT field, (2) in a COMPARISON clause, (3) in an "IN" clause, and (4) as a DB RESOURCE.
 
 In this demo, we will illustrate the versatility of parameters with an example that covers nearly all the contexts mentioned above.
 
