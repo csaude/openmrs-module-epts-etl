@@ -4,6 +4,9 @@ NOTE that All the demo examples use mysql as dbms, but you can change the db con
 
 #### Simple etl process.
 This example shows the basic ETL process where the records from one database are copied to the destination database. This is a very basic process because there is no transformation between the processes. The src and dst structure is the very same between the two databases.
+
+![quick-demo-data-model](quick-demo/datamodel.png)
+
 To run this demo follow the instructions below:
 - (1) Download the content of [this directory](quick-demo).
 - (2) Edit the [conf.json](quick-demo/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
