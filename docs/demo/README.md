@@ -63,7 +63,7 @@ Here the extra extraction rules are defined by two elements: the "selfJoinTables
 - (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)
 
 #### The power of parameters
-Parameters allow users to pass dynamic values to queries within the ETL item configuration. As detailed (here)[https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#the-use-of-params-whithin-src-configuration] , parameters can be utilized in four contexts: (1) as a SELECT field, (2) in a COMPARISON clause, (3) in an "IN" clause, and (4) as a DB RESOURCE.
+Parameters allow users to pass dynamic values to queries within the ETL item configuration. As detailed [here](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#the-use-of-params-whithin-src-configuration) , parameters can be utilized in four contexts: (1) as a SELECT field, (2) in a COMPARISON clause, (3) in an "IN" clause, and (4) as a DB RESOURCE.
 
 In this demo, we will illustrate the versatility of parameters with an example that covers nearly all the contexts mentioned above.
 
@@ -80,11 +80,12 @@ Now, let's define the transformation rules. Our main source table is "system_tab
  ![etl-conf-file](the-power-of-parameters/etl_with_parameters.png)
 
 In this ETL we have "system_table" as the main source table. Our destination table is "table_info". We are using two "extraQueryDataSource" to extract the count from the source table and destination table. Note that for each record from the "system_table" we use the field "table_name" as parameter to "extraQueryDataSource". Lets explain each parameter present on the queries
-- (1) originAppLocationCode: here we use a parameter as a SELECT field; the value for this parameter is present on the configuration file;
+- (1) originAppLocationCode: here we use a parameter as a SELECT field; the value for this parameter is present on the configuration fields (highlighted field);
 - (2) table_name: here the parameter is used again as a SELECT field; the value will be picked up from the main source table. We intentionally put this field here in the "extraQueryDataSource" just for illustration, since this field is present on the main source table and will be automatically be mapped.
 - (3) table_name: here the parameter is used in a context of DB_RESOURCE which is a table resource;
 - (4) table_name: again here the parameter is used in a context of DB_RESOURCE;
 - (5) and (6) unique_key_field: here the parameter is used as DB_RESOURCE of type field.   
+
 
   To run this demo example follow the instrunctions below:
  - (1) Download the content of [this directory](the-power-of-parameters).
@@ -92,8 +93,21 @@ In this ETL we have "system_table" as the main source table. Our destination tab
 - (3) Run the [sql script](the-power-of-parameters/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
 - (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)
 
+#### Exploring the Field Transformer
+A transformer allows custom transformation to a destination field through a java code. There are some field transformers that can be used out of the box, namely (1) the **ArithmeticFieldTransformer** which allow the evaluation of arithmetic expressions (2) **StringTranformer** which allow the transformation through string methods and (3) the **SimpleValueTranformer** which allow the direct transformation of srcValue.  In this section we will illustrate the use of these transformers.
+In this demo we will generate a *Monthly Payslip* based on data contained in src tables and some transformations on these data. The image below shows the involved tables and the result we want to accomplish.
 
+![transformation-with-transformers](out-of-the-box-transformers/payslip.png)
 
+We will be using [this configuration file](out-of-the-box-transformers/conf.json) and below we highlight the "dstConf"
 
+![transformation-with-transformers](out-of-the-box-transformers/out-of-box-transformers.png)
+
+Below is explained the use of each tranformer:
+
+- (1) here we do the necessary transformation to fill the field "pos" in the report. We are using **ArithmeticFieldTransformer**. The value we want to evaluate is contained in the field "srcValue". Note the presence of 3 parameters: @year and @month, which will be picked from the configuration params, and @id, which will be picked from the main src object.
+- (2) here we do the necessary transformation to fill the field "full_month" in the report. Here we are using the **SimpleValueTransformer**. Note that we omitted the transformer as it will be automatically detected by the application. The *SimpleValueTransformer* allows the transformation of constant values or values from parameters.
+- (3) here we use **StringTransformer** to change the full_name to upperCase. Note that we put the expression we want to transform within the "()". When we use the *StringTransformer* we must always invoke a method which returns a value; otherwise, an exception will occur.
+- (4) here we use a **ArithmeticFieldTransformer** again to determine the salary.
 
 
