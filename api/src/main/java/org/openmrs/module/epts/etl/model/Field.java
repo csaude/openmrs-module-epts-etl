@@ -43,7 +43,11 @@ public class Field implements Serializable {
 	
 	private boolean timeStamp;
 	
+	private TypePrecision precision;
+	
 	private Class<?> typeClass;
+	
+	private boolean autoIncrement;
 	
 	public Field() {
 	}
@@ -54,6 +58,15 @@ public class Field implements Serializable {
 	
 	public void setTypeClass(Class<?> typeClass) {
 		this.typeClass = typeClass;
+	}
+	
+	@JsonIgnore
+	public TypePrecision getPrecision() {
+		return precision;
+	}
+	
+	public void setPrecision(TypePrecision precision) {
+		this.precision = precision;
 	}
 	
 	@JsonIgnore
@@ -465,6 +478,35 @@ public class Field implements Serializable {
 		} else {
 			this.setTypeClass(Object.class);
 		}
+	}
+	
+	public void setAutoIncrement(boolean autoIncrement) {
+		this.autoIncrement = autoIncrement;
+	}
+	
+	public boolean isAutoIncrement() {
+		return autoIncrement;
+	}
+	
+	public boolean isTextField() {
+		return utilities.isStringIn(this.getType(), "TEXT");
+	}
+	
+	public boolean isClob() {
+		return AttDefinedElements.isClob(this.getType());
+	}
+	
+	public boolean isDecimalField() {
+		return AttDefinedElements.isDecimal(this.getType());
+	}
+	
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		Field field = new Field();
+		
+		field.copyFrom(this);
+		
+		return field;
 	}
 	
 }

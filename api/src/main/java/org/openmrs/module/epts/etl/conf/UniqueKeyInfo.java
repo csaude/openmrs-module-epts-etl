@@ -244,7 +244,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 			return false;
 		} else {
 			
-			if (!uk.contained(uniqueKeys)) {
+			if (!uk.isContained(uniqueKeys)) {
 				uniqueKeys.add(uk);
 			}
 			
@@ -252,7 +252,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		}
 	}
 	
-	private boolean contained(List<UniqueKeyInfo> uniqueKeys) {
+	public boolean isContained(List<UniqueKeyInfo> uniqueKeys) {
 		if (!utilities.arrayHasElement(uniqueKeys)) {
 			return false;
 		}

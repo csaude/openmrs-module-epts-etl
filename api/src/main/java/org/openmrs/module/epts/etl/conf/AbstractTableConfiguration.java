@@ -317,6 +317,10 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	public void setPrimaryKey(PrimaryKey primaryKey) {
 		this.primaryKey = primaryKey;
+		
+		if (hasPK()) {
+			this.getPrimaryKey().setTabConf(this);
+		}
 	}
 	
 	public boolean isAllRelatedTablesFullLoaded() {

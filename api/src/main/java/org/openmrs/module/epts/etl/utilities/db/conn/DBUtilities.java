@@ -23,6 +23,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.model.TypePrecision;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
@@ -1116,6 +1117,10 @@ public class DBUtilities {
 				
 				field.setAllowNull(rsMetaData.isNullable(i) == ResultSetMetaData.columnNullable);
 				
+				field.setPrecision(TypePrecision.init(rsMetaData.getPrecision(i), rsMetaData.getScale(i)));
+				
+				field.setAutoIncrement(rsMetaData.isAutoIncrement(i));
+				
 				fields.add(field);
 			}
 			
@@ -1158,8 +1163,18 @@ public class DBUtilities {
 		return fieldName + " text " + constraint;
 	}
 	
-	public static String generateTableIntegerField(String fieldName, String constraint, Connection conn) throws DBException {
-		return fieldName + " INTEGER " + constraint;
+	public static String generateTableClobField(String fieldName, String constraint, Connection conn) throws DBException {
+		return fieldName + " MEDIUMBLOB " + constraint;
+	}
+	
+	public static String generateTableIntegerField(String fieldName, int precision, String constraint, Connection conn)
+	        throws DBException {
+		return fieldName + " INTEGER (" + precision + ")" + constraint;
+	}
+	
+	public static String generateTableDecimalField(String fieldName, int precision, int scale, String constraint,
+	        Connection conn) throws DBException {
+		return fieldName + " DECIMAL (" + precision + ", " + scale + ")" + constraint;
 	}
 	
 	public static String generateTableNumericField(String fieldName, int precision, String constraint, Number defaultValue,

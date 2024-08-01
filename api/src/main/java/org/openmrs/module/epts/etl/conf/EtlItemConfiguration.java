@@ -37,7 +37,21 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	 */
 	private String manualMapPrimaryKeyOnField;
 	
+	private boolean createDstTableIfNotExists;
+	
 	public EtlItemConfiguration() {
+	}
+	
+	public void setCreateDstTableIfNotExists(boolean createDstTableIfNotExists) {
+		this.createDstTableIfNotExists = createDstTableIfNotExists;
+	}
+	
+	public boolean isCreateDstTableIfNotExists() {
+		return createDstTableIfNotExists;
+	}
+	
+	public boolean createDstTableIfNotExists() {
+		return this.isCreateDstTableIfNotExists();
 	}
 	
 	public String getManualMapPrimaryKeyOnField() {
@@ -109,7 +123,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		try {
 			if (!this.hasDstConf()) {
-				this.generateDefaultDstConf();
+				this.setDstConf(DstConf.generateDefaultDstConf(this));
 			}
 			
 			if (this.hasDstConf()) {
@@ -186,7 +200,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				dstConn = this.getRelatedEtlConf().openDstConn();
 				
 				if (!this.hasDstConf()) {
-					this.generateDefaultDstConf();
+					this.setDstConf(DstConf.generateDefaultDstConf(this));
 				}
 				
 				for (DstConf map : this.getDstConf()) {
@@ -211,6 +225,19 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 					}
 					
 					map.generateAllFieldsMapping(dstConn);
+				}
+			} else {
+				if (hasDstConf()) {
+					//Force the dstConf to be inMemory
+					
+					for (DstConf dstConf : this.getDstConf()) {
+						if (dstConf.hasMapping()) {
+							
+						} else {
+							
+						}
+					}
+					
 				}
 			}
 			
@@ -354,38 +381,4 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return null;
 	}
 	
-	public void generateDefaultDstConf() throws DBException {
-		OpenConnection dstConn;
-		
-		if (!hasDstConf()) {
-			
-			dstConn = getRelatedEtlConf().openDstConn();
-			try {
-				DstConf map = new DstConf();
-				
-				map.setTableName(this.getSrcConf().getTableName());
-				map.setObservationDateFields(getSrcConf().getObservationDateFields());
-				map.setRemoveForbidden(this.getSrcConf().isRemoveForbidden());
-				map.setSchema(dstConn.getSchema());
-				map.setAutomaticalyGenerated(true);
-				map.setOnConflict(getSrcConf().onConflict());
-				map.setRelatedConnInfo(getRelatedEtlConf().getDstConnInfo());
-				map.setWinningRecordFieldsInfo(getSrcConf().getWinningRecordFieldsInfo());
-				map.setRelatedEtlConfig(getRelatedEtlConf());
-				map.setManualMapPrimaryKeyOnField(getSrcConf().getManualMapPrimaryKeyOnField());
-				
-				map.setParentConf(this);
-				map.setDstType(getSrcConf().getDstType());
-				
-				if (!map.isAutomaticalyGenerated()) {
-					map.loadSchemaInfo(dstConn);
-				}
-				
-				this.setDstConf(utilities.parseToList(map));
-			}
-			catch (SQLException e) {
-				throw new DBException(e);
-			}
-		}
-	}
 }

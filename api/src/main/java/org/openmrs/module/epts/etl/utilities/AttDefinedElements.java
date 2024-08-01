@@ -408,9 +408,9 @@ public class AttDefinedElements {
 			return "Short";
 		if (utilities.isStringIn(databaseType, "BIGINT", "INT8", "SERIAL"))
 			return "Long";
-		if (utilities.isStringIn(databaseType, "DECIMAL", "NUMERIC", "SMALLINT", "REAL", "DOUBLE"))
+		if (utilities.isStringIn(databaseType, "DECIMAL", "NUMERIC", "REAL", "DOUBLE"))
 			return "Double";
-		if (utilities.isStringIn(databaseType, "FLOAT", "NUMERIC", "SMALLINT"))
+		if (utilities.isStringIn(databaseType, "FLOAT", "NUMERIC"))
 			return "Float";
 		if (utilities.isStringIn(databaseType, "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT"))
 			return "String";
@@ -420,6 +420,10 @@ public class AttDefinedElements {
 			return "java.util.Date";
 		
 		throw new ForbiddenOperationException("Unknown data type for field " + fieldName + " [" + databaseType + "]");
+	}
+	
+	public static boolean isClob(String type) {
+		return utilities.isStringIn(type, "java.io.InputStream", "[B", "MEDIUMBLOB", "VARBINARY", "BLOB", "LONGBLOB");
 	}
 	
 	public static boolean isDateType(String type) {
@@ -453,6 +457,11 @@ public class AttDefinedElements {
 	
 	public static boolean isLong(String type) {
 		return utilities.isStringIn(type.toLowerCase(), "long", "java.lang.long");
+	}
+	
+	public static boolean isDecimal(String type) {
+		return utilities.isStringIn(type.toUpperCase(), "JAVA.LANG.DOUBLE", "FLOAT", "JAVA.LANG.FLOAT", "DECIMAL", "NUMERIC",
+		    "REAL", "DOUBLE");
 	}
 	
 }

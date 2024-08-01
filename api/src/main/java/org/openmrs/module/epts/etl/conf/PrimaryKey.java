@@ -14,6 +14,15 @@ public class PrimaryKey extends UniqueKeyInfo {
 		super(tabConf);
 	}
 	
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		PrimaryKey cloned = new PrimaryKey();
+		
+		cloned.copy(this);
+		
+		return cloned;
+	}
+	
 	public boolean isSimpleNumericKey() {
 		return isSimpleKey() && retrieveSimpleKey().isNumericColumnType();
 	}

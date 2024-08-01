@@ -28,7 +28,22 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	private EtlDstType dstType;
 	
+	/**
+	 * The fields involved in ETL process for this srcConf. Note that when the dstConf is not
+	 * configured on related {@link EtlItemConfiguration}, then this fields will automatically
+	 * mapped to target table
+	 */
+	private List<EtlField> etlFields;
+	
 	public SrcConf() {
+	}
+	
+	public List<EtlField> getEtlFields() {
+		return etlFields;
+	}
+	
+	public void setEtlFields(List<EtlField> etlFields) {
+		this.etlFields = etlFields;
 	}
 	
 	public EtlDstType getDstType() {
@@ -184,6 +199,19 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 				for (QueryDataSourceConfig query : this.getExtraQueryDataSource()) {
 					query.setRelatedSrcConf(this);
 					query.fullLoad(srcConn);
+				}
+			}
+			
+			if (utilities.arrayHasNoElement(this.getEtlFields())) {
+				if (hasExtraDataSource()) {
+					this.setEtlFields(EtlField.converteFromDataSourceFields(this));
+					
+					for (EtlDataSource ds : this.getAvaliableExtraDataSource()) {
+						this.getEtlFields().addAll(EtlField.converteFromDataSourceFields(ds));
+					}
+				} else {
+					//Preserve the original names if there is only the main ds
+					this.setEtlFields(EtlField.converteFromDataSourceFields(this.getFields()));
 				}
 			}
 		}

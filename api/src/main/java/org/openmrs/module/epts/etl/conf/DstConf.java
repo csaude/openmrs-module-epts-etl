@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.conf;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -13,8 +14,11 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultRecordTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
 import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
+import org.openmrs.module.epts.etl.exceptions.FieldsMappingExceprion;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -67,7 +71,35 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private EtlRecordTransformer transformerInstance;
 	
+	private boolean inMemoryTable;
+	
+	/**
+	 * If true, when the table does not exists, it will be created with all fields from datasource +
+	 * the fields defined on mapping
+	 */
+	private boolean includeAllFieldsFromDataSource;
+	
 	public DstConf() {
+	}
+	
+	public DstConf(String tableName) {
+		setTableName(tableName);
+	}
+	
+	public boolean isIncludeAllFieldsFromDataSource() {
+		return includeAllFieldsFromDataSource;
+	}
+	
+	public void setIncludeAllFieldsFromDataSource(boolean includeAllFieldsFromDataSource) {
+		this.includeAllFieldsFromDataSource = includeAllFieldsFromDataSource;
+	}
+	
+	public boolean isInMemoryTable() {
+		return inMemoryTable;
+	}
+	
+	public void setInMemoryTable(boolean inMemoryTable) {
+		this.inMemoryTable = inMemoryTable;
 	}
 	
 	public EtlRecordTransformer getTransformerInstance() {
@@ -184,27 +216,18 @@ public class DstConf extends AbstractTableConfiguration {
 		return getTransformerInstance() instanceof DefaultRecordTransformer;
 	}
 	
-	public void generateAllFieldsMapping(Connection conn) throws DBException {
-		if (!useDefaultTransformer()) {
-			return;
-		}
+	private FieldsMappingIssues loadConfiguredMappingAdditionalInfo(Connection conn) throws DBException {
+		FieldsMappingIssues mappingProblem = null;
 		
-		this.allMapping = new ArrayList<>();
-		
-		List<String> avaliableInMultiDataSources = new ArrayList<>();
-		List<String> notAvaliableInSpecifiedDataSource = new ArrayList<>();
-		List<String> notAvaliableInAnyDataSource = new ArrayList<>();
-		
-		if (utilities.arrayHasElement(this.mapping)) {
-			for (FieldsMapping fm : this.mapping) {
+		if (utilities.arrayHasElement(this.getMapping())) {
+			mappingProblem = new FieldsMappingIssues();
+			
+			for (FieldsMapping fm : this.getMapping()) {
 				fm.tryToLoadTransformer(conn);
 				
 				if (!utilities.stringHasValue(fm.getDataSourceName())) {
 					try {
 						tryToLoadDataSourceToFieldMapping(fm);
-						
-						addMapping(fm);
-						
 					}
 					catch (FieldNotAvaliableInAnyDataSource e) {
 						Field f = getField(fm.getDstField());
@@ -214,11 +237,11 @@ public class DstConf extends AbstractTableConfiguration {
 						problem = problem ? problem : !this.useAutoIncrementId(conn);
 						
 						if (problem) {
-							notAvaliableInAnyDataSource.add(fm.getSrcField());
+							mappingProblem.getNotAvaliableInAnyDataSource().add(fm);
 						}
 					}
 					catch (FieldAvaliableInMultipleDataSources e) {
-						avaliableInMultiDataSources.add(fm.getSrcField());
+						mappingProblem.getAvaliableInMultiDataSources().add(fm);
 					}
 					
 				} else {
@@ -231,13 +254,37 @@ public class DstConf extends AbstractTableConfiguration {
 					if (ds.containsField(fm.getSrcField())) {
 						fm.setDataSourceName(ds.getAlias());
 					} else {
-						notAvaliableInSpecifiedDataSource.add(fm.getSrcField());
+						mappingProblem.getNotAvaliableInSpecifiedDataSource().add(fm);
 					}
-					
-					addMapping(fm);
 				}
 				
 			}
+		}
+		
+		return mappingProblem;
+	}
+	
+	public void generateAllFieldsMapping(Connection conn) throws DBException, FieldsMappingExceprion {
+		if (!useDefaultTransformer()) {
+			return;
+		}
+		
+		this.allMapping = new ArrayList<>();
+		
+		FieldsMappingIssues mappingProblem = null;
+		
+		if (this.hasMapping()) {
+			mappingProblem = loadConfiguredMappingAdditionalInfo(conn);
+			
+			for (FieldsMapping fm : this.getMapping()) {
+				if (!mappingProblem.contains(fm)) {
+					addMapping(fm);
+				}
+			}
+		}
+		
+		if (mappingProblem == null) {
+			mappingProblem = new FieldsMappingIssues();
 		}
 		
 		List<Field> myFields = this.getFields();
@@ -268,33 +315,20 @@ public class DstConf extends AbstractTableConfiguration {
 					problem = problem ? problem : !this.useAutoIncrementId(conn);
 					
 					if (problem) {
-						notAvaliableInAnyDataSource.add(fm.getSrcField());
+						mappingProblem.getNotAvaliableInAnyDataSource().add(fm);
 					}
 					
 				}
 				catch (FieldAvaliableInMultipleDataSources e) {
-					avaliableInMultiDataSources.add(fm.getSrcField());
+					mappingProblem.getAvaliableInMultiDataSources().add(fm);
 				}
 			}
-			
 		}
 		
-		if (!avaliableInMultiDataSources.isEmpty()) {
-			throw new ForbiddenOperationException(getTableName() + " The destination fields "
-			        + avaliableInMultiDataSources.toString()
-			        + " cannot be automatically mapped as them occurrs in multiple src. Please configure them manually or specify the datasource order preference in prefferredDataSource array ");
+		if (mappingProblem.hasIssue()) {
+			throw new FieldsMappingExceprion(this.getTableName(), mappingProblem);
 		}
 		
-		if (!notAvaliableInAnyDataSource.isEmpty()) {
-			throw new ForbiddenOperationException(getTableName() + " The destination fields "
-			        + notAvaliableInAnyDataSource.toString()
-			        + " cannot be automatically mapped as them do not occurr in any src. Please configure them manually!");
-		}
-		
-		if (!notAvaliableInSpecifiedDataSource.isEmpty()) {
-			throw new ForbiddenOperationException(getTableName() + " The source fields for destination fields ["
-			        + notAvaliableInSpecifiedDataSource.toString() + "] do not occurs in specified data sources !");
-		}
 	}
 	
 	private void tryToLoadDataSourceToFieldMapping(FieldsMapping fm)
@@ -386,13 +420,58 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
-		this.tryToGenerateTableAlias(getRelatedEtlConf());
 		
-		if (!hasManualMapPrimaryKeyOnField()) {
-			setManualMapPrimaryKeyOnField(getRelatedEtlConf().getManualMapPrimaryKeyOnField());
+		if (isInMemoryTable()) {
+			try {
+				this.setFieldsLoaded(true);
+				
+				if (this.hasMapping()) {
+					this.setFields(new ArrayList<>());
+					
+					FieldsMappingIssues mappingProblem = loadConfiguredMappingAdditionalInfo(conn);
+					
+					for (FieldsMapping map : this.getMapping()) {
+						
+					}
+					
+				} else {
+					this.setFields(EtlField.convertToSimpleFiled(this.getSrcConf().getEtlFields()));
+				}
+				
+				if (this.getSrcConf().hasPK()) {
+					if (this.containsAllFields(
+					    utilities.parseList(this.getSrcConf().getPrimaryKey().getFields(), Field.class))) {
+						this.setPrimaryKey((PrimaryKey) this.getSrcConf().getPrimaryKey().clone());
+					}
+				}
+				
+				this.setPrimaryKeyInfoLoaded(true);
+				
+				if (this.getSrcConf().hasUniqueKeys()) {
+					for (UniqueKeyInfo uk : this.getSrcConf().getUniqueKeys()) {
+						if (this.containsAllFields(utilities.parseList(uk.getFields(), Field.class))) {
+							this.addUniqueKey(uk);
+						}
+					}
+				}
+				
+				this.setUniqueKeyInfoLoaded(true);
+				
+				this.setFullLoaded(true);
+			}
+			catch (CloneNotSupportedException e) {
+				throw new EtlExceptionImpl(e);
+			}
+			
+		} else {
+			this.tryToGenerateTableAlias(getRelatedEtlConf());
+			
+			if (!hasManualMapPrimaryKeyOnField()) {
+				setManualMapPrimaryKeyOnField(getRelatedEtlConf().getManualMapPrimaryKeyOnField());
+			}
+			
+			super.fullLoad(conn);
 		}
-		
-		super.fullLoad(conn);
 	}
 	
 	/**
@@ -659,6 +738,65 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	public boolean hasJoinFields() {
 		return utilities.arrayHasElement(this.getGeneratedJoinFields());
+	}
+	
+	public static List<DstConf> generateDefaultDstConf(final EtlItemConfiguration itemConf) throws DBException {
+		
+		synchronized (itemConf) {
+			
+			OpenConnection dstConn;
+			
+			if (!itemConf.hasDstConf()) {
+				
+				dstConn = itemConf.getRelatedEtlConf().openDstConn();
+				
+				try {
+					DstConf map = new DstConf();
+					
+					map.setTableName(itemConf.getSrcConf().getTableName());
+					map.setSchema(dstConn.getSchema());
+					map.setDstType(itemConf.getSrcConf().getDstType());
+					try {
+						map.loadSchemaInfo(dstConn);
+						
+						map.setObservationDateFields(itemConf.getSrcConf().getObservationDateFields());
+						map.setRemoveForbidden(itemConf.getSrcConf().isRemoveForbidden());
+						map.setOnConflict(itemConf.getSrcConf().onConflict());
+						map.setWinningRecordFieldsInfo(itemConf.getSrcConf().getWinningRecordFieldsInfo());
+						map.setManualMapPrimaryKeyOnField(itemConf.getSrcConf().getManualMapPrimaryKeyOnField());
+						
+					}
+					catch (DatabaseResourceDoesNotExists e) {
+						if (map.getDstType().isDb() && !itemConf.createDstTableIfNotExists()) {
+							throw e;
+						}
+						
+						map.setInMemoryTable(true);
+						
+						if (map.getDstType().isDb() && itemConf.createDstTableIfNotExists()) {
+							map.createTable(dstConn);
+						}
+					}
+					
+					map.setRelatedConnInfo(itemConf.getRelatedEtlConf().getDstConnInfo());
+					map.setAutomaticalyGenerated(true);
+					map.setRelatedEtlConfig(itemConf.getRelatedEtlConf());
+					map.setParentConf(itemConf);
+					map.setDstType(itemConf.getSrcConf().getDstType());
+					
+					return utilities.parseToList(map);
+				}
+				catch (SQLException e) {
+					throw new DBException(e);
+				}
+			} else {
+				return null;
+			}
+		}
+	}
+	
+	public boolean hasMapping() {
+		return utilities.arrayHasElement(this.getMapping());
 	}
 	
 }

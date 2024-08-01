@@ -580,9 +580,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				}
 			}
 			
-			for (EtlItemConfiguration tc : this.etlItemConfiguration) {
+			for (EtlItemConfiguration tc : this.getEtlItemConfiguration()) {
 				tc.setRelatedEtlConfig(this);
 				tc.getSrcConf().setParentConf(tc);
+				
+				if (!tc.getSrcConf().hasDstType()) {
+					//We start with the first operation dst type. Eventual this should be changed if the nested operation has different dstType
+					tc.getSrcConf().setDstType(this.getOperations().get(0).getDstType());
+				}
 				
 				if (tc.getSrcConf().hasAlias()) {
 					tc.getSrcConf().setUsingManualDefinedAlias(true);

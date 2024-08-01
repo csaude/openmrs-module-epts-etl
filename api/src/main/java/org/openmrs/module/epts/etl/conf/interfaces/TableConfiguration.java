@@ -18,6 +18,7 @@ import org.openmrs.module.epts.etl.conf.RefType;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -190,6 +191,76 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		return getPrimaryKey() != null;
+	}
+	
+	default boolean hasTableName() {
+		return getTableName() != null && !getTableName().isEmpty();
+	}
+	
+	default void createTable(Connection conn) throws DBException {
+		if (!hasFields()) {
+			throw new ForbiddenOperationException("There is no field for creation table!!");
+		}
+		
+		if (!hasTableName()) {
+			throw new ForbiddenOperationException("The table has no table name!!");
+		}
+		
+		String notNullConstraint = "NOT NULL";
+		String nullConstraint = "NULL";
+		String endLineMarker = ",\n";
+		
+		String sql = "CREATE table " + getFullTableName() + "(";
+		
+		for (Field f : this.getFields()) {
+			String constraint = f.allowNull() ? nullConstraint : notNullConstraint;
+			
+			if (f.isClob()) {
+				sql += DBUtilities.generateTableClobField(f.getName(), constraint, conn) + endLineMarker;
+			} else if (f.isTextField()) {
+				sql += DBUtilities.generateTableTextField(f.getName(), constraint, conn) + endLineMarker;
+			} else if (f.isString()) {
+				sql += DBUtilities.generateTableVarcharField(f.getName(), f.getPrecision().getLength(), constraint, conn)
+				        + endLineMarker;
+			} else if (f.isLongField()) {
+				sql += DBUtilities.generateTableBigIntField(f.getName(), constraint, conn) + endLineMarker;
+			} else if (f.isIntegerField() || f.isSmallIntType()) {
+				sql += DBUtilities.generateTableIntegerField(f.getName(), f.getPrecision().getLength(), constraint, conn)
+				        + endLineMarker;
+			} else if (f.isDateField()) {
+				sql += DBUtilities.generateTableDateTimeField(f.getName(), constraint, conn) + endLineMarker;
+			} else if (f.isDecimalField()) {
+				sql += DBUtilities.generateTableDecimalField(f.getName(), f.getPrecision().getLength(),
+				    f.getPrecision().getDecimalDigits(), constraint, conn) + endLineMarker;
+				
+			} else {
+				sql += DBUtilities.generateTableVarcharField(f.getName(), f.getPrecision().getLength(), constraint, conn)
+				        + endLineMarker;
+			}
+		}
+		
+		//Remove the last #endLineMarker 
+		sql = utilities.removeLastChar(sql);
+		
+		if (this.hasPK()) {
+			sql += endLineMarker;
+			
+			sql += DBUtilities.generateTablePrimaryKeyDefinition(getPrimaryKey().parseFieldNamesToCommaSeparatedString(),
+			    this.getTableName() + "_pk", conn);
+		}
+		
+		if (hasUniqueKeys()) {
+			sql += endLineMarker;
+			
+			for (UniqueKeyInfo uk : this.getUniqueKeys()) {
+				sql += DBUtilities.generateTableUniqueKeyDefinition(uk.getKeyName(),
+				    uk.parseFieldNamesToCommaSeparatedString(), conn) + endLineMarker;
+			}
+		}
+		
+		//Remove the last #endLineMarker 
+		sql = utilities.removeLastChar(sql);
+		
 	}
 	
 	default boolean useManualGeneratedObjectId() {
@@ -1218,8 +1289,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				if (!includePrimaryKeyOnInsert()) {
 					
 					//Force the inclusion of primaryKey if the table is not autoincrement or if it uses shared pj
-					if ((!isAutoIncrementId() || useSharedPKKey()
-					        || this.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) && !(this instanceof EtlConfigurationTableConf)) {
+					if ((!isAutoIncrementId() || useSharedPKKey() || this.getRelatedEtlConf().isDoNotTransformsPrimaryKeys())
+					        && !(this instanceof EtlConfigurationTableConf)) {
 						setIncludePrimaryKeyOnInsert(true);
 					}
 				}
@@ -1276,7 +1347,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 * @throws DBException
 	 * @throws ForbiddenOperationException
 	 */
-	default void loadSchemaInfo(Connection conn) throws DBException, ForbiddenOperationException {
+	default void loadSchemaInfo(Connection conn)
+	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
 		
 		if (isTableNameInfoLoaded())
 			return;
@@ -1297,7 +1369,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		boolean exists = DBUtilities.isTableExists(getSchema(), getTableName(), conn);
 		
 		if (!exists)
-			throw new ForbiddenOperationException("The table '" + generateFullTableName(conn) + "' does not exist!!!");
+			throw new DatabaseResourceDoesNotExists(generateFullTableName(conn));
 		
 		setTableNameInfoLoaded(true);
 	}
@@ -2161,6 +2233,22 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default boolean hasObservationDateFields() {
 		return utilities.arrayHasElement(getObservationDateFields());
+	}
+	
+	default void addUniqueKey(UniqueKeyInfo uk) {
+		if (!hasUniqueKeys()) {
+			this.setUniqueKeys(new ArrayList<>());
+		}
+		
+		if (!uk.isContained(this.getUniqueKeys())) {
+			uk.setTabConf(this);
+			
+			this.getUniqueKeys().add(uk);
+		} else {
+			throw new ForbiddenOperationException(
+			        "The uk you are trying to add is already in the uk list for this table " + this.getTableName());
+		}
+		
 	}
 	
 	default boolean containsAllFields(List<Field> fields) {
