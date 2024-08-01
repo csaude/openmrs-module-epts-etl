@@ -31,7 +31,7 @@
       {
          "srcConf":{
             "tableName":"person",
-            "selfJoinTables":[
+            "auxExtractTable":[
                {
                   "tableName":"office",
                   "joinExtraCondition":"id in (@anexesOffices)"
