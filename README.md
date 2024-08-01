@@ -1,8 +1,7 @@
 # Introduction
-The epts-etl module is an OpenMRS module designed to perform generics ETL operations and mutch more. The epts-etl module can be integrated to an OpenMRS instance BUT can also run as a stand-alone java application. Take in mind that this module is still in development and some of its features may not well function now.
+The epts-etl module is an OpenMRS module designed to perform generic ETL operations and much more. The epts-etl module can be integrated with an OpenMRS instance, but it can also run as a stand-alone Java application. Please note that this module is still in development, and some of its features may not function correctly at this time.
 # Architecture overview
-The EPTS-ETL module is written in Java and follows the OpenMRS modules pattern. Its core is implemented on the API level so it can run as a stand-alone application.
-On the top of EPTS-ETL logic there is Processes which represents a set of operations which can be intended as tasks which together complete a certain objective.
+The epts-etl module is written in Java and follows the OpenMRS module pattern. Its core functionality is implemented at the API level, allowing it to operate as a stand-alone application. At the top of the EPTS-ETL logic are Processes, which represent a set of operations intended to function as tasks that collectively achieve a specific objective.
 
  ![eptssync_arquitecture](docs/Eptssync_Arquitecture.png)
 
