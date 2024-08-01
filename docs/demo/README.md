@@ -80,7 +80,7 @@ Now, let's define the transformation rules. Our main source table is "system_tab
  ![etl-conf-file](the-power-of-parameters/etl_with_parameters.png)
 
 In this ETL we have "system_table" as the main source table. Our destination table is "table_info". We are using two "extraQueryDataSource" to extract the count from the source table and destination table. Note that for each record from the "system_table" we use the field "table_name" as parameter to "extraQueryDataSource". Lets explain each parameter present on the queries
-- (1) originAppLocationCode: here we use a parameter as a SELECT field; the value for this parameter is present on the configuration file;
+- (1) originAppLocationCode: here we use a parameter as a SELECT field; the value for this parameter is present on the configuration fields (highlighted field);
 - (2) table_name: here the parameter is used again as a SELECT field; the value will be picked up from the main source table. We intentionally put this field here in the "extraQueryDataSource" just for illustration, since this field is present on the main source table and will be automatically be mapped.
 - (3) table_name: here the parameter is used in a context of DB_RESOURCE which is a table resource;
 - (4) table_name: again here the parameter is used in a context of DB_RESOURCE;
