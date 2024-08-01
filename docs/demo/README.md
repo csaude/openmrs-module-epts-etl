@@ -86,6 +86,7 @@ In this ETL we have "system_table" as the main source table. Our destination tab
 - (4) table_name: again here the parameter is used in a context of DB_RESOURCE;
 - (5) and (6) unique_key_field: here the parameter is used as DB_RESOURCE of type field.   
 
+
   To run this demo example follow the instrunctions below:
  - (1) Download the content of [this directory](the-power-of-parameters).
 - (2) Edit the [conf.json](the-power-of-parameters/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
