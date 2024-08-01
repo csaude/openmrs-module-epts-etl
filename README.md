@@ -339,20 +339,20 @@ As can be seen the "winningRecordFieldsInfo'' is a list of lists, listing the fi
 ## Default configuration files templates
 In this section are listed some templates for configuration files for specific etl processes. For demo please check [this session](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#etl-quick-examples).
 
-###### The generic etl configuration template
+#### The generic etl configuration template
 This could be used for simple or complex etl processes. Using this template each src record will be transformed and saved to the destination database. The template for this process can be found [here](docs/process_templates/generic_etl.json)
 
 
-###### The database merge configuration template
+#### The database merge configuration template
 The database merge is a process of joining together one or more databases. The template for this process can be found [here](docs/process_templates/db_merge.json)
 
-###### The database extract configuration template
+#### The database extract configuration template
 The database extraction is a process of extracting a set of data from the src database to a dst database. The template for this process can be found [here](docs/process_templates/db_extract.json)
 
-###### The records update configuration template
+#### The records update configuration template
 The record update can be useful if you want to perform the update of records using data from a src database. The template for this process can be found [here](docs/process_templates/db_update.json)
 
-###### The records deletion configuration template
+#### The records deletion configuration template
 This process performs physical remotion of records on the target database. The template for this process can be found [here](docs/process_templates/db_delete.json) 
 
 
