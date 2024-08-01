@@ -1,3 +1,5 @@
+`* TOC`
+
 # Introduction
 The epts-etl module is an OpenMRS module designed to perform generic ETL operations and much more. The epts-etl module can be integrated with an OpenMRS instance, but it can also run as a stand-alone Java application. Please note that this module is still in development, and some of its features may not function correctly at this time.
 # Architecture overview
