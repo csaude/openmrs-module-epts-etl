@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class SrcConf extends AbstractTableConfiguration implements EtlDataSource {
 	
-	private List<AuxExtractTable> selfJoinTables;
+	private List<AuxExtractTable> auxExtractTable;
 	
 	private List<TableDataSourceConfig> extraTableDataSource;
 	
@@ -39,12 +39,12 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		this.dstType = dstType;
 	}
 	
-	public List<AuxExtractTable> getSelfJoinTables() {
-		return selfJoinTables;
+	public List<AuxExtractTable> getAuxExtractTable() {
+		return auxExtractTable;
 	}
 	
-	public void setSelfJoinTables(List<AuxExtractTable> selfJoinTables) {
-		this.selfJoinTables = selfJoinTables;
+	public void setAuxExtractTable(List<AuxExtractTable> auxExtractTable) {
+		this.auxExtractTable = auxExtractTable;
 	}
 	
 	public List<QueryDataSourceConfig> getExtraQueryDataSource() {
@@ -122,7 +122,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		try {
 			
 			if (hasSelfJoinTables()) {
-				for (AuxExtractTable t : this.getSelfJoinTables()) {
+				for (AuxExtractTable t : this.getAuxExtractTable()) {
 					t.setParentConf(this);
 					t.tryToGenerateTableAlias(getRelatedEtlConf());
 					t.setMainExtractTable(this);
@@ -302,16 +302,16 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public boolean hasExtraTableDataSourceConfig() {
-		return utilities.arrayHasElement(this.extraTableDataSource);
+		return utilities.arrayHasElement(this.getExtraTableDataSource());
 	}
 	
 	public boolean hasExtraQueryDataSourceConfig() {
-		return utilities.arrayHasElement(this.extraQueryDataSource);
+		return utilities.arrayHasElement(this.getExtraQueryDataSource());
 		
 	}
 	
 	public boolean hasSelfJoinTables() {
-		return utilities.arrayHasElement(getSelfJoinTables());
+		return utilities.arrayHasElement(this.getAuxExtractTable());
 	}
 	
 	public boolean hasRequiredExtraDataSource() {

@@ -9,7 +9,7 @@ public interface EtlDataSource extends DatabaseObjectConfiguration {
 	
 	String getName();
 	
-	List<AuxExtractTable> getSelfJoinTables();
+	List<AuxExtractTable> getAuxExtractTable();
 	
-	void setSelfJoinTables(List<AuxExtractTable> setSelfJoinTables);
+	void setAuxExtractTable(List<AuxExtractTable> auxExtractTable);
 }

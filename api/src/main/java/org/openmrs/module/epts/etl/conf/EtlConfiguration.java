@@ -612,7 +612,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				}
 				
 				if (tc.getSrcConf().hasSelfJoinTables()) {
-					for (AuxExtractTable t : tc.getSrcConf().getSelfJoinTables()) {
+					for (AuxExtractTable t : tc.getSrcConf().getAuxExtractTable()) {
 						if (t.hasAlias()) {
 							t.setUsingManualDefinedAlias(true);
 							

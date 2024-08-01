@@ -23,7 +23,7 @@ public class RefMapping {
 	private boolean setNullDueInconsistency;
 	
 	/*
-	 * Indicate if this parent can be ignored if not found in referenced table or not
+	 * Indicate if this parent can be ignored if not found in referenced table
 	 */
 	private boolean ignorable;
 	

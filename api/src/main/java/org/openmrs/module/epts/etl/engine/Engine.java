@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.SrcConf;
@@ -211,6 +212,10 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	
 	public EtlProgressMeter getProgressMeter() {
 		return this.tableOperationProgressInfo != null ? this.tableOperationProgressInfo.getProgressMeter() : null;
+	}
+	
+	public EtlConfiguration getEtlConfiguration() {
+		return this.getEtlItemConfiguration().getRelatedEtlConf();
 	}
 	
 	public DBConnectionInfo getDstConnInfo() {
@@ -700,9 +705,11 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	}
 	
 	public File getDataDir() {
-		String subFolder = this.getRelatedOperationController().generateOperationStatusFolder();
+		String subFolder = getEtlConfiguration().getEtlRootDirectory();
 		
 		subFolder += FileUtilities.getPathSeparator() + "data";
+		
+		subFolder += FileUtilities.getPathSeparator() + getEtlConfiguration().getOriginAppLocationCode();
 		
 		return new File(subFolder);
 	}

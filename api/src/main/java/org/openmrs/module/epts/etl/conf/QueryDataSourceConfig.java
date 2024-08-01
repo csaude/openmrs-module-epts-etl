@@ -446,12 +446,12 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public List<AuxExtractTable> getSelfJoinTables() {
+	public List<AuxExtractTable> getAuxExtractTable() {
 		return null;
 	}
 	
 	@Override
-	public void setSelfJoinTables(List<AuxExtractTable> setSelfJoinTables) {
+	public void setAuxExtractTable(List<AuxExtractTable> auxExtractTable) {
 	}
 	
 	@Override

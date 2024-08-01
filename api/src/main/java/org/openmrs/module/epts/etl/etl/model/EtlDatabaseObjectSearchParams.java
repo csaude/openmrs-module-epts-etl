@@ -42,10 +42,10 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		String clauseFrom = srcConfig.generateSelectFromClauseContent();
 		
-		if (utilities.arrayHasElement(srcConfig.getSelfJoinTables())) {
+		if (utilities.arrayHasElement(srcConfig.getAuxExtractTable())) {
 			String additionalLeftJoinFields = "";
 			
-			for (AuxExtractTable aux : srcConfig.getSelfJoinTables()) {
+			for (AuxExtractTable aux : srcConfig.getAuxExtractTable()) {
 				String joinType = aux.getJoinType().toString();
 				String extraJoinQuery = aux.generateJoinConditionsFields();
 				

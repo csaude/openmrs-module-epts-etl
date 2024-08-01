@@ -89,7 +89,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	
 	@Override
 	public JoinType determineJoinType() {
-		if (utilities.arrayHasMoreThanOneElements(this.getMainExtractTable().getSelfJoinTables())) {
+		if (utilities.arrayHasMoreThanOneElements(this.getMainExtractTable().getAuxExtractTable())) {
 			return JoinType.LEFT;
 		} else {
 			return JoinType.INNER;

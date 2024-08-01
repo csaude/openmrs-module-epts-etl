@@ -63,11 +63,11 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 	}
 	
 	@Override
-	public List<AuxExtractTable> getSelfJoinTables() {
+	public List<AuxExtractTable> getAuxExtractTable() {
 		return null;
 	}
 	
 	@Override
-	public void setSelfJoinTables(List<AuxExtractTable> setSelfJoinTables) {
+	public void setAuxExtractTable(List<AuxExtractTable> auxExtractTable) {
 	}
 }

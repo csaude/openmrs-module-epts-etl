@@ -26,7 +26,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	private SrcConf relatedSrcConf;
 	
-	private List<AuxExtractTable> selfJoinTables;
+	private List<AuxExtractTable> auxExtractTable;
 	
 	/*
 	 * The join type between this additional src table with the main src table. It could be INNER or LEFT.
@@ -37,12 +37,14 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	public TableDataSourceConfig() {
 	}
 	
-	public List<AuxExtractTable> getSelfJoinTables() {
-		return selfJoinTables;
+	@Override
+	public List<AuxExtractTable> getAuxExtractTable() {
+		return this.auxExtractTable;
 	}
 	
-	public void setSelfJoinTables(List<AuxExtractTable> selfJoinTables) {
-		this.selfJoinTables = selfJoinTables;
+	@Override
+	public void setAuxExtractTable(List<AuxExtractTable> auxExtractTable) {
+		this.auxExtractTable = auxExtractTable;
 	}
 	
 	public JoinType getJoinType() {
@@ -150,7 +152,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		loadJoinElements(conn);
 		
 		if (hasSelfJoinTables()) {
-			for (AuxExtractTable t : this.getSelfJoinTables()) {
+			for (AuxExtractTable t : this.getAuxExtractTable()) {
 				t.setParentConf(this);
 				t.setMainExtractTable(this);
 				
@@ -173,7 +175,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	private boolean hasSelfJoinTables() {
-		return utilities.arrayHasElement(getSelfJoinTables());
+		return utilities.arrayHasElement(this.getAuxExtractTable());
 	}
 	
 	@Override

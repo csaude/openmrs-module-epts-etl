@@ -334,25 +334,6 @@ public class EtlLoadHelper {
 	 * @throws ParentNotYetMigratedException
 	 * @throws MissingParentException
 	 */
-	public void beforeLoadToFile(DstConf dstConf, Connection srcConn, Connection dstConn)
-	        throws DBException, ParentNotYetMigratedException, MissingParentException {
-		
-		this.logDebug("Preparing the load of " + this.qtyRecordsToLoad());
-		
-		for (LoadRecord loadRecord : this.getAllRecordsAsLoadRecord(dstConf)) {
-			loadRecord.setStatus(LoadStatus.READY);
-		}
-	}
-	
-	/**
-	 * @param srcConn
-	 * @param dstConn
-	 * @param objects
-	 * @param processedRecords
-	 * @throws DBException
-	 * @throws ParentNotYetMigratedException
-	 * @throws MissingParentException
-	 */
 	public void beforeLoadToDb(DstConf dstConf, Connection srcConn, Connection dstConn)
 	        throws DBException, ParentNotYetMigratedException, MissingParentException {
 		
