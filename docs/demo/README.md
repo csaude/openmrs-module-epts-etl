@@ -103,7 +103,7 @@ We will be using [this configuration file](out-of-the-box-transformers/conf.json
 
 ![transformation-with-transformers](out-of-the-box-transformers/out-of-box-transformers.png)
 
-Bellow is explained the use of each tranformer:
+Below is explained the use of each tranformer:
 
 - (1) here we do the necessary transformation to fill the field "pos" in the report. We are using *ArithmeticFieldTransformer*. The value we want to evaluate is contained in the field "srcValue". Note the presence of 3 parameters @year and @month which will be picked from the configuration parameters, @id which will be picked from the main src object.
 - (2) here we do the necessary transformation to fill the field "full_month" in the report. Here we are using the *SimpleValueTranformer*. Note that we omitted the transformer as it will be automatically detected by the application. The *SimpleValueTranformer* allow the transformation of constant values or values from parameters.
