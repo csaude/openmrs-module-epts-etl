@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
@@ -507,6 +508,15 @@ public class Field implements Serializable {
 		field.copyFrom(this);
 		
 		return field;
+	}
+	
+	public Field cloneMe() {
+		try {
+			return (Field) clone();
+		}
+		catch (CloneNotSupportedException e) {
+			throw new EtlExceptionImpl(e);
+		}
 	}
 	
 }

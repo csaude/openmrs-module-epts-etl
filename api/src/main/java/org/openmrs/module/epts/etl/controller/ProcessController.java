@@ -925,10 +925,10 @@ public class ProcessController implements Controller, ControllerStarter {
 			sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableDateTimeField("started_at", "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableDateTimeField("last_refresh_at", "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableIntegerField("min_record_id", "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableIntegerField("max_record_id", "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableIntegerField("total_records", "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableIntegerField("total_processed_records", "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("min_record_id", 11, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("max_record_id", 11, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("total_records", 11, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("total_processed_records", 11, "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableVarcharField("status", 50, "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableTimeStampField("creation_date", conn) + ",\n";
 			sql += DBUtilities.generateTableUniqueKeyDefinition(
@@ -1055,7 +1055,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		sql += "CREATE TABLE " + getConfiguration().getSyncStageSchema() + ".inconsistence_info (\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("table_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableIntegerField("record_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableIntegerField("record_id", 11, notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("parent_table_name", 100, notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("parent_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("default_parent_id", "NULL", conn) + endLineMarker;

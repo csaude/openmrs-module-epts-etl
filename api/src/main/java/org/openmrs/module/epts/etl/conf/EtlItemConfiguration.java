@@ -8,12 +8,12 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
@@ -209,12 +209,26 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 					map.setRelatedEtlConfig(getRelatedEtlConf());
 					
 					map.setParentConf(this);
+					map.setDstType(this.getSrcConf().getDstType());
 					
-					if (!map.isAutomaticalyGenerated()) {
+					try {
 						map.loadSchemaInfo(dstConn);
 					}
+					catch (DatabaseResourceDoesNotExists e) {
+						if (map.getDstType().isDb() && !this.createDstTableIfNotExists()) {
+							throw e;
+						}
+						
+						map.setInMemoryTable(true);
+					}
 					
-					if (DBUtilities.isTableExists(map.getSchema(), map.getTableName(), dstConn)) {
+					if (map.isInMemoryTable()) {
+						map.fullLoad(dstConn);
+						
+						if (map.getDstType().isDb() && this.createDstTableIfNotExists()) {
+							map.createTable(dstConn);
+						}
+					} else {
 						map.loadFields(dstConn);
 						
 						if (map.isAutomaticalyGenerated() && getSrcConf().hasParents()) {
@@ -222,20 +236,20 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 						}
 						
 						map.fullLoad(dstConn);
+						
+						map.generateAllFieldsMapping(dstConn);
 					}
 					
-					map.generateAllFieldsMapping(dstConn);
 				}
 			} else {
 				if (hasDstConf()) {
 					//Force the dstConf to be inMemory
 					
 					for (DstConf dstConf : this.getDstConf()) {
-						if (dstConf.hasMapping()) {
-							
-						} else {
-							
-						}
+						dstConf.setInMemoryTable(true);
+						dstConf.setDstType(this.getSrcConf().getDstType());
+						
+						dstConf.fullLoad(srcConn);
 					}
 					
 				}

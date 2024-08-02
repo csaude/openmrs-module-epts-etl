@@ -14,11 +14,10 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultRecordTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
-import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
 import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
-import org.openmrs.module.epts.etl.exceptions.FieldsMappingExceprion;
+import org.openmrs.module.epts.etl.exceptions.FieldsMappingException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -92,6 +91,10 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	public void setIncludeAllFieldsFromDataSource(boolean includeAllFieldsFromDataSource) {
 		this.includeAllFieldsFromDataSource = includeAllFieldsFromDataSource;
+	}
+	
+	public boolean includeAllFieldsFromDataSource() {
+		return isIncludeAllFieldsFromDataSource();
 	}
 	
 	public boolean isInMemoryTable() {
@@ -223,7 +226,7 @@ public class DstConf extends AbstractTableConfiguration {
 			mappingProblem = new FieldsMappingIssues();
 			
 			for (FieldsMapping fm : this.getMapping()) {
-				fm.tryToLoadTransformer(conn);
+				fm.tryToLoadTransformer();
 				
 				if (!utilities.stringHasValue(fm.getDataSourceName())) {
 					try {
@@ -264,7 +267,7 @@ public class DstConf extends AbstractTableConfiguration {
 		return mappingProblem;
 	}
 	
-	public void generateAllFieldsMapping(Connection conn) throws DBException, FieldsMappingExceprion {
+	public void generateAllFieldsMapping(Connection conn) throws DBException, FieldsMappingException {
 		if (!useDefaultTransformer()) {
 			return;
 		}
@@ -297,10 +300,10 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			FieldsMapping fm = FieldsMapping.fastCreate(field.getName(), field.getName());
 			
-			if (!this.allMapping.contains(fm)) {
+			if (!this.getAllMapping().contains(fm)) {
 				try {
 					
-					fm.tryToLoadTransformer(conn);
+					fm.tryToLoadTransformer();
 					
 					tryToLoadDataSourceToFieldMapping(fm);
 					
@@ -326,7 +329,7 @@ public class DstConf extends AbstractTableConfiguration {
 		}
 		
 		if (mappingProblem.hasIssue()) {
-			throw new FieldsMappingExceprion(this.getTableName(), mappingProblem);
+			throw new FieldsMappingException(this.getTableName(), mappingProblem);
 		}
 		
 	}
@@ -340,12 +343,17 @@ public class DstConf extends AbstractTableConfiguration {
 		}
 		
 		if (!fm.useDefaultTransformer()) {
+			
+			fm.loadType(this, null);
+			
 			return;
 		}
 		
 		for (EtlDataSource pref : this.allPrefferredDataSource) {
 			if (pref.containsField(fm.getSrcField())) {
 				fm.setDataSourceName(pref.getAlias());
+				
+				fm.loadType(this, pref);
 				
 				qtyOccurences++;
 				
@@ -362,6 +370,8 @@ public class DstConf extends AbstractTableConfiguration {
 						break;
 					} else {
 						fm.setDataSourceName(notPref.getAlias());
+						
+						fm.loadType(this, notPref);
 					}
 				}
 			}
@@ -418,6 +428,18 @@ public class DstConf extends AbstractTableConfiguration {
 		}
 	}
 	
+	private List<EtlDataSource> avaliableDataSources() {
+		List<EtlDataSource> dataSource = new ArrayList<>();
+		
+		dataSource.add(this.getSrcConf());
+		
+		if (this.getSrcConf().hasExtraDataSource()) {
+			dataSource.addAll(this.getSrcConf().getAvaliableExtraDataSource());
+		}
+		
+		return dataSource;
+	}
+	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		
@@ -425,13 +447,27 @@ public class DstConf extends AbstractTableConfiguration {
 			try {
 				this.setFieldsLoaded(true);
 				
+				loadDataSourceInfo(conn);
+				
 				if (this.hasMapping()) {
-					this.setFields(new ArrayList<>());
 					
 					FieldsMappingIssues mappingProblem = loadConfiguredMappingAdditionalInfo(conn);
 					
-					for (FieldsMapping map : this.getMapping()) {
-						
+					if (mappingProblem.hasIssue()) {
+						throw new FieldsMappingException(this.getTableName(), mappingProblem);
+					}
+					
+					this.setFields(FieldsMapping.parseAllToField(this.getMapping(), avaliableDataSources()));
+					
+					this.setAllMapping(this.getMapping());
+					
+					if (this.includeAllFieldsFromDataSource()) {
+						for (EtlField field : this.getSrcConf().getEtlFields()) {
+							if (!this.containsField(field.getName())) {
+								this.getFields().add(field);
+								this.addMapping(FieldsMapping.converteFromEtlField(field));
+							}
+						}
 					}
 					
 				} else {
@@ -504,6 +540,12 @@ public class DstConf extends AbstractTableConfiguration {
 	public void loadOwnElements(Connection conn) throws DBException {
 		loadJoinFields(conn);
 		
+		loadDataSourceInfo(conn);
+		
+		tryToLoadTransformer(conn);
+	}
+	
+	private void loadDataSourceInfo(Connection conn) throws DBException {
 		this.allAvaliableDataSource = new ArrayList<>();
 		this.allAvaliableDataSource.add(getSrcConf());
 		
@@ -515,8 +557,6 @@ public class DstConf extends AbstractTableConfiguration {
 		this.fullLoadAllRelatedTables(getRelatedEtlConf(), null, conn);
 		
 		determinePrefferredDataSources();
-		
-		tryToLoadTransformer(conn);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -756,27 +796,12 @@ public class DstConf extends AbstractTableConfiguration {
 					map.setTableName(itemConf.getSrcConf().getTableName());
 					map.setSchema(dstConn.getSchema());
 					map.setDstType(itemConf.getSrcConf().getDstType());
-					try {
-						map.loadSchemaInfo(dstConn);
-						
-						map.setObservationDateFields(itemConf.getSrcConf().getObservationDateFields());
-						map.setRemoveForbidden(itemConf.getSrcConf().isRemoveForbidden());
-						map.setOnConflict(itemConf.getSrcConf().onConflict());
-						map.setWinningRecordFieldsInfo(itemConf.getSrcConf().getWinningRecordFieldsInfo());
-						map.setManualMapPrimaryKeyOnField(itemConf.getSrcConf().getManualMapPrimaryKeyOnField());
-						
-					}
-					catch (DatabaseResourceDoesNotExists e) {
-						if (map.getDstType().isDb() && !itemConf.createDstTableIfNotExists()) {
-							throw e;
-						}
-						
-						map.setInMemoryTable(true);
-						
-						if (map.getDstType().isDb() && itemConf.createDstTableIfNotExists()) {
-							map.createTable(dstConn);
-						}
-					}
+					
+					map.setObservationDateFields(itemConf.getSrcConf().getObservationDateFields());
+					map.setRemoveForbidden(itemConf.getSrcConf().isRemoveForbidden());
+					map.setOnConflict(itemConf.getSrcConf().onConflict());
+					map.setWinningRecordFieldsInfo(itemConf.getSrcConf().getWinningRecordFieldsInfo());
+					map.setManualMapPrimaryKeyOnField(itemConf.getSrcConf().getManualMapPrimaryKeyOnField());
 					
 					map.setRelatedConnInfo(itemConf.getRelatedEtlConf().getDstConnInfo());
 					map.setAutomaticalyGenerated(true);

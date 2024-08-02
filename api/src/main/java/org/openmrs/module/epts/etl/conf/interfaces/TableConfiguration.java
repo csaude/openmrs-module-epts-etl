@@ -2135,6 +2135,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean containsField(String fieldName) {
+		if (!hasFields())
+			return false;
+		
 		for (Field f : this.getFields()) {
 			if (f.getName().equals(fieldName)) {
 				return true;

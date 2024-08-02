@@ -65,14 +65,18 @@ public class EtlField extends Field {
 		return fields;
 	}
 	
-	public static List<EtlField> converteFromDataSourceFields(List<Field> simpleFields) {
+	public static List<EtlField> converteFromDataSourceFields(List<Field> simpleFields, EtlDataSource dataSource) {
 		if (utilities.arrayHasNoElement(simpleFields))
 			throw new ForbiddenOperationException("The fields is empty!");
 		
 		List<EtlField> fields = new ArrayList<>(simpleFields.size());
 		
 		for (Field f : simpleFields) {
-			fields.add(new EtlField(f));
+			EtlField etlField = new EtlField(f);
+			
+			etlField.setSrcDataSource(dataSource);
+			
+			fields.add(etlField);
 		}
 		
 		return fields;

@@ -2,11 +2,11 @@ package org.openmrs.module.epts.etl.exceptions;
 
 import org.openmrs.module.epts.etl.conf.FieldsMappingIssues;
 
-public class FieldsMappingExceprion extends EtlExceptionImpl {
+public class FieldsMappingException extends EtlExceptionImpl {
 	
 	private static final long serialVersionUID = 1505624913800886849L;
 	
-	public FieldsMappingExceprion(String tableName, FieldsMappingIssues mappingIssue) {
+	public FieldsMappingException(String tableName, FieldsMappingIssues mappingIssue) {
 		super(generateIssueMsg(tableName, mappingIssue));
 	}
 	
