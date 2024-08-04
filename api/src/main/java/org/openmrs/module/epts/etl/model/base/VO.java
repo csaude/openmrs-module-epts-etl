@@ -13,14 +13,15 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface VO {
+	public static final CommonUtilities utils = CommonUtilities.getInstance();
 	
-	public abstract void load(ResultSet rs) throws SQLException;
+	void load(ResultSet rs) throws SQLException;
 	
-	public abstract String generateTableName();
+	String generateTableName();
 	
-	public abstract boolean isExcluded();
+	boolean isExcluded();
 	
-	public abstract void setExcluded(boolean excluded);
+	void setExcluded(boolean excluded);
 	
 	List<Field> getFields();
 	
@@ -77,12 +78,15 @@ public interface VO {
 	default List<Object> getFieldValues() {
 		List<Object> fieldsValues = new ArrayList<>(getFields().size());
 		
-		for (Field field : getFields()) {
+		for (Field field : this.getFields()) {
+			String fieldNameInSnakeCase = utils.parsetoSnakeCase(field.getName());
+			String fieldNameInCameCase = utils.parsetoCamelCase(field.getName());
+		
 			try {
-				fieldsValues.add(getFieldValue(field.getName()));
+				fieldsValues.add(getFieldValue(fieldNameInSnakeCase));
 			}
 			catch (ForbiddenOperationException e) {
-				fieldsValues.add(getFieldValue(field.getNameAsClassAtt()));
+				fieldsValues.add(getFieldValue(fieldNameInCameCase));
 			}
 		}
 		
