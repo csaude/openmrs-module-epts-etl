@@ -457,7 +457,7 @@ public class DstConf extends AbstractTableConfiguration {
 						throw new FieldsMappingException(this.getTableName(), mappingProblem);
 					}
 					
-					this.setFields(FieldsMapping.parseAllToField(this.getMapping(), avaliableDataSources()));
+					this.setFields(FieldsMapping.parseAllToField(this.getMapping(), this, avaliableDataSources()));
 					
 					this.setAllMapping(this.getMapping());
 					
@@ -492,6 +492,8 @@ public class DstConf extends AbstractTableConfiguration {
 				}
 				
 				this.setUniqueKeyInfoLoaded(true);
+				
+				tryToLoadTransformer(conn);
 				
 				this.setFullLoaded(true);
 			}

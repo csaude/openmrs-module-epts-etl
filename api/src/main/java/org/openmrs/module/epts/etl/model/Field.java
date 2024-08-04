@@ -472,6 +472,8 @@ public class Field implements Serializable {
 			
 		} else if (this.isLongField()) {
 			this.setTypeClass(Long.class);
+		} else if (this.isDecimalField()) {
+			this.setTypeClass(Double.class);
 		} else if (this.isNumericColumnType()) {
 			this.setTypeClass(Integer.class);
 		} else if (this.isString()) {

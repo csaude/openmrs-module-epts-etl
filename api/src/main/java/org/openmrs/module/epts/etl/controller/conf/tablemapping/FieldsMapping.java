@@ -227,7 +227,7 @@ public class FieldsMapping {
 		return f;
 	}
 	
-	public static List<Field> parseAllToField(List<FieldsMapping> toParse, List<EtlDataSource> dataSource) {
+	public static List<Field> parseAllToField(List<FieldsMapping> toParse, DstConf dstConf, List<EtlDataSource> dataSource) {
 		List<Field> parsed = new ArrayList<>(toParse.size());
 		
 		for (FieldsMapping fm : toParse) {
@@ -240,6 +240,8 @@ public class FieldsMapping {
 				dstField = fm.parseToField(srcField);
 			} else {
 				//If there is no srcField then there must be a transformer
+				
+				fm.loadType(dstConf, null);
 				
 				dstField = Field.fastCreateField(fm.getDstField());
 				
@@ -286,9 +288,9 @@ public class FieldsMapping {
 			
 			if (this.getTransformerInstance() instanceof ArithmeticFieldTransformer) {
 				this.setDataType("double");
+			} else {
+				this.setDataType("String");
 			}
-			
-			this.setDataType("String");
 		} else {
 			if (!this.hasTransformer()) {
 				throw new ForbiddenOperationException("There is no transformer for dstField " + this.getDstField());
@@ -307,18 +309,21 @@ public class FieldsMapping {
 	}
 	
 	private Field findSrcFieldInDataSource(List<EtlDataSource> dataSource) {
+		return findContainingDataSource(dataSource).getField(this.getSrcField());
+	}
+	
+	private EtlDataSource findContainingDataSource(List<EtlDataSource> dataSource) {
 		
 		for (EtlDataSource ds : dataSource) {
 			
 			if (ds.getName().equals(this.getDataSourceName()) || ds.getAlias().equals(this.getDataSourceName())) {
-				Field f = ds.getField(this.getSrcField());
 				
-				if (f == null) {
+				if (ds.getField(this.getSrcField()) == null) {
 					throw new ForbiddenOperationException(
 					        "No field '" + this.getSrcField() + "' found on datasource " + this.getDataSourceName() + "!");
 				}
 				
-				return f;
+				return ds;
 			}
 		}
 		
