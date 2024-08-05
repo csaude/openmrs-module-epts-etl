@@ -100,7 +100,7 @@ In this ETL we have "system_table" as the main source table. Our destination tab
 A transformer allows custom transformation to a destination field through a java code. There are some field transformers that can be used out of the box, namely (1) the **ArithmeticFieldTransformer** which allow the evaluation of arithmetic expressions (2) **StringTranformer** which allow the transformation through string methods and (3) the **SimpleValueTranformer** which allow the direct transformation of srcValue.  In this section we will illustrate the use of these transformers.
 In this demo we will generate a *Monthly Payslip* based on data contained in src tables and some transformations on these data. The image below shows the involved tables and the result we want to accomplish.
 
-![img](out-of-the-box-transformers/payslip.png)
+![img](img/payslip.png)
 
 We will be using [this configuration file](out-of-the-box-transformers/conf.json) and below we highlight the "dstConf"
 
