@@ -59,12 +59,4 @@ INSERT INTO employer_work_info (year, month, employer_id, worked_days) VALUES
 	 (2024, 8, 8, 26),
 	 (2024, 8, 9, 30),
 	 (2024, 8, 10, 29);
-
-CREATE TABLE `monthly_payslip` (
-  `pos` int(11),
-  `full_month` varchar(7),
-  `full_name` varchar(250) NOT NULL,
-  `salary` double NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 	 

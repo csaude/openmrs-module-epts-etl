@@ -112,6 +112,18 @@
 }
 ```	 
 
+```
+{
+   "srcConf":{
+      "etlFields":[
+         {
+            "name":"",
+			"dataSource":""
+         }
+      ]
+   }
+}
+```	 
 		 
 ```
 {
