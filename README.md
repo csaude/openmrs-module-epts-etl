@@ -105,6 +105,7 @@ Bellow are explained the relevant configuration for "srcConf" and "dstConf".
 ### The "srcConf"
 The "srcConf '' allows the configuration of datasource in an etl process. The relevant configuration fields are explained below
 - *tableName*: table name of the main data source.
+- *etlFields*: allows the specification of fields from the datasource to be included in the ETL process. If not specified, all fields from the available datasources will be included in the ETL. Usualy this propertie is useful when the destination table is not present in database as it will be generated based on the etlFields. 
 - *parents*: list of configured parents. Note that if there is no additional configuration for the parent, there is no need to include this property as it will automatically loaded using the information schema;
 - *metadata*: optional boolean indicating that the table is a metadata table;
 - *removeForbidden*: optional boolean that indicate if records from this table can be automatically removed when there is inconsistencies
@@ -116,6 +117,22 @@ The "srcConf '' allows the configuration of datasource in an etl process. The re
 - *extraQueryDataSource*: option list of auxiliary queries to be used as data source;
 
 Bellow are additional explanation of complex configuration on "srcConf"
+
+#### etlFields
+```
+{
+   "srcConf":{
+      "etlFields":[
+         {
+            "name":"",
+	    "dataSource":""
+         }
+      ]
+   }
+}
+```
+Each "etlField" has a *name* which is the field name from one of the datasources fields fields present in the "srcConf"; the *dataSource* is the datasource name containing the field. If not present the application will try to automatically discover the datasource.
+
 
 #### Unique Keys
 The *"uniqueKeys"* allow the configuration of src table unique keys. If the table defines the unique keys in its metadata then there is no need to manually configure the unique keys. But when needed, the unique keys can be configured following below pattern.
