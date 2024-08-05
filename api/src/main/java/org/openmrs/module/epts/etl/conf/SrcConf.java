@@ -202,18 +202,17 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 				}
 			}
 			
-			if (utilities.arrayHasNoElement(this.getEtlFields())) {
-				if (hasExtraDataSource()) {
-					this.setEtlFields(EtlField.converteFromDataSourceFields(this));
-					
-					for (EtlDataSource ds : this.getAvaliableExtraDataSource()) {
-						this.getEtlFields().addAll(EtlField.converteFromDataSourceFields(ds));
-					}
-				} else {
-					//Preserve the original names if there is only the main ds
-					this.setEtlFields(EtlField.converteFromDataSourceFields(this.getFields(), this));
+			if (hasExtraDataSource()) {
+				this.setEtlFields(EtlField.converteFromDataSourceFields(this));
+				
+				for (EtlDataSource ds : this.getAvaliableExtraDataSource()) {
+					this.getEtlFields().addAll(EtlField.converteFromDataSourceFields(ds));
 				}
+			} else {
+				//Preserve the original names if there is only the main ds
+				this.setEtlFields(EtlField.converteFromDataSourceFields(this.getFields(), this));
 			}
+			
 		}
 		finally
 		
@@ -354,6 +353,22 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 		
 		return false;
+	}
+	
+	public boolean hasEtlFields() {
+		return utilities.arrayHasElement(this.getEtlFields());
+	}
+	
+	public EtlField getEtlField(String fieldName) {
+		if (this.hasEtlFields()) {
+			for (EtlField f : this.getEtlFields()) {
+				if (f.getName().equals(fieldName)) {
+					return f;
+				}
+			}
+		}
+		
+		return null;
 	}
 	
 	public boolean hasExtraDataSource() {

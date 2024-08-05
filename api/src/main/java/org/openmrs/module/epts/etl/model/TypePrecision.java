@@ -2,38 +2,43 @@ package org.openmrs.module.epts.etl.model;
 
 public class TypePrecision {
 	
-	private int length;
+	private Integer length;
 	
-	private int decimalDigits;
+	private Integer decimalDigits;
 	
-	public TypePrecision(int length, int decimalDigits) {
+	public TypePrecision(Integer length, Integer decimalDigits) {
 		this.length = length;
 		this.decimalDigits = decimalDigits;
 	}
 	
-	public TypePrecision(int length) {
+	public TypePrecision(Integer length) {
 		this.length = length;
 		this.decimalDigits = 0;
 	}
 	
-	public int getLength() {
+	public Integer getLength() {
 		return length;
 	}
 	
-	public void setLength(int length) {
+	public void setLength(Integer length) {
 		this.length = length;
 	}
 	
-	public int getDecimalDigits() {
+	public Integer getDecimalDigits() {
 		return decimalDigits;
 	}
 	
-	public void setDecimalDigits(int decimalDigits) {
+	public void setDecimalDigits(Integer decimalDigits) {
 		this.decimalDigits = decimalDigits;
 	}
 	
-	public static TypePrecision init(int precision, int scale) {
+	public static TypePrecision init(Integer precision, Integer scale) {
 		return new TypePrecision(precision, scale);
+	}
+	
+	@Override
+	public String toString() {
+		return this.getLength() + (this.getDecimalDigits() != null ? ", " + this.getDecimalDigits() : "");
 	}
 	
 }

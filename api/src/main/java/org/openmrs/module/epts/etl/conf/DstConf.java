@@ -298,7 +298,16 @@ public class DstConf extends AbstractTableConfiguration {
 				continue;
 			}
 			
-			FieldsMapping fm = FieldsMapping.fastCreate(field.getName(), field.getName());
+			FieldsMapping fm = null;
+			
+			EtlField etlField = this.getSrcConf().getEtlField(field.getName());
+			
+			if (etlField != null) {
+				fm = FieldsMapping.fastCreate(etlField.getSrcField().getName(), field.getName());
+				fm.setDataSourceName(etlField.getSrcDataSource().getName());
+			} else {
+				fm = FieldsMapping.fastCreate(field.getName(), field.getName());
+			}
 			
 			if (!this.getAllMapping().contains(fm)) {
 				try {
@@ -469,7 +478,6 @@ public class DstConf extends AbstractTableConfiguration {
 							}
 						}
 					}
-					
 				} else {
 					this.setFields(EtlField.convertToSimpleFiled(this.getSrcConf().getEtlFields()));
 				}

@@ -493,6 +493,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static void insert(List<EtlDatabaseObject> objects, Connection conn) throws DBException {
+		if (utilities.arrayHasNoElement(objects))
+			return;
 		
 		TableConfiguration tabConf = (TableConfiguration) objects.get(0).getRelatedConfiguration();
 		

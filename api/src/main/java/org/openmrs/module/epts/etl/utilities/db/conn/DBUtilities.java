@@ -1146,7 +1146,7 @@ public class DBUtilities {
 	
 	public static String generateTablePrimaryKeyDefinition(String fieldName, String pkName, Connection conn)
 	        throws DBException {
-		return " CONSTRAINT " + pkName + " PRIMARY KEY (" + fieldName + ")";
+		return " CONSTRAINT " + pkName + " PRIMARY KEY(" + fieldName + ")";
 	}
 	
 	public static String generateTableVarcharField(String fieldName, int precision, String constraint, Connection conn)
@@ -1169,17 +1169,17 @@ public class DBUtilities {
 	
 	public static String generateTableIntegerField(String fieldName, int precision, String constraint, Connection conn)
 	        throws DBException {
-		return fieldName + " INTEGER (" + precision + ")" + constraint;
+		return fieldName + " INTEGER(" + precision + ") " + constraint;
 	}
 	
 	public static String generateTableDecimalField(String fieldName, int precision, int scale, String constraint,
 	        Connection conn) throws DBException {
-		return fieldName + " DECIMAL (" + precision + ", " + scale + ")" + constraint;
+		return fieldName + " DECIMAL(" + precision + ", " + scale + ") " + constraint;
 	}
 	
 	public static String generateTableNumericField(String fieldName, int precision, String constraint, Number defaultValue,
 	        Connection conn) throws DBException {
-		return fieldName + " NUMERIC (" + precision + ")" + constraint + " DEFAULT " + defaultValue;
+		return fieldName + " NUMERIC(" + precision + ") " + constraint + " DEFAULT " + defaultValue;
 	}
 	
 	public static String generateTableBigIntField(String fieldName, String constraint, Connection conn) throws DBException {

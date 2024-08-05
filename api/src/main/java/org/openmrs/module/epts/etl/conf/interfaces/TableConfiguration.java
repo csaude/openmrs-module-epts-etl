@@ -261,6 +261,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		//Remove the last #endLineMarker 
 		sql = utilities.removeLastChar(sql);
 		
+		sql += ")";
+		
+		BaseDAO.executeBatch(conn, sql);
 	}
 	
 	default boolean useManualGeneratedObjectId() {

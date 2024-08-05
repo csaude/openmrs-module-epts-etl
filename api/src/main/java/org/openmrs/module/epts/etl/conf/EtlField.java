@@ -17,6 +17,8 @@ public class EtlField extends Field {
 	
 	private EtlDataSource srcDataSource;
 	
+	private String dataSource;
+	
 	private Field srcField;
 	
 	public EtlField() {
@@ -34,6 +36,14 @@ public class EtlField extends Field {
 		this.srcField = srcField;
 		
 		this.copyFrom(srcField);
+	}
+	
+	public String getDataSource() {
+		return dataSource;
+	}
+	
+	public void setDataSource(String dataSource) {
+		this.dataSource = dataSource;
 	}
 	
 	public EtlDataSource getSrcDataSource() {
@@ -95,5 +105,60 @@ public class EtlField extends Field {
 		}
 		
 		return fields;
+	}
+	
+	public void fullLoad(SrcConf srcConf) {
+		if (this.getSrcDataSource() == null) {
+			List<EtlDataSource> avaliableDs = utilities.parseToList(srcConf);
+			
+			if (srcConf.hasExtraDataSource()) {
+				avaliableDs.addAll(srcConf.getAvaliableExtraDataSource());
+			}
+			
+			if (utilities.stringHasValue(this.getDataSource())) {
+				
+				for (EtlDataSource ds : avaliableDs) {
+					if (ds.getName().equals(this.getDataSource())) {
+						this.setSrcDataSource(ds);
+						
+						break;
+					}
+				}
+				
+				if (this.getSrcDataSource() == null) {
+					throw new ForbiddenOperationException("The dataSource " + this.getDataSource()
+					        + " cannot be found on the dataSource list on the item configuration "
+					        + srcConf.getParentConf().getConfigCode() + "!!!");
+				}
+			} else {
+				//Discovery the Ds
+				
+				for (EtlDataSource ds : avaliableDs) {
+					if (ds.containsField(this.getName())) {
+						this.setSrcDataSource(ds);
+						
+						break;
+					}
+				}
+				
+				throw new ForbiddenOperationException("The etlField " + this.getName()
+				        + " cannot be found on any dataSource listed on the item configuration "
+				        + srcConf.getParentConf().getConfigCode() + "!!!");
+			}
+		} else {
+			this.setDataSource(this.getSrcDataSource().getName());
+		}
+		
+		this.setSrcField(this.getSrcDataSource().getField(this.getName()));
+		
+		if (this.getSrcField() == null) {
+			throw new ForbiddenOperationException(
+			        "The dataSource '" + this.getDataSource() + "' does not contain the srcField " + this.getName());
+		}
+		
+		if (this.getType() == null) {
+			this.setType(this.getSrcField().getType());
+		}
+		
 	}
 }

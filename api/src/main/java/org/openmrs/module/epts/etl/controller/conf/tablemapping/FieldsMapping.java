@@ -223,6 +223,7 @@ public class FieldsMapping {
 		Field f = (Field) srcField.cloneMe();
 		
 		f.setName(this.getDstField());
+		f.setType(srcField.getType());
 		
 		return f;
 	}

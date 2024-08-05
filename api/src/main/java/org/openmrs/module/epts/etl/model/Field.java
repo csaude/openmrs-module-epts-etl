@@ -352,6 +352,7 @@ public class Field implements Serializable {
 		this.value = f.value;
 		this.allowNull = f.allowNull;
 		this.typeClass = f.typeClass;
+		this.precision = f.precision;
 	}
 	
 	@JsonIgnore
@@ -467,17 +468,37 @@ public class Field implements Serializable {
 	public void determineTypeClass() {
 		if (this.isIntegerField()) {
 			this.setTypeClass(Integer.class);
+			
+			if (this.getPrecision() == null) {
+				this.setPrecision(TypePrecision.init(11, null));
+			}
 		} else if (this.isDateField()) {
 			this.setTypeClass(Date.class);
 			
 		} else if (this.isLongField()) {
 			this.setTypeClass(Long.class);
+			
+			if (this.getPrecision() == null) {
+				this.setPrecision(TypePrecision.init(20, null));
+			}
 		} else if (this.isDecimalField()) {
 			this.setTypeClass(Double.class);
+			
+			if (this.getPrecision() == null) {
+				this.setPrecision(TypePrecision.init(20, 7));
+			}
 		} else if (this.isNumericColumnType()) {
 			this.setTypeClass(Integer.class);
+			
+			if (this.getPrecision() == null) {
+				this.setPrecision(TypePrecision.init(11, null));
+			}
 		} else if (this.isString()) {
 			this.setTypeClass(String.class);
+			
+			if (this.getPrecision() == null) {
+				this.setPrecision(TypePrecision.init(250, null));
+			}
 		} else {
 			this.setTypeClass(Object.class);
 		}

@@ -56,7 +56,14 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 	}
 	
 	public static EtlStageAreaObject generateSrc(EtlDatabaseObject relatedEtlObject, Connection conn) throws DBException {
-		return generate(EtlStageTableType.SRC, relatedEtlObject, conn);
+		
+		TableConfiguration tabConf = (TableConfiguration) relatedEtlObject.getRelatedConfiguration();
+		
+		if (tabConf.hasPK()) {
+			return generate(EtlStageTableType.SRC, relatedEtlObject, conn);
+		} else {
+			return null;
+		}
 	}
 	
 	public static List<EtlStageAreaObject> generateDst(List<EtlDatabaseObject> relatedEtlObject, Connection conn)
@@ -64,7 +71,11 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		List<EtlStageAreaObject> recs = new ArrayList<>();
 		
 		for (EtlDatabaseObject etlObject : relatedEtlObject) {
-			recs.add(generate(EtlStageTableType.DST, etlObject, conn));
+			TableConfiguration tabConf = (TableConfiguration) etlObject.getRelatedConfiguration();
+			
+			if (tabConf.hasPK()) {
+				recs.add(generate(EtlStageTableType.DST, etlObject, conn));
+			}
 		}
 		
 		return recs;
@@ -100,12 +111,14 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		
 		etlObject.loadObjectIdData(etlObjectRelatedTabConf);
 		
-		//We want to preserve the UK name
-		UniqueKeyInfo uk = new UniqueKeyInfo();
-		uk.copy(etlObject.getObjectId());
-		uk.setKeyName(etlObjectRelatedTabConf.getPrimaryKey().getKeyName());
-		
-		allKeys.add(uk);
+		if (etlObjectRelatedTabConf.hasPK()) {
+			//We want to preserve the UK name
+			UniqueKeyInfo uk = new UniqueKeyInfo();
+			uk.copy(etlObject.getObjectId());
+			uk.setKeyName(etlObjectRelatedTabConf.getPrimaryKey().getKeyName());
+			
+			allKeys.add(uk);
+		}
 		
 		etlObject.loadUniqueKeyValues();
 		
