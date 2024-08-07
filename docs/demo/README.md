@@ -13,8 +13,8 @@ To run this demo follow the instructions below:
 - (3) Run the [sql script](quick-demo/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
 - (4) [Run the application using the conf.json as configuration file](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#running-the-application)
 
-#### Etl with transformation
-This example demonstrates how to perform a transformation on the ETL process. The transformation is needed when there are differences between the source table and destination table or if there are multiple data sources to one destination. We want to bring together data from two tables. The process is based on [this configuration file](etl-with-transformation/conf.json).
+#### Etl with transformation (Desnormalization example)
+This example demonstrates how to perform a transformation on the ETL process. The transformation is needed when there are differences between the source table and destination table or if there are multiple data sources to one destination. We want to bring together data from two tables. The process is based on [this configuration file](etl-with-transformation/conf.json). This is a basic example showing the denormalization process of two related tables into one table.
 Let's take a look at the configuration file. We will be focused on "etlItemConfiguration". In below image we represent in the left the data model of source and destination database.
 
  ![etl-transformation](img/transformation_configuration.png)
