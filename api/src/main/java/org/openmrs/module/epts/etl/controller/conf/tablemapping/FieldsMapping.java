@@ -305,7 +305,7 @@ public class FieldsMapping {
 		return utilities.stringHasValue(this.getDataType());
 	}
 	
-	private boolean hasSrcField() {
+	public boolean hasSrcField() {
 		return utilities.stringHasValue(this.getSrcField());
 	}
 	
@@ -347,6 +347,28 @@ public class FieldsMapping {
 		fm.tryToLoadTransformer();
 		
 		return fm;
+	}
+	
+	public void tryToLoadDataSourceInfoFromSrcField() {
+		
+		if (this.hasSrcField()) {
+			String[] srcFieldParts = this.getSrcField().split("\\.");
+			
+			if (srcFieldParts.length > 2) {
+				throw new ForbiddenOperationException("Malformed srcField " + this.getSrcField());
+			} else if (srcFieldParts.length == 2) {
+				if (!this.hasDataSourceName()) {
+					this.setDataSourceName(srcFieldParts[0]);
+				}
+				
+				this.setSrcField(srcFieldParts[1]);
+			}
+		}
+		
+	}
+	
+	public boolean hasDataSourceName() {
+		return utilities.stringHasValue(this.getDataSourceName());
 	}
 	
 }

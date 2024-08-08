@@ -16,6 +16,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DefaultRecordTransformer implements EtlRecordTransformer {
 	
+	private static CommonUtilities utilities = CommonUtilities.getInstance();
+	
 	private static DefaultRecordTransformer defaultTransformer;
 	
 	private static final String LOCK_STRING = "LOCK_STRING";
@@ -53,7 +55,11 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		}
 		
 		for (EtlAdditionalDataSource mappingInfo : dstConf.getSrcConf().getAvaliableExtraDataSource()) {
-			EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(srcObject, srcConn);
+			
+			List<EtlDatabaseObject> avaliableObjects = mappingInfo.allowMultipleSrcObjects() ? srcObjects
+			        : utilities.parseToList(srcObject);
+			
+			EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(avaliableObjects, srcConn);
 			
 			if (relatedSrcObject == null) {
 				

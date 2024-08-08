@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.SrcConf;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -13,10 +14,10 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	
 	void setRelatedSrcConf(SrcConf relatedSrcConf);
 	
-	EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection conn) throws DBException;
+	EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException;
 	
 	/**
-	 * Tels weather this source is mandatory or not. If it is required and it returns an empty
+	 * Tells weather this source is mandatory or not. If it is required and it returns an empty
 	 * result then the main dstRecord will be ignored, i.e will not be loaded to destination table
 	 * 
 	 * @return true if this data source is required or false if not
@@ -31,4 +32,6 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	boolean allowMultipleSrcObjects();
 }

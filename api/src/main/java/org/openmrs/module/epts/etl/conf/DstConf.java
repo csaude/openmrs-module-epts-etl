@@ -228,7 +228,9 @@ public class DstConf extends AbstractTableConfiguration {
 			for (FieldsMapping fm : this.getMapping()) {
 				fm.tryToLoadTransformer();
 				
-				if (!utilities.stringHasValue(fm.getDataSourceName())) {
+				fm.tryToLoadDataSourceInfoFromSrcField();
+				
+				if (!fm.hasDataSourceName()) {
 					try {
 						tryToLoadDataSourceToFieldMapping(fm);
 					}

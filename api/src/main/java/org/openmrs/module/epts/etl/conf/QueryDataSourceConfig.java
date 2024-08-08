@@ -183,7 +183,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		
 	}
 	
-	public void prepare(EtlDatabaseObject mainObject, Connection conn) throws DBException {
+	public void prepare(List<EtlDatabaseObject> mainObject, Connection conn) throws DBException {
 		if (isPrepared()) {
 			return;
 		}
@@ -267,6 +267,11 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		String fullPackageName = utilities.concatStringsWithSeparator(rootPackageName, packageName, ".");
 		
 		return fullPackageName;
+	}
+	
+	@Override
+	public boolean allowMultipleSrcObjects() {
+		return true;
 	}
 	
 	public void generateRecordClass(DBConnectionInfo connInfo, boolean fullClass) {
@@ -384,12 +389,13 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(EtlDatabaseObject mainObject, Connection srcConn) throws DBException {
+	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
+	        throws DBException {
 		if (!isPrepared()) {
-			prepare(mainObject, srcConn);
+			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		return this.getDefaultPreparedQuery().cloneAndLoadValues(mainObject).query(srcConn);
+		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
 	}
 	
 	@Override

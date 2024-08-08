@@ -25,7 +25,7 @@ public class PreparedQuery {
 	
 	private String query;
 	
-	private EtlDatabaseObject srcObject;
+	private List<EtlDatabaseObject> srcObject;
 	
 	private EtlConfiguration etlConfig;
 	
@@ -42,7 +42,7 @@ public class PreparedQuery {
 	PreparedQuery() {
 	}
 	
-	PreparedQuery(QueryDataSourceConfig dataSource, EtlDatabaseObject srcObject, EtlConfiguration configuration) {
+	PreparedQuery(QueryDataSourceConfig dataSource, List<EtlDatabaseObject> srcObject, EtlConfiguration configuration) {
 		this.setDataSource(dataSource);
 		this.setQuery(dataSource.getQuery());
 		this.setEtlConfig(configuration);
@@ -171,7 +171,7 @@ public class PreparedQuery {
 		this.subqueries = subqueries;
 	}
 	
-	private EtlDatabaseObject getSrcObject() {
+	private List<EtlDatabaseObject> getSrcObject() {
 		return srcObject;
 	}
 	
@@ -195,7 +195,7 @@ public class PreparedQuery {
 		this.queryParams = queryParams;
 	}
 	
-	private void setSrcObject(EtlDatabaseObject srcObject) {
+	private void setSrcObject(List<EtlDatabaseObject> srcObject) {
 		this.srcObject = srcObject;
 	}
 	
@@ -262,7 +262,7 @@ public class PreparedQuery {
 		return queryParams;
 	}
 	
-	public static PreparedQuery prepare(QueryDataSourceConfig queryDs, EtlDatabaseObject srcObject,
+	public static PreparedQuery prepare(QueryDataSourceConfig queryDs, List<EtlDatabaseObject> srcObject,
 	        EtlConfiguration configuration) {
 		
 		return new PreparedQuery(queryDs, srcObject, configuration);
@@ -273,7 +273,7 @@ public class PreparedQuery {
 		return new PreparedQuery(queryDs, etlConfig);
 	}
 	
-	public PreparedQuery cloneAndLoadValues(EtlDatabaseObject srcObject) {
+	public PreparedQuery cloneAndLoadValues(List<EtlDatabaseObject> srcObject) {
 		PreparedQuery cloned = new PreparedQuery();
 		cloned.setDataSource(this.getDataSource());
 		cloned.setQuery(this.getQuery());
@@ -342,7 +342,16 @@ public class PreparedQuery {
 		if (this.getSrcObject() == null)
 			throw new ForbiddenOperationException("The main object is not defined");
 		
-		Object paramValue = this.getSrcObject().getFieldValue(paramName);
+		Object paramValue = null;
+		
+		for (EtlDatabaseObject obj : this.getSrcObject()) {
+			try {
+				paramValue = obj.getFieldValue(paramName);
+			}
+			catch (ForbiddenOperationException e) {
+				//Ignore if the object does not contain the parameter
+			}
+		}
 		
 		if (paramValue == null) {
 			throw new ForbiddenOperationException(
