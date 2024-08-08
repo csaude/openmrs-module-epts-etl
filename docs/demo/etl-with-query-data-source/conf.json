@@ -24,6 +24,7 @@
          "dstType":"db"
       }
    ],
+   
    "etlItemConfiguration":[
       {
          "srcConf":{
@@ -40,13 +41,11 @@
                "tableName":"person_data",
                "mapping":[
                   {
-                     "dataSourceName":"person",
-                     "srcField":"uuid",
+                     "srcField":"person.uuid",
                      "dstField":"person_uuid"
                   },
                   {
-                     "dataSourceName":"person",
-                     "srcField":"creation_date",
+                     "srcField":"person.creation_date",
                      "dstField":"person_creation_date"
                   }
                ],
@@ -57,4 +56,6 @@
          ]
       }
    ]
+   
+   
 }
