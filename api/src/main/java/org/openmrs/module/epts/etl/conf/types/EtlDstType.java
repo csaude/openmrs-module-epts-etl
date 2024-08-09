@@ -6,7 +6,9 @@ public enum EtlDstType {
 	db,
 	json,
 	dump,
-	csv;
+	csv,
+	console,
+	popup;
 	
 	// @formatter:on
 	public boolean isDefault() {
@@ -33,4 +35,15 @@ public enum EtlDstType {
 		return isCsv() || isJson() || isDump();
 	}
 	
+	public boolean isConsole() {
+		return this.equals(console);
+	}
+	
+	public boolean isPopUp() {
+		return this.equals(popup);
+	}
+	
+	public boolean isInstantaneo() {
+		return this.isPopUp() || this.isConsole();
+	}
 }

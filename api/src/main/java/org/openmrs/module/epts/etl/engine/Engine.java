@@ -3,13 +3,16 @@ package org.openmrs.module.epts.etl.engine;
 import java.io.File;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
@@ -18,6 +21,7 @@ import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
@@ -60,6 +64,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	
 	private List<TaskProcessor<T>> currentTaskProcessor;
 	
+	private Map<String, List<EtlDatabaseObject>> recordsToDisplay;
+	
 	public Engine(OperationController<T> controller, EtlItemConfiguration etlItemConfiguration,
 	    TableOperationProgressInfo tableOperationProgressInfo) {
 		this.controller = controller;
@@ -71,6 +77,14 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
 		
 		this.finalCheckStatus = MigrationFinalCheckStatus.NOT_INITIALIZED;
+	}
+	
+	public Map<String, List<EtlDatabaseObject>> getRecordsToDisplay() {
+		return recordsToDisplay;
+	}
+	
+	public void setRecordsToDisplay(Map<String, List<EtlDatabaseObject>> recordsToDisplay) {
+		this.recordsToDisplay = recordsToDisplay;
 	}
 	
 	public EtlDstType getGlobalDstType() {
@@ -324,6 +338,17 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 					//}
 				}
 				
+				if (this.getRecordsToDisplay() != null) {
+					for (DstConf dstConf : this.getEtlItemConfiguration().getDstConf()) {
+						if (dstConf.getDstType().isConsole()) {
+							displayResultInConsole(this.getRecordsToDisplay().get(dstConf.getTableName()));
+						} else if (dstConf.getDstType().isPopUp()) {
+							displayResultInPopUp(this.getRecordsToDisplay().get(dstConf.getTableName()));
+						} else
+							throw new ForbiddenOperationException("Unsupported display method " + dstConf.getDstType());
+					}
+				}
+				
 				changeStatusToFinished();
 				
 				if (getRelatedOperationController().isResumable()) {
@@ -338,6 +363,15 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			
 			getController().requestStopDueError(this, e);
 		}
+	}
+	
+	private void displayResultInPopUp(List<EtlDatabaseObject> list) {
+		throw new ForbiddenOperationException("Currently popup not supported!");
+	}
+	
+	private void displayResultInConsole(List<EtlDatabaseObject> objs) {
+		System.out.println(utilities.generateTabDelimitedHeader(objs.get(0)));
+		System.out.println(utilities.parseToTabDelimitedWithoutHeader(objs));
 	}
 	
 	/**
@@ -957,6 +991,22 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		log += "TIME: " + globalProgressMeter.getHumanReadbleTime() + "]";
 		
 		this.logInfo(log);
+	}
+	
+	public synchronized void requestDisplayOfEtlResult(DstConf dstConf, List<EtlDatabaseObject> resultObjs) {
+		if (this.getRecordsToDisplay() == null) {
+			this.setRecordsToDisplay(new HashMap<>());
+		}
+		
+		List<EtlDatabaseObject> dstRecords = this.getRecordsToDisplay().get(dstConf.getTableName());
+		
+		if (dstRecords == null) {
+			dstRecords = new ArrayList<>();
+		}
+		
+		dstRecords.addAll(resultObjs);
+		
+		this.getRecordsToDisplay().put(dstConf.getTableName(), dstRecords);
 	}
 	
 }

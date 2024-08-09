@@ -76,6 +76,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private EtlActionType afterEtlActionType;
 	
+	private boolean disableParallelSearch;
+	
 	/**
 	 * Indicates whether this operation will executed over all tables configured under
 	 * {@link #relatedEtlConfig}. If true, the operation will be run only once (for the first table)
@@ -94,6 +96,14 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.operationType = EtlOperationType.ETL;
 		this.processingBatch = EtlOperationConfig.DEFAULT_BATCH_PROCESSING;
 		this.maxSupportedProcessors = utilities.getAvailableProcessors();
+	}
+	
+	public boolean isDisableParallelSearch() {
+		return disableParallelSearch;
+	}
+	
+	public void setDisableParallelSearch(boolean disableParallelSearch) {
+		this.disableParallelSearch = disableParallelSearch;
 	}
 	
 	public EtlActionType getActionType() {

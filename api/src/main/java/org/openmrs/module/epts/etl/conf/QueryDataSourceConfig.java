@@ -168,7 +168,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		PreparedQuery query;
 		try {
-			query = PreparedQuery.prepare(this, getRelatedEtlConf());
+			query = PreparedQuery.prepare(this, getRelatedEtlConf(), true);
 			
 			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), null, conn));
 			

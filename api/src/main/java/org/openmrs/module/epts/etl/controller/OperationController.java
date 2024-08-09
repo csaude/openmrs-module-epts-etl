@@ -509,17 +509,19 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		progressInfo.getProgressMeter().changeStatusToFinished();
 		
-		OpenConnection conn = getDefaultConnInfo().openConnection();
-		
-		try {
-			progressInfo.save(conn);
-			conn.markAsSuccessifullyTerminated();
-		}
-		catch (DBException e) {
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
+		if (isResumable()) {
+			OpenConnection conn = getDefaultConnInfo().openConnection();
+			
+			try {
+				progressInfo.save(conn);
+				conn.markAsSuccessifullyTerminated();
+			}
+			catch (DBException e) {
+				throw new RuntimeException(e);
+			}
+			finally {
+				conn.finalizeConnection();
+			}
 		}
 	}
 	

@@ -141,6 +141,23 @@ public class EtlLoadHelper {
 		return allOfDst;
 	}
 	
+	/**
+	 * Finds all LoadRecord records which as same {@link DstConf} from the #loadRecordHelper
+	 */
+	private List<EtlDatabaseObject> getAllRecordsAsEtlDstDatabaseObject(DstConf dstConf) {
+		List<EtlDatabaseObject> allOfDst = new ArrayList<>();
+		
+		for (EtlLoadHelperRecord lr : getLoadRecordHelper()) {
+			LoadRecord rec = lr.getLoadRecord(dstConf);
+			
+			if (rec != null) {
+				allOfDst.add(rec.getDstRecord());
+			}
+		}
+		
+		return allOfDst;
+	}
+	
 	public void load(Connection srcConn, Connection dstConn) throws ParentNotYetMigratedException, DBException {
 		
 		for (DstConf dst : this.getDstConf()) {
@@ -185,6 +202,8 @@ public class EtlLoadHelper {
 			loadToDb(dstConf, srcConn, dstConn);
 		} else if (dstType.isFile()) {
 			loadToFile(dstConf);
+		} else if (dstType.isInstantaneo()) {
+			getEngine().requestDisplayOfEtlResult(dstConf, getAllRecordsAsEtlDstDatabaseObject(dstConf));
 		} else {
 			throw new ForbiddenOperationException("Unsupported dstType '" + dstType + "'");
 		}

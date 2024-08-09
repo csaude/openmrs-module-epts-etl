@@ -690,8 +690,8 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 			if (tabConf.containsAllFields(utilities.parseList(this.getFields(), Field.class))) {
 				this.tabConf = tabConf;
 			} else {
-				throw new ForbiddenOperationException(
-				        "The table you a setting for this UniqueKeyInfo does not contain one or more fields contained by the UniqueKeyInfo");
+				throw new ForbiddenOperationException("The table [" + tabConf.getTableName()
+				        + "] you a setting for this UniqueKeyInfo does not contain one or more fields contained by the UniqueKeyInfo");
 			}
 		}
 	}

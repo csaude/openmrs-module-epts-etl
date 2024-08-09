@@ -346,10 +346,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setParentRefInfo(toCloneFrom.getParentRefInfo());
 		this.setSyncRecordClass(toCloneFrom.getSyncRecordClass());
 		this.setParentConf(toCloneFrom.getParentConf());
+		this.setFields(toCloneFrom.getFields());
 		
 		this.setPrimaryKey(toCloneFrom.getPrimaryKey());
 		
-		this.setFields(toCloneFrom.getFields());
 		this.setWinningRecordFieldsInfo(toCloneFrom.getWinningRecordFieldsInfo());
 		
 		if (this.hasPK()) {

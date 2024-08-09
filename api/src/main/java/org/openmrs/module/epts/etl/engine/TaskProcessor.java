@@ -150,6 +150,10 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	
 	public void performe(boolean useMultiThreadSearch, Connection srcConn, Connection dstConn) throws DBException {
 		
+		if (getRelatedEtlOperationConfig().isDisableParallelSearch()) {
+			useMultiThreadSearch = false;
+		}
+		
 		String threads = useMultiThreadSearch ? " USING MULTI-THREAD" : " USING SINGLE THREAD";
 		
 		if (getLimits() != null) {

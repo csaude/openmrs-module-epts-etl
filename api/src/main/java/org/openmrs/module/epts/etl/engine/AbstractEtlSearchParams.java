@@ -106,7 +106,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
 			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
 			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraContidion),
-			    getConfig().getRelatedEtlConf());
+			    getConfig().getRelatedEtlConf(), true);
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
 			
@@ -189,6 +189,11 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		long qtyRecordsBetweenLimits = maxRecordId - minRecordId + 1;
 		
 		int qtyProcessors = utilities.getAvailableProcessors();
+		
+		if (this.getRelatedEngine() != null
+		        && this.getRelatedEngine().getRelatedEtlOperationConfig().isDisableParallelSearch()) {
+			qtyProcessors = 1;
+		}
 		
 		if (qtyProcessors > qtyRecordsBetweenLimits) {
 			qtyProcessors = (int) qtyRecordsBetweenLimits;

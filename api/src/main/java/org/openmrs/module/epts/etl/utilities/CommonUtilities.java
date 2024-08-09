@@ -991,6 +991,33 @@ public class CommonUtilities implements Serializable {
 		return csvBuilder.toString();
 	}
 	
+	public <T extends VO> String generateTabDelimitedHeader(T firstObj) {
+		StringBuilder csvBuilder = new StringBuilder();
+		
+		List<String> headers = org.openmrs.module.epts.etl.model.Field.parseAllToListOfName(firstObj.getFields());
+		
+		csvBuilder.append(String.join("\t\t", headers)).append("\n");
+		
+		return csvBuilder.toString();
+	}
+	
+	public String parseToTabDelimitedWithoutHeader(List<? extends VO> objs) {
+		if (objs == null || objs.isEmpty()) {
+			return "";
+		}
+		
+		StringBuilder tabBuilder = new StringBuilder();
+		
+		for (VO obj : objs) {
+			List<String> values = obj.getFieldValuesAsString();
+			
+			// Join the values with tabs and append to the StringBuilder with a newline
+			tabBuilder.append(String.join("\t\t", values)).append("\n");
+		}
+		
+		return tabBuilder.toString();
+	}
+	
 	public static String parseToCSV_(List<String> objs, boolean includeHeader) {
 		if (objs == null || objs.isEmpty()) {
 			return "";

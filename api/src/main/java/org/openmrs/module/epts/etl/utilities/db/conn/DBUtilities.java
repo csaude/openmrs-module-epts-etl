@@ -1328,7 +1328,8 @@ public class DBUtilities {
 				if (parenthesisStack.size() == 1) {
 					String subquery = currentSubquery.toString();
 					// Validate subquery starts with "select"
-					if (subquery.trim().toLowerCase().startsWith("(select")) {
+					if (subquery.trim().toLowerCase().startsWith("(select")
+					        || subquery.trim().toLowerCase().startsWith("( select")) {
 						subqueries.add(subquery);
 					}
 				}
@@ -1350,11 +1351,11 @@ public class DBUtilities {
 			return false;
 		}
 		
-		// Regular expression for a basic SQL SELECT statement
-		String selectRegex = "(?i)\\s*select\\s+.+\\s+from\\s+.+";
+		// Regular expression for a basic SQL SELECT statement with flexible spacing and line breaks
+		String selectRegex = "(?i)\\s*select\\s+(.|\\s)+\\s+from\\s+(.|\\s)+";
 		
 		// Check if the query matches the regex
-		return query.matches(selectRegex);
+		return query.toLowerCase().matches(selectRegex);
 	}
 	
 	public static List<SqlFunctionInfo> extractSqlFunctionsInSelect(String query) {
@@ -1472,10 +1473,71 @@ public class DBUtilities {
 		    "select", "order", "group", "by");
 	}
 	
-	public static void main(String[] args) {
-		String sql = "select count(*) as qty, max(id) as maxid from abc as a inner join a where a = b";
-		
-		System.out.println(extractFirstTableAliasOnSqlQuery(sql));
+	
+	public static List<String> tryToSplitQueryByUnions(String query) {
+        // Normalize the query by removing extra spaces
+        query = query.trim().replaceAll("\\s+", " ");
+        List<String> splitQueries = new ArrayList<>();
+        StringBuilder currentQuery = new StringBuilder();
+        int parenthesesLevel = 0;
+        String lowerQuery = query.toLowerCase();
+        
+        int i = 0;
+        while (i < query.length()) {
+            char currentChar = query.charAt(i);
+            currentQuery.append(currentChar);
+
+            // Track parentheses to determine the context (main query vs subquery)
+            if (currentChar == '(') {
+                parenthesesLevel++;
+            } else if (currentChar == ')') {
+                parenthesesLevel--;
+            }
+
+            // Check for " UNION " (with spaces around) outside of subqueries
+            if (parenthesesLevel == 0 && i + 6 < query.length() && lowerQuery.substring(i).startsWith(" union ") && 
+                (i + 6 == query.length() || Character.isWhitespace(query.charAt(i + 6)))) {
+                
+                // Add the current query part to the list and reset the currentQuery
+                splitQueries.add(currentQuery.toString().trim());
+                currentQuery.setLength(0);  // Reset the StringBuilder
+                
+                // Skip the " UNION " part in the main query
+                i += 6;
+                continue;  // Continue without incrementing i to ensure the loop works correctly
+            }
+
+            i++;
+        }
+
+        // Add the remaining part of the query
+        splitQueries.add(currentQuery.toString().trim());
+        
+        return splitQueries;
 	}
 	
+
+	public static void main(String[] args) {
+		String sql = "";
+		
+		sql += " select a, b ";
+		sql += " from tab1 ";
+		
+		sql += " union ";
+		
+		sql += " select tab2.x as a, k as a ";
+		sql += " from 	tab2 ";
+		sql += "		left join (	select  k ";
+		sql += "					from tab3 ";
+		sql += "					union ";
+		sql += "					select y as k ";
+		sql += "					from tab4) inner_union on inner_union.col1 = tab2.col3";
+		sql += " union";
+		sql += " select a, b ";
+		sql += " from tab7 ";
+		
+		for (String query : tryToSplitQueryByUnions(sql)) {
+			System.out.println("\"" + query + "\"");
+		}
+	}
 }

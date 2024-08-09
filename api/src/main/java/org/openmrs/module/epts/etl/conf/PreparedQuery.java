@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.conf;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -10,6 +11,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.exceptions.MissingParameterException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -39,10 +41,13 @@ public class PreparedQuery {
 	
 	private QueryDataSourceConfig dataSource;
 	
+	private String originalQuery;
+	
 	PreparedQuery() {
 	}
 	
-	PreparedQuery(QueryDataSourceConfig dataSource, List<EtlDatabaseObject> srcObject, EtlConfiguration configuration) {
+	PreparedQuery(QueryDataSourceConfig dataSource, List<EtlDatabaseObject> srcObject, EtlConfiguration configuration,
+	    boolean ignoreMissingParameters) {
 		this.setDataSource(dataSource);
 		this.setQuery(dataSource.getQuery());
 		this.setEtlConfig(configuration);
@@ -53,15 +58,24 @@ public class PreparedQuery {
 		if (!hasQueryParams())
 			return;
 		
-		loadQueryParamValues();
+		try {
+			loadQueryParamValues();
+		}
+		catch (MissingParameterException e) {
+			if (!ignoreMissingParameters) {
+				throw e;
+			}
+			
+		}
+		
 	}
 	
-	PreparedQuery(QueryDataSourceConfig queryDs, EtlConfiguration config) {
-		this(queryDs, null, config);
+	PreparedQuery(QueryDataSourceConfig queryDs, EtlConfiguration config, boolean ignoreMissingParameters) {
+		this(queryDs, null, config, ignoreMissingParameters);
 	}
 	
 	void loadQueryParamValues() {
-		String error = "";
+		List<String> missingParameters = new ArrayList<>();
 		
 		for (QueryParameter field : this.getQueryParams()) {
 			
@@ -73,23 +87,18 @@ public class PreparedQuery {
 					field.setValue(getParamValueFromSourceMainObject(field.getName()));
 				}
 				catch (ForbiddenOperationException e1) {
-					if (!error.isEmpty()) {
-						error += ",";
-					}
-					
-					error += field.getName();
+					missingParameters.add(field.getName());
 				}
 			}
 		}
 		
-		if (!error.isEmpty()) {
-			throw new ForbiddenOperationException("Missing parameters: " + error);
+		if (!missingParameters.isEmpty()) {
+			throw new MissingParameterException(missingParameters);
 		}
-		
 	}
 	
 	Object retrieveParamValue(String paramName) {
-		String error = "";
+		List<String> missingParameters = new ArrayList<>();
 		
 		QueryParameter param = null;
 		
@@ -106,11 +115,7 @@ public class PreparedQuery {
 					field.setValue(getParamValueFromSourceMainObject(field.getName()));
 				}
 				catch (ForbiddenOperationException e1) {
-					if (!error.isEmpty()) {
-						error += ",";
-					}
-					
-					error += field.getName();
+					missingParameters.add(field.getName());
 				}
 			}
 			
@@ -119,8 +124,8 @@ public class PreparedQuery {
 			break;
 		}
 		
-		if (!error.isEmpty()) {
-			throw new ForbiddenOperationException("Missing parameters: " + error);
+		if (!missingParameters.isEmpty()) {
+			throw new MissingParameterException(missingParameters);
 		}
 		
 		return param.getValue();
@@ -128,9 +133,11 @@ public class PreparedQuery {
 	}
 	
 	public void setQuery(String query) {
-		this.query = query;
-		this.query = utilities.removeDuplicatedEmptySpace(this.query);
-		this.query = utilities.removeSpacesBeforeAndAfterPeriod(this.query);
+		this.originalQuery = query;
+		this.query = utilities.removeDuplicatedEmptySpace(this.getOriginalQuery());
+		this.query = utilities.removeSpacesBeforeAndAfterPeriod(this.getQuery());
+		
+		this.query = this.getQuery().replaceAll("\\s+", " ");
 		
 		this.setSubqueries(DBUtilities.findSubqueries(this.getQuery()));
 		
@@ -189,6 +196,14 @@ public class PreparedQuery {
 	
 	public String getQuery() {
 		return query;
+	}
+	
+	public String getOriginalQuery() {
+		return originalQuery;
+	}
+	
+	public void setOriginalQuery(String originalQuery) {
+		this.originalQuery = originalQuery;
 	}
 	
 	private void setQueryParams(List<QueryParameter> queryParams) {
@@ -265,12 +280,12 @@ public class PreparedQuery {
 	public static PreparedQuery prepare(QueryDataSourceConfig queryDs, List<EtlDatabaseObject> srcObject,
 	        EtlConfiguration configuration) {
 		
-		return new PreparedQuery(queryDs, srcObject, configuration);
+		return new PreparedQuery(queryDs, srcObject, configuration, false);
 	}
 	
-	public static PreparedQuery prepare(QueryDataSourceConfig queryDs, EtlConfiguration etlConfig)
-	        throws ForbiddenOperationException {
-		return new PreparedQuery(queryDs, etlConfig);
+	public static PreparedQuery prepare(QueryDataSourceConfig queryDs, EtlConfiguration etlConfig,
+	        boolean ignoreMissingParameters) throws ForbiddenOperationException {
+		return new PreparedQuery(queryDs, etlConfig, ignoreMissingParameters);
 	}
 	
 	public PreparedQuery cloneAndLoadValues(List<EtlDatabaseObject> srcObject) {
@@ -332,7 +347,7 @@ public class PreparedQuery {
 		Object paramValue = this.getEtlConfig().getParamValue(param);
 		
 		if (paramValue == null) {
-			throw new ForbiddenOperationException("The configuration param '" + param + "' is needed to load source object");
+			throw new MissingParameterException(param);
 		}
 		
 		return paramValue;
@@ -422,23 +437,35 @@ public class PreparedQuery {
 	}
 	
 	private List<QueryParameter> extractQueryParameters(String sqlQuery) {
-		
 		List<QueryParameter> parameters = new ArrayList<>();
+		
+		List<String> queriesInUnion = DBUtilities.tryToSplitQueryByUnions(sqlQuery);
+		
+		List<String> avaliableSubQueries = null;
+		
+		if (utilities.arrayHasElement(queriesInUnion)) {
+			avaliableSubQueries = queriesInUnion;
+		} else {
+			avaliableSubQueries = utilities.parseToList(sqlQuery);
+		}
 		
 		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
 		String parameterRegex = "@\\s*(\\w+)";
 		Pattern pattern = Pattern.compile(parameterRegex);
-		Matcher matcher = pattern.matcher(sqlQuery);
 		
-		while (matcher.find()) {
-			String paramName = matcher.group(1);
-			int paramStart = matcher.start();
+		for (String query : avaliableSubQueries) {
+			Matcher matcher = pattern.matcher(query);
 			
-			QueryParameter params = new QueryParameter(paramName);
-			
-			params.setContextType(determineParameterContext(sqlQuery, paramStart));
-			
-			parameters.add(params);
+			while (matcher.find()) {
+				String paramName = matcher.group(1);
+				int paramStart = matcher.start();
+				
+				QueryParameter params = new QueryParameter(paramName);
+				
+				params.setContextType(determineParameterContext(query, paramStart));
+				
+				parameters.add(params);
+			}
 		}
 		
 		return parameters;
@@ -461,6 +488,8 @@ public class PreparedQuery {
 	private static String tryToExtractParameterContaingSubQuery(String sqlQuery, int paramStart) {
 		String subQuery = "";
 		
+		Stack<Integer> parenthesisStack = new Stack<>();
+		
 		boolean foundPossibleSubQueryStarting = false;
 		boolean foundPossibleSubQueryFinishing = false;
 		
@@ -470,14 +499,19 @@ public class PreparedQuery {
 			if (currChar == '(') {
 				//Found the possible starting sub query
 				
-				foundPossibleSubQueryStarting = true;
-				break;
-			}
-			if (currChar == ')') {
-				//Closing the subquery before found the staring. Abort
-				break;
+				if (parenthesisStack.size() == 0) {
+					foundPossibleSubQueryStarting = true;
+					break;
+				} else {
+					parenthesisStack.pop();
+					subQuery = ("" + currChar) + subQuery;
+				}
+			} else if (currChar == ')') {
+				parenthesisStack.push(i);
+				
+				subQuery = ("" + currChar) + subQuery;
 			} else {
-				subQuery = currChar + subQuery;
+				subQuery = ("" + currChar) + subQuery;
 			}
 		}
 		
@@ -486,14 +520,17 @@ public class PreparedQuery {
 				char currChar = sqlQuery.charAt(i);
 				
 				if (currChar == ')') {
-					//Found the possible finishing sub query
+					if (parenthesisStack.size() == 0) {
+						foundPossibleSubQueryFinishing = true;
+						break;
+					}else {
+						parenthesisStack.pop();
+						subQuery = ("" + currChar) + subQuery;	
+					}
+				} else if (currChar == '(') {
+					parenthesisStack.push(i);
 					
-					foundPossibleSubQueryFinishing = true;
-					break;
-				}
-				if (currChar == '(') {
-					//Found the opening subquery before the closing... Abort
-					break;
+					subQuery = ("" + currChar) + subQuery;
 					
 				} else {
 					subQuery = subQuery + currChar;
@@ -516,11 +553,20 @@ public class PreparedQuery {
 		String beforeParam = sqlQuery.substring(0, paramStart).toLowerCase();
 		String afterParam = sqlQuery.substring(paramStart).toLowerCase();
 		
+		Pattern compareClausePattenern = Pattern.compile(".*(=|>|<|>=|<=|!=|<>|like)\\s*(--.*)?$", Pattern.DOTALL);
+		Matcher compareClauseMatcher = compareClausePattenern.matcher(beforeParam.toLowerCase().trim());
+		
+		Pattern inClauseBeforePattenern = Pattern.compile(".*\\bin\\s*\\(\\s*$", Pattern.DOTALL);
+		Matcher inClauseBeforeMatcher = inClauseBeforePattenern.matcher(beforeParam.toLowerCase().trim());
+		
+		Pattern inClauseAfterPattenern = Pattern.compile("(?s)^\\s*\\)\\s*(and|or|$)", Pattern.DOTALL);
+		Matcher inClauseAfterMatcher = inClauseAfterPattenern.matcher(afterParam.toLowerCase().trim());
+		
 		if (beforeParam.contains("select ") && afterParam.contains(" from ")) {
 			return ParameterContextType.SELECT_FIELD;
-		} else if (beforeParam.matches(".*\\bin\\s*\\($") || afterParam.matches("^\\s*\\)\\s*(and|or|$)")) {
+		} else if (inClauseBeforeMatcher.matches() || inClauseAfterMatcher.matches()) {
 			return ParameterContextType.IN_CLAUSE;
-		} else if (beforeParam.matches(".*(=|>|<|>=|<=|!=|<>|like)\\s*$")) {
+		} else if (compareClauseMatcher.matches()) {
 			return ParameterContextType.COMPARE_CLAUSE;
 		} else if (beforeParam.contains(" from ") || beforeParam.contains(" join ") || beforeParam.contains(" exists ")) {
 			return ParameterContextType.DB_RESOURCE;
