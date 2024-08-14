@@ -7,10 +7,12 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.VO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public abstract class AbstractSearchParams<T extends VO> {
 	
@@ -159,10 +161,21 @@ public abstract class AbstractSearchParams<T extends VO> {
 		return SearchParamsDAO.countAll(this, null, conn);
 	}
 	
-	private String parseParamToString(Object param) {
+	private String parseParamToString(Object param, Connection conn) throws DBException {
+		DbmsType dbmsType = DbmsType.determineFromConnection(conn);
+		
 		if (param instanceof Date) {
-			return "TO_DATE('" + DateAndTimeUtilities.formatToDDMMYYYY_HHMISS((Date) param) + "', '"
-			        + DateAndTimeUtilities.DATE_TIME_FORMAT + "')";
+			
+			if (dbmsType.isOracle() || dbmsType.isPostgres()) {
+				
+				return "TO_DATE('" + DateAndTimeUtilities.formatToDDMMYYYY_HHMISS((Date) param) + "', '"
+				        + DateAndTimeUtilities.DATE_TIME_FORMAT + "')";
+			} else if (dbmsType.isMysql()) {
+				return DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) param);
+			} else if (dbmsType.issSqlServer()) {
+				return "CONVERT(date, '" + DateAndTimeUtilities.formatToYYYYMMDD_HHMISS((Date) param) + "',120)";
+			} else
+				throw new ForbiddenOperationException("Unsuported dbms '" + dbmsType + "'");
 		}
 		
 		if (param instanceof String)
@@ -173,6 +186,27 @@ public abstract class AbstractSearchParams<T extends VO> {
 	
 	public abstract SearchClauses<T> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
 	        Connection dstConn) throws DBException;
+	
+	public String generateFulfilledQuery(IntervalExtremeRecord recordLimits, Connection srcConn, Connection dstConn)
+	        throws DBException {
+		SearchClauses<T> searchClauses = generateSearchClauses(recordLimits, srcConn, dstConn);
+		
+		String fulfiledQuery = "";
+		
+		String query = searchClauses.generateSQL(srcConn);
+		
+		int currParam = 0;
+		
+		for (int i = 0; i < query.length(); i++) {
+			if (query.charAt(i) == '?') {
+				fulfiledQuery += parseParamToString(searchClauses.getParameters()[currParam], srcConn);
+				currParam++;
+			} else
+				fulfiledQuery += query.charAt(i);
+		}
+		
+		return fulfiledQuery;
+	}
 	
 	public String generateFulfilledQueryClause(IntervalExtremeRecord recordLimits, Connection srcConn, Connection dstConn)
 	        throws DBException {
@@ -185,7 +219,7 @@ public abstract class AbstractSearchParams<T extends VO> {
 		
 		for (int i = 0; i < clauses.length(); i++) {
 			if (clauses.charAt(i) == '?') {
-				fulfiledQuery += parseParamToString(searchClauses.getParameters()[currParam]);
+				fulfiledQuery += parseParamToString(searchClauses.getParameters()[currParam], srcConn);
 				currParam++;
 			} else
 				fulfiledQuery += clauses.charAt(i);

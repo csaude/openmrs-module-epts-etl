@@ -57,7 +57,9 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
 	
-	public QueryDataSourceConfig(String query) {
+	public QueryDataSourceConfig(String query, SrcConf relatedSrcVonf) {
+		setRelatedSrcConf(relatedSrcVonf);
+		
 		setQuery(query);
 	}
 	
@@ -168,9 +170,16 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		PreparedQuery query;
 		try {
+			
+			getRelatedEtlConf().logDebug("Initializing full loading of QueryDataSourceConfig [" + this.getName() + "]");
+			
 			query = PreparedQuery.prepare(this, getRelatedEtlConf(), true);
 			
+			getRelatedEtlConf().logTrace("Determining fields for query...");
+			
 			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), null, conn));
+			
+			getRelatedEtlConf().logDebug("QueryDataSourceConfig [" + this.getName() + "] full loaded!");
 			
 			this.fullLoaded = true;
 		}
@@ -470,8 +479,13 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		return false;
 	}
 	
-	public static QueryDataSourceConfig fastCreate(String query) {
-		return new QueryDataSourceConfig(query);
+	public static QueryDataSourceConfig fastCreate(String query, SrcConf relatedSrcVonf) {
+		return new QueryDataSourceConfig(query, relatedSrcVonf);
+	}
+	
+	@Override
+	public String toString() {
+		return "Query " + getName() + "\nQuery\n--------------------\n" + getQuery() + "\n--------------------";
 	}
 	
 }

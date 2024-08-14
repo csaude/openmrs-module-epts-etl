@@ -105,7 +105,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses) {
 		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
 			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
-			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraContidion),
+			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraContidion, getSrcConf()),
 			    getConfig().getRelatedEtlConf(), true);
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
@@ -249,6 +249,11 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		}
 		
 		String sql = searchClauses.generateSQL(srcConn);
+		
+		if (getRelatedEngine() != null) {
+			getRelatedEngine().logTrace("Using query for intervals " + intervalExtremeRecord + " > \n------------ \n "
+			        + this.generateFulfilledQuery(intervalExtremeRecord, srcConn, dstCOnn) + "\n----------------");
+		}
 		
 		return BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, searchClauses.getParameters(), srcConn);
 	}

@@ -186,7 +186,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 			
 			logDebug("TASK ON " + records.size() + " DONE!");
 		} else {
-			logDebug("No dstRecord found for etl");
+			logDebug("NO SRC RECORD FOUND FOR ETL!");
 		}
 	}
 	

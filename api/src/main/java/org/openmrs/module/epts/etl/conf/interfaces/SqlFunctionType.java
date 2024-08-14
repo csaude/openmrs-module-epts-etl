@@ -6,7 +6,7 @@ public enum SqlFunctionType {
 	
 	COUNT,
 	MAX,
-	MIN;
+	MIN, timestampdiff;
 	
 	public boolean isCount() {
 		return this.equals(COUNT);
@@ -22,7 +22,10 @@ public enum SqlFunctionType {
 		if (token.toLowerCase().contains("min")) {
 			return SqlFunctionType.MIN;
 		}
+		else if (token.toLowerCase().contains("timestampdiff")) {
+			return SqlFunctionType.timestampdiff;
+		}
 		
-		throw new ForbiddenOperationException("Ansuported function in token " + token);
+		throw new ForbiddenOperationException("Unsuported function in token " + token);
 	}
 }

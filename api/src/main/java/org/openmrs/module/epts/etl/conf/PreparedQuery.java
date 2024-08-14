@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
-import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParameterException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -43,23 +42,41 @@ public class PreparedQuery {
 	
 	private String originalQuery;
 	
+	private boolean sqlFunctionLoaded;
+	
 	PreparedQuery() {
+	}
+	
+	EtlConfiguration getRelatedEtlConfiguration() {
+		return getDataSource().getRelatedEtlConf();
 	}
 	
 	PreparedQuery(QueryDataSourceConfig dataSource, List<EtlDatabaseObject> srcObject, EtlConfiguration configuration,
 	    boolean ignoreMissingParameters) {
+		
 		this.setDataSource(dataSource);
+		
+		this.logTrace("Starting Query preparation... " + dataSource.getName());
+		
 		this.setQuery(dataSource.getQuery());
 		this.setEtlConfig(configuration);
 		this.setSrcObject(srcObject);
+		this.tryToLoadSQLFunctionInfo();
+		logTrace("Loading Query Parameters..");
 		
-		this.setQueryParams(extractAllParamOnQuery());
+		this.setQueryParams(extractParamOnQuery(this.getQuery()));
 		
+		logTrace("Query Parameters Loaded!");
 		if (!hasQueryParams())
 			return;
 		
 		try {
+			
+			logTrace("Loading Query Parameters Values...");
+			
 			loadQueryParamValues();
+			
+			logTrace("Query parameters loaded!");
 		}
 		catch (MissingParameterException e) {
 			if (!ignoreMissingParameters) {
@@ -132,6 +149,14 @@ public class PreparedQuery {
 		
 	}
 	
+	void logTrace(String msg) {
+		getRelatedEtlConfiguration().logTrace(msg);
+	}
+	
+	void logDebug(String msg) {
+		getRelatedEtlConfiguration().logDebug(msg);
+	}
+	
 	public void setQuery(String query) {
 		this.originalQuery = query;
 		this.query = utilities.removeDuplicatedEmptySpace(this.getOriginalQuery());
@@ -139,7 +164,15 @@ public class PreparedQuery {
 		
 		this.query = this.getQuery().replaceAll("\\s+", " ");
 		
+		logTrace("Discovering subqueries on quey");
+		
 		this.setSubqueries(DBUtilities.findSubqueries(this.getQuery()));
+		
+		if (hasSubQueries()) {
+			logTrace("Found Subqueries \n" + this.getSubqueries());
+		} else {
+			logTrace("No subquery found");
+		}
 		
 		setMainQuery(this.getQuery());
 		
@@ -290,10 +323,12 @@ public class PreparedQuery {
 	
 	public PreparedQuery cloneAndLoadValues(List<EtlDatabaseObject> srcObject) {
 		PreparedQuery cloned = new PreparedQuery();
+		cloned.setSqlFunctionLoaded(this.isSqlFunctionLoaded());
 		cloned.setDataSource(this.getDataSource());
 		cloned.setQuery(this.getQuery());
 		cloned.setEtlConfig(this.getEtlConfig());
 		cloned.setSrcObject(srcObject);
+		cloned.setCountFunctionInfo(this.getCountFunctionInfo());
 		
 		if (this.hasQueryParams()) {
 			cloned.setQueryParams(QueryParameter.cloneAll(this.getQueryParams()));
@@ -312,27 +347,41 @@ public class PreparedQuery {
 		return countFunctionInfo;
 	}
 	
+	public boolean isSqlFunctionLoaded() {
+		return sqlFunctionLoaded;
+	}
+	
+	public void setSqlFunctionLoaded(boolean sqlFunctionLoaded) {
+		this.sqlFunctionLoaded = sqlFunctionLoaded;
+	}
+	
 	private void tryToLoadSQLFunctionInfo() {
-		List<SqlFunctionInfo> avaliableFunction = DBUtilities.extractSqlFunctionsInSelect(getMainQuery());
 		
-		if (utilities.arrayHasExactlyOneElement(this.getDataSource().getFields())
-		        && utilities.arrayHasExactlyOneElement(avaliableFunction)) {
-			if (avaliableFunction.get(0).isCountFunction()) {
-				this.setCountFunctionInfo(avaliableFunction.get(0));
-				
-				String mainTableName = DBUtilities.extractFirstTableFromSelectQuery(this.getMainQuery());
-				
-				if (mainTableName.startsWith("@")) {
-					mainTableName = retrieveParamValue(utilities.removeFirsChar(mainTableName)).toString();
+		if (!isSqlFunctionLoaded()) {
+			
+			List<SqlFunctionInfo> avaliableFunction = DBUtilities.extractSqlFunctionsInSelect(getMainQuery());
+			
+			if (utilities.arrayHasExactlyOneElement(this.getDataSource().getFields())
+			        && utilities.arrayHasExactlyOneElement(avaliableFunction)) {
+				if (avaliableFunction.get(0).isCountFunction()) {
+					this.setCountFunctionInfo(avaliableFunction.get(0));
+					
+					String mainTableName = DBUtilities.extractFirstTableFromSelectQuery(this.getMainQuery());
+					
+					if (mainTableName.startsWith("@")) {
+						mainTableName = retrieveParamValue(utilities.removeFirsChar(mainTableName)).toString();
+					}
+					
+					this.getCountFunctionInfo().setMainTable(new GenericTableConfiguration(mainTableName));
+					
+					new MaintableAliasGenerator(this, mainTableName)
+					        .generateAliasForTable(this.getCountFunctionInfo().getMainTable());
+					
+					this.getCountFunctionInfo().getMainTable().setRelatedEtlConfig(this.getEtlConfig());
 				}
-				
-				this.getCountFunctionInfo().setMainTable(new GenericTableConfiguration(mainTableName));
-				
-				new MaintableAliasGenerator(this, mainTableName)
-				        .generateAliasForTable(this.getCountFunctionInfo().getMainTable());
-				
-				this.getCountFunctionInfo().getMainTable().setRelatedEtlConfig(this.getEtlConfig());
 			}
+			
+			this.setSqlFunctionLoaded(true);
 		}
 	}
 	
@@ -383,20 +432,42 @@ public class PreparedQuery {
 	 * @param sqlQuery the query to extract from
 	 * @return the list of extracted parameters name
 	 */
-	private List<QueryParameter> extractAllParamOnQuery() {
+	private List<QueryParameter> extractParamOnQuery(String sqlQuery) {
 		
+		logTrace("Extracting query parameters:\n-----------------\n" + sqlQuery + "\n---------------------");
+		
+		List<QueryParameter> parameters = new ArrayList<>();
+		
+		List<String> avaliableSubQueries = DBUtilities.tryToSplitQueryByUnions(sqlQuery);
+		
+		for (String subQuery : avaliableSubQueries) {
+			List<QueryParameter> parametersInSubQuery = extractQueryParametersInSubQuery(subQuery);
+			
+			if (utilities.arrayHasElement(parametersInSubQuery)) {
+				parameters.addAll(parametersInSubQuery);
+			}
+		}
+		
+		return parameters;
+	}
+	
+	private List<QueryParameter> extractQueryParametersInSubQuery(String subQuery) {
 		List<QueryParameter> parameters = new ArrayList<>();
 		
 		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
 		String parameterRegex = "@\\s*(\\w+)";
 		Pattern pattern = Pattern.compile(parameterRegex);
-		Matcher matcher = pattern.matcher(this.getQuery());
+		Matcher matcher = pattern.matcher(subQuery);
 		
 		int minAllowedParamStart = 0;
 		
 		while (matcher.find()) {
 			String paramName = matcher.group(1);
+			
+			logTrace("Found parameter: " + paramName);
+			
 			int paramStart = matcher.start();
+			int paramEnd = matcher.end();
 			
 			if (paramStart < minAllowedParamStart) {
 				continue;
@@ -404,9 +475,15 @@ public class PreparedQuery {
 			
 			QueryParameter params = new QueryParameter(paramName);
 			
-			String containgSubquery = tryToExtractParameterContaingSubQuery(this.getQuery(), paramStart);
+			logTrace("Trying to extract subquery from starting position " + paramStart + "\nOn Query\n--------------\n"
+			        + subQuery);
+			
+			String containgSubquery = tryToExtractParameterContaingSubQuery(subQuery, paramStart);
 			
 			if (utilities.stringHasValue(containgSubquery)) {
+				
+				logTrace("Found subquer within the paratameter " + params.getName());
+				
 				//Assuming that this is the first parameter on the sub query
 				//Try to determine its position
 				
@@ -418,51 +495,22 @@ public class PreparedQuery {
 				//We want to exclude all parameters within the sub query in the main parameters extraction
 				minAllowedParamStart = subSueryStart + containgSubquery.length();
 				
-				List<QueryParameter> subqueyParams = extractQueryParameters(containgSubquery);
+				List<QueryParameter> subqueyParams = extractParamOnQuery(containgSubquery);
 				
 				if (utilities.arrayHasElement(subqueyParams)) {
 					parameters.addAll(subqueyParams);
 				}
 				
 			} else {
+				logTrace("No subquery found within the parameter on the current query");
+				
 				minAllowedParamStart = paramStart;
 				
-				params.setContextType(determineParameterContext(this.getMainQuery(), paramStart));
+				logTrace("Determining Parameter context for parameter " + paramName);
 				
-				parameters.add(params);
-			}
-		}
-		
-		return parameters;
-	}
-	
-	private List<QueryParameter> extractQueryParameters(String sqlQuery) {
-		List<QueryParameter> parameters = new ArrayList<>();
-		
-		List<String> queriesInUnion = DBUtilities.tryToSplitQueryByUnions(sqlQuery);
-		
-		List<String> avaliableSubQueries = null;
-		
-		if (utilities.arrayHasElement(queriesInUnion)) {
-			avaliableSubQueries = queriesInUnion;
-		} else {
-			avaliableSubQueries = utilities.parseToList(sqlQuery);
-		}
-		
-		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
-		String parameterRegex = "@\\s*(\\w+)";
-		Pattern pattern = Pattern.compile(parameterRegex);
-		
-		for (String query : avaliableSubQueries) {
-			Matcher matcher = pattern.matcher(query);
-			
-			while (matcher.find()) {
-				String paramName = matcher.group(1);
-				int paramStart = matcher.start();
+				params.determineParameterContext(subQuery, paramStart, paramEnd);
 				
-				QueryParameter params = new QueryParameter(paramName);
-				
-				params.setContextType(determineParameterContext(query, paramStart));
+				logTrace("Context for " + paramName + " is " + params.getContextType().toString());
 				
 				parameters.add(params);
 			}
@@ -487,6 +535,10 @@ public class PreparedQuery {
 	
 	private static String tryToExtractParameterContaingSubQuery(String sqlQuery, int paramStart) {
 		String subQuery = "";
+		
+		if (paramStart == 533) {
+			System.out.println();
+		}
 		
 		Stack<Integer> parenthesisStack = new Stack<>();
 		
@@ -523,14 +575,14 @@ public class PreparedQuery {
 					if (parenthesisStack.size() == 0) {
 						foundPossibleSubQueryFinishing = true;
 						break;
-					}else {
+					} else {
 						parenthesisStack.pop();
-						subQuery = ("" + currChar) + subQuery;	
+						subQuery = subQuery + ("" + currChar);
 					}
 				} else if (currChar == '(') {
 					parenthesisStack.push(i);
 					
-					subQuery = ("" + currChar) + subQuery;
+					subQuery = subQuery + ("" + currChar);
 					
 				} else {
 					subQuery = subQuery + currChar;
@@ -546,33 +598,6 @@ public class PreparedQuery {
 		
 		return null;
 		
-	}
-	
-	private static ParameterContextType determineParameterContext(String sqlQuery, int paramStart) {
-		
-		String beforeParam = sqlQuery.substring(0, paramStart).toLowerCase();
-		String afterParam = sqlQuery.substring(paramStart).toLowerCase();
-		
-		Pattern compareClausePattenern = Pattern.compile(".*(=|>|<|>=|<=|!=|<>|like)\\s*(--.*)?$", Pattern.DOTALL);
-		Matcher compareClauseMatcher = compareClausePattenern.matcher(beforeParam.toLowerCase().trim());
-		
-		Pattern inClauseBeforePattenern = Pattern.compile(".*\\bin\\s*\\(\\s*$", Pattern.DOTALL);
-		Matcher inClauseBeforeMatcher = inClauseBeforePattenern.matcher(beforeParam.toLowerCase().trim());
-		
-		Pattern inClauseAfterPattenern = Pattern.compile("(?s)^\\s*\\)\\s*(and|or|$)", Pattern.DOTALL);
-		Matcher inClauseAfterMatcher = inClauseAfterPattenern.matcher(afterParam.toLowerCase().trim());
-		
-		if (beforeParam.contains("select ") && afterParam.contains(" from ")) {
-			return ParameterContextType.SELECT_FIELD;
-		} else if (inClauseBeforeMatcher.matches() || inClauseAfterMatcher.matches()) {
-			return ParameterContextType.IN_CLAUSE;
-		} else if (compareClauseMatcher.matches()) {
-			return ParameterContextType.COMPARE_CLAUSE;
-		} else if (beforeParam.contains(" from ") || beforeParam.contains(" join ") || beforeParam.contains(" exists ")) {
-			return ParameterContextType.DB_RESOURCE;
-		} else {
-			return ParameterContextType.DB_RESOURCE;
-		}
 	}
 	
 	/**
@@ -611,8 +636,6 @@ public class PreparedQuery {
 	}
 	
 	public EtlDatabaseObject query(Connection conn) throws DBException {
-		
-		this.tryToLoadSQLFunctionInfo();
 		
 		if (this.isCountQuery()) {
 			this.detemineLimits(conn);

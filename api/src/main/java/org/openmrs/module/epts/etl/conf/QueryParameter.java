@@ -2,6 +2,8 @@ package org.openmrs.module.epts.etl.conf;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.conf.types.ParameterValueType;
@@ -138,4 +140,41 @@ public class QueryParameter extends Field {
 		
 		return allCloned;
 	}
+	
+	public void determineParameterContext(String sqlQuery, int paramStart, int paramEnd) {
+		String beforeParam = sqlQuery.substring(0, paramStart).toLowerCase();
+		String afterParam = sqlQuery.substring(paramEnd).toLowerCase();
+		
+		// Pattern to check if the comparison token exists before the parameter
+		Pattern beforeComparisonTokenPattern = Pattern.compile(".*\\s*(=|>|<|>=|<=|!=|<>|like)\\s*$",
+		    Pattern.CASE_INSENSITIVE);
+		Matcher beforeCompareClauseMatcher = beforeComparisonTokenPattern.matcher(beforeParam);
+		
+		// Pattern to check if the comparison token exists after the parameter
+		Pattern afterComparisonTokenPattern = Pattern.compile("^\\s*(=|>|<|>=|<=|!=|<>|like)\\s*", Pattern.CASE_INSENSITIVE);
+		Matcher afterCompareClauseMatcher = afterComparisonTokenPattern.matcher(afterParam);
+		
+		Pattern inClauseBeforePattenern = Pattern.compile(".*\\bin\\s*\\(\\s*$", Pattern.DOTALL);
+		Matcher inClauseBeforeMatcher = inClauseBeforePattenern.matcher(beforeParam.toLowerCase());
+		
+		Pattern inClauseAfterPattenern = Pattern.compile("(?s)^\\s*\\)\\s*(and|or|$)", Pattern.DOTALL);
+		Matcher inClauseAfterMatcher = inClauseAfterPattenern.matcher(afterParam.toLowerCase());
+		
+		ParameterContextType type = null;
+		
+		if (beforeCompareClauseMatcher.find() || afterCompareClauseMatcher.find()) {
+			type = ParameterContextType.COMPARE_CLAUSE;
+		} else if (beforeParam.contains("select ") && afterParam.contains(" from ")) {
+			type = ParameterContextType.SELECT_FIELD;
+		} else if (inClauseBeforeMatcher.matches() || inClauseAfterMatcher.matches()) {
+			type = ParameterContextType.IN_CLAUSE;
+		} else if (beforeParam.contains(" from ") || beforeParam.contains(" join ") || beforeParam.contains(" exists ")) {
+			type = ParameterContextType.DB_RESOURCE;
+		} else {
+			type = ParameterContextType.DB_RESOURCE;
+		}
+		
+		this.setContextType(type);
+	}
+	
 }

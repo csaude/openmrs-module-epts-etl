@@ -1352,7 +1352,7 @@ public class DBUtilities {
 		}
 		
 		// Regular expression for a basic SQL SELECT statement with flexible spacing and line breaks
-		String selectRegex = "(?i)\\s*select\\s+(.|\\s)+\\s+from\\s+(.|\\s)+";
+		String selectRegex = "(?i)\\s*select\\s+.+?\\s+from\\s+.+";
 		
 		// Check if the query matches the regex
 		return query.toLowerCase().matches(selectRegex);
@@ -1383,7 +1383,12 @@ public class DBUtilities {
 				        : functionMatcher.group(4).trim() + "(" + functionMatcher.group(5).trim() + ")";
 				String alias = functionMatcher.group(3) != null ? functionMatcher.group(3).trim()
 				        : (functionMatcher.group(6) != null ? functionMatcher.group(6).trim() : null);
-				functions.add(new SqlFunctionInfo(SqlFunctionType.determine(function), alias));
+				try {
+					functions.add(new SqlFunctionInfo(SqlFunctionType.determine(function), alias));
+				}
+				catch (ForbiddenOperationException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		
@@ -1473,50 +1478,48 @@ public class DBUtilities {
 		    "select", "order", "group", "by");
 	}
 	
-	
 	public static List<String> tryToSplitQueryByUnions(String query) {
-        // Normalize the query by removing extra spaces
-        query = query.trim().replaceAll("\\s+", " ");
-        List<String> splitQueries = new ArrayList<>();
-        StringBuilder currentQuery = new StringBuilder();
-        int parenthesesLevel = 0;
-        String lowerQuery = query.toLowerCase();
-        
-        int i = 0;
-        while (i < query.length()) {
-            char currentChar = query.charAt(i);
-            currentQuery.append(currentChar);
-
-            // Track parentheses to determine the context (main query vs subquery)
-            if (currentChar == '(') {
-                parenthesesLevel++;
-            } else if (currentChar == ')') {
-                parenthesesLevel--;
-            }
-
-            // Check for " UNION " (with spaces around) outside of subqueries
-            if (parenthesesLevel == 0 && i + 6 < query.length() && lowerQuery.substring(i).startsWith(" union ") && 
-                (i + 6 == query.length() || Character.isWhitespace(query.charAt(i + 6)))) {
-                
-                // Add the current query part to the list and reset the currentQuery
-                splitQueries.add(currentQuery.toString().trim());
-                currentQuery.setLength(0);  // Reset the StringBuilder
-                
-                // Skip the " UNION " part in the main query
-                i += 6;
-                continue;  // Continue without incrementing i to ensure the loop works correctly
-            }
-
-            i++;
-        }
-
-        // Add the remaining part of the query
-        splitQueries.add(currentQuery.toString().trim());
-        
-        return splitQueries;
+		// Normalize the query by removing extra spaces
+		query = query.trim().replaceAll("\\s+", " ");
+		List<String> splitQueries = new ArrayList<>();
+		StringBuilder currentQuery = new StringBuilder();
+		int parenthesesLevel = 0;
+		String lowerQuery = query.toLowerCase();
+		
+		int i = 0;
+		while (i < query.length()) {
+			char currentChar = query.charAt(i);
+			currentQuery.append(currentChar);
+			
+			// Track parentheses to determine the context (main query vs subquery)
+			if (currentChar == '(') {
+				parenthesesLevel++;
+			} else if (currentChar == ')') {
+				parenthesesLevel--;
+			}
+			
+			// Check for " UNION " (with spaces around) outside of subqueries
+			if (parenthesesLevel == 0 && i + 6 < query.length() && lowerQuery.substring(i).startsWith(" union ")
+			        && (i + 6 == query.length() || Character.isWhitespace(query.charAt(i + 6)))) {
+				
+				// Add the current query part to the list and reset the currentQuery
+				splitQueries.add(currentQuery.toString().trim());
+				currentQuery.setLength(0); // Reset the StringBuilder
+				
+				// Skip the " UNION " part in the main query
+				i += 6;
+				continue; // Continue without incrementing i to ensure the loop works correctly
+			}
+			
+			i++;
+		}
+		
+		// Add the remaining part of the query
+		splitQueries.add(currentQuery.toString().trim());
+		
+		return splitQueries;
 	}
 	
-
 	public static void main(String[] args) {
 		String sql = "";
 		
