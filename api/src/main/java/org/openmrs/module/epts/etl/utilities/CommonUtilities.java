@@ -64,6 +64,17 @@ public class CommonUtilities implements Serializable {
 		return str.substring(0, x) + "...";
 	}
 	
+	public String ident(String str, int totalSize) {
+		int numberOfCharacterToIncrise = 0;
+		
+		numberOfCharacterToIncrise = totalSize - str.length();
+		
+		for (int i = 0; i < numberOfCharacterToIncrise; i++)
+			str = " " + str;
+		
+		return str;
+	}
+	
 	public String addAtributeToValidationString(String currentString, long field, String scapeStr) {
 		return addAtributeToValidationString(currentString, "" + field, scapeStr);
 	}

@@ -298,6 +298,8 @@ public class FuncoesGenericas {
 		return b.setScale(precision, RoundingMode.HALF_UP).toPlainString();
 	}
 	
+	
+	
 	/**
 	 * Faz o Split de um double, dividindo-o em duas partes atraves do ponto ou virgula
 	 * 
@@ -666,7 +668,7 @@ public class FuncoesGenericas {
 	 */
 	public static String generateCommaSeparetedNumber(double number) {
 		if (number == 0)
-			return "";
+			return "0";
 		
 		BigDecimal valueToFormat = new BigDecimal(number);
 		
@@ -676,7 +678,7 @@ public class FuncoesGenericas {
 	}
 	
 	public static void main(String[] args) {
-		System.err.println(generateCommaSeparetedNumber(8567));
+		System.err.println(getNumberInXPrecision(1, 2));
 	}
 	
 	/**

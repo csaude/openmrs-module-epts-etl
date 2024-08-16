@@ -687,7 +687,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				processed = total - remaining;
 			}
 			
-			this.getProgressMeter().refresh(this.getProgressMeter().getStatusMsg(), total, processed);
+			this.getProgressMeter().refresh(this.getProgressMeter().getStatusMsg(), total, processed,
+			    getThreadRecordIntervalsManager().getCurrentLastRecordId());
 			
 			if (getRelatedOperationController().isResumable()) {
 				this.getTableOperationProgressInfo().save(conn);
@@ -968,7 +969,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	public synchronized void refreshProgressMeter(int newlyProcessedRecords, Connection conn) throws DBException {
 		logDebug("REFRESHING PROGRESS METER FOR MORE " + newlyProcessedRecords + " RECORDS.");
 		this.getProgressMeter().refresh("RUNNING", this.getProgressMeter().getTotal(),
-		    this.getProgressMeter().getProcessed() + newlyProcessedRecords);
+		    this.getProgressMeter().getProcessed() + newlyProcessedRecords,
+		    this.getThreadRecordIntervalsManager().getCurrentLastRecordId());
 		
 		if (getRelatedOperationController().isResumable()) {
 			this.getTableOperationProgressInfo().save(conn);
@@ -984,11 +986,15 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		
 		String log = "";
 		
-		log += this.getEtlConfigCode().toUpperCase() + " PROGRESS: ";
-		log += "[TOTAL RECS: " + utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotal()) + ", ";
+		log += this.getEtlConfigCode().toUpperCase() + "\n\nPROGRESS:\n------------------\n";
+		log += "TOTAL TO ANALYZE     : " +  utilities.ident(utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotalToAnalyze()),12) + ", ";
+		log += "PROCESSED: " + globalProgressMeter.getDetailedProgressOfAnalyzedRecords() + ", ";
+		log += "REMAINING: " + globalProgressMeter.getDetailedRemainingToAnalize() + ",\n";
+		
+		log += "TOTAL RECS TO PROCESS: " + utilities.ident(utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotal()), 12) + ", ";
 		log += "PROCESSED: " + globalProgressMeter.getDetailedProgress() + ", ";
 		log += "REMAINING: " + globalProgressMeter.getDetailedRemaining() + ",";
-		log += "TIME: " + globalProgressMeter.getHumanReadbleTime() + "]";
+		log += "\nTIME                 : " + utilities.ident(globalProgressMeter.getHumanReadbleTime(), 12) + "\n------------------";
 		
 		this.logInfo(log);
 	}

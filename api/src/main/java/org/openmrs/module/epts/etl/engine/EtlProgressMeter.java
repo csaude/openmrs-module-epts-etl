@@ -50,6 +50,11 @@ public class EtlProgressMeter implements TimeCountDownInitializer {
 	private long maxRecordId;
 	
 	/**
+	 * The last analyzed record in interval {@link #minRecordId} - {@link #maxRecordId}
+	 */
+	private long lastAnalyzedRecordId;
+	
+	/**
 	 * Estado corrente
 	 */
 	private String status;
@@ -99,13 +104,15 @@ public class EtlProgressMeter implements TimeCountDownInitializer {
 		this.status = STATUS_NOT_INITIALIZED;
 	}
 	
-	public EtlProgressMeter(String statusMsg, long minRecordId, long maxRecordId, int total, int processed) {
+	public EtlProgressMeter(String statusMsg, long minRecordId, long maxRecordId, int total, int processed,
+	    long lastAnalyzedRecordId) {
 		this();
 		
 		this.minRecordId = minRecordId;
 		this.maxRecordId = maxRecordId;
+		this.lastAnalyzedRecordId = lastAnalyzedRecordId;
 		
-		refresh(statusMsg, total, processed);
+		refresh(statusMsg, total, processed, lastAnalyzedRecordId);
 		
 		this.id = "meter_default_id" + this.hashCode();
 		
@@ -119,6 +126,14 @@ public class EtlProgressMeter implements TimeCountDownInitializer {
 		
 		//this._default = true;
 		this.id = id;
+	}
+	
+	public long getLastAnalyzedRecordId() {
+		return lastAnalyzedRecordId;
+	}
+	
+	public void setLastAnalyzedRecordId(long lastAnalyzedRecordId) {
+		this.lastAnalyzedRecordId = lastAnalyzedRecordId;
 	}
 	
 	public static EtlProgressMeter defaultProgressMeter(String id) {
@@ -156,10 +171,12 @@ public class EtlProgressMeter implements TimeCountDownInitializer {
 	 * @param total de registos em migracao
 	 * @param processed Registos processados
 	 * @param timer Temporizador da migracao
+	 * @param lastAnalyzedRecordId the last Analyzed recordId
 	 */
-	public synchronized void refresh(String statusMsg, int total, int processed) {
+	public synchronized void refresh(String statusMsg, int total, int processed, long lastAnalyzedRecordId) {
 		this.total = total;
 		this.processed = processed;
+		this.lastAnalyzedRecordId = lastAnalyzedRecordId;
 		
 		this.statusMsg = statusMsg;
 		
@@ -243,6 +260,32 @@ public class EtlProgressMeter implements TimeCountDownInitializer {
 	
 	public int getRemain() {
 		return this.total - this.processed;
+	}
+	
+	public int getTotalToAnalyze() {
+		return (int) (this.maxRecordId - this.minRecordId);
+	}
+	
+	public int getTotalAnalyzed() {
+		return (int) (this.lastAnalyzedRecordId - this.minRecordId);
+	}
+	
+	public int getRemainToAnalyze() {
+		return getTotalToAnalyze() - getTotalAnalyzed();
+	}
+	
+	public double getProgressOfAnalyzedRecords() {
+		double progress = 0;
+		
+		if (this.getTotalAnalyzed() > 0) {
+			
+			double processedAsDouble = this.getTotalAnalyzed();
+			double totalAsDouble = this.getTotalToAnalyze();
+			
+			progress = Double.parseDouble(utilities.getNumberInXPrecision((processedAsDouble / totalAsDouble) * 100, 2));
+		}
+		
+		return progress;
 	}
 	
 	/**
@@ -371,11 +414,25 @@ public class EtlProgressMeter implements TimeCountDownInitializer {
 	public String getDetailedRemaining() {
 		int remaining = total - processed;
 		
-		return utilities.generateCommaSeparetedNumber(remaining) + "(" + (100 - this.getProgress()) + "%)";
+		return identQty(utilities.generateCommaSeparetedNumber(remaining)) + "("
+		        + identPercentage("" + formatPercentage((100 - this.getProgress()))) + "%)";
 	}
 	
 	public String getDetailedProgress() {
-		return utilities.generateCommaSeparetedNumber(this.processed) + "(" + this.getProgress() + "%)";
+		return identQty(utilities.generateCommaSeparetedNumber(this.processed)) + "("
+		        + identPercentage("" + formatPercentage(this.getProgress())) + "%)";
+	}
+	
+	public String getDetailedRemainingToAnalize() {
+		int remaining = this.getRemainToAnalyze();
+		
+		return identQty(utilities.generateCommaSeparetedNumber(remaining)) + "("
+		        + identPercentage("" + formatPercentage((100 - this.getProgressOfAnalyzedRecords()))) + "%)";
+	}
+	
+	public String getDetailedProgressOfAnalyzedRecords() {
+		return identQty(utilities.generateCommaSeparetedNumber(this.getTotalAnalyzed())) + "("
+		        + identPercentage("" + formatPercentage(this.getProgressOfAnalyzedRecords())) + "%)";
 	}
 	
 	/**
@@ -463,5 +520,17 @@ public class EtlProgressMeter implements TimeCountDownInitializer {
 	
 	public void setMaxRecordId(long maxRecordId) {
 		this.maxRecordId = maxRecordId;
+	}
+	
+	String identQty(String qty) {
+		return utilities.ident(qty, 12);
+	}
+	
+	String identPercentage(String percentage) {
+		return utilities.ident(percentage, 6);
+	}
+	
+	String formatPercentage(double percentage) {
+		return utilities.getNumberInXPrecision(percentage, 2);
 	}
 }
