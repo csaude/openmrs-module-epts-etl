@@ -1,8 +1,9 @@
-package org.openmrs.module.epts.etl.conf;
+package org.openmrs.module.epts.etl.conf.datasource;
 
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;

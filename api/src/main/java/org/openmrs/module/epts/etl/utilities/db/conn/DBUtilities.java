@@ -17,8 +17,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.SqlFunctionInfo;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.datasource.SqlFunctionInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;

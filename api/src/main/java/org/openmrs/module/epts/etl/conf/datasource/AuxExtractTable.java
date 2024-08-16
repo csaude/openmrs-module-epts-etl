@@ -1,8 +1,10 @@
-package org.openmrs.module.epts.etl.conf;
+package org.openmrs.module.epts.etl.conf.datasource;
 
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;

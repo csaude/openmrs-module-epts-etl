@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.conf;
+package org.openmrs.module.epts.etl.conf.datasource;
 
 import java.sql.Connection;
 

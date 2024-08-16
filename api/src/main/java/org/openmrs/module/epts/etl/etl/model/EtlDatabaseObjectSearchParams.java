@@ -4,11 +4,11 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.DstConf;
-import org.openmrs.module.epts.etl.conf.PreparedQuery;
-import org.openmrs.module.epts.etl.conf.QueryDataSourceConfig;
-import org.openmrs.module.epts.etl.conf.SrcConf;
+import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
+import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
+import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
+import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;

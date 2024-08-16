@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.data.validation.missingrecords.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
-import org.openmrs.module.epts.etl.conf.SrcConf;
+import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
 import org.openmrs.module.epts.etl.engine.Engine;

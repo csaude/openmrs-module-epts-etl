@@ -11,10 +11,10 @@ import java.util.stream.Collectors;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
-import org.openmrs.module.epts.etl.conf.PreparedQuery;
-import org.openmrs.module.epts.etl.conf.QueryDataSourceConfig;
-import org.openmrs.module.epts.etl.conf.SrcConf;
-import org.openmrs.module.epts.etl.conf.TableDataSourceConfig;
+import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
+import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
+import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
+import org.openmrs.module.epts.etl.conf.datasource.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadCurrentIntervals;

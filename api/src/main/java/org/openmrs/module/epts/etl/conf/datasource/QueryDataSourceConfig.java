@@ -1,4 +1,4 @@
-package org.openmrs.module.epts.etl.conf;
+package org.openmrs.module.epts.etl.conf.datasource;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,6 +9,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
+import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
+import org.openmrs.module.epts.etl.conf.ChildTable;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
