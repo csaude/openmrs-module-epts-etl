@@ -95,7 +95,7 @@ The etl item configuration section defines the rules of extraction, transformati
    "dstConf":[
       
    ],
-   "createDstTableIfNotExists": "",
+   "createDstTableIfNotExists": ""
 }
 ```
 
