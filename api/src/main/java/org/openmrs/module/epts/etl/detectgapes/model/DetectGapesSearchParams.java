@@ -12,12 +12,14 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	public DetectGapesSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
+	public DetectGapesSearchParams(Engine<EtlDatabaseObject> engine,
+	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		super(engine, limits);
 		
 		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
@@ -39,7 +41,7 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 		
 		tryToAddLimits(limits, searchClauses);
 		
-		tryToAddExtraConditionForExport(searchClauses);
+		tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());

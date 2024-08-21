@@ -100,6 +100,14 @@ public class LoadRecord {
 		this.status = status;
 	}
 	
+	public void markAsFailed() {
+		this.setStatus(LoadStatus.FAIL);
+	}
+	
+	public void markAsSuccess() {
+		this.setStatus(LoadStatus.SUCCESS);
+	}
+	
 	public EtlProcessor getProcessor() {
 		return this.processor;
 	}

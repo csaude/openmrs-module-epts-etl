@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.conf.types.EtlActionType;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.types.EtlProcessingModeType;
+import org.openmrs.module.epts.etl.conf.types.ThreadingMode;
 import org.openmrs.module.epts.etl.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.controller.ProcessController;
@@ -88,6 +89,12 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private EtlDstType dstType;
 	
+	private boolean useMysqlInsertIgnore;
+	
+	private int fisicalCpuMultiplier;
+	
+	private ThreadingMode threadingMode;
+	
 	public EtlOperationConfig() {
 		this.dstType = EtlDstType.db;
 		this.actionType = EtlActionType.CREATE;
@@ -96,6 +103,36 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.operationType = EtlOperationType.ETL;
 		this.processingBatch = EtlOperationConfig.DEFAULT_BATCH_PROCESSING;
 		this.maxSupportedProcessors = utilities.getAvailableProcessors();
+		this.fisicalCpuMultiplier = 1;
+		this.threadingMode = ThreadingMode.MULTI_THREAD;
+	}
+	
+	public ThreadingMode getThreadingMode() {
+		return threadingMode;
+	}
+	
+	public void setThreadingMode(ThreadingMode threadingMode) {
+		this.threadingMode = threadingMode;
+	}
+	
+	public int getFisicalCpuMultiplier() {
+		return fisicalCpuMultiplier;
+	}
+	
+	public void setFisicalCpuMultiplier(int fisicalCpuMultiplier) {
+		this.fisicalCpuMultiplier = fisicalCpuMultiplier;
+	}
+	
+	public boolean isUseMysqlInsertIgnore() {
+		return useMysqlInsertIgnore;
+	}
+	
+	public boolean useseMysqlInsertIgnore() {
+		return isUseMysqlInsertIgnore();
+	}
+	
+	public void setUseMysqlInsertIgnore(boolean useMysqlInsertIgnore) {
+		this.useMysqlInsertIgnore = useMysqlInsertIgnore;
 	}
 	
 	public boolean isDisableParallelSearch() {
@@ -846,6 +883,46 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public static EtlOperationConfig createDefaultOperation(EtlConfiguration relatedConfig) {
 		return fastCreate(EtlOperationType.ETL, relatedConfig);
+	}
+	
+	public void recalculateThreads(List<EtlItemConfiguration> avaliableItems) {
+		getRelatedEtlConfig().logInfo("Determining optimal threads...");
+		
+		if (this.getThreadingMode().isMultiThread()) {
+			
+			List<EtlItemConfiguration> allSync = getRelatedEtlConfig().getEtlItemConfiguration();
+			
+			double items = avaliableItems.size();
+			
+			double processors = utilities.getAvailableProcessors();
+			
+			processors = processors * this.getFisicalCpuMultiplier();
+			
+			double treadPerItem = utilities.aprox(processors / items);
+			
+			if (treadPerItem == 0) {
+				treadPerItem = 1;
+			}
+			
+			String msg = "\n------------------------------------\n";
+			msg += "All Configured Items            : " + allSync.size() + "\n";
+			msg += "Avaliable fisical Processors    : " + utilities.getAvailableProcessors() + "\n";
+			
+			if (this.getFisicalCpuMultiplier() > 1) {
+				msg += "Processors busted by            : " + this.getFisicalCpuMultiplier() + "\n";
+				msg += "Amount of processors to use     : " + processors + "\n";
+			}
+			
+			msg += "Currently Avaliable Items       : " + avaliableItems.size() + "\n";
+			msg += "Thread to use per item          : " + treadPerItem + "\n";
+			msg += "------------------------------------";
+			
+			this.getRelatedEtlConfig().logInfo(msg);
+			
+			this.setMaxSupportedProcessors((int) treadPerItem);
+		} else {
+			setMaxSupportedProcessors(1);
+		}
 	}
 	
 }

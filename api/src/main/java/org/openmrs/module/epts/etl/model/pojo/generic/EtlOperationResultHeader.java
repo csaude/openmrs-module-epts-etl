@@ -31,6 +31,8 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	
 	private List<EtlOperationItemResult<T>> recordsWithNoError;
 	
+	private List<EtlDatabaseObject> processedRecords;
+	
 	private Exception fatalException;
 	
 	private IntervalExtremeRecord interval;
@@ -46,6 +48,14 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	
 	public EtlOperationResultHeader(List<T> recordsWithNoError) {
 		this.recordsWithNoError = EtlOperationItemResult.parseFromEtlDatabaseObject(recordsWithNoError);
+	}
+	
+	public List<EtlDatabaseObject> getProcessedRecords() {
+		return processedRecords;
+	}
+	
+	public void setProcessedRecords(List<EtlDatabaseObject> processedRecords) {
+		this.processedRecords = processedRecords;
 	}
 	
 	public List<EtlOperationItemResult<T>> getRecordsWithUnexpectedErrors() {
@@ -372,7 +382,12 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	}
 	
 	public int countAllSuccessfulyProcessedRecords() {
-		return utilities.arraySize(getRecordsWithNoError()) + utilities.arraySize(getRecordsWithResolvedInconsistences());
+		int allRecords = utilities.arraySize(this.getProcessedRecords());
+		
+		int recordsWithUnresolvedInconsistences = utilities.arraySize(getRecordsWithUnresolvedInconsistences());
+		int recordsWithUnexpectedErrors = utilities.arraySize(getRecordsWithUnexpectedErrors());
+		
+		return allRecords - recordsWithUnresolvedInconsistences - recordsWithUnexpectedErrors;
 	}
 	
 	public List<T> getAllSuccessfulyProcessedRecords() {

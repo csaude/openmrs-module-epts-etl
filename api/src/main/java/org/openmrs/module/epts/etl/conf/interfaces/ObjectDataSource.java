@@ -2,14 +2,15 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.sql.Connection;
 import java.util.List;
-import java.util.Map;
 
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
+import org.openmrs.module.epts.etl.conf.datasource.DataSourceField;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
+import org.openmrs.module.epts.etl.conf.types.ObjectLanguageType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -17,11 +18,13 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class JavaObjectDataSource implements EtlAdditionalDataSource {
+public class ObjectDataSource implements EtlAdditionalDataSource {
 	
 	private String name;
 	
-	private List<Field> fields;
+	private ObjectLanguageType objectLanguage;
+	
+	private List<DataSourceField> objectFields;
 	
 	private boolean fullLoaded;
 	
@@ -29,14 +32,12 @@ public class JavaObjectDataSource implements EtlAdditionalDataSource {
 	
 	private boolean required;
 	
-	private EtlConfiguration relatedSyncConfiguration;
-	
-	private String javaObjectDataSourceGeneratorClazz;
-	
-	private JavaObjectDataSourceGenerator fieldGeneratorInstance;
+	private String objectDataSourceGeneratorClazz;
+		
+	private JavaObjectDataSourceGenerator objectDataSourceGeneratorInstance;
 	
 	public EtlConfiguration getRelatedSyncConfiguration() {
-		return relatedSyncConfiguration;
+		return this.relatedSrcConf.getRelatedEtlConf();
 	}
 	
 	@Override
@@ -85,8 +86,16 @@ public class JavaObjectDataSource implements EtlAdditionalDataSource {
 	}
 	
 	@Override
-	public List<Field> getFields() {
-		return this.fields;
+	public List<? extends Field> getFields() {
+		return this.objectFields;
+	}
+	
+	public List<DataSourceField> getObjectFields() {
+		return this.objectFields;
+	}
+	
+	public void setObjectFields(List<DataSourceField> objectFields) {
+		this.objectFields = objectFields;
 	}
 	
 	@Override
@@ -165,7 +174,6 @@ public class JavaObjectDataSource implements EtlAdditionalDataSource {
 	
 	@Override
 	public void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration) {
-		this.relatedSyncConfiguration = relatedSyncConfiguration;
 	}
 	
 	@Override
@@ -179,19 +187,19 @@ public class JavaObjectDataSource implements EtlAdditionalDataSource {
 	
 	@Override
 	public SrcConf getRelatedSrcConf() {
-		return null;
+		return this.relatedSrcConf;
 	}
 	
 	@Override
 	public void setRelatedSrcConf(SrcConf relatedSrcConf) {
+		this.relatedSrcConf = relatedSrcConf;
 	}
 	
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection conn)
 	        throws DBException {
 		
-		Map<String, Object> values = get
-		
+		//Map<String, Object> values = get
 		
 		return null;
 	}
@@ -204,6 +212,12 @@ public class JavaObjectDataSource implements EtlAdditionalDataSource {
 	@Override
 	public boolean allowMultipleSrcObjects() {
 		return true;
+	}
+	
+	@Override
+	public String getQuery() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }

@@ -148,6 +148,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		        "No IdGeneratorManager found on processor " + getProcessorId() + " For table " + dstConf.getFullTableName());
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void performe(boolean useMultiThreadSearch, Connection srcConn, Connection dstConn) throws DBException {
 		
 		if (getRelatedEtlOperationConfig().isDisableParallelSearch()) {
@@ -181,6 +182,8 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 			        + records.size() + "' RECORDS OF TABLE '" + this.getSrcConf().getTableName() + "'");
 			
 			beforeSync(records, srcConn, dstConn);
+			
+			getTaskResultInfo().setProcessedRecords((List<EtlDatabaseObject>) records);
 			
 			performeEtl(records, srcConn, dstConn);
 			

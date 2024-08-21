@@ -1301,11 +1301,15 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		boolean done = false;
 		
-		//To avoid failer on ConcurrentModificationException
+		//To avoid failure on ConcurrentModificationException
 		while (!done) {
 			
 			try {
 				for (TableConfiguration tab : this.getFullLoadedTables()) {
+					
+					logDebug("tab.getSchema(): " + tab.getSchema());
+					logDebug("tab.getTableName(): " + tab.getTableName());
+					
 					if (tab.getSchema().equals(schema) && tab.getTableName().equals(tableName)) {
 						return tab;
 					}

@@ -15,6 +15,8 @@ public class MissingParameterException extends ForbiddenOperationException {
 	}
 	
 	public MissingParameterException(List<String> missingParameters) {
+		super(missingParameters != null ? missingParameters.toString() : null);
+		
 		this.missingParameters = missingParameters;
 	}
 	

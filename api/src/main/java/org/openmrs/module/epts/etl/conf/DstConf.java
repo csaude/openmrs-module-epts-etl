@@ -310,7 +310,7 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			FieldsMapping fm = null;
 			
-			EtlField etlField = this.getSrcConf().getEtlField(field.getName());
+			EtlField etlField = this.getSrcConf().getEtlField(field.getName(), true);
 			
 			if (etlField != null) {
 				fm = FieldsMapping.fastCreate(etlField.getSrcField().getName(), field.getName());

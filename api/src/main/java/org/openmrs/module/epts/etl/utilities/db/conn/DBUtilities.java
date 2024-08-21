@@ -940,12 +940,29 @@ public class DBUtilities {
 		return query.toLowerCase().split("where ")[0];
 	}
 	
+	public static String normalizeQuery(String query) {
+		String normalized = query;
+		normalized = utilities.removeDuplicatedEmptySpace(normalized);
+		normalized = utilities.removeSpacesBeforeAndAfterPeriod(normalized);
+		
+		normalized = normalized.replaceAll("\\s+", " ");
+		
+		String commentRegex = "(--.*?$)|(/\\*.*?\\*/)";
+		
+		// Remove comments from the SQL string
+		normalized = normalized.replaceAll(commentRegex, "");
+		
+		return normalized;
+	}
+	
 	public static List<Field> determineFieldsFromQuery(String query) {
 		
-		// Regular expression to match fields in the SELECT clause
+		String normalizedQuery = normalizeQuery(query);
+		
+		// Regular  expression to match fields in the SELECT clause
 		String selectRegex = "(?i)select\\s+(.+?)\\s+from";
 		Pattern selectPattern = Pattern.compile(selectRegex);
-		Matcher selectMatcher = selectPattern.matcher(query);
+		Matcher selectMatcher = selectPattern.matcher(normalizedQuery);
 		
 		List<Field> fields = new ArrayList<>();
 		
@@ -969,7 +986,7 @@ public class DBUtilities {
 				if (s.split(" as ").length > 1) {
 					fieldName = s.split(" as ")[1];
 				} else if (s.split(" ").length > 1) {
-					fieldName = s.split(" ")[1];
+					fieldName = s.split(" ")[s.split(" ").length - 1];
 				} else if (s.split("\\.").length > 1) {
 					fieldName = s.split("\\.")[1];
 				} else {
@@ -1346,7 +1363,7 @@ public class DBUtilities {
 	 * @param query the query to be validated
 	 * @return true if the query is a sql select query or false if not
 	 */
-	public static boolean isValidSelectSqlQuery(String query) {
+	public static boolean isValidSelectSqlQuery(String query, DbmsType dbType) {
 		if (query == null || query.trim().isEmpty()) {
 			return false;
 		}
@@ -1355,7 +1372,17 @@ public class DBUtilities {
 		String selectRegex = "(?i)\\s*select\\s+.+?\\s+from\\s+.+";
 		
 		// Check if the query matches the regex
-		return query.toLowerCase().matches(selectRegex);
+		boolean match = query.toLowerCase().matches(selectRegex);
+		
+		if (!match && dbType.isMysql()) {
+			// Regular expression for a basic SQL SELECT statement with flexible spacing and line breaks
+			selectRegex = "(?i)\\s*select\\s+.+?\\s*";
+			
+			// Check if the query matches the regex
+			match = query.toLowerCase().matches(selectRegex);
+		}
+		
+		return match;
 	}
 	
 	public static List<SqlFunctionInfo> extractSqlFunctionsInSelect(String query) {

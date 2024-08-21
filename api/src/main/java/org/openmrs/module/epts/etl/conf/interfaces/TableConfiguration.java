@@ -180,6 +180,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	void setManualMapPrimaryKeyOnField(String manualMapPrimaryKeyOnField);
 	
+	boolean useMysqlInsertIgnore();
+	
 	@Override
 	PrimaryKey getPrimaryKey();
 	
@@ -2018,13 +2020,16 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			
 			FieldsMapping field = joinFields.get(i);
 			
-			Object value;
+			//By default the joining value is marked as parameter 
+			Object value = "@" + field.getDstField();
 			
-			try {
-				value = parentObject.getFieldValue(field.getDstField());
-			}
-			catch (ForbiddenOperationException e) {
-				value = parentObject.getFieldValue(field.getDstFieldAsClassField());
+			if (parentObject != null) {
+				try {
+					value = parentObject.getFieldValue(field.getDstField());
+				}
+				catch (ForbiddenOperationException e) {
+					value = parentObject.getFieldValue(field.getDstFieldAsClassField());
+				}
 			}
 			
 			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getSrcField(), value);
@@ -2142,7 +2147,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			return false;
 		
 		for (Field f : this.getFields()) {
-			if (f.getName().equals(fieldName)) {
+			if (f.getName().equals(fieldName) || f.generateAliasedColumn(this).equals(fieldName)) {
 				return true;
 			}
 		}
@@ -2635,4 +2640,5 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default long getMaxRecordId(Connection conn) throws DBException {
 		return this.getExtremeRecord(SqlFunctionType.MAX, conn);
 	}
+	
 }

@@ -70,6 +70,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	
 	protected OperationProgressInfo progressInfo;
 	
+	private List<EtlItemConfiguration> finalizedItems;
+	
 	public OperationController(ProcessController processController, EtlOperationConfig operationConfig) {
 		this.logger = new EptsEtlLogger(OperationController.class);
 		
@@ -97,6 +99,14 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				conn.finalizeConnection();
 		}
 		
+	}
+	
+	private List<EtlItemConfiguration> getFinalizedItems() {
+		return finalizedItems;
+	}
+	
+	private void setFinalizedItems(List<EtlItemConfiguration> finalizedItems) {
+		this.finalizedItems = finalizedItems;
 	}
 	
 	public EtlDstType getDstType() {
@@ -284,11 +294,15 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	private synchronized void runInParallelMode() throws DBException {
-		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
-		
 		this.enginesActivititieMonitor = new ArrayList<>();
 		
-		for (EtlItemConfiguration config : allSync) {
+		logInfo("Starting operations in parallel");
+		
+		List<EtlItemConfiguration> avaliableItems = this.determineAvaliableItems();
+		
+		this.getOperationConfig().recalculateThreads(avaliableItems);
+		
+		for (EtlItemConfiguration config : avaliableItems) {
 			if (operationTableIsAlreadyFinished(config)) {
 				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
 				        + config.getConfigCode() + "' was already finished!").toUpperCase());
@@ -300,18 +314,49 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				logInfo("INITIALIZING '" + getOperationType().name().toLowerCase() + "' ENGINE FOR ETL CONFIGURATION '"
 				        + config.getConfigCode().toUpperCase() + "'");
 				
-				TableOperationProgressInfo progressInfo = this.progressInfo.retrieveProgressInfo(config);
+				if (!config.isFullLoaded()) {
+					try {
+						logDebug("Performing the full load of etl item configuration");
+						
+						config.fullLoad(this.getOperationConfig());
+					}
+					catch (DBException e) {
+						throw new RuntimeException(e);
+					}
+				}
+				
+				TableOperationProgressInfo progressInfo = null;
+				
+				try {
+					progressInfo = this.progressInfo.retrieveProgressInfo(config);
+				}
+				catch (NullPointerException e) {
+					logErr("Error on thread " + this.getControllerId()
+					        + ": Progress meter not found for Etl Confinguration [" + config.getConfigCode() + "].");
+					
+					e.printStackTrace();
+					
+					throw e;
+				}
+				
+				if (this.progressInfo.getItemsProgressInfo() == null) {
+					progressInfo = this.progressInfo.retrieveProgressInfo(config);
+				}
 				
 				Engine<T> engine = Engine.init(this, config, progressInfo);
 				
 				OpenConnection conn = getDefaultConnInfo().openConnection();
 				
 				try {
-					
 					if (isResumable()) {
+						logTrace("Saving Progress Info....");
+						
 						progressInfo.save(conn);
-						conn.markAsSuccessifullyTerminated();
+						
+						logTrace("Progress Info Saved!");
+						
 					}
+					conn.markAsSuccessifullyTerminated();
 				}
 				catch (DBException e) {
 					throw new RuntimeException(e);
@@ -325,6 +370,27 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		}
 		
 		changeStatusToRunning();
+	}
+	
+	private List<EtlItemConfiguration> determineAvaliableItems() {
+		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
+		
+		logDebug("Determine finalized operations...");
+		
+		List<EtlItemConfiguration> avaliableItems = new ArrayList<>();
+		
+		for (EtlItemConfiguration config : allSync) {
+			if (operationTableIsAlreadyFinished(config)) {
+				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
+				        + config.getConfigCode() + "' was already finished!").toUpperCase());
+				
+				this.addItemToFinalized(config);
+			} else {
+				avaliableItems.add(config);
+			}
+		}
+		
+		return avaliableItems;
 	}
 	
 	public boolean operationTableIsAlreadyFinished(EtlItemConfiguration etlConfig) {
@@ -433,6 +499,32 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 					
 					this.onStop();
 				}
+				
+				if (getOperationConfig().isParallelModeProcessing()) {
+					
+					if (this.enginesActivititieMonitor != null) {
+						
+						int qty = 0;
+						
+						String msg = "\nRUNNING ITEMS...\n";
+						
+						msg += "----------------------------------------\n";
+						
+						for (Engine<T> engine : this.enginesActivititieMonitor) {
+							
+							if (engine.isRunning()) {
+								qty++;
+								
+								msg += qty + "." + engine.getEtlConfigCode() + "\n";
+							}
+						}
+						
+						msg += "----------------------------------------";
+						
+						logWarn(msg, 60);
+					}
+				}
+				
 			}
 		}
 		catch (Exception e) {
@@ -834,5 +926,18 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	
 	public abstract AbstractEtlSearchParams<T> initMainSearchParams(ThreadRecordIntervalsManager<T> intervalsMgt,
 	        Engine<T> engine);
+	
+	public synchronized void finalize(Engine<T> engine) {
+		this.addItemToFinalized(engine.getEtlItemConfiguration());
+	}
+	
+	private synchronized void addItemToFinalized(EtlItemConfiguration item) {
+		if (getFinalizedItems() == null) {
+			this.setFinalizedItems(new ArrayList<>());
+		}
+		
+		getFinalizedItems().add(item);
+		
+	}
 	
 }

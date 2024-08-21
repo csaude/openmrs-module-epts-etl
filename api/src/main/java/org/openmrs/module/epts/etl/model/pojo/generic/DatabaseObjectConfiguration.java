@@ -87,7 +87,7 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	String getObjectName();
 	
-	List<Field> getFields();
+	<T extends Field> List<T> getFields();
 	
 	UniqueKeyInfo getPrimaryKey();
 	

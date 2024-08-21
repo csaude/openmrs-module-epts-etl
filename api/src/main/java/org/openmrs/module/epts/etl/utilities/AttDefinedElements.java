@@ -311,7 +311,9 @@ public class AttDefinedElements {
 	public static String defineSqlAtribuitionString(String attName, Object attValue) {
 		String sqlAtribuitionString = "";
 		
-		if (utilities.isNumeric(attValue.toString())) {
+		if (attValue instanceof String && ((String) attValue).startsWith("@")) {
+			sqlAtribuitionString = attName + " = " + attValue;
+		} else if (utilities.isNumeric(attValue.toString())) {
 			sqlAtribuitionString = attName + " = " + attValue;
 		} else if (attValue instanceof Date) {
 			sqlAtribuitionString = attName + " = " + aspasAbrir

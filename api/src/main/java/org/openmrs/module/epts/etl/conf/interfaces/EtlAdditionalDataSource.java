@@ -34,4 +34,6 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	}
 	
 	boolean allowMultipleSrcObjects();
+	
+	String getQuery();
 }

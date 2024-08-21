@@ -243,6 +243,29 @@ public class FuncoesGenericas {
 		return notSpaced;
 	}
 	
+	public static long aprox(String numero) {
+		
+		try {
+			long[] tokens = splitDoubleNumber(numero);
+			
+			if (tokens == null)
+				return 0;
+			
+			long parteInteira = tokens[0];
+			
+			double parteFracionaria = Double.parseDouble("0." + tokens[1]);
+			
+			if (parteFracionaria >= 0.5)
+				return parteInteira + 1;
+			else
+				return parteInteira;
+			
+		}
+		catch (Exception e) {
+			return 0;
+		}
+	}
+	
 	/**
 	 * Forca a aproximacao por excesso do numero recebido pelo parametro
 	 * 
@@ -297,8 +320,6 @@ public class FuncoesGenericas {
 		
 		return b.setScale(precision, RoundingMode.HALF_UP).toPlainString();
 	}
-	
-	
 	
 	/**
 	 * Faz o Split de um double, dividindo-o em duas partes atraves do ponto ou virgula
@@ -678,7 +699,7 @@ public class FuncoesGenericas {
 	}
 	
 	public static void main(String[] args) {
-		System.err.println(getNumberInXPrecision(1, 2));
+		System.err.println(aprox("1"));
 	}
 	
 	/**

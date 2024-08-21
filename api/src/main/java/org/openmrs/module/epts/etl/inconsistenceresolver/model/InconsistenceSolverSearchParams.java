@@ -12,6 +12,7 @@ import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
@@ -37,7 +38,7 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 			        + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey() + ")");
 			tryToAddLimits(recordLimits, searchClauses);
 			
-			tryToAddExtraConditionForExport(searchClauses);
+			tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
 		}
 		
 		return searchClauses;

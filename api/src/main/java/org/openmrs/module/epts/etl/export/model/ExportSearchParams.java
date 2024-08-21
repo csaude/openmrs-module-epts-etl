@@ -12,6 +12,7 @@ import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
@@ -36,7 +37,7 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 		
 		if (!this.selectAllRecords) {
 			tryToAddLimits(limits, searchClauses);
-			tryToAddExtraConditionForExport(searchClauses);
+			tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
 		}
 		
 		searchClauses.addToClauses("consistent = 1");

@@ -11,16 +11,18 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 /**
  * Represents a source table configuration. A {@link TableDataSourceConfig} is used as an auxiliary
  * extraction table as well as an extra datasource
  */
 public class TableDataSourceConfig extends AbstractTableConfiguration implements EtlAdditionalDataSource, JoinableEntity {
+	
+	private final String stringLock = new String("LOCK_STRING");
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -36,7 +38,13 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	 */
 	private JoinType joinType;
 	
+	private PreparedQuery defaultPreparedQuery;
+	
 	public TableDataSourceConfig() {
+	}
+	
+	private boolean isPrepared() {
+		return this.defaultPreparedQuery != null;
 	}
 	
 	@Override
@@ -73,6 +81,31 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		super.fullLoad(conn);
 	}
 	
+	public void prepare(List<EtlDatabaseObject> mainObject, Connection conn) throws DBException {
+		if (isPrepared()) {
+			return;
+		}
+		
+		synchronized (stringLock) {
+			PreparedQuery query = PreparedQuery.prepare(this, mainObject, getRelatedEtlConf(),
+			    DbmsType.determineFromConnection(conn));
+			/*
+			List<Object> paramsAsList = query.generateQueryParameters();
+			
+			Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
+			
+			try {
+				setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), params, conn));
+			}
+			catch (DBException e) {
+				throw new DBException("Error computing the query for dataSource" + this.getName(), e);
+			}
+			*/
+			
+			this.defaultPreparedQuery = query;
+		}
+	}
+	
 	public String getJoinExtraCondition() {
 		return joinExtraCondition;
 	}
@@ -101,6 +134,17 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		setParentConf(relatedSrcConf);
 	}
 	
+	public PreparedQuery getDefaultPreparedQuery() {
+		return defaultPreparedQuery;
+	}
+	
+	@Override
+	public String getQuery() {
+		String condition = super.generateConditionsFields(null, this.joinFields, this.joinExtraCondition);
+		
+		return this.generateSelectFromQuery() + " WHERE " + condition;
+	}
+	
 	@Override
 	public SrcConf getParentConf() {
 		return this.relatedSrcConf;
@@ -115,12 +159,11 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
 	        throws DBException {
 		
-		String condition = super.generateConditionsFields(avaliableSrcObjects.get(0), this.joinFields,
-		    this.joinExtraCondition);
+		if (!isPrepared()) {
+			prepare(avaliableSrcObjects, srcConn);
+		}
 		
-		String sql = this.generateSelectFromQuery() + " WHERE " + condition;
-		
-		return DatabaseObjectDAO.find(this.getLoadHealper(), this.getSyncRecordClass(), sql, null, srcConn);
+		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
 	}
 	
 	@Override
@@ -191,5 +234,4 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	public TableConfiguration getJoiningEntity() {
 		return getRelatedSrcConf();
 	}
-	
 }

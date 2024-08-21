@@ -13,6 +13,7 @@ import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchParams {
@@ -89,7 +90,7 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 			searchClauses.addToClauseFrom(clauseFrom);
 		}
 		
-		tryToAddExtraConditionForExport(searchClauses);
+		tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());

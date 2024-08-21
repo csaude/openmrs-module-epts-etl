@@ -422,7 +422,17 @@ public class Field implements Serializable {
 	}
 	
 	public String generateAliasedColumn(TableConfiguration tabConf) {
-		return tabConf.getTableAlias() + "_" + this.name;
+		
+		if (tabConf.hasAlias()) {
+			
+			if (this.getName().startsWith(tabConf.getAlias())) {
+				return this.getName();
+			}
+			
+			return tabConf.getTableAlias() + "_" + this.getName();
+		}
+		
+		return this.getName();
 	}
 	
 	@JsonIgnore

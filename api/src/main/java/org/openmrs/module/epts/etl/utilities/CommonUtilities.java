@@ -295,6 +295,10 @@ public class CommonUtilities implements Serializable {
 		return FuncoesGenericas.forcarAproximacaoPorExcesso("" + numero);
 	}
 	
+	public long aprox(double numero) {
+		return FuncoesGenericas.aprox("" + numero);
+	}
+	
 	public String getNumberInXPrecision(double number, int precision) {
 		return FuncoesGenericas.getNumberInXPrecision(number, precision);
 	}

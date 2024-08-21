@@ -15,6 +15,7 @@ import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchParams {
 	
@@ -28,6 +29,7 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 		
 		this.type = type;
 	}
+	
 	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
 	        Connection dstConn) throws DBException {
@@ -70,7 +72,7 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 			tryToAddLimits(limits, searchClauses);
 		}
 		
-		tryToAddExtraConditionForExport(searchClauses);
+		tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
 		
 		return searchClauses;
 	}

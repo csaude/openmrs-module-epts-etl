@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -18,6 +19,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 /**
  * Represents an prepared query ready to be executed. It alwas has a ready query and its parameters
@@ -40,11 +42,13 @@ public class PreparedQuery {
 	
 	private SqlFunctionInfo countFunctionInfo;
 	
-	private QueryDataSourceConfig dataSource;
+	private EtlAdditionalDataSource dataSource;
 	
 	private String originalQuery;
 	
 	private boolean sqlFunctionLoaded;
+	
+	private DbmsType dbmsType;
 	
 	PreparedQuery() {
 	}
@@ -53,9 +57,9 @@ public class PreparedQuery {
 		return getDataSource().getRelatedEtlConf();
 	}
 	
-	PreparedQuery(QueryDataSourceConfig dataSource, List<EtlDatabaseObject> srcObject, EtlConfiguration configuration,
-	    boolean ignoreMissingParameters) {
-		
+	PreparedQuery(EtlAdditionalDataSource dataSource, List<EtlDatabaseObject> srcObject, EtlConfiguration configuration,
+	    boolean ignoreMissingParameters, DbmsType dbmsType) {
+		this.dbmsType = dbmsType;
 		this.setDataSource(dataSource);
 		
 		this.logTrace("Starting Query preparation... " + dataSource.getName());
@@ -89,8 +93,9 @@ public class PreparedQuery {
 		
 	}
 	
-	PreparedQuery(QueryDataSourceConfig queryDs, EtlConfiguration config, boolean ignoreMissingParameters) {
-		this(queryDs, null, config, ignoreMissingParameters);
+	PreparedQuery(EtlAdditionalDataSource queryDs, EtlConfiguration config, boolean ignoreMissingParameters,
+	    DbmsType dbmsType) {
+		this(queryDs, null, config, ignoreMissingParameters, dbmsType);
 	}
 	
 	void loadQueryParamValues() {
@@ -185,11 +190,11 @@ public class PreparedQuery {
 		}
 	}
 	
-	public QueryDataSourceConfig getDataSource() {
+	public EtlAdditionalDataSource getDataSource() {
 		return dataSource;
 	}
 	
-	public void setDataSource(QueryDataSourceConfig dataSource) {
+	public void setDataSource(EtlAdditionalDataSource dataSource) {
 		this.dataSource = dataSource;
 	}
 	
@@ -278,8 +283,15 @@ public class PreparedQuery {
 					
 					questionMarkToBeReplaced += parts.length;
 				} else if (param.getContextType().dbResource()) {
-					pQuery = utilities.replaceNthOccurrenceWithString(pQuery, "?", param.getValue().toString(),
-					    questionMarkToBeReplaced);
+					
+					if (param.hasValue()) {
+						pQuery = utilities.replaceNthOccurrenceWithString(pQuery, "?", param.getValue().toString(),
+						    questionMarkToBeReplaced);
+					} else {
+						throw new ForbiddenOperationException("The parameter '" + param.getName()
+						        + " ' has no value and its needed to generate prepared query!!");
+					}
+					
 				}
 			}
 		}
@@ -312,15 +324,15 @@ public class PreparedQuery {
 		return queryParams;
 	}
 	
-	public static PreparedQuery prepare(QueryDataSourceConfig queryDs, List<EtlDatabaseObject> srcObject,
-	        EtlConfiguration configuration) {
+	public static PreparedQuery prepare(EtlAdditionalDataSource queryDs, List<EtlDatabaseObject> srcObject,
+	        EtlConfiguration configuration, DbmsType dbmsType) {
 		
-		return new PreparedQuery(queryDs, srcObject, configuration, false);
+		return new PreparedQuery(queryDs, srcObject, configuration, false, dbmsType);
 	}
 	
-	public static PreparedQuery prepare(QueryDataSourceConfig queryDs, EtlConfiguration etlConfig,
-	        boolean ignoreMissingParameters) throws ForbiddenOperationException {
-		return new PreparedQuery(queryDs, etlConfig, ignoreMissingParameters);
+	public static PreparedQuery prepare(EtlAdditionalDataSource queryDs, EtlConfiguration etlConfig,
+	        boolean ignoreMissingParameters, DbmsType dbmsType) throws ForbiddenOperationException {
+		return new PreparedQuery(queryDs, etlConfig, ignoreMissingParameters, dbmsType);
 	}
 	
 	public PreparedQuery cloneAndLoadValues(List<EtlDatabaseObject> srcObject) {
@@ -480,7 +492,7 @@ public class PreparedQuery {
 			logTrace("Trying to extract subquery from starting position " + paramStart + "\nOn Query\n--------------\n"
 			        + subQuery);
 			
-			String containgSubquery = tryToExtractParameterContaingSubQuery(subQuery, paramStart);
+			String containgSubquery = tryToExtractParameterContaingSubQuery(subQuery, paramStart, this.dbmsType);
 			
 			if (utilities.stringHasValue(containgSubquery)) {
 				
@@ -510,7 +522,7 @@ public class PreparedQuery {
 				
 				logTrace("Determining Parameter context for parameter " + paramName);
 				
-				params.determineParameterContext(subQuery, paramStart, paramEnd);
+				params.determineParameterContext(subQuery, paramStart, paramEnd, this.dbmsType);
 				
 				logTrace("Context for " + paramName + " is " + params.getContextType().toString());
 				
@@ -535,7 +547,7 @@ public class PreparedQuery {
 		
 	}
 	
-	private static String tryToExtractParameterContaingSubQuery(String sqlQuery, int paramStart) {
+	private static String tryToExtractParameterContaingSubQuery(String sqlQuery, int paramStart, DbmsType dbmsType) {
 		String subQuery = "";
 		
 		if (paramStart == 533) {
@@ -592,7 +604,7 @@ public class PreparedQuery {
 			}
 			
 			if (foundPossibleSubQueryFinishing) {
-				if (DBUtilities.isValidSelectSqlQuery(subQuery)) {
+				if (DBUtilities.isValidSelectSqlQuery(subQuery, dbmsType)) {
 					return subQuery;
 				}
 			}

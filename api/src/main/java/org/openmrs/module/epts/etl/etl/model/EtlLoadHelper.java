@@ -253,10 +253,32 @@ public class EtlLoadHelper {
 		}
 	}
 	
-	void tryToAddToResult(EtlOperationResultHeader<EtlDatabaseObject> result) {
+	void loadAndAddResult(EtlOperationResultHeader<EtlDatabaseObject> result, DstConf dstConf) {
 		if (isPrincipalLoading()) {
-			getProcessor().getTaskResultInfo().addAllFromOtherResult_(result);
+			if (result != null) {
+				
+				if (result.hasRecordsWithUnexpectedErrors()) {
+					for (EtlOperationItemResult<EtlDatabaseObject> r : result.getRecordsWithUnexpectedErrors()) {
+						EtlLoadHelperRecord item = findRelatedLoadITem(r);
+						
+						item.getLoadRecord(dstConf).markAsFailed();
+					}
+				}
+				
+				getProcessor().getTaskResultInfo().addAllFromOtherResult_(result);
+			}
 		}
+	}
+	
+	private EtlLoadHelperRecord findRelatedLoadITem(EtlOperationItemResult<EtlDatabaseObject> r) {
+		
+		for (EtlLoadHelperRecord l : this.getLoadRecordHelper()) {
+			if (l.getSrcObject() == r.getRecord()) {
+				return l;
+			}
+		}
+		
+		throw new ForbiddenOperationException("No record found for result");
 	}
 	
 	/**
@@ -308,19 +330,21 @@ public class EtlLoadHelper {
 		if (getActionType().isCreate()) {
 			logDebug("Starting the insertion of " + objects.size() + " on db...");
 			
-			tryToAddToResult(DatabaseObjectDAO.load(objects, dstConf, dstConn));
+			dstConf.setUseMysqlInsertIgnore(this.getEtlOperationConfig().useseMysqlInsertIgnore());
+			
+			this.loadAndAddResult(DatabaseObjectDAO.load(objects, dstConf, dstConn), dstConf);
 			
 			logDebug(objects.size() + " records inserted on db!");
 		} else if (getActionType().isUpdate()) {
 			logDebug("Starting the upodate of " + objects.size() + " on db...");
 			
-			tryToAddToResult(DatabaseObjectDAO.updateAll(objects, dstConf, dstConn));
+			this.loadAndAddResult(DatabaseObjectDAO.updateAll(objects, dstConf, dstConn), dstConf);
 			logDebug(objects.size() + " records updated from db!");
 			
 		} else if (getActionType().isDelete()) {
 			logDebug("Starting the deletion of " + objects.size() + " on db...");
 			
-			tryToAddToResult(DatabaseObjectDAO.deleteAll(objects, dstConf, dstConn));
+			this.loadAndAddResult(DatabaseObjectDAO.deleteAll(objects, dstConf, dstConn), dstConf);
 			
 			logDebug(objects.size() + " records deleted on db!");
 			

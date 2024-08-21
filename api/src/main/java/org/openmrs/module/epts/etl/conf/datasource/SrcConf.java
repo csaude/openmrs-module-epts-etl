@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.ObjectDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
@@ -29,6 +30,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	private List<QueryDataSourceConfig> extraQueryDataSource;
 	
+	private List<ObjectDataSource> extraObjectDataSource;
+	
 	private EtlDstType dstType;
 	
 	/**
@@ -39,6 +42,14 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	private List<EtlField> etlFields;
 	
 	public SrcConf() {
+	}
+	
+	public List<ObjectDataSource> getExtraObjectDataSource() {
+		return extraObjectDataSource;
+	}
+	
+	public void setExtraObjectDataSource(List<ObjectDataSource> extraObjectDataSource) {
+		this.extraObjectDataSource = extraObjectDataSource;
 	}
 	
 	public List<EtlField> getEtlFields() {
@@ -205,6 +216,13 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 				}
 			}
 			
+			if (hasExtraObjectDataSourceConfig()) {
+				for (ObjectDataSource query : this.getExtraObjectDataSource()) {
+					query.setRelatedSrcConf(this);
+					query.fullLoad(srcConn);
+				}
+			}
+			
 			if (hasExtraDataSource()) {
 				this.setEtlFields(EtlField.converteFromDataSourceFields(this));
 				
@@ -299,6 +317,10 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			ds.addAll(this.getExtraQueryDataSource());
 		}
 		
+		if (hasExtraObjectDataSourceConfig()) {
+			ds.addAll(this.getExtraObjectDataSource());
+		}
+		
 		return ds;
 	}
 	
@@ -340,6 +362,10 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		
 	}
 	
+	public boolean hasExtraObjectDataSourceConfig() {
+		return utilities.arrayHasElement(this.getExtraObjectDataSource());
+	}
+	
 	public boolean hasSelfJoinTables() {
 		return utilities.arrayHasElement(this.getAuxExtractTable());
 	}
@@ -362,11 +388,31 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		return utilities.arrayHasElement(this.getEtlFields());
 	}
 	
-	public EtlField getEtlField(String fieldName) {
+	public EtlField getEtlField(String fieldName, boolean deepCheck) {
 		if (this.hasEtlFields()) {
 			for (EtlField f : this.getEtlFields()) {
 				if (f.getName().equals(fieldName)) {
 					return f;
+				}
+			}
+		}
+		
+		if (deepCheck) {
+			
+			List<EtlDataSource> allDs = new ArrayList<>();
+			
+			allDs.add(this);
+			
+			if (this.hasExtraDataSource()) {
+				allDs.addAll(this.getAvaliableExtraDataSource());
+			}
+			
+			if (this.hasExtraDataSource()) {
+				for (EtlDataSource ds : allDs) {
+					EtlField f = this.getEtlField(EtlField.fastCreate(fieldName, ds).getName(), false);
+					
+					if (f != null)
+						return f;
 				}
 			}
 		}

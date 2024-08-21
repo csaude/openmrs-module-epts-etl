@@ -326,16 +326,15 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				
 				logTrace("DEFAULT PARENT OBJECTS CREATED");
 				
-				if (this.getMaxSupportedProcessors() > 1) {
+				if (this.getRelatedEtlOperationConfig().getThreadingMode().isMultiThread()
+				        && this.getMaxSupportedProcessors() > 1) {
 					performeTaskInMultiProcessors();
 				} else {
 					this.performeTaskInSingleProcessor();
 				}
 				
 				if (mustDoFinalCheck()) {
-					//if (getProgressMeter().getTotal() > getProgressMeter().getProcessed()) {
 					perfomeFinalization();
-					//}
 				}
 				
 				if (this.getRecordsToDisplay() != null) {
@@ -354,6 +353,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				if (getRelatedOperationController().isResumable()) {
 					getRelatedOperationController().markTableOperationAsFinished(this.getEtlItemConfiguration());
 				}
+				
+				getRelatedOperationController().finalize(this);
 			}
 		}
 		catch (Exception e) {
@@ -986,15 +987,20 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		
 		String log = "";
 		
-		log += this.getEtlConfigCode().toUpperCase() + "\n\nPROGRESS:\n------------------\n";
-		log += "TOTAL TO ANALYZE     : " +  utilities.ident(utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotalToAnalyze()),12) + ", ";
+		log += this.getEtlConfigCode().toUpperCase() + "\n\nPROGRESS (" + getEtlConfigCode().toUpperCase()
+		        + "):\n------------------\n";
+		log += "TOTAL TO ANALYZE     : "
+		        + utilities.ident(utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotalToAnalyze()), 12)
+		        + ", ";
 		log += "PROCESSED: " + globalProgressMeter.getDetailedProgressOfAnalyzedRecords() + ", ";
 		log += "REMAINING: " + globalProgressMeter.getDetailedRemainingToAnalize() + ",\n";
 		
-		log += "TOTAL RECS TO PROCESS: " + utilities.ident(utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotal()), 12) + ", ";
+		log += "TOTAL RECS TO PROCESS: "
+		        + utilities.ident(utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotal()), 12) + ", ";
 		log += "PROCESSED: " + globalProgressMeter.getDetailedProgress() + ", ";
 		log += "REMAINING: " + globalProgressMeter.getDetailedRemaining() + ",";
-		log += "\nTIME                 : " + utilities.ident(globalProgressMeter.getHumanReadbleTime(), 12) + "\n------------------";
+		log += "\nTIME                 : " + utilities.ident(globalProgressMeter.getHumanReadbleTime(), 12)
+		        + "\n------------------";
 		
 		this.logInfo(log);
 	}

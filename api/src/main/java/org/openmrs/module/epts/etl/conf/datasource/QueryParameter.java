@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.conf.types.ParameterValueType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -141,17 +142,18 @@ public class QueryParameter extends Field {
 		return allCloned;
 	}
 	
-	public void determineParameterContext(String sqlQuery, int paramStart, int paramEnd) {
+	public void determineParameterContext(String sqlQuery, int paramStart, int paramEnd, DbmsType dbmsType) {
 		String beforeParam = sqlQuery.substring(0, paramStart).toLowerCase();
 		String afterParam = sqlQuery.substring(paramEnd).toLowerCase();
 		
 		// Pattern to check if the comparison token exists before the parameter
-		Pattern beforeComparisonTokenPattern = Pattern.compile(".*\\s*(=|>|<|>=|<=|!=|<>|like)\\s*$",
+		Pattern beforeComparisonTokenPattern = Pattern.compile(".*\\s*(=|>|<|>=|<=|!=|<>|like|between|and)\\s*$",
 		    Pattern.CASE_INSENSITIVE);
 		Matcher beforeCompareClauseMatcher = beforeComparisonTokenPattern.matcher(beforeParam);
 		
 		// Pattern to check if the comparison token exists after the parameter
-		Pattern afterComparisonTokenPattern = Pattern.compile("^\\s*(=|>|<|>=|<=|!=|<>|like)\\s*", Pattern.CASE_INSENSITIVE);
+		Pattern afterComparisonTokenPattern = Pattern.compile("^\\s*(=|>|<|>=|<=|!=|<>|like|between|and)\\s*",
+		    Pattern.CASE_INSENSITIVE);
 		Matcher afterCompareClauseMatcher = afterComparisonTokenPattern.matcher(afterParam);
 		
 		Pattern inClauseBeforePattenern = Pattern.compile(".*\\bin\\s*\\(\\s*$", Pattern.DOTALL);
@@ -164,7 +166,7 @@ public class QueryParameter extends Field {
 		
 		if (beforeCompareClauseMatcher.find() || afterCompareClauseMatcher.find()) {
 			type = ParameterContextType.COMPARE_CLAUSE;
-		} else if (beforeParam.contains("select ") && afterParam.contains(" from ")) {
+		} else if (isSelectStarting(beforeParam) && (afterParam.contains(" from ") || dbmsType.isMysql())) {
 			type = ParameterContextType.SELECT_FIELD;
 		} else if (inClauseBeforeMatcher.matches() || inClauseAfterMatcher.matches()) {
 			type = ParameterContextType.IN_CLAUSE;
@@ -175,6 +177,17 @@ public class QueryParameter extends Field {
 		}
 		
 		this.setContextType(type);
+	}
+	
+	boolean isSelectStarting(String query) {
+		
+		if (query.toLowerCase().startsWith("select")) {
+			return true;
+		}
+		
+		String selectRegex = "(?i)\\s*select\\s+.+?\\s*";
+		
+		return query.toLowerCase().matches(selectRegex);
 	}
 	
 }

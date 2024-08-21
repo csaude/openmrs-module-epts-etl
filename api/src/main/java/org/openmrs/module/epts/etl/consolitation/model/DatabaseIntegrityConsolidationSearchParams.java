@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjectSearchParams {
 	
@@ -40,7 +41,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 			
 			tryToAddLimits(limits, searchClauses);
 			
-			tryToAddExtraConditionForExport(searchClauses);
+			tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
 		}
 		
 		return searchClauses;

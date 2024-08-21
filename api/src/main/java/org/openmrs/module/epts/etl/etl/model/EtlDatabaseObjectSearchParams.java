@@ -21,6 +21,7 @@ import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
@@ -51,7 +52,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 				
 				if (utilities.stringHasValue(extraJoinQuery)) {
 					PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraJoinQuery, getSrcConf()),
-					    getConfig().getRelatedEtlConf(), true);
+					    getConfig().getRelatedEtlConf(), true, DbmsType.determineFromConnection(dstConn));
 					
 					List<Object> paramsAsList = pQ.generateQueryParameters();
 					
@@ -96,7 +97,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		tryToAddLimits(intervalExtremeRecord, searchClauses);
 		
-		tryToAddExtraConditionForExport(searchClauses);
+		tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
 		
 		if (getRelatedEngine() != null && getRelatedEngine().getFinalCheckStatus().onGoing()) {
 			

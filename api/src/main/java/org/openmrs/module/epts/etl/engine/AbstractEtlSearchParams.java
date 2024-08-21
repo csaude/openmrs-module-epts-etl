@@ -30,6 +30,7 @@ import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> extends AbstractSearchParams<T> {
 	
@@ -102,11 +103,11 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	/**
 	 * @param searchClauses
 	 */
-	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses) {
+	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses, DbmsType dbmsType) {
 		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
 			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
 			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraContidion, getSrcConf()),
-			    getConfig().getRelatedEtlConf(), true);
+			    getConfig().getRelatedEtlConf(), true, dbmsType);
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
 			

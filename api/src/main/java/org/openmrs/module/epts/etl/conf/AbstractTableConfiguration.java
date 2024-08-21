@@ -108,6 +108,8 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private ConflictResolutionType onConflict;
 	
+	private boolean useMysqlInsertIgnore;
+	
 	public AbstractTableConfiguration() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 		this.onConflict = ConflictResolutionType.MAKE_YOUR_DECISION;
@@ -125,6 +127,19 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	public void setManualMapPrimaryKeyOnField(String manualMapPrimaryKeyOnField) {
 		this.manualMapPrimaryKeyOnField = manualMapPrimaryKeyOnField;
+	}
+	
+	public boolean isUseMysqlInsertIgnore() {
+		return useMysqlInsertIgnore;
+	}
+	
+	@Override
+	public boolean useMysqlInsertIgnore() {
+		return isUseMysqlInsertIgnore();
+	}
+	
+	public void setUseMysqlInsertIgnore(boolean useMysqlInsertIgnore) {
+		this.useMysqlInsertIgnore = useMysqlInsertIgnore;
 	}
 	
 	@Override
@@ -245,7 +260,13 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		if (this.primaryKey != null) {
 			if (!isPrimaryKeyInfoLoaded()) {
 				this.primaryKey.setManualConfigured(true);
-				this.primaryKey.setTabConf(this);
+				try {
+					this.primaryKey.setTabConf(this);
+				}
+				catch (NullPointerException e) {
+					throw e;
+				}
+				
 				this.setPrimaryKeyInfoLoaded(true);
 				this.primaryKey.setKeyName("pk");
 				

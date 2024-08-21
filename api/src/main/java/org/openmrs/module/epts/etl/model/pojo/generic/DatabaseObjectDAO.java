@@ -526,6 +526,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql = objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
 		}
 		
+		if (tabConf.useMysqlInsertIgnore()) {
+			sql = DBUtilities.addInsertIgnoreOnInsertScript(sql, conn);
+		}
+		
 		sql += " VALUES";
 		
 		Object[] params = {};
@@ -560,13 +564,15 @@ public class DatabaseObjectDAO extends BaseDAO {
 				if (utilities.arrayHasElement(ids) && objects.get(0).getObjectId().isSimpleId()
 				        && !tabConf.includePrimaryKeyOnInsert()) {
 					
-					int i = 0;
-					
-					for (EtlDatabaseObject record : objects) {
-						record.loadObjectIdData(tabConf);
-						record.setObjectId(Oid.fastCreate(record.getObjectId().asSimpleKey().getName(), ids.get(i)));
+					if (ids.size() == objects.size()) {
+						int i = 0;
 						
-						i += 1;
+						for (EtlDatabaseObject record : objects) {
+							record.loadObjectIdData(tabConf);
+							record.setObjectId(Oid.fastCreate(record.getObjectId().asSimpleKey().getName(), ids.get(i)));
+							
+							i += 1;
+						}
 					}
 				}
 				
@@ -596,7 +602,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 						catch (DBException e1) {
 							
 							if (generateOperationResult) {
-								result.addToRecordsWithUnresolvedErrors(record, e1);
+								result.addToRecordsWithUnresolvedErrors(record.getSrcRelatedObject(), e1);
 							} else
 								throw e;
 						}

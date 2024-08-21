@@ -26,6 +26,7 @@ import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -178,7 +179,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 			
 			getRelatedEtlConf().logDebug("Initializing full loading of QueryDataSourceConfig [" + this.getName() + "]");
 			
-			query = PreparedQuery.prepare(this, getRelatedEtlConf(), true);
+			query = PreparedQuery.prepare(this, getRelatedEtlConf(), true, DbmsType.determineFromConnection(conn));
 			
 			getRelatedEtlConf().logTrace("Determining fields for query...");
 			
@@ -203,7 +204,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		}
 		
 		synchronized (stringLock) {
-			PreparedQuery query = PreparedQuery.prepare(this, mainObject, getRelatedEtlConf());
+			PreparedQuery query = PreparedQuery.prepare(this, mainObject, getRelatedEtlConf(),
+			    DbmsType.determineFromConnection(conn));
 			
 			List<Object> paramsAsList = query.generateQueryParameters();
 			
@@ -409,7 +411,15 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
+		
+		
+		EtlDatabaseObject obj = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
+	
+		if (obj.getFieldValue("regime") == null) {
+			System.err.println();
+		}
+		
+		return obj;
 	}
 	
 	@Override

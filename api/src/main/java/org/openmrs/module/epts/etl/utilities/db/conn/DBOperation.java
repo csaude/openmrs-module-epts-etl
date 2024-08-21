@@ -44,7 +44,7 @@ public class DBOperation {
 				
 				if (e.isTemporaryDBErrr(conn)) {
 					try {
-						Thread.sleep(5000);
+						Thread.sleep(500);
 					}
 					catch (InterruptedException e1) {}
 					

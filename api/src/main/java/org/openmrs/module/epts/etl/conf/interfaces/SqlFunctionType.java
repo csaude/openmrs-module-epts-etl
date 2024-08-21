@@ -1,12 +1,12 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-
 public enum SqlFunctionType {
 	
 	COUNT,
 	MAX,
-	MIN, timestampdiff;
+	MIN,
+	timestampdiff,
+	UNKOWN;
 	
 	public boolean isCount() {
 		return this.equals(COUNT);
@@ -21,11 +21,11 @@ public enum SqlFunctionType {
 		}
 		if (token.toLowerCase().contains("min")) {
 			return SqlFunctionType.MIN;
-		}
-		else if (token.toLowerCase().contains("timestampdiff")) {
+		} else if (token.toLowerCase().contains("timestampdiff")) {
 			return SqlFunctionType.timestampdiff;
 		}
 		
-		throw new ForbiddenOperationException("Unsuported function in token " + token);
+		else
+			return SqlFunctionType.UNKOWN;
 	}
 }

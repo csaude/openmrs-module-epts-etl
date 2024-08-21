@@ -33,6 +33,10 @@ public class EtlField extends Field {
 		this.setName(this.getSrcDataSource().getName() + "_" + this.getSrcField().getName());
 	}
 	
+	public static EtlField fastCreate(String srcFieldName, EtlDataSource srcDataSource) {
+		return new EtlField(Field.fastCreateField(srcFieldName), srcDataSource);
+	}
+	
 	public EtlField(Field srcField) {
 		this.srcField = srcField;
 		
