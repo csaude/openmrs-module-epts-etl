@@ -256,7 +256,7 @@ As can be seen on the code above, each extraQueryDataSource can have the
 - **required** if true, the source record will be ignored if the query does not return an result;
 
 #### The extraObjectDataSource configuration
-An object datasource allows to include object fields as datasource. The values for those object fields can be directly configured within the object datasource or be generated using a user defined custom generator. This generator can be written on a supported programing language (notice that currently only java language is supported).
+An object datasource allows to include object fields as datasource. The values for those object fields can be directly configured within the object datasource or be generated using an user defined custom generator. This generator can be written on a supported programing language (notice that currently only java language is supported).
 
 ```
 "extraObjectDataSource":[
