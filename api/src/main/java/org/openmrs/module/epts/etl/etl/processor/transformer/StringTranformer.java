@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -36,26 +36,22 @@ public class StringTranformer implements EtlFieldTransformer {
 	}
 	
 	@Override
-	public void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects,
-	        FieldsMapping fieldsMapping, Connection srcConn, Connection dstConn)
-	        throws DBException, ForbiddenOperationException {
+	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
+	        Connection dstConn) throws DBException, ForbiddenOperationException {
 		
-		if (fieldsMapping.getSrcValue() == null) {
+		if (field.getValueToTransform() == null) {
 			throw new ForbiddenOperationException("Source value must be provided for String transformation.");
 		}
 		
-		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, fieldsMapping);
-		
-		Object dstValue = null;
+		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform());
 		
 		try {
-			dstValue = evaluateStringExpression(srcValueWithParamsReplaced);
+			return evaluateStringExpression(srcValueWithParamsReplaced);
 		}
 		catch (Exception e) {
-			throw new EtlExceptionImpl("Failed to evaluate the string expression: " + fieldsMapping.getSrcValue(), e);
+			throw new EtlExceptionImpl("Failed to evaluate the string expression: " + field.getValueToTransform(), e);
 		}
 		
-		transformedRecord.setFieldValue(fieldsMapping.getDstField(), dstValue);
 	}
 	
 	private Object evaluateStringExpression(String expression) throws Exception {

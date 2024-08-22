@@ -1391,4 +1391,11 @@ public class CommonUtilities implements Serializable {
 		
 		return input.replace(token, mask);
 	}
+	
+	public boolean isNumericType(Class<?> fieldType) {
+		return Number.class.isAssignableFrom(fieldType) || fieldType == int.class || fieldType == long.class
+		        || fieldType == double.class || fieldType == float.class || fieldType == short.class
+		        || fieldType == byte.class;
+	}
+	
 }

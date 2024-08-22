@@ -6,15 +6,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
  * Allow the custom field transformation.
  */
 public interface EtlFieldTransformer {
+	
+	public static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	static final String DEFAULT_TRANSFORMER = DefaultFieldTransformer.class.getCanonicalName();
 	
@@ -34,17 +38,40 @@ public interface EtlFieldTransformer {
 	 * @param dstConn
 	 * @return the transformed value for dstField
 	 */
-	void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects, FieldsMapping fieldsMapping,
-	        Connection srcConn, Connection dstConn) throws DBException, ForbiddenOperationException;
-	
-	default String tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects,
-	        final FieldsMapping fieldsMapping) throws ForbiddenOperationException {
+	default void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects,
+	        FieldsMapping fieldsMapping, Connection srcConn, Connection dstConn)
+	        throws DBException, ForbiddenOperationException {
 		
-		if (fieldsMapping.getSrcValue() == null || fieldsMapping.getSrcValue().isEmpty()) {
+		Object dstValue = this.transform(srcObjects, fieldsMapping, srcConn, dstConn);
+		
+		if (utilities.isNumericType(transformedRecord.getFieldType(fieldsMapping.getDstField()))) {
+			dstValue = utilities.parseValue(dstValue.toString(),
+			    transformedRecord.getFieldType(fieldsMapping.getDstField()));
+		}
+		
+		transformedRecord.setFieldValue(fieldsMapping.getDstField(), dstValue);
+	}
+	
+	/**
+	 * Generates the transformed value for a given value from a field.
+	 * 
+	 * @param srcObjects the available src objects
+	 * @param fieldsMapping the field mapping containing the mapping information
+	 * @param srcConn
+	 * @param dstConn
+	 * @return the transformed value for dstField
+	 */
+	Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn, Connection dstConn)
+	        throws DBException, ForbiddenOperationException;
+	
+	default String tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final String srcValoue)
+	        throws ForbiddenOperationException {
+		
+		if (srcValoue == null || srcValoue.isEmpty()) {
 			throw new ForbiddenOperationException("The srcValue is empty");
 		}
 		
-		String expression = fieldsMapping.getSrcValue();
+		String expression = srcValoue;
 		
 		Pattern pattern = Pattern.compile("@(\\w+)");
 		Matcher matcher = pattern.matcher(expression);

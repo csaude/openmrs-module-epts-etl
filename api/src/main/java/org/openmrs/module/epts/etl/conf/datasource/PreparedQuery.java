@@ -422,18 +422,26 @@ public class PreparedQuery {
 		
 		Object paramValue = null;
 		
+		boolean paramExists = false;
+		
 		for (EtlDatabaseObject obj : this.getSrcObject()) {
 			try {
 				paramValue = obj.getFieldValue(paramName);
+				
+				paramExists = true;
+				
+				if (paramValue != null) {
+					break;
+				}
+				
 			}
 			catch (ForbiddenOperationException e) {
 				//Ignore if the object does not contain the parameter
 			}
 		}
 		
-		if (paramValue == null) {
-			throw new ForbiddenOperationException(
-			        "The field '" + paramName + "' has no value and it is needed to load source object");
+		if (!paramExists) {
+			throw new MissingParameterException(paramName);
 		}
 		
 		return paramValue;

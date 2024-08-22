@@ -411,15 +411,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		
-		
-		EtlDatabaseObject obj = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
-	
-		if (obj.getFieldValue("regime") == null) {
-			System.err.println();
-		}
-		
-		return obj;
+		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
 	}
 	
 	@Override

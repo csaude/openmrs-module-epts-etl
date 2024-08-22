@@ -7,12 +7,10 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlField;
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
-import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
-import org.openmrs.module.epts.etl.etl.processor.transformer.SimpleValueTransformer;
-import org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
@@ -23,7 +21,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
  * 
  * @author jpboane
  */
-public class FieldsMapping {
+public class FieldsMapping implements TransformableField {
 	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -108,10 +106,6 @@ public class FieldsMapping {
 		this.transformer = transformer;
 	}
 	
-	public boolean hasTransformer() {
-		return getTransformer() != null;
-	}
-	
 	public String getSrcValue() {
 		return srcValue;
 	}
@@ -167,50 +161,12 @@ public class FieldsMapping {
 		return "[srcField: " + srcField + ", dstField: " + dstField + ", dataSourceName: " + this.dataSourceName + "]";
 	}
 	
-	public boolean hasTransformerInstance() {
-		return this.getTransformerInstance() != null;
-	}
-	
 	public void setMapToNullValue(boolean b) {
 		mapToNullValue = b;
 	}
 	
 	public boolean isMapToNullValue() {
 		return mapToNullValue;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public void tryToLoadTransformer() {
-		if (this.hasTransformer()) {
-			
-			if (this.getTransformer().equals(EtlFieldTransformer.STRING_TRANSFORMER)) {
-				this.setTransformer(StringTranformer.class.getCanonicalName());
-				this.setTransformerInstance(StringTranformer.getInstance());
-			} else if (this.getTransformer().equals(EtlFieldTransformer.ARITHMETIC_TRANSFORMER)) {
-				this.setTransformer(ArithmeticFieldTransformer.class.getCanonicalName());
-				this.setTransformerInstance(ArithmeticFieldTransformer.getInstance());
-			} else {
-				try {
-					ClassLoader loader = EtlRecordTransformer.class.getClassLoader();
-					
-					Class<? extends EtlFieldTransformer> transformerClazz = (Class<? extends EtlFieldTransformer>) loader
-					        .loadClass(this.getTransformer());
-					
-					this.setTransformerInstance(transformerClazz.newInstance());
-				}
-				catch (Exception e) {
-					throw new ForbiddenOperationException(
-					        "Error loading transformer class [" + this.getTransformer() + "]!!! " + e.getLocalizedMessage());
-				}
-			}
-		} else if (this.getSrcValue() != null) {
-			this.setTransformer(SimpleValueTransformer.class.getCanonicalName());
-			this.setTransformerInstance(SimpleValueTransformer.getInstance());
-		} else {
-			this.setTransformer(DefaultFieldTransformer.class.getCanonicalName());
-			
-			this.setTransformerInstance(DefaultFieldTransformer.getInstance());
-		}
 	}
 	
 	/**
@@ -369,6 +325,16 @@ public class FieldsMapping {
 	
 	public boolean hasDataSourceName() {
 		return utilities.stringHasValue(this.getDataSourceName());
+	}
+	
+	@Override
+	public String getValueToTransform() {
+		return this.getSrcValue();
+	}
+	
+	@Override
+	public String getName() {
+		return this.dstField;
 	}
 	
 }

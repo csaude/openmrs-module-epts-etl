@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -32,18 +32,15 @@ public class SimpleValueTransformer implements EtlFieldTransformer {
 	}
 	
 	@Override
-	public void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects,
-	        FieldsMapping fieldsMapping, Connection srcConn, Connection dstConn)
-	        throws DBException, ForbiddenOperationException {
+	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
+	        Connection dstConn) throws DBException, ForbiddenOperationException {
 		
-		if (fieldsMapping.isMapToNullValue() || fieldsMapping.getSrcValue().isEmpty()
-		        || fieldsMapping.getSrcValue().equals("null")) {
-			transformedRecord.setFieldValue(fieldsMapping.getDstField(), null);
+		if (field == null || field.getValueToTransform().toString().isEmpty()
+		        || field.getValueToTransform().equals("null")) {
+			return null;
+		} else {
+			return tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform());
 		}
-		
-		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, fieldsMapping);
-		
-		transformedRecord.setFieldValue(fieldsMapping.getDstField(), srcValueWithParamsReplaced);
 	}
 	
 }

@@ -3,7 +3,7 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -35,38 +35,40 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 	}
 	
 	@Override
-	public void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects,
-	        FieldsMapping fieldsMapping, Connection srcConn, Connection dstConn)
-	        throws DBException, ForbiddenOperationException {
+	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
+	        Connection dstConn) throws DBException, ForbiddenOperationException {
 		
 		Object dstValue = null;
 		
-		if (fieldsMapping.isMapToNullValue()) {
+		if (field.getValueToTransform() == null) {
 			dstValue = null;
 		} else {
 			
 			boolean found = false;
 			
 			for (EtlDatabaseObject srcObject : srcObjects) {
-				if (fieldsMapping.getDataSourceName().equals(srcObject.getRelatedConfiguration().getAlias())) {
+				if (field.getDataSourceName().equals(srcObject.getRelatedConfiguration().getAlias())) {
 					found = true;
 					
+					String fieldNameInSnakeCase = utilities.parsetoSnakeCase(field.getName());
+					String fieldNameInCameCase = utilities.parsetoCamelCase(field.getName());
+					
 					try {
-						dstValue = srcObject.getFieldValue(fieldsMapping.getSrcField());
+						dstValue = srcObject.getFieldValue(fieldNameInSnakeCase);
 					}
 					catch (ForbiddenOperationException e) {
-						dstValue = srcObject.getFieldValue(fieldsMapping.getSrcFieldAsClassField());
+						dstValue = srcObject.getFieldValue(fieldNameInCameCase);
 					}
 				}
 			}
 			
 			if (!found) {
 				throw new ForbiddenOperationException(
-				        "The field '" + fieldsMapping.getSrcField() + " does not belong to any configured source table");
+				        "The field '" + field.getName() + " does not belong to any configured source table");
 			}
 		}
 		
-		transformedRecord.setFieldValue(fieldsMapping.getDstField(), dstValue);
+		return dstValue;
 	}
 	
 }
