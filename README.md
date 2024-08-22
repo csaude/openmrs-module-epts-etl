@@ -52,7 +52,8 @@ This section allowd the database configuration. The "srcConnConf" allows the con
 This section allow the configuration of operations. Each operation can be defined by the following fields:
 - "operationType": indicates the operation to be executed for each item defined on ETL configuration session;
 - "processingBatch": the amount of records to be processed in a batch, if not present, a default batch of 1000 will be applied;
-- "maxSupportedProcessors": an integer representing the quantity of max thread which will applied to execute the operation, if not present, the amount of avaliable server processors will be applied;
+- "threadingMode": indicates if the processing should be done using a SINGLE or MULTI threads. Possible values: MULTI, SINGLE, default is MULTI;
+- "fisicalCpuMultiplier": when using MULTI threading, the amount of available physical CPU will be multiplied by the value from this propertie. This allow to overpower the processing. Notice that using big values for this can lead to process slowdown; 
 - "processingMode": indicate the way the ETL items will be processed. (1) SERIAL: indicates that one ETL Item will be processed at time (2) PARALLEL: all the listed ETL Item will be processed at same time; if not present, a SERIAL mode will be applied;
 - "processorFullClassName": a full class name indicating a customized processor.
 - "skipFinalDataVerification": the final verification is done to check if all the records on the source were processed to the destination database. If this field is set to false, the final check will be skipped! Since the final verification could take time, disabling it could improve the speed; 
@@ -115,7 +116,8 @@ The "srcConf '' allows the configuration of datasource in an etl process. The re
 - *auxExtractTable*: optional list containing the joining tables which helps to add additional extraction conditions;
 - *extraTableDataSource*: optional list of auxiliary tables to be used as data source
 - *extraQueryDataSource*: option list of auxiliary queries to be used as data source;
-
+- *extraObjectDataSource*: option list of auxiliary objects configuration to be used as data source;
+  
 Bellow are additional explanation of complex configuration on "srcConf"
 
 #### Unique Keys
@@ -253,7 +255,27 @@ As can be seen on the code above, each extraQueryDataSource can have the
 - **script** which defines the relative path to the file containing the query. The application will look for the query files under @etlRootDirectory/dump-scripts/. Note that the application will try to load the "script" only if the "query" field is empty.
 - **required** if true, the source record will be ignored if the query does not return an result;
 
-  
+#### The extraObjectDataSource configuration
+An object datasource allows to include object fields as datasource. The values for those object fields can be directly configured within the object datasource or be generated using a user defined custom generator. This generator can be written on a supported programing language (notice that currently only java language is supported).
+
+```
+"extraObjectDataSource":[
+   {
+	  "name":"",
+	  "objectLanguage": "",
+	  "objectFields":[
+		 {
+			"name":"",
+			"value":"",
+			"dataType":"",
+			"transformer":""
+		 }
+	  ],
+	  "fieldsValuesGenerator":""
+   }
+]		 
+```	
+
 #### The use of params whithin Src Configuration
 The Src configuration allows the use of params for querying. The params can be present on "joinExtraCondition", "extraConditionForExtract", "query", etc. Parameters will be defined as identifiers preceded by "@". Eng. "location_id = @locationId". The parameters can appear in several context within queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1".
 
