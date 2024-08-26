@@ -162,7 +162,7 @@ public class EtlField extends Field {
 		}
 		
 		if (this.getDataType() == null) {
-			this.setType(this.getSrcField().getDataType());
+			this.setDataType(this.getSrcField().getDataType());
 		}
 		
 	}

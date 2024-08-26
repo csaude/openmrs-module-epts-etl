@@ -32,7 +32,7 @@ public class Key extends Field implements Comparable<Key> {
 	
 	public static Key fastCreateTyped(String name, String type) {
 		Key k = new Key(name);
-		k.setType(type);
+		k.setDataType(type);
 		
 		return k;
 	}
@@ -40,7 +40,7 @@ public class Key extends Field implements Comparable<Key> {
 	public Key(String name, String type, Object value) {
 		this(name);
 		
-		setType(type);
+		setDataType(type);
 		setValue(value);
 	}
 	

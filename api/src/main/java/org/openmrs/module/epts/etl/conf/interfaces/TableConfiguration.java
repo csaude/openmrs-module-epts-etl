@@ -419,7 +419,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						Key pk = new Key();
 						pk.setName(rs.getString("COLUMN_NAME"));
 						
-						pk.setType(getField(pk.getName()).getDataType());
+						pk.setDataType(getField(pk.getName()).getDataType());
 						
 						primaryKey.addKey(pk);
 					}
@@ -703,7 +703,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 								map.setParentTabConf((ParentTableImpl) p);
 								
 								Field field = utilities.findOnArray(this.getFields(), new Field(map.getChildFieldName()));
-								map.getChildField().setType(field.getDataType());
+								map.getChildField().setDataType(field.getDataType());
 							}
 						}
 					}
@@ -976,8 +976,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		RefMapping map = RefMapping.fastCreate(childFieldname, parentFieldName);
 		
-		map.getChildField().setType(field.getDataType());
-		map.getParentField().setType(field.getDataType());
+		map.getChildField().setDataType(field.getDataType());
+		map.getParentField().setDataType(field.getDataType());
 		map.setIgnorable(ignorable);
 		
 		if (this.getParentRefInfo() == null) {

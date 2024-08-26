@@ -278,7 +278,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 					Field field = getField(key.getName());
 					
 					if (field != null) {
-						key.setType(field.getDataType());
+						key.setDataType(field.getDataType());
 					} else {
 						throw new ForbiddenOperationException("The field '" + key.getName()
 						        + "' defined as part of primaryKey cannot found on table " + getFullTableName() + "'");

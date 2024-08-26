@@ -803,7 +803,7 @@ public class DBUtilities {
 				
 				att = new Field(primaryKey);
 				
-				att.setType(primaryKeyType);
+				att.setDataType(primaryKeyType);
 			}
 		}
 		catch (SQLException e) {
@@ -921,7 +921,7 @@ public class DBUtilities {
 			
 			for (int i = 1; i <= qtyAttrs; i++) {
 				Field field = new Field(rsMetaData.getColumnLabel(i));
-				field.setType(rsMetaData.getColumnTypeName(i));
+				field.setDataType(rsMetaData.getColumnTypeName(i));
 				
 				fields.add(field);
 			}
@@ -1131,7 +1131,7 @@ public class DBUtilities {
 			
 			for (int i = 1; i <= qtyAttrs; i++) {
 				Field field = new Field(rsMetaData.getColumnName(i));
-				field.setType(rsMetaData.getColumnTypeName(i));
+				field.setDataType(rsMetaData.getColumnTypeName(i));
 				
 				field.setAllowNull(rsMetaData.isNullable(i) == ResultSetMetaData.columnNullable);
 				

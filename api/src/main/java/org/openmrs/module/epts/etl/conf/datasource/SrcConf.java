@@ -235,9 +235,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			}
 			
 		}
-		finally
-		
-		{
+		finally {
 			srcConn.finalizeConnection();
 		}
 		

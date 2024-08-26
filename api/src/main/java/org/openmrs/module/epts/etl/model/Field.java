@@ -93,7 +93,6 @@ public class Field implements Serializable {
 		this.attDefinedElements = attDefinedElements;
 	}
 	
-	@JsonIgnore
 	public String getDataType() {
 		return dataType;
 	}
@@ -148,7 +147,7 @@ public class Field implements Serializable {
 	}
 	
 	@JsonIgnore
-	boolean hasDataType() {
+	public boolean hasDataType() {
 		return getDataType() != null;
 	}
 	

@@ -8,6 +8,8 @@ import org.openmrs.module.epts.etl.model.Field;
 
 public class DataSourceField extends Field implements TransformableField {
 	
+	private static final long serialVersionUID = -7824136202167355998L;
+	
 	private String transformer;
 	
 	private EtlFieldTransformer transformerInstance;
@@ -19,7 +21,6 @@ public class DataSourceField extends Field implements TransformableField {
 	private ObjectDataSource dataSource;
 	
 	public DataSourceField() {
-		System.err.println();
 	}
 	
 	public void setDataSource(ObjectDataSource dataSource) {
@@ -59,15 +60,6 @@ public class DataSourceField extends Field implements TransformableField {
 		this.extension = extension;
 	}
 	
-	public String getDataType() {
-		return super.getType();
-	}
-	
-	@Override
-	public void setDataType(String dataType) {
-		super.setType(dataType);
-	}
-	
 	public boolean isDataTypeLoaded() {
 		return dataTypeLoaded;
 	}
@@ -83,7 +75,7 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	@Override
 	public boolean hasSrcField() {
-		return true;
+		return false;
 	}
 	
 	@Override

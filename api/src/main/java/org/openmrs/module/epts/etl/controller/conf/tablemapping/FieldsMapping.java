@@ -178,7 +178,7 @@ public class FieldsMapping implements TransformableField {
 		Field f = (Field) srcField.cloneMe();
 		
 		f.setName(this.getDstField());
-		f.setType(srcField.getDataType());
+		f.setDataType(srcField.getDataType());
 		
 		return f;
 	}
@@ -206,7 +206,7 @@ public class FieldsMapping implements TransformableField {
 					        "The dataType for dstField " + fm.getDstField() + " was not loaded");
 				}
 				
-				dstField.setType(fm.getDataType());
+				dstField.setDataType(fm.getDataType());
 			}
 			
 			parsed.add(dstField);
