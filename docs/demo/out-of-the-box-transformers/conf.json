@@ -42,31 +42,37 @@
                   "tableName":"salary_parameter",
                   "joinType":"INNER"
                }
+            ],
+            "extraObjectDataSource":[
+               {
+                  "name":"payslip_generator",
+                  "objectFields":[
+                     {
+                        "name":"pos",
+                        "dataType":"int",
+                        "value":"@year*@month + @id",
+                        "transformer":"org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer"
+                     },
+                     {
+                        "name":"full_month",
+                        "value":"@year@month"
+                     },
+                     {
+                        "name":"full_name",
+                        "value":"(@full_name).toUpperCase()",
+                        "transformer":"org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer"
+                     },
+                     {
+                        "name":"salary",
+                        "value":"@worked_days*@base",
+                        "transformer":"org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer"
+                     }
+                  ]
+               }
             ]
          },
          "dstConf":{
-            "tableName":"monthly_payslip",
-            "mapping":[
-               {
-                  "dstField":"pos",
-                  "transformer":"org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer",
-                  "srcValue":"@year*@month + @id"
-               },
-               {
-                  "dstField":"full_month",
-                  "srcValue":"@year@month"
-               },
-               {
-                  "dstField":"full_name",
-                  "transformer":"org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer",
-                  "srcValue":"(@full_name).toUpperCase()"
-               },
-               {
-                  "dstField":"salary",
-                  "transformer":"org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer",
-                  "srcValue":"@worked_days*@base"
-               }
-            ]
+            "tableName":"monthly_payslip"
          }
       }
    ]
