@@ -106,9 +106,9 @@ We will be using [this configuration file](out-of-the-box-transformers/conf.json
 
 ![transformation-with-transformers](img/out-of-box-transformers.png)
 
-Below is explained the use of each tranformer:
+To generate the  *Monthly Payslip* content we added an "extraObjectDataSource". In this case we are using the built-in FieldGeneration. For this kind of Field Generator we must specify value for each data source field. We are exploring the transformer to do some transformation on the fields values. Below is explained the use of each transformer:
 
-- (1) here we do the necessary transformation to fill the field "pos" in the report. We are using **ArithmeticFieldTransformer**. The value we want to evaluate is contained in the field "srcValue". Note the presence of 3 parameters: @year and @month, which will be picked from the configuration params, and @id, which will be picked from the main src object.
+- (1) here we do the necessary transformation to fill the field "pos" in the report. We are using **ArithmeticFieldTransformer**. Note the presence of 3 parameters on the field value: @year and @month, which will be picked from the configuration params, and @id, which will be picked from the main src object.
 - (2) here we do the necessary transformation to fill the field "full_month" in the report. Here we are using the **SimpleValueTransformer**. Note that we omitted the transformer as it will be automatically detected by the application. The *SimpleValueTransformer* allows the transformation of constant values or values from parameters.
 - (3) here we use **StringTransformer** to change the full_name to upperCase. Note that we put the expression we want to transform within the "()". When we use the *StringTransformer* we must always invoke a method which returns a value; otherwise, an exception will occur.
 - (4) here we use a **ArithmeticFieldTransformer** again to determine the salary.
