@@ -52,7 +52,8 @@ This section allowd the database configuration. The "srcConnConf" allows the con
 This section allow the configuration of operations. Each operation can be defined by the following fields:
 - "operationType": indicates the operation to be executed for each item defined on ETL configuration session;
 - "processingBatch": the amount of records to be processed in a batch, if not present, a default batch of 1000 will be applied;
-- "maxSupportedProcessors": an integer representing the quantity of max thread which will applied to execute the operation, if not present, the amount of avaliable server processors will be applied;
+- "threadingMode": indicates if the processing should be done using a SINGLE or MULTI threads. Possible values: MULTI, SINGLE, default is MULTI;
+- "fisicalCpuMultiplier": when using MULTI threading, the amount of available physical CPU will be multiplied by the value from this propertie. This allow to overpower the processing. Notice that using big values for this can lead to process slowdown; 
 - "processingMode": indicate the way the ETL items will be processed. (1) SERIAL: indicates that one ETL Item will be processed at time (2) PARALLEL: all the listed ETL Item will be processed at same time; if not present, a SERIAL mode will be applied;
 - "processorFullClassName": a full class name indicating a customized processor.
 - "skipFinalDataVerification": the final verification is done to check if all the records on the source were processed to the destination database. If this field is set to false, the final check will be skipped! Since the final verification could take time, disabling it could improve the speed; 
@@ -115,7 +116,8 @@ The "srcConf '' allows the configuration of datasource in an etl process. The re
 - *auxExtractTable*: optional list containing the joining tables which helps to add additional extraction conditions;
 - *extraTableDataSource*: optional list of auxiliary tables to be used as data source
 - *extraQueryDataSource*: option list of auxiliary queries to be used as data source;
-
+- *extraObjectDataSource*: option list of auxiliary objects configuration to be used as data source;
+  
 Bellow are additional explanation of complex configuration on "srcConf"
 
 #### Unique Keys
@@ -253,7 +255,38 @@ As can be seen on the code above, each extraQueryDataSource can have the
 - **script** which defines the relative path to the file containing the query. The application will look for the query files under @etlRootDirectory/dump-scripts/. Note that the application will try to load the "script" only if the "query" field is empty.
 - **required** if true, the source record will be ignored if the query does not return an result;
 
-  
+#### The extraObjectDataSource configuration
+An object datasource allows to include object fields as datasource. The values for those object fields can be directly configured within the object datasource or be generated using an user defined custom generator. This generator can be written on a supported programing language (notice that currently only java language is supported).
+
+```
+"extraObjectDataSource":[
+   {
+	  "name":"",
+	  "objectFields":[
+		 {
+			"name":"",
+			"value":"",
+			"transformer":"",
+			"dataType":""
+		 }
+	  ],
+	  "objectLanguage": "",
+	  "fieldsValuesGenerator":""
+   }
+]		 
+```	
+Each "extraObjectDataSource" is defined by
+- *name* which is the unique datasource identifier within the etl item configuration;
+- *objectFields* the list of object fields. Note that each field is defined by:
+  - (1) **name** the unique field name within the datasource;
+  - (2) **value** allow the specification of fixed value for the field. This value can be constant, parameter or expression. Parameter values should start with '@' then followed by an identifier. If no value is specified then application will assume that the "fieldsValuesGenerator" will generates the "value";
+  - (3) **transformer** a transformer enables transformation of "value". A transformation is needed when the "value" is an expression. There are 3 types of transformers, namely: (1) the *org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer* which allow the evaluation of arithmetic expressions (2) *org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer* which allow the transformation through string methods and (3) the *org.openmrs.module.epts.etl.etl.processor.transformer.SimpleValueTranformer* which allow the direct transformation of value. If empty, then the **SimpleValueTranformer** will be applied .  
+  - (4) **dataType** an optional token to specify the data type for value. By default, the type will match the final expression type from the transformer. Supported types: int, long, double, string, date      
+- *objectLanguage* specify the language to be used to process the field generation. This can be omitted if there is no custom generator to be used
+- *fieldsValuesGenerator* a full class name for custom field generator.   
+
+For demo see [exploring-field-transformation](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#exploring-the-field-transformer) session.
+
 #### The use of params whithin Src Configuration
 The Src configuration allows the use of params for querying. The params can be present on "joinExtraCondition", "extraConditionForExtract", "query", etc. Parameters will be defined as identifiers preceded by "@". Eng. "location_id = @locationId". The parameters can appear in several context within queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1".
 
@@ -274,17 +307,13 @@ If the "dstConf '' has more than one element or if there is needed a transformat
          "prefferredDataSource":[],
          "ignoreUnmappedFields":"",
          "dstType":"",
-         "transformer":"",
 	 "includeAllFieldsFromDataSource": "",
          "mapping":[
             {
                "dataSourceName":"",
                "srcField":"",
                "dstField":"",
-               "srcValue":"",
-               "dataType": ""
-               "mapToNullValue":"",
-               "transformer":"",
+               "mapToNullValue":""
             }
          ],
          "joinFields":[
@@ -306,9 +335,12 @@ Bellow is the explanation for each field:
 - **prefferredDataSource** a comma separated list of tokens representing the data sources names from the "srcConf '' in order of preference.  This is important when it comes to auto-mapping, if a certain field is present in multiple datasources. If there is only one datasource or if each field in the dst table appears only in one datasource, then this element could be omitted.
 - **ignoreUnmappedFields** if there are fields on the dst that were not configured manually and could  not be resolved automatically then the application will fail. To avoid that, then set this field to true;
 -  **dstType** the destination type for this specific dstConf. If not present will be applied the "dstType" from operationConfiguration;
--  **transformer** a transformer is a java class which implements a custom transformation of src to dst. The transformers must implement the [EtlRecordTransformer](api/src/main/java/org/openmrs/module/epts/etl/etl/processor/transformer/EtlRecordTransformer.java) interface. If there is a custom transformer you must place here the full class of the transformer.
 - **includeAllFieldsFromDataSource** If true, all the fields from all the data sources in "srcConf" will be included on the destination table (if it is automatically generated by the application); in contrast, only the mapped fields will be included on the destination table.
--  **mapping** is used to manually map the dataSource for specific fields in the dst table. The manual mapping is necessary if the dst field could not be automatically mapped because it does not appear in any dataSource in the srcConf. The relevant field for each mapping are: (1) *dataSourceName* the datasource from were the data will be picked-up; this can be omitted if the value for this fields is from a constant, parameter or from a transformer. You can also specify the dataSourceName within the srcField like 'dataSourceName.srcFieldName' (2) *srcField* the field on the dataSource from where the value will be picked up; this can be omitted if there is no datasource for this dst field (3) *dstField* the field in dst which we want to fill (4) *srcValue* allow to fill the dst field with a constant value or a parameter or arithmetic expression. Within the srcValue the parameters could be specified by using '@' at beggining of identifier. e.g "@siteId" (5) *dataType*  an optional token to specify the data type for dstField. By default, the type will match the field in the destination table if it exists, or the srcField data type, or the final expression type from the transformer. Supported types: int, long, double, string, date (6) *mapToNullValue* a boolean which indicates that this field should be filled with null value (7) a transformer is a java class which implements a custom transformation of field from src field to dst field. The field transformers must implement the [EtlFieldTransformer](api/src/main/java/org/openmrs/module/epts/etl/etl/processor/transformer/EtlFieldTransformer.java) interface. If there is a custom field transformer you must place here the full class of the transformer. There are out-of-the-box transformers which can be used, namely  (1) the *ArithmeticFieldTransformer* which allow the evaluation of arithmetic expressions (2) *StringTranformer* which allow the transformation through string methods and (3) the *SimpleValueTranformer* which allow the direct transformation of srcValue
+-  **mapping** is used to manually map the dataSource for specific fields in the dst table. The manual mapping is necessary if the dst field could not be automatically mapped because it does not appear in any dataSource in the srcConf. The relevant field for each mapping are:
+   - (1) *dataSourceName* the datasource from were the data will be picked-up; this can be omitted if the value for this fields is from a constant, parameter or from a transformer. You can also specify the dataSourceName within the srcField like 'dataSourceName.srcFieldName'
+   - (2) *srcField* the field on the dataSource from where the value will be picked up;
+   - (3) *dstField* the field in dst which we want to fill;
+   - (4) *mapToNullValue* a boolean which indicates that this field should be filled with null value;
 -  **joinFields** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst use the same unique keys. The joining fields are important when it comes to determining if all the src records were processed. If the joining fields are not present then the final verification of the process will be skipped for that specific table.
 -  **winningRecordFieldsInfo** optional list indicating the fields to be checked when there is conflict between an record with existing one on the etl process. When merge existing record, the incoming dstRecord will win if the listed fields have the specified values. Below is an example of winningRecordFieldsInfo.
   
