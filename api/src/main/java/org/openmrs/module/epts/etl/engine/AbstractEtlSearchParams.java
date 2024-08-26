@@ -205,7 +205,6 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		List<CompletableFuture<Integer>> tasks = new ArrayList<>(qtyProcessors);
 		
 		for (IntervalExtremeRecord limits : currIntervas.getInternalIntervals()) {
-			
 			tasks.add(CompletableFuture.supplyAsync(() -> {
 				try {
 					return SearchParamsDAO.countAll(this, limits, conn);

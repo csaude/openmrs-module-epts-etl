@@ -76,7 +76,7 @@ public class DatabaseEntityPOJOGenerator {
 		for (int i = 0; i < qtyAttrs - 1; i++) {
 			Field field = pojoble.getFields().get(i);
 			
-			attElements = AttDefinedElements.define(field.getName(), field.getType(), false, pojoble);
+			attElements = AttDefinedElements.define(field.getName(), field.getDataType(), false, pojoble);
 			
 			if (!isIgnorableField(field.getName())) {
 				attsDefinition = utilities.concatStringsWithSeparator(attsDefinition, attElements.getAttDefinition(), "\n");
@@ -129,7 +129,7 @@ public class DatabaseEntityPOJOGenerator {
 		
 		Field field = pojoble.getFields().get(qtyAttrs - 1);
 		
-		attElements = AttDefinedElements.define(field.getName(), field.getType(), true, pojoble);
+		attElements = AttDefinedElements.define(field.getName(), field.getDataType(), true, pojoble);
 		
 		if (!isIgnorableField(field.getName())) {
 			attsDefinition = utilities.concatStringsWithSeparator(attsDefinition, attElements.getAttDefinition(), "\n");

@@ -42,6 +42,10 @@ public interface EtlFieldTransformer {
 	        FieldsMapping fieldsMapping, Connection srcConn, Connection dstConn)
 	        throws DBException, ForbiddenOperationException {
 		
+		if (fieldsMapping.getSrcValue() == null && fieldsMapping.hasDataSourceName()) {
+			fieldsMapping.setSrcValue("@" + fieldsMapping.getSrcField());
+		}
+		
 		Object dstValue = this.transform(srcObjects, fieldsMapping, srcConn, dstConn);
 		
 		if (utilities.isNumericType(transformedRecord.getFieldType(fieldsMapping.getDstField()))) {

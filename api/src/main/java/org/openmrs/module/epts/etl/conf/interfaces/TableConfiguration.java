@@ -419,7 +419,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						Key pk = new Key();
 						pk.setName(rs.getString("COLUMN_NAME"));
 						
-						pk.setType(getField(pk.getName()).getType());
+						pk.setType(getField(pk.getName()).getDataType());
 						
 						primaryKey.addKey(pk);
 					}
@@ -703,7 +703,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 								map.setParentTabConf((ParentTableImpl) p);
 								
 								Field field = utilities.findOnArray(this.getFields(), new Field(map.getChildFieldName()));
-								map.getChildField().setType(field.getType());
+								map.getChildField().setType(field.getDataType());
 							}
 						}
 					}
@@ -976,8 +976,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		RefMapping map = RefMapping.fastCreate(childFieldname, parentFieldName);
 		
-		map.getChildField().setType(field.getType());
-		map.getParentField().setType(field.getType());
+		map.getChildField().setType(field.getDataType());
+		map.getParentField().setType(field.getDataType());
 		map.setIgnorable(ignorable);
 		
 		if (this.getParentRefInfo() == null) {
@@ -1408,12 +1408,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		for (int i = 0; i < qtyAttrs - 1; i++) {
 			Field field = this.getFields().get(i);
 			
-			field.setAttDefinedElements(AttDefinedElements.define(field.getName(), field.getType(), false, this));
+			field.setAttDefinedElements(AttDefinedElements.define(field.getName(), field.getDataType(), false, this));
 		}
 		
 		Field field = this.getFields().get(qtyAttrs - 1);
 		
-		field.setAttDefinedElements(AttDefinedElements.define(field.getName(), field.getType(), true, this));
+		field.setAttDefinedElements(AttDefinedElements.define(field.getName(), field.getDataType(), true, this));
 		
 		generateSQLElemenets();
 	}

@@ -189,7 +189,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 			
 			this.fullLoaded = true;
 		}
-		catch (ForbiddenOperationException e) {
+		catch (ForbiddenOperationException | DBException e) {
 			//Mean that there are missing parameters. Lets try to load the minimal information of fields
 			//Note that we are not marking the record as fullLoaded as there will be missing information on fields
 			

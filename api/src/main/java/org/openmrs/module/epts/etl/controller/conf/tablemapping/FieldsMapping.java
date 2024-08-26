@@ -8,7 +8,6 @@ import org.openmrs.module.epts.etl.conf.EtlField;
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
-import org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -179,7 +178,7 @@ public class FieldsMapping implements TransformableField {
 		Field f = (Field) srcField.cloneMe();
 		
 		f.setName(this.getDstField());
-		f.setType(srcField.getType());
+		f.setType(srcField.getDataType());
 		
 		return f;
 	}
@@ -215,50 +214,6 @@ public class FieldsMapping implements TransformableField {
 		}
 		
 		return parsed;
-	}
-	
-	public void loadType(DstConf dstConf, EtlDataSource dataSource) {
-		if (this.hasDataType()) {
-			if (!utilities.isStringIn(this.getDataType().toLowerCase(), "int", "double", "string", "date", "long")) {
-				throw new ForbiddenOperationException("Unsupported dataType for dstField " + this.getDstField());
-			}
-		} else if (dstConf.containsField(this.getDstField())) {
-			this.setDataType(dstConf.getField(this.getDstField()).getType());
-		} else if (this.hasSrcField()) {
-			if (dataSource != null) {
-				if (dataSource.containsField(this.getSrcField())) {
-					this.setDataType(dataSource.getField(this.getSrcField()).getType());
-				} else {
-					throw new ForbiddenOperationException(
-					        "The Datasource (" + dataSource.getName() + ") does not contain the src field "
-					                + this.getSrcField() + " for dstField " + this.getDstField());
-				}
-			} else {
-				throw new ForbiddenOperationException("There is no datasource for " + this.getSrcField());
-			}
-		} else if (this.hasTransformer()) {
-			
-			if (!this.hasTransformerInstance()) {
-				throw new ForbiddenOperationException("The transformer instance for dstField " + this.getDstField()
-				        + " was not loaded! Please load the transformer instance before!!!");
-			}
-			
-			if (this.getTransformerInstance() instanceof ArithmeticFieldTransformer) {
-				this.setDataType("double");
-			} else {
-				this.setDataType("String");
-			}
-		} else {
-			if (!this.hasTransformer()) {
-				throw new ForbiddenOperationException("There is no transformer for dstField " + this.getDstField());
-			}
-		}
-		
-		this.setDataTypeLoaded(true);
-	}
-	
-	public boolean hasDataType() {
-		return utilities.stringHasValue(this.getDataType());
 	}
 	
 	public boolean hasSrcField() {

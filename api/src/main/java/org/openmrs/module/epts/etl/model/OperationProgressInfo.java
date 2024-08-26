@@ -155,22 +155,27 @@ public class OperationProgressInfo {
 		this.status = determineStatus();
 	}
 	
+	@JsonIgnore
 	public boolean isRunning() {
 		return this.status.equals(EtlProgressMeter.STATUS_RUNNING);
 	}
 	
+	@JsonIgnore
 	public boolean isPaused() {
 		return this.status.equals(EtlProgressMeter.STATUS_PAUSED);
 	}
 	
+	@JsonIgnore
 	public boolean isStopped() {
 		return this.status.equals(EtlProgressMeter.STATUS_STOPPED);
 	}
 	
+	@JsonIgnore
 	public boolean isSleeping() {
 		return this.status.equals(EtlProgressMeter.STATUS_SLEEPING);
 	}
 	
+	@JsonIgnore
 	public boolean isFinished() {
 		return this.status.equals(EtlProgressMeter.STATUS_FINISHED);
 	}

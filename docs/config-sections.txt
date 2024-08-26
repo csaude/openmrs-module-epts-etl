@@ -88,9 +88,24 @@
                }
             ]
 			
-
 		 
-		 
+```
+"extraObjectDataSource":[
+   {
+	  "name":"",
+	  "objectLanguage": "",
+	  "objectFields":[
+		 {
+			"name":"",
+			"value":"",
+			"dataType":"",
+			"transformer":""
+		 }
+	  ],
+	  "fieldsValuesGenerator":""
+   }
+]		 
+```		 
 		 
 ```
 {

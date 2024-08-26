@@ -26,7 +26,10 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	
 	default EtlDatabaseObject newInstance() {
 		try {
-			return getSyncRecordClass().newInstance();
+			EtlDatabaseObject obj = getSyncRecordClass().newInstance();
+			obj.setRelatedConfiguration(this);
+			
+			return obj;
 		}
 		catch (InstantiationException | IllegalAccessException | ForbiddenOperationException e) {
 			throw new RuntimeException(e);

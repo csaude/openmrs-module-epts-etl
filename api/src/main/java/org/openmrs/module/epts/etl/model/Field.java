@@ -36,7 +36,7 @@ public class Field implements Serializable {
 	
 	private Object value;
 	
-	private String type;
+	private String dataType;
 	
 	private AttDefinedElements attDefinedElements;
 	
@@ -94,12 +94,12 @@ public class Field implements Serializable {
 	}
 	
 	@JsonIgnore
-	public String getType() {
-		return type;
+	public String getDataType() {
+		return dataType;
 	}
 	
-	public void setType(String type) {
-		this.type = type;
+	public void setDataType(String dataType) {
+		this.dataType = dataType;
 		
 		determineTypeClass();
 	}
@@ -116,10 +116,10 @@ public class Field implements Serializable {
 		return f;
 	}
 	
-	public static Field fastCreateWithType(String name, String type) {
+	public static Field fastCreateWithType(String name, String dataType) {
 		Field f = new Field(name);
 		
-		f.setType(type);
+		f.setDataType(dataType);
 		
 		return f;
 	}
@@ -148,12 +148,12 @@ public class Field implements Serializable {
 	}
 	
 	@JsonIgnore
-	boolean hasType() {
-		return type != null;
+	boolean hasDataType() {
+		return getDataType() != null;
 	}
 	
 	public void setValue(Object value) {
-		if (this.hasType() && value instanceof Double && (this.isIntegerField() || this.isLongField())) {
+		if (this.hasDataType() && value instanceof Double && (this.isIntegerField() || this.isLongField())) {
 			this.value = utilities.forcarAproximacaoPorExcesso((Double) value);
 		} else {
 			this.value = value;
@@ -308,46 +308,46 @@ public class Field implements Serializable {
 	
 	@JsonIgnore
 	public boolean isDateField() {
-		return AttDefinedElements.isDateType(this.type);
+		return AttDefinedElements.isDateType(this.getDataType());
 	}
 	
 	@JsonIgnore
 	public boolean isNumericColumnType() {
-		return AttDefinedElements.isNumeric(this.type);
+		return AttDefinedElements.isNumeric(this.getDataType());
 	}
 	
 	@JsonIgnore
 	public boolean isIntegerField() {
-		return AttDefinedElements.isInteger(this.type);
+		return AttDefinedElements.isInteger(this.getDataType());
 	}
 	
 	@JsonIgnore
 	public boolean isLongField() {
-		return AttDefinedElements.isLong(this.type);
+		return AttDefinedElements.isLong(this.getDataType());
 	}
 	
 	@JsonIgnore
 	public boolean isString() {
-		return AttDefinedElements.isString(this.type);
+		return AttDefinedElements.isString(this.getDataType());
 	}
 	
 	@JsonIgnore
 	public boolean isSmallIntType() {
-		return AttDefinedElements.isSmallInt(this.type);
+		return AttDefinedElements.isSmallInt(this.getDataType());
 	}
 	
 	@JsonIgnore
 	public Field createACopy() {
 		Field f = new Field(this.name);
 		
-		f.setType(this.getType());
+		f.setDataType(this.getDataType());
 		f.setAllowNull(this.allowNull());
 		
 		return f;
 	}
 	
 	public void copyFrom(Field f) {
-		this.type = f.type;
+		this.dataType = f.dataType;
 		this.name = f.name;
 		this.value = f.value;
 		this.allowNull = f.allowNull;
@@ -476,41 +476,46 @@ public class Field implements Serializable {
 	}
 	
 	public void determineTypeClass() {
-		if (this.isIntegerField()) {
-			this.setTypeClass(Integer.class);
-			
-			if (this.getPrecision() == null) {
-				this.setPrecision(TypePrecision.init(11, null));
-			}
-		} else if (this.isDateField()) {
-			this.setTypeClass(Date.class);
-			
-		} else if (this.isLongField()) {
-			this.setTypeClass(Long.class);
-			
-			if (this.getPrecision() == null) {
-				this.setPrecision(TypePrecision.init(20, null));
-			}
-		} else if (this.isDecimalField()) {
-			this.setTypeClass(Double.class);
-			
-			if (this.getPrecision() == null) {
-				this.setPrecision(TypePrecision.init(20, 7));
-			}
-		} else if (this.isNumericColumnType()) {
-			this.setTypeClass(Integer.class);
-			
-			if (this.getPrecision() == null) {
-				this.setPrecision(TypePrecision.init(11, null));
-			}
-		} else if (this.isString()) {
-			this.setTypeClass(String.class);
-			
-			if (this.getPrecision() == null) {
-				this.setPrecision(TypePrecision.init(250, null));
+		
+		if (hasDataType()) {
+			if (this.isIntegerField()) {
+				this.setTypeClass(Integer.class);
+				
+				if (this.getPrecision() == null) {
+					this.setPrecision(TypePrecision.init(11, null));
+				}
+			} else if (this.isDateField()) {
+				this.setTypeClass(Date.class);
+				
+			} else if (this.isLongField()) {
+				this.setTypeClass(Long.class);
+				
+				if (this.getPrecision() == null) {
+					this.setPrecision(TypePrecision.init(20, null));
+				}
+			} else if (this.isDecimalField()) {
+				this.setTypeClass(Double.class);
+				
+				if (this.getPrecision() == null) {
+					this.setPrecision(TypePrecision.init(20, 7));
+				}
+			} else if (this.isNumericColumnType()) {
+				this.setTypeClass(Integer.class);
+				
+				if (this.getPrecision() == null) {
+					this.setPrecision(TypePrecision.init(11, null));
+				}
+			} else if (this.isString()) {
+				this.setTypeClass(String.class);
+				
+				if (this.getPrecision() == null) {
+					this.setPrecision(TypePrecision.init(250, null));
+				}
+			} else {
+				this.setTypeClass(Object.class);
 			}
 		} else {
-			this.setTypeClass(Object.class);
+			this.setTypeClass(null);
 		}
 	}
 	
@@ -523,15 +528,15 @@ public class Field implements Serializable {
 	}
 	
 	public boolean isTextField() {
-		return utilities.isStringIn(this.getType(), "TEXT");
+		return utilities.isStringIn(this.getDataType(), "TEXT");
 	}
 	
 	public boolean isClob() {
-		return AttDefinedElements.isClob(this.getType());
+		return AttDefinedElements.isClob(this.getDataType());
 	}
 	
 	public boolean isDecimalField() {
-		return AttDefinedElements.isDecimal(this.getType());
+		return AttDefinedElements.isDecimal(this.getDataType());
 	}
 	
 	@Override

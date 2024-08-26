@@ -52,7 +52,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 				
 				if (utilities.stringHasValue(extraJoinQuery)) {
 					PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraJoinQuery, getSrcConf()),
-					    getConfig().getRelatedEtlConf(), true, DbmsType.determineFromConnection(dstConn));
+					    getConfig().getRelatedEtlConf(), true, DbmsType.determineFromConnection(srcConn));
 					
 					List<Object> paramsAsList = pQ.generateQueryParameters();
 					

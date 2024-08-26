@@ -192,7 +192,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 				if (!tabConf.isIgnorableField(Field.fastCreateField(rs.getString("COLUMN_NAME")))) {
 					Field f = tabConf.getField(rs.getString("COLUMN_NAME"));
 					
-					keyElements.add(Key.fastCreateTyped(f.getName(), f.getType()));
+					keyElements.add(Key.fastCreateTyped(f.getName(), f.getDataType()));
 				}
 			}
 			
@@ -395,7 +395,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		UniqueKeyInfo uk = UniqueKeyInfo.init(this.tabConf, keyName);
 		
 		for (Field field : this.getFields()) {
-			uk.addKey(Key.fastCreateTyped(field.getName(), field.getType()));
+			uk.addKey(Key.fastCreateTyped(field.getName(), field.getDataType()));
 		}
 		return uk;
 	}

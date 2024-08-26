@@ -161,8 +161,8 @@ public class EtlField extends Field {
 			        "The dataSource '" + this.getDataSource() + "' does not contain the srcField " + this.getName());
 		}
 		
-		if (this.getType() == null) {
-			this.setType(this.getSrcField().getType());
+		if (this.getDataType() == null) {
+			this.setType(this.getSrcField().getDataType());
 		}
 		
 	}

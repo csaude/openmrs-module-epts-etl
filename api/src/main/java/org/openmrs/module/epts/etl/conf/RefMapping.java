@@ -177,12 +177,12 @@ public class RefMapping {
 	
 	@JsonIgnore
 	public boolean isNumericRefColumn() {
-		return AttDefinedElements.isNumeric(this.childField.getType());
+		return AttDefinedElements.isNumeric(this.childField.getDataType());
 	}
 	
 	@JsonIgnore
 	public boolean isPrimitieveRefColumn() {
-		return AttDefinedElements.isPrimitive(this.childField.getType());
+		return AttDefinedElements.isPrimitive(this.childField.getDataType());
 	}
 	
 	public RefMapping clone() {

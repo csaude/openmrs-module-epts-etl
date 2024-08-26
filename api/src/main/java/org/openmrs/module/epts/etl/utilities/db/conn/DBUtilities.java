@@ -895,6 +895,9 @@ public class DBUtilities {
 		ResultSetMetaData rsMetaData;
 		
 		try {
+			
+			query = normalizeQuery(query);
+			
 			st = conn.prepareStatement(query);
 			
 			int qtyQuestionMarksOnQuery = getQtyQuestionMarksOnQuery(query);
@@ -925,8 +928,6 @@ public class DBUtilities {
 			
 		}
 		catch (SQLException e) {
-			e.printStackTrace();
-			
 			throw new DBException(e);
 		}
 		catch (IOException e) {

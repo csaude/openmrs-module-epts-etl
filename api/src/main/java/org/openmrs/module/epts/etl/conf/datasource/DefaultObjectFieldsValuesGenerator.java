@@ -7,7 +7,9 @@ import java.util.Map;
 
 import org.openmrs.module.epts.etl.conf.interfaces.JavaObjectFieldsValuesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.ObjectDataSource;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DefaultObjectFieldsValuesGenerator implements JavaObjectFieldsValuesGenerator {
 	
@@ -17,12 +19,14 @@ public class DefaultObjectFieldsValuesGenerator implements JavaObjectFieldsValue
 	
 	@Override
 	public Map<String, Object> generateObjectFields(ObjectDataSource dataSource, List<EtlDatabaseObject> avaliableSrcObjects,
-	        Connection srcConn, Connection dstConn) {
+	        Connection srcConn, Connection dstConn) throws DBException, ForbiddenOperationException {
 		
 		Map<String, Object> map = new HashMap<>();
 		
 		for (DataSourceField field : dataSource.getObjectFields()) {
+			Object o = field.getTransformerInstance().transform(avaliableSrcObjects, field, srcConn, dstConn);
 			
+			map.put(field.getName(), o);
 		}
 		
 		return map;

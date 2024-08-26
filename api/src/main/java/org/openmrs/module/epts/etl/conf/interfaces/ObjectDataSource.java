@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
+import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -129,6 +130,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 			for (DataSourceField f : this.getObjectFields()) {
 				f.setDataSource(this);
 				f.tryToLoadTransformer();
+				f.loadType(null, this);
 			}
 		} else {
 			throw new ForbiddenOperationException(
@@ -271,14 +273,17 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		
 		EtlDatabaseObject obj = this.newInstance();
 		
-		for (Map.Entry<String, Object> entry : values.entrySet()) {
-			String key = entry.getKey();
-			Object value = entry.getValue();
-			
-			obj.setFieldValue(key, value);
+		for (DataSourceField f : this.getObjectFields()) {
+			Object value = values.get(f.getName());
+			obj.setFieldValue(f.getName(), value);
 		}
 		
 		return obj;
+	}
+	
+	@Override
+	public Class<? extends EtlDatabaseObject> getSyncRecordClass() throws ForbiddenOperationException {
+		return GenericDatabaseObject.class;
 	}
 	
 	@Override

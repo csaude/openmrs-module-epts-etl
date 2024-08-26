@@ -989,11 +989,16 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		
 		log += this.getEtlConfigCode().toUpperCase() + "\n\nPROGRESS (" + getEtlConfigCode().toUpperCase()
 		        + "):\n------------------\n";
-		log += "TOTAL TO ANALYZE     : "
-		        + utilities.ident(utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotalToAnalyze()), 12)
-		        + ", ";
-		log += "PROCESSED: " + globalProgressMeter.getDetailedProgressOfAnalyzedRecords() + ", ";
-		log += "REMAINING: " + globalProgressMeter.getDetailedRemainingToAnalize() + ",\n";
+		
+		long diff = globalProgressMeter.getTotalToAnalyze() - globalProgressMeter.getTotal();
+		
+		if (!utilities.isBetween(diff, -10, 10)) {
+			log += "TOTAL TO ANALYZE     : "
+			        + utilities.ident(utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotalToAnalyze()), 12)
+			        + ", ";
+			log += "PROCESSED: " + globalProgressMeter.getDetailedProgressOfAnalyzedRecords() + ", ";
+			log += "REMAINING: " + globalProgressMeter.getDetailedRemainingToAnalize() + ",\n";
+		}
 		
 		log += "TOTAL RECS TO PROCESS: "
 		        + utilities.ident(utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotal()), 12) + ", ";

@@ -199,9 +199,9 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 				
 				if (getRelatedConfiguration() instanceof TableConfiguration) {
 					field.setValue(retrieveFieldValue(
-					    field.generateAliasedColumn((TableConfiguration) this.relatedConfiguration), field.getType(), rs));
+					    field.generateAliasedColumn((TableConfiguration) this.relatedConfiguration), field.getDataType(), rs));
 				} else {
-					field.setValue(retrieveFieldValue(field.getName(), field.getType(), rs));
+					field.setValue(retrieveFieldValue(field.getName(), field.getDataType(), rs));
 				}
 				
 				try {
