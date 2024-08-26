@@ -262,19 +262,30 @@ An object datasource allows to include object fields as datasource. The values f
 "extraObjectDataSource":[
    {
 	  "name":"",
-	  "objectLanguage": "",
 	  "objectFields":[
 		 {
 			"name":"",
 			"value":"",
-			"dataType":"",
-			"transformer":""
+			"transformer":"",
+			"dataType":""
 		 }
 	  ],
+	  "objectLanguage": "",
 	  "fieldsValuesGenerator":""
    }
 ]		 
 ```	
+Each "extraObjectDataSource" is defined by
+- *name* which is the unique datasource identifier within the etl item configuration;
+- *objectFields* the list of object fields. Note that each field is defined by:
+  - (1) **name** the unique field name within the datasource;
+  - (2) **value** allow the specification of fixed value for the field. This value can be constant, parameter or expression. Parameter values should start with '@' then followed by an identifier. If no value is specified then application will assume that the "fieldsValuesGenerator" will generates the "value";
+  - (3) **transformer** a transformer enables transformation of "value". A transformation is needed when the "value" is an expression. There are 3 types of transformers, namely: (1) the *org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer* which allow the evaluation of arithmetic expressions (2) *org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer* which allow the transformation through string methods and (3) the *org.openmrs.module.epts.etl.etl.processor.transformer.SimpleValueTranformer* which allow the direct transformation of value. If empty, then the **SimpleValueTranformer** will be applied .  
+  - (4) **dataType** an optional token to specify the data type for value. By default, the type will match the final expression type from the transformer. Supported types: int, long, double, string, date      
+- *objectLanguage* specify the language to be used to process the field generation. This can be omitted if there is no custom generator to be used
+- *fieldsValuesGenerator* a full class name for custom field generator.   
+
+For demo see [exploring-field-transformation](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#exploring-the-field-transformer) session.
 
 #### The use of params whithin Src Configuration
 The Src configuration allows the use of params for querying. The params can be present on "joinExtraCondition", "extraConditionForExtract", "query", etc. Parameters will be defined as identifiers preceded by "@". Eng. "location_id = @locationId". The parameters can appear in several context within queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1".
