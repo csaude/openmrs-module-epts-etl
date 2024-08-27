@@ -31,7 +31,7 @@ The process configuration file is the heart of the application. For each process
 - *etlRootDirectory*: a full path to the directory where the process files will be placed.
 - *childConfigFilePath*: a full path to another JSON configuration file which defines a process that will be executed when the current process is finished. This parameter allows multiple processes to be executed in sequence. This can be useful, for example, when there is a need to merge multiple databases.
 - *originAppLocationCode*: a token representing the location where the process is running. In the case of the merge process, this will be the source location.
-- *manualStart*: an optional boolean indicating whether the process related to this configuration file will automatically manualy started. If true, the process will not start at application startup.
+- *manualStart*: an optional boolean indicating whether the process related to this configuration file will be manualy started. If true, the process will not start at application startup.
 - *params*: a map object that enables the configuration of parameters. These parameters are usually used in queries defined in the ETL item configuration.
 - *disabled*: indicates whether the process is disabled.
 - *syncStageSchema*: an optional token indicating the database name where the process data will be stored. If not present, the name "etl_stage_area" will be used.
