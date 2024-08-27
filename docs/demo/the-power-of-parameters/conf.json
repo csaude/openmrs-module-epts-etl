@@ -19,8 +19,6 @@
       {
          "operationType":"ETL",
          "processingBatch":1000,
-         "maxSupportedProcessors":1,
-         "processingMode":"SERIAL",
          "dstType":"db"
       }
    ],

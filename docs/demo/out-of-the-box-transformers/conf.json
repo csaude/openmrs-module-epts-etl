@@ -23,7 +23,6 @@
       {
          "operationType":"ETL",
          "processingBatch":1000,
-         "processingMode":"SERIAL",
          "dstType":"csv"
       }
    ],
