@@ -942,7 +942,8 @@ public class DBUtilities {
 	}
 	
 	public static String normalizeQuery(String query) {
-		String normalized = query;
+		
+		String normalized = query.trim();
 		normalized = utilities.removeDuplicatedEmptySpace(normalized);
 		normalized = utilities.removeSpacesBeforeAndAfterPeriod(normalized);
 		

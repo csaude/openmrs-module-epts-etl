@@ -1345,6 +1345,35 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		} else {
 			throw new ForbiddenOperationException("The table name " + getTableName() + " is malformed!");
 		}
+		
+		if (getSchema().startsWith("@")) {
+			String normalizedSchema = DBUtilities.normalizeQuery(getSchema());
+			
+			String param = utilities.removeFirsChar(normalizedSchema);
+			
+			Object paramValue = getRelatedEtlConf().getParamValue(param);
+			
+			if (paramValue == null) {
+				throw new ForbiddenOperationException("You should configure the parameter '" + param + "'");
+			}
+			
+			this.setSchema(paramValue.toString());
+		}
+		
+		if (getTableName().startsWith("@")) {
+			String normalizedTableName = DBUtilities.normalizeQuery(getTableName());
+			
+			String param = utilities.removeFirsChar(normalizedTableName);
+			
+			Object paramValue = getRelatedEtlConf().getParamValue(param);
+			
+			if (paramValue == null) {
+				throw new ForbiddenOperationException("You should configure the parameter '" + param + "'");
+			}
+			
+			setTableName(paramValue.toString());
+		}
+		
 	}
 	
 	/**
@@ -1358,17 +1387,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		if (isTableNameInfoLoaded())
 			return;
 		
-		String[] tableNameParts = getTableName().split("\\.");
+		tryToLoadSchemaInfo();
 		
-		if (tableNameParts.length == 1) {
-			if (getSchema() == null) {
-				setSchema(DBUtilities.determineSchemaName(conn));
-			}
-		} else if (tableNameParts.length == 2) {
-			setTableName(tableNameParts[1]);
-			setSchema(tableNameParts[0]);
-		} else {
-			throw new ForbiddenOperationException("The table name " + getTableName() + " is malformed!");
+		if (getSchema() == null) {
+			setSchema(DBUtilities.determineSchemaName(conn));
 		}
 		
 		boolean exists = DBUtilities.isTableExists(getSchema(), getTableName(), conn);
