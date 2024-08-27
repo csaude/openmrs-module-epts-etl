@@ -198,8 +198,9 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			for (Field field : this.fields) {
 				
 				if (getRelatedConfiguration() instanceof TableConfiguration) {
-					field.setValue(retrieveFieldValue(
-					    field.generateAliasedColumn((TableConfiguration) this.relatedConfiguration), field.getDataType(), rs));
+					field.setValue(
+					    retrieveFieldValue(field.generateAliasedColumn((TableConfiguration) this.relatedConfiguration),
+					        field.getDataType(), rs));
 				} else {
 					field.setValue(retrieveFieldValue(field.getName(), field.getDataType(), rs));
 				}
@@ -375,6 +376,10 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public Object getParentValue(ParentTable parent) {
+		if (!parent.useSimplePk()) {
+			throw new ForbiddenOperationException("The parent " + parent + " does not use simple pk");
+		}
+		
 		if (this.relatedConfiguration.hasParentRefInfo()) {
 			for (ParentTable refInfo : this.relatedConfiguration.getParentRefInfo()) {
 				for (RefMapping map : refInfo.getRefMapping()) {

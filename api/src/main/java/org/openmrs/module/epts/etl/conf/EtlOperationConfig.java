@@ -208,7 +208,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	}
 	
 	public boolean writeOperationHistory() {
-		return !doNotWriteOperationHistory();
+		return !doNotWriteOperationHistory() && this.getDstType().isDb();
 	}
 	
 	public boolean isDoNotWriteOperationHistory() {

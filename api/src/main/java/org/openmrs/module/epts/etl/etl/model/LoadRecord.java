@@ -481,7 +481,23 @@ public class LoadRecord {
 			}
 			
 			if (parent == null) {
-				return true;
+				
+				if (!refInfo.isFullLoaded()) {
+					refInfo.fullLoad(dstConn);
+				}
+				
+				for (ParentTable p : refInfo.getParentRefInfo()) {
+					
+					if (p.getTableName().equals(this.dstConf.getTableName())) {
+						Object parentValue = parentInOrigin.getParentValue(p);
+						
+						this.getSrcRecord().loadObjectIdData();
+						
+						if (parentValue != null && parentValue.equals(this.getSrcRecord().getObjectId().asSimpleValue())) {
+							return true;
+						}
+					}
+				}
 			}
 			
 		}

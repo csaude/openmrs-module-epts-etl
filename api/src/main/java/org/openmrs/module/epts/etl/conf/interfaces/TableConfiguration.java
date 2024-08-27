@@ -1389,7 +1389,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		if (isFieldsLoaded())
 			return;
 		
-		List<Field> flds = DBUtilities.getTableFields(getTableName(), getSchema(), conn);
+		List<Field> flds = null;
+		
+		try {
+			flds = DBUtilities.getTableFields(getTableName(), getSchema(), conn);
+		}
+		catch (Exception e) {
+			throw e;
+		}
 		
 		this.setFields(new ArrayList<>());
 		

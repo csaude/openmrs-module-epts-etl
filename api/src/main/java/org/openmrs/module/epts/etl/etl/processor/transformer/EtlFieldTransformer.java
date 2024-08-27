@@ -48,7 +48,7 @@ public interface EtlFieldTransformer {
 		
 		Object dstValue = this.transform(srcObjects, fieldsMapping, srcConn, dstConn);
 		
-		if (utilities.isNumericType(transformedRecord.getFieldType(fieldsMapping.getDstField()))) {
+		if (dstValue != null && utilities.isNumericType(transformedRecord.getFieldType(fieldsMapping.getDstField()))) {
 			dstValue = utilities.parseValue(dstValue.toString(),
 			    transformedRecord.getFieldType(fieldsMapping.getDstField()));
 		}

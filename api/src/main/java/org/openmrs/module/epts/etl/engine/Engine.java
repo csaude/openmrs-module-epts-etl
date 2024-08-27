@@ -1004,8 +1004,9 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		        + utilities.ident(utilities.generateCommaSeparetedNumber(globalProgressMeter.getTotal()), 12) + ", ";
 		log += "PROCESSED: " + globalProgressMeter.getDetailedProgress() + ", ";
 		log += "REMAINING: " + globalProgressMeter.getDetailedRemaining() + ",";
-		log += "\nTIME                 : " + utilities.ident(globalProgressMeter.getHumanReadbleTime(), 12)
-		        + "\n------------------";
+		log += "\nTIME                 : " + utilities.ident(globalProgressMeter.getHumanReadbleTime(), 12);
+		log += "\nUSING THREADS		   : " + this.getThreadRecordIntervalsManager().getMaxSupportedProcessors();
+		log += "\n------------------";
 		
 		this.logInfo(log);
 	}

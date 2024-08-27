@@ -1306,10 +1306,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			
 			try {
 				for (TableConfiguration tab : this.getFullLoadedTables()) {
-					
-					logDebug("tab.getSchema(): " + tab.getSchema());
-					logDebug("tab.getTableName(): " + tab.getTableName());
-					
 					if (tab.getSchema().equals(schema) && tab.getTableName().equals(tableName)) {
 						return tab;
 					}

@@ -78,7 +78,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 				}
 			}
 			
-			logDebug("Initializing the loading of " + etlObjects.size() + " records...");
+			logDebug("Initializing the loading of " + etlObjects.size() + getSrcConf().getFullTableName());
 			
 			loadHelper.load(srcConn, dstConn);
 			

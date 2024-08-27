@@ -171,6 +171,7 @@ public class EtlLoadHelper {
 			}
 		}
 		
+		//Dont write history if the dst is csv
 		if (getEtlOperationConfig().writeOperationHistory()) {
 			EtlStageAreaObjectDAO.saveAll(getAllSuccessifulProcessedAsEtlStageAreaObject(srcConn, dstConn), srcConn);
 		}
@@ -291,7 +292,8 @@ public class EtlLoadHelper {
 	public void tryToReloadDefaultParents(LoadRecord loadRec, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		
-		logTrace("Reloading parents for dstRecord " + loadRec.getDstRecord());
+		logTrace(
+		    "Reloading parents for dstRecord " + loadRec.getDstConf().getFullTableDescription() + loadRec.getDstRecord());
 		
 		loadRec.reloadParentsWithDefaultValues(srcConn, dstConn);
 		
@@ -416,9 +418,12 @@ public class EtlLoadHelper {
 		for (LoadRecord loadRecord : this.getAllRecordsAsLoadRecord(dstConf)) {
 			this.logTrace("Preparing the load of dstRecord " + loadRecord.getDstRecord());
 			
+			/*
 			boolean recursiveKeys = this.getProcessor().isRunningInConcurrency()
 			        ? loadRecord.hasUnresolvedRecursiveRelationship(srcConn, dstConn)
-			        : false;
+			        : false;*/
+			
+			boolean recursiveKeys = loadRecord.hasUnresolvedRecursiveRelationship(srcConn, dstConn);
 			
 			if (recursiveKeys) {
 				this.logDebug("Record " + loadRecord.getDstRecord()
