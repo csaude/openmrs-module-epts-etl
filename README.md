@@ -27,11 +27,11 @@ The process configuration file is the heart of the application. For each process
 - **The section 4** lists the ETL configuration. This define the rules of how the extraction, transformation and load will be hundled.
 
 ## The common configuration
-- *processType*: A string representing the Process Type. The supported types are listed in the section "Supported Types."
+- *processType*: A string representing the Process Type. The supported types are listed in the section "Supported Process Types."
 - *etlRootDirectory*: a full path to the directory where the process files will be placed.
 - *childConfigFilePath*: a full path to another JSON configuration file which defines a process that will be executed when the current process is finished. This parameter allows multiple processes to be executed in sequence. This can be useful, for example, when there is a need to merge multiple databases.
 - *originAppLocationCode*: a token representing the location where the process is running. In the case of the merge process, this will be the source location.
-- *manualStart*: an optional boolean indicating whether the process related to this configuration file will automatically manualy started. If true, the process will not start at application startup.
+- *manualStart*: an optional boolean indicating whether the process related to this configuration file will be manualy started. If true, the process will not start at application startup.
 - *params*: a map object that enables the configuration of parameters. These parameters are usually used in queries defined in the ETL item configuration.
 - *disabled*: indicates whether the process is disabled.
 - *syncStageSchema*: an optional token indicating the database name where the process data will be stored. If not present, the name "etl_stage_area" will be used.
@@ -60,7 +60,7 @@ This section allow the configuration of operations. Each operation can be define
 - "doNotWriteOperationHistory": by default the information of each processed record is stored on the Etl Staging table. This information is important as can help to know the source and destination of an record processed on the ETL process. If this field is set to true, the history will not be stored and this could improve the speed of process.
 - "useSharedConnectionPerThread": If the processing is done by multiple threads, setting this field to true means all threads will share the same database connection. This can help reduce deadlocks but may negatively impact performance. This configuration is also useful when we need to ensure that the records in a batch are available in the target database simultaneously.
 - "actionType": represent the action on the ETL process. The supported action are: (1) CREATE: This action creates new dstRecord on ETL operation (2) DELETE:  This action deletes the dstRecord on ETL operation (3) UPDATE: This action update the dstRecord on ETL operation. If not present, a CREATE action will be applied.
-- "afterEtlActionType": defines the action which will be perfomed on the src record afte the operation. Only the action "DELETE" will have effect;
+- "afterEtlActionType": defines the action which will be perfomed on the src record after the operation. Only the action "DELETE" will have effect;
 - "dstType": indicates the destination type which can be: (1) **db**: the transformed record will be stored on the database (2) **json**: the transformed record will be written on json file (3) **dump**: the transformed record will be written os sql file as an sql query (4) **csv**: the transformed record will be written on csv file. When the dstType is a file, then the file will be stored under @etlRootDirectory/data/@originAppLocationCode (5) **console** the tranformed records will be written on the console
 - "disabled": if true , the this operation will not be run;
 - "child": a nested operation configuration which will be executed after the main operation is finished.  
@@ -91,7 +91,10 @@ The etl item configuration section defines the rules of extraction, transformati
       ],
       "extraQueryDataSource":[
          
-      ]
+      ],
+      "extraObjectDataSource":[
+
+       ]	
    },
    "dstConf":[
       
@@ -288,7 +291,7 @@ Each "extraObjectDataSource" is defined by
 For demo see [exploring-field-transformation](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#exploring-the-field-transformer) session.
 
 #### The use of params whithin Src Configuration
-The Src configuration allows the use of params for querying. The params can be present on "joinExtraCondition", "extraConditionForExtract", "query", etc. Parameters will be defined as identifiers preceded by "@". Eng. "location_id = @locationId". The parameters can appear in several context within queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1".
+The Src configuration allows the use of params for querying. The params can be present on "joinExtraCondition", "extraConditionForExtract", "query", "tableName", etc. Parameters will be defined as identifiers preceded by "@". Eng. "location_id = @locationId". The parameters can appear in several context within queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1".
 
 The parameter value will be lookuped on:
 (1) global configurations parameters if the parameters appers on the main src table configuration
