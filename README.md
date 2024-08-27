@@ -91,7 +91,10 @@ The etl item configuration section defines the rules of extraction, transformati
       ],
       "extraQueryDataSource":[
          
-      ]
+      ],
+      "extraObjectDataSource":[
+
+       ]	
    },
    "dstConf":[
       
