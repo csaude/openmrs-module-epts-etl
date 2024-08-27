@@ -27,7 +27,7 @@ The process configuration file is the heart of the application. For each process
 - **The section 4** lists the ETL configuration. This define the rules of how the extraction, transformation and load will be hundled.
 
 ## The common configuration
-- *processType*: A string representing the Process Type. The supported types are listed in the section "Supported Types."
+- *processType*: A string representing the Process Type. The supported types are listed in the section "Supported Process Types."
 - *etlRootDirectory*: a full path to the directory where the process files will be placed.
 - *childConfigFilePath*: a full path to another JSON configuration file which defines a process that will be executed when the current process is finished. This parameter allows multiple processes to be executed in sequence. This can be useful, for example, when there is a need to merge multiple databases.
 - *originAppLocationCode*: a token representing the location where the process is running. In the case of the merge process, this will be the source location.
