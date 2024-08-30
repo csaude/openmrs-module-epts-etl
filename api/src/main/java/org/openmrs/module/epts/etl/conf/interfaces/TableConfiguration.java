@@ -1346,7 +1346,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			throw new ForbiddenOperationException("The table name " + getTableName() + " is malformed!");
 		}
 		
-		if (getSchema().startsWith("@")) {
+		if (hasSchema() && getSchema().startsWith("@")) {
 			String normalizedSchema = DBUtilities.normalizeQuery(getSchema());
 			
 			String param = utilities.removeFirsChar(normalizedSchema);

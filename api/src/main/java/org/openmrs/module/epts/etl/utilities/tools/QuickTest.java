@@ -57,7 +57,7 @@ public class QuickTest {
 	
 	static String json = "{\r\n" + "            \"dataBaseUserName\":\"root\",\r\n"
 	        + "            \"dataBaseUserPassword\":\"#moZart123#\",\r\n"
-	        + "            \"connectionURI\":\"jdbc:mysql://10.10.2.71:3306/mozart_q1_fy24_ariel_cab_consolidated?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true\",\r\n"
+	        + "            \"connectionURI\":\"jdbc:mysql://10.10.2.71:3306/mozart_q3_fy24_consolidated?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true\",\r\n"
 	        + "            \"driveClassName\":\"com.mysql.cj.jdbc.Driver\"\r\n" + "         }";
 	
 	@SuppressWarnings("unused")
@@ -65,13 +65,13 @@ public class QuickTest {
 		
 		DBConnectionInfo connInfo_mozart = DBConnectionInfo.loadFromJson(json);
 		
-		DBConnectionService service = DBConnectionService.init(connInfo_localhost);
+		DBConnectionService service = DBConnectionService.init(connInfo_mozart);
 		
 		return service.openConnection();
 	}
 	
 	public static void main(String[] args) throws Exception {
-		countAllOnTables();
+		countAll();
 	}
 	
 	public static void saveToTable() throws DBException {
@@ -462,18 +462,17 @@ public class QuickTest {
 		List<String> alldbs = FileUtilities.readAllFileAsListOfString("D:/ORG/C-SAUDE/PROJECTOS/Mozart/Analisy/alldbs.txt");
 		
 		long total = 0;
-		
-		alldbs = utilities.parseToList("mozart_q1_fy24_icap_consolidated");
+		//alldbs = utilities.parseToList("mozart_q3_fy24_consolidated");
 		
 		for (String dbName : alldbs) {
-			
+			System.out.println("Performing " + dbName);
 			String sql = "select count(*) as value from  " + dbName + ".patient_state";
 			
 			SimpleValue result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
 			
 			total += result.integerValue();
 			
-			System.out.println(total);
+			System.out.println(utilities.displayNumberOnStringFormat(total));
 		}
 	}
 	

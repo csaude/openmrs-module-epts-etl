@@ -634,97 +634,98 @@ public interface EtlDatabaseObject extends EtlObject {
 			recordOnDB = DatabaseObjectDAO.getByUniqueKeys(this, conn);
 		}
 		
-		if (recordOnDB == null) {
-			throw new ConflictWithRecordNotYetAvaliableException(this, exception);
-		}
-		
 		boolean existingRecordIsOutdated = false;
 		
 		//Quickly abort the conflict resolution if the resolution type is ConflictResolutionType.KEEP_EXISTING
 		if (tableConfiguration.onConflict().keepExisting()) {
 			//Nothing to do
-		} else if (tableConfiguration.onConflict().updateExisting()) {
-			existingRecordIsOutdated = true;
-		} else if (utils.arrayHasElement(tableConfiguration.getWinningRecordFieldsInfo())) {
-			for (List<org.openmrs.module.epts.etl.model.Field> fields : tableConfiguration.getWinningRecordFieldsInfo()) {
-				
-				//Start assuming that this dstRecord is updated
-				boolean thisRecordIsUpdated = true;
-				
-				for (org.openmrs.module.epts.etl.model.Field field : fields) {
-					Object thisRecordFieldValue;
+		} else {
+			if (recordOnDB == null) {
+				throw new ConflictWithRecordNotYetAvaliableException(this, exception);
+			} else if (tableConfiguration.onConflict().updateExisting()) {
+				existingRecordIsOutdated = true;
+			} else if (utils.arrayHasElement(tableConfiguration.getWinningRecordFieldsInfo())) {
+				for (List<org.openmrs.module.epts.etl.model.Field> fields : tableConfiguration
+				        .getWinningRecordFieldsInfo()) {
+					
+					//Start assuming that this dstRecord is updated
+					boolean thisRecordIsUpdated = true;
+					
+					for (org.openmrs.module.epts.etl.model.Field field : fields) {
+						Object thisRecordFieldValue;
+						
+						try {
+							thisRecordFieldValue = this.getFieldValue(field.getName());
+						}
+						catch (ForbiddenOperationException e) {
+							thisRecordFieldValue = this.getFieldValue(field.getNameAsClassAtt());
+						}
+						
+						//If at least one of field value is different from the winning value, assume that this dstRecord is not updated
+						if (!thisRecordFieldValue.toString().equals(field.getValue().toString())) {
+							thisRecordIsUpdated = false;
+							
+							//Check the next list of fields
+							break;
+						}
+					}
+					
+					if (thisRecordIsUpdated) {
+						existingRecordIsOutdated = true;
+						
+						break;
+					}
+				}
+			} else if (tableConfiguration.hasObservationDateFields()) {
+				for (String dateField : tableConfiguration.getObservationDateFields()) {
+					
+					Date thisRecordDate;
+					Date recordOnDBDate;
 					
 					try {
-						thisRecordFieldValue = this.getFieldValue(field.getName());
+						thisRecordDate = (Date) this.getFieldValue(dateField);
 					}
 					catch (ForbiddenOperationException e) {
-						thisRecordFieldValue = this.getFieldValue(field.getNameAsClassAtt());
+						thisRecordDate = (Date) this
+						        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
 					}
 					
-					//If at least one of field value is different from the winning value, assume that this dstRecord is not updated
-					if (!thisRecordFieldValue.toString().equals(field.getValue().toString())) {
-						thisRecordIsUpdated = false;
-						
-						//Check the next list of fields
-						break;
+					try {
+						recordOnDBDate = (Date) recordOnDB.getFieldValue(dateField);
 					}
-				}
-				
-				if (thisRecordIsUpdated) {
-					existingRecordIsOutdated = true;
+					catch (NullPointerException e) {
+						recordOnDBDate = null;
+					}
+					catch (ForbiddenOperationException e) {
+						recordOnDBDate = (Date) recordOnDB
+						        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
+					}
 					
-					break;
-				}
-			}
-		} else if (tableConfiguration.hasObservationDateFields()) {
-			for (String dateField : tableConfiguration.getObservationDateFields()) {
-				
-				Date thisRecordDate;
-				Date recordOnDBDate;
-				
-				try {
-					thisRecordDate = (Date) this.getFieldValue(dateField);
-				}
-				catch (ForbiddenOperationException e) {
-					thisRecordDate = (Date) this
-					        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
-				}
-				
-				try {
-					recordOnDBDate = (Date) recordOnDB.getFieldValue(dateField);
-				}
-				catch (NullPointerException e) {
-					recordOnDBDate = null;
-				}
-				catch (ForbiddenOperationException e) {
-					recordOnDBDate = (Date) recordOnDB
-					        .getFieldValue(AttDefinedElements.convertTableAttNameToClassAttName(dateField));
-				}
-				
-				if (thisRecordDate != null) {
-					if (recordOnDBDate == null) {
-						existingRecordIsOutdated = true;
-						
-						break;
-					} else if (DateAndTimeUtilities.dateDiff(thisRecordDate, recordOnDBDate) > 0) {
-						existingRecordIsOutdated = true;
-						
-						break;
+					if (thisRecordDate != null) {
+						if (recordOnDBDate == null) {
+							existingRecordIsOutdated = true;
+							
+							break;
+						} else if (DateAndTimeUtilities.dateDiff(thisRecordDate, recordOnDBDate) > 0) {
+							existingRecordIsOutdated = true;
+							
+							break;
+						}
 					}
 				}
 			}
-		}
-		
-		if (existingRecordIsOutdated) {
-			this.setConflictResolutionType(ConflictResolutionType.UPDATED_EXISTING);
 			
-			this.setObjectId(recordOnDB.getObjectId());
-			this.update(tableConfiguration, conn);
-		} else {
-			this.setConflictResolutionType(ConflictResolutionType.KEPT_EXISTING);
-			
-			this.setObjectId(recordOnDB.getObjectId());
-		}
+			if (existingRecordIsOutdated) {
+				this.setConflictResolutionType(ConflictResolutionType.UPDATED_EXISTING);
+				
+				this.setObjectId(recordOnDB.getObjectId());
+				this.update(tableConfiguration, conn);
+			} else {
+				this.setConflictResolutionType(ConflictResolutionType.KEPT_EXISTING);
+				
+				this.setObjectId(recordOnDB.getObjectId());
+			}
+		 }
 	}
 	
 	default Field getField(String fieldName) {
