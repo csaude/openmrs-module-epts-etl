@@ -289,7 +289,7 @@ public class FieldsMapping implements TransformableField {
 	
 	@Override
 	public String getName() {
-		return this.dstField;
+		return hasSrcField() ? this.getSrcField() : this.getDstField();
 	}
 	
 }
