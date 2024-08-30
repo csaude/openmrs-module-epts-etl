@@ -63,8 +63,8 @@ Sometime there is a need to use complex queries to define extraction rules. The 
 Here the extra extraction rules are defined by two elements: the "auxExtractTable" and "extraConditionForExtract"
  
 - (1) the "auxExtractTable" is a list of tables which helps to add conditions from other tables related to the main table. In this example, the main table is "person" and we want to add an extra extract condition from the table "office". So we listed it as a "auxExtractTable". Note that from the data model there is "joinFields" between the two tables as the "person" table has foreign reference to the "office" table. In case were there is no relationship defined from the data model the "joinFields" could be specified manually (see [auxExtractTable configuration](https://github.com/csaude/openmrs-module-epts-etl/tree/master?tab=readme-ov-file#the-auxExtractTable-table-configuration)).
-- (2) within the auxExtractTable we can include additional joining conditions using the attribute "joinExtraCondition". In our example we want to extract only people which are allocated to an annexed office;
-- (3) we can also add extra extract condition which does not use self joining tables; the attribute "extraConditionForExtract" allow a generic way to include extra condition for extraction in an ETL process. In our example we want to extract only people which are not present in the destination table which is etl_demo_with_extraction_rules_dst_db.person_data.
+- (2) within the "auxExtractTable" we can include additional joining conditions using the attribute "joinExtraCondition". In our example we want to extract only people which are allocated to an annexed office;
+- (3) we can also add extra extract condition which does not use auxiliary extracting tables; the attribute "extraConditionForExtract" allow a generic way to include extra condition for extraction in an ETL process. In our example we want to extract only people which are not present in the destination table which is etl_demo_with_extraction_rules_dst_db.person_data.
 
 **To run this demo example follow the instrunctions below:**
  - (1) Download the content of [this directory](extraction-rules).
