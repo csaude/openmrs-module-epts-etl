@@ -43,13 +43,11 @@
                      "dstField":"person_uuid"
                   },
                   {
-                     "dataSourceName":"person",
-                     "srcField":"creation_date",
+                     "srcField":"person.creation_date",
                      "dstField":"person_creation_date"
                   },
                   {
-                     "dataSourceName":"address",
-                     "srcField":"uuid",
+                     "srcField":"address.uuid",
                      "dstField":"address_uuid"
                   },
                   {
