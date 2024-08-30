@@ -638,6 +638,11 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		//Quickly abort the conflict resolution if the resolution type is ConflictResolutionType.KEEP_EXISTING
 		if (tableConfiguration.onConflict().keepExisting()) {
+			
+			if (recordOnDB != null) {
+				this.setObjectId(recordOnDB.getObjectId());
+			}
+			
 			//Nothing to do
 		} else {
 			if (recordOnDB == null) {
