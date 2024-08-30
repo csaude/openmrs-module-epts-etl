@@ -63,7 +63,8 @@ This section allow the configuration of operations. Each operation can be define
 - "afterEtlActionType": defines the action which will be perfomed on the src record after the operation. Only the action "DELETE" will have effect;
 - "dstType": indicates the destination type which can be: (1) **db**: the transformed record will be stored on the database (2) **json**: the transformed record will be written on json file (3) **dump**: the transformed record will be written os sql file as an sql query (4) **csv**: the transformed record will be written on csv file. When the dstType is a file, then the file will be stored under @etlRootDirectory/data/@originAppLocationCode (5) **console** the tranformed records will be written on the console
 - "disabled": if true , the this operation will not be run;
-- "child": a nested operation configuration which will be executed after the main operation is finished.  
+- "child": a nested operation configuration which will be executed after the main operation is finished;
+- "finishOnNoRemainRecordsToProcess": When a process starts, it determines the *minimum* and *maximum* records in intervals to be processed and calculates the *number of records to handle* within each interval. The process will analyze the entire range between the minimum and maximum records and will only complete once the maximum record is reached. However, if *finishOnNoRemainRecordsToProcess* is set to true, the process will finish as soon as the calculated number of records to process is reached, even if the maximum record has not been reached.
 	
 
 ## The etl item configuration
@@ -291,16 +292,17 @@ Each "extraObjectDataSource" is defined by
 For demo see [exploring-field-transformation](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#exploring-the-field-transformer) session.
 
 #### The use of params whithin Src Configuration
-The Src configuration allows the use of params for querying. The params can be present on "joinExtraCondition", "extraConditionForExtract", "query", "tableName", etc. Parameters will be defined as identifiers preceded by "@". Eng. "location_id = @locationId". The parameters can appear in several context within queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1".
+The Src configuration allows the use of params for querying. The params can be present on "joinExtraCondition", "extraConditionForExtract", "query", "tableName", etc. Parameters will be defined as identifiers preceded by "@". Eng. "location_id = @locationId". The parameters can appear in several context within queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1". (5) in "tableName" specification in any party configuration file, e.g {"tableName":"@mainSchema.@nameOfTable"}
 
-The parameter value will be lookuped on:
-(1) global configurations parameters if the parameters appers on the main src table configuration
-(2) current main src object if the parameter apper on "extraQueryDataSource", or "extraTableDataSource", but then on the global properties if it is not present on the main src object.  
+The parameter value will be lookuped following below sequence:
+(1) first on configured parameters on "params" propertie;
+(2) in not present will be lookuped on properties of etl configurations file;
+(3) and finally on the current main src objects.  
 
 
 ### The DstConf
-The "dstConf '' element is used to configure the destination object in an ETL operation as well as the transformation rules. This element can be omitted there is no transformation needed from the src to destination (eg. if its name and fields are exactly the same with the "srcConf").
-If the "dstConf '' has more than one element or if there is needed a transformation of src record to dst record, then it could be configured following the explanation below.
+The "dstConf '' element is used to configure the destination object in an ETL operation. This element can be omitted if the dst fields can be automatically mapped from the available datasources;
+If the "dstConf '' has more than one element or if the mapping cannot be automatically done, then it could be configured following the explanation below.
 
 ```
 {
@@ -335,12 +337,12 @@ If the "dstConf '' has more than one element or if there is needed a transformat
 
 Bellow is the explanation for each field:
 - **tableName** the destination table name;
-- **prefferredDataSource** a comma separated list of tokens representing the data sources names from the "srcConf '' in order of preference.  This is important when it comes to auto-mapping, if a certain field is present in multiple datasources. If there is only one datasource or if each field in the dst table appears only in one datasource, then this element could be omitted.
+- **prefferredDataSource** a comma separated list of tokens representing the data sources names from the "srcConf" in order of preference.  This is important when it comes to auto-mapping, if a certain dst field is present in multiple datasources. If there is only one datasource or if each field in the dst table appears only in one datasource, then this element could be omitted.
 - **ignoreUnmappedFields** if there are fields on the dst that were not configured manually and could  not be resolved automatically then the application will fail. To avoid that, then set this field to true;
 -  **dstType** the destination type for this specific dstConf. If not present will be applied the "dstType" from operationConfiguration;
 - **includeAllFieldsFromDataSource** If true, all the fields from all the data sources in "srcConf" will be included on the destination table (if it is automatically generated by the application); in contrast, only the mapped fields will be included on the destination table.
 -  **mapping** is used to manually map the dataSource for specific fields in the dst table. The manual mapping is necessary if the dst field could not be automatically mapped because it does not appear in any dataSource in the srcConf. The relevant field for each mapping are:
-   - (1) *dataSourceName* the datasource from were the data will be picked-up; this can be omitted if the value for this fields is from a constant, parameter or from a transformer. You can also specify the dataSourceName within the srcField like 'dataSourceName.srcFieldName'
+   - (1) *dataSourceName* the datasource from were the data will be picked-up; this can be omitted if there is only one datasource containing the srcField or if the "prefferredDataSource" is defined. You can also specify the dataSourceName within the srcField like 'dataSourceName.srcFieldName'
    - (2) *srcField* the field on the dataSource from where the value will be picked up;
    - (3) *dstField* the field in dst which we want to fill;
    - (4) *mapToNullValue* a boolean which indicates that this field should be filled with null value;
