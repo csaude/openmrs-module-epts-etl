@@ -475,6 +475,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	 */
 	public void performeTaskInMultiProcessors() throws DBException, InterruptedException, ExecutionException {
 		
+		EtlProgressMeter globalProgressMeter = this.getProgressMeter();
+		
 		logDebug("INITIALIZING PROCESS IN MULTI-THREAD");
 		
 		EtlThreadFactory<T> threadFactor = new EtlThreadFactory<>(this);
@@ -483,6 +485,17 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		ThreadRecordIntervalsManager<T> iManager = this.getThreadRecordIntervalsManager();
 		
 		while (iManager.canGoNext() || !iManager.getCurrentLimits().isFullProcessed()) {
+			
+			if (globalProgressMeter.getRemain() == 0) {
+				if (getRelatedEtlOperationConfig().finishOnNoRemainRecordsToProcess()) {
+					logInfo("Finishing operation as there is no more record to process");
+					
+					return;
+				} else {
+					logDebug(
+					    "No remain records to process but still checking... consider setting finishOnNoRemainRecordsToProcess to true");
+				}
+			}
 			
 			List<IntervalExtremeRecord> avaliableIntervals = iManager.getCurrentLimits().getAllNotProcessed();
 			
