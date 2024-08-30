@@ -95,6 +95,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private ThreadingMode threadingMode;
 	
+	private boolean finishOnNoRemainRecordsToProcess;
+	
 	public EtlOperationConfig() {
 		this.dstType = EtlDstType.db;
 		this.actionType = EtlActionType.CREATE;
@@ -105,6 +107,20 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.maxSupportedProcessors = utilities.getAvailableProcessors();
 		this.fisicalCpuMultiplier = 1;
 		this.threadingMode = ThreadingMode.MULTI_THREAD;
+	}
+	
+	
+	public boolean isFinishOnNoRemainRecordsToProcess() {
+		return finishOnNoRemainRecordsToProcess;
+	}
+	
+	
+	public void setFinishOnNoRemainRecordsToProcess(boolean finishOnNoRemainRecordsToProcess) {
+		this.finishOnNoRemainRecordsToProcess = finishOnNoRemainRecordsToProcess;
+	}
+	
+	public boolean finishOnNoRemainRecordsToProcess() {
+		return isFinishOnNoRemainRecordsToProcess();
 	}
 	
 	public ThreadingMode getThreadingMode() {
