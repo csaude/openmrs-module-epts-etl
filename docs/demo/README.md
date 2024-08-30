@@ -7,7 +7,8 @@ This example shows the basic ETL process where the records from one database are
 
 ![quick-demo-data-model](img/datamodel.png)
 
-To run this demo follow the instructions below:
+**To run this demo follow the instructions below:**
+
 - (1) Download the content of [this directory](quick-demo).
 - (2) Edit the [conf.json](quick-demo/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
 - (3) Run the [sql script](quick-demo/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
@@ -27,6 +28,7 @@ Let's take a look at the configuration file. We will be focused on "etlItemConfi
 - (5) note that we added the field "creation_date" on the "ignorableFields" because we do want to include it on the transformation as it has default value on destination table which is CURRENT_TIMESTAMP.
 
   **To run this demo example follow the instrunctions below:**
+  
  - (1) Download the content of [this directory](etl-with-transformation).
 - (2) Edit the [conf.json](etl-with-transformation/conf.json) file placing the correct values for the following attributes: "etlRootDirectory", "dataBaseUserName" and "dataBaseUserPassword".
 - (3) Run the [sql script](etl-with-transformation/db_schema_and_data.sql) to create the databases. This script creates a src database filled with data and an empty dst database.
