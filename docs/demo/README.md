@@ -22,8 +22,9 @@ Let's take a look at the configuration file. We will be focused on "etlItemConfi
 
 - (1) In this configuration we defined the **person** table as the main source table. Because we also want data from the **address** table, we added it to the list of "extraTableDataSource". Note the use of "INNER" on joinType. This means that only "person" with "address" will be picked up.
 - (2) In the dstConf we highlighted the "mapping". Here we map only the fields on the destination table which cannot be automatically mapped, namely: "person_uuid", "person_creation_date", "address_uuid" and "address_creation_date". There is no need to map the other fields since they can be automatically mapped.
-- (3) note that for each mapping there is "dataSourceName", "srcField", "dstField". Note that we have two data sources, "person" and "address" and we map their fields accordling. It would be possible to omit the "dataSourceName" attribute as long as it was specified next to the "srcField" field, like **srcField="person.uuid"**.
-- (4) note that we added the field "creation_date" on the "ignorableFields" because we do want to include it on the transformation as it has default value on destination table which is CURRENT_TIMESTAMP.
+- (3) Note that for each mapping there is "srcField" and "dstField". Each mapping is associated with a datasource which can be specified using  "dataSourceName" field; note that we have two data sources, "person" and "address" and we map their fields accordling.
+- (4) It's possible to omit the "dataSourceName" field as long as it is specified next to the "srcField" field, like **srcField="address.uuid"**.
+- (5) note that we added the field "creation_date" on the "ignorableFields" because we do want to include it on the transformation as it has default value on destination table which is CURRENT_TIMESTAMP.
 
   To run this demo example follow the instrunctions below:
  - (1) Download the content of [this directory](etl-with-transformation).
