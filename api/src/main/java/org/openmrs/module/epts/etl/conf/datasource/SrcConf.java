@@ -10,6 +10,8 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
+import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ObjectDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -22,7 +24,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SrcConf extends AbstractTableConfiguration implements EtlDataSource {
+public class SrcConf extends AbstractTableConfiguration implements EtlDataSource, MainJoiningEntity {
 	
 	private List<AuxExtractTable> auxExtractTable;
 	
@@ -149,36 +151,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		OpenConnection srcConn = this.getRelatedConnInfo().openConnection();
 		
 		try {
-			
-			if (hasSelfJoinTables()) {
-				for (AuxExtractTable t : this.getAuxExtractTable()) {
-					t.setParentConf(this);
-					t.tryToGenerateTableAlias(getRelatedEtlConf());
-					t.setMainExtractTable(this);
-					
-					TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName());
-					
-					if (fullLoadedTab != null) {
-						t.clone(fullLoadedTab, conn);
-					} else {
-						t.fullLoad(srcConn);
-					}
-					
-					if (t.useSharedPKKey()) {
-						t.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
-						
-						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName());
-						
-						if (fullLoadedTab != null) {
-							t.getSharedKeyRefInfo().clone(fullLoadedTab, srcConn);
-						} else {
-							t.getSharedKeyRefInfo().fullLoad(srcConn);
-						}
-						
-						t.getSharedKeyRefInfo().setParentConf(t);
-					}
-				}
-			}
+			tryToLoadAuxExtraJoinTable(conn);
 			
 			if (hasExtraTableDataSourceConfig()) {
 				for (TableDataSourceConfig t : this.getExtraTableDataSource()) {
@@ -364,10 +337,6 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		return utilities.arrayHasElement(this.getExtraObjectDataSource());
 	}
 	
-	public boolean hasSelfJoinTables() {
-		return utilities.arrayHasElement(this.getAuxExtractTable());
-	}
-	
 	public boolean hasRequiredExtraDataSource() {
 		if (hasExtraDataSource()) {
 			return false;
@@ -424,6 +393,16 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	public boolean isComplex() {
 		return hasRequiredExtraDataSource();
+	}
+	
+	@Override
+	public boolean isJoinable() {
+		return false;
+	}
+	
+	@Override
+	public JoinableEntity parseToJoinable() throws ForbiddenOperationException {
+		throw new ForbiddenOperationException("Not joinable entity!!!");
 	}
 	
 }

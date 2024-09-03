@@ -617,7 +617,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					t.setRelatedSrcConf(tc.getSrcConf());
 				}
 				
-				if (tc.getSrcConf().hasSelfJoinTables()) {
+				if (tc.getSrcConf().hasAuxExtraJoinTable()) {
 					for (AuxExtractTable t : tc.getSrcConf().getAuxExtractTable()) {
 						if (t.hasAlias()) {
 							t.setUsingManualDefinedAlias(true);

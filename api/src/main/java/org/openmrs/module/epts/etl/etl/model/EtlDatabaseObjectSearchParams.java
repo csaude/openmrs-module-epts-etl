@@ -9,6 +9,8 @@ import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
 import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
+import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -37,67 +39,25 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 	        Connection srcConn, Connection dstConn) throws DBException {
 		SrcConf srcConfig = getSrcTableConf();
 		
-		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
+		AuxQueryInfo auxQueryInfo = new AuxQueryInfo(new SearchClauses<EtlDatabaseObject>(this));
 		
-		searchClauses.addColumnToSelect("distinct " + srcConfig.generateFullAliasedSelectColumns() + "\n");
+		auxQueryInfo.addColumnToSelect("distinct " + srcConfig.generateFullAliasedSelectColumns() + "\n");
 		
-		String clauseFrom = srcConfig.generateSelectFromClauseContent();
+		auxQueryInfo.setClauseFrom(srcConfig.generateSelectFromClauseContent());
 		
 		if (utilities.arrayHasElement(srcConfig.getAuxExtractTable())) {
-			String additionalLeftJoinFields = "";
-			
 			for (AuxExtractTable aux : srcConfig.getAuxExtractTable()) {
-				String joinType = aux.getJoinType().toString();
-				String extraJoinQuery = aux.generateJoinConditionsFields();
-				
-				if (utilities.stringHasValue(extraJoinQuery)) {
-					PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraJoinQuery, getSrcConf()),
-					    getConfig().getRelatedEtlConf(), true, DbmsType.determineFromConnection(srcConn));
-					
-					List<Object> paramsAsList = pQ.generateQueryParameters();
-					
-					Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
-					
-					extraJoinQuery = pQ.generatePreparedQuery();
-					
-					searchClauses.addToParameters(params);
-				}
-				
-				String newLine = clauseFrom.toUpperCase().contains("JOIN") ? "\n" : "";
-				
-				clauseFrom = clauseFrom + " " + newLine + joinType + " join " + aux.getFullTableName() + " "
-				        + aux.getTableAlias() + " on " + extraJoinQuery;
-				
-				if (aux.useSharedPKKey()) {
-					
-					ParentTable shrd = aux.getSharedTableConf();
-					
-					clauseFrom += "\n" + joinType + " join " + shrd.generateSelectFromClauseContent() + " on "
-					        + shrd.generateJoinCondition();
-				}
-				
-				if (aux.getJoinType().isLeftJoin()) {
-					
-					if (aux.getPrimaryKey() == null) {
-						throw new ForbiddenOperationException("The aux table " + aux.getTableName() + " in relation "
-						        + srcConfig.getTableName() + " does not have primary key");
-					}
-					
-					additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
-					    aux.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
-				}
+				loadAllAuxExtractTable(auxQueryInfo, aux, srcConn);
 			}
 			
-			if (!additionalLeftJoinFields.isEmpty()) {
-				searchClauses.addToClauses(additionalLeftJoinFields);
+			if (!auxQueryInfo.getAdditionalLeftJoinFields().isEmpty()) {
+				auxQueryInfo.getSearchClauses().addToClauses(auxQueryInfo.getAdditionalLeftJoinFields());
 			}
 		}
 		
-		searchClauses.addToClauseFrom(clauseFrom);
+		tryToAddLimits(intervalExtremeRecord, auxQueryInfo.getSearchClauses());
 		
-		tryToAddLimits(intervalExtremeRecord, searchClauses);
-		
-		tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraConditionForExport(auxQueryInfo.getSearchClauses(), DbmsType.determineFromConnection(srcConn));
 		
 		if (getRelatedEngine() != null && getRelatedEngine().getFinalCheckStatus().onGoing()) {
 			
@@ -111,10 +71,74 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		}
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
-			searchClauses.addToClauses(getExtraCondition());
+			auxQueryInfo.getSearchClauses().addToClauses(getExtraCondition());
 		}
 		
-		return searchClauses;
+		return auxQueryInfo.getSearchClauses();
+	}
+	
+	private void loadAllAuxExtractTable(AuxQueryInfo queryInfo, MainJoiningEntity aux, Connection srcConn)
+	        throws ForbiddenOperationException, DBException {
+		
+		loadAuxExtractTable(queryInfo, aux.parseToJoinable(), srcConn);
+		
+		if (aux.hasAuxExtraJoinTable()) {
+			for (JoinableEntity jEntity : aux.getAuxExtractTable()) {
+				loadAuxExtractTable(queryInfo, jEntity, srcConn);
+			}
+		}
+	}
+	
+	private void loadAuxExtractTable(AuxQueryInfo queryInfo, JoinableEntity aux, Connection srcConn)
+	        throws ForbiddenOperationException, DBException {
+		SrcConf srcConfig = getSrcTableConf();
+		
+		SearchClauses<EtlDatabaseObject> searchClauses = queryInfo.getSearchClauses();
+		String clauseFrom = queryInfo.getClauseFrom();
+		String additionalLeftJoinFields = queryInfo.getAdditionalLeftJoinFields();
+		
+		String joinType = aux.getJoinType().toString();
+		String extraJoinQuery = aux.generateJoinConditionsFields();
+		
+		if (utilities.stringHasValue(extraJoinQuery)) {
+			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraJoinQuery, getSrcConf()),
+			    getConfig().getRelatedEtlConf(), true, DbmsType.determineFromConnection(srcConn));
+			
+			List<Object> paramsAsList = pQ.generateQueryParameters();
+			
+			Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
+			
+			extraJoinQuery = pQ.generatePreparedQuery();
+			
+			searchClauses.addToParameters(params);
+		}
+		
+		String newLine = clauseFrom.toUpperCase().contains("JOIN") ? "\n" : "";
+		
+		clauseFrom = clauseFrom + " " + newLine + joinType + " join " + aux.getFullTableName() + " " + aux.getTableAlias()
+		        + " on " + extraJoinQuery;
+		
+		if (aux.useSharedPKKey()) {
+			
+			ParentTable shrd = aux.getSharedTableConf();
+			
+			clauseFrom += "\n" + joinType + " join " + shrd.generateSelectFromClauseContent() + " on "
+			        + shrd.generateJoinCondition();
+		}
+		
+		if (aux.getJoinType().isLeftJoin()) {
+			if (aux.getPrimaryKey() == null) {
+				throw new ForbiddenOperationException("The aux table " + aux.getTableName() + " in relation "
+				        + srcConfig.getTableName() + " does not have primary key");
+			}
+			
+			additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
+			    aux.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
+		}
+		
+		queryInfo.setSearchClauses(searchClauses);
+		queryInfo.setClauseFrom(clauseFrom);
+		queryInfo.setAdditionalLeftJoinFields(additionalLeftJoinFields);
 	}
 	
 	@Override

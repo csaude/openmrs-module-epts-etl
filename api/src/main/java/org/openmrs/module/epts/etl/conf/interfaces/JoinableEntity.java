@@ -8,7 +8,12 @@ import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
+/**
+ * Represents an database object which can be joined to other database object (the
+ * {@link MainJoiningEntity})
+ */
 public interface JoinableEntity extends TableConfiguration {
 	
 	List<FieldsMapping> getJoinFields();
@@ -21,7 +26,19 @@ public interface JoinableEntity extends TableConfiguration {
 	
 	JoinType getJoinType();
 	
-	void setJoinFields(List<FieldsMapping> tryToLoadJoinFields);
+	void setJoinFields(List<FieldsMapping> joinFields);
+	
+	void setJoinType(JoinType joinType);
+	
+	void setJoinExtraCondition(String joinExtraCondition);
+	
+	void setMainExtractTable(MainJoiningEntity mainJoiningTable);
+	
+	MainJoiningEntity getMainExtractTable();
+	
+	default boolean hasJoinExtraCondition() {
+		return utilities.stringHasValue(this.getJoinExtraCondition());
+	}
 	
 	default void addJoinField(FieldsMapping fm) {
 		if (this.getJoinFields() == null) {
@@ -83,17 +100,24 @@ public interface JoinableEntity extends TableConfiguration {
 		}
 	}
 	
-	JoinType determineJoinType();
+	default void loadAlias() {
+		if (hasJoinExtraCondition() && !isUsingManualDefinedAlias()) {
+			this.setJoinExtraCondition(
+			    this.getJoinExtraCondition().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
+			
+			String condition = DBUtilities.tryToPutTableNameInFieldsInASqlClause(this.getJoinExtraCondition(),
+			    this.getTableAlias(), this.getFields());
+			
+			this.setJoinExtraCondition(condition);
+		}
+	}
 	
-	void setJoinType(JoinType joinType);
-	
-	void setJoinExtraCondition(String replaceAll);
-	
-	/**
-	 * @return
-	 */
-	default boolean hasJoinExtraCondition() {
-		return utilities.stringHasValue(this.getJoinExtraCondition());
+	default JoinType determineJoinType() {
+		if (utilities.arrayHasMoreThanOneElements(this.getMainExtractTable().getAuxExtractTable())) {
+			return JoinType.LEFT;
+		} else {
+			return JoinType.INNER;
+		}
 	}
 	
 }

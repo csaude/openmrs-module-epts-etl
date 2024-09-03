@@ -5,20 +5,20 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
+import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 /**
  * Represents an auxiliary table for data extraction. A {@link AuxExtractTable} is used as an
- * auxiliary extraction trable usually used to include additional extraction conditions
+ * auxiliary extraction table usually used to include additional extraction conditions
  */
-public class AuxExtractTable extends AbstractTableConfiguration implements JoinableEntity {
+public class AuxExtractTable extends AbstractTableConfiguration implements JoinableEntity, MainJoiningEntity {
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -30,7 +30,17 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	 */
 	private JoinType joinType;
 	
-	private EtlDataSource mainExtractTable;
+	private MainJoiningEntity mainExtractTable;
+	
+	private List<InnerAuxExtractTable> auxExtractTable;
+	
+	public List<InnerAuxExtractTable> getAuxExtractTable() {
+		return auxExtractTable;
+	}
+	
+	public void setAuxExtractTable(List<InnerAuxExtractTable> auxExtractTable) {
+		this.auxExtractTable = auxExtractTable;
+	}
 	
 	public JoinType getJoinType() {
 		return joinType;
@@ -40,11 +50,13 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 		this.joinType = joinType;
 	}
 	
-	public void setMainExtractTable(EtlDataSource mainExtractTable) {
+	@Override
+	public void setMainExtractTable(MainJoiningEntity mainExtractTable) {
 		this.mainExtractTable = mainExtractTable;
 	}
 	
-	public EtlDataSource getMainExtractTable() {
+	@Override
+	public MainJoiningEntity getMainExtractTable() {
 		return mainExtractTable;
 	}
 	
@@ -90,26 +102,25 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public JoinType determineJoinType() {
-		if (utilities.arrayHasMoreThanOneElements(this.getMainExtractTable().getAuxExtractTable())) {
-			return JoinType.LEFT;
-		} else {
-			return JoinType.INNER;
-		}
+	public void loadOwnElements(Connection conn) throws DBException {
+		
+		setRelatedEtlConfig(this.mainExtractTable.getRelatedEtlConf());
+		
+		loadJoinElements(conn);
+		
+		loadAlias();
+		
+		tryToLoadAuxExtraJoinTable(conn);
 	}
 	
 	@Override
-	public void loadOwnElements(Connection conn) throws DBException {
-		loadJoinElements(conn);
-		
-		if (hasJoinExtraCondition() && !isUsingManualDefinedAlias()) {
-			this.setJoinExtraCondition(
-			    this.getJoinExtraCondition().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
-			
-			String condition = DBUtilities.tryToPutTableNameInFieldsInASqlClause(this.getJoinExtraCondition(),
-			    this.getTableAlias(), this.getFields());
-			
-			this.setJoinExtraCondition(condition);
-		}
+	public boolean isJoinable() {
+		return true;
 	}
+	
+	@Override
+	public JoinableEntity parseToJoinable() throws ForbiddenOperationException {
+		return this;
+	}
+	
 }

@@ -51,8 +51,7 @@
                      "dstField":"address_uuid"
                   },
                   {
-                     "dataSourceName":"address",
-                     "srcField":"creation_date",
+                     "srcField":"address.creation_date",
                      "dstField":"address_creation_date"
                   }
                ],
