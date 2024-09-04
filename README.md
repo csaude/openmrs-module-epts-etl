@@ -191,21 +191,26 @@ The **"auxExtractTable"** element, allow the specification of extra tables to be
       "auxExtractTable":[
          {
             "tableName":"",
-            "joinExtraCondition":"", 
+            "joinExtraCondition":"",
             "joinFields":[
                {
                   "srcField":"",
                   "dstField":""
                }
             ],
-            "joinType":""
+            "joinType":"",
+            "auxExtractTable":[
+               
+            ]
          }
       ]
    }
 }
 ```	 
 
-As can be seen on the code above, each auxExtractTable can have the **tableName** with represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT.  
+As can be seen on the code above, each auxExtractTable can have the **tableName** with represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT.
+
+**NOTE** that you can add inner "auxExtractTable" within the main "auxExtractTable" which is also a list of auxiliary tables which allow you to add more conditions for extraction.
 
 
 #### The extra datasource table configuration
