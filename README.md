@@ -406,7 +406,7 @@ This process performs physical remotion of records on the target database. The t
 
 
 ## Examples 
-For demo examples please check [this session](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#etl-quick-examples).
+For demo examples please check [this session](docs/demo/README.md#etl-quick-examples).
 
 # Running the application
 To run this application you should (1) get the jar file either from the releases or (2) cloning and compiling the [eptssync project](https://github.com/FriendsInGlobalHealth/openmrs-module-eptssync.git).
