@@ -216,7 +216,7 @@ As can be seen on the code above, each auxExtractTable can have the **tableName*
 
 #### The extra datasource table configuration
 
-The **"extraTableDataSource"** element, allows the specification of extra tables to be used as data source in addition to the main table. There relevant configuration info for extra table datasource is shown below    
+The **"extraTableDataSource"** element, allows the specification of extra tables to be used as data source in addition to the main table. The relevant configuration info for extra table datasource is shown below    
 ```
 {
    "srcConf":{
