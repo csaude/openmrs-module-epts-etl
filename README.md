@@ -296,7 +296,7 @@ Each "extraObjectDataSource" is defined by
 - *objectLanguage* specify the language to be used to process the field generation. This can be omitted if there is no custom generator to be used
 - *fieldsValuesGenerator* a full class name for custom field generator.   
 
-For demo see [exploring-field-transformation](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#exploring-the-field-transformer) session.
+For demo see [exploring-objectdatasource-field-transformers](docs/demo/README.md#exploring-objectdatasource-field-transformers) session.
 
 #### The use of params whithin Src Configuration
 The Src configuration allows the use of params for querying. The params can be present on "joinExtraCondition", "extraConditionForExtract", "query", "tableName", etc. Parameters will be defined as identifiers preceded by "@". Eng. "location_id = @locationId". The parameters can appear in several context within queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1". (5) in "tableName" specification in any party configuration file, e.g {"tableName":"@mainSchema.@nameOfTable"}
@@ -306,6 +306,7 @@ The parameter value will be lookuped following below sequence:
 (2) in not present will be lookuped on properties of etl configurations file;
 (3) and finally on the current main src objects.  
 
+For demo see [the-power-of-parameters](docs/demo/README.md#the-power-of-parameters) session.
 
 ### The DstConf
 The "dstConf '' element is used to configure the destination object in an ETL operation. This element can be omitted if the dst fields can be automatically mapped from the available datasources;
