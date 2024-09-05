@@ -182,6 +182,7 @@ Within the parent configuration we can also define the "conditionalFields". The 
 We can also define a global "defaultValueDueInconsistency" and "setNullDueInconsistency" in a relationship between the table and its parents. These are global properties within the relatishioship meaning that for all the mapping these values will be applied.   
 
 #### The auxExtractTable table configuration
+<a name="aux-extract-table"></a>
 
 The **"auxExtractTable"** element, allow the specification of extra tables to be used as joining tables to the main table. This allow the inclusion of additional querying condition from those joining tables. This is also used as an additional data source for the etl item configuration.     
 
@@ -239,7 +240,7 @@ The **"extraTableDataSource"** element, allows the specification of extra tables
 }
 ```
 
-As can be seen on the code above, each extraTableDataSource can have the **tableName** with represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT. The **auxExtractTable** allows the inclusion of additional tables which can be joined with the extraTableDataSource for the purpose of inclusion of extra conditions. 
+As can be seen on the code above, each extraTableDataSource can have the **tableName** which represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT. The **auxExtractTable** allows the inclusion of additional tables which can be joined with the extraTableDataSource for the purpose of inclusion of extra conditions; this is also used as an extra datasource. ([See AuxExtractTable](#aux-extract-table)) 
 
 #### The extraQueryDataSource configuration
 
