@@ -1011,7 +1011,8 @@ public class CommonUtilities implements Serializable {
 		
 		List<String> headers = org.openmrs.module.epts.etl.model.Field.parseAllToListOfName(firstObj.getFields());
 		
-		csvBuilder.append(String.join("\t\t", headers)).append("\n");
+		
+		csvBuilder.append(String.join("\t\t\t\t", headers)).append("\n");
 		
 		return csvBuilder.toString();
 	}
@@ -1027,7 +1028,7 @@ public class CommonUtilities implements Serializable {
 			List<String> values = obj.getFieldValuesAsString();
 			
 			// Join the values with tabs and append to the StringBuilder with a newline
-			tabBuilder.append(String.join("\t\t", values)).append("\n");
+			tabBuilder.append(String.join("\t\t\t\t", values)).append("\n");
 		}
 		
 		return tabBuilder.toString();

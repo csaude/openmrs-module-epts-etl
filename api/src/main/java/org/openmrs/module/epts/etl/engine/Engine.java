@@ -371,8 +371,12 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	}
 	
 	private void displayResultInConsole(List<EtlDatabaseObject> objs) {
-		System.out.println(utilities.generateTabDelimitedHeader(objs.get(0)));
+		String header = utilities.generateTabDelimitedHeader(objs.get(0));
+		String separator = utilities.maskToken(header, header, '#');
+		System.out.println(separator);
+		System.out.println(header);
 		System.out.println(utilities.parseToTabDelimitedWithoutHeader(objs));
+		System.out.println(separator);
 	}
 	
 	/**

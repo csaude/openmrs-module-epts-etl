@@ -122,11 +122,14 @@ public class QuickTest {
 		String uuids = "'5a04df3e-692f-4cc8-8abe-3807ffd0c5bd', 'cdc12dfb-c561-4106-bcd4-b4ac8f6e069d', 'cdc21dfb-c561-4106-bcd4-b4ac8f6e069d'";
 		//uuids="'881ea99d-f3f3-49fe-8126-099a9efd204c', 'ecc979b7-c0ad-47a1-9d02-9b7d095dcc92', '2fe42e1b-e676-4c8d-92e9-48da01fe3a07'";
 		
+		uuids = "'cdc21dfb-c561-4106-bcd4-b4ac8f6e069d'";
+		uuids = "'5a04df3e-692f-4cc8-8abe-3807ffd0c5bd'";
+		
 		for (String dbName : alldbs) {
 			String sql = "";
 			sql += " select location_uuid as value " + newLine;
 			sql += " from  " + dbName + ".location " + newLine;
-			sql += " where location_uuid in (" + uuids + ")";
+			sql += " where selected = 1 and location_uuid in (" + uuids + ")";
 			
 			SimpleValue result = null;
 			try {
@@ -139,7 +142,7 @@ public class QuickTest {
 					
 					sql += " select name as value " + newLine;
 					sql += " from  " + dbName + ".location " + newLine;
-					sql += " where location_uuid in (" + uuids + ")";
+					sql += " where selected = 1 and location_uuid in (" + uuids + ")";
 					
 					result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
 					

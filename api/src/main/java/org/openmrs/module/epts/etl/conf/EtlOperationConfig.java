@@ -109,11 +109,9 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.threadingMode = ThreadingMode.MULTI_THREAD;
 	}
 	
-	
 	public boolean isFinishOnNoRemainRecordsToProcess() {
 		return finishOnNoRemainRecordsToProcess;
 	}
-	
 	
 	public void setFinishOnNoRemainRecordsToProcess(boolean finishOnNoRemainRecordsToProcess) {
 		this.finishOnNoRemainRecordsToProcess = finishOnNoRemainRecordsToProcess;
@@ -181,6 +179,10 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	public void setDstType(EtlDstType dstType) {
 		this.dstType = dstType;
+	}
+	
+	public boolean isConsoleDst() {
+		return getDstType().isConsole();
 	}
 	
 	public boolean isDbDst() {

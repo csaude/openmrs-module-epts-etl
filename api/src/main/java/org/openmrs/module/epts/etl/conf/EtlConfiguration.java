@@ -579,6 +579,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				if (operation.getMaxSupportedProcessors() == 1) {
 					operation.setUseSharedConnectionPerThread(false);
 				}
+				
+				if (operation.isConsoleDst()) {
+					operation.setDoNotSaveOperationProgress(true);
+				}
 			}
 			
 			for (EtlItemConfiguration tc : this.getEtlItemConfiguration()) {
