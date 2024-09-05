@@ -117,7 +117,7 @@ The "srcConf '' allows the configuration of datasource in an etl process. The re
 - *observationDateFields*: optional list of date fields which will be checked when an operation need to look for records which had some action in certain period (ex. records created or updated within a period)
 - *extraConditionForExtract*: optional param which contains the extra sql condition to be injected when the operation queries for records to process.
 - *uniqueKeys*: optional list containing the unique key info. This is unnecessary if the table has explicit unique keys;
-- *auxExtractTable*: optional list containing the joining tables which helps to add additional extraction conditions;
+- *auxExtractTable*: optional list containing the joining tables which helps to add additional extraction conditions; this act as a extra data source also;
 - *extraTableDataSource*: optional list of auxiliary tables to be used as data source
 - *extraQueryDataSource*: option list of auxiliary queries to be used as data source;
 - *extraObjectDataSource*: option list of auxiliary objects configuration to be used as data source;
@@ -209,7 +209,7 @@ The **"auxExtractTable"** element, allow the specification of extra tables to be
 }
 ```	 
 
-As can be seen on the code above, each auxExtractTable can have the **tableName** with represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, there is also **joiningType** which can be INNER, LEFT or RIGHT; the "doNotUseAsDatasource" allows the exclusion of the "auxExtractTable" from the data sources; by default, an "auxExtractTable" is also a datasource.  
+As can be seen on the code above, each auxExtractTable can have the **tableName** which represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, there is also **joiningType** which can be INNER, LEFT or RIGHT; the "doNotUseAsDatasource" allows the exclusion of the "auxExtractTable" from the data sources; by default, an "auxExtractTable" is also a datasource.  
 
 **NOTE** that you can add inner "auxExtractTable" within the main "auxExtractTable" which is also a list of auxiliary tables which allow you to add more conditions for extraction.
 
