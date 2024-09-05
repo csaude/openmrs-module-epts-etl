@@ -70,16 +70,8 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 	}
 	
 	@Override
-	public List<AuxExtractTable> getAuxExtractTable() {
-		return null;
-	}
-	
-	@Override
-	public void setAuxExtractTable(List<AuxExtractTable> auxExtractTable) {
-	}
-	
-	@Override
 	public String getQuery() {
 		return null;
 	}
+	
 }

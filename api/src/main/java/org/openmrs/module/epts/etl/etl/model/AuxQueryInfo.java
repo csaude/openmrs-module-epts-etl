@@ -46,4 +46,12 @@ public class AuxQueryInfo {
 		return this.getSearchClauses().getClauseFrom();
 	}
 	
+	public String getColumnsToSelect() {
+		return this.getSearchClauses().getColumnsToSelect();
+	}
+	
+	public void setColumnsToSelect(String fullSelectColumns) {
+		this.getSearchClauses().setColumnsToSelect(fullSelectColumns);
+	}
+	
 }

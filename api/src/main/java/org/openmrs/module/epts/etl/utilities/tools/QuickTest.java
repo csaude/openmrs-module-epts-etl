@@ -71,7 +71,7 @@ public class QuickTest {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		countAll();
+		searchOnDbs(openConnection());
 	}
 	
 	public static void saveToTable() throws DBException {
@@ -111,30 +111,45 @@ public class QuickTest {
 	}
 	
 	public static void searchOnDbs(Connection conn) throws IOException, DBException {
-		List<String> alldbs = FileUtilities
-		        .readAllFileAsListOfString("D:\\PRG\\JEE\\Workspace\\CSaude\\eptssync\\_quelimane\\dbs.txt");
+		List<String> alldbs = FileUtilities.readAllFileAsListOfString("D:/ORG/C-SAUDE/PROJECTOS/Mozart/Analisy/alldbs.txt");
 		
 		String newLine = "\n";
 		
+		/*sql += " select count(*) as value " + newLine;
+		sql += " from  " + dbName + ".encounter inner join " + dbName + ".location using (location_id)" + newLine;
+		sql += " where encounter.uuid in ('dfa96496-54aa-4c83-bce2-3cb8c3e4ffd5', '49d6a0ea-aa71-461d-95f5-45cb9b66878e', '15d0ea8e-a1b6-4e68-8891-88474c4f701f', 'ded002e7-b24d-49e1-9be0-e112e333dc4d', '22403449-77c5-466c-a5c5-071e861d9b43', '7a45dfc1-2baa-446e-951c-440b4f2ee5ab', 'a38ea590-3103-4240-acd7-9aaed6951cfd', 'b3cfac54-56da-4271-8c56-6f7141ed9306', 'ee25ca52-d27f-46dd-b1a2-ed355052bb76', 'beabf800-582d-413a-8d37-5470431870cb', '38ca70df-0713-4539-9c1a-03966dc67bc8', '78c79009-f81f-4282-9eeb-1b6220858c35', '1e65d82b-56ae-41d7-8ad8-94bafec2c308', '95ea6e43-639e-4251-9e30-d89e8ca7ca4d', 'b0173511-b4bf-4975-84ea-721a3f95caa6')";*/
+		
+		String uuids = "'5a04df3e-692f-4cc8-8abe-3807ffd0c5bd', 'cdc12dfb-c561-4106-bcd4-b4ac8f6e069d', 'cdc21dfb-c561-4106-bcd4-b4ac8f6e069d'";
+		//uuids="'881ea99d-f3f3-49fe-8126-099a9efd204c', 'ecc979b7-c0ad-47a1-9d02-9b7d095dcc92', '2fe42e1b-e676-4c8d-92e9-48da01fe3a07'";
+		
 		for (String dbName : alldbs) {
 			String sql = "";
-			sql += " select count(*) as value " + newLine;
-			sql += " from  " + dbName + ".encounter inner join " + dbName + ".location using (location_id)" + newLine;
-			sql += " where encounter.uuid in ('dfa96496-54aa-4c83-bce2-3cb8c3e4ffd5', '49d6a0ea-aa71-461d-95f5-45cb9b66878e', '15d0ea8e-a1b6-4e68-8891-88474c4f701f', 'ded002e7-b24d-49e1-9be0-e112e333dc4d', '22403449-77c5-466c-a5c5-071e861d9b43', '7a45dfc1-2baa-446e-951c-440b4f2ee5ab', 'a38ea590-3103-4240-acd7-9aaed6951cfd', 'b3cfac54-56da-4271-8c56-6f7141ed9306', 'ee25ca52-d27f-46dd-b1a2-ed355052bb76', 'beabf800-582d-413a-8d37-5470431870cb', '38ca70df-0713-4539-9c1a-03966dc67bc8', '78c79009-f81f-4282-9eeb-1b6220858c35', '1e65d82b-56ae-41d7-8ad8-94bafec2c308', '95ea6e43-639e-4251-9e30-d89e8ca7ca4d', 'b0173511-b4bf-4975-84ea-721a3f95caa6')";
+			sql += " select location_uuid as value " + newLine;
+			sql += " from  " + dbName + ".location " + newLine;
+			sql += " where location_uuid in (" + uuids + ")";
 			
 			SimpleValue result = null;
 			try {
 				result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
 				
-				if (result != null && result.intValue() > 0) {
-					System.out.println("Record found on " + dbName + " Rec: " + result.intValue());
+				if (result != null) {
+					String uuid = result.getValue();
+					
+					sql = "";
+					
+					sql += " select name as value " + newLine;
+					sql += " from  " + dbName + ".location " + newLine;
+					sql += " where location_uuid in (" + uuids + ")";
+					
+					result = DatabaseObjectDAO.find(SimpleValue.class, sql, null, conn);
+					
+					String name = result.getValue();
+					
+					System.out.println("Record found on " + dbName + " Rec: " + name + " <> " + uuid);
 				}
 			}
 			catch (DBException e) {
-				if (!e.getLocalizedMessage().contains("Table '" + dbName + ".encounter'")) {
-					throw e;
-				}
-				
+				throw e;
 			}
 			
 		}

@@ -25,16 +25,17 @@ public class EtlField extends Field {
 	public EtlField() {
 	}
 	
-	public EtlField(Field srcField, EtlDataSource srcDataSource) {
+	public EtlField(Field srcField, EtlDataSource srcDataSource, boolean preserveOriginalName) {
 		this(srcField);
 		
 		this.srcDataSource = srcDataSource;
 		
-		this.setName(this.getSrcDataSource().getName() + "_" + this.getSrcField().getName());
+		this.setName(preserveOriginalName ? this.getSrcField().getName()
+		        : this.getSrcDataSource().getName() + "_" + this.getSrcField().getName());
 	}
 	
-	public static EtlField fastCreate(String srcFieldName, EtlDataSource srcDataSource) {
-		return new EtlField(Field.fastCreateField(srcFieldName), srcDataSource);
+	public static EtlField fastCreate(String srcFieldName, EtlDataSource srcDataSource, boolean preserveOriginalName) {
+		return new EtlField(Field.fastCreateField(srcFieldName), srcDataSource, preserveOriginalName);
 	}
 	
 	public EtlField(Field srcField) {
@@ -67,31 +68,18 @@ public class EtlField extends Field {
 		this.srcField = srcField;
 	}
 	
-	public static List<EtlField> converteFromDataSourceFields(EtlDataSource dataSource) {
+	public boolean hasSrcField() {
+		return this.getSrcField() != null;
+	}
+	
+	public static List<EtlField> converteFromDataSourceFields(EtlDataSource dataSource, boolean preserveOriginalName) {
 		if (!dataSource.hasFields())
 			throw new ForbiddenOperationException("The datasource " + dataSource.getName() + " has no fields!");
 		
 		List<EtlField> fields = new ArrayList<>(dataSource.getFields().size());
 		
 		for (Field f : dataSource.getFields()) {
-			fields.add(new EtlField(f, dataSource));
-		}
-		
-		return fields;
-	}
-	
-	public static List<EtlField> converteFromDataSourceFields(List<Field> simpleFields, EtlDataSource dataSource) {
-		if (utilities.arrayHasNoElement(simpleFields))
-			throw new ForbiddenOperationException("The fields is empty!");
-		
-		List<EtlField> fields = new ArrayList<>(simpleFields.size());
-		
-		for (Field f : simpleFields) {
-			EtlField etlField = new EtlField(f);
-			
-			etlField.setSrcDataSource(dataSource);
-			
-			fields.add(etlField);
+			fields.add(new EtlField(f, dataSource, preserveOriginalName));
 		}
 		
 		return fields;

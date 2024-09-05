@@ -4,11 +4,13 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -16,7 +18,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents an inner auxiliary table for data extraction. A {@link InnerAuxExtractTable} is used
  * as an auxiliary extraction table for an {@link AuxExtractTable}
  */
-public class InnerAuxExtractTable extends AbstractTableConfiguration implements JoinableEntity {
+public class InnerAuxExtractTable extends AbstractTableConfiguration implements JoinableEntity, EtlDataSource {
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -30,6 +32,21 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	
 	private AuxExtractTable mainExtractTable;
 	
+	private boolean doNotUseAsDatasource;
+	
+	public boolean isDoNotUseAsDatasource() {
+		return doNotUseAsDatasource;
+	}
+	
+	@Override
+	public boolean doNotUseAsDatasource() {
+		return isDoNotUseAsDatasource();
+	}
+	
+	public void setDoNotUseAsDatasource(boolean doNotUseAsDatasource) {
+		this.doNotUseAsDatasource = doNotUseAsDatasource;
+	}
+	
 	@Override
 	public boolean isGeneric() {
 		return false;
@@ -37,9 +54,6 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	
 	@Override
 	public void loadOwnElements(Connection conn) throws DBException {
-		loadJoinElements(conn);
-		
-		loadAlias();
 	}
 	
 	@Override
@@ -89,6 +103,21 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	@Override
 	public void setJoinExtraCondition(String joinExtraCondition) {
 		this.joinExtraCondition = joinExtraCondition;
+	}
+	
+	@Override
+	public boolean isMainJoiningEntity() {
+		return false;
+	}
+	
+	@Override
+	public MainJoiningEntity parseToJoining() throws ForbiddenOperationException {
+		throw new ForbiddenOperationException("Not joining entity!!!");
+	}
+	
+	@Override
+	public String getName() {
+		return this.getTableName();
 	}
 	
 }

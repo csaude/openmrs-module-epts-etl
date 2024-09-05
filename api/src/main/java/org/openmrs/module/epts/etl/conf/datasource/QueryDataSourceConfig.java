@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -468,15 +469,6 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public List<AuxExtractTable> getAuxExtractTable() {
-		return null;
-	}
-	
-	@Override
-	public void setAuxExtractTable(List<AuxExtractTable> auxExtractTable) {
-	}
-	
-	@Override
 	public String generateSelectFromQuery() {
 		return null;
 	}
@@ -493,6 +485,11 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	@Override
 	public String toString() {
 		return "Query " + getName() + "\nQuery\n--------------------\n" + getQuery() + "\n--------------------";
+	}
+	
+	@Override
+	public TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName) {
+		return null;
 	}
 	
 }

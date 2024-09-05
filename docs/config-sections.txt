@@ -88,7 +88,28 @@
                }
             ]
 			
-		 
+
+{
+   "srcConf":{
+      "auxExtractTable":[
+         {
+            "tableName":"",
+            "joinExtraCondition":"",
+            "joinFields":[
+               {
+                  "srcField":"",
+                  "dstField":""
+               }
+            ],
+            "joinType":"",
+            "auxExtractTable":[
+               
+            ]
+         }
+      ]
+   }
+}
+			
 ```
 "extraObjectDataSource":[
    {

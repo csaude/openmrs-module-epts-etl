@@ -12,6 +12,7 @@ import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -82,8 +83,8 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		loadAuxExtractTable(queryInfo, aux.parseToJoinable(), srcConn);
 		
-		if (aux.hasAuxExtraJoinTable()) {
-			for (JoinableEntity jEntity : aux.getAuxExtractTable()) {
+		if (aux.hasAuxExtractTable()) {
+			for (JoinableEntity jEntity : aux.getJoiningTable()) {
 				loadAuxExtractTable(queryInfo, jEntity, srcConn);
 			}
 		}
@@ -134,6 +135,13 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 			
 			additionalLeftJoinFields = utilities.concatCondition(additionalLeftJoinFields,
 			    aux.getPrimaryKey().generateSqlNotNullCheckWithDisjunction(), "or");
+		}
+		
+		if (!aux.doNotUseAsDatasource()) {
+			String fullSelectColumns = queryInfo.getColumnsToSelect() + ","
+			        + ((TableConfiguration) aux).generateFullAliasedSelectColumns();
+			
+			queryInfo.setColumnsToSelect(fullSelectColumns);
 		}
 		
 		queryInfo.setSearchClauses(searchClauses);

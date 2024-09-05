@@ -13,7 +13,9 @@ public interface MainJoiningEntity extends TableConfiguration {
 	
 	static final CommonUtilities utils = CommonUtilities.getInstance();
 	
-	List<? extends JoinableEntity> getAuxExtractTable();
+	List<? extends JoinableEntity> getJoiningTable();
+	
+	void setJoiningTable(List<? extends JoinableEntity> joiningTable);
 	
 	/**
 	 * Tells whether this main join entity is also joinable or not. Example of known main joinable
@@ -23,19 +25,21 @@ public interface MainJoiningEntity extends TableConfiguration {
 	 */
 	boolean isJoinable();
 	
+	boolean doNotUseAsDatasource();
+	
 	/**
 	 * @return return this main joining entity as {@link JoinableEntity}
 	 * @throws ForbiddenOperationException if this main joining entity is not joinable
 	 */
 	JoinableEntity parseToJoinable() throws ForbiddenOperationException;
 	
-	default boolean hasAuxExtraJoinTable() {
-		return utils.arrayHasElement(this.getAuxExtractTable());
+	default boolean hasAuxExtractTable() {
+		return utils.arrayHasElement(this.getJoiningTable());
 	}
 	
 	default void tryToLoadAuxExtraJoinTable(Connection conn) throws DBException {
-		if (hasAuxExtraJoinTable()) {
-			for (JoinableEntity t : this.getAuxExtractTable()) {
+		if (hasAuxExtractTable()) {
+			for (JoinableEntity t : this.getJoiningTable()) {
 				t.setParentConf(this);
 				t.tryToGenerateTableAlias(getRelatedEtlConf());
 				t.setMainExtractTable(this);
@@ -65,6 +69,12 @@ public interface MainJoiningEntity extends TableConfiguration {
 						
 						t.getSharedKeyRefInfo().setParentConf(t);
 					}
+					
+					if (t.isMainJoiningEntity() && t.parseToJoining().hasAuxExtractTable()) {
+						t.parseToJoining().tryToLoadAuxExtraJoinTable(conn);
+					}
+					
+					t.loadJoinElements(conn);
 				}
 				finally {
 					srcConn.finalizeConnection();

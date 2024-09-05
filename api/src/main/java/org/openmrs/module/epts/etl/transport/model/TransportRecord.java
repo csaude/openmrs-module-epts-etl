@@ -499,4 +499,10 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

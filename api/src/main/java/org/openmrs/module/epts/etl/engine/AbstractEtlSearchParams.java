@@ -192,7 +192,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		int qtyProcessors = utilities.getAvailableProcessors();
 		
 		if (this.getRelatedEngine() != null
-		        && this.getRelatedEngine().getRelatedEtlOperationConfig().isDisableParallelSearch()) {
+		        && this.getRelatedEngine().getRelatedEtlOperationConfig().isDisableMultithreadingSearch()) {
 			qtyProcessors = 1;
 		}
 		

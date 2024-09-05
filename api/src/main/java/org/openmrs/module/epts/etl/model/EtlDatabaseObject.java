@@ -14,6 +14,7 @@ import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
@@ -24,6 +25,7 @@ import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
@@ -62,6 +64,13 @@ public interface EtlDatabaseObject extends EtlObject {
 	List<EtlDatabaseObjectUniqueKeyInfo> getUniqueKeysInfo();
 	
 	void setUniqueKeysInfo(List<EtlDatabaseObjectUniqueKeyInfo> uniqueKeysInfo);
+	
+	/**
+	 * If the {@link #getRelatedConfiguration()} is instance of {@link MainJoiningEntity} then the
+	 * objects related to tables presents on {@link MainJoiningEntity#getJoiningTable()} will be
+	 * placed on this field.
+	 */
+	List<? extends EtlDatabaseObject> getAuxLoadObject();
 	
 	/**
 	 * Load the destination parents id to this object
@@ -296,6 +305,10 @@ public interface EtlDatabaseObject extends EtlObject {
 		}
 		
 		return true;
+	}
+	
+	default boolean hasAuxLoadObject() {
+		return utils.arrayHasElement(this.getAuxLoadObject());
 	}
 	
 	/**
@@ -730,7 +743,7 @@ public interface EtlDatabaseObject extends EtlObject {
 				
 				this.setObjectId(recordOnDB.getObjectId());
 			}
-		 }
+		}
 	}
 	
 	default Field getField(String fieldName) {

@@ -708,9 +708,11 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				this.getTableOperationProgressInfo().save(conn);
 			}
 			
-			logDebug("CALCULATION DONE. TOTAL RECORDS " + total + "! PROCESSED RECORDS " + processed);
+			logInfo("CALCULATION DONE. TOTAL RECORDS " + total + "! PROCESSED RECORDS " + processed);
 			
 			conn.markAsSuccessifullyTerminated();
+			
+			reportProgress();
 		}
 		catch (DBException e) {
 			getRelatedOperationController().requestStopDueError(this, e);

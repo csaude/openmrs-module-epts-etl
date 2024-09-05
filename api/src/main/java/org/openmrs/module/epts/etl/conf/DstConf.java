@@ -9,6 +9,7 @@ import java.util.NoSuchElementException;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
@@ -568,6 +569,22 @@ public class DstConf extends AbstractTableConfiguration {
 	private void loadDataSourceInfo(Connection conn) throws DBException {
 		this.allAvaliableDataSource = new ArrayList<>();
 		this.allAvaliableDataSource.add(getSrcConf());
+		
+		if (this.getSrcConf().hasAuxExtractTable()) {
+			for (JoinableEntity auxExtractTable : this.getSrcConf().getJoiningTable()) {
+				if (!auxExtractTable.doNotUseAsDatasource()) {
+					this.allAvaliableDataSource.add(auxExtractTable);
+				}
+				
+				if (auxExtractTable.isMainJoiningEntity() && auxExtractTable.parseToJoining().hasAuxExtractTable()) {
+					for (JoinableEntity innerAuxExtractTable : auxExtractTable.parseToJoining().getJoiningTable()) {
+						if (!innerAuxExtractTable.doNotUseAsDatasource()) {
+							this.allAvaliableDataSource.add(innerAuxExtractTable);
+						}
+					}
+				}
+			}
+		}
 		
 		if (utilities.arrayHasElement(getSrcConf().getAvaliableExtraDataSource())) {
 			allAvaliableDataSource

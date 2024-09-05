@@ -2,20 +2,35 @@ create database etl_demo_with_extraction_rules_src_db;
 
 use etl_demo_with_extraction_rules_src_db;
 
-CREATE TABLE `office` (
+CREATE TABLE `office_type` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(250) NOT NULL,
+  `type` varchar(10) NOT NULL,
   `creation_date` datetime DEFAULT CURRENT_TIMESTAMP,
   `uuid` char(38) NOT NULL,
    PRIMARY KEY (`id`),
-   UNIQUE KEY `office_uk` (`uuid`)
+   UNIQUE KEY `office_type_uk` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO etl_demo_with_extraction_rules_src_db.office_type (id,type,uuid) VALUES
+	 ('1','Main','b8adb61d-6a89-11ef-a189-e86a64ea1bc5'),
+	 ('2','Anex','cabafdf3-6a89-11ef-a189-e86a64ea1bc5');
+	 
+CREATE TABLE `office` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(250) NOT NULL,
+  `type_id`  int(11) NOT NULL,
+  `creation_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `uuid` char(38) NOT NULL,
+   PRIMARY KEY (`id`),
+   UNIQUE KEY `office_uk` (`uuid`),  
+   CONSTRAINT `office_fk1` FOREIGN KEY (`type_id`) REFERENCES `office_type` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-INSERT INTO etl_demo_with_extraction_rules_src_db.office (id,name,uuid) VALUES
-	 ('10001','Main office','9acc18fb-44ef-11ef-97f0-e86a64ea1bc5'),
-	 ('10002','Anex 1','9acc29ab-44ef-11ef-97f9-e76a64ea1bc5'),
-	 ('10003','Anex 1','9acc2be0-44ef-11ef-96f9-e86a64ea1bc5');
+INSERT INTO etl_demo_with_extraction_rules_src_db.office (id,name, type_id, uuid) VALUES
+	 ('10001','Main office',1,'9acc18fb-44ef-11ef-97f0-e86a64ea1bc5'),
+	 ('10002','Anex 1',2,'9acc29ab-44ef-11ef-97f9-e76a64ea1bc5'),
+	 ('10003','Anex 1',2,'9acc2be0-44ef-11ef-96f9-e86a64ea1bc5');
 
 
 CREATE TABLE `person` (

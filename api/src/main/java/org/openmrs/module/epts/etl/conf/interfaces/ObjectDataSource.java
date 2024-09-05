@@ -8,7 +8,6 @@ import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
-import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.datasource.DataSourceField;
 import org.openmrs.module.epts.etl.conf.datasource.DefaultObjectFieldsValuesGenerator;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
@@ -79,16 +78,6 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	@Override
 	public String getName() {
 		return this.name;
-	}
-	
-	@Override
-	public List<AuxExtractTable> getAuxExtractTable() {
-		throw new ForbiddenOperationException("Forbiden Method");
-	}
-	
-	@Override
-	public void setAuxExtractTable(List<AuxExtractTable> auxExtractTable) {
-		throw new ForbiddenOperationException("Forbiden Method");
 	}
 	
 	@Override
@@ -327,6 +316,11 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 			
 			this.setFieldsValuesGeneratorInstance(DefaultObjectFieldsValuesGenerator.getInstance());
 		}
+	}
+	
+	@Override
+	public TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName) {
+		return null;
 	}
 	
 }

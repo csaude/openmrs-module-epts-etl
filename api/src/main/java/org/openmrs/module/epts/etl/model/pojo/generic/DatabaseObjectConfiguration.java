@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -29,6 +30,8 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	void fullLoad() throws DBException;
 	
 	void fullLoad(Connection conn) throws DBException;
+	
+	TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName);
 	
 	@JsonIgnore
 	default File getPOJOCopiledFilesDirectory() {

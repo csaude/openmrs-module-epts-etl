@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -14,7 +15,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
  * Represents an database object which can be joined to other database object (the
  * {@link MainJoiningEntity})
  */
-public interface JoinableEntity extends TableConfiguration {
+public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 	
 	List<FieldsMapping> getJoinFields();
 	
@@ -26,6 +27,8 @@ public interface JoinableEntity extends TableConfiguration {
 	
 	JoinType getJoinType();
 	
+	boolean doNotUseAsDatasource();
+	
 	void setJoinFields(List<FieldsMapping> joinFields);
 	
 	void setJoinType(JoinType joinType);
@@ -33,6 +36,20 @@ public interface JoinableEntity extends TableConfiguration {
 	void setJoinExtraCondition(String joinExtraCondition);
 	
 	void setMainExtractTable(MainJoiningEntity mainJoiningTable);
+	
+	/**
+	 * Tells whether this joinable entity is also joining ({@link MainJoiningEntity}) or not.
+	 * Example of known main joining entities are {@link AuxExtractTable}
+	 * 
+	 * @return 'true' if this joinable entity is also main joining entity
+	 */
+	boolean isMainJoiningEntity();
+	
+	/**
+	 * @return return this joinable entity as {@link MainJoiningEntity}
+	 * @throws ForbiddenOperationException if this main joinable entity is not joining
+	 */
+	MainJoiningEntity parseToJoining() throws ForbiddenOperationException;
 	
 	MainJoiningEntity getMainExtractTable();
 	
@@ -105,6 +122,9 @@ public interface JoinableEntity extends TableConfiguration {
 			this.setJoinExtraCondition(
 			    this.getJoinExtraCondition().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
 			
+			this.setJoinExtraCondition(this.getJoinExtraCondition().replaceAll(
+			    this.getMainExtractTable().getObjectName() + "\\.", this.getMainExtractTable().getAlias() + "\\."));
+			
 			String condition = DBUtilities.tryToPutTableNameInFieldsInASqlClause(this.getJoinExtraCondition(),
 			    this.getTableAlias(), this.getFields());
 			
@@ -113,7 +133,7 @@ public interface JoinableEntity extends TableConfiguration {
 	}
 	
 	default JoinType determineJoinType() {
-		if (utilities.arrayHasMoreThanOneElements(this.getMainExtractTable().getAuxExtractTable())) {
+		if (utilities.arrayHasMoreThanOneElements(this.getMainExtractTable().getJoiningTable())) {
 			return JoinType.LEFT;
 		} else {
 			return JoinType.INNER;

@@ -44,16 +44,30 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	public TableDataSourceConfig() {
 	}
 	
+	@Override
+	public boolean doNotUseAsDatasource() {
+		return false;
+	}
+	
 	private boolean isPrepared() {
 		return this.defaultPreparedQuery != null;
 	}
 	
 	@Override
+	public List<? extends JoinableEntity> getJoiningTable() {
+		return this.getAuxExtractTable();
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public void setJoiningTable(List<? extends JoinableEntity> joiningTable) {
+		setAuxExtractTable((List<AuxExtractTable>) joiningTable);
+	}
+	
 	public List<AuxExtractTable> getAuxExtractTable() {
 		return this.auxExtractTable;
 	}
 	
-	@Override
 	public void setAuxExtractTable(List<AuxExtractTable> auxExtractTable) {
 		this.auxExtractTable = auxExtractTable;
 	}
@@ -181,11 +195,10 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public void loadOwnElements(Connection conn) throws DBException {
-		loadJoinElements(conn);
-		tryToLoadAuxExtraJoinTable(conn);
+		this.loadJoinElements(conn);
+		this.loadAlias();
 		
-		loadAlias();
-		
+		this.tryToLoadAuxExtraJoinTable(conn);
 	}
 	
 	@Override
@@ -206,6 +219,16 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	@Override
 	public boolean isJoinable() {
 		return true;
+	}
+	
+	@Override
+	public boolean isMainJoiningEntity() {
+		return true;
+	}
+	
+	@Override
+	public MainJoiningEntity parseToJoining() throws ForbiddenOperationException {
+		return this;
 	}
 	
 	@Override

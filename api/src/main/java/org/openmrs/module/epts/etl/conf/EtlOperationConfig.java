@@ -77,7 +77,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private EtlActionType afterEtlActionType;
 	
-	private boolean disableParallelSearch;
+	private boolean disableMultithreadingSearch;
 	
 	/**
 	 * Indicates whether this operation will executed over all tables configured under
@@ -151,12 +151,12 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.useMysqlInsertIgnore = useMysqlInsertIgnore;
 	}
 	
-	public boolean isDisableParallelSearch() {
-		return disableParallelSearch;
+	public boolean isDisableMultithreadingSearch() {
+		return disableMultithreadingSearch;
 	}
 	
-	public void setDisableParallelSearch(boolean disableParallelSearch) {
-		this.disableParallelSearch = disableParallelSearch;
+	public void setDisableMultithreadingSearch(boolean disableMultithreadingSearch) {
+		this.disableMultithreadingSearch = disableMultithreadingSearch;
 	}
 	
 	public EtlActionType getActionType() {

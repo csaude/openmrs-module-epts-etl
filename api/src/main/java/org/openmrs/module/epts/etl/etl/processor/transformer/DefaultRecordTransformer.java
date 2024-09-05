@@ -54,6 +54,26 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			srcObjects.add(srcObject.getSharedPkObj());
 		}
 		
+		if (srcObject.hasAuxLoadObject()) {
+			for (EtlDatabaseObject auxObject : srcObject.getAuxLoadObject()) {
+				srcObjects.add(auxObject);
+				
+				if (auxObject.shasSharedPkObj()) {
+					srcObjects.add(auxObject.getSharedPkObj());
+				}
+				
+				if (auxObject.hasAuxLoadObject()) {
+					for (EtlDatabaseObject innerObject : auxObject.getAuxLoadObject()) {
+						srcObjects.add(innerObject);
+						
+						if (innerObject.shasSharedPkObj()) {
+							srcObjects.add(innerObject.getSharedPkObj());
+						}
+					}
+				}
+			}
+		}
+		
 		for (EtlAdditionalDataSource mappingInfo : dstConf.getSrcConf().getAvaliableExtraDataSource()) {
 			
 			List<EtlDatabaseObject> avaliableObjects = mappingInfo.allowMultipleSrcObjects() ? srcObjects
@@ -75,7 +95,6 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			}
 			
 			srcObjects.add(relatedSrcObject);
-			
 		}
 		
 		EtlDatabaseObject transformedRec = dstConf.createRecordInstance();

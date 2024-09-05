@@ -46,6 +46,11 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	public SrcConf() {
 	}
 	
+	@Override
+	public boolean doNotUseAsDatasource() {
+		return false;
+	}
+	
 	public List<ObjectDataSource> getExtraObjectDataSource() {
 		return extraObjectDataSource;
 	}
@@ -75,7 +80,18 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public void setAuxExtractTable(List<AuxExtractTable> auxExtractTable) {
-		this.auxExtractTable = auxExtractTable;
+		this.auxExtractTable = (List<AuxExtractTable>) auxExtractTable;
+	}
+	
+	@Override
+	public List<? extends JoinableEntity> getJoiningTable() {
+		return this.getAuxExtractTable();
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public void setJoiningTable(List<? extends JoinableEntity> joiningTable) {
+		setAuxExtractTable((List<AuxExtractTable>) joiningTable);
 	}
 	
 	public List<QueryDataSourceConfig> getExtraQueryDataSource() {
@@ -120,38 +136,41 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	@Override
 	public void loadOwnElements(Connection conn) throws DBException {
 		
-		if (this.hasParentRefInfo()) {
-			for (ParentTable ref : this.getParentRefInfo()) {
-				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());
-				
-				ref.tryToGenerateTableAlias(getRelatedEtlConf());
-				
-				if (fullLoadedTab != null) {
-					ref.clone(fullLoadedTab, conn);
-				} else {
-					ref.fullLoad();
-				}
-				
-				if (ref.useSharedPKKey()) {
-					fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getSharedKeyRefInfo().getFullTableName());
-					
-					if (!ref.getSharedKeyRefInfo().hasAlias()) {
-						ref.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
-					}
-					if (fullLoadedTab != null) {
-						ref.getSharedKeyRefInfo().clone(fullLoadedTab, conn);
-					} else {
-						ref.getSharedKeyRefInfo().fullLoad();
-					}
-				}
-				
-			}
-		}
+		this.tryToLoadParentRefInfo(conn);
 		
+		this.tryToLoadAuxExtraJoinTable(conn);
+		
+		this.tryToLoadExtraDatasource(conn);
+		
+		this.loadEtlFields();
+		
+		this.setFullLoaded(true);
+	}
+	
+	private void loadEtlFields() {
+		if (hasExtraDataSource() || hasAuxExtractTable()) {
+			this.setEtlFields(new ArrayList<>());
+			
+			this.loadOwnFieldsToEtlFields(this.getEtlFields(), false);
+			
+			for (EtlDataSource ds : this.getAvaliableExtraDataSource()) {
+				ds.loadOwnFieldsToEtlFields(this.getEtlFields(), false);
+			}
+		} else {
+			//Preserve the original names if there is only the main ds
+			this.loadOwnFieldsToEtlFields(this.getEtlFields(), true);
+		}
+	}
+	
+	/**
+	 * @param conn
+	 * @param srcConn
+	 * @throws DBException
+	 */
+	private void tryToLoadExtraDatasource(Connection conn) throws DBException {
 		OpenConnection srcConn = this.getRelatedConnInfo().openConnection();
 		
 		try {
-			tryToLoadAuxExtraJoinTable(conn);
 			
 			if (hasExtraTableDataSourceConfig()) {
 				for (TableDataSourceConfig t : this.getExtraTableDataSource()) {
@@ -195,24 +214,44 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					query.fullLoad(srcConn);
 				}
 			}
-			
-			if (hasExtraDataSource()) {
-				this.setEtlFields(EtlField.converteFromDataSourceFields(this));
-				
-				for (EtlDataSource ds : this.getAvaliableExtraDataSource()) {
-					this.getEtlFields().addAll(EtlField.converteFromDataSourceFields(ds));
-				}
-			} else {
-				//Preserve the original names if there is only the main ds
-				this.setEtlFields(EtlField.converteFromDataSourceFields(this.getFields(), this));
-			}
-			
 		}
 		finally {
 			srcConn.finalizeConnection();
 		}
-		
-		this.setFullLoaded(true);
+	}
+	
+	/**
+	 * @param conn
+	 * @throws DBException
+	 */
+	private void tryToLoadParentRefInfo(Connection conn) throws DBException {
+		if (this.hasParentRefInfo()) {
+			for (ParentTable ref : this.getParentRefInfo()) {
+				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());
+				
+				ref.tryToGenerateTableAlias(getRelatedEtlConf());
+				
+				if (fullLoadedTab != null) {
+					ref.clone(fullLoadedTab, conn);
+				} else {
+					ref.fullLoad();
+				}
+				
+				if (ref.useSharedPKKey()) {
+					fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getSharedKeyRefInfo().getFullTableName());
+					
+					if (!ref.getSharedKeyRefInfo().hasAlias()) {
+						ref.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
+					}
+					if (fullLoadedTab != null) {
+						ref.getSharedKeyRefInfo().clone(fullLoadedTab, conn);
+					} else {
+						ref.getSharedKeyRefInfo().fullLoad();
+					}
+				}
+				
+			}
+		}
 	}
 	
 	public void setFullLoaded(boolean fullLoaded) {
@@ -358,8 +397,15 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	public EtlField getEtlField(String fieldName, boolean deepCheck) {
 		if (this.hasEtlFields()) {
 			for (EtlField f : this.getEtlFields()) {
+				
 				if (f.getName().equals(fieldName)) {
 					return f;
+				}
+				
+				if (f.hasSrcField()) {
+					if (f.getSrcField().getName().equals(fieldName)) {
+						return f;
+					}
 				}
 			}
 		}
@@ -376,7 +422,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			
 			if (this.hasExtraDataSource()) {
 				for (EtlDataSource ds : allDs) {
-					EtlField f = this.getEtlField(EtlField.fastCreate(fieldName, ds).getName(), false);
+					EtlField f = this.getEtlField(EtlField.fastCreate(fieldName, ds, false).getName(), false);
 					
 					if (f != null)
 						return f;

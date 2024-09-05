@@ -3,12 +3,17 @@ package org.openmrs.module.epts.etl.model.pojo.generic;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.RefMapping;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
+import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -24,9 +29,24 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	private GenericDatabaseObject sharedPkObj;
 	
+	/**
+	 * If the {@link #relatedConfiguration} is instance of {@link EtlDataSource} the the objects
+	 * related to tables presents on {@link EtlDataSource#getAuxExtractTable()} will be placed on
+	 * this field.
+	 */
+	private List<GenericDatabaseObject> auxLoadObject;
+	
 	private boolean loadedFromDb;
 	
 	public GenericDatabaseObject() {
+	}
+	
+	public List<GenericDatabaseObject> getAuxLoadObject() {
+		return auxLoadObject;
+	}
+	
+	public void setAuxLoadObject(List<GenericDatabaseObject> auxLoadObject) {
+		this.auxLoadObject = auxLoadObject;
 	}
 	
 	@Override
@@ -225,6 +245,26 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			
 			if (this.getRelatedConfiguration() instanceof TableConfiguration) {
 				this.loadObjectIdData((TableConfiguration) this.getRelatedConfiguration());
+			}
+			
+			if (this.getRelatedConfiguration() instanceof MainJoiningEntity) {
+				MainJoiningEntity ds = (MainJoiningEntity) this.getRelatedConfiguration();
+				
+				if (ds.hasAuxExtractTable()) {
+					this.setAuxLoadObject(new ArrayList<>());
+					
+					for (JoinableEntity j : ds.getJoiningTable()) {
+						if (!j.doNotUseAsDatasource()) {
+							
+							GenericDatabaseObject obj = new GenericDatabaseObject();
+							obj.setRelatedConfiguration(j);
+							
+							obj.load(rs);
+							
+							this.getAuxLoadObject().add(obj);
+						}
+					}
+				}
 			}
 			
 			loadedFromDb = true;
