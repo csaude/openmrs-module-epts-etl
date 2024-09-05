@@ -183,7 +183,7 @@ We can also define a global "defaultValueDueInconsistency" and "setNullDueIncons
 
 #### The auxExtractTable table configuration
 
-The **"auxExtractTable"** element, allow the specification of extra tables to be used as joining tables to the main table. This allow the inclusion of additional querying condition from those joining tables     
+The **"auxExtractTable"** element, allow the specification of extra tables to be used as joining tables to the main table. This allow the inclusion of additional querying condition from those joining tables. This is also used as an additional data source for the etl item configuration.     
 
 ```
 {
@@ -191,21 +191,27 @@ The **"auxExtractTable"** element, allow the specification of extra tables to be
       "auxExtractTable":[
          {
             "tableName":"",
-            "joinExtraCondition":"", 
+            "joinExtraCondition":"",
             "joinFields":[
                {
                   "srcField":"",
                   "dstField":""
                }
             ],
-            "joinType":""
+            "joinType":"",
+	    "doNotUseAsDatasource": "",	
+            "auxExtractTable":[
+               
+            ]
          }
       ]
    }
 }
 ```	 
 
-As can be seen on the code above, each auxExtractTable can have the **tableName** with represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT.  
+As can be seen on the code above, each auxExtractTable can have the **tableName** with represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, there is also **joiningType** which can be INNER, LEFT or RIGHT; the "doNotUseAsDatasource" allows the exclusion of the "auxExtractTable" from the data sources; by default, an "auxExtractTable" is also a datasource.  
+
+**NOTE** that you can add inner "auxExtractTable" within the main "auxExtractTable" which is also a list of auxiliary tables which allow you to add more conditions for extraction.
 
 
 #### The extra datasource table configuration
