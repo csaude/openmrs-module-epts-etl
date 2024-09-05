@@ -117,7 +117,7 @@ The "srcConf '' allows the configuration of datasource in an etl process. The re
 - *observationDateFields*: optional list of date fields which will be checked when an operation need to look for records which had some action in certain period (ex. records created or updated within a period)
 - *extraConditionForExtract*: optional param which contains the extra sql condition to be injected when the operation queries for records to process.
 - *uniqueKeys*: optional list containing the unique key info. This is unnecessary if the table has explicit unique keys;
-- *auxExtractTable*: optional list containing the joining tables which helps to add additional extraction conditions;
+- *auxExtractTable*: optional list containing the joining tables which helps to add additional extraction conditions; this act as a extra data source also;
 - *extraTableDataSource*: optional list of auxiliary tables to be used as data source
 - *extraQueryDataSource*: option list of auxiliary queries to be used as data source;
 - *extraObjectDataSource*: option list of auxiliary objects configuration to be used as data source;
@@ -182,6 +182,7 @@ Within the parent configuration we can also define the "conditionalFields". The 
 We can also define a global "defaultValueDueInconsistency" and "setNullDueInconsistency" in a relationship between the table and its parents. These are global properties within the relatishioship meaning that for all the mapping these values will be applied.   
 
 #### The auxExtractTable table configuration
+<a name="aux-extract-table"></a>
 
 The **"auxExtractTable"** element, allow the specification of extra tables to be used as joining tables to the main table. This allow the inclusion of additional querying condition from those joining tables. This is also used as an additional data source for the etl item configuration.     
 
@@ -209,14 +210,14 @@ The **"auxExtractTable"** element, allow the specification of extra tables to be
 }
 ```	 
 
-As can be seen on the code above, each auxExtractTable can have the **tableName** with represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, there is also **joiningType** which can be INNER, LEFT or RIGHT; the "doNotUseAsDatasource" allows the exclusion of the "auxExtractTable" from the data sources; by default, an "auxExtractTable" is also a datasource.  
+As can be seen on the code above, each auxExtractTable can have the **tableName** which represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, there is also **joiningType** which can be INNER, LEFT or RIGHT; the "doNotUseAsDatasource" allows the exclusion of the "auxExtractTable" from the data sources; by default, an "auxExtractTable" is also a datasource.  
 
 **NOTE** that you can add inner "auxExtractTable" within the main "auxExtractTable" which is also a list of auxiliary tables which allow you to add more conditions for extraction.
 
 
 #### The extra datasource table configuration
 
-The **"extraTableDataSource"** element, allows the specification of extra tables to be used as data source in addition to the main table. There relevant configuration info for extra table datasource is shown below    
+The **"extraTableDataSource"** element, allows the specification of extra tables to be used as data source in addition to the main table. The relevant configuration info for extra table datasource is shown below    
 ```
 {
    "srcConf":{
@@ -239,7 +240,7 @@ The **"extraTableDataSource"** element, allows the specification of extra tables
 }
 ```
 
-As can be seen on the code above, each extraTableDataSource can have the **tableName** with represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT. The **auxExtractTable** allows the inclusion of additional tables which can be joined with the extraTableDataSource for the purpose of inclusion of extra conditions. 
+As can be seen on the code above, each extraTableDataSource can have the **tableName** which represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT. The **auxExtractTable** allows the inclusion of additional tables which can be joined with the extraTableDataSource for the purpose of inclusion of extra conditions; this is also used as an extra datasource. (See [AuxExtractTable](#aux-extract-table)) 
 
 #### The extraQueryDataSource configuration
 
@@ -295,7 +296,7 @@ Each "extraObjectDataSource" is defined by
 - *objectLanguage* specify the language to be used to process the field generation. This can be omitted if there is no custom generator to be used
 - *fieldsValuesGenerator* a full class name for custom field generator.   
 
-For demo see [exploring-field-transformation](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#exploring-the-field-transformer) session.
+For demo see [exploring-objectdatasource-field-transformers](docs/demo/README.md#exploring-objectdatasource-field-transformers) session.
 
 #### The use of params whithin Src Configuration
 The Src configuration allows the use of params for querying. The params can be present on "joinExtraCondition", "extraConditionForExtract", "query", "tableName", etc. Parameters will be defined as identifiers preceded by "@". Eng. "location_id = @locationId". The parameters can appear in several context within queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1". (5) in "tableName" specification in any party configuration file, e.g {"tableName":"@mainSchema.@nameOfTable"}
@@ -305,6 +306,7 @@ The parameter value will be lookuped following below sequence:
 (2) in not present will be lookuped on properties of etl configurations file;
 (3) and finally on the current main src objects.  
 
+For demo see [the-power-of-parameters](docs/demo/README.md#the-power-of-parameters) session.
 
 ### The DstConf
 The "dstConf '' element is used to configure the destination object in an ETL operation. This element can be omitted if the dst fields can be automatically mapped from the available datasources;
@@ -404,7 +406,7 @@ This process performs physical remotion of records on the target database. The t
 
 
 ## Examples 
-For demo examples please check [this session](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#etl-quick-examples).
+For demo examples please check [this session](docs/demo/README.md#etl-quick-examples).
 
 # Running the application
 To run this application you should (1) get the jar file either from the releases or (2) cloning and compiling the [eptssync project](https://github.com/FriendsInGlobalHealth/openmrs-module-eptssync.git).
