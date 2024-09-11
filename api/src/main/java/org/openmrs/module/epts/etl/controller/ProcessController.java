@@ -703,7 +703,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	@Override
 	public int getWaitTimeToCheckStatus() {
-		return 30;
+		return this.getConfiguration().getWaitTimeToCheckStatus();
 	}
 	
 	@JsonIgnore

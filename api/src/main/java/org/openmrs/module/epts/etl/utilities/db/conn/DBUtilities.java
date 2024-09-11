@@ -1572,4 +1572,21 @@ public class DBUtilities {
 			System.out.println("\"" + query + "\"");
 		}
 	}
+	
+	public static void handlePostgresExceptionIssue(Connection conn) throws DBException {
+		if (DBUtilities.isPostgresDB(conn)) {
+			/*
+			 * PosgresSql fails when you continue to use a connection which previously encontred an exception
+			 * So we are commiting before try to use the connection again
+			 * 
+			 * NOTE that we are taking risk if some othe bug happen and the transaction need to be aborted
+			 */
+			try {
+				conn.commit();
+			}
+			catch (SQLException e1) {
+				throw new DBException(e1);
+			}
+		}
+	}
 }

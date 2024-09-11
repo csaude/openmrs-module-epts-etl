@@ -330,25 +330,25 @@ public class EtlLoadHelper {
 		List<EtlDatabaseObject> objects = getReadyOBjectsAsEtlDatabaseObject(dstConf);
 		
 		if (getActionType().isCreate()) {
-			logDebug("Starting the insertion of " + objects.size() + " on db...");
+			logDebug("Starting the insertion of " + objects.size() + " " + dstConf.getTableName() + " on db...");
 			
 			dstConf.setUseMysqlInsertIgnore(this.getEtlOperationConfig().useseMysqlInsertIgnore());
 			
 			this.loadAndAddResult(DatabaseObjectDAO.load(objects, dstConf, dstConn), dstConf);
 			
-			logDebug(objects.size() + " records inserted on db!");
+			logDebug(objects.size() + " " + dstConf.getTableName() + "  inserted on db!");
 		} else if (getActionType().isUpdate()) {
-			logDebug("Starting the upodate of " + objects.size() + " on db...");
+			logDebug("Starting the upodate of " + objects.size() + " " + dstConf.getTableName() + " on db...");
 			
 			this.loadAndAddResult(DatabaseObjectDAO.updateAll(objects, dstConf, dstConn), dstConf);
-			logDebug(objects.size() + " records updated from db!");
+			logDebug(objects.size() + " " + dstConf.getTableName() + " updated from db!");
 			
 		} else if (getActionType().isDelete()) {
-			logDebug("Starting the deletion of " + objects.size() + " on db...");
+			logDebug("Starting the deletion of " + objects.size() + " " + dstConf.getTableName() + " on db...");
 			
 			this.loadAndAddResult(DatabaseObjectDAO.deleteAll(objects, dstConf, dstConn), dstConf);
 			
-			logDebug(objects.size() + " records deleted on db!");
+			logDebug(objects.size() + " " + dstConf.getTableName() + "  deleted on db!");
 			
 		} else {
 			throw new ForbiddenOperationException("Unsupported operation " + getActionType() + " on ETL");

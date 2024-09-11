@@ -97,6 +97,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean finishOnNoRemainRecordsToProcess;
 	
+	private boolean alwaysCalculateStatistics;
+	
 	public EtlOperationConfig() {
 		this.dstType = EtlDstType.db;
 		this.actionType = EtlActionType.CREATE;
@@ -107,6 +109,18 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.maxSupportedProcessors = utilities.getAvailableProcessors();
 		this.fisicalCpuMultiplier = 1;
 		this.threadingMode = ThreadingMode.MULTI_THREAD;
+	}
+	
+	public boolean alwaysCalculateStatistics() {
+		return isAlwaysCalculateStatistics();
+	}
+	
+	public boolean isAlwaysCalculateStatistics() {
+		return alwaysCalculateStatistics;
+	}
+	
+	public void setAlwaysCalculateStatistics(boolean alwaysCalculateStatistics) {
+		this.alwaysCalculateStatistics = alwaysCalculateStatistics;
 	}
 	
 	public boolean isFinishOnNoRemainRecordsToProcess() {

@@ -797,7 +797,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	
 	@Override
 	public int getWaitTimeToCheckStatus() {
-		return 5;
+		return this.getEtlConfiguration().getWaitTimeToCheckStatus();
 	}
 	
 	@JsonIgnore

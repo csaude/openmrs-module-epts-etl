@@ -166,7 +166,7 @@ public class QueryParameter extends Field {
 		
 		if (beforeCompareClauseMatcher.find() || afterCompareClauseMatcher.find()) {
 			type = ParameterContextType.COMPARE_CLAUSE;
-		} else if (isSelectStarting(beforeParam) && (afterParam.contains(" from ") || dbmsType.isMysql())) {
+		} else if (isSelectStarting(beforeParam) && !beforeParam.contains(" from ") && (afterParam.contains(" from ") || dbmsType.isMysql())) {
 			type = ParameterContextType.SELECT_FIELD;
 		} else if (inClauseBeforeMatcher.matches() || inClauseAfterMatcher.matches()) {
 			type = ParameterContextType.IN_CLAUSE;

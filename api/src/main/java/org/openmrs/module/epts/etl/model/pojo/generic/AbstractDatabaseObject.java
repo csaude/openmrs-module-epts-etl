@@ -294,24 +294,15 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		catch (DBException e) {
 			
 			if (e.isDuplicatePrimaryOrUniqueKeyException()) {
-				
-				if (DBUtilities.isPostgresDB(conn)) {
-					/*
-					 * PosgresSql fails when you continue to use a connection which previously encontred an exception
-					 * So we are commiting before try to use the connection again
-					 * 
-					 * NOTE that we are taking risk if some othe bug happen and the transaction need to be aborted
-					 */
-					try {
-						conn.commit();
-					}
-					catch (SQLException e1) {
-						throw new DBException(e);
-					}
-				}
+				DBUtilities.handlePostgresExceptionIssue(conn);
 				
 				if (onConflict.makeYourDecision()) {
-					resolveConflictWithExistingRecord(tableConfiguration, e, conn);
+					try {
+						resolveConflictWithExistingRecord(tableConfiguration, e, conn);
+					}
+					catch (Exception e1) {
+						e1.printStackTrace();
+					}
 				}
 			} else
 				throw e;
@@ -321,7 +312,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	@Override
 	public void save(TableConfiguration tableConfiguration, Connection conn) throws DBException {
-		save(tableConfiguration, ConflictResolutionType.MAKE_YOUR_DECISION, conn);
+		save(tableConfiguration, tableConfiguration.onConflict(), conn);
 	}
 	
 	@Override

@@ -266,7 +266,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				maxRecId = tableOperationProgressInfo.getProgressMeter().getMaxRecordId();
 				
 				if (maxRecId == 0) {
-					logDebug("DETERMINING MAX RECORD FOR CONFIG" + getEtlItemConfiguration().getConfigCode());
+					logDebug("DETERMINING MAX RECORD FOR CONFIG '" + getEtlItemConfiguration().getConfigCode() + "'");
 					
 					maxRecId = getController().getMaxRecordId(this);
 					
@@ -315,6 +315,23 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				this.getSearchParams().setRelatedEngine(this);
 				
 				changeStatusToRunning();
+				
+				OpenConnection conn = null;
+				
+				try {
+					conn = openSrcConn();
+					
+					if (getRelatedOperationController().isResumable()) {
+						this.getTableOperationProgressInfo().save(conn);
+						
+						conn.markAsSuccessifullyTerminated();
+					}
+				}
+				finally {
+					if (conn != null) {
+						conn.finalizeConnection();
+					}
+				}
 				
 				calculateStatistics();
 				
@@ -388,6 +405,19 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		while (iManager.canGoNext() || !iManager.getCurrentLimits().isFullProcessed()) {
 			if (iManager.getCurrentLimits().isFullProcessed()) {
 				iManager.moveNext();
+			}
+			
+			EtlProgressMeter globalProgressMeter = this.getProgressMeter();
+			
+			if (globalProgressMeter.getRemain() == 0) {
+				if (getRelatedEtlOperationConfig().finishOnNoRemainRecordsToProcess()) {
+					logInfo("Finishing operation as there is no more record to process");
+					
+					return;
+				} else {
+					logDebug(
+					    "No remain records to process but still checking... consider setting finishOnNoRemainRecordsToProcess to true");
+				}
 			}
 			
 			for (IntervalExtremeRecord i : iManager.getCurrentLimits().getAllNotProcessed()) {
@@ -697,8 +727,17 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			int total = getProgressMeter().getTotal();
 			int processed = total - remaining;
 			
+			if (this.getRelatedEtlOperationConfig().alwaysCalculateStatistics()) {
+				if (total > 0) {
+					logDebug(
+					    "Recorded statistic found! But the statistics will be recalculated as per configuration alwaysCalculateStatistics set to true");
+					
+					total = 0;
+				}
+			}
+			
 			if (total == 0) {
-				logDebug("No recorded statistic. Loading from Database");
+				logDebug("Loading from Database...");
 				
 				total = getSearchParams().countAllRecords(conn);
 				remaining = getSearchParams().countNotProcessedRecords(conn);
@@ -720,8 +759,6 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		}
 		catch (DBException e) {
 			getRelatedOperationController().requestStopDueError(this, e);
-			
-			e.printStackTrace();
 			
 			throw new RuntimeException(e);
 		}
@@ -1024,7 +1061,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		log += "PROCESSED: " + globalProgressMeter.getDetailedProgress() + ", ";
 		log += "REMAINING: " + globalProgressMeter.getDetailedRemaining() + ",";
 		log += "\nTIME                 : " + utilities.ident(globalProgressMeter.getHumanReadbleTime(), 12);
-		log += "\nUSING THREADS		 : " + this.getThreadRecordIntervalsManager().getMaxSupportedProcessors();
+		log += "\nUSING THREADS: " + this.getThreadRecordIntervalsManager().getMaxSupportedProcessors();
 		log += "\n------------------";
 		
 		this.logInfo(log);

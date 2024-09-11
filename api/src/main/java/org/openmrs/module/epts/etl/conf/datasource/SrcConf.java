@@ -157,6 +157,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 				ds.loadOwnFieldsToEtlFields(this.getEtlFields(), false);
 			}
 		} else {
+			this.setEtlFields(new ArrayList<>());
+			
 			//Preserve the original names if there is only the main ds
 			this.loadOwnFieldsToEtlFields(this.getEtlFields(), true);
 		}

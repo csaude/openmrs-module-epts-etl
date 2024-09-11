@@ -132,6 +132,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 */
 	private String manualMapPrimaryKeyOnField;
 	
+	/**
+	 * The time in seconds to wait before check the process status again
+	 */
+	private int waitTimeToCheckStatus;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -142,6 +147,16 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.configuredTables = new ArrayList<>();
 		
 		this.busyTableAliasName = new ArrayList<>();
+		
+		this.waitTimeToCheckStatus = 5;
+	}
+	
+	public int getWaitTimeToCheckStatus() {
+		return waitTimeToCheckStatus;
+	}
+	
+	public void setWaitTimeToCheckStatus(int waitTimeToCheckStatus) {
+		this.waitTimeToCheckStatus = waitTimeToCheckStatus;
 	}
 	
 	public String getManualMapPrimaryKeyOnField() {

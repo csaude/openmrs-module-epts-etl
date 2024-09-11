@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class ResourceList {
@@ -41,11 +42,16 @@ public class ResourceList {
 			FileUtilities.createDirectory(destinationDirectory.getCanonicalPath());
 		
 		for (final File file : fileList) {
+			
+			
 			if (file.isDirectory()) {
 				recreateResources(file, new File(destinationDirectory.getCanonicalPath() + "/" + file.getName()));
 			} else {
 				copyResource(file, destinationDirectory);
 			}
+			
+			TimeCountDown.sleep(5);
+			
 		}
 	}
 	
