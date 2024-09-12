@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.conf.types.EtlActionType;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.types.EtlProcessingModeType;
+import org.openmrs.module.epts.etl.conf.types.EtlTotalRecordsCountStrategy;
 import org.openmrs.module.epts.etl.conf.types.ThreadingMode;
 import org.openmrs.module.epts.etl.consolitation.controller.DatabaseIntegrityConsolidationController;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -97,7 +98,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean finishOnNoRemainRecordsToProcess;
 	
-	private boolean alwaysCalculateStatistics;
+	private EtlTotalRecordsCountStrategy totalCountStrategy;
 	
 	public EtlOperationConfig() {
 		this.dstType = EtlDstType.db;
@@ -109,18 +110,19 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.maxSupportedProcessors = utilities.getAvailableProcessors();
 		this.fisicalCpuMultiplier = 1;
 		this.threadingMode = ThreadingMode.MULTI_THREAD;
+		this.totalCountStrategy = EtlTotalRecordsCountStrategy.COUNT_ONCE;
 	}
 	
-	public boolean alwaysCalculateStatistics() {
-		return isAlwaysCalculateStatistics();
+	public EtlTotalRecordsCountStrategy getTotalCountStrategy() {
+		return totalCountStrategy;
 	}
 	
-	public boolean isAlwaysCalculateStatistics() {
-		return alwaysCalculateStatistics;
+	public void setTotalCountStrategy(EtlTotalRecordsCountStrategy totalCountStrategy) {
+		this.totalCountStrategy = totalCountStrategy;
 	}
 	
-	public void setAlwaysCalculateStatistics(boolean alwaysCalculateStatistics) {
-		this.alwaysCalculateStatistics = alwaysCalculateStatistics;
+	public EtlTotalRecordsCountStrategy totalCountStrategy() {
+		return this.getTotalCountStrategy();
 	}
 	
 	public boolean isFinishOnNoRemainRecordsToProcess() {

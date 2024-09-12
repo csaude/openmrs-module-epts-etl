@@ -727,19 +727,24 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			int total = getProgressMeter().getTotal();
 			int processed = total - remaining;
 			
-			if (this.getRelatedEtlOperationConfig().alwaysCalculateStatistics()) {
+			if (this.getRelatedEtlOperationConfig().getTotalCountStrategy().isCountAlways()) {
 				if (total > 0) {
 					logDebug(
-					    "Recorded statistic found! But the statistics will be recalculated as per configuration alwaysCalculateStatistics set to true");
+					    "Recorded statistic found! But the statistics will be recalculated as per configuration totalCountStrategy set to COUNT_ALWAYS");
 					
 					total = 0;
 				}
 			}
 			
 			if (total == 0) {
-				logDebug("Loading from Database...");
+				if (this.getRelatedEtlOperationConfig().getTotalCountStrategy().isUseMaxRecordIdAsCount()) {
+					total = (int) this.getProgressMeter().getMaxRecordId();
+				} else {
+					logDebug("Loading from Database...");
+					
+					total = getSearchParams().countAllRecords(conn);
+				}
 				
-				total = getSearchParams().countAllRecords(conn);
 				remaining = getSearchParams().countNotProcessedRecords(conn);
 				processed = total - remaining;
 			}
