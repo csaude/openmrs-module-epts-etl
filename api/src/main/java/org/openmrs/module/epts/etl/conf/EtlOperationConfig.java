@@ -98,6 +98,9 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	
 	private boolean finishOnNoRemainRecordsToProcess;
 	
+	/**
+	 * The strategy to be used to calculate the total of records to be processed.
+	 */
 	private EtlTotalRecordsCountStrategy totalCountStrategy;
 	
 	public EtlOperationConfig() {

@@ -721,7 +721,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		OpenConnection conn = getController().openSrcConnection();
 		
 		try {
-			logInfo("CALCULATING STATISTICS...");
+			logInfo("CALCULATING STATISTICS! Using '"
+			        + this.getRelatedEtlOperationConfig().getTotalCountStrategy().toString() + "' strategy...");
 			
 			int remaining = getProgressMeter().getRemain();
 			int total = getProgressMeter().getTotal();
@@ -739,13 +740,14 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			if (total == 0) {
 				if (this.getRelatedEtlOperationConfig().getTotalCountStrategy().isUseMaxRecordIdAsCount()) {
 					total = (int) this.getProgressMeter().getMaxRecordId();
+					remaining = total;
 				} else {
 					logDebug("Loading from Database...");
 					
 					total = getSearchParams().countAllRecords(conn);
+					remaining = getSearchParams().countNotProcessedRecords(conn);
 				}
 				
-				remaining = getSearchParams().countNotProcessedRecords(conn);
 				processed = total - remaining;
 			}
 			
