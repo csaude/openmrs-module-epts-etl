@@ -44,13 +44,27 @@ public class FieldsMapping implements TransformableField {
 	
 	private boolean dataTypeLoaded;
 	
+	private List<String> possibleSrc;
+	
 	public FieldsMapping() {
+		this.possibleSrc = new ArrayList<>(5);
 	}
 	
 	public FieldsMapping(String srcField, String dataSourceName, String destField) {
+		this();
+		
 		this.srcField = srcField;
 		this.dataSourceName = dataSourceName;
 		this.dstField = destField;
+		this.possibleSrc.add(dataSourceName);
+	}
+	
+	public List<String> getPossibleSrc() {
+		return possibleSrc;
+	}
+	
+	public void setPossibleSrc(List<String> possibleSrc) {
+		this.possibleSrc = possibleSrc;
 	}
 	
 	public boolean isDataTypeLoaded() {
@@ -143,6 +157,12 @@ public class FieldsMapping implements TransformableField {
 	
 	public void setDataSourceName(String dataSourceName) {
 		this.dataSourceName = dataSourceName;
+		
+		if (this.getPossibleSrc().size() == 0) {
+			this.getPossibleSrc().add(dataSourceName);
+		} else if (this.getPossibleSrc().size() == 1) {
+			this.getPossibleSrc().set(0, dataSourceName);
+		}
 	}
 	
 	@Override

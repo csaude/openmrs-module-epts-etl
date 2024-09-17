@@ -387,6 +387,8 @@ public class DstConf extends AbstractTableConfiguration {
 					qtyOccurences++;
 					
 					if (qtyOccurences > 1) {
+						fm.getPossibleSrc().add(notPref.getAlias());
+						
 						break;
 					} else {
 						fm.setDataSourceName(notPref.getAlias());
@@ -621,7 +623,7 @@ public class DstConf extends AbstractTableConfiguration {
 	}
 	
 	private void determinePrefferredDataSources() {
-		if (this.prefferredDataSource == null) {
+		if (utilities.arrayHasNoElement(this.prefferredDataSource)) {
 			String prefferredDs = null;
 			
 			for (EtlDataSource tDs : this.allAvaliableDataSource) {
@@ -641,23 +643,20 @@ public class DstConf extends AbstractTableConfiguration {
 					this.prefferredDataSource.add(getSrcConf().getTableName());
 				}
 			} else {
-				this.prefferredDataSource.add(getSrcConf().getTableName());
+				this.prefferredDataSource.add(getSrcConf().getAlias());
 			}
 		}
 		
 		this.allNotPrefferredDataSource = new ArrayList<>();
 		this.allPrefferredDataSource = new ArrayList<>();
 		
-		for (String dsName : this.prefferredDataSource) {
-			for (EtlDataSource ds : allAvaliableDataSource) {
-				if (dsName.equals(ds.getName())) {
-					allPrefferredDataSource.add(ds);
-				} else {
-					allNotPrefferredDataSource.add(ds);
-				}
+		for (EtlDataSource ds : allAvaliableDataSource) {
+			if (this.getPrefferredDataSource().contains(ds.getName())) {
+				allPrefferredDataSource.add(ds);
+			} else {
+				allNotPrefferredDataSource.add(ds);
 			}
 		}
-		
 	}
 	
 	private void addToGeneratedJoinFields(List<FieldsMapping> toAdd) {

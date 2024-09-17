@@ -23,7 +23,7 @@ public class FieldsMappingIssues {
 		List<String> extracted = new ArrayList<>();
 		
 		for (FieldsMapping map : this.getAvaliableInMultiDataSources()) {
-			extracted.add(map.getDstField());
+			extracted.add(map.getDstField() + ", srcs: [" + map.getPossibleSrc().toString() + "]");
 		}
 		
 		return extracted;
