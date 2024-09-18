@@ -622,13 +622,17 @@ public class DstConf extends AbstractTableConfiguration {
 		}
 	}
 	
+	private List<EtlDataSource> getAllAvaliableDataSource() {
+		return allAvaliableDataSource;
+	}
+	
 	private void determinePrefferredDataSources() {
-		if (utilities.arrayHasNoElement(this.prefferredDataSource)) {
+		if (utilities.arrayHasNoElement(this.getPrefferredDataSource())) {
 			String prefferredDs = null;
 			
-			for (EtlDataSource tDs : this.allAvaliableDataSource) {
+			for (EtlDataSource tDs : this.getAllAvaliableDataSource()) {
 				if (tDs.getName().equals(this.getTableName())) {
-					prefferredDs = this.getTableName();
+					prefferredDs = tDs.getName();
 					
 					break;
 				}
@@ -638,20 +642,46 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			if (prefferredDs != null) {
 				this.prefferredDataSource.add(prefferredDs);
-				
-				if (!prefferredDs.equals(getSrcConf().getTableName())) {
-					this.prefferredDataSource.add(getSrcConf().getTableName());
-				}
-			} else {
-				this.prefferredDataSource.add(getSrcConf().getAlias());
 			}
+			
+			if (!this.prefferredDataSource.contains(getSrcConf().getName())) {
+				this.prefferredDataSource.add(getSrcConf().getName());
+			}
+		}
+		
+		//Change the ds name to aliases
+		if (utilities.arrayHasElement(this.getPrefferredDataSource())) {
+			List<String> aliasedDs = new ArrayList<>(this.getPrefferredDataSource().size());
+			
+			for (String originalDsName : this.getPrefferredDataSource()) {
+				int occur = 0;
+				
+				String aliasedName = originalDsName;
+				
+				for (EtlDataSource ds : this.getAllAvaliableDataSource()) {
+					if (ds.getName().equals(originalDsName)) {
+						occur++;
+						
+						if (occur > 1) {
+							throw new ForbiddenOperationException("The preferred datasource '" + ds.getName()
+							        + "' occurs more than once. Please use alias instead of name or rename the datasource name");
+						}
+						
+						aliasedName = ds.getAlias();
+					}
+				}
+				
+				aliasedDs.add(aliasedName);
+			}
+			
 		}
 		
 		this.allNotPrefferredDataSource = new ArrayList<>();
 		this.allPrefferredDataSource = new ArrayList<>();
 		
 		for (EtlDataSource ds : allAvaliableDataSource) {
-			if (this.getPrefferredDataSource().contains(ds.getName())) {
+			if (this.getPrefferredDataSource().contains(ds.getName())
+			        || this.getPrefferredDataSource().contains(ds.getAlias())) {
 				allPrefferredDataSource.add(ds);
 			} else {
 				allNotPrefferredDataSource.add(ds);

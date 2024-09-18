@@ -31,7 +31,7 @@ public class EtlField extends Field {
 		this.srcDataSource = srcDataSource;
 		
 		this.setName(preserveOriginalName ? this.getSrcField().getName()
-		        : this.getSrcDataSource().getName() + "_" + this.getSrcField().getName());
+		        : this.getSrcDataSource().getAlias() + "_" + this.getSrcField().getName());
 	}
 	
 	public static EtlField fastCreate(String srcFieldName, EtlDataSource srcDataSource, boolean preserveOriginalName) {
@@ -74,7 +74,7 @@ public class EtlField extends Field {
 	
 	public static List<EtlField> converteFromDataSourceFields(EtlDataSource dataSource, boolean preserveOriginalName) {
 		if (!dataSource.hasFields())
-			throw new ForbiddenOperationException("The datasource " + dataSource.getName() + " has no fields!");
+			throw new ForbiddenOperationException("The datasource " + dataSource.getAlias() + " has no fields!");
 		
 		List<EtlField> fields = new ArrayList<>(dataSource.getFields().size());
 		
@@ -111,7 +111,7 @@ public class EtlField extends Field {
 			if (utilities.stringHasValue(this.getDataSource())) {
 				
 				for (EtlDataSource ds : avaliableDs) {
-					if (ds.getName().equals(this.getDataSource())) {
+					if (ds.getAlias().equals(this.getDataSource())) {
 						this.setSrcDataSource(ds);
 						
 						break;
@@ -139,7 +139,7 @@ public class EtlField extends Field {
 				        + srcConf.getParentConf().getConfigCode() + "!!!");
 			}
 		} else {
-			this.setDataSource(this.getSrcDataSource().getName());
+			this.setDataSource(this.getSrcDataSource().getAlias());
 		}
 		
 		this.setSrcField(this.getSrcDataSource().getField(this.getName()));

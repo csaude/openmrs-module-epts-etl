@@ -137,6 +137,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 */
 	private int waitTimeToCheckStatus;
 	
+	/**
+	 * If true, the relationship information will be ignored, meaning that the parent info in the
+	 * src will be the very same in destination. This will make the process fail in some DBMS which
+	 * do not tolerate inconsistency in case a consistency is found NOTE that, currently this is
+	 * only supported on mysql dbms
+	 */
+	private boolean doNotResolveRelationship;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -149,6 +157,18 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.busyTableAliasName = new ArrayList<>();
 		
 		this.waitTimeToCheckStatus = 5;
+	}
+	
+	public boolean isDoNotResolveRelationship() {
+		return doNotResolveRelationship;
+	}
+	
+	public void setDoNotResolveRelationship(boolean doNotResolveRelationship) {
+		this.doNotResolveRelationship = doNotResolveRelationship;
+	}
+	
+	public boolean doNotResolveRelationship() {
+		return isDoNotResolveRelationship();
 	}
 	
 	public int getWaitTimeToCheckStatus() {
@@ -1389,6 +1409,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		if (hasDstConnInfo()) {
 			dstConn = getDstConnInfo().openConnection();
 			
+			if (this.doNotResolveRelationship()) {
+				DBUtilities.disableForegnKeyChecks(dstConn);
+			}
+			
 		} else {
 			throw new ForbiddenOperationException("No dst conn config defined!");
 		}
@@ -1397,6 +1421,12 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public OpenConnection openSrcConn() throws DBException, ForbiddenOperationException {
-		return getSrcConnInfo().openConnection();
+		OpenConnection conn = getSrcConnInfo().openConnection();
+		
+		if (this.doNotResolveRelationship()) {
+			DBUtilities.disableForegnKeyChecks(conn);
+		}
+		
+		return conn;
 	}
 }

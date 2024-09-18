@@ -184,9 +184,11 @@ public class PreparedQuery {
 		setMainQuery(this.getQuery());
 		
 		if (hasSubQueries()) {
+			logTrace("Masking found Subqueries");
 			for (String sQuery : this.getSubqueries()) {
 				this.setMainQuery(utilities.maskToken(this.getMainQuery(), sQuery, '#'));
 			}
+			logTrace("Masking done");
 		}
 	}
 	

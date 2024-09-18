@@ -40,17 +40,20 @@ public class ResourceList {
 		
 		if (!destinationDirectory.exists())
 			FileUtilities.createDirectory(destinationDirectory.getCanonicalPath());
-		
+		int i = 0;
 		for (final File file : fileList) {
-			
 			
 			if (file.isDirectory()) {
 				recreateResources(file, new File(destinationDirectory.getCanonicalPath() + "/" + file.getName()));
 			} else {
+				
+				System.out
+				        .println("Recreating file " + (++i) + "/" + fileList.length + " [" + file.getAbsolutePath() + "']");
+				
 				copyResource(file, destinationDirectory);
 			}
 			
-			TimeCountDown.sleep(5);
+			TimeCountDown.sleep(10);
 			
 		}
 	}
@@ -62,7 +65,8 @@ public class ResourceList {
 	}
 	
 	public static void main(final String[] args) throws IOException {
-		ResourceList.recreateResources(new File("D:\\MIDIA\\Audio & Music\\New\\2024\\Afro_PlayList_m3u"), new File("D:\\MIDIA\\Audio & Music\\New\\2024\\Afro_PlayList_m3u\\Afro"));
+		ResourceList.recreateResources(new File("D:\\MIDIA\\Audio & Music\\New\\2024\\Kizombas\\Kizomba_List_PlayList_m3u"),
+		    new File("D:\\MIDIA\\Audio & Music\\New\\2024\\Kizombas\\Ordered"));
 	}
-
+	
 }

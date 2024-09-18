@@ -678,191 +678,197 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default void loadParents(Connection conn) throws DBException {
-		synchronized (this) {
+		if (!getRelatedEtlConf().doNotResolveRelationship()) {
 			
-			try {
-				if (isParentsLoaded())
-					return;
+			synchronized (this) {
 				
-				logDebug("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
-				
-				ResultSet foreignKeyRS = null;
-				
-				int count = countParents(conn);
-				
-				//First load all necessary info on configured parents
-				
-				if (utilities.arrayHasElement(this.getParents())) {
-					for (ParentTable p : this.getParents()) {
-						
-						p.setChildTableConf(this);
-						
-						if (p.getRefMapping() != null) {
+				try {
+					if (isParentsLoaded())
+						return;
+					
+					logDebug("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
+					
+					ResultSet foreignKeyRS = null;
+					
+					int count = countParents(conn);
+					
+					//First load all necessary info on configured parents
+					
+					if (utilities.arrayHasElement(this.getParents())) {
+						for (ParentTable p : this.getParents()) {
 							
-							for (RefMapping map : p.getRefMapping()) {
-								map.setParentTabConf((ParentTableImpl) p);
+							p.setChildTableConf(this);
+							
+							if (p.getRefMapping() != null) {
 								
-								Field field = utilities.findOnArray(this.getFields(), new Field(map.getChildFieldName()));
-								map.getChildField().setDataType(field.getDataType());
+								for (RefMapping map : p.getRefMapping()) {
+									map.setParentTabConf((ParentTableImpl) p);
+									
+									Field field = utilities.findOnArray(this.getFields(),
+									    new Field(map.getChildFieldName()));
+									map.getChildField().setDataType(field.getDataType());
+								}
 							}
 						}
 					}
-				}
-				
-				if (count == 0) {
-					logDebug("NO PARENT FOUND FOR TABLE '" + getTableName() + "'");
-				} else
-					try {
-						logDebug("DISCOVERED '" + count + "' PARENTS FOR TABLE '" + getTableName() + "'");
-						
-						foreignKeyRS = conn.getMetaData().getImportedKeys(getCatalog(conn), getSchema(), getTableName());
-						
-						while (foreignKeyRS.next()) {
+					
+					if (count == 0) {
+						logDebug("NO PARENT FOUND FOR TABLE '" + getTableName() + "'");
+					} else
+						try {
+							logDebug("DISCOVERED '" + count + "' PARENTS FOR TABLE '" + getTableName() + "'");
 							
-							logDebug("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '"
-							        + getTableName() + "'");
+							foreignKeyRS = conn.getMetaData().getImportedKeys(getCatalog(conn), getSchema(), getTableName());
 							
-							String refCode = foreignKeyRS.getString("FK_NAME");
-							
-							String childFieldName = foreignKeyRS.getString("FKCOLUMN_NAME");
-							
-							String parentFieldName = foreignKeyRS.getString("PKCOLUMN_NAME");
-							String parentTableName = foreignKeyRS.getString("PKTABLE_NAME");
-							
-							ParentTableImpl parentTabConf = ParentTableImpl.init(parentTableName, refCode);
-							
-							parentTabConf.setParentConf(this.getParentConf());
-							parentTabConf.setChildTableConf(this);
-							parentTabConf.setRelatedEtlConfig(getRelatedEtlConf());
-							parentTabConf.setSchema(foreignKeyRS.getString("PKTABLE_SCHEM"));
-							
-							if (!parentTabConf.hasSchema()) {
-								parentTabConf.setSchema(foreignKeyRS.getString("PKTABLE_CAT"));
+							while (foreignKeyRS.next()) {
+								
+								logDebug("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '"
+								        + getTableName() + "'");
+								
+								String refCode = foreignKeyRS.getString("FK_NAME");
+								
+								String childFieldName = foreignKeyRS.getString("FKCOLUMN_NAME");
+								
+								String parentFieldName = foreignKeyRS.getString("PKCOLUMN_NAME");
+								String parentTableName = foreignKeyRS.getString("PKTABLE_NAME");
+								
+								ParentTableImpl parentTabConf = ParentTableImpl.init(parentTableName, refCode);
+								
+								parentTabConf.setParentConf(this.getParentConf());
+								parentTabConf.setChildTableConf(this);
+								parentTabConf.setRelatedEtlConfig(getRelatedEtlConf());
+								parentTabConf.setSchema(foreignKeyRS.getString("PKTABLE_SCHEM"));
+								
+								if (!parentTabConf.hasSchema()) {
+									parentTabConf.setSchema(foreignKeyRS.getString("PKTABLE_CAT"));
+								}
+								
+								addParentMappingInfo(refCode, childFieldName, parentTabConf, parentFieldName, conn);
+								
+								logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '"
+								        + getTableName() + "' CONFIGURED");
 							}
 							
-							addParentMappingInfo(refCode, childFieldName, parentTabConf, parentFieldName, conn);
-							
-							logDebug("PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '" + getTableName()
-							        + "' CONFIGURED");
-						}
-						
-						//Copy additional configured Info
-						if (this.hasParentRefInfo() && this.hasParents()) {
-							
-							for (ParentTable autoLoadedRefInfo : this.getParentRefInfo()) {
+							//Copy additional configured Info
+							if (this.hasParentRefInfo() && this.hasParents()) {
 								
-								for (ParentTable manualConfiguredRefInfo : this.getParents()) {
+								for (ParentTable autoLoadedRefInfo : this.getParentRefInfo()) {
 									
-									ParentTable mixedConfiguredRef = manualConfiguredRefInfo;
-									
-									if (autoLoadedRefInfo.getTableName().equals(manualConfiguredRefInfo.getTableName())) {
+									for (ParentTable manualConfiguredRefInfo : this.getParents()) {
 										
-										if (!manualConfiguredRefInfo.hasMapping()) {
-											if (autoLoadedRefInfo.isCompositeMapping()) {
-												throw new ForbiddenOperationException(
-												        "You must manual configure the ref info for parent "
-												                + manualConfiguredRefInfo.getTableName() + " on table "
-												                + this.getTableName()
-												                + ". Optionaly you can remove the manual parent specification");
-											}
-											
-											//create default refInfo to force the copy of shared ref info
-											
-											mixedConfiguredRef = ParentTableImpl.init(manualConfiguredRefInfo.getTableName(),
-											    "");
-											
-											mixedConfiguredRef
-											        .setConditionalFields(manualConfiguredRefInfo.getConditionalFields());
-											
-											mixedConfiguredRef.setChildTableConf(this);
-											
-											mixedConfiguredRef.setRefMapping(autoLoadedRefInfo.cloneAllMapping());
-											
-											mixedConfiguredRef.getSimpleRefMapping().setDefaultValueDueInconsistency(
-											    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
-											mixedConfiguredRef.getSimpleRefMapping().setSetNullDueInconsistency(
-											    manualConfiguredRefInfo.isSetNullDueInconsistency());
-											
-											mixedConfiguredRef.setDefaultValueDueInconsistency(
-											    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
-											mixedConfiguredRef.setSetNullDueInconsistency(
-											    manualConfiguredRefInfo.isSetNullDueInconsistency());
-											
-										}
+										ParentTable mixedConfiguredRef = manualConfiguredRefInfo;
 										
-										if (autoLoadedRefInfo.equals(mixedConfiguredRef)) {
-											autoLoadedRefInfo
-											        .setConditionalFields(mixedConfiguredRef.getConditionalFields());
+										if (autoLoadedRefInfo.getTableName()
+										        .equals(manualConfiguredRefInfo.getTableName())) {
 											
-											autoLoadedRefInfo.setDefaultValueDueInconsistency(
-											    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
-											autoLoadedRefInfo.setSetNullDueInconsistency(
-											    manualConfiguredRefInfo.isSetNullDueInconsistency());
-											
-											for (RefMapping map : autoLoadedRefInfo.getRefMapping()) {
-												RefMapping configuredMap = mixedConfiguredRef
-												        .findRefMapping(map.getChildFieldName(), map.getParentFieldName());
-												
-												if (configuredMap == null) {
-													throw new ForbiddenOperationException("The mapping ["
-													        + map.getChildFieldName() + " : " + map.getParentFieldName()
-													        + "] was not found on configured mapping!");
+											if (!manualConfiguredRefInfo.hasMapping()) {
+												if (autoLoadedRefInfo.isCompositeMapping()) {
+													throw new ForbiddenOperationException(
+													        "You must manual configure the ref info for parent "
+													                + manualConfiguredRefInfo.getTableName() + " on table "
+													                + this.getTableName()
+													                + ". Optionaly you can remove the manual parent specification");
 												}
 												
-												map.setIgnorable(
-												    map.isIgnorable() ? configuredMap.isIgnorable() : map.isIgnorable());
-												map.setDefaultValueDueInconsistency(
-												    configuredMap.getDefaultValueDueInconsistency());
-												map.setSetNullDueInconsistency(configuredMap.isSetNullDueInconsistency());
+												//create default refInfo to force the copy of shared ref info
+												
+												mixedConfiguredRef = ParentTableImpl
+												        .init(manualConfiguredRefInfo.getTableName(), "");
+												
+												mixedConfiguredRef.setConditionalFields(
+												    manualConfiguredRefInfo.getConditionalFields());
+												
+												mixedConfiguredRef.setChildTableConf(this);
+												
+												mixedConfiguredRef.setRefMapping(autoLoadedRefInfo.cloneAllMapping());
+												
+												mixedConfiguredRef.getSimpleRefMapping().setDefaultValueDueInconsistency(
+												    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
+												mixedConfiguredRef.getSimpleRefMapping().setSetNullDueInconsistency(
+												    manualConfiguredRefInfo.isSetNullDueInconsistency());
+												
+												mixedConfiguredRef.setDefaultValueDueInconsistency(
+												    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
+												mixedConfiguredRef.setSetNullDueInconsistency(
+												    manualConfiguredRefInfo.isSetNullDueInconsistency());
+												
+											}
+											
+											if (autoLoadedRefInfo.equals(mixedConfiguredRef)) {
+												autoLoadedRefInfo
+												        .setConditionalFields(mixedConfiguredRef.getConditionalFields());
+												
+												autoLoadedRefInfo.setDefaultValueDueInconsistency(
+												    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
+												autoLoadedRefInfo.setSetNullDueInconsistency(
+												    manualConfiguredRefInfo.isSetNullDueInconsistency());
+												
+												for (RefMapping map : autoLoadedRefInfo.getRefMapping()) {
+													RefMapping configuredMap = mixedConfiguredRef.findRefMapping(
+													    map.getChildFieldName(), map.getParentFieldName());
+													
+													if (configuredMap == null) {
+														throw new ForbiddenOperationException("The mapping ["
+														        + map.getChildFieldName() + " : " + map.getParentFieldName()
+														        + "] was not found on configured mapping!");
+													}
+													
+													map.setIgnorable(
+													    map.isIgnorable() ? configuredMap.isIgnorable() : map.isIgnorable());
+													map.setDefaultValueDueInconsistency(
+													    configuredMap.getDefaultValueDueInconsistency());
+													map.setSetNullDueInconsistency(
+													    configuredMap.isSetNullDueInconsistency());
+												}
 											}
 										}
 									}
 								}
 							}
-						}
-						//Check if there is a configured parent but not defined on the db schema
-						
-						if (utilities.arrayHasElement(this.getParents())) {
+							//Check if there is a configured parent but not defined on the db schema
 							
-							for (ParentTable configuredParent : this.getParents()) {
-								if (configuredParent.hasMapping()) {
-									if (!this.getParentRefInfo().contains(configuredParent)) {
-										configuredParent.setManualyConfigured(true);
-										
-										this.getParentRefInfo().add(configuredParent);
+							if (utilities.arrayHasElement(this.getParents())) {
+								
+								for (ParentTable configuredParent : this.getParents()) {
+									if (configuredParent.hasMapping()) {
+										if (!this.getParentRefInfo().contains(configuredParent)) {
+											configuredParent.setManualyConfigured(true);
+											
+											this.getParentRefInfo().add(configuredParent);
+										}
 									}
 								}
 							}
-						}
-						
-						if (hasParentRefInfo()) {
-							//Find and exclude duplicated ref
 							
-							List<ParentTable> cleanList = new ArrayList<>();
-							
-							for (ParentTable ref : this.getParentRefInfo()) {
-								if (!cleanList.contains(ref)) {
-									cleanList.add(ref);
+							if (hasParentRefInfo()) {
+								//Find and exclude duplicated ref
+								
+								List<ParentTable> cleanList = new ArrayList<>();
+								
+								for (ParentTable ref : this.getParentRefInfo()) {
+									if (!cleanList.contains(ref)) {
+										cleanList.add(ref);
+									}
 								}
+								
+								this.setParentRefInfo(cleanList);
 							}
 							
-							this.setParentRefInfo(cleanList);
+							logDebug("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
 						}
+						finally
 						
-						logDebug("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
-					}
-					finally
-					
-					{
-						if (foreignKeyRS != null) {
-							foreignKeyRS.close();
+						{
+							if (foreignKeyRS != null) {
+								foreignKeyRS.close();
+							}
 						}
-					}
-				
-				setParentsLoaded(true);
-			}
-			catch (SQLException e) {
-				throw new DBException(e);
+					
+					setParentsLoaded(true);
+				}
+				catch (SQLException e) {
+					throw new DBException(e);
+				}
 			}
 		}
 	}

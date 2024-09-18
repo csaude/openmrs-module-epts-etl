@@ -455,7 +455,7 @@ public class DBUtilities {
 				st.close();
 				
 			} else
-				throw new RuntimeException("Database not supported!");
+				throw new RuntimeException("Database does not support disable FOREIGN_KEY_CHECKS!");
 		}
 		catch (SQLException e) {
 			e.printStackTrace();

@@ -347,7 +347,7 @@ public class AttDefinedElements {
 	}
 	
 	public static boolean isString(String attType) {
-		return utilities.isStringIn(attType, "java.lang.String", "String", "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT");
+		return utilities.isStringIn(attType, "java.lang.String", "String", "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT", "LONGTEXT");
 	}
 	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,
@@ -414,7 +414,7 @@ public class AttDefinedElements {
 			return "Double";
 		if (utilities.isStringIn(databaseType, "FLOAT", "NUMERIC"))
 			return "Float";
-		if (utilities.isStringIn(databaseType, "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT"))
+		if (utilities.isStringIn(databaseType, "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT", "LONGTEXT"))
 			return "String";
 		if (utilities.isStringIn(databaseType, "MEDIUMBLOB", "VARBINARY", "BLOB", "LONGBLOB"))
 			return "byte[]";

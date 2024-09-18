@@ -3,7 +3,8 @@ package org.openmrs.module.epts.etl.conf.types;
 public enum JoinType {
 	
 	INNER,
-	LEFT;
+	LEFT,
+	RIGHT;
 	
 	public boolean isLeftJoin() {
 		return this.equals(LEFT);
@@ -11,5 +12,9 @@ public enum JoinType {
 	
 	public boolean isInnerJoin() {
 		return this.equals(INNER);
+	}
+	
+	public boolean isRightJoin() {
+		return this.equals(RIGHT);
 	}
 }

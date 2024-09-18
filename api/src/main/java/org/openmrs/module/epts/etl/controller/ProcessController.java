@@ -758,15 +758,27 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	public OpenConnection openConnection() throws DBException {
-		return getDefaultConnInfo().openConnection();
+		OpenConnection conn = getDefaultConnInfo().openConnection();
+		
+		if (getConfiguration().doNotResolveRelationship()) {
+			DBUtilities.disableForegnKeyChecks(conn);
+		}
+		
+		return conn;
 	}
 	
 	public OpenConnection tryToOpenDstConn() throws DBException {
+		OpenConnection conn = null;
+		
 		if (getConfiguration().hasDstConnInfo()) {
-			return getDstConnInfo().openConnection();
+			conn = getDstConnInfo().openConnection();
+			
+			if (getConfiguration().doNotResolveRelationship()) {
+				DBUtilities.disableForegnKeyChecks(conn);
+			}
 		}
 		
-		return null;
+		return conn;
 	}
 	
 	private void createStageSchema() throws DBException {

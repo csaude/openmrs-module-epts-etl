@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
+import org.openmrs.module.epts.etl.conf.datasource.DynamicEtlItemSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -20,6 +21,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private String configCode;
+	
+	private DynamicEtlItemSrcConf dynamicEtlItemSrcConf;
 	
 	private SrcConf srcConf;
 	
@@ -41,6 +44,14 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	private boolean createDstTableIfNotExists;
 	
 	public EtlItemConfiguration() {
+	}
+	
+	public DynamicEtlItemSrcConf getSrcOfSrc() {
+		return dynamicEtlItemSrcConf;
+	}
+	
+	public void setSrcOfSrc(DynamicEtlItemSrcConf srcOfSrc) {
+		this.dynamicEtlItemSrcConf = srcOfSrc;
 	}
 	
 	public void setCreateDstTableIfNotExists(boolean createDstTableIfNotExists) {
