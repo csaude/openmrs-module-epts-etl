@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -103,6 +104,16 @@ public class EtlLoadHelperRecord {
 		        : "NONE";
 		
 		return determineGlobalStatus().toString() + ": For " + str;
+	}
+	
+	public ConflictResolutionType getGlobalConflictResolutionType() {
+		for (EtlDatabaseObject obj : this.getDstRecords()) {
+			if (!obj.getConflictResolutionType().none()) {
+				return obj.getConflictResolutionType();
+			}
+		}
+		
+		return ConflictResolutionType.NONE;
 	}
 	
 }

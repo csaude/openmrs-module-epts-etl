@@ -66,7 +66,7 @@ public class ResourceList {
 	
 	public static void main(final String[] args) throws IOException {
 		ResourceList.recreateResources(new File("D:\\MIDIA\\Audio & Music\\New\\2024\\Kizombas\\Kizomba_List_PlayList_m3u"),
-		    new File("D:\\MIDIA\\Audio & Music\\New\\2024\\Kizombas\\Ordered"));
+		    new File("F:\\01_01_Now\\Kizomba"));
 	}
 	
 }

@@ -56,6 +56,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private List<EtlItemConfiguration> etlItemConfiguration;
 	
+	private EtlItemConfiguration testingEtlItemConfiguration;
+	
 	private DBConnectionInfo srcConnInfo;
 	
 	private DBConnectionInfo dstConnInfo;
@@ -157,6 +159,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.busyTableAliasName = new ArrayList<>();
 		
 		this.waitTimeToCheckStatus = 5;
+	}
+	
+	public void setTestingEtlItemConfiguration(EtlItemConfiguration testingEtlItemConfiguration) {
+		this.testingEtlItemConfiguration = testingEtlItemConfiguration;
+	}
+	
+	public EtlItemConfiguration getTestingEtlItemConfiguration() {
+		return testingEtlItemConfiguration;
 	}
 	
 	public boolean isDoNotResolveRelationship() {
@@ -620,80 +630,93 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				}
 			}
 			
-			for (EtlItemConfiguration tc : this.getEtlItemConfiguration()) {
-				tc.setRelatedEtlConfig(this);
-				tc.getSrcConf().setParentConf(tc);
-				
-				if (!tc.getSrcConf().hasDstType()) {
-					//We start with the first operation dst type. Eventual this should be changed if the nested operation has different dstType
-					tc.getSrcConf().setDstType(this.getOperations().get(0).getDstType());
-				}
-				
-				if (tc.getSrcConf().hasAlias()) {
-					tc.getSrcConf().setUsingManualDefinedAlias(true);
-					tryToAddToBusyTableAliasName(tc.getSrcConf().getTableAlias());
-				}
-				
-				addConfiguredTable(tc.getSrcConf());
-				
-				tc.getSrcConf().tryToLoadSchemaInfo();
-				
-				List<EtlAdditionalDataSource> allAvaliableDataSources = tc.getSrcConf().getAvaliableExtraDataSource();
-				
-				for (EtlAdditionalDataSource t : allAvaliableDataSources) {
-					if (t instanceof AbstractTableConfiguration) {
-						TableConfiguration tAsTabConf = (TableConfiguration) t;
-						
-						if (tAsTabConf.hasAlias()) {
-							tAsTabConf.setUsingManualDefinedAlias(true);
-							tryToAddToBusyTableAliasName(tAsTabConf.getTableAlias());
-						}
-						
-						addConfiguredTable((AbstractTableConfiguration) t);
-						t.setRelatedSrcConf(tc.getSrcConf());
-					}
-					
-					t.setRelatedSrcConf(tc.getSrcConf());
-				}
-				
-				if (tc.getSrcConf().hasAuxExtractTable()) {
-					for (AuxExtractTable t : tc.getSrcConf().getAuxExtractTable()) {
-						if (t.hasAlias()) {
-							t.setUsingManualDefinedAlias(true);
-							
-							tryToAddToBusyTableAliasName(t.getTableAlias());
-						}
-					}
-				}
-				
-				String code = "";
-				
-				if (utilities.arrayHasElement(tc.getDstConf())) {
-					for (DstConf dst : tc.getDstConf()) {
-						
-						dst.tryToLoadSchemaInfo();
-						
-						if (dst.hasAlias()) {
-							dst.setUsingManualDefinedAlias(true);
-							
-							tryToAddToBusyTableAliasName(dst.getTableAlias());
-						}
-						
-						addConfiguredTable(dst);
-						
-						dst.setParentConf(tc);
-						
-						code = utilities.stringHasValue(code) ? code + "_and_" + dst.getTableName() : dst.getTableName();
-					}
-				}
-				
-				code = utilities.stringHasValue(code) ? code : tc.getSrcConf().getTableName();
-				
-				code = tc.getSrcConf().getTableName() + "_to_" + code;
-				
-				tc.setConfigCode(finalizeItemCodeGeneration(code));
+			for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
+				initItem(item, false);
+			}
+			
+			if (this.hasTestingItem()) {
+				initItem(this.getTestingEtlItemConfiguration(), true);
 			}
 		}
+	}
+	
+	public boolean hasTestingItem() {
+		return this.getTestingEtlItemConfiguration() != null && !this.getTestingEtlItemConfiguration().isDisabled();
+	}
+	
+	void initItem(EtlItemConfiguration item, boolean testing) {
+		item.setRelatedEtlConfig(this);
+		item.getSrcConf().setParentConf(item);
+		item.setTesting(testing);
+		
+		if (!item.getSrcConf().hasDstType()) {
+			//We start with the first operation dst type. Eventual this should be changed if the nested operation has different dstType
+			item.getSrcConf().setDstType(this.getOperations().get(0).getDstType());
+		}
+		
+		if (item.getSrcConf().hasAlias()) {
+			item.getSrcConf().setUsingManualDefinedAlias(true);
+			tryToAddToBusyTableAliasName(item.getSrcConf().getTableAlias());
+		}
+		
+		addConfiguredTable(item.getSrcConf());
+		
+		item.getSrcConf().tryToLoadSchemaInfo();
+		
+		List<EtlAdditionalDataSource> allAvaliableDataSources = item.getSrcConf().getAvaliableExtraDataSource();
+		
+		for (EtlAdditionalDataSource t : allAvaliableDataSources) {
+			if (t instanceof AbstractTableConfiguration) {
+				TableConfiguration tAsTabConf = (TableConfiguration) t;
+				
+				if (tAsTabConf.hasAlias()) {
+					tAsTabConf.setUsingManualDefinedAlias(true);
+					tryToAddToBusyTableAliasName(tAsTabConf.getTableAlias());
+				}
+				
+				addConfiguredTable((AbstractTableConfiguration) t);
+				t.setRelatedSrcConf(item.getSrcConf());
+			}
+			
+			t.setRelatedSrcConf(item.getSrcConf());
+		}
+		
+		if (item.getSrcConf().hasAuxExtractTable()) {
+			for (AuxExtractTable t : item.getSrcConf().getAuxExtractTable()) {
+				if (t.hasAlias()) {
+					t.setUsingManualDefinedAlias(true);
+					
+					tryToAddToBusyTableAliasName(t.getTableAlias());
+				}
+			}
+		}
+		
+		String code = "";
+		
+		if (utilities.arrayHasElement(item.getDstConf())) {
+			for (DstConf dst : item.getDstConf()) {
+				
+				dst.tryToLoadSchemaInfo();
+				
+				if (dst.hasAlias()) {
+					dst.setUsingManualDefinedAlias(true);
+					
+					tryToAddToBusyTableAliasName(dst.getTableAlias());
+				}
+				
+				addConfiguredTable(dst);
+				
+				dst.setParentConf(item);
+				
+				code = utilities.stringHasValue(code) ? code + "_and_" + dst.getTableName() : dst.getTableName();
+			}
+		}
+		
+		code = utilities.stringHasValue(code) ? code : item.getSrcConf().getTableName();
+		
+		code = item.getSrcConf().getTableName() + "_to_" + code;
+		
+		item.setConfigCode(finalizeItemCodeGeneration(code));
 	}
 	
 	synchronized String finalizeItemCodeGeneration(String code) {
@@ -923,6 +946,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		for (EtlOperationConfig operation : this.getOperations()) {
 			operation.validate();
+			
+			if (this.hasTestingItem()) {
+				operation.setDoNotSaveOperationProgress(true);
+			}
 		}
 		
 		if (utilities.stringHasValue(this.getFinalizerFullClassName())) {

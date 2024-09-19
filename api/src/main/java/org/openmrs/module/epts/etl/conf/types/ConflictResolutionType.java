@@ -44,4 +44,12 @@ public enum ConflictResolutionType {
 	public boolean makeYourDecision() {
 		return this.equals(MAKE_YOUR_DECISION);
 	}
+	
+	public boolean keptExisting() {
+		return this.equals(KEPT_EXISTING);
+	}
+	
+	public boolean none() {
+		return this.equals(NONE);
+	}
 }

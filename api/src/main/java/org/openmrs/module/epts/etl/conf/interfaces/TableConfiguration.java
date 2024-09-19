@@ -2613,7 +2613,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
 		sql += ")";
 		
-		BaseDAO.executeBatch(conn, sql);
+		String indexName = tableName + "location_idx";
+		String indexFields = "record_origin_location_code";
+		
+		String idxDefinition = DBUtilities.generateIndexDefinition(this.generateFullStageTableName(), indexName, indexFields,
+		    conn);
+		
+		BaseDAO.executeBatch(conn, sql, idxDefinition);
 	}
 	
 	default String generateLastUpdateDateInsertTriggerMonitor() {

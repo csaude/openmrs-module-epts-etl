@@ -188,7 +188,15 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	private synchronized void runInSequencialMode() throws DBException {
 		changeStatusToRunning();
 		
-		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
+		List<EtlItemConfiguration> allSync = null;
+		
+		if (this.getEtlConfiguration().hasTestingItem()) {
+			allSync = utilities().parseToList(this.getEtlConfiguration().getTestingEtlItemConfiguration());
+			
+			logInfo("Working on testing item");
+		} else {
+			allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
+		}
 		
 		this.enginesActivititieMonitor = new ArrayList<Engine<T>>();
 		
@@ -228,6 +236,11 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				try {
 					progressInfo = this.progressInfo.retrieveProgressInfo(config);
+					
+					if (progressInfo == null) {
+						
+					}
+					
 				}
 				catch (NullPointerException e) {
 					logErr("Error on thread " + this.getControllerId()
@@ -236,10 +249,6 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 					e.printStackTrace();
 					
 					throw e;
-				}
-				
-				if (this.progressInfo.getItemsProgressInfo() == null) {
-					progressInfo = this.progressInfo.retrieveProgressInfo(config);
 				}
 				
 				Engine<T> engine = Engine.init(this, config, progressInfo);
@@ -256,6 +265,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 						
 						logTrace("Progress Info Saved!");
 						
+					} else {
+						logTrace("Skiping the saving as the operation  is not resumable");
 					}
 					conn.markAsSuccessifullyTerminated();
 				}
@@ -373,23 +384,28 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	private List<EtlItemConfiguration> determineAvaliableItems() {
-		List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
-		
-		logDebug("Determine finalized operations...");
-		
 		List<EtlItemConfiguration> avaliableItems = new ArrayList<>();
 		
-		for (EtlItemConfiguration config : allSync) {
-			if (operationTableIsAlreadyFinished(config)) {
-				logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
-				        + config.getConfigCode() + "' was already finished!").toUpperCase());
-				
-				this.addItemToFinalized(config);
-			} else {
-				avaliableItems.add(config);
+		if (this.getEtlConfiguration().hasTestingItem()) {
+			avaliableItems = utilities().parseToList(this.getEtlConfiguration().getTestingEtlItemConfiguration());
+			
+			logInfo("Working on testing item");
+		} else {
+			List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
+			
+			logDebug("Determine finalized operations...");
+			
+			for (EtlItemConfiguration config : allSync) {
+				if (operationTableIsAlreadyFinished(config)) {
+					logDebug(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
+					        + config.getConfigCode() + "' was already finished!").toUpperCase());
+					
+					this.addItemToFinalized(config);
+				} else {
+					avaliableItems.add(config);
+				}
 			}
 		}
-		
 		return avaliableItems;
 	}
 	

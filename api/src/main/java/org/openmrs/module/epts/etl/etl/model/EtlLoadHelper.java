@@ -118,7 +118,15 @@ public class EtlLoadHelper {
 		List<EtlStageAreaInfo> info = new ArrayList<>(sucess.size());
 		
 		for (EtlLoadHelperRecord rec : sucess) {
-			info.add(EtlStageAreaInfo.generate(rec, srcConn, dstConn));
+			
+			/*Currently all conflicting records are note stored on stage area
+			 *
+			 * TODO: Identify if the conflict is within the same origin_location_code or not.
+			 * If the location is not the same, then it is safe to store the staging info
+			 */
+			if (rec.getGlobalConflictResolutionType().none()) {
+				info.add(EtlStageAreaInfo.generate(rec, srcConn, dstConn));
+			}
 		}
 		
 		return info;
@@ -292,8 +300,28 @@ public class EtlLoadHelper {
 	public void tryToReloadDefaultParents(LoadRecord loadRec, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		
-		logTrace(
-		    "Reloading parents for dstRecord " + loadRec.getDstConf().getFullTableDescription() + loadRec.getDstRecord());
+		String msg = "Reloading parents for dstRecord [" + loadRec.getDstConf().getFullTableDescription()
+		        + loadRec.getDstRecord() + "]";
+		
+		String tree = "";
+		
+		if (loadRec.hasParentLoadRecord()) {
+			LoadRecord parent = loadRec;
+			
+			while (parent != null) {
+				if (tree.isEmpty()) {
+					tree = parent.getDstRecord().toString();
+				} else {
+					tree = tree + " <<<< " + parent.getDstRecord().toString();
+				}
+				
+				parent = parent.getParentLoadRecord();
+			}
+			
+			msg += " Tree Info: [" + tree + "]";
+		}
+		
+		logTrace(msg);
 		
 		loadRec.reloadParentsWithDefaultValues(srcConn, dstConn);
 		
@@ -538,6 +566,27 @@ public class EtlLoadHelper {
 	
 	public static void performeParentLoading(LoadRecord loadRecord, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
+		
+		String msg = "Initializing the load of parent record [" + loadRecord.getDstConf().getFullTableDescription()
+		        + loadRecord.getDstRecord() + "]";
+		
+		String tree = "";
+		
+		LoadRecord parent = loadRecord;
+		
+		while (parent != null) {
+			if (tree.isEmpty()) {
+				tree = parent.getDstRecord().toString();
+			} else {
+				tree = tree + " <<<< " + parent.getDstRecord().toString();
+			}
+			
+			parent = parent.getParentLoadRecord();
+		}
+		
+		msg += " Tree Info: [" + tree + "]";
+		
+		loadRecord.getProcessor().logTrace(msg);
 		
 		new EtlLoadHelper(loadRecord.getProcessor(), loadRecord, utilities.parseToList(loadRecord.getDstConf()),
 		        LoadingType.INNER).load(loadRecord.getDstConf(), srcConn, dstConn);

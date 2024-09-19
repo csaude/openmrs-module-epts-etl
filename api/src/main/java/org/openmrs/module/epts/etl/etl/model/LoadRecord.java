@@ -48,6 +48,8 @@ public class LoadRecord {
 	
 	private LoadStatus status;
 	
+	private LoadRecord parentLoadRecord;
+	
 	public LoadRecord(EtlDatabaseObject srcRecord, EtlDatabaseObject dstRecord, SrcConf srcConf, DstConf dstConf,
 	    EtlProcessor engine) {
 		
@@ -66,6 +68,14 @@ public class LoadRecord {
 		this.resultItem = new EtlOperationItemResult<EtlDatabaseObject>(srcRecord);
 		
 		this.status = LoadStatus.UNDEFINED;
+	}
+	
+	public LoadRecord getParentLoadRecord() {
+		return parentLoadRecord;
+	}
+	
+	public void setParentLoadRecord(LoadRecord parentRecord) {
+		this.parentLoadRecord = parentRecord;
 	}
 	
 	public EtlDatabaseObject getSrcRecord() {
@@ -196,9 +206,14 @@ public class LoadRecord {
 				if (dstParent != null) {
 					
 					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, getTaskProcessor());
+					
+					parentData.setParentLoadRecord(this);
+					
 					DBException exception = null;
 					
 					try {
+						parentData.setParentLoadRecord(this);
+						
 						EtlLoadHelper.performeParentLoading(parentData, srcConn, dstConn);
 					}
 					catch (DBException e) {
@@ -535,6 +550,10 @@ public class LoadRecord {
 		LoadRecord other = (LoadRecord) obj;
 		
 		return this.getSrcRecord().equals(other.getSrcRecord()) && this.getDstConf().equals(other.getDstConf());
+	}
+	
+	public boolean hasParentLoadRecord() {
+		return this.getParentLoadRecord() != null;
 	}
 	
 }

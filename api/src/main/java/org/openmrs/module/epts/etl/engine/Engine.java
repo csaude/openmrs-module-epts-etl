@@ -307,6 +307,11 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 					t = ThreadRecordIntervalsManager.tryToLoadFromFile(getEngineId(), this);
 				}
 				
+				if (getEtlConfiguration().hasTestingItem()) {
+					this.getRelatedEtlOperationConfig()
+					        .setProcessingBatch((int) tableOperationProgressInfo.getProgressMeter().getMaxRecordId());
+				}
+				
 				if (t == null) {
 					t = new ThreadRecordIntervalsManager<>(this);
 				}
@@ -379,6 +384,9 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			
 			e.printStackTrace();
 			
+			logErr(e.getLocalizedMessage());
+			logErr(e.getMessage());
+			
 			getController().requestStopDueError(this, e);
 		}
 	}
@@ -424,7 +432,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				TaskProcessor<T> taskProcessor = getController().initRelatedTaskProcessor(this, i, false);
 				taskProcessor.setProcessorId(this.getEngineId());
 				
-				boolean persistTheWork = true;
+				boolean persistTheWork = this.getEtlConfiguration().hasTestingItem() ? false : true;
 				boolean useMultiThreadSearch = true;
 				
 				performeTask(taskProcessor, useMultiThreadSearch, persistTheWork, openSrcConn(), tryToOpenDstConn());
@@ -452,7 +460,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		    getThreadRecordIntervalsManager().getCurrentLimits(), false);
 		taskProcessor.setProcessorId(this.getEngineId());
 		
-		boolean persistTheWork = true;
+		boolean persistTheWork = this.getEtlConfiguration().hasTestingItem() ? false : true;
 		boolean useMultiThreadSearch = true;
 		
 		performeTask(taskProcessor, useMultiThreadSearch, persistTheWork, openSrcConn(), tryToOpenDstConn());
@@ -587,7 +595,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 								    sharedDstConn);
 							} else {
 								try {
-									boolean persistTheWork = true;
+									boolean persistTheWork = this.getEtlConfiguration().hasTestingItem() ? false : true;
 									
 									performeTask(taskProcessor, useMultiThreadSearch, persistTheWork, openSrcConn(),
 									    tryToOpenDstConn());
@@ -628,7 +636,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 						r.throwDefaultExcetions();
 					} else {
 						
-						if (useSharedConnection) {
+						if (useSharedConnection && !this.getEtlConfiguration().hasTestingItem()) {
 							OpenConnection.markAllAsSuccessifullyTerminected(sharedSrcConn, sharedDstConn);
 							
 							getThreadRecordIntervalsManager().getCurrentLimits().markAsProcessed();

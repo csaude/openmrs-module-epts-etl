@@ -43,11 +43,21 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private boolean createDstTableIfNotExists;
 	
+	private boolean testing;
+	
 	public EtlItemConfiguration() {
 	}
 	
 	public DynamicEtlItemSrcConf getSrcOfSrc() {
 		return dynamicEtlItemSrcConf;
+	}
+	
+	public boolean isTesting() {
+		return testing;
+	}
+	
+	public void setTesting(boolean testing) {
+		this.testing = testing;
 	}
 	
 	public void setSrcOfSrc(DynamicEtlItemSrcConf srcOfSrc) {
