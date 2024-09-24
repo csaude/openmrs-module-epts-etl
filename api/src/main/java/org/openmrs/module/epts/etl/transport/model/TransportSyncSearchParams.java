@@ -28,10 +28,10 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 		super(engine, limits);
 		
 		if (limits != null) {
-			this.firstFileName = getSrcTableConf().getTableName() + "_"
+			this.firstFileName = getSrcConf().getTableName() + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + ".json";
-			this.lastFileName = getSrcTableConf().getTableName() + "_"
+			this.lastFileName = getSrcConf().getTableName() + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json";
 		}
@@ -123,7 +123,7 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	}
 	
 	private File getSyncDirectory() {
-		return getRelatedController().getSyncDirectory(getSrcTableConf());
+		return getRelatedController().getSyncDirectory(getSrcConf());
 	}
 	
 	@Override

@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -323,4 +324,36 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		return null;
 	}
 	
+	public static List<ObjectDataSource> cloneAll(List<ObjectDataSource> allToCloneFrom, SrcConf relatedSrcConf,
+	        Connection conn) throws DBException {
+		
+		List<ObjectDataSource> allCloned = null;
+		
+		if (utilities.arrayHasElement(allToCloneFrom)) {
+			allCloned = new ArrayList<>(allToCloneFrom.size());
+			
+			for (ObjectDataSource aux : allToCloneFrom) {
+				ObjectDataSource cloned = new ObjectDataSource();
+				cloned.clone(aux, relatedSrcConf, conn);
+				
+				allCloned.add(cloned);
+			}
+		}
+		
+		return allCloned;
+	}
+	
+	public void clone(ObjectDataSource toCloneFrom, SrcConf relatedSrcConf, Connection conn) throws DBException {
+		this.setName(toCloneFrom.getName());
+		this.setRelatedSrcConf(relatedSrcConf);
+		this.setRequired(toCloneFrom.isRequired());
+		
+		this.setObjectLanguage(toCloneFrom.getObjectLanguage());
+		
+		this.setObjectFields(toCloneFrom.getObjectFields());
+		this.setRelatedSrcConf(relatedSrcConf);
+		this.setRequired(toCloneFrom.isRequired());
+		this.setFieldsValuesGenerator(toCloneFrom.getFieldsValuesGenerator());
+		this.setFieldsValuesGeneratorInstance(toCloneFrom.getFieldsValuesGeneratorInstance());
+	}
 }

@@ -16,7 +16,9 @@ import org.openmrs.module.epts.etl.conf.interfaces.ObjectDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -182,7 +184,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					t.tryToGenerateTableAlias(getRelatedEtlConf());
 					
 					if (fullLoadedTab != null) {
-						t.clone(fullLoadedTab, conn);
+						t.clone(fullLoadedTab, null, conn);
 					} else {
 						t.fullLoad(srcConn);
 					}
@@ -195,7 +197,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getSharedKeyRefInfo().getFullTableName());
 						
 						if (fullLoadedTab != null) {
-							t.getSharedKeyRefInfo().clone(fullLoadedTab, conn);
+							t.getSharedKeyRefInfo().clone(fullLoadedTab, null, conn);
 						} else {
 							t.getSharedKeyRefInfo().fullLoad();
 						}
@@ -234,7 +236,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 				ref.tryToGenerateTableAlias(getRelatedEtlConf());
 				
 				if (fullLoadedTab != null) {
-					ref.clone(fullLoadedTab, conn);
+					ref.clone(fullLoadedTab, null, conn);
 				} else {
 					ref.fullLoad();
 				}
@@ -246,7 +248,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 						ref.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
 					}
 					if (fullLoadedTab != null) {
-						ref.getSharedKeyRefInfo().clone(fullLoadedTab, conn);
+						ref.getSharedKeyRefInfo().clone(fullLoadedTab, null, conn);
 					} else {
 						ref.getSharedKeyRefInfo().fullLoad();
 					}
@@ -281,7 +283,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig, Connection conn) throws DBException {
 		SrcConf src = new SrcConf();
 		
-		src.clone(src, conn);
+		src.clone(src, null, conn);
 		
 		return src;
 	}
@@ -451,6 +453,55 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	@Override
 	public JoinableEntity parseToJoinable() throws ForbiddenOperationException {
 		throw new ForbiddenOperationException("Not joinable entity!!!");
+	}
+	
+	public void clone(SrcConf toCloneFrom, EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+		super.clone(toCloneFrom, schemaInfoSrc, conn);
+		
+		if (utilities.arrayHasElement(toCloneFrom.getAuxExtractTable())) {
+			this.setAuxExtractTable(AuxExtractTable.cloneAll(toCloneFrom.getAuxExtractTable(), this, schemaInfoSrc, conn));
+		}
+		
+		if (toCloneFrom.hasExtraTableDataSourceConfig()) {
+			this.setExtraTableDataSource(
+			    TableDataSourceConfig.cloneAll(toCloneFrom.getExtraTableDataSource(), this, schemaInfoSrc, conn));
+		}
+		
+		if (toCloneFrom.hasExtraQueryDataSourceConfig()) {
+			this.setExtraQueryDataSource(QueryDataSourceConfig.cloneAll(toCloneFrom.getExtraQueryDataSource(), this, conn));
+		}
+		
+		if (toCloneFrom.hasExtraObjectDataSourceConfig()) {
+			this.setExtraObjectDataSource(ObjectDataSource.cloneAll(toCloneFrom.getExtraObjectDataSource(), this, conn));
+		}
+		
+		this.setDstType(toCloneFrom.getDstType());
+		
+	}
+	
+	@Override
+	public void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
+		super.loadSchemaInfo(schemaInfoSrc, conn);
+		
+		if (this.hasAuxExtractTable()) {
+			for (AuxExtractTable tab : this.getAuxExtractTable()) {
+				tab.loadSchemaInfo(schemaInfoSrc, conn);
+			}
+		}
+		
+		if (this.hasExtraTableDataSourceConfig()) {
+			for (TableDataSourceConfig tab : this.getExtraTableDataSource()) {
+				tab.loadSchemaInfo(schemaInfoSrc, conn);
+			}
+		}
+		
+		if (this.hasExtraQueryDataSourceConfig()) {
+			for (QueryDataSourceConfig q : this.getExtraQueryDataSource()) {
+				q.tryToFillParams(schemaInfoSrc);
+			}
+		}
+		
 	}
 	
 }

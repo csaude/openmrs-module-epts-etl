@@ -278,17 +278,29 @@ public abstract class BaseDAO {
 			
 			st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 			
+			logger.trace("Executing query: \n" + utilities.garantirXCaracteres(sql, 500));
+			
+			logger.trace("Loading Params");
+			
 			loadParamsToStatment(st, params, connection);
 			
+			logger.trace("Performing execution");
+			
 			st.execute();
+			
+			logger.trace("Done execution of query");
 			
 			List<Long> generatedKeys = new ArrayList<>();
 			
 			ResultSet rs = st.getGeneratedKeys();
 			
+			logger.trace("Retrieving the generated IDs");
+			
 			while (rs != null && rs.next()) {
 				generatedKeys.add(rs.getLong(1));
 			}
+			
+			logger.trace("Returning");
 			
 			return generatedKeys;
 		}

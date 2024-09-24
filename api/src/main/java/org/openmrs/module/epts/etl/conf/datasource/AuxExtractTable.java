@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.conf.datasource;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
@@ -11,7 +12,9 @@ import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -36,6 +39,9 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	private List<InnerAuxExtractTable> auxExtractTable;
 	
 	private boolean doNotUseAsDatasource;
+	
+	public AuxExtractTable() {
+	}
 	
 	public List<InnerAuxExtractTable> getAuxExtractTable() {
 		return auxExtractTable;
@@ -155,6 +161,59 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	@Override
 	public String getName() {
 		return this.getTableName();
+	}
+	
+	public static List<AuxExtractTable> cloneAll(List<AuxExtractTable> allToCloneFrom,
+	        MainJoiningEntity relatedMainExtractTable, EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+		List<AuxExtractTable> allCloned = null;
+		
+		if (utilities.arrayHasElement(allToCloneFrom)) {
+			allCloned = new ArrayList<>(allToCloneFrom.size());
+			
+			for (AuxExtractTable aux : allToCloneFrom) {
+				AuxExtractTable cloned = new AuxExtractTable();
+				cloned.clone(aux, relatedMainExtractTable, schemaInfoSrc, conn);
+				
+				allCloned.add(cloned);
+			}
+		}
+		
+		return allCloned;
+	}
+	
+	public void clone(AuxExtractTable toCloneFrom, MainJoiningEntity relatedMainExtractTable,
+	        EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+		super.clone(toCloneFrom, schemaInfoSrc, conn);
+		
+		this.setJoinFields(toCloneFrom.getJoinFields());
+		this.setJoinExtraCondition(toCloneFrom.getJoinExtraCondition());
+		this.setJoinType(toCloneFrom.getJoinType());
+		this.setMainExtractTable(relatedMainExtractTable);
+		
+		if (utilities.arrayHasElement(toCloneFrom.getAuxExtractTable())) {
+			this.setAuxExtractTable(new ArrayList<>(toCloneFrom.getAuxExtractTable().size()));
+			
+			for (InnerAuxExtractTable aux : toCloneFrom.getAuxExtractTable()) {
+				InnerAuxExtractTable cloned = new InnerAuxExtractTable();
+				cloned.clone(aux, this, schemaInfoSrc, conn);
+				
+				this.getAuxExtractTable().add(cloned);
+			}
+		}
+		
+		this.setDoNotUseAsDatasource(toCloneFrom.isDoNotUseAsDatasource());
+	}
+	
+	@Override
+	public void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
+		super.loadSchemaInfo(schemaInfoSrc, conn);
+		
+		if (this.hasAuxExtractTable()) {
+			for (InnerAuxExtractTable tab : this.getAuxExtractTable()) {
+				tab.loadSchemaInfo(schemaInfoSrc, conn);
+			}
+		}
 	}
 	
 }

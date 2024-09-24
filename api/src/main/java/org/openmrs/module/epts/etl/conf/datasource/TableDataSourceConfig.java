@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.conf.datasource;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
@@ -11,6 +12,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -234,5 +236,51 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	@Override
 	public JoinableEntity parseToJoinable() throws ForbiddenOperationException {
 		return this;
+	}
+	
+	public static List<TableDataSourceConfig> cloneAll(List<TableDataSourceConfig> allToCloneFrom, SrcConf relatedSrcConf,
+	        EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+		
+		List<TableDataSourceConfig> allCloned = null;
+		
+		if (utilities.arrayHasElement(allToCloneFrom)) {
+			allCloned = new ArrayList<>(allToCloneFrom.size());
+			
+			for (TableDataSourceConfig aux : allToCloneFrom) {
+				TableDataSourceConfig cloned = new TableDataSourceConfig();
+				cloned.clone(aux, relatedSrcConf, schemaInfoSrc, conn);
+				
+				allCloned.add(cloned);
+			}
+		}
+		
+		return allCloned;
+	}
+	
+	public void clone(TableDataSourceConfig toCloneFrom, SrcConf relatedSrcConf, EtlDatabaseObject schemaInfoSrc,
+	        Connection conn) throws DBException {
+		super.clone(toCloneFrom, schemaInfoSrc, conn);
+		
+		this.setJoinFields(toCloneFrom.getJoinFields());
+		this.setJoinExtraCondition(this.getJoinExtraCondition());
+		this.setRelatedSrcConf(relatedSrcConf);
+		
+		if (toCloneFrom.hasAuxExtractTable()) {
+			this.setAuxExtractTable(AuxExtractTable.cloneAll(toCloneFrom.getAuxExtractTable(), this, schemaInfoSrc, conn));
+		}
+		
+		this.setJoinType(toCloneFrom.getJoinType());
+	}
+	
+	@Override
+	public void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
+		super.loadSchemaInfo(schemaInfoSrc, conn);
+		
+		if (this.hasAuxExtractTable()) {
+			for (AuxExtractTable tab : this.getAuxExtractTable()) {
+				tab.loadSchemaInfo(schemaInfoSrc, conn);
+			}
+		}
 	}
 }

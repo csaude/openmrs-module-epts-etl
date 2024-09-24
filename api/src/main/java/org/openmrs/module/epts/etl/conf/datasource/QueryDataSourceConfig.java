@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
 import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
@@ -131,22 +133,22 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	public String getQuery() {
-		if (!utilities.stringHasValue(query) && utilities.stringHasValue(this.script)) {
+		if (!utilities.stringHasValue(this.query) && utilities.stringHasValue(this.getScript())) {
 			loadQueryFromFile();
 		}
 		
-		if (!utilities.stringHasValue(query)) {
+		if (!utilities.stringHasValue(this.query)) {
 			throw new ForbiddenOperationException("No query was defined!");
 		}
 		
-		return utilities.removeNewline(query);
+		return utilities.removeNewline(this.query);
 	}
 	
 	private void loadQueryFromFile() {
 		String pathToScript = getRelatedEtlConf().getSqlScriptsDirectory().getAbsolutePath() + File.separator + this.script;
 		
 		try {
-			this.query = new String(Files.readAllBytes(Paths.get(pathToScript)));
+			this.setQuery(new String(Files.readAllBytes(Paths.get(pathToScript))));
 		}
 		catch (IOException e) {
 			throw new RuntimeException(e);
@@ -492,4 +494,58 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		return null;
 	}
 	
+	public static List<QueryDataSourceConfig> cloneAll(List<QueryDataSourceConfig> allToCloneFrom, SrcConf relatedSrcConf,
+	        Connection conn) throws DBException {
+		
+		List<QueryDataSourceConfig> allCloned = null;
+		
+		if (utilities.arrayHasElement(allToCloneFrom)) {
+			allCloned = new ArrayList<>(allToCloneFrom.size());
+			
+			for (QueryDataSourceConfig aux : allToCloneFrom) {
+				QueryDataSourceConfig cloned = new QueryDataSourceConfig();
+				cloned.clone(aux, relatedSrcConf, conn);
+				
+				allCloned.add(cloned);
+			}
+		}
+		
+		return allCloned;
+	}
+	
+	public void clone(QueryDataSourceConfig toCloneFrom, SrcConf relatedSrcConf, Connection conn) throws DBException {
+		this.setName(toCloneFrom.getName());
+		this.setQuery(toCloneFrom.getQuery());
+		this.setScript(toCloneFrom.getScript());
+		this.setRelatedSrcConf(relatedSrcConf);
+		this.setRequired(toCloneFrom.isRequired());
+	}
+	
+	public void tryToFillParams(EtlDatabaseObject schemaInfoSrc) {
+		String paramRegex = "@(\\w+)";
+		Pattern pattern = Pattern.compile(paramRegex);
+		Matcher matcher = pattern.matcher(this.getQuery());
+		StringBuffer result = new StringBuffer();
+		
+		while (matcher.find()) {
+			String paramName = matcher.group(1);
+			
+			try {
+				Object paramValue = schemaInfoSrc.getFieldValue(paramName);
+				
+				if (paramValue != null && !paramValue.toString().isEmpty()) {
+					matcher.appendReplacement(result, paramValue.toString());
+				} else {
+					matcher.appendReplacement(result, "@" + paramName);
+				}
+			}
+			catch (ForbiddenOperationException e) {
+				e.printStackTrace();
+			}
+			
+		}
+		matcher.appendTail(result);
+		
+		this.setQuery(result.toString());
+	}
 }

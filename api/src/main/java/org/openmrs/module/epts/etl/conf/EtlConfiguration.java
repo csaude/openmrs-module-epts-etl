@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
 
 import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
@@ -40,7 +41,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-public class EtlConfiguration extends AbstractBaseConfiguration implements TableAliasesGenerator {
+public class EtlConfiguration extends AbstractBaseConfiguration implements TableAliasesGenerator, EtlDataConfiguration {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -606,13 +607,12 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 * @throws ForbiddenOperationException
 	 * @throws DBException
 	 */
-	public void init() throws ForbiddenOperationException {
+	public void init(Connection conn) throws ForbiddenOperationException, DBException {
 		if (initialized) {
 			return;
 		}
 		
 		synchronized (STRING_LOCK) {
-			
 			this.defaultGeneratedObjectKeyTabConf = new EtlConfigurationTableConf(
 			        EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME, this);
 			
@@ -630,8 +630,39 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				}
 			}
 			
+			List<EtlItemConfiguration> allItem = new ArrayList<>();
+			
+			int pos = 0;
+			
 			for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
-				initItem(item, false);
+				pos++;
+				
+				item.setRelatedEtlConfig(this);
+				
+				if (item.isDynamic()) {
+					List<EtlItemConfiguration> dynamicItems = item.generateDynamicItems(conn);
+					
+					if (utilities.arrayHasElement(dynamicItems)) {
+						logDebug(
+						    "Found Dynamic Item on position [" + pos + "] whith " + dynamicItems.size() + " returned item!");
+						
+						for (EtlItemConfiguration dItem : dynamicItems) {
+							allItem.add(dItem);
+							
+							initItem(dItem, false);
+						}
+						
+					} else {
+						logWarn("No Item was returned on dynamic item [" + pos + "]");
+					}
+					
+				} else {
+					allItem.add(item);
+					
+					initItem(item, false);
+				}
+				
+				this.setEtlItemConfiguration(allItem);
 			}
 			
 			if (this.hasTestingItem()) {
@@ -661,7 +692,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		addConfiguredTable(item.getSrcConf());
 		
-		item.getSrcConf().tryToLoadSchemaInfo();
+		item.getSrcConf().tryToLoadSchemaInfo(item.getRelatedEtlSchemaObject());
 		
 		List<EtlAdditionalDataSource> allAvaliableDataSources = item.getSrcConf().getAvaliableExtraDataSource();
 		
@@ -696,7 +727,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		if (utilities.arrayHasElement(item.getDstConf())) {
 			for (DstConf dst : item.getDstConf()) {
 				
-				dst.tryToLoadSchemaInfo();
+				dst.tryToLoadSchemaInfo(item.getRelatedEtlSchemaObject());
 				
 				if (dst.hasAlias()) {
 					dst.setUsingManualDefinedAlias(true);
@@ -801,6 +832,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromJSON(String json)
 	        throws ForbiddenOperationException {
+		
+		OpenConnection conn = null;
+		
 		try {
 			Class<?>[] types = new Class<?>[1];
 			
@@ -809,9 +843,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			EtlConfiguration etlConfiguration = new ObjectMapperProvider(types).getContext(EtlConfiguration.class)
 			        .readValue(json, EtlConfiguration.class);
 			
-			etlConfiguration.init();
+			conn = etlConfiguration.openSrcConn();
+			
+			etlConfiguration.init(conn);
 			
 			return etlConfiguration;
+		}
+		catch (DBException e) {
+			throw new RuntimeException(e);
 		}
 		catch (JsonParseException e) {
 			e.printStackTrace();
@@ -827,6 +866,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
+		}
+		finally {
+			if (conn != null) {
+				conn.finalizeConnection();
+			}
 		}
 	}
 	
@@ -1455,5 +1499,19 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 		
 		return conn;
+	}
+	
+	@Override
+	public EtlConfiguration getRelatedEtlConf() {
+		return null;
+	}
+	
+	@Override
+	public EtlDataConfiguration getParentConf() {
+		return null;
+	}
+	
+	@Override
+	public void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration) {
 	}
 }

@@ -2,15 +2,19 @@ package org.openmrs.module.epts.etl.conf;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.datasource.EtlItemSrcConf;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
-import org.openmrs.module.epts.etl.conf.datasource.DynamicEtlItemSrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.etl.model.EtlDynamicItemSearchParams;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
@@ -22,7 +26,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private String configCode;
 	
-	private DynamicEtlItemSrcConf dynamicEtlItemSrcConf;
+	private EtlItemSrcConf etlItemSrcConf;
 	
 	private SrcConf srcConf;
 	
@@ -45,11 +49,21 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private boolean testing;
 	
+	private EtlDatabaseObject relatedEtlSchemaObject;
+	
 	public EtlItemConfiguration() {
 	}
 	
-	public DynamicEtlItemSrcConf getSrcOfSrc() {
-		return dynamicEtlItemSrcConf;
+	public EtlDatabaseObject getRelatedEtlSchemaObject() {
+		return relatedEtlSchemaObject;
+	}
+	
+	public void setRelatedEtlSchemaObject(EtlDatabaseObject relatedEtlSchemaObject) {
+		this.relatedEtlSchemaObject = relatedEtlSchemaObject;
+	}
+	
+	public EtlItemSrcConf getEtlItemSrcConf() {
+		return etlItemSrcConf;
 	}
 	
 	public boolean isTesting() {
@@ -60,8 +74,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.testing = testing;
 	}
 	
-	public void setSrcOfSrc(DynamicEtlItemSrcConf srcOfSrc) {
-		this.dynamicEtlItemSrcConf = srcOfSrc;
+	public void setEtlItemSrcConf(EtlItemSrcConf srcOfSrc) {
+		this.etlItemSrcConf = srcOfSrc;
 	}
 	
 	public void setCreateDstTableIfNotExists(boolean createDstTableIfNotExists) {
@@ -234,7 +248,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 					map.setDstType(this.getSrcConf().getDstType());
 					
 					try {
-						map.loadSchemaInfo(dstConn);
+						map.loadSchemaInfo(null, dstConn);
 					}
 					catch (DatabaseResourceDoesNotExists e) {
 						if (map.getDstType().isDb() && !this.createDstTableIfNotExists()) {
@@ -415,6 +429,58 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			}
 		}
 		return null;
+	}
+	
+	public boolean isDynamic() {
+		return this.getEtlItemSrcConf() != null;
+	}
+	
+	@Override
+	public EtlDataConfiguration getParentConf() {
+		return this.getRelatedEtlConf();
+	}
+	
+	public List<EtlItemConfiguration> generateDynamicItems(Connection conn) throws DBException {
+		if (!this.isDynamic()) {
+			throw new ForbiddenOperationException(
+			        "This item [" + this.getConfigCode() + " Is not dynamic!!! You cannot generate Dynamic Items");
+		}
+		
+		this.getEtlItemSrcConf().setRelatedItemConf(this);
+		this.getEtlItemSrcConf().setRelatedEtlConfig(this.getRelatedEtlConf());
+		
+		this.getEtlItemSrcConf().fullLoad(conn);
+		
+		EtlDynamicItemSearchParams searchParams = new EtlDynamicItemSearchParams(this.getEtlItemSrcConf());
+		
+		List<EtlDatabaseObject> itemsSrc = searchParams.search(null, conn, conn);
+		
+		List<EtlItemConfiguration> items = new ArrayList<>(itemsSrc.size());
+		
+		for (EtlDatabaseObject itemSrc : itemsSrc) {
+			items.add(cloneDynamic(itemSrc, conn));
+		}
+		
+		return items;
+	}
+	
+	private EtlItemConfiguration cloneDynamic(EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+		EtlItemConfiguration item = new EtlItemConfiguration();
+		
+		item.setSrcConf(new SrcConf());
+		item.getSrcConf().clone(this.getSrcConf(), schemaInfoSrc, conn);
+		
+		if (this.hasDstConf()) {
+			item.setDstConf(DstConf.cloneAll(this.getDstConf(), this, schemaInfoSrc, conn));
+		}
+		
+		item.setDisabled(this.isDisabled());
+		item.setManualMapPrimaryKeyOnField(this.getManualMapPrimaryKeyOnField());
+		item.setCreateDstTableIfNotExists(this.isCreateDstTableIfNotExists());
+		item.setTesting(this.isTesting());
+		item.setRelatedEtlSchemaObject(schemaInfoSrc);
+		
+		return item;
 	}
 	
 }

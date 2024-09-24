@@ -58,7 +58,7 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord intervalExtremeRecord,
 	        Connection srcConn, Connection dstConn) throws DBException {
-		SrcConf srcConfig = getSrcTableConf();
+		SrcConf srcConfig = getSrcConf();
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		

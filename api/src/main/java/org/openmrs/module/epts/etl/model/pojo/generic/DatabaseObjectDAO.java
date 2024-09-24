@@ -559,6 +559,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql += utilities.removeLastChar(values);
 			
 			try {
+				logger.trace("Executing insertion of " + objects.size() + " " + tabConf.getTableName() + " Using query\n\n"
+				        + utilities.garantirXCaracteres(sql, 250));
+				
 				List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 				
 				if (utilities.arrayHasElement(ids) && objects.get(0).getObjectId().isSimpleId()
@@ -580,6 +583,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 					result.addAllToRecordsWithNoError(EtlOperationItemResult
 					        .parseFromEtlDatabaseObject(EtlDatabaseObject.collectAllSrcRelatedOBjects(objects)));
 				}
+				
+				logger.trace("Inserted " + objects.size() + " " + tabConf.getTableName());
 			}
 			catch (DBException e) {
 				

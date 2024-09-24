@@ -10,6 +10,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.AbstractRelatedTable;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.PrimaryKey;
@@ -329,8 +330,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
-	default void clone(TableConfiguration toCloneFrom, Connection conn) throws DBException {
+	default void clone(TableConfiguration toCloneFrom, EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
 		this.setTableName(toCloneFrom.getTableName());
+		
+		this.tryToLoadSchemaInfo(schemaInfoSrc);
+		
 		this.setParents(toCloneFrom.getParents());
 		this.setMustLoadChildrenInfo(toCloneFrom.isMustLoadChildrenInfo());
 		this.setOnConflict(toCloneFrom.onConflict());
@@ -350,13 +354,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setParentConf(toCloneFrom.getParentConf());
 		this.setFields(toCloneFrom.getFields());
 		
-		this.setPrimaryKey(toCloneFrom.getPrimaryKey());
-		
-		this.setWinningRecordFieldsInfo(toCloneFrom.getWinningRecordFieldsInfo());
-		
 		if (this.hasPK()) {
+			this.setPrimaryKey(toCloneFrom.getPrimaryKey());
 			this.getPrimaryKey().setTabConf(this);
 		}
+		
+		this.setWinningRecordFieldsInfo(toCloneFrom.getWinningRecordFieldsInfo());
 		
 		this.setSharePkWith(toCloneFrom.getSharePkWith());
 		this.setMetadata(toCloneFrom.isMetadata());
@@ -388,7 +391,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			setExtraConditionForExtract(null);
 		}
 		
-		loadOwnElements(conn);
+		if (isFullLoaded()) {
+			loadOwnElements(conn);
+		}
 	}
 	
 	@JsonIgnore
@@ -405,7 +410,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				this.loadManualConfiguredPk(conn);
 			} else {
 				
-				loadSchemaInfo(conn);
+				loadSchemaInfo(null, conn);
 				loadFields(conn);
 				
 				try {
@@ -1280,7 +1285,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					return;
 				}
 				
-				loadSchemaInfo(conn);
+				loadSchemaInfo(null, conn);
 				
 				loadFields(conn);
 				
@@ -1336,10 +1341,40 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
+	default EtlItemConfiguration retrieveRelatedItemConf() {
+		EtlItemConfiguration item = null;
+		
+		EtlDataConfiguration parent = this.getParentConf();
+		
+		while (parent != null && !(parent instanceof EtlItemConfiguration)) {
+			parent = parent.getParentConf();
+		}
+		
+		return item;
+	}
+	
+	default String getParamValue(EtlDatabaseObject schemaInfoSrc, String paramName) {
+		
+		Object paramValue = null;
+		
+		if (schemaInfoSrc != null) {
+			try {
+				paramValue = schemaInfoSrc.getFieldValue(paramName);
+			}
+			catch (ForbiddenOperationException e) {}
+		}
+		
+		if (paramValue == null) {
+			paramValue = getRelatedEtlConf().getParamValue(paramName);
+		}
+		
+		return paramValue.toString();
+	}
+	
 	/**
 	 * @throws ForbiddenOperationException
 	 */
-	default void tryToLoadSchemaInfo() throws ForbiddenOperationException {
+	default void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc) throws ForbiddenOperationException {
 		if (isTableNameInfoLoaded())
 			return;
 		
@@ -1357,7 +1392,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			
 			String param = utilities.removeFirsChar(normalizedSchema);
 			
-			Object paramValue = getRelatedEtlConf().getParamValue(param);
+			Object paramValue = this.getParamValue(schemaInfoSrc, param);
 			
 			if (paramValue == null) {
 				throw new ForbiddenOperationException("You should configure the parameter '" + param + "'");
@@ -1371,7 +1406,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			
 			String param = utilities.removeFirsChar(normalizedTableName);
 			
-			Object paramValue = getRelatedEtlConf().getParamValue(param);
+			Object paramValue = this.getParamValue(schemaInfoSrc, param);
 			
 			if (paramValue == null) {
 				throw new ForbiddenOperationException("You should configure the parameter '" + param + "'");
@@ -1387,13 +1422,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 * @throws DBException
 	 * @throws ForbiddenOperationException
 	 */
-	default void loadSchemaInfo(Connection conn)
+	default void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
 	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
 		
 		if (isTableNameInfoLoaded())
 			return;
 		
-		tryToLoadSchemaInfo();
+		tryToLoadSchemaInfo(schemaInfoSrc);
 		
 		if (getSchema() == null) {
 			setSchema(DBUtilities.determineSchemaName(conn));
@@ -2164,7 +2199,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				ref.tryToGenerateTableAlias(aliasGenerator);
 				
 				if (existingConf != null) {
-					ref.clone(existingConf, conn);
+					ref.clone(existingConf, null, conn);
 					
 				} else {
 					ref.fullLoad(conn);

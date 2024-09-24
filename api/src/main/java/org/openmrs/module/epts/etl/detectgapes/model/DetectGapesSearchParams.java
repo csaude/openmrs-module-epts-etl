@@ -22,7 +22,7 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		super(engine, limits);
 		
-		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray());
+		setOrderByFields(getSrcConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	public DetectGapesController getRelatedController() {
@@ -32,7 +32,7 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
 	        Connection dstCOnn) throws DBException {
-		AbstractTableConfiguration tableInfo = getSrcTableConf();
+		AbstractTableConfiguration tableInfo = getSrcConf();
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		

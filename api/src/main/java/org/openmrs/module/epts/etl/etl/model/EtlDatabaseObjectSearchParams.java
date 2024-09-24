@@ -32,13 +32,15 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		super(engine, limits);
 		
-		setOrderByFields(getSrcTableConf().getPrimaryKey().parseFieldNamesToArray(getSrcTableConf().getTableAlias()));
+		if (getSrcConf() != null && getSrcConf().hasPK()) {
+			setOrderByFields(getSrcConf().getPrimaryKey().parseFieldNamesToArray(getSrcConf().getTableAlias()));
+		}
 	}
 	
 	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord intervalExtremeRecord,
 	        Connection srcConn, Connection dstConn) throws DBException {
-		SrcConf srcConfig = getSrcTableConf();
+		SrcConf srcConfig = getSrcConf();
 		
 		AuxQueryInfo auxQueryInfo = new AuxQueryInfo(new SearchClauses<EtlDatabaseObject>(this));
 		
@@ -92,7 +94,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 	
 	private void loadAuxExtractTable(AuxQueryInfo queryInfo, JoinableEntity aux, Connection srcConn)
 	        throws ForbiddenOperationException, DBException {
-		SrcConf srcConfig = getSrcTableConf();
+		SrcConf srcConfig = getSrcConf();
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = queryInfo.getSearchClauses();
 		String clauseFrom = queryInfo.getClauseFrom();
@@ -160,7 +162,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 	}
 	
 	public DatabaseObjectLoaderHelper getLoaderHealper() {
-		return this.getConfig().getSrcConf().getLoadHealper();
+		return this.getSrcConf().getLoadHealper();
 	}
 	
 	@Override
@@ -226,7 +228,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 	
 	private String generateDestinationJoinSubquery(DstConf dstConf, Connection dstConn) throws DBException {
 		
-		AbstractTableConfiguration srcTabConf = getSrcTableConf();
+		AbstractTableConfiguration srcTabConf = getSrcConf();
 		
 		String fromClause = dstConf.generateSelectFromClauseContent();
 		

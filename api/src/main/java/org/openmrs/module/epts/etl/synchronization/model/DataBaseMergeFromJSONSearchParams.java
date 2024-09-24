@@ -44,7 +44,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 		
 		SearchClauses<EtlStageRecordVO> searchClauses = new SearchClauses<EtlStageRecordVO>(this);
 		
-		AbstractTableConfiguration tableInfo = this.getSrcTableConf();
+		AbstractTableConfiguration tableInfo = this.getSrcConf();
 		
 		searchClauses.addColumnToSelect(tableInfo.generateFullStageTableName() + ".*");
 		

@@ -37,13 +37,14 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	
 	private String fileNamePathern;
 	
-	public LoadSyncDataSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
+	public LoadSyncDataSearchParams(Engine<EtlDatabaseObject> engine,
+	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		super(engine, limits);
 		
 		if (limits != null) {
-			this.firstFileName = getSrcTableConf().getTableName() + "_"
+			this.firstFileName = getSrcConf().getTableName() + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentFirstRecordId(), 10) + ".json";
-			this.lastFileName = getSrcTableConf().getTableName() + "_"
+			this.lastFileName = getSrcConf().getTableName() + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json";
 		}
 	}
@@ -64,8 +65,8 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord,
-	        Connection srcConn, Connection dstCOnn) throws DBException {
+	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
+	        Connection dstCOnn) throws DBException {
 		
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
@@ -191,7 +192,7 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	private File getSyncDirectory() {
-		return this.getRelatedController().getSyncDirectory(getSrcTableConf());
+		return this.getRelatedController().getSyncDirectory(getSrcConf());
 	}
 	
 	@Override

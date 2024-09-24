@@ -104,7 +104,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	 * @param searchClauses
 	 */
 	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses, DbmsType dbmsType) {
-		if (this.getConfig().getSrcConf().getExtraConditionForExtract() != null) {
+		if (this.getSrcConf().getExtraConditionForExtract() != null) {
 			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
 			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraContidion, getSrcConf()),
 			    getConfig().getRelatedEtlConf(), true, dbmsType);
@@ -125,9 +125,9 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	 */
 	public void tryToAddLimits(IntervalExtremeRecord intervalExtremeRecord, SearchClauses<EtlDatabaseObject> searchClauses) {
 		if (intervalExtremeRecord != null) {
-			if (getSrcTableConf().getPrimaryKey().isSimpleNumericKey()) {
+			if (getSrcConf().getPrimaryKey().isSimpleNumericKey()) {
 				searchClauses.addToClauses(getSrcConf().getTableAlias() + "."
-				        + getSrcTableConf().getPrimaryKey().retrieveSimpleKeyColumnName() + " between ? and ?");
+				        + getSrcConf().getPrimaryKey().retrieveSimpleKeyColumnName() + " between ? and ?");
 				searchClauses.addToParameters(intervalExtremeRecord.getMinRecordId());
 				searchClauses.addToParameters(intervalExtremeRecord.getMaxRecordId());
 			} else {
@@ -138,17 +138,10 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	
 	@SuppressWarnings("unchecked")
 	public Class<T> getRecordClass() {
-		return (Class<T>) getSrcTableConf().getSyncRecordClass(getSrcTableConf().getSrcConnInfo());
+		return (Class<T>) getSrcConf().getSyncRecordClass(getSrcConf().getSrcConnInfo());
 	}
 	
 	public SrcConf getSrcConf() {
-		return this.getConfig().getSrcConf();
-	}
-	
-	/**
-	 * @return
-	 */
-	public SrcConf getSrcTableConf() {
 		return this.getConfig().getSrcConf();
 	}
 	

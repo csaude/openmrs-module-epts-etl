@@ -26,7 +26,7 @@ public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchPara
 		SearchClauses<EtlStageRecordVO> searchClauses = new SearchClauses<EtlStageRecordVO>(this);
 		
 		searchClauses.addColumnToSelect("*");
-		searchClauses.addToClauseFrom(getSrcTableConf().generateFullStageTableName());
+		searchClauses.addToClauseFrom(getSrcConf().generateFullStageTableName());
 		searchClauses.addToClauses("consistent = 1");
 		
 		if (!this.selectAllRecords) {

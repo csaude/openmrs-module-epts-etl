@@ -51,7 +51,7 @@ public interface MainJoiningEntity extends TableConfiguration {
 				
 				try {
 					if (fullLoadedTab != null) {
-						t.clone(fullLoadedTab, conn);
+						t.clone(fullLoadedTab, null, conn);
 					} else {
 						t.fullLoad(srcConn);
 					}
@@ -62,7 +62,7 @@ public interface MainJoiningEntity extends TableConfiguration {
 						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName());
 						
 						if (fullLoadedTab != null) {
-							t.getSharedKeyRefInfo().clone(fullLoadedTab, srcConn);
+							t.getSharedKeyRefInfo().clone(fullLoadedTab, null, srcConn);
 						} else {
 							t.getSharedKeyRefInfo().fullLoad(srcConn);
 						}

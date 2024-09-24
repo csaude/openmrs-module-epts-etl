@@ -28,11 +28,11 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
-		searchClauses.addColumnToSelect(getSrcTableConf().generateFullAliasedSelectColumns());
-		searchClauses.addToClauseFrom(getSrcTableConf().generateSelectFromClauseContent());
+		searchClauses.addColumnToSelect(getSrcConf().generateFullAliasedSelectColumns());
+		searchClauses.addToClauseFrom(getSrcConf().generateSelectFromClauseContent());
 		
 		searchClauses
-		        .addToClauseFrom("INNER JOIN " + getSrcTableConf().generateFullStageTableName() + " ON record_uuid = uuid");
+		        .addToClauseFrom("INNER JOIN " + getSrcConf().generateFullStageTableName() + " ON record_uuid = uuid");
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("consistent = -1");

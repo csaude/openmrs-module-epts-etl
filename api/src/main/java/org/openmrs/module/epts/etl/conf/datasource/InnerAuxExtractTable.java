@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -118,6 +119,17 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	@Override
 	public String getName() {
 		return this.getTableName();
+	}
+	
+	public void clone(InnerAuxExtractTable toCloneFrom, AuxExtractTable relatedMainExtractTable,
+	        EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+		super.clone(toCloneFrom, schemaInfoSrc, conn);
+		
+		this.setJoinFields(toCloneFrom.getJoinFields());
+		this.setJoinExtraCondition(toCloneFrom.getJoinExtraCondition());
+		this.setJoinType(toCloneFrom.getJoinType());
+		this.setMainExtractTable(relatedMainExtractTable);
+		this.setDoNotUseAsDatasource(toCloneFrom.isDoNotUseAsDatasource());
 	}
 	
 }

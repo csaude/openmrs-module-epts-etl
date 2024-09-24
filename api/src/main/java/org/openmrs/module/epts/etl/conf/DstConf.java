@@ -890,4 +890,38 @@ public class DstConf extends AbstractTableConfiguration {
 		return utilities.arrayHasElement(this.getMapping());
 	}
 	
+	public static List<DstConf> cloneAll(List<DstConf> allToCloneFrom, EtlItemConfiguration relatedSrcConf,
+	        EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+		
+		List<DstConf> allCloned = null;
+		
+		if (utilities.arrayHasElement(allToCloneFrom)) {
+			allCloned = new ArrayList<>(allToCloneFrom.size());
+			
+			for (DstConf aux : allToCloneFrom) {
+				DstConf cloned = new DstConf();
+				cloned.clone(aux, relatedSrcConf, schemaInfoSrc, conn);
+				
+				allCloned.add(cloned);
+			}
+		}
+		
+		return allCloned;
+	}
+	
+	public void clone(DstConf toCloneFrom, EtlItemConfiguration relatedSrcConf, EtlDatabaseObject schemaInfoSrc,
+	        Connection conn) throws DBException {
+		super.clone(toCloneFrom, schemaInfoSrc, conn);
+		this.setParentConf(relatedSrcConf);
+		this.setRelatedEtlConfig(relatedSrcConf.getRelatedEtlConf());
+		this.setJoinFields(toCloneFrom.getJoinFields());
+		this.setMapping(toCloneFrom.getMapping());
+		this.setPrefferredDataSource(toCloneFrom.getPrefferredDataSource());
+		this.setIgnoreUnmappedFields(toCloneFrom.isIgnoreUnmappedFields());
+		this.setDstType(toCloneFrom.getDstType());
+		this.setTransformer(toCloneFrom.getTransformer());
+		this.setTransformerInstance(toCloneFrom.getTransformerInstance());
+		this.setIncludeAllFieldsFromDataSource(toCloneFrom.includeAllFieldsFromDataSource());
+	}
+	
 }

@@ -149,7 +149,7 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	}
 	
 	private File getSyncDirectory() {
-		return this.getRelatedController().getSyncDirectory(getSrcTableConf());
+		return this.getRelatedController().getSyncDirectory(getSrcConf());
 	}
 	
 	@Override

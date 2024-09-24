@@ -53,7 +53,7 @@ public class ResourceList {
 				copyResource(file, destinationDirectory);
 			}
 			
-			TimeCountDown.sleep(10);
+			TimeCountDown.sleep(2);
 			
 		}
 	}
@@ -65,8 +65,8 @@ public class ResourceList {
 	}
 	
 	public static void main(final String[] args) throws IOException {
-		ResourceList.recreateResources(new File("D:\\MIDIA\\Audio & Music\\New\\2024\\Kizombas\\Kizomba_List_PlayList_m3u"),
-		    new File("F:\\01_01_Now\\Kizomba"));
+		ResourceList.recreateResources(new File("D:\\MIDIA\\Audio & Music\\New\\2024\\Afro_PlayList_m3u"),
+		    new File("G:\\01_01_Now\\Afro"));
 	}
 	
 }

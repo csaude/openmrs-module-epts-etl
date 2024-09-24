@@ -3,11 +3,9 @@ package org.openmrs.module.epts.etl.conf.datasource;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
-import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -16,7 +14,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * This class represent a table which can act as source of {@link SrcConf} or {@link DstConf}. This
  * allow the dynamic configuration of {@link EtlItemConfiguration}
  */
-public class DynamicEtlItemSrcConf extends AbstractTableConfiguration implements MainJoiningEntity {
+public class EtlItemSrcConf extends SrcConf {
 	
 	private List<AuxExtractTable> auxExtractTable;
 	

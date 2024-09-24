@@ -30,7 +30,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 		
 		searchClauses.addColumnToSelect("distinct (src_.record_uuid) record_uuid");
 		
-		AbstractTableConfiguration tableInfo = this.getSrcTableConf();
+		AbstractTableConfiguration tableInfo = this.getSrcConf();
 		
 		searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName() + " src_ ");
 		
