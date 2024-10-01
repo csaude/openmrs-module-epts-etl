@@ -290,13 +290,10 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	@Override
 	public void setParentConf(EtlDataConfiguration parent) {
-		super.setParentConf((EtlItemConfiguration) parent);
-	}
-	
-	@Override
-	@JsonIgnore
-	public EtlItemConfiguration getParentConf() {
-		return (EtlItemConfiguration) super.getParentConf();
+		if (!(parent instanceof EtlItemConfiguration))
+			throw new ForbiddenOperationException("Only 'EtlItemConfiguration' is allowed to be a parent of an SrcConf");
+		
+		super.setParentConf(parent);
 	}
 	
 	@Override
@@ -309,9 +306,14 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		super.tryToDiscoverySharedKeyInfo(conn);
 		
 		if (useSharedPKKey()) {
-			//Parce the shared parent to datasource
-			utilities.updateOnArray(this.getParentRefInfo(), getSharedKeyRefInfo(),
-			    ParentAsSrcDataSource.generateFromSrcConfSharedPkParent(this, getSharedKeyRefInfo(), conn));
+			
+			ParentTable shrd = this.getSharedKeyRefInfo();
+			
+			//Parse the shared parent to data source
+			ParentAsSrcDataSource sharedAsSrcConf = ParentAsSrcDataSource.generateFromSrcConfSharedPkParent(this, shrd,
+			    conn);
+			
+			utilities.updateOnArray(this.getParentRefInfo(), shrd, sharedAsSrcConf);
 		}
 	}
 	

@@ -121,7 +121,7 @@ public class EtlField extends Field {
 				if (this.getSrcDataSource() == null) {
 					throw new ForbiddenOperationException("The dataSource " + this.getDataSource()
 					        + " cannot be found on the dataSource list on the item configuration "
-					        + srcConf.getParentConf().getConfigCode() + "!!!");
+					        + ((EtlItemConfiguration) srcConf.getParentConf()).getConfigCode() + "!!!");
 				}
 			} else {
 				//Discovery the Ds
@@ -136,7 +136,7 @@ public class EtlField extends Field {
 				
 				throw new ForbiddenOperationException("The etlField " + this.getName()
 				        + " cannot be found on any dataSource listed on the item configuration "
-				        + srcConf.getParentConf().getConfigCode() + "!!!");
+				        + ((EtlItemConfiguration) srcConf.getParentConf()) + "!!!");
 			}
 		} else {
 			this.setDataSource(this.getSrcDataSource().getAlias());

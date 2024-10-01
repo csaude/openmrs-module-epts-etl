@@ -8,8 +8,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
 import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
@@ -522,30 +520,6 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	public void tryToFillParams(EtlDatabaseObject schemaInfoSrc) {
-		String paramRegex = "@(\\w+)";
-		Pattern pattern = Pattern.compile(paramRegex);
-		Matcher matcher = pattern.matcher(this.getQuery());
-		StringBuffer result = new StringBuffer();
-		
-		while (matcher.find()) {
-			String paramName = matcher.group(1);
-			
-			try {
-				Object paramValue = schemaInfoSrc.getFieldValue(paramName);
-				
-				if (paramValue != null && !paramValue.toString().isEmpty()) {
-					matcher.appendReplacement(result, paramValue.toString());
-				} else {
-					matcher.appendReplacement(result, "@" + paramName);
-				}
-			}
-			catch (ForbiddenOperationException e) {
-				e.printStackTrace();
-			}
-			
-		}
-		matcher.appendTail(result);
-		
-		this.setQuery(result.toString());
+		this.setQuery(DBUtilities.tryToReplaceParamsInQuery(this.getQuery(), schemaInfoSrc));
 	}
 }

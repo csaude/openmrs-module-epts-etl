@@ -21,17 +21,33 @@
 		   "srcConf":{
 			  "tableName":"",
 			  "extraConditionForExtract":"",
-			  "observationDateFields":[],
+			  "observationDateFields":[
+				 
+			  ],
 			  "sharePkWith":"",
 			  "metadata":"",
 			  "removeForbidden":"",
-			  "uniqueKeys":[],
-			  "parents":[],
-			  "extraTableDataSource":[],
-			  "extraQueryDataSource":[]
+			  "uniqueKeys":[
+				 
+			  ],
+			  "parents":[
+				 
+			  ],
+			  "extraTableDataSource":[
+				 
+			  ],
+			  "extraQueryDataSource":[
+				 
+			  ]
 		   },
-		   
-		   "dstConf":[]
+		   "dstConf":[
+			  
+		   ],
+		   "createDstTableIfNotExists": "",
+		   "etlItemSrcConf":{
+			  
+		   },
+		   "disabled":""
 		}
 		
 		

@@ -16,6 +16,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 
 import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
+import org.openmrs.module.epts.etl.conf.datasource.EtlConfigurationSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
@@ -55,9 +56,13 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private String originAppLocationCode;
 	
+	private EtlConfigurationSrcConf dynamicSrcConf;
+	
 	private List<EtlItemConfiguration> etlItemConfiguration;
 	
 	private EtlItemConfiguration testingEtlItemConfiguration;
+	
+	private DBConnectionInfo mainConnInfo;
 	
 	private DBConnectionInfo srcConnInfo;
 	
@@ -148,6 +153,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 */
 	private boolean doNotResolveRelationship;
 	
+	private EtlConfiguration parentEtlConf;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -160,6 +167,26 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.busyTableAliasName = new ArrayList<>();
 		
 		this.waitTimeToCheckStatus = 5;
+	}
+	
+	public EtlConfiguration getParentEtlConf() {
+		return parentEtlConf;
+	}
+	
+	public void setParentEtlConf(EtlConfiguration parentEtlConf) {
+		this.parentEtlConf = parentEtlConf;
+	}
+	
+	public EtlConfigurationSrcConf getDynamicSrcConf() {
+		return dynamicSrcConf;
+	}
+	
+	public void setDynamicSrcConf(EtlConfigurationSrcConf dynamicSrcConf) {
+		this.dynamicSrcConf = dynamicSrcConf;
+	}
+	
+	public boolean isDynamic() {
+		return this.getDynamicSrcConf() != null;
 	}
 	
 	public void setTestingEtlItemConfiguration(EtlItemConfiguration testingEtlItemConfiguration) {
@@ -441,6 +468,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	@JsonIgnore
 	public String getPojoPackage(DBConnectionInfo connInfo) {
 		return connInfo.getPojoPackageName();
+	}
+	
+	public DBConnectionInfo getMainConnInfo() {
+		return mainConnInfo;
+	}
+	
+	public void setMainConnInfo(DBConnectionInfo mainConnInfo) {
+		this.mainConnInfo = mainConnInfo;
 	}
 	
 	public DBConnectionInfo getSrcConnInfo() {
@@ -843,9 +878,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			EtlConfiguration etlConfiguration = new ObjectMapperProvider(types).getContext(EtlConfiguration.class)
 			        .readValue(json, EtlConfiguration.class);
 			
-			conn = etlConfiguration.openSrcConn();
-			
-			etlConfiguration.init(conn);
+			if (!etlConfiguration.isDynamic()) {
+				conn = etlConfiguration.openSrcConn();
+				etlConfiguration.init(conn);
+			}
 			
 			return etlConfiguration;
 		}
@@ -1268,6 +1304,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return getDstConnInfo() != null;
 	}
 	
+	public boolean hasMainConnInfo() {
+		return getDstConnInfo() != null;
+	}
+	
 	public void finalizeAllApps() {
 		if (hasSrcConnInfo())
 			getSrcConnInfo().finalize();
@@ -1491,6 +1531,18 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return dstConn;
 	}
 	
+	public OpenConnection openMainConn() throws DBException, ForbiddenOperationException {
+		OpenConnection mainConn = null;
+		
+		if (hasMainConnInfo()) {
+			mainConn = getMainConnInfo().openConnection();
+		} else {
+			throw new ForbiddenOperationException("No main conn config defined!");
+		}
+		
+		return mainConn;
+	}
+	
 	public OpenConnection openSrcConn() throws DBException, ForbiddenOperationException {
 		OpenConnection conn = getSrcConnInfo().openConnection();
 		
@@ -1503,15 +1555,73 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	@Override
 	public EtlConfiguration getRelatedEtlConf() {
-		return null;
+		return this.getParentEtlConf();
 	}
 	
 	@Override
 	public EtlDataConfiguration getParentConf() {
-		return null;
+		return this.getParentEtlConf();
 	}
 	
 	@Override
 	public void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration) {
 	}
+	
+	public EtlConfiguration cloneDynamic(EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+		EtlConfiguration qqlcoisa = new EtlConfiguration();
+		
+		qqlcoisa.setEtlRootDirectory(tryToLoadPlaceHolders(this.getEtlRootDirectory(), schemaInfoSrc));
+		
+		qqlcoisa.setOriginAppLocationCode(tryToLoadPlaceHolders(this.getOriginAppLocationCode(), schemaInfoSrc));
+		
+		qqlcoisa.setEtlItemConfiguration(new ArrayList<>());
+		
+		for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
+			
+			EtlItemConfiguration cloned = new EtlItemConfiguration();
+			
+			cloned.copyFromOther(item, conn);
+			
+			qqlcoisa.getEtlItemConfiguration().add(item);
+			
+		}
+		
+		if (this.hasTestingItem()) {
+			qqlcoisa.setTestingEtlItemConfiguration(this.getTestingEtlItemConfiguration());
+		}
+		
+		qqlcoisa.setMainConnInfo(this.getMainConnInfo());
+		
+		qqlcoisa.setSrcConnInfo(new DBConnectionInfo());
+		qqlcoisa.getSrcConnInfo().copyFromOther(this.getSrcConnInfo());
+		qqlcoisa.getSrcConnInfo().tryToLoadPlaceHolders(schemaInfoSrc);
+		
+		qqlcoisa.setDstConnInfo(new DBConnectionInfo());
+		qqlcoisa.getDstConnInfo().copyFromOther(this.getDstConnInfo());
+		qqlcoisa.getDstConnInfo().tryToLoadPlaceHolders(schemaInfoSrc);
+		
+		qqlcoisa.setProcessType(this.getProcessType());
+		qqlcoisa.setRelatedConfFile(this.getRelatedConfFile());
+		qqlcoisa.setOperations(this.getOperations());
+		qqlcoisa.setManualStart(this.isManualStart());
+		qqlcoisa.setChildConfigFilePath(tryToLoadPlaceHolders(this.getChildConfigFilePath(), schemaInfoSrc));
+		qqlcoisa.setConfigFilePath(this.getChildConfigFilePath());
+		qqlcoisa.setDisabled(this.isDisabled());
+		qqlcoisa.setModuleRootDirectory(this.getModuleRootDirectory());
+		qqlcoisa.setSyncStageSchema(tryToLoadPlaceHolders(this.getSyncStageSchema(), schemaInfoSrc));
+		qqlcoisa.setFinalizerFullClassName(this.getFinalizerFullClassName());
+		qqlcoisa.setParams(getParams());
+		qqlcoisa.setClassPath(this.getClassPath());
+		qqlcoisa.setDoNotTransformsPrimaryKeys(this.isDoNotTransformsPrimaryKeys());
+		qqlcoisa.setManualMapPrimaryKeyOnField(this.getManualMapPrimaryKeyOnField());
+		qqlcoisa.setWaitTimeToCheckStatus(this.getWaitTimeToCheckStatus());
+		qqlcoisa.setDoNotResolveRelationship(this.isDoNotResolveRelationship());
+		
+		return qqlcoisa;
+	}
+	
+	private String tryToLoadPlaceHolders(String str, EtlDatabaseObject schemaInfoSrc) {
+		return DBUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
+	}
+	
 }

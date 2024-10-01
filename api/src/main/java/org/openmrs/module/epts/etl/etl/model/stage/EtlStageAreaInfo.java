@@ -96,7 +96,6 @@ public class EtlStageAreaInfo {
 	}
 	
 	public static List<EtlDatabaseObject> collectAllDstStageAreaObjectAsEtlDatabaseObject(List<EtlStageAreaInfo> stageInfo) {
-		
 		return utilities.parseList(collectAllDstStageAreaObject(stageInfo), EtlDatabaseObject.class);
 	}
 	
@@ -135,7 +134,6 @@ public class EtlStageAreaInfo {
 		for (EtlStageAreaInfo st : stageObjectInfo) {
 			st.loadSrcIdToDstStageObject();
 		}
-		
 	}
 	
 	public static void loadSrcStageIdToSrcKeyInfo(List<EtlStageAreaInfo> stageInfo) {
@@ -160,16 +158,32 @@ public class EtlStageAreaInfo {
 	
 	private void loadSrcIdToDstStageObject() {
 		if (hasDstStageInfoObject()) {
+			List<EtlStageAreaObject> newDstStageInfo = new ArrayList<>();
+			
 			for (EtlStageAreaObject obj : this.getDstStageInfoObject()) {
-				obj.setFieldValue("stage_record_id", this.getSrcStageInfoObject().getFieldValue("id"));
+				if (this.getSrcStageInfoObject().getFieldValue("id") != null) {
+					obj.setFieldValue("stage_record_id", this.getSrcStageInfoObject().getFieldValue("id"));
+					newDstStageInfo.add(obj);
+				}
 			}
+			
+			this.setDstStageInfoObject(newDstStageInfo);
 		}
 	}
 	
 	private void loadSrcStageObjectIdToSrcKeyInfoObject() {
+		//The src info
+		List<EtlDatabaseObject> newSrcStageInfo = new ArrayList<>();
+		
 		for (EtlDatabaseObject obj : this.getSrcStageInfoObject().getKeyInfo()) {
-			obj.setFieldValue("stage_record_id", this.getSrcStageInfoObject().getFieldValue("id"));
+			if (this.getSrcStageInfoObject().getFieldValue("id") != null) {
+				obj.setFieldValue("stage_record_id", this.getSrcStageInfoObject().getFieldValue("id"));
+				
+				newSrcStageInfo.add(obj);
+			}
 		}
+		
+		this.getSrcStageInfoObject().setKeyInfo(newSrcStageInfo);
 	}
 	
 }

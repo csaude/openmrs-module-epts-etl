@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
@@ -119,8 +120,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			EtlDatabaseObject dstParent = null;
 			
 			for (SrcConf src : srcForSharedPk) {
-				DstConf sharedPkDstConf = src.getParentConf().findDstTable(processor.getRelatedEtlOperationConfig(),
-				    dstConf.getSharedKeyRefInfo().getTableName());
+				DstConf sharedPkDstConf = ((EtlItemConfiguration) src.getParentConf()).findDstTable(
+				    processor.getRelatedEtlOperationConfig(), dstConf.getSharedKeyRefInfo().getTableName());
 				
 				EtlDatabaseObject recordAsSrc = src.createRecordInstance();
 				recordAsSrc.setRelatedConfiguration(src);

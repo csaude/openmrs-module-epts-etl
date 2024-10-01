@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 public class DBConnectionInfo {
@@ -190,6 +191,29 @@ public class DBConnectionInfo {
 	
 	public String getPojoPackageName() {
 		throw new ForbiddenOperationException("Rever esta logica");
+	}
+	
+	public void copyFromOther(DBConnectionInfo toCopyFrom) {
+		this.setDataBaseUserName(toCopyFrom.getDataBaseUserName());
+		this.setDataBaseUserPassword(toCopyFrom.getDataBaseUserPassword());
+		this.setConnectionURI(toCopyFrom.getConnectionURI());
+		this.setDriveClassName(toCopyFrom.getDriveClassName());
+		this.setSchema(toCopyFrom.getSchema());
+		this.setMaxActiveConnections(toCopyFrom.getMaxActiveConnections());
+		this.setMaxIdleConnections(toCopyFrom.getMaxIdleConnections());
+		this.setMinIdleConnections(toCopyFrom.getMinIdleConnections());
+		this.setDatabaseSchemaPath(toCopyFrom.getDatabaseSchemaPath());
+	}
+	
+	public void tryToLoadPlaceHolders(EtlDatabaseObject schemaInfoSrc) {
+		this.setDataBaseUserName(tryToLoadPlaceHolders(this.getDataBaseUserName(), schemaInfoSrc));
+		this.setDataBaseUserPassword(tryToLoadPlaceHolders(this.getDataBaseUserPassword(), schemaInfoSrc));
+		this.setConnectionURI(tryToLoadPlaceHolders(this.getConnectionURI(), schemaInfoSrc));
+		this.setSchema(tryToLoadPlaceHolders(this.getSchema(), schemaInfoSrc));
+	}
+	
+	private String tryToLoadPlaceHolders(String str, EtlDatabaseObject schemaInfoSrc) {
+		return DBUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
 	}
 	
 }

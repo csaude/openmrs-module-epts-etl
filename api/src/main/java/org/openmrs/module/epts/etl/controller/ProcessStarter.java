@@ -2,8 +2,6 @@ package org.openmrs.module.epts.etl.controller;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
@@ -22,7 +20,7 @@ public class ProcessStarter implements ControllerStarter {
 	
 	private boolean initialized;
 	
-	private String[] synConfigFilesPaths;
+	private EtlConfiguration etlConfig;
 	
 	private ProcessController currentController;
 	
@@ -30,8 +28,8 @@ public class ProcessStarter implements ControllerStarter {
 	
 	private static final String stringLock = new String("LOCK_STRING");
 	
-	public ProcessStarter(String[] synConfigFiles) {
-		this.synConfigFilesPaths = synConfigFiles;
+	public ProcessStarter(EtlConfiguration etlConfig) {
+		this.etlConfig = etlConfig;
 		
 		this.logger = new EptsEtlLogger(ProcessStarter.class);
 	}
@@ -40,8 +38,8 @@ public class ProcessStarter implements ControllerStarter {
 		return currentController;
 	}
 	
-	public ProcessStarter(String[] synConfigFiles, Logger logger) {
-		this.synConfigFilesPaths = synConfigFiles;
+	public ProcessStarter(EtlConfiguration etlConfig, Logger logger) {
+		this.etlConfig = etlConfig;
 		
 		this.logger = new EptsEtlLogger(logger);
 	}
@@ -74,20 +72,11 @@ public class ProcessStarter implements ControllerStarter {
 			
 			logger.debug("Initializing the ProcessStarter...");
 			
-			List<EtlConfiguration> syncConfigs = loadSyncConfig(this.synConfigFilesPaths);
+			logger.debug("Initializing ProcessController using " + this.etlConfig.getConfigFilePath());
 			
-			logger.debug("Found " + syncConfigs.size() + " Configuration files!");
+			this.currentController = new ProcessController(this, this.etlConfig);
 			
-			for (EtlConfiguration conf : syncConfigs) {
-				if (conf.isManualStart())
-					continue;
-				
-				logger.debug("Initializing ProcessController using " + conf.getConfigFilePath());
-				
-				this.currentController = new ProcessController(this, conf);
-				
-				logger.debug("ProcessController Initialized");
-			}
+			logger.debug("ProcessController Initialized");
 			
 			this.initialized = true;
 			
@@ -171,54 +160,4 @@ public class ProcessStarter implements ControllerStarter {
 		
 	}
 	
-	public List<EtlConfiguration> loadSyncConfig(File[] syncConfigFiles) throws ForbiddenOperationException, IOException {
-		String[] pathToFiles = new String[syncConfigFiles.length];
-		
-		for (int i = 0; i < syncConfigFiles.length; i++) {
-			pathToFiles[i] = syncConfigFiles[i].getAbsolutePath();
-		}
-		
-		return loadSyncConfig(pathToFiles);
-	}
-	
-	public List<EtlConfiguration> loadSyncConfig(String[] synConfigFiles) throws ForbiddenOperationException {
-		List<EtlConfiguration> syncConfigs = new ArrayList<EtlConfiguration>(synConfigFiles.length);
-		
-		for (String confFile : synConfigFiles) {
-			File file = new File(confFile);
-			
-			if (file.isDirectory()) {
-				File[] files = file.listFiles();
-				
-				String[] paths = new String[files.length];
-				
-				for (int i = 0; i < files.length; i++) {
-					paths[i] = files[i].getAbsolutePath();
-				}
-				
-				syncConfigs.addAll(loadSyncConfig(paths));
-			} else {
-				EtlConfiguration conf;
-				
-				try {
-					conf = EtlConfiguration.loadFromFile(file);
-					
-					conf.validate();
-					
-					if (!conf.existsOnArray(syncConfigs)) {
-						logger.warn("USING CONFIGURATION FILE " + conf.getRelatedConfFile().getAbsolutePath()
-						        + " WITH PROCESS " + conf.getDesignation());
-						syncConfigs.add(conf);
-					} else
-						throw new ForbiddenOperationException(
-						        "The configuration [" + conf.getDesignation() + "] exists in more than one files");
-				}
-				catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		}
-		
-		return syncConfigs;
-	}
 }

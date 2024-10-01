@@ -524,7 +524,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	@Override
-	public AbstractEtlDataConfiguration getParentConf() {
+	public EtlDataConfiguration getParentConf() {
 		return parentConf;
 	}
 	

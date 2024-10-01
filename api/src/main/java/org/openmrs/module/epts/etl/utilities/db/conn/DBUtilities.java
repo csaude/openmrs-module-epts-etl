@@ -22,6 +22,7 @@ import org.openmrs.module.epts.etl.conf.datasource.SqlFunctionInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.TypePrecision;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -1588,5 +1589,33 @@ public class DBUtilities {
 				throw new DBException(e1);
 			}
 		}
+	}
+	
+	public static String tryToReplaceParamsInQuery(String query, EtlDatabaseObject paramSrc) {
+		String paramRegex = "@(\\w+)";
+		Pattern pattern = Pattern.compile(paramRegex);
+		Matcher matcher = pattern.matcher(query);
+		StringBuffer result = new StringBuffer();
+		
+		while (matcher.find()) {
+			String paramName = matcher.group(1);
+			
+			try {
+				Object paramValue = paramSrc.getFieldValue(paramName);
+				
+				if (paramValue != null && !paramValue.toString().isEmpty()) {
+					matcher.appendReplacement(result, paramValue.toString());
+				} else {
+					matcher.appendReplacement(result, "@" + paramName);
+				}
+			}
+			catch (ForbiddenOperationException e) {
+				e.printStackTrace();
+			}
+			
+		}
+		matcher.appendTail(result);
+		
+		return result.toString();
 	}
 }

@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -192,7 +193,7 @@ public class LoadRecord {
 			EtlDatabaseObject recordAsSrc = null;
 			
 			for (SrcConf src : avaliableSrcForCurrParent) {
-				DstConf dst = src.getParentConf().findDstTable(getEtlOperationConfig(),
+				DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable(getEtlOperationConfig(),
 				    parentInfo.getParentTableConfInDst().getTableName());
 				
 				recordAsSrc = src.createRecordInstance();

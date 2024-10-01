@@ -21,6 +21,7 @@ import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -354,7 +355,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setParentConf(toCloneFrom.getParentConf());
 		this.setFields(toCloneFrom.getFields());
 		
-		if (this.hasPK()) {
+		if (toCloneFrom.hasPK()) {
 			this.setPrimaryKey(toCloneFrom.getPrimaryKey());
 			this.getPrimaryKey().setTabConf(this);
 		}
@@ -1548,6 +1549,15 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			
 			for (ParentTable parent : this.getParentRefInfo()) {
 				if (parent.getTableName().equalsIgnoreCase(this.getSharePkWith())) {
+					
+					if (!parent.isFullLoaded()) {
+						try {
+							parent.fullLoad();
+						}
+						catch (DBException e) {
+							throw new EtlExceptionImpl(e);
+						}
+					}
 					
 					PrimaryKey pk = (PrimaryKey) parent.getPrimaryKey();
 					

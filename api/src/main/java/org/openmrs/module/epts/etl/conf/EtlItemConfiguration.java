@@ -141,12 +141,6 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.fullLoaded = fullLoaded;
 	}
 	
-	public void clone(EtlItemConfiguration toCloneFrom) {
-		this.srcConf = toCloneFrom.srcConf;
-		this.disabled = toCloneFrom.disabled;
-		this.dstConf = toCloneFrom.dstConf;
-	}
-	
 	public boolean hasDstConf() {
 		return utilities.arrayHasElement(this.getDstConf());
 	}
@@ -481,6 +475,20 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		item.setRelatedEtlSchemaObject(schemaInfoSrc);
 		
 		return item;
+	}
+	
+	public void copyFromOther(EtlItemConfiguration toCopyFrom, Connection conn) throws DBException {
+		this.setSrcConf(new SrcConf());
+		this.getSrcConf().clone(toCopyFrom.getSrcConf(), null, conn);
+		
+		if (toCopyFrom.hasDstConf()) {
+			this.setDstConf(DstConf.cloneAll(toCopyFrom.getDstConf(), this, null, conn));
+		}
+		
+		this.setDisabled(toCopyFrom.isDisabled());
+		this.setManualMapPrimaryKeyOnField(toCopyFrom.getManualMapPrimaryKeyOnField());
+		this.setCreateDstTableIfNotExists(toCopyFrom.isCreateDstTableIfNotExists());
+		this.setTesting(toCopyFrom.isTesting());
 	}
 	
 }
