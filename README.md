@@ -74,38 +74,39 @@ The etl item configuration section defines the rules of extraction, transformati
 ```
 {
    "srcConf":{
-      "tableName":"",
-      "extraConditionForExtract":"",
-      "manualMapPrimaryKeyOnField":"",
-      "observationDateFields":[
-         
-      ],
-      "metadata":"",
-      "removeForbidden":"",
-      "uniqueKeys":[
-         
-      ],
-      "parents":[
-         
-      ],
-      "extraTableDataSource":[
-         
-      ],
-      "extraQueryDataSource":[
-         
-      ],
-      "extraObjectDataSource":[
-
-       ]	
+	  "tableName":"",
+	  "extraConditionForExtract":"",
+	  "observationDateFields":[
+		 
+	  ],
+	  "sharePkWith":"",
+	  "metadata":"",
+	  "removeForbidden":"",
+	  "uniqueKeys":[
+		 
+	  ],
+	  "parents":[
+		 
+	  ],
+	  "extraTableDataSource":[
+		 
+	  ],
+	  "extraQueryDataSource":[
+		 
+	  ]
    },
    "dstConf":[
-      
+	  
    ],
-   "createDstTableIfNotExists": ""
+   "createDstTableIfNotExists": "",
+   "etlItemSrcConf":{
+	  
+   },
+   "disabled":""
 }
 ```
 
-The srcConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source. If "createDstTableIfNotExists" field is set to true, the dst table will be automaticaly created in the dst database if it does not exists. 
+The srcConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source. If "createDstTableIfNotExists" field is set to true, the dst table will be automaticaly created in the dst database if it does not exists. The "disabled" field allow the item to bem ignored on the etl process.  
 
 Bellow are explained the relevant configuration for "srcConf" and "dstConf".
 
@@ -383,6 +384,9 @@ Bellow is the explanation for each field:
    }
 }
 ```	  
+
+### The etlItemSrcConf
+The etlItemSrcConf allows the dynamic configuration of Etl Items. This means that item elements can be dynamically gathered from one or more tables. Note that the etlItemSrcConf has the very same elements with SrcConf.     
 
 As can be seen the "winningRecordFieldsInfo'' is a list of lists, listing the fields which will be used to determine which record will win when there are conflicts between an incoming record and existing one. In the above example, if the incoming record has value 1 on field "is_selected" AND has value 0 on field "voided" OR  if the "fullProcessed" field has value true, then the incoming record will win.  Note that for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND".
 
