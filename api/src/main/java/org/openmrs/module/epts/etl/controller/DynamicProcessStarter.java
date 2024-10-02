@@ -60,22 +60,13 @@ public class DynamicProcessStarter extends ProcessStarter implements ControllerS
 	}
 	
 	ProcessController init(EtlDatabaseObject src) throws ForbiddenOperationException, DBException {
-		OpenConnection conn = this.etlConfig.openMainConn();
-		
 		ProcessController currentController;
 		
-		try {
-			logger.debug("Initializing ProcessController using " + this.etlConfig.getConfigFilePath());
-			
-			currentController = new ProcessController(this, this.etlConfig.cloneDynamic(src, conn));
-			
-			logger.debug("ProcessController Initialized");
-		}
-		finally {
-			if (conn != null) {
-				conn.finalizeConnection();
-			}
-		}
+		logger.debug("Initializing ProcessController using " + this.etlConfig.getConfigFilePath());
+		
+		currentController = new ProcessController(this, this.etlConfig.cloneDynamic(src));
+		
+		logger.debug("ProcessController Initialized");
 		
 		return currentController;
 	}

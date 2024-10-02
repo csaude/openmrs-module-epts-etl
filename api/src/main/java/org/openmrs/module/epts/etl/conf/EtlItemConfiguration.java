@@ -462,7 +462,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		EtlItemConfiguration item = new EtlItemConfiguration();
 		
 		item.setSrcConf(new SrcConf());
-		item.getSrcConf().clone(this.getSrcConf(), schemaInfoSrc, conn);
+		item.getSrcConf().copyFromOther(this.getSrcConf(), schemaInfoSrc, conn);
 		
 		if (this.hasDstConf()) {
 			item.setDstConf(DstConf.cloneAll(this.getDstConf(), this, schemaInfoSrc, conn));
@@ -477,9 +477,11 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return item;
 	}
 	
-	public void copyFromOther(EtlItemConfiguration toCopyFrom, Connection conn) throws DBException {
+	public void copyFromOther(EtlItemConfiguration toCopyFrom, boolean ignoreMissingParamsOnElements, Connection conn)
+	        throws DBException {
 		this.setSrcConf(new SrcConf());
-		this.getSrcConf().clone(toCopyFrom.getSrcConf(), null, conn);
+		this.getSrcConf().setIgnoreMissingParameters(ignoreMissingParamsOnElements);
+		this.getSrcConf().copyFromOther(toCopyFrom.getSrcConf(), null, conn);
 		
 		if (toCopyFrom.hasDstConf()) {
 			this.setDstConf(DstConf.cloneAll(toCopyFrom.getDstConf(), this, null, conn));

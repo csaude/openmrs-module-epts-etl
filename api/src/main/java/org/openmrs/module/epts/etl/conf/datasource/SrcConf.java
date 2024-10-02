@@ -283,16 +283,16 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig, Connection conn) throws DBException {
 		SrcConf src = new SrcConf();
 		
-		src.clone(src, null, conn);
+		src.copyFromOther(src, null, conn);
 		
 		return src;
 	}
 	
 	@Override
 	public void setParentConf(EtlDataConfiguration parent) {
-		if (!(parent instanceof EtlItemConfiguration))
+		/*if (!(parent instanceof EtlItemConfiguration))
 			throw new ForbiddenOperationException("Only 'EtlItemConfiguration' is allowed to be a parent of an SrcConf");
-		
+		*/
 		super.setParentConf(parent);
 	}
 	
@@ -457,7 +457,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		throw new ForbiddenOperationException("Not joinable entity!!!");
 	}
 	
-	public void clone(SrcConf toCloneFrom, EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+	public void copyFromOther(SrcConf toCloneFrom, EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
 		super.clone(toCloneFrom, schemaInfoSrc, conn);
 		
 		if (utilities.arrayHasElement(toCloneFrom.getAuxExtractTable())) {

@@ -25,6 +25,7 @@ import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.types.EtlProcessType;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -1567,57 +1568,75 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	public void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration) {
 	}
 	
-	public EtlConfiguration cloneDynamic(EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
-		EtlConfiguration qqlcoisa = new EtlConfiguration();
+	public EtlConfiguration cloneDynamic(EtlDatabaseObject schemaInfoSrc) {
+		EtlConfiguration clonedEtlConf = new EtlConfiguration();
 		
-		qqlcoisa.setEtlRootDirectory(tryToLoadPlaceHolders(this.getEtlRootDirectory(), schemaInfoSrc));
+		clonedEtlConf.setEtlRootDirectory(tryToLoadPlaceHolders(this.getEtlRootDirectory(), schemaInfoSrc));
 		
-		qqlcoisa.setOriginAppLocationCode(tryToLoadPlaceHolders(this.getOriginAppLocationCode(), schemaInfoSrc));
+		clonedEtlConf.setOriginAppLocationCode(tryToLoadPlaceHolders(this.getOriginAppLocationCode(), schemaInfoSrc));
 		
-		qqlcoisa.setEtlItemConfiguration(new ArrayList<>());
-		
-		for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
-			
-			EtlItemConfiguration cloned = new EtlItemConfiguration();
-			
-			cloned.copyFromOther(item, conn);
-			
-			qqlcoisa.getEtlItemConfiguration().add(item);
-			
-		}
+		clonedEtlConf.setEtlItemConfiguration(new ArrayList<>());
 		
 		if (this.hasTestingItem()) {
-			qqlcoisa.setTestingEtlItemConfiguration(this.getTestingEtlItemConfiguration());
+			clonedEtlConf.setTestingEtlItemConfiguration(this.getTestingEtlItemConfiguration());
 		}
 		
-		qqlcoisa.setMainConnInfo(this.getMainConnInfo());
+		clonedEtlConf.setMainConnInfo(this.getMainConnInfo());
 		
-		qqlcoisa.setSrcConnInfo(new DBConnectionInfo());
-		qqlcoisa.getSrcConnInfo().copyFromOther(this.getSrcConnInfo());
-		qqlcoisa.getSrcConnInfo().tryToLoadPlaceHolders(schemaInfoSrc);
+		clonedEtlConf.setSrcConnInfo(new DBConnectionInfo());
+		clonedEtlConf.getSrcConnInfo().copyFromOther(this.getSrcConnInfo());
+		clonedEtlConf.getSrcConnInfo().tryToLoadPlaceHolders(schemaInfoSrc);
 		
-		qqlcoisa.setDstConnInfo(new DBConnectionInfo());
-		qqlcoisa.getDstConnInfo().copyFromOther(this.getDstConnInfo());
-		qqlcoisa.getDstConnInfo().tryToLoadPlaceHolders(schemaInfoSrc);
+		clonedEtlConf.setDstConnInfo(new DBConnectionInfo());
+		clonedEtlConf.getDstConnInfo().copyFromOther(this.getDstConnInfo());
+		clonedEtlConf.getDstConnInfo().tryToLoadPlaceHolders(schemaInfoSrc);
 		
-		qqlcoisa.setProcessType(this.getProcessType());
-		qqlcoisa.setRelatedConfFile(this.getRelatedConfFile());
-		qqlcoisa.setOperations(this.getOperations());
-		qqlcoisa.setManualStart(this.isManualStart());
-		qqlcoisa.setChildConfigFilePath(tryToLoadPlaceHolders(this.getChildConfigFilePath(), schemaInfoSrc));
-		qqlcoisa.setConfigFilePath(this.getChildConfigFilePath());
-		qqlcoisa.setDisabled(this.isDisabled());
-		qqlcoisa.setModuleRootDirectory(this.getModuleRootDirectory());
-		qqlcoisa.setSyncStageSchema(tryToLoadPlaceHolders(this.getSyncStageSchema(), schemaInfoSrc));
-		qqlcoisa.setFinalizerFullClassName(this.getFinalizerFullClassName());
-		qqlcoisa.setParams(getParams());
-		qqlcoisa.setClassPath(this.getClassPath());
-		qqlcoisa.setDoNotTransformsPrimaryKeys(this.isDoNotTransformsPrimaryKeys());
-		qqlcoisa.setManualMapPrimaryKeyOnField(this.getManualMapPrimaryKeyOnField());
-		qqlcoisa.setWaitTimeToCheckStatus(this.getWaitTimeToCheckStatus());
-		qqlcoisa.setDoNotResolveRelationship(this.isDoNotResolveRelationship());
+		clonedEtlConf.setProcessType(this.getProcessType());
+		clonedEtlConf.setRelatedConfFile(this.getRelatedConfFile());
+		clonedEtlConf.setOperations(this.getOperations());
+		clonedEtlConf.setManualStart(this.isManualStart());
+		clonedEtlConf.setChildConfigFilePath(tryToLoadPlaceHolders(this.getChildConfigFilePath(), schemaInfoSrc));
+		clonedEtlConf.setConfigFilePath(this.getChildConfigFilePath());
+		clonedEtlConf.setDisabled(this.isDisabled());
+		clonedEtlConf.setModuleRootDirectory(this.getModuleRootDirectory());
+		clonedEtlConf.setSyncStageSchema(tryToLoadPlaceHolders(this.getSyncStageSchema(), schemaInfoSrc));
+		clonedEtlConf.setFinalizerFullClassName(this.getFinalizerFullClassName());
+		clonedEtlConf.setParams(getParams());
+		clonedEtlConf.setClassPath(this.getClassPath());
+		clonedEtlConf.setDoNotTransformsPrimaryKeys(this.isDoNotTransformsPrimaryKeys());
+		clonedEtlConf.setManualMapPrimaryKeyOnField(this.getManualMapPrimaryKeyOnField());
+		clonedEtlConf.setWaitTimeToCheckStatus(this.getWaitTimeToCheckStatus());
+		clonedEtlConf.setDoNotResolveRelationship(this.isDoNotResolveRelationship());
 		
-		return qqlcoisa;
+		OpenConnection conn = null;
+		
+		try {
+			conn = clonedEtlConf.openSrcConn();
+			
+			for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
+				
+				EtlItemConfiguration cloned = new EtlItemConfiguration();
+				
+				cloned.copyFromOther(item, true, conn);
+				
+				clonedEtlConf.getEtlItemConfiguration().add(item);
+				
+			}
+			
+			clonedEtlConf.init(conn);
+			
+		}
+		catch (DBException e) {
+			throw new EtlExceptionImpl(e);
+		}
+		finally {
+			if (conn != null) {
+				
+				conn.finalizeConnection();
+			}
+		}
+		
+		return clonedEtlConf;
 	}
 	
 	private String tryToLoadPlaceHolders(String str, EtlDatabaseObject schemaInfoSrc) {

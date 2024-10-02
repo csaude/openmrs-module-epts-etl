@@ -33,9 +33,9 @@ public class EtlConfigurationSrcConf extends SrcConf {
 	
 	@Override
 	public void setParentConf(EtlDataConfiguration parent) {
-		if (!(parent instanceof EtlConfiguration))
+		/*if (!(parent instanceof EtlConfiguration))
 			throw new ForbiddenOperationException(
-			        "Only 'EtlConfiguration' is allowed to be a parent of an EtlConfigurationSrcConf");
+			        "Only 'EtlConfiguration' is allowed to be a parent of an EtlConfigurationSrcConf");*/
 		
 		super.setParentConf(parent);
 	}

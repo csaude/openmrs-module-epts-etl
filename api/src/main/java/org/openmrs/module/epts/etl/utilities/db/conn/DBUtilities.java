@@ -1592,6 +1592,9 @@ public class DBUtilities {
 	}
 	
 	public static String tryToReplaceParamsInQuery(String query, EtlDatabaseObject paramSrc) {
+		if (!utilities.stringHasValue(query))
+			return query;
+		
 		String paramRegex = "@(\\w+)";
 		Pattern pattern = Pattern.compile(paramRegex);
 		Matcher matcher = pattern.matcher(query);

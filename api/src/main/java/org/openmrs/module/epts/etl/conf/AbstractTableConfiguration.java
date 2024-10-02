@@ -33,7 +33,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private Class<? extends EtlDatabaseObject> syncRecordClass;
 	
-	private AbstractEtlDataConfiguration parentConf;
+	private EtlDataConfiguration parentConf;
 	
 	private PrimaryKey primaryKey;
 	
@@ -110,6 +110,8 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private boolean useMysqlInsertIgnore;
 	
+	private boolean ignoreMissingParameters;
+	
 	public AbstractTableConfiguration() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 		this.onConflict = ConflictResolutionType.MAKE_YOUR_DECISION;
@@ -119,6 +121,18 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this();
 		
 		this.tableName = tableName;
+	}
+	
+	public boolean isIgnoreMissingParameters() {
+		return ignoreMissingParameters;
+	}
+	
+	public boolean ignoreMissingParameters() {
+		return ignoreMissingParameters;
+	}
+	
+	public void setIgnoreMissingParameters(boolean ignoreMissingParameters) {
+		this.ignoreMissingParameters = ignoreMissingParameters;
 	}
 	
 	public String getManualMapPrimaryKeyOnField() {
@@ -529,7 +543,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	public void setParentConf(EtlDataConfiguration parentConf) {
-		this.parentConf = (AbstractEtlDataConfiguration) parentConf;
+		this.parentConf = (EtlDataConfiguration) parentConf;
 	}
 	
 	public String getTableName() {

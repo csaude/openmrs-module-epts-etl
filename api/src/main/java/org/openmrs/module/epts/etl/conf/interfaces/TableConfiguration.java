@@ -132,6 +132,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	boolean isRemoveForbidden();
 	
+	boolean ignoreMissingParameters();
+	
 	public void setRemoveForbidden(boolean removeForbidden);
 	
 	List<ParentTable> getParents();
@@ -1365,11 +1367,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			catch (ForbiddenOperationException e) {}
 		}
 		
-		if (paramValue == null) {
+		if (paramValue == null && getRelatedEtlConf() != null) {
 			paramValue = getRelatedEtlConf().getParamValue(paramName);
 		}
 		
-		return paramValue.toString();
+		return paramValue != null ? paramValue.toString() : null;
 	}
 	
 	/**
@@ -1395,11 +1397,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			
 			Object paramValue = this.getParamValue(schemaInfoSrc, param);
 			
-			if (paramValue == null) {
+			if (paramValue == null && !ignoreMissingParameters()) {
 				throw new ForbiddenOperationException("You should configure the parameter '" + param + "'");
 			}
 			
-			this.setSchema(paramValue.toString());
+			if (paramValue != null) {
+				this.setSchema(paramValue.toString());
+			}
 		}
 		
 		if (getTableName().startsWith("@")) {
@@ -1409,11 +1413,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			
 			Object paramValue = this.getParamValue(schemaInfoSrc, param);
 			
-			if (paramValue == null) {
+			if (paramValue == null && !ignoreMissingParameters()) {
 				throw new ForbiddenOperationException("You should configure the parameter '" + param + "'");
 			}
 			
-			setTableName(paramValue.toString());
+			if (paramValue != null) {
+				setTableName(paramValue.toString());
+			}
 		}
 		
 	}
