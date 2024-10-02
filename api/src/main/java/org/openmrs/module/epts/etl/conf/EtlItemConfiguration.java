@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.ThreadingMode;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.EtlDynamicItemSearchParams;
@@ -51,7 +52,21 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private EtlDatabaseObject relatedEtlSchemaObject;
 	
+	private ThreadingMode threadingMode;
+	
 	public EtlItemConfiguration() {
+	}
+	
+	public ThreadingMode getThreadingMode() {
+		return threadingMode;
+	}
+	
+	public void setThreadingMode(ThreadingMode threadingMode) {
+		this.threadingMode = threadingMode;
+	}
+	
+	public boolean hasThreadingMode() {
+		return this.getThreadingMode() != null;
 	}
 	
 	public EtlDatabaseObject getRelatedEtlSchemaObject() {
@@ -467,7 +482,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		if (this.hasDstConf()) {
 			item.setDstConf(DstConf.cloneAll(this.getDstConf(), this, schemaInfoSrc, conn));
 		}
-		
+		item.setThreadingMode(this.getThreadingMode());
 		item.setDisabled(this.isDisabled());
 		item.setManualMapPrimaryKeyOnField(this.getManualMapPrimaryKeyOnField());
 		item.setCreateDstTableIfNotExists(this.isCreateDstTableIfNotExists());

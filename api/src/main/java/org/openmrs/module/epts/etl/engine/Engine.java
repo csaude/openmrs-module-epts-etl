@@ -18,6 +18,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
+import org.openmrs.module.epts.etl.conf.types.ThreadingMode;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
@@ -348,8 +349,13 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				
 				logTrace("DEFAULT PARENT OBJECTS CREATED");
 				
-				if (this.getRelatedEtlOperationConfig().getThreadingMode().isMultiThread()
-				        && this.getMaxSupportedProcessors() > 1) {
+				ThreadingMode threadingMode = this.getRelatedEtlOperationConfig().getThreadingMode();
+				
+				if (this.getEtlItemConfiguration().hasThreadingMode()) {
+					threadingMode = this.getEtlItemConfiguration().getThreadingMode();
+				}
+				
+				if (threadingMode.isMultiThread() && this.getMaxSupportedProcessors() > 1) {
 					performeTaskInMultiProcessors();
 				} else {
 					this.performeTaskInSingleProcessor();
