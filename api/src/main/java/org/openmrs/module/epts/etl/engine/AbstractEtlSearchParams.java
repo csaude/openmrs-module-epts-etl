@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
 import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
@@ -105,9 +106,9 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	 */
 	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses, DbmsType dbmsType) {
 		if (this.getSrcConf().getExtraConditionForExtract() != null) {
-			String extraContidion = this.getConfig().getSrcConf().getExtraConditionForExtract();
+			String extraContidion = getSrcConf().getExtraConditionForExtract();
 			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraContidion, getSrcConf()),
-			    getConfig().getRelatedEtlConf(), true, dbmsType);
+			    getRelatedEtlConf(), true, dbmsType);
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
 			
@@ -117,6 +118,10 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 			
 			searchClauses.addToParameters(params);
 		}
+	}
+	
+	public EtlConfiguration getRelatedEtlConf() {
+		return getConfig().getRelatedEtlConf();
 	}
 	
 	/**

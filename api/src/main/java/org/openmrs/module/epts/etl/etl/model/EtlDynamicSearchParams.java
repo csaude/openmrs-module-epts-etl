@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.etl.model;
 
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.EtlConfigurationSrcConf;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 
@@ -18,4 +19,8 @@ public class EtlDynamicSearchParams extends EtlDatabaseObjectSearchParams {
 		return relatedSrcConf;
 	}
 	
+	@Override
+	public EtlConfiguration getRelatedEtlConf() {
+		return relatedSrcConf.getRelatedEtlConf();
+	}
 }
