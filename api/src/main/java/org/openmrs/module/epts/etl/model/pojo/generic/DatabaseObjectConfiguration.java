@@ -31,7 +31,7 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	void fullLoad(Connection conn) throws DBException;
 	
-	TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName);
+	TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName, List<Integer> alreadyCheckedObjects);
 	
 	@JsonIgnore
 	default File getPOJOCopiledFilesDirectory() {
@@ -146,6 +146,18 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	List<ChildTable> getChildRefInfo();
 	
 	DatabaseObjectLoaderHelper getLoadHealper();
+	
+	default List<String> getParentRefInfoAsString() {
+		List<String> parents = new ArrayList<>();
+		
+		if (hasParentRefInfo()) {
+			for (ParentTable p : this.getParentRefInfo()) {
+				parents.add(p.getTableName());
+			}
+		}
+		
+		return parents;
+	}
 	
 	default boolean hasParentRefInfo() {
 		return utilities.arrayHasElement(this.getParentRefInfo());

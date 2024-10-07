@@ -179,7 +179,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			if (hasExtraTableDataSourceConfig()) {
 				for (TableDataSourceConfig t : this.getExtraTableDataSource()) {
 					
-					TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName());
+					TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName(),
+					    new ArrayList<>());
 					
 					t.tryToGenerateTableAlias(getRelatedEtlConf());
 					
@@ -194,7 +195,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					if (t.useSharedPKKey()) {
 						t.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
 						
-						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getSharedKeyRefInfo().getFullTableName());
+						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getSharedKeyRefInfo().getFullTableName(),
+						    new ArrayList<>());
 						
 						if (fullLoadedTab != null) {
 							t.getSharedKeyRefInfo().clone(fullLoadedTab, null, conn);
@@ -231,7 +233,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	private void tryToLoadParentRefInfo(Connection conn) throws DBException {
 		if (this.hasParentRefInfo()) {
 			for (ParentTable ref : this.getParentRefInfo()) {
-				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());
+				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getFullTableName(),
+				    new ArrayList<>());
 				
 				ref.tryToGenerateTableAlias(getRelatedEtlConf());
 				
@@ -242,7 +245,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 				}
 				
 				if (ref.useSharedPKKey()) {
-					fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getSharedKeyRefInfo().getFullTableName());
+					fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getSharedKeyRefInfo().getFullTableName(),
+					    new ArrayList<>());
 					
 					if (!ref.getSharedKeyRefInfo().hasAlias()) {
 						ref.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());

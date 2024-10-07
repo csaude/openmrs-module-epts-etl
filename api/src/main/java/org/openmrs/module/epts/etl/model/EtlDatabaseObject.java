@@ -25,7 +25,6 @@ import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
@@ -569,8 +568,8 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		Oid prentOid = refInfo.generateParentOidFromChild(this);
 		
-		TableConfiguration tabConfInSrc = src
-		        .findFullConfiguredConfInAllRelatedTable(refInfo.generateFullTableNameOnSchema(src.getSchema()));
+		TableConfiguration tabConfInSrc = src.findFullConfiguredConfInAllRelatedTable(
+		    refInfo.generateFullTableNameOnSchema(src.getSchema()), new ArrayList<>());
 		
 		if (tabConfInSrc == null) {
 			tabConfInSrc = new GenericTableConfiguration(src);

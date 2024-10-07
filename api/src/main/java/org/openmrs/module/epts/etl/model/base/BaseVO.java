@@ -172,64 +172,53 @@ public abstract class BaseVO implements VO {
 	public void load(ResultSet resultSet) throws SQLException {
 		for (java.lang.reflect.Field field : this.getInstanceFields()) {
 			String name = toColumnName(field.getName());
-			
 			try {
 				Object value = resultSet.getObject(name);
 				
 				if (value != null) {
 					String c = field.getType().getName();
 					
-					if (c.equals("int"))
-						field.setInt(this, resultSet.getInt(name));
-					else if (c.equals("boolean")) {
-						int number = resultSet.getInt(name);
-						
-						field.setBoolean(this, number > 0);
-					} else if (c.equals("double"))
-						field.setDouble(this, resultSet.getDouble(name));
-					else if (c.equals("float"))
-						field.setFloat(this, resultSet.getFloat(name));
-					else if (c.equals("Integer"))
-						field.setInt(this, resultSet.getInt(name));
-					else if (c.equals("java.lang.String")) {
+					if (c.equals("int") || c.toLowerCase().contains("integer")) {
+						value = Integer.valueOf(resultSet.getInt(name));
+					} else if (c.toLowerCase().contains("boolean")) {
+						value = resultSet.getBoolean(name);
+					} else if (c.toLowerCase().contains("double")) {
+						value = Double.valueOf(resultSet.getDouble(name));
+					} else if (c.toLowerCase().contains("float")) {
+						value = Float.valueOf(resultSet.getFloat(name));
+					} else if (c.toLowerCase().contains("long")) {
+						value = Long.valueOf(resultSet.getLong(name));
+					} else if (c.equals("java.lang.String")) {
 						/*
 						 * JP: 2015.02.18
 						 * 
-						 * Este codigo foi acrescentado para tratar dos casos em
-						 * que o campo que se pretende carregar eh uma String
-						 * guardada num campo Clob
+						 * Este codigo foi acrescentado para tratar dos casos em que o campo que se
+						 * pretende carregar eh uma String guardada num campo Clob
 						 *
 						 */
 						
-						field.set(this, resultSet.getString(name).trim());
-					} else if (value instanceof Timestamp || value instanceof Date || value instanceof LocalDateTime) {
-						
-						java.util.Date data = new java.util.Date(resultSet.getTimestamp(name).getTime());
-						// System.out.println("TimeStamp =
-						// "+rs.getTimestamp(name).getTime());
-						field.set(this, data);
+						value = resultSet.getString(name).trim();
+					} else if (value instanceof Timestamp || value instanceof Date) {
+						value = new java.util.Date(resultSet.getTimestamp(name).getTime());
 						
 					} else if (c.equals("java.io.InputStream")) {
 						
 						Blob blob = resultSet.getBlob(name);
 						
-						// InputStream input = blob.getBinaryStream();
-						// System.out.println("Is blob " + input.available());
+						value = blob.getBinaryStream();
 						
-						field.set(this, blob.getBinaryStream());
-						
-					} else if (c.equals("[B")) {// byte[]
-						field.set(this, resultSet.getBytes(name));
+					} else if (c.equals("[B")) {
+						value = resultSet.getBytes(name);
 					}
 					
-					else {
-						field.set(this, value);
-						/* System.out.println("Unkown type"); */}
+					field.set(this, value);
 				}
 			}
-			catch (Exception e) {
-				// e.printStackTrace();
+			catch (java.sql.SQLException | java.lang.IllegalArgumentException e) {}
+			catch (IllegalAccessException e) {
+				throw new RuntimeException(e);
 			}
+			
 		}
 	}
 	

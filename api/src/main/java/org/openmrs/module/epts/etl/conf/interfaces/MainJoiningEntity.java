@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
@@ -45,7 +46,7 @@ public interface MainJoiningEntity extends TableConfiguration {
 				t.setMainExtractTable(this);
 				t.setRelatedEtlConfig(this.getRelatedEtlConf());
 				
-				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName());
+				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName(), new ArrayList<>());
 				
 				OpenConnection srcConn = this.getRelatedConnInfo().openConnection();
 				
@@ -59,7 +60,7 @@ public interface MainJoiningEntity extends TableConfiguration {
 					if (t.useSharedPKKey()) {
 						t.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
 						
-						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName());
+						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName(), new ArrayList<>());
 						
 						if (fullLoadedTab != null) {
 							t.getSharedKeyRefInfo().clone(fullLoadedTab, null, srcConn);

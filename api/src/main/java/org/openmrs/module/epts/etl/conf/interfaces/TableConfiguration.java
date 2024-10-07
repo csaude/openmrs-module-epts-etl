@@ -2149,27 +2149,49 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return conditionFields;
 	}
 	
-	default TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName) {
+	default TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName,
+	        List<Integer> alreadyCheckedObjects) {
+		
+		if (alreadyCheckedObjects == null) {
+			throw new ForbiddenOperationException("The 'alreadyCheckedObjects' list should be not null!!!");
+		}
+		
+		Integer identity = System.identityHashCode(this);
+		
+		if (alreadyCheckedObjects.contains(identity)) {
+			logTrace("Skipping verification of table '" + fullTableName + "' on table " + this.getFullTableName() + "("
+			        + System.identityHashCode(this) + ")");
+			
+			return null;
+		}
+		
 		if (this.getFullTableName().equals(fullTableName) && this.isFullLoaded()) {
 			return this;
 		}
 		
+		logTrace("Finding Configured table '" + fullTableName + "' on Table '" + this.getFullTableName() + "("
+		        + System.identityHashCode(this) + ") with Parents: [" + this.getParentRefInfoAsString() + "]");
+		
+		alreadyCheckedObjects.add(identity);
+		
 		if (this.hasParentRefInfo()) {
 			for (ParentTable p : this.getParentRefInfo()) {
-				TableConfiguration fullLoaded = p.findFullConfiguredConfInAllRelatedTable(fullTableName);
+				TableConfiguration fullLoadedTable = p.findFullConfiguredConfInAllRelatedTable(fullTableName,
+				    alreadyCheckedObjects);
 				
-				if (fullLoaded != null) {
-					return fullLoaded;
+				if (fullLoadedTable != null) {
+					return fullLoadedTable;
 				}
 			}
 		}
 		
 		if (this.hasChildRefInfo()) {
 			for (ChildTable p : this.getChildRefInfo()) {
-				TableConfiguration fullLoaded = p.findFullConfiguredConfInAllRelatedTable(fullTableName);
+				TableConfiguration fullLoadedTable = p.findFullConfiguredConfInAllRelatedTable(fullTableName,
+				    alreadyCheckedObjects);
 				
-				if (fullLoaded != null) {
-					return fullLoaded;
+				if (fullLoadedTable != null) {
+					return fullLoadedTable;
 				}
 			}
 		}
@@ -2205,11 +2227,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				TableConfiguration existingConf = null;
 				
 				if (related != null) {
-					existingConf = related.findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());
+					existingConf = related.findFullConfiguredConfInAllRelatedTable(ref.getFullTableName(),
+					    new ArrayList<>());
 				}
 				
 				if (existingConf == null) {
-					existingConf = this.findFullConfiguredConfInAllRelatedTable(ref.getFullTableName());
+					existingConf = this.findFullConfiguredConfInAllRelatedTable(ref.getFullTableName(), new ArrayList<>());
 				}
 				
 				ref.tryToGenerateTableAlias(aliasGenerator);

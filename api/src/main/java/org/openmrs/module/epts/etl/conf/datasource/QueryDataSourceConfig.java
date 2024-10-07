@@ -488,7 +488,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName) {
+	public TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName, List<Integer> a) {
 		return null;
 	}
 	

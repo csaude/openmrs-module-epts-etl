@@ -320,7 +320,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	}
 	
 	@Override
-	public TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName) {
+	public TableConfiguration findFullConfiguredConfInAllRelatedTable(String fullTableName, List<Integer> a) {
 		return null;
 	}
 	
