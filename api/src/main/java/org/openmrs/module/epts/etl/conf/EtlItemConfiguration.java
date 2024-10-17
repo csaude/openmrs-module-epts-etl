@@ -449,7 +449,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return this.getRelatedEtlConf();
 	}
 	
-	public List<EtlItemConfiguration> generateDynamicItems(Connection conn) throws DBException {
+	public List<EtlItemConfiguration> generateDynamicItems(EtlConfiguration relatedEtlConf, Connection conn)
+	        throws DBException {
 		if (!this.isDynamic()) {
 			throw new ForbiddenOperationException(
 			        "This item [" + this.getConfigCode() + " Is not dynamic!!! You cannot generate Dynamic Items");
@@ -467,17 +468,20 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		List<EtlItemConfiguration> items = new ArrayList<>(itemsSrc.size());
 		
 		for (EtlDatabaseObject itemSrc : itemsSrc) {
-			items.add(cloneDynamic(itemSrc, conn));
+			items.add(cloneDynamic(itemSrc, relatedEtlConf, conn));
 		}
 		
 		return items;
 	}
 	
-	private EtlItemConfiguration cloneDynamic(EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+	private EtlItemConfiguration cloneDynamic(EtlDatabaseObject schemaInfoSrc, EtlConfiguration relatedEtlConf,
+	        Connection conn) throws DBException {
+		
 		EtlItemConfiguration item = new EtlItemConfiguration();
+		item.setRelatedEtlConfig(relatedEtlConf);
 		
 		item.setSrcConf(new SrcConf());
-		item.getSrcConf().copyFromOther(this.getSrcConf(), schemaInfoSrc, conn);
+		item.getSrcConf().copyFromOther(this.getSrcConf(), schemaInfoSrc, item, conn);
 		
 		if (this.hasDstConf()) {
 			item.setDstConf(DstConf.cloneAll(this.getDstConf(), this, schemaInfoSrc, conn));
@@ -492,11 +496,14 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return item;
 	}
 	
-	public void copyFromOther(EtlItemConfiguration toCopyFrom, boolean ignoreMissingParamsOnElements, Connection conn)
-	        throws DBException {
+	public void copyFromOther(EtlItemConfiguration toCopyFrom, EtlConfiguration relatedEtlConf,
+	        boolean ignoreMissingParamsOnElements, Connection conn) throws DBException {
+		
 		this.setSrcConf(new SrcConf());
+		this.setRelatedEtlConfig(relatedEtlConf);
+		
 		this.getSrcConf().setIgnoreMissingParameters(ignoreMissingParamsOnElements);
-		this.getSrcConf().copyFromOther(toCopyFrom.getSrcConf(), null, conn);
+		this.getSrcConf().copyFromOther(toCopyFrom.getSrcConf(), null, this, conn);
 		
 		if (toCopyFrom.hasDstConf()) {
 			this.setDstConf(DstConf.cloneAll(toCopyFrom.getDstConf(), this, null, conn));

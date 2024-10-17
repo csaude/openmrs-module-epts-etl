@@ -287,7 +287,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig, Connection conn) throws DBException {
 		SrcConf src = new SrcConf();
 		
-		src.copyFromOther(src, null, conn);
+		src.copyFromOther(src, null, null, conn);
 		
 		return src;
 	}
@@ -461,8 +461,12 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		throw new ForbiddenOperationException("Not joinable entity!!!");
 	}
 	
-	public void copyFromOther(SrcConf toCloneFrom, EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+	public void copyFromOther(SrcConf toCloneFrom, EtlDatabaseObject schemaInfoSrc, EtlItemConfiguration relatedItemConf,
+	        Connection conn) throws DBException {
 		super.clone(toCloneFrom, schemaInfoSrc, conn);
+		
+		this.setRelatedEtlConfig(relatedItemConf.getRelatedEtlConf());
+		this.setParentConf(relatedItemConf);
 		
 		if (utilities.arrayHasElement(toCloneFrom.getAuxExtractTable())) {
 			this.setAuxExtractTable(AuxExtractTable.cloneAll(toCloneFrom.getAuxExtractTable(), this, schemaInfoSrc, conn));

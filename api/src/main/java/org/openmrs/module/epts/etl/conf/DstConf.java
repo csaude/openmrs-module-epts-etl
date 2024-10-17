@@ -890,7 +890,7 @@ public class DstConf extends AbstractTableConfiguration {
 		return utilities.arrayHasElement(this.getMapping());
 	}
 	
-	public static List<DstConf> cloneAll(List<DstConf> allToCloneFrom, EtlItemConfiguration relatedSrcConf,
+	public static List<DstConf> cloneAll(List<DstConf> allToCloneFrom, EtlItemConfiguration relatedItemConf,
 	        EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
 		
 		List<DstConf> allCloned = null;
@@ -900,7 +900,7 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			for (DstConf aux : allToCloneFrom) {
 				DstConf cloned = new DstConf();
-				cloned.clone(aux, relatedSrcConf, schemaInfoSrc, conn);
+				cloned.clone(aux, relatedItemConf, schemaInfoSrc, conn);
 				
 				allCloned.add(cloned);
 			}
@@ -909,11 +909,11 @@ public class DstConf extends AbstractTableConfiguration {
 		return allCloned;
 	}
 	
-	public void clone(DstConf toCloneFrom, EtlItemConfiguration relatedSrcConf, EtlDatabaseObject schemaInfoSrc,
+	public void clone(DstConf toCloneFrom, EtlItemConfiguration relatedItemConf, EtlDatabaseObject schemaInfoSrc,
 	        Connection conn) throws DBException {
 		super.clone(toCloneFrom, schemaInfoSrc, conn);
-		this.setParentConf(relatedSrcConf);
-		this.setRelatedEtlConfig(relatedSrcConf.getRelatedEtlConf());
+		this.setParentConf(relatedItemConf);
+		this.setRelatedEtlConfig(relatedItemConf.getRelatedEtlConf());
 		this.setJoinFields(toCloneFrom.getJoinFields());
 		this.setMapping(toCloneFrom.getMapping());
 		this.setPrefferredDataSource(toCloneFrom.getPrefferredDataSource());

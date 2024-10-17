@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -676,7 +677,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				item.setRelatedEtlConfig(this);
 				
 				if (item.isDynamic()) {
-					List<EtlItemConfiguration> dynamicItems = item.generateDynamicItems(conn);
+					List<EtlItemConfiguration> dynamicItems = item.generateDynamicItems(this, conn);
 					
 					if (utilities.arrayHasElement(dynamicItems)) {
 						logDebug(
@@ -1601,7 +1602,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		clonedEtlConf.setModuleRootDirectory(this.getModuleRootDirectory());
 		clonedEtlConf.setSyncStageSchema(tryToLoadPlaceHolders(this.getSyncStageSchema(), schemaInfoSrc));
 		clonedEtlConf.setFinalizerFullClassName(this.getFinalizerFullClassName());
-		clonedEtlConf.setParams(getParams());
+		clonedEtlConf.setParams(tryToLoadPlaceHolders(getParams(), schemaInfoSrc));
 		clonedEtlConf.setClassPath(this.getClassPath());
 		clonedEtlConf.setDoNotTransformsPrimaryKeys(this.isDoNotTransformsPrimaryKeys());
 		clonedEtlConf.setManualMapPrimaryKeyOnField(this.getManualMapPrimaryKeyOnField());
@@ -1617,10 +1618,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				
 				EtlItemConfiguration cloned = new EtlItemConfiguration();
 				
-				cloned.copyFromOther(item, true, conn);
+				cloned.copyFromOther(item, clonedEtlConf, true, conn);
 				
 				clonedEtlConf.getEtlItemConfiguration().add(item);
-				
 			}
 			
 			clonedEtlConf.init(conn);
@@ -1637,6 +1637,21 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 		
 		return clonedEtlConf;
+	}
+	
+	private Map<String, String> tryToLoadPlaceHolders(Map<String, String> params, EtlDatabaseObject schemaInfoSrc) {
+		if (params != null) {
+			
+			Map<String, String> newMap = new LinkedHashMap<>();
+			
+			for (Map.Entry<String, String> entry : params.entrySet()) {
+				newMap.put(entry.getKey(), DBUtilities.tryToReplaceParamsInQuery(entry.getValue(), schemaInfoSrc));
+			}
+			
+			return newMap;
+		} else {
+			return null;
+		}
 	}
 	
 	private String tryToLoadPlaceHolders(String str, EtlDatabaseObject schemaInfoSrc) {
