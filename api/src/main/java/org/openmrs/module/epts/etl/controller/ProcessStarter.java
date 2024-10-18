@@ -22,7 +22,7 @@ public class ProcessStarter implements ControllerStarter {
 	
 	private EtlConfiguration etlConfig;
 	
-	private ProcessController currentController;
+	protected ProcessController currentController;
 	
 	private EptsEtlLogger logger;
 	

@@ -1620,7 +1620,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				
 				cloned.copyFromOther(item, clonedEtlConf, true, conn);
 				
-				clonedEtlConf.getEtlItemConfiguration().add(item);
+				clonedEtlConf.getEtlItemConfiguration().add(cloned);
 			}
 			
 			clonedEtlConf.init(conn);

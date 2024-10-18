@@ -163,6 +163,8 @@ public abstract class BaseDAO {
 			
 			loadParamsToStatment(st, params, conn);
 			
+			logger.trace("Executing select: \n" + utilities.garantirXCaracteres(sql, 500));
+				
 			st.executeQuery();
 			
 			rs = st.getResultSet();

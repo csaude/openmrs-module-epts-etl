@@ -79,24 +79,24 @@ public class DynamicProcessStarter extends ProcessStarter implements ControllerS
 				TimeCountDown.sleep(10);
 			}
 			
-			ProcessController currentController = null;
+			this.currentController = null;
 			
 			for (EtlDatabaseObject src : loadAvaliableSrcObjects(this.etlConfig)) {
-				currentController = init(src);
+				this.currentController = init(src);
 				
-				ThreadPoolService.getInstance().createNewThreadPoolExecutor(currentController.getControllerId())
-				        .execute(currentController);
+				ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.currentController.getControllerId())
+				        .execute(this.currentController);
 				
-				while (!currentController.isFinalized()) {
+				while (!this.currentController.isFinalized()) {
 					TimeCountDown.sleep(30);
 					
 					logger.warn("THE APPLICATION IS STILL RUNING...", 60 * 15);
 				}
 			}
 			
-			if (currentController.isFinished()) {
+			if (this.currentController.isFinished()) {
 				logger.warn("ALL JOBS ARE FINISHED");
-			} else if (currentController.isStopped()) {
+			} else if (this.currentController.isStopped()) {
 				logger.warn("ALL JOBS ARE STOPPED");
 			}
 		}
