@@ -122,7 +122,6 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		
 		this.tableName = tableName;
 	}
-	
 	public boolean isIgnoreMissingParameters() {
 		return ignoreMissingParameters;
 	}

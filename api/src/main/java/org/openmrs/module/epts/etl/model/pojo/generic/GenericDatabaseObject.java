@@ -420,18 +420,9 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			throw new ForbiddenOperationException("The parent " + parent + " does not use simple pk");
 		}
 		
-		if (this.relatedConfiguration.hasParentRefInfo()) {
-			for (ParentTable refInfo : this.relatedConfiguration.getParentRefInfo()) {
-				for (RefMapping map : refInfo.getRefMapping()) {
-					
-					if (map.getChildFieldName().equals(map.getParentFieldName())) {
-						return getFieldValue(map.getChildFieldName());
-					}
-				}
-			}
-		}
+		RefMapping map = parent.getRefMapping().get(0);
 		
-		return null;
+		return getFieldValue(map.getChildFieldName());
 	}
 	
 	@Override

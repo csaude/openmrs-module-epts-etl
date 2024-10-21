@@ -497,11 +497,16 @@ public class LoadRecord {
 			}
 			
 			if (parent == null) {
-				
 				if (!refInfo.isFullLoaded()) {
 					refInfo.fullLoad(dstConn);
 				}
 				
+				//If the relashionship is self recursive
+				if (refInfo.getTableName().equals(this.dstConf.getTableName())) {
+					return true;
+				}
+				
+				//Check if there are recursive relationship between the child (this record) and its parent
 				for (ParentTable p : refInfo.getParentRefInfo()) {
 					
 					if (p.getTableName().equals(this.dstConf.getTableName())) {

@@ -324,8 +324,7 @@ public class EtlLoadHelper {
 		logTrace(msg);
 		
 		loadRec.reloadParentsWithDefaultValues(srcConn, dstConn);
-		
-		if (loadRec.getResultItem().hasUnresolvedInconsistences()) {
+			if (loadRec.getResultItem().hasUnresolvedInconsistences()) {
 			getProcessor().logDebug(
 			    "The dstRecord has inconsistence after reloading of default parent.  Removing it " + loadRec.getDstRecord());
 			loadRec.getDstRecord().remove(dstConn);
