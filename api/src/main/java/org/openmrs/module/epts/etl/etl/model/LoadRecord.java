@@ -25,6 +25,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
+import org.openmrs.module.epts.etl.model.pojo.generic.RecordWithDefaultParentInfo;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -180,79 +181,90 @@ public class LoadRecord {
 		
 		for (ParentInfo parentInfo : this.getParentsWithDefaultValues()) {
 			
-			List<SrcConf> avaliableSrcForCurrParent = parentInfo.getParentTableConfInDst()
-			        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(getEtlOperationConfig());
+			List<EtlDatabaseObject> recursive = retriveRecursiveRelationship(parentInfo.getParentTableConfInDst(), srcConn,
+			    dstConn);
 			
-			if (utilities.arrayHasNoElement(avaliableSrcForCurrParent)) {
-				throw new ForbiddenOperationException(
-				        "There are relashioship which cannot auto resolved as there is no configured etl for "
-				                + parentInfo.getParentTableConfInDst().getTableName() + " as source and destination!");
-			}
-			
-			EtlDatabaseObject dstParent = null;
-			EtlDatabaseObject recordAsSrc = null;
-			
-			for (SrcConf src : avaliableSrcForCurrParent) {
-				DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable(getEtlOperationConfig(),
-				    parentInfo.getParentTableConfInDst().getTableName());
+			if (utilities.arrayHasElement(recursive)) {
+				getProcessor().logDebug(
+				    "Recursive relationship found reloading parents for record " + this.getDstRecord() + " with parent ");
 				
-				recordAsSrc = src.createRecordInstance();
-				recordAsSrc.setRelatedConfiguration(src);
+				DatabaseObjectDAO.insert(recursive, srcConn);
+			} else {
+				List<SrcConf> avaliableSrcForCurrParent = parentInfo.getParentTableConfInDst()
+				        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(getEtlOperationConfig());
 				
-				recordAsSrc.copyFrom(parentInfo.getParentRecordInOrigin());
-				
-				dstParent = dst.getTransformerInstance().transform(this.getProcessor(), recordAsSrc, dst,
-				    TransformationType.INNER, srcConn, dstConn);
-				
-				if (dstParent != null) {
-					
-					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, getTaskProcessor());
-					
-					parentData.setParentLoadRecord(this);
-					
-					DBException exception = null;
-					
-					try {
-						parentData.setParentLoadRecord(this);
-						
-						EtlLoadHelper.performeParentLoading(parentData, srcConn, dstConn);
-					}
-					catch (DBException e) {
-						exception = e;
-						
-						if (!exception.isIntegrityConstraintViolationException()) {
-							this.getResultItem().setException(exception);
-						}
-					}
-					finally {
-						
-						if (parentData.getResultItem().hasInconsistences()
-						        || exception != null && exception.isIntegrityConstraintViolationException()) {
-							
-							getProcessor().logDebug("The parent for default for parent ["
-							        + parentInfo.getParentRecordInOrigin() + "] could not be loaded. The dstRecord [");
-							
-							this.getResultItem()
-							        .addInconsistence(InconsistenceInfo.generate(getDstRecord().generateTableName(),
-							            getDstRecord().getObjectId(), parentInfo.getParentTableConfInDst().getTableName(),
-							            parentInfo.getParentRecordInOrigin().getObjectId().getSimpleValueAsInt(), null,
-							            this.getDstConf().getOriginAppLocationCode()));
-							
-						}
-					}
-					
-					break;
+				if (utilities.arrayHasNoElement(avaliableSrcForCurrParent)) {
+					throw new ForbiddenOperationException(
+					        "There are relashioship which cannot auto resolved as there is no configured etl for "
+					                + parentInfo.getParentTableConfInDst().getTableName() + " as source and destination!");
 				}
 				
-			}
-			
-			try {
-				getDstRecord().changeParentValue(parentInfo.getParentTableConfInDst(), dstParent);
-			}
-			catch (NullPointerException e) {
-				e.printStackTrace();
+				EtlDatabaseObject dstParent = null;
+				EtlDatabaseObject recordAsSrc = null;
 				
-				throw e;
+				for (SrcConf src : avaliableSrcForCurrParent) {
+					DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable(getEtlOperationConfig(),
+					    parentInfo.getParentTableConfInDst().getTableName());
+					
+					recordAsSrc = src.createRecordInstance();
+					recordAsSrc.setRelatedConfiguration(src);
+					
+					recordAsSrc.copyFrom(parentInfo.getParentRecordInOrigin());
+					
+					dstParent = dst.getTransformerInstance().transform(this.getProcessor(), recordAsSrc, dst,
+					    TransformationType.INNER, srcConn, dstConn);
+					
+					if (dstParent != null) {
+						
+						LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, getTaskProcessor());
+						
+						parentData.setParentLoadRecord(this);
+						
+						DBException exception = null;
+						
+						try {
+							parentData.setParentLoadRecord(this);
+							
+							EtlLoadHelper.performeParentLoading(parentData, srcConn, dstConn);
+						}
+						catch (DBException e) {
+							exception = e;
+							
+							if (!exception.isIntegrityConstraintViolationException()) {
+								this.getResultItem().setException(exception);
+							}
+						}
+						finally {
+							
+							if (parentData.getResultItem().hasInconsistences()
+							        || exception != null && exception.isIntegrityConstraintViolationException()) {
+								
+								getProcessor().logDebug("The parent for default for parent ["
+								        + parentInfo.getParentRecordInOrigin() + "] could not be loaded. The dstRecord [");
+								
+								this.getResultItem()
+								        .addInconsistence(InconsistenceInfo.generate(getDstRecord().generateTableName(),
+								            getDstRecord().getObjectId(),
+								            parentInfo.getParentTableConfInDst().getTableName(),
+								            parentInfo.getParentRecordInOrigin().getObjectId().getSimpleValueAsInt(), null,
+								            this.getDstConf().getOriginAppLocationCode()));
+								
+							}
+						}
+						
+						break;
+					}
+					
+				}
+				
+				try {
+					getDstRecord().changeParentValue(parentInfo.getParentTableConfInDst(), dstParent);
+				}
+				catch (NullPointerException e) {
+					e.printStackTrace();
+					
+					throw e;
+				}
 			}
 		}
 	}
@@ -454,77 +466,119 @@ public class LoadRecord {
 		}
 	}
 	
-	public boolean hasUnresolvedRecursiveRelationship(Connection srcConn, Connection dstConn) throws DBException {
+	public List<EtlDatabaseObject> retriveRecursiveRelationship(ParentTable refInfo, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo())) {
-			return false;
+			return null;
 		}
+		
+		List<EtlDatabaseObject> recursiveRelationship = new ArrayList<>();
+		
+		if (refInfo.isMetadata()) {
+			return null;
+		}
+		
+		performeParentInfoInitialization(dstConn, refInfo);
+		
+		if (!getDstRecord().hasAllPerentFieldsFilled(refInfo)) {
+			return null;
+		}
+		
+		EtlDatabaseObject parentInOrigin = this.getDstRecord().retrieveParentInSrcUsingDstParentInfo(refInfo, srcConf,
+		    srcConn);
+		
+		if (parentInOrigin == null) {
+			return null;
+		}
+		
+		EtlDatabaseObject parent;
+		
+		if (getTaskProcessor().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
+			parent = this.getDstRecord().retrieveParentByOid(refInfo, dstConn);
+		} else {
+			EtlDatabaseObject recInDst = refInfo.createRecordInstance();
+			recInDst.setRelatedConfiguration(refInfo);
+			recInDst.copyFrom(parentInOrigin);
+			recInDst.loadUniqueKeyValues(refInfo);
+			recInDst.loadObjectIdData(refInfo);
+			
+			parent = this.getDstRecord().retrieveParentInDestination(refInfo, parentInOrigin, dstConn);
+		}
+		
+		if (parent == null) {
+			if (!refInfo.isFullLoaded()) {
+				refInfo.fullLoad(dstConn);
+			}
+			
+			//If the relationship is self recursive
+			if (refInfo.getTableName().equals(this.getDstConf().getTableName())) {
+				recursiveRelationship.add(RecordWithDefaultParentInfo.init(this.getSrcRecord(), this.getDstRecord(),
+				    parentInOrigin, refInfo, srcConn));
+			}
+			
+			/*
+			 * Check if there are recursive relationship between the child (this record) and its parent
+			 * 
+			 * We loop over all the parents of 'refInfo' which is parent of current record
+			 * 
+			 */
+			for (ParentTable p : refInfo.getParentRefInfo()) {
+				
+				//Mean that the parent 'p' is the very same as the table of this record  
+				if (p.getTableName().equals(this.getDstConf().getTableName())) {
+					Object parentValue = parentInOrigin.getParentValue(p);
+					
+					if (parentValue != null) {
+						recursiveRelationship.add(RecordWithDefaultParentInfo.init(this.getSrcRecord(), this.getDstRecord(),
+						    parentInOrigin, refInfo, srcConn));
+						
+						break;
+					}
+					
+					/*this.getSrcRecord().loadObjectIdData();
+					
+					if (parentValue != null && parentValue.equals(this.getSrcRecord().getObjectId().asSimpleValue())) {
+						recursiveRelationship.add(RecordWithDefaultParentInfo.init(this.getSrcRecord(), this.getDstRecord(),
+						    parentInOrigin, refInfo, srcConn));
+						
+						break;
+					}*/
+				}
+			}
+		}
+		
+		return recursiveRelationship;
+	}
+	
+	public List<EtlDatabaseObject> retriveRecursiveRelationship(Connection srcConn, Connection dstConn) throws DBException {
+		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo())) {
+			return null;
+		}
+		
+		List<EtlDatabaseObject> recursiveRelationship = new ArrayList<>();
 		
 		for (ParentTable refInfo : getDstConf().getParentRefInfo()) {
+			List<EtlDatabaseObject> recursiveInfo = retriveRecursiveRelationship(refInfo, srcConn, dstConn);
 			
-			if (refInfo.isMetadata()) {
-				continue;
+			if (utilities.arrayHasElement(recursiveInfo)) {
+				recursiveRelationship.addAll(recursiveInfo);
 			}
-			
-			if (!refInfo.getTableName().equals(getDstConf().getTableName())) {
-				continue;
-			}
-			
-			performeParentInfoInitialization(dstConn, refInfo);
-			
-			if (!getDstRecord().hasAllPerentFieldsFilled(refInfo)) {
-				continue;
-			}
-			
-			EtlDatabaseObject parentInOrigin = this.getDstRecord().retrieveParentInSrcUsingDstParentInfo(refInfo, srcConf,
-			    srcConn);
-			
-			if (parentInOrigin == null) {
-				continue;
-			}
-			
-			EtlDatabaseObject parent;
-			
-			if (getTaskProcessor().getRelatedEtlConfiguration().isDoNotTransformsPrimaryKeys()) {
-				parent = this.getDstRecord().retrieveParentByOid(refInfo, dstConn);
-			} else {
-				EtlDatabaseObject recInDst = refInfo.createRecordInstance();
-				recInDst.setRelatedConfiguration(refInfo);
-				recInDst.copyFrom(parentInOrigin);
-				recInDst.loadUniqueKeyValues(refInfo);
-				recInDst.loadObjectIdData(refInfo);
-				
-				parent = this.getDstRecord().retrieveParentInDestination(refInfo, parentInOrigin, dstConn);
-			}
-			
-			if (parent == null) {
-				if (!refInfo.isFullLoaded()) {
-					refInfo.fullLoad(dstConn);
-				}
-				
-				//If the relashionship is self recursive
-				if (refInfo.getTableName().equals(this.dstConf.getTableName())) {
-					return true;
-				}
-				
-				//Check if there are recursive relationship between the child (this record) and its parent
-				for (ParentTable p : refInfo.getParentRefInfo()) {
-					
-					if (p.getTableName().equals(this.dstConf.getTableName())) {
-						Object parentValue = parentInOrigin.getParentValue(p);
-						
-						this.getSrcRecord().loadObjectIdData();
-						
-						if (parentValue != null && parentValue.equals(this.getSrcRecord().getObjectId().asSimpleValue())) {
-							return true;
-						}
-					}
-				}
-			}
-			
 		}
 		
-		return false;
-		
+		return recursiveRelationship;
+	}
+	
+	public void saveRecordsWithDefaultsParents(Connection srcConn, Connection dstConn) throws DBException {
+		for (ParentInfo parentInfo : this.getParentsWithDefaultValues()) {
+			RecordWithDefaultParentInfo defaultParentInfo = RecordWithDefaultParentInfo.init(this.getSrcRecord(),
+			    this.getDstRecord(), parentInfo.getParentRecordInOrigin(), parentInfo.getParentTableConfInDst(), srcConn);
+			
+			getProcessor().logDebug(
+			    "Recursive relationship found reloading parents for record " + this.getDstRecord() + " with parent ");
+			
+			DatabaseObjectDAO.insert(defaultParentInfo, (TableConfiguration) defaultParentInfo.getRelatedConfiguration(),
+			    srcConn);
+		}
 	}
 	
 	public EtlDatabaseObject parseToEtlObject() {

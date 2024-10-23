@@ -98,4 +98,14 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 	public LoadRecord initEtlRecord(EtlDatabaseObject srcObject, EtlDatabaseObject destObject, DstConf mappingInfo) {
 		return new LoadRecord(srcObject, destObject, getSrcConf(), mappingInfo, this);
 	}
+	
+	@Override
+	public TaskProcessor<EtlDatabaseObject> initReloadRecordsWithDefaultParentsTaskProcessor(IntervalExtremeRecord limits) {
+		ReloadRecordsWithDefaultParentProcessor p = new ReloadRecordsWithDefaultParentProcessor(
+		        (Engine<EtlDatabaseObject>) this.getEngine(), limits, false);
+		
+		p.setRelatedEtlProcessor(this);
+		
+		return p;
+	}
 }

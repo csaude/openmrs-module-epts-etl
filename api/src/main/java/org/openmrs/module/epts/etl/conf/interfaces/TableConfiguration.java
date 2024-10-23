@@ -550,12 +550,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		if (!getPrimaryKey().isSimpleKey())
 			throw new ForbiddenOperationException("Only simple pk is supported!");
 		
-		EtlConfigurationTableConf skippedRecordTabConf = getRelatedEtlConf().getSkippedRecordTabConf();
+		EtlConfigurationTableConf recWithDefaultParents = getRelatedEtlConf().getRecordWithDefaultParentsInfoTabConf();
 		
 		String sql = "";
 		sql += getTableAlias() + "." + getPrimaryKey().retrieveSimpleKeyColumnName();
-		sql += " in  (	select object_id \n";
-		sql += "		from " + skippedRecordTabConf.getFullTableName() + "\n";
+		sql += " in  (	select src_rec_id \n";
+		sql += "		from " + recWithDefaultParents.getFullTableName() + "\n";
 		sql += " 		where table_name = '" + getTableName() + "')";
 		
 		return sql;
@@ -1206,6 +1206,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return getSyncStageSchema() + "." + generateRelatedStageDstUniqueKeysTableName();
 	}
 	
+	@JsonIgnore
 	default boolean existRelatedExportStageTable(Connection conn) {
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;

@@ -119,6 +119,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf;
 	
+	private EtlConfigurationTableConf recordWithDefaultParentsInfoTabConf;
+	
 	private EtlConfigurationTableConf etlRecordErrorTabCof;
 	
 	private EtlConfigurationTableConf skippedRecordTabConf;
@@ -249,6 +251,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	public void setSkippedRecordTabConf(EtlConfigurationTableConf skippedRecordTabConf) {
 		this.skippedRecordTabConf = skippedRecordTabConf;
+	}
+	
+	public EtlConfigurationTableConf getRecordWithDefaultParentsInfoTabConf() {
+		return recordWithDefaultParentsInfoTabConf;
+	}
+	
+	public void setRecordWithDefaultParentsInfoTabConf(EtlConfigurationTableConf recordWithDefaultParentsInfoTabConf) {
+		this.recordWithDefaultParentsInfoTabConf = recordWithDefaultParentsInfoTabConf;
 	}
 	
 	public boolean isDoTransformsPrimaryKeys() {
@@ -656,6 +666,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			this.skippedRecordTabConf = new EtlConfigurationTableConf(EtlConfiguration.SKIPPED_RECORD_TABLE_NAME, this);
 			
 			this.etlRecordErrorTabCof = new EtlConfigurationTableConf(EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME, this);
+			
+			this.recordWithDefaultParentsInfoTabConf = new EtlConfigurationTableConf(
+			        this.getRecordWithDefaultParentInfoTableName(), this);
 			
 			for (EtlOperationConfig operation : this.getOperations()) {
 				if (operation.getMaxSupportedProcessors() == 1) {
@@ -1656,6 +1669,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private String tryToLoadPlaceHolders(String str, EtlDatabaseObject schemaInfoSrc) {
 		return DBUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
+	}
+	
+	public String getRecordWithDefaultParentInfoTableName() {
+		return "record_with_default_parents";
+	}
+	
+	public String generateFullRecursiveInfoTableName() {
+		return getSyncStageSchema() + "." + getRecordWithDefaultParentInfoTableName();
 	}
 	
 }

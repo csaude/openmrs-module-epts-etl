@@ -526,7 +526,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql = objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
 		}
 		
-		if (tabConf.useMysqlInsertIgnore()) {
+		if (false) {
 			sql = DBUtilities.addInsertIgnoreOnInsertScript(sql, conn);
 		}
 		
