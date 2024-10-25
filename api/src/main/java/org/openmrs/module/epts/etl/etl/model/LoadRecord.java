@@ -12,6 +12,7 @@ import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
@@ -576,8 +577,8 @@ public class LoadRecord {
 			getProcessor().logDebug(
 			    "Recursive relationship found reloading parents for record " + this.getDstRecord() + " with parent ");
 			
-			DatabaseObjectDAO.insert(defaultParentInfo, (TableConfiguration) defaultParentInfo.getRelatedConfiguration(),
-			    srcConn);
+			defaultParentInfo.save((TableConfiguration) defaultParentInfo.getRelatedConfiguration(),
+			    ConflictResolutionType.KEEP_EXISTING, srcConn);
 		}
 	}
 	

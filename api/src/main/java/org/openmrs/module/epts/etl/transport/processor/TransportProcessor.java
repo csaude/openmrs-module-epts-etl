@@ -74,4 +74,8 @@ public class TransportProcessor extends TaskProcessor<TransportRecord> {
 		return (TransportController) super.getRelatedOperationController();
 	}
 	
+	@Override
+	public TaskProcessor<TransportRecord> initReloadRecordsWithDefaultParentsTaskProcessor(IntervalExtremeRecord limits) {
+		throw new ForbiddenOperationException("Forbiden Method");
+	}
 }

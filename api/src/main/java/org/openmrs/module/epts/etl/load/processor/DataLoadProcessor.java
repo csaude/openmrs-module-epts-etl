@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.load.controller.DataLoadController;
 import org.openmrs.module.epts.etl.load.model.LoadSyncDataSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -92,5 +93,10 @@ public class DataLoadProcessor extends TaskProcessor<EtlDatabaseObject> {
 	@Override
 	public DataLoadController getRelatedOperationController() {
 		return (DataLoadController) super.getRelatedOperationController();
+	}
+	
+	@Override
+	public TaskProcessor<EtlDatabaseObject> initReloadRecordsWithDefaultParentsTaskProcessor(IntervalExtremeRecord limits) {
+		throw new ForbiddenOperationException("Forbiden Method");
 	}
 }

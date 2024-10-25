@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
@@ -18,6 +19,7 @@ import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.RecordWithDefaultParentInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -79,86 +81,9 @@ public class ReloadRecordsWithDefaultParentProcessor extends TaskProcessor<EtlDa
 			}
 			
 			for (EtlDatabaseObject etlObj : etlObjects) {
+				EtlDatabaseObject dstObject = reloadDefaultsParents(mainSrc, etlObj, srcConn, dstConn);
 				
-				List<RecordWithDefaultParentInfo> rcs = RecordWithDefaultParentInfo.getAllOfSrcRecord(mainSrc,
-				    etlObj.getObjectId().asSimpleNumericValue(), srcConn);
-				
-				for (RecordWithDefaultParentInfo recWithDefaultParentInfo : rcs) {
-					
-					recWithDefaultParentInfo.fullLoad(this.getRelatedEtlItemConfiguration(), srcConn, dstConn);
-					
-					ParentTable parentRefInfo = recWithDefaultParentInfo.getParentRefInfo();
-					
-					List<SrcConf> avaliableSrcForCurrParent = parentRefInfo
-					        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(getRelatedEtlOperationConfig());
-					
-					if (utilities.arrayHasNoElement(avaliableSrcForCurrParent)) {
-						throw new ForbiddenOperationException(
-						        "There are relashioship which cannot auto resolved as there is no configured etl for "
-						                + parentRefInfo.getTableName() + " as source and destination!");
-					}
-					
-					EtlDatabaseObject dstParent = null;
-					EtlDatabaseObject recordAsSrc = null;
-					
-					for (SrcConf src : avaliableSrcForCurrParent) {
-						DstConf dst = ((EtlItemConfiguration) src.getParentConf())
-						        .findDstTable(getRelatedEtlOperationConfig(), parentRefInfo.getTableName());
-						
-						recordAsSrc = src.createRecordInstance();
-						recordAsSrc.setRelatedConfiguration(src);
-						
-						recordAsSrc.copyFrom(recWithDefaultParentInfo.getParentRecordInOrigin());
-						
-						dstParent = dst.getTransformerInstance().transform(this, recordAsSrc, dst, TransformationType.INNER,
-						    srcConn, dstConn);
-						
-						if (dstParent != null) {
-							
-							LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst,
-							        this.getRelatedEtlProcessor());
-							
-							DBException exception = null;
-							
-							try {
-								EtlLoadHelper.performeParentLoading(parentData, srcConn, dstConn);
-							}
-							catch (DBException e) {
-								throw new EtlExceptionImpl(e);
-							}
-							finally {
-								
-								if (parentData.getResultItem().hasInconsistences()
-								        || exception != null && exception.isIntegrityConstraintViolationException()) {
-									
-									logDebug("The parent for default for parent ["
-									        + recWithDefaultParentInfo.getParentRecordInOrigin()
-									        + "] could not be loaded. The dstRecord [");
-									/*
-									InconsistenceInfo.generate(recWithDefaultParentInfo.getDstRecord().generateTableName(),
-										recWithDefaultParentInfo.getDstRecord().getObjectId(),
-									        parentRefInfo.getParentTableConfInDst().getTableName(),
-									        parentRefInfo.getParentRecordInOrigin().getObjectId().getSimpleValueAsInt(),
-									        null, this.getDstConf().getOriginAppLocationCode()));*/
-									
-								}
-							}
-							
-							break;
-						}
-						
-					}
-					
-					try {
-						recWithDefaultParentInfo.getDstRecord()
-						        .changeParentValue(recWithDefaultParentInfo.getParentRefInfo(), dstParent);
-					}
-					catch (NullPointerException e) {
-						e.printStackTrace();
-						
-						throw e;
-					}
-				}
+				dstObject.update((TableConfiguration) dstObject.getRelatedConfiguration(), dstConn);
 			}
 		}
 		catch (Exception e) {
@@ -169,6 +94,98 @@ public class ReloadRecordsWithDefaultParentProcessor extends TaskProcessor<EtlDa
 			getTaskResultInfo().setFatalException(e);
 		}
 		
+	}
+	
+	private EtlDatabaseObject reloadDefaultsParents(SrcConf mainSrc, EtlDatabaseObject etlObj, Connection srcConn,
+	        Connection dstConn) throws DBException, ForbiddenOperationException {
+		List<RecordWithDefaultParentInfo> rcs = RecordWithDefaultParentInfo.getAllOfSrcRecord(mainSrc,
+		    etlObj.getObjectId().asSimpleNumericValue(), srcConn);
+		
+		EtlDatabaseObject srcObject = null;
+		EtlDatabaseObject dstObject = null;
+		
+		for (RecordWithDefaultParentInfo recWithDefaultParentInfo : rcs) {
+			
+			if (srcObject != null) {
+				recWithDefaultParentInfo.setSrcRelatedObject(srcObject);
+				recWithDefaultParentInfo.setDstRelatedObject(dstObject);
+			}
+			
+			recWithDefaultParentInfo.fullLoad(this.getRelatedEtlItemConfiguration(), srcConn, dstConn);
+			
+			srcObject = recWithDefaultParentInfo.getSrcRelatedObject();
+			dstObject = recWithDefaultParentInfo.getDstRelatedObject();
+			
+			ParentTable parentRefInfo = recWithDefaultParentInfo.getParentRefInfo();
+			
+			List<SrcConf> avaliableSrcForCurrParent = parentRefInfo
+			        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(getRelatedEtlOperationConfig());
+			
+			if (utilities.arrayHasNoElement(avaliableSrcForCurrParent)) {
+				throw new ForbiddenOperationException(
+				        "There are relashioship which cannot auto resolved as there is no configured etl for "
+				                + parentRefInfo.getTableName() + " as source and destination!");
+			}
+			
+			EtlDatabaseObject dstParent = null;
+			EtlDatabaseObject recordAsSrc = null;
+			
+			for (SrcConf src : avaliableSrcForCurrParent) {
+				DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable(getRelatedEtlOperationConfig(),
+				    parentRefInfo.getTableName());
+				
+				recordAsSrc = src.createRecordInstance();
+				recordAsSrc.setRelatedConfiguration(src);
+				
+				recordAsSrc.copyFrom(recWithDefaultParentInfo.getParentRecordInOrigin());
+				
+				dstParent = dst.getTransformerInstance().transform(this, recordAsSrc, dst, TransformationType.INNER, srcConn,
+				    dstConn);
+				
+				if (dstParent != null) {
+					
+					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, this.getRelatedEtlProcessor());
+					
+					DBException exception = null;
+					
+					try {
+						EtlLoadHelper.performeParentLoading(parentData, srcConn, dstConn);
+						
+						dstObject.changeParentValue(recWithDefaultParentInfo.getParentRefInfo(), dstParent);
+					}
+					catch (DBException e) {
+						throw new EtlExceptionImpl(e);
+					}
+					finally {
+						
+						if (parentData.getResultItem().hasInconsistences()
+						        || exception != null && exception.isIntegrityConstraintViolationException()) {
+							
+							String msg = "The parent for default for parent ["
+							        + recWithDefaultParentInfo.getParentRecordInOrigin()
+							        + "] could not be loaded. The dstRecord [" + dstObject + "]";
+							
+							logDebug(msg);
+							
+							InconsistenceInfo incInfo = InconsistenceInfo.generate(
+							    recWithDefaultParentInfo.getDstRelatedObject().generateTableName(),
+							    recWithDefaultParentInfo.getDstRelatedObject().getObjectId(), parentRefInfo.getTableName(),
+							    recWithDefaultParentInfo.getParentRecordInOrigin().getObjectId().getSimpleValueAsInt(), null,
+							    mainSrc.getOriginAppLocationCode());
+							
+							incInfo.save(mainSrc, srcConn);
+							
+							recWithDefaultParentInfo.setAsInconsistent(srcConn);
+						}
+					}
+					
+					break;
+				}
+				
+			}
+		}
+		
+		return dstObject;
 	}
 	
 	@Override

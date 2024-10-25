@@ -145,7 +145,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		if (!existRelatedRecursiveRecordInfoTable()) {
 			logDebug("GENERATING RELATED RECURSIVE TABLE");
 			
-			createRecursiveRecordInfoTable();
+			createRecordWithDefaultParentInfoTable();
 			
 			logDebug("RELATEDRECURSIVE TABLE GENERATED");
 		}
@@ -1023,7 +1023,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
-	private void createRecursiveRecordInfoTable() {
+	private void createRecordWithDefaultParentInfoTable() {
 		OpenConnection conn = null;
 		
 		try {
@@ -1045,6 +1045,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			sql += DBUtilities.generateTableVarcharField("parent_table", 50, notNullConstraint, conn) + endLineMarker;
 			sql += DBUtilities.generateTableVarcharField("parent_field", 50, notNullConstraint, conn) + endLineMarker;
 			sql += DBUtilities.generateTableBigIntField("src_parent_id", notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableNumericField("inconsistent_parent", 1, notNullConstraint, -1, conn) + endLineMarker;
 			sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
 			
 			sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),

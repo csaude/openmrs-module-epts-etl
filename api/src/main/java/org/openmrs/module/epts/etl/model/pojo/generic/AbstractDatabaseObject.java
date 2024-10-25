@@ -321,10 +321,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			DatabaseObjectDAO.update(this, conn);
 		}
 		catch (DBException e) {
-			if (e.isDuplicatePrimaryOrUniqueKeyException()) {
-				System.err.println();
-			}
-			
 			throw e;
 		}
 	}

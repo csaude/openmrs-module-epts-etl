@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -12,12 +13,11 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 	
-	private EtlDatabaseObject srcObject;
-	
-	private EtlDatabaseObject dstObject;
+	private EtlDatabaseObject dstRelatedObject;
 	
 	private EtlDatabaseObject parentRecordInOrigin;
 	
@@ -44,6 +44,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		rec.setFieldValue("parent_table", parentRefInfo.getTableName());
 		rec.setFieldValue("parent_field", parentRefInfo.getChildColumnOnSimpleMapping());
 		rec.setFieldValue("src_parent_id", srcObject.getParentValue(parentRefInfo));
+		rec.setFieldValue("inconsistent_parent", -1);
 		
 		return rec;
 		
@@ -90,11 +91,16 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		
 		this.parentRefInfo = relatedSrcConf.getFieldIsRelatedParent(Field.fastCreateField(this.getParentField()));
 		
-		this.srcObject = DatabaseObjectDAO.getByOid(relatedSrcConf,
-		    Oid.fastCreate(relatedSrcConf.getPrimaryKey().asSimpleKey().getName(), this.getSrcRecId()), srcConn);
+		//The srcObject and dstRelatedObject should be the same for multiple default parents for same record
+		if (this.getSrcRelatedObject() == null) {
+			this.setSrcRelatedObject(DatabaseObjectDAO.getByOid(relatedSrcConf,
+			    Oid.fastCreate(relatedSrcConf.getPrimaryKey().asSimpleKey().getName(), this.getSrcRecId()), srcConn));
+		}
 		
-		this.dstObject = DatabaseObjectDAO.getByOid(dstConf,
-		    Oid.fastCreate(dstConf.getPrimaryKey().asSimpleKey().getName(), this.getDstRecId()), dstConn);
+		if (this.getDstRelatedObject() == null) {
+			this.setDstRelatedObject(DatabaseObjectDAO.getByOid(dstConf,
+			    Oid.fastCreate(dstConf.getPrimaryKey().asSimpleKey().getName(), this.getDstRecId()), dstConn));
+		}
 		
 		this.parentRecordInOrigin = DatabaseObjectDAO.getByOid(this.parentRefInfo,
 		    Oid.fastCreate(dstConf.getPrimaryKey().asSimpleKey().getName(), this.getSrcParentId()), dstConn);
@@ -109,12 +115,12 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		return parentRefInfo;
 	}
 	
-	public EtlDatabaseObject getSrcObject() {
-		return srcObject;
+	public EtlDatabaseObject getDstRelatedObject() {
+		return dstRelatedObject;
 	}
 	
-	public EtlDatabaseObject getDstRecord() {
-		return dstObject;
+	public void setDstRelatedObject(EtlDatabaseObject relatedDstObject) {
+		this.dstRelatedObject = relatedDstObject;
 	}
 	
 	public static List<RecordWithDefaultParentInfo> getAllOfSrcRecord(SrcConf srcTable, Long srcRecId, Connection srcConn)
@@ -126,7 +132,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		}
 		
 		String sql = "";
-		sql += " select " + tabConf.generateFullAliasedSelectColumns() ;
+		sql += " select " + tabConf.generateFullAliasedSelectColumns();
 		sql += " from   " + tabConf.generateSelectFromClauseContent();
 		sql += " where  src_rec_id = ? ";
 		sql += "		and table_name = ?";
@@ -134,6 +140,20 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		Object[] params = { srcRecId, srcTable.getTableName() };
 		
 		return DatabaseObjectDAO.search(tabConf.getLoadHealper(), RecordWithDefaultParentInfo.class, sql, params, srcConn);
+	}
+	
+	public void setAsInconsistent(Connection conn) throws DBException {
+		this.setFieldValue("inconsistent_parent", 1);
+		
+		this.update((TableConfiguration) this.getRelatedConfiguration(), conn);
+	}
+	
+	public static void deleteAllSuccessifulyProcessed(SrcConf srcConf, OpenConnection srcConn) throws DBException {
+		EtlConfigurationTableConf skippedRecordTabConf = srcConf.getRelatedEtlConf()
+		        .getRecordWithDefaultParentsInfoTabConf();
+		
+		DatabaseObjectDAO.removeAll(skippedRecordTabConf,
+		    "table_name = '" + srcConf.getTableName() + "' and inconsistent_parent = -1", srcConn);
 	}
 	
 }

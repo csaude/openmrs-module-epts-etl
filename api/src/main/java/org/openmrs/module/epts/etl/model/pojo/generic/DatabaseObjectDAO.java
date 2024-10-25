@@ -526,7 +526,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			sql = objects.get(0).getInsertSQLWithoutObjectId().split("VALUES")[0];
 		}
 		
-		if (false) {
+		if (tabConf.useMysqlInsertIgnore()) {
 			sql = DBUtilities.addInsertIgnoreOnInsertScript(sql, conn);
 		}
 		
@@ -561,6 +561,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 			try {
 				logger.trace("Executing insertion of " + objects.size() + " " + tabConf.getTableName() + " Using query\n\n"
 				        + utilities.garantirXCaracteres(sql, 250));
+				
+				if (tabConf.getTableName().equals("location")) {
+					System.out.println("Stop");
+				}
 				
 				List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 				

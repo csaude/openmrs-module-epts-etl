@@ -111,4 +111,8 @@ public class DBExportProcessor extends TaskProcessor<EtlDatabaseObject> {
 		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcConf(), startRecord, lastRecord);
 	}
 	
+	@Override
+	public TaskProcessor<EtlDatabaseObject> initReloadRecordsWithDefaultParentsTaskProcessor(IntervalExtremeRecord limits) {
+		throw new ForbiddenOperationException("Forbiden Method");
+	}
 }

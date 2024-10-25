@@ -97,4 +97,9 @@ public class DBQuickExportProcessor extends TaskProcessor<EtlDatabaseObject> {
 	private File generateJSONTempFile(SyncJSONInfo jsonInfo, Integer startRecord, Integer lastRecord) throws IOException {
 		return getRelatedOperationController().generateJSONTempFile(jsonInfo, getSrcConf(), startRecord, lastRecord);
 	}
+	
+	@Override
+	public TaskProcessor<EtlDatabaseObject> initReloadRecordsWithDefaultParentsTaskProcessor(IntervalExtremeRecord limits) {
+		throw new ForbiddenOperationException("Forbiden Method");
+	}
 }

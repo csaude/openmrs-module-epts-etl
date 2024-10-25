@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.changedrecordsdetector.controller.ChangedReco
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -70,4 +71,8 @@ public class ChangedRecordsDetectorProcessor extends TaskProcessor<EtlDatabaseOb
 		*/
 	}
 	
+	@Override
+	public TaskProcessor<EtlDatabaseObject> initReloadRecordsWithDefaultParentsTaskProcessor(IntervalExtremeRecord limits) {
+		throw new ForbiddenOperationException("Forbiden Method");
+	}
 }

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.engine.Engine;
@@ -119,4 +120,9 @@ public class PojoGenerationProcessor extends TaskProcessor<PojoGenerationRecord>
 		return (PojoGenerationController) super.getRelatedOperationController();
 	}
 	
+	@Override
+	public TaskProcessor<PojoGenerationRecord> initReloadRecordsWithDefaultParentsTaskProcessor(
+	        IntervalExtremeRecord limits) {
+		throw new ForbiddenOperationException("Forbiden Method");
+	}
 }
